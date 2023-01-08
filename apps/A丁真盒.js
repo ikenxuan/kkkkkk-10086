@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import uploadRecord from '../../yenai-plugin/model/uploadRecord.js'; // 需搭配椰奶插件高清语言
+const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/鸡音盒'
 const dz = {
   "阿巴": "1",
   "阿妈": "2",
@@ -138,7 +139,7 @@ export class example extends plugin {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/dzh/res/${encodeURIComponent(dz[e.msg])}.mp3`, 0, false))
   }
   async dingzhen2(e) {
-    e.reply(await uploadRecord(`E:/Yunzai-Bot/plugins/kkkkkk-10086/resources/鸡音盒/${encodeURIComponent(dz2[e.msg])}.mp3`, 0, false))
+    e.reply(await uploadRecord(`file:///${_path}/${encodeURIComponent(dz2[e.msg])}.mp3`, 0, false))
   }
 
   async help(e) {
