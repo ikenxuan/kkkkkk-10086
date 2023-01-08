@@ -1,3 +1,4 @@
+//ark打包方法来源于小飞
 import { core } from "oicq"
 
 async function Sign(json, client_info = null) {
