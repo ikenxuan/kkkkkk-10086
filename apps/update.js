@@ -88,7 +88,7 @@ export class update extends plugin {
         log = log.join("\n\n");
         if (log.length <= 0) return "";
         let end = "";
-        end ="更多详细信息，请前往GitHub查看\nhttps://github.com/kkkkkk-10086/kkkkkk-10086";
+        end ="更多详细信息，请前往gitee查看\nhttps://gitee.com/kkkkkkxuan/kkkkkk-10086";
         log = await this.makeForwardMsg(`kkkkkk-10086更新日志，共${line}条`, log, end);
         return log;
     }
