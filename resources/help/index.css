@@ -19,7 +19,7 @@ body {
   position: relative;
   font-size: 20px;
   background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(114, 126, 253, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(253, 114, 114, 0.37);
   backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(30px);
   border-radius: 30px;
