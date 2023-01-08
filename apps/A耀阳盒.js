@@ -1,6 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
-import uploadRecord from '../yenai-plugin/model/uploadRecord.js';
+import uploadRecord from '../../yenai-plugin/model/uploadRecord.js'; // 需搭配椰奶插件高清语言
 const yy = {
   "汪汪": "汪汪",
   "什么声音": "什么声音",
