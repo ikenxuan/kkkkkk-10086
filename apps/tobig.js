@@ -1,3 +1,4 @@
+// cv自 "清凉图插件"
 import plugin from '../../../lib/plugins/plugin.js';
 import ArkMsg from "../model/ArkMsg.js";
 import Note from "../../genshin/model/note.js";

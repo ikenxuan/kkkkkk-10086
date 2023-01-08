@@ -1,3 +1,4 @@
+// 语言盒均cv "椰奶插件"
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import uploadRecord from '../../yenai-plugin/model/uploadRecord.js'; // 需搭配椰奶插件高清语言
