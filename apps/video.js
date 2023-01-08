@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 import { segment } from 'oicq'
 import fs from "fs";
 
-import Config from '../yenai-plugin/model/Config.js';
+import Config from '../../yenai-plugin/model/Config.js';
 const _path = process.cwd();
 
 /*

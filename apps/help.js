@@ -55,7 +55,7 @@ async function help(e) {
     })
 }
 const rodom = async function () {
-    var image = fs.readdirSync(`./plugins/yunzai-c-v-plugin/resources/help/theme/`);
+    var image = fs.readdirSync(`./plugins/kkkkkk-10086/resources/help/theme/`);
     var list_img = [];
     for (let val of image) {
         list_img.push(val)
