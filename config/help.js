@@ -19,11 +19,6 @@ export const helpList = [{
       icon: 14,
       title: '#体力',
       desc: '大图卡片体力（需要开启）'
-    },
-    {
-      icon: 84,
-      title: '自动检测短视频链接解析发出无水印视频',
-      desc: '默认开启'
     }
 
   ]
