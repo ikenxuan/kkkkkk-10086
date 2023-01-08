@@ -4,7 +4,7 @@
 # 什么都没有
 ### 云崽根目录下执行
 ```
-git clone https://github.com/kkkkkk-10086/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone https://gitee.com/kkkkkkxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 本人QQ：[2066855608](http://wpa.qq.com/msgrd?v=3&uin=2066855608&site=qq&menu=yes)
 
