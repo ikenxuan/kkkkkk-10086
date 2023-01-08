@@ -9,7 +9,7 @@
 
 [![访问](https://profile-counter.glitch.me/kkkkkk-10086/count.svg)](https://gitee.com/kkkkkkxuan/kkkkkk-10086.git)
 
-# 安装（yunzai根目录下执行）
+## 安装（yunzai根目录下执行）
 ```
 git clone https://gitee.com/kkkkkkxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
