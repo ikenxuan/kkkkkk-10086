@@ -187,7 +187,7 @@ let qiy = {
 let mp4= await fetch(`${shipdz}`,{method: "get",headers:qiy});
 
 let lopp = await mp4.buffer();
-let path =`../video/快手.mp4`;
+let path =`${_path}/plugins/example/记录/video/快手.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
 console.log(err || "下载视频成功");
   if (!err) {
@@ -214,7 +214,7 @@ let qiy = {
 
 let mp4= await fetch(`${data.nwm_video_url_HQ}`,{method: "get",headers:qiy});
 let lopp = await mp4.buffer();
-let path =`${_path}/plugins/example/记录/video/抖音.mp4`;
+let path =`${_path}/plugins/example/记录/video/douyin.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
   if (!err) {
    e.reply([segment.video(path)]);
