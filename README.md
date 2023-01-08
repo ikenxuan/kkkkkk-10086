@@ -6,8 +6,8 @@
 ```
 git clone https://gitee.com/kkkkkkxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
-本人QQ：[2066855608](http://wpa.qq.com/msgrd?v=3&uin=2066855608&site=qq&menu=yes)
 
-[![插件库](https://img.shields.io/badge/Gitee-插件库-black?style=flat-square&logo=gitee)](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index) [![YunzaiBot](https://img.shields.io/badge/Yunzai-v3.0.0-black?style=flat-square&logo=dependabot)](https://gitee.com/Le-niao/Yunzai-Bot) [![QQ](https://img.shields.io/badge/QQ-2066855608-success?style=flat-square&logo=tencent-qq)](http://wpa.qq.com/msgrd?v=3&uin=2066855608&site=qq&menu=yes)
+
+# [![插件库](https://img.shields.io/badge/Gitee-插件库-black?style=flat-square&logo=gitee)](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index) [![YunzaiBot](https://img.shields.io/badge/Yunzai-v3.0.0-black?style=flat-square&logo=dependabot)](https://gitee.com/Le-niao/Yunzai-Bot) 
 
 
