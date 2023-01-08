@@ -213,7 +213,7 @@ let qiy = {
 }
 
 let mp4= await fetch(`${data.nwm_video_url_HQ}`,{method: "get",headers:qiy});
-let lopp = await mp4.buffer();
+let lopp = await mp4.response.arrayBuffer();
 let path =`./video/douyin.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
   if (!err) {
