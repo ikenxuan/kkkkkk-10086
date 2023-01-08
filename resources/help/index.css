@@ -11,7 +11,7 @@ body {
   font-size: 50px;
 }
 .cont-box {
-  border-radius: 15px;
+  border-radius: 5px;
   margin-top: 20px;
   margin-bottom: 20px;
   overflow: hidden;
@@ -24,7 +24,7 @@ body {
   -webkit-backdrop-filter: blur(30px);
   border-radius: 30px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #209cf5;
+  color: #ff594e;
 }
 .help-group {
   font-size: 20px;
@@ -62,8 +62,8 @@ body {
   background: rgba(34, 41, 51, 0.5);
 }
 .help-icon {
-  width: 40px;
-  height: 40px;
+  width: 41px;
+  height: 41px;
   display: block;
   position: absolute;
   background: url("icon.png") 0 0 no-repeat;
