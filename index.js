@@ -4,7 +4,9 @@ const files = fs.readdirSync('./plugins/kkkkkk-10086/apps').filter(file => file.
 
 let ret = []
 
-logger.info('转大图插件加载中。。。。。。。。。。。。。。。。。。')
+logger.info(chalk.cyan('------------------------------------'))
+logger.info(`~\t${chalk.yellow(`欢迎使用kkkkkk插件${Ver.ver}`)}\t~`)
+logger.info(chalk.magenta('------------------------------------'))
 
 
 
