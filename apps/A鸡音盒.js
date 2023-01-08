@@ -175,7 +175,7 @@ export class example extends plugin {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[e.msg])}.mp3`, 0, false))
   }
   async jiji2(e) {
-    e.reply(await uploadRecord(`E:/Yunzai-Bot/plugins/kkkkkk-10086\resources\鸡音盒/${encodeURIComponent(jilocal[e.msg])}.mp3`, 0, false))
+    e.reply(await uploadRecord(`E:/Yunzai-Bot/plugins/kkkkkk-10086/resources/鸡音盒/${encodeURIComponent(jilocal[e.msg])}.mp3`, 0, false))
   }
   
   async help(e) {
