@@ -1,6 +1,8 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
-import uploadRecord from '../../yenai-plugin/model/uploadRecord.js';
+import uploadRecord from '../../yenai-plugin/model/uploadRecord.js'; // 需搭配椰奶插件高清语言
+const _path = process.cwd() + '/resources/鸡音盒'
+
 const ji = {
   "鸡": "j",
   "你": "n",
@@ -175,7 +177,7 @@ export class example extends plugin {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[e.msg])}.mp3`, 0, false))
   }
   async jiji2(e) {
-    e.reply(await uploadRecord(`E:/Yunzai-Bot/plugins/kkkkkk-10086/resources/鸡音盒/${encodeURIComponent(jilocal[e.msg])}.mp3`, 0, false))
+    e.reply(await uploadRecord(`file:///${_path}/${encodeURIComponent(jilocal[e.msg])}.mp3`, 0, false))
   }
   
   async help(e) {
