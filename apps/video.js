@@ -186,7 +186,7 @@ let qiy = {
 
 let mp4= await fetch(`${shipdz}`,{method: "get",headers:qiy});
 
-let lopp = await mp4.buffer();
+let lopp = await mp4.arrayBuffer();
 let path =`./video/快手.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
 console.log(err || "下载视频成功");
@@ -213,7 +213,7 @@ let qiy = {
 }
 
 let mp4= await fetch(`${data.nwm_video_url_HQ}`,{method: "get",headers:qiy});
-let lopp = await mp4.buffer();
+let lopp = await mp4.arrayBuffer();
 let path =`./video/douyin.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
   if (!err) {
@@ -238,7 +238,7 @@ let qiy = {
 
 let mp4= await fetch(`${data.video_data.nwm_video_url_HQ}`,{method: "get",headers:qiy});
 e.reply([`发现Tik Tok分享...\n正在读取 URL...`]);
-let lopp = await mp4.buffer();
+let lopp = await mp4.arrayBuffer();
 let path =`./video/Tiktok.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
   if (!err) {
