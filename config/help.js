@@ -1,6 +1,6 @@
 //如需自定义清凉图帮助，请将改文件复制一份，粘贴到上一个目录（即此插件config文件夹内），并将粘贴过去的文件重命名为help.js，编辑完后重启云崽即可生效
 export const helpCfg = {
-  title: '莫辛纳甘66',
+  title: 'kkkkkk帮助',
   subTitle: 'Yunzai-Bot & kkkkkk-10086',
   columnCount: 0,
   colWidth: 265,
