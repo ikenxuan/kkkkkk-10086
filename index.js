@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import chalk from 'chalk'
 
 const files = fs.readdirSync('./plugins/kkkkkk-10086/apps').filter(file => file.endsWith('.js'))
 

@@ -1,4 +1,4 @@
-![啊哈](resources/photos.jpg)
+![啊哈](resources/photos/photo1.jpg)
 #
 
 
@@ -6,6 +6,8 @@
 
 # 创作历程：CTRL C + CTRL V
 ### 什么都没有 (doge
+
+[![访问](https://profile-counter.glitch.me/kkkkkk-10086/count.svg)](https://gitee.com/kkkkkkxuan/kkkkkk-10086.git)
 
 
 ```
