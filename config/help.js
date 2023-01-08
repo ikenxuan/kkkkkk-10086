@@ -19,7 +19,13 @@ export const helpList = [{
       icon: 14,
       title: '#体力',
       desc: '大图卡片体力（需要开启）'
+    },
+    {
+      icon: 23,
+      title: '<鸡音|丁真|鸡汤|耀阳|神鹰>盒',
+      desc: '名人名言。例：鸡音盒'
     }
+
 
   ]
 }, {
