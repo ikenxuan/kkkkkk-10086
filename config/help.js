@@ -12,13 +12,20 @@ export const helpList = [{
   list: [
     {
       icon:88,
-      title: "#发大图 #转大图",
-      desc: "#将图片(回复或消息携带)转为卡片发送"
-    },{
+      title: "#大图 #转大图 #json/JSON",
+      desc: "发送携带的图片卡片信息"
+    },
+    {
       icon: 14,
       title: '#体力',
       desc: '大图卡片体力（需要开启）'
+    },
+    {
+      icon: 84,
+      title: '自动检测短视频链接解析发出无水印视频',
+      desc: '默认开启'
     }
+
   ]
 }, {
   group: '管理类命令',
