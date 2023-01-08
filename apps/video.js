@@ -26,7 +26,7 @@ export class example extends plugin {
       /** https://oicqjs.github.io/oicq/#events */
       event: 'message',
       /** 优先级，数字越小等级越高 */
-      priority: 1,
+      priority: 2,
       rule: [
         {
           /** 命令正则匹配 */
@@ -213,7 +213,7 @@ let qiy = {
 }
 
 let mp4= await fetch(`${data.nwm_video_url_HQ}`,{method: "get",headers:qiy});
-let lopp = await mp4.response.arrayBuffer();
+let lopp = await mp4.response.arraybuffer();
 let path =`./video/douyin.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
   if (!err) {
