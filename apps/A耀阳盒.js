@@ -1,4 +1,4 @@
-import plugin from '../../lib/plugins/plugin.js'
+import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import uploadRecord from '../yenai-plugin/model/uploadRecord.js';
 const yy = {

@@ -1,7 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import uploadRecord from '../../yenai-plugin/model/uploadRecord.js'; // 需搭配椰奶插件高清语言
-const _path = process.cwd() + '/resources/鸡音盒'
+const _path = process.cwd() + 'plugins/kkkkkk-10086/resources/鸡音盒'
 
 const ji = {
   "鸡": "j",
