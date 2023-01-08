@@ -187,7 +187,7 @@ let qiy = {
 let mp4= await fetch(`${shipdz}`,{method: "get",headers:qiy});
 
 let lopp = await mp4.buffer();
-let path =`${_path}/video/快手.mp4`;
+let path =`../video/快手.mp4`;
 fs.writeFile(path,lopp,"binary",function (err) {
 console.log(err || "下载视频成功");
   if (!err) {
