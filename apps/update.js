@@ -13,7 +13,7 @@ export class update extends plugin {
             priority: 1000,
             rule: [
                 {
-                    reg: "^#?(kkkkkk|kkk)(插件)?(强制)?（更新|gx)$",
+                    reg: "^#?(kkkkkk|kkk)(插件)?(强制)?更新$",
                     fnc: "update",
                 },
             ],
