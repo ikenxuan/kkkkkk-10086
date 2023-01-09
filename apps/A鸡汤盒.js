@@ -1,6 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
-import uploadRecord from '../uploadRecord.js';
+import uploadRecord from '../model/uploadRecord.js';
 const jitang = {
   "啊哈哈": "啊哈哈",
   "鸡汤来了": "鸡汤来了",
