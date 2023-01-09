@@ -2,7 +2,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import uploadRecord from '../model/uploadRecord.js'; 
-const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/鸡音盒'
+const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/丁真盒'
 const dz = {
   "阿巴": "1",
   "阿妈": "2",
