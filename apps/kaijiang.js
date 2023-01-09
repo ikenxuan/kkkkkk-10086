@@ -34,7 +34,13 @@ export class sjs extends plugin {
 
   async cj(e) {
 	  // if(!Config.getConfig('set','pz')['jryq']) return this.reply('抽奖功能已关闭')
-    if(e.isMaster){e.reply('你是主人没有CD')}
+    if (!e.isGroup) {
+      return;
+    }
+    if(e.isMaster)
+    {
+      e.reply('你是主人没有CD')
+    }
     else{
 	  let qq =  e.user_id
     let now_time = new Date().getTime();
