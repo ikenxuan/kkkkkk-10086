@@ -39,7 +39,7 @@ export class sjs extends plugin {
     }
     if (e.isMaster)
     {
-      // e.reply('你是主人没有CD')
+      //  e.reply('你是主人没有CD')
     }
     else{
 	  let qq =  e.user_id
