@@ -13,7 +13,7 @@ export class anzhuohuoquck extends plugin {
             priority: 1,
             rule: [
                 {
-                    reg: '^#安卓获取ck|安卓获取cookie|获取ck|获取cookie$',
+                    reg: '^#?安卓获取ck|安卓获取cookie|获取ck|获取cookie$',
                     fnc: 'anzhuogetckhelp'
                 }
             ]
