@@ -1,11 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
 import { Config} from '../components/index.js'
-import moment from 'moment';
-let sum = 1; //这里记录总次数 也就是每天可查询次数接口分开算
-// yyyy-MM-DD 默认当前年月日 改后面的时间就行
-let dateTime='YYYY-MM-DD 00:00:00'; //这里定义时间刷新时间格式是 年-月-日 时:分:秒
-let GayCD = {};
 import fs from 'node:fs'
 const xhz_path ='plugins/kkkkkk-10086/resources/鸽鸽的照片/'
 
