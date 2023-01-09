@@ -9,7 +9,6 @@
 
 
 
-## 安装（yunzai根目录下执行）
 ```
 git clone https://gitee.com/kkkkkkxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
