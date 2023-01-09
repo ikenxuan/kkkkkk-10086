@@ -8,7 +8,7 @@ export class kkkkkk_10086_help extends plugin {
         super({
             name: '转大图帮助',
             event: 'help',
-            priority: 1145,
+            priority: 800,
             rule: [
                 {
                     reg: '^#?(大图|转大图|卡片|kkk|kkkkkk|10086)(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
