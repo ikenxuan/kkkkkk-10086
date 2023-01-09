@@ -7,7 +7,7 @@ export class yunzai_c_v_help extends plugin {
     constructor() {
         super({
             name: '转大图帮助',
-            event: 'message',
+            event: 'help',
             priority: 1145,
             rule: [
                 {
