@@ -24,7 +24,13 @@ export const helpList = [{
       icon: 23,
       title: '<鸡音|丁真|鸡汤|耀阳|神鹰>盒',
       desc: '名人名言。例：鸡音盒'
+    },
+    {
+      icon: 34,
+      title: '获取ck',
+      desc: '通过app获取米游社cookie'
     }
+
 
 
   ]

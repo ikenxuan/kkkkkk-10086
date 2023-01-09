@@ -3,7 +3,7 @@ import fs from 'fs'
 import lodash from 'lodash'
 import { render, Data } from '../components/index.js'
 
-export class yunzai_c_v_help extends plugin {
+export class kkkkkk_10086_help extends plugin {
     constructor() {
         super({
             name: '转大图帮助',
