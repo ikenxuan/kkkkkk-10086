@@ -7,7 +7,7 @@ export class kkkkkk_10086_help extends plugin {
     constructor() {
         super({
             name: '转大图帮助',
-            event: 'help',
+            event: 'messages',
             priority: 800,
             rule: [
                 {
