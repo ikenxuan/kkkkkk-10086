@@ -1,14 +1,13 @@
 import fs from 'node:fs'
 import chalk from 'chalk'
-import Ver from './components/Version.js'
 
 const files = fs.readdirSync('./plugins/kkkkkk-10086/apps').filter(file => file.endsWith('.js'))
 
 let ret = []
 
-logger.info(chalk.cyan('------------------------------------'))
-logger.info(`~\t${chalk.yellow(`欢迎使用kkkkkk插件${Ver.ver}`)}\t~`)
-logger.info(chalk.magenta('------------------------------------'))
+logger.info(chalk.blueBright('------------------------------------'))
+logger.info(`~\t${chalk.redBright(`欢迎使用kkkkkk插件`)}\t~`)
+logger.info(chalk.blueBright('------------------------------------'))
 
 
 

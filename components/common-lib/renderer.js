@@ -1,5 +1,5 @@
-import { Data, Version, Plugin_Name } from './index.js'
-import puppeteer from '../../../lib/puppeteer/puppeteer.js'
+import { Data, Version, Plugin_Name } from '../index.js'
+import puppeteer from '../../../../lib/puppeteer/puppeteer.js'
 import fs from 'fs'
 const _path = process.cwd()
 export default async function (path, params, cfg) {
@@ -24,7 +24,7 @@ export default async function (path, params, cfg) {
     },
     sys: {
       scale: `style=transform:scale(${cfg.scale || 1})`,
-	    copyright: `Yunzai-Bot<span class="version">${Version.yunzai}</span> & kkkkkk-10086<span class="version">${Version.ver}</span>`
+	    copyright: `Yunzai-Bot<span class="version">${Version.yunzai}</span> & kkkkkk-10086 <span class="version">${Version.ver}</span>`
     },
     quality: 100
   }

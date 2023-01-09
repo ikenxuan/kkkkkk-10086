@@ -1,17 +1,17 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fs from 'fs'
 import lodash from 'lodash'
-import { render, Data } from '../components/index.js'
-
-export class kkkkkk_10086_help extends plugin {
+import { Data }  from '../components/index.js'
+import render from '../components/common-lib/render.js'
+export class yunzai_c_v_help extends plugin {
     constructor() {
         super({
-            name: '转大图帮助',
-            event: 'messages',
-            priority: 800,
+            name: 'kkk帮助',
+            event: 'message',
+            priority: 1145,
             rule: [
                 {
-                    reg: '^#(大图|转大图|卡片|kkk|kkkkkk|10086)(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
+                    reg: '^#?(kkkkkk|kkk)(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
                     fnc: 'messages'
                 }
             ]
