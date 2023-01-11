@@ -30,6 +30,12 @@ export const helpList = [{
       title: '获取ck',
       desc: '通过app获取米游社cookie'
     },
+    {
+      icon: 34,
+      title: '开奖',
+      desc: '不知道怎么形容'
+    },
+
   ]
 }, {
   group: '管理类命令',
