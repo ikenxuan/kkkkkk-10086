@@ -122,7 +122,7 @@ if(numss > numbb){
 	 setTimeout(() => {
 	  e.reply("摇号成功，三秒后开奖");
 	},1000);
-	let msk = ['恭喜抽中一等奖,涩图一张', segment.image('https://api.sdgou.cc/api/tao/')]
+	let msk = ['恭喜抽中一等奖,老婆一张', segment.image('https://app.zichen.zone/api/acg.php')]
   setTimeout(() => {
     e.reply(msk);
   }, 3000);
