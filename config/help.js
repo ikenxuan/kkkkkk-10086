@@ -37,7 +37,7 @@ export const helpList = [{
     },
     {
       icon: 34,
-      title: '订阅仓库、查看仓库列表',
+      title: '订阅仓库、(开启|关闭)仓库推送、查看仓库列表',
       desc: '不知道怎么形容'
     },
 
