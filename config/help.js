@@ -35,6 +35,11 @@ export const helpList = [{
       title: '开奖',
       desc: '不知道怎么形容'
     },
+    {
+      icon: 34,
+      title: '订阅仓库、查看仓库列表',
+      desc: '不知道怎么形容'
+    },
 
   ]
 }, {
