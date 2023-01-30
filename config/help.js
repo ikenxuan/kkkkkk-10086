@@ -44,6 +44,11 @@ export const helpList = [{
       title: '头像框@群友/<qq号>',
       desc: '给当前指定qq的头像随机添加头像框'
     },
+    {
+      icon: 37,
+      title: '手写<文本>',
+      desc: '仿真字迹'
+    },
 
   ]
 }, {
