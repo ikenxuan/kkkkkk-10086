@@ -19,8 +19,8 @@ export class wenan extends plugin {
     
     async realtext(e) {
         let msg = e.msg
-		let text = msg.replace(/#|手写/g, "").trim();
-        let url = `https://zj.v.api.aa1.cn/api/zuoye/?msg=${text}`;
+		    let text = msg.replace(/#|手写/g, "").trim();
+        let url = `https://zj.v.api.aa1.cn/api/zuoye/?msg=${encodeURIComponent(text)}`;
         let data = [
             // segment.at(e.user_id),
             segment.image(url),
