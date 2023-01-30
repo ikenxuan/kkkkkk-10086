@@ -87,9 +87,9 @@ export class update extends plugin {
         let line = log.length;
         log = log.join("\n\n");
         if (log.length <= 0) return "";
-        let end = "";
-        end ="更多详细信息，请前往gitee查看\nhttps://gitee.com/kkkkkkxuan/kkkkkk-10086";
-        log = await this.makeForwardMsg(`kkkkkk-10086更新日志，共${line}条`, log, end);
+        // let end = "";
+        // end ="更多详细信息，请前往gitee查看\nhttps://gitee.com/kkkkkkxuan/kkkkkk-10086";
+        log = await this.makeForwardMsg(`kkkkkk-10086更新日志，共${line}条`, log);
         return log;
     }
     async getcommitId(plugin = "") {
