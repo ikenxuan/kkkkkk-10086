@@ -164,7 +164,7 @@ export class example extends plugin {
           fnc: 'jiji2'
         },
         {
-          reg: "^鸡音盒$",
+          reg: "^鸡(音|乐)盒$",
           fnc: 'help'
         }
       ]
