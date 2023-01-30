@@ -27,13 +27,10 @@ export class wenan extends plugin {
       ]
       //发送消息
       e.reply(data);
-      return true
+      // return true
 
-    if (!res) {
-    logger.error('[查询手机号] 接口请求失败')
-    return await this.reply('查绑接口请求失败,请联系主人更换接口')
+    if (!data) {
+    logger.error('[添加头像框] 接口请求失败')
+    return await this.reply(logger)
   }
-    res = await res.text()
-    await this.reply(`${res}\n该功能请谨慎使用,容易冻结机器人`)
-    }  
-}
+}}
