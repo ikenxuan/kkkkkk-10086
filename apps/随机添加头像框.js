@@ -26,7 +26,7 @@ export class wenan extends plugin {
 			qq = e.msg.match(/\d+/g)
 		}
 		if (!qq) qq = e.user_id;
-    let url = `https://v.api.aa1.cn/api/api-tksc/sc.php?qq=${qq}`;
+    let url = `https://v.api.aa1.cn/api/api-tksc/sc.php?qq=${encodeURIComponent(qq)}`;
     let data = [
       segment.at(e.user_id),
       segment.image(url),
