@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from 'oicq'
+import lodash from 'lodash'
 import fetch from 'node-fetch'
 
 export class wenan extends plugin {
@@ -18,9 +19,14 @@ export class wenan extends plugin {
     })
   }
   async cb(e) {
-    let msg = e.msg
-		let place = msg.replace(/#|头像框/g, "").trim();
-    let url = `https://v.api.aa1.cn/api/api-tksc/sc.php?qq=${place}`;
+    // let msg = e.msg
+		// let place = msg.replace(/#|头像框/g, "").trim();
+    let qq = e.message.filter(item => item.type == 'at')?.map(item => item?.qq)
+		if (lodash.isEmpty(qq)) {
+			qq = e.msg.match(/\d+/g)
+		}
+		if (!qq) qq = e.user_id;
+    let url = `https://v.api.aa1.cn/api/api-tksc/sc.php?qq=${qq}`;
     let data = [
       segment.at(e.user_id),
       segment.image(url),
