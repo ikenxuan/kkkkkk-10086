@@ -1,11 +1,8 @@
-// cv椰奶
 import { core } from "oicq"
-import common from "oicq"
 import Contactable from "oicq"
 import querystring from "querystring"
 import fetch from "node-fetch"
 import fs from "fs"
-import path from "path"
 import os from "os"
 import util from "util"
 import stream from "stream"
@@ -97,14 +94,15 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
         const buf = file instanceof Buffer ? file : Buffer.from(file.slice(9), "base64");
         const head = buf.slice(0, 7).toString();
         if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
-            const tmpfile = path.join(TMP_DIR, (0, uuid)());
+            const tmpfile = TMP_DIR + '/' + (0, uuid)();
             await fs.promises.writeFile(tmpfile, buf);
             let result = await getAudioTime(tmpfile,ffmpeg);
             if(result.code == 1) time = result.data;
+            buf = await fs.promises.readFile(tmpfile);
             fs.unlink(tmpfile,NOOP);
-            buffer = buf;
+            buffer = result.buffer || buf;
         }else {
-            const tmpfile = path.join(TMP_DIR, (0, uuid)());
+            const tmpfile = TMP_DIR + '/' + (0, uuid)();
             let result = await getAudioTime(tmpfile,ffmpeg);
             if(result.code == 1) time = result.data;
             await fs.promises.writeFile(tmpfile, buf);
@@ -123,16 +121,15 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
                 headers: headers
             });
             const buf = Buffer.from(await response.arrayBuffer());
-            const tmpfile = path.join(TMP_DIR, (0, uuid)());
+            const tmpfile = TMP_DIR + '/' + (0, uuid)();
             await fs.promises.writeFile(tmpfile, buf);
             //await (0, pipeline)(readable.pipe(new DownloadTransform), fs.createWriteStream(tmpfile));
             const head = await read7Bytes(tmpfile);
             let result = await getAudioTime(tmpfile,ffmpeg);
             if(result.code == 1) time = result.data;
             if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
-                //const buf = await fs.promises.readFile(tmpfile);
                 fs.unlink(tmpfile,NOOP);
-                buffer = buf;
+                buffer = result.buffer || buf;
             } else {
                 buffer = await audioTrans(tmpfile, ffmpeg);
             }
@@ -146,7 +143,7 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
         let result = await getAudioTime(file,ffmpeg);
         if(result.code == 1) time = result.data;
         if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
-            buffer = await fs.promises.readFile(file);
+            buffer = result.buffer || await fs.promises.readFile(file);
         } else {
             buffer = await audioTrans(file, ffmpeg);
         }
@@ -156,8 +153,20 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
 
 async function getAudioTime(file, ffmpeg = "ffmpeg") {
     return new Promise((resolve, reject) => {
-        (0, child_process.exec)(`${ffmpeg} -i "${file}"`, async (error, stdout, stderr) => {
+        let file_info = fs.statSync(file);
+        let cmd = `${ffmpeg} -i "${file}"`;
+        let is_aac = false;
+        if(file_info['size'] >= 10485760){
+            cmd = `${ffmpeg} -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`;
+            is_aac = true;
+        }
+        (0, child_process.exec)(cmd, async (error, stdout, stderr) => {
             try {
+                let buffer = null;
+                if(is_aac){
+                    buffer = fs.readFileSync(`${file}.mp3`);
+                    fs.unlinkSync(`${file}.mp3`);
+                }
 				let time = stderr.split('Duration:')[1]?.split(',')[0].trim();
                 let arr = time?.split(':');
                 arr.reverse();
@@ -167,10 +176,11 @@ async function getAudioTime(file, ffmpeg = "ffmpeg") {
                     if(parseInt(val) > 0) s += parseInt(val) * n;
                     n *= 60;
                 }
-                resolve({code: 1,data: {
+                resolve({code: 1,buffer: buffer,data: {
                     time: time,
                     seconds: s,
-					exec_text: stderr
+					exec_text: stderr,
+                    
                 }});
             }
             catch {
@@ -182,7 +192,7 @@ async function getAudioTime(file, ffmpeg = "ffmpeg") {
 
 async function audioTrans(file, ffmpeg = "ffmpeg") {
     return new Promise((resolve, reject) => {
-        const tmpfile = path.join(TMP_DIR, (0, uuid)());
+        const tmpfile = TMP_DIR + '/' + (0, uuid)();
         (0, child_process.exec)(`${ffmpeg} -y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`, async (error, stdout, stderr) => {
             try {
                 const amr = await fs.promises.readFile(tmpfile);
