@@ -510,6 +510,10 @@ export class example extends plugin {
         {
           reg: "^神鹰盒$",
           fnc: 'syhelp'
+        },
+        {
+          reg: "^语音盒$",
+          fnc: 'help'
         }
       ]
     })
@@ -554,6 +558,16 @@ export class example extends plugin {
         .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
     
       return forwardMsg
+    }
+    async help(e) {
+      let res = []
+      res.push(Object.keys({...ji,...ji2}).join("、"))
+      res.push(Object.keys({...dz,...dz2}).join("、"))
+      res.push(Object.keys(jitang).join("、"))
+      res.push(Object.keys(yy).join("、"))
+      res.push(Object.keys(sy).join("、"))
+      let data1 = await this.makeForwardMsg(e.user_id, "语音盒", res)
+      await this.e.reply(data1)
     }
   //鸡--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async jiji(e) {
