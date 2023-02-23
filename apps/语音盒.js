@@ -497,7 +497,7 @@ export class example extends plugin {
         },
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------        
         {
-          reg: "^丁真盒$",
+          reg: "^(丁真)|(dz)盒$",
           fnc: 'dzhelp'
         },
         {
@@ -505,15 +505,15 @@ export class example extends plugin {
           fnc: 'jihelp'
         },
         {
-          reg: "^鸡汤盒$",
+          reg: "^(鸡汤)|(jt)盒$",
           fnc: 'jitanghelp'
         },
         {
-          reg: "^耀阳盒$",
+          reg: "^(耀阳)|(yy)盒$",
           fnc: 'yyhelp'
         },
         {
-          reg: "^神鹰盒$",
+          reg: "^(神鹰)|(sy)盒$",
           fnc: 'syhelp'
         },
         {
