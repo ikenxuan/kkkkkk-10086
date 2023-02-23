@@ -517,7 +517,7 @@ export class example extends plugin {
         }
       ]
     })
-  } 
+  }
 
     /**
  * 制作转发消息
