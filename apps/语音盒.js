@@ -252,7 +252,9 @@ const dz2 = {
   "醉赤壁": "02",
   "维新派降调": "03",
   "偷电子烟": "04",
-  "zood": "05",
+  "i got smoke": "05",
+  "smoke boy": "06",
+  "zood": "07",
 }
 //鸡汤
 const jitang = {
