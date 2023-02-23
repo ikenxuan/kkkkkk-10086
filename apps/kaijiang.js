@@ -8,19 +8,14 @@ const xhz_path ='plugins/kkkkkk-10086/resources/鸽鸽的照片/'
 export class sjs extends plugin {
   constructor () {
     super({
-      /** 功能名称 */
       name: '随机类游戏',
-      /** 功能描述 */
       dsc: '随机类游戏',
       /** https://oicqjs.github.io/oicq/#events */
       event: 'message',
-      /** 优先级，数字越小等级越高 */
       priority: 5000,
       rule: [
         {
-          /** 命令正则匹配 */
           reg: '^#*开奖$',
-          /** 执行方法 */
           fnc: 'cj'
         }
       ]
@@ -32,10 +27,7 @@ export class sjs extends plugin {
     if (!e.isGroup) {
       return;
     }
-    if (e.isMaster)
-    {
-      //  e.reply('你是主人没有CD')
-    }
+    if (e.isMaster){}
     else{
 	  let qq =  e.user_id
     let now_time = new Date().getTime();
