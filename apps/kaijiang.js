@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from "oicq";
-import { Config} from '../components/index.js'
 import fs from 'node:fs'
 const xhz_path ='plugins/kkkkkk-10086/resources/鸽鸽的照片/'
 
@@ -23,7 +22,6 @@ export class sjs extends plugin {
   }
 
   async cj(e) {
-	  // if(!Config.getConfig('set','pz')['jryq']) return this.reply('抽奖功能已关闭')
     if (!e.isGroup) {
       return;
     }
@@ -73,7 +71,6 @@ export class sjs extends plugin {
   var num4 = Math.random();
    num4 = Math.ceil(num4 * 12.9);
 
-   if(!Config.getConfig('set','pz')['dz']) {return false}
   let file = fs.readdirSync(xhz_path)
      let imgnum = Math.round(Math.random() * (file.length - 1))
 
