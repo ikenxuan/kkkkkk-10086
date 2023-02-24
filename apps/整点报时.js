@@ -1,7 +1,7 @@
 import { segment } from "oicq";
 import schedule from "node-schedule";
 import moment from "moment";
-import uploadRecord from "../../xiaofei-plugin/model/uploadRecord.js"
+import uploadRecord from '../../xiaofei-plugin/model/uploadRecord.js'
 const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/报时'
 let Gruop  = [795874649,];
 
