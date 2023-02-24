@@ -1,0 +1,20 @@
+- group: 其他查询指令
+  list:
+    - icon: 原石
+      title: 大图 json
+      desc: 回复引用图片发送全屏卡片
+    - icon: 星辉
+      title: 开奖
+      desc: 买彩票
+    - icon: excel
+      title: 语音盒
+      desc: 鸡音、鸡汤、丁真、耀阳盒
+    - icon: 纠缠之缘
+      title: 手写<文字>
+      desc: 模拟手写文本
+    - icon: 浮世
+      title: 证书<QQ号>
+      desc: 用qq头像制作证书类图片
+    - icon: 刻晴
+      title: kkk更新
+      desc: update

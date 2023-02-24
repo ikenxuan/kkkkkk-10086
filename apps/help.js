@@ -1,65 +1,44 @@
 import plugin from '../../../lib/plugins/plugin.js'
-import fs from 'fs'
-import lodash from 'lodash'
-import { Data }  from '../components/index.js'
-import render from '../components/common-lib/render.js'
-export class yunzai_c_v_help extends plugin {
-    constructor() {
-        super({
-            name: 'kkk帮助',
-            event: 'message',
-            priority: 1145,
-            rule: [
-                {
-                    reg: '^#?(kkkkkk|kkk)(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
-                    fnc: 'messages'
-                }
-            ]
-        });
-    }
-    async messages() {return await help(this.e);}
+import puppeteer from '../../../lib/puppeteer/puppeteer.js'
+import Help from '../model/help.js'
+import md5 from 'md5'
+
+let helpData = {
+  md5: '',
+  img: ''
 }
-async function help(e) {
-    let custom = {}
-    let help = {}
-    let { diyCfg, sysCfg } = await Data.importCfg('help')
-    custom = help
-    let helpConfig = lodash.defaults(diyCfg.helpCfg || {}, custom.helpCfg, sysCfg.helpCfg)
-    let helpList = diyCfg.helpList || custom.helpList || sysCfg.helpList
-    let helpGroup = []
-    lodash.forEach(helpList, (group) => {
-        if (group.auth && group.auth === 'master' && !e.isMaster) {return true}
-        lodash.forEach(group.list, (help) => {
-            let icon = help.icon * 1
-            if (!icon) {
-                help.css = 'display:none'
-            } else {
-                let x = (icon - 1) % 10
-                let y = (icon - x - 1) / 10
-                help.css = `background-position:-${x * 50}px -${y * 50}px`
-            }
-        })
-        helpGroup.push(group)
+
+export class help extends plugin {
+  constructor (e) {
+    super({
+      name: '云崽帮助',
+      dsc: '云崽帮助',
+      event: 'message',
+      priority: 500,
+      rule: [
+        {
+          reg: '^(#|kkk)*(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
+          fnc: 'help'
+        }
+      ]
     })
-    let bg = await rodom()
-    let colCount = 3;
-    return await render('help/index', {
-        helpCfg: helpConfig,
-        helpGroup,
-        bg,
-        colCount,
-        element: 'default'
-    }, {
-        e,
-        scale: 2.0
-    })
-}
-const rodom = async function () {
-    var image = fs.readdirSync(`./plugins/kkkkkk-10086/resources/help/theme/`);
-    var list_img = [];
-    for (let val of image) {
-        list_img.push(val)
-    }
-    var theme = list_img.length == 1 ? list_img[0] : list_img[lodash.random(0, list_img.length - 1)];
-    return theme;
+  }
+
+  async help () {
+    let data = await Help.get(this.e)
+    if (!data) return
+
+    let img = await this.cache(data)
+    await this.reply(img)
+  }
+
+  async cache (data) {
+    let tmp = md5(JSON.stringify(data))
+    if (helpData.md5 == tmp) return helpData.img
+
+    helpData.img = await puppeteer.screenshot('help', data)
+    helpData.md5 = tmp
+
+    return helpData.img
+  }
 }
