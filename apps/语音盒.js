@@ -144,6 +144,9 @@ const ji2 = {
   "潮流坤坤2": "chaoliu02",
   "潮流坤坤3": "chaoliu03",
   "官方MV": "officalmv",
+  "one last kiss": "one last kiss",
+  "鸡真没睡": "jzms",
+  "鸡你太吵": "jntc"
 }
 //丁真
 const dz = {
