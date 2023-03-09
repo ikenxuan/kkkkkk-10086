@@ -146,7 +146,8 @@ const ji2 = {
   "官方MV": "officalmv",
   "one last kiss": "one last kiss",
   "鸡真没睡": "jzms",
-  "鸡你太吵": "jntc"
+  "鸡你太吵": "jntc",
+  "精卫": "jingwei"
 }
 //丁真
 const dz = {
