@@ -11,7 +11,6 @@ const data = YAML.parse(file)
 const username = data.username //账号
 const password = data.password //密码
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
-
 //作者2066855608
 /**
  * 休眠函数
