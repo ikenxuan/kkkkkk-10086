@@ -5,7 +5,7 @@ export class example extends plugin {
     constructor () {
       super({
         name: '大图',
-        dsc: '视频',
+        dsc: '简单开发示例',
         /* oicq文档：https://oicqjs.github.io/oicq/#events */
         event: 'message',
         priority: 50,
@@ -54,14 +54,6 @@ export class example extends plugin {
     let arkres = await this.e.reply(await ArkMsg.Share(JSON.stringify(json), e))
     //console.log(json)
 }}
-    // 读取本地图片文件，转换为base64编码
-    //let preview = fs.readFileSync('D:/GitHub/Yunzai-Bot/Yunzai-Bot/plugins/example/01.jpg').toString('base64');
-
-    // 调用ShareImage_JSON函数生成json数据
-    //let json = ShareImage_JSON(e, `data:image/jpeg;base64,${preview}`, `data:image/jpeg;base64,${src}`).data;
-
-    // 直接使用oicq的e.reply函数来发送消息，并且不需要使用ArkMsg.Share函数
-
 // 定义一个函数，来生成一个只有图片的json数据
 function ShareImage_JSON(e, preview, src) {
     let json = {
