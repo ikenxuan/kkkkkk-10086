@@ -1,6 +1,48 @@
 //ark打包方法来源于小飞
 import { core } from "oicq"
 
+// 定义一个函数，来生成一个只有图片的json数据
+function ShareImage_JSON(imgurl) {
+    let json = {
+        "actionData": "",
+        "actionData_A" :"",
+        "app": "com.tencent.imagetextbot",
+        "appID": "",
+        "config": {
+            "ctime": 0,
+            "menuMode": 0,
+            "showSender": 0,
+            "token": 0,
+            "type": "normal"
+        },
+        "desc": "",
+        "extra": {},
+        "meta": {
+            "robot": {
+                "cover": "",
+                "jump_url": "",
+                "subtitle": "",
+                "title":{
+                    "qq":0,
+                    "type":"at"
+                    }
+            }
+        },
+        "prompt": '',
+        "sourceAd":"",
+        "sourceName":"",
+        "sourceUrl":"",
+        "text":"",
+        "ver":"1.0.0.11",
+        "view":"index"
+    }
+    json.meta.robot.cover = imgurl
+    return { 
+        data: json 
+    }
+}
+
+
 async function Sign(json, client_info = null) {
 	return new Promise((resolve, reject) => {
 		let result = { code: -1 };
@@ -305,7 +347,8 @@ async function Share(json, e, to_uin = null, client_info = null, get_message = f
 
 export default {
 	Sign,
-	Share
+	Share,
+	ShareImage_JSON
 }
 //ark打包方法来源于小飞
 /**
