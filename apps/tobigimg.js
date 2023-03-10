@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import ArkMsg from "../../xiaofei-plugin/model/ArkMsg.js"
 import fs from "fs"
+import parseImageFileParam from "oicq"
 export class example extends plugin {
     constructor () {
       super({
@@ -50,8 +51,9 @@ export class example extends plugin {
         "ver":"1.0.0.11",
         "view":"index"
     }
-    //json.meta.robot.cover = preview;
-    let arkres = await this.e.reply(await ArkMsg.Share(JSON.stringify(json), e))
+    let img = await parseImageFileParam(img)
+    json.meta.robot.cover = img;
+    await this.e.reply(await ArkMsg.Share(JSON.stringify(json), e))
     //console.log(json)
 }}
 // 定义一个函数，来生成一个只有图片的json数据
