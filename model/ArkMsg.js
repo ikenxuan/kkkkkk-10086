@@ -2,7 +2,7 @@
 import { core } from "oicq"
 
 // 定义一个函数，来生成一个只有图片的json数据
-async function ShareImage_JSON(imgurl) {
+function ShareImage_JSON(imgurl) {
     let json = {
         "actionData": "",
         "actionData_A" :"",
