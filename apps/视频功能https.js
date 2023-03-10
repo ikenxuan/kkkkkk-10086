@@ -238,12 +238,18 @@ let access_token = tokendata.access_token
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
     } else if (imagenum === 1) {
+      let lbw =[]
       let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
       console.log(oneimg.data)
       e.reply(ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, true))
-      let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
-      await this.e.reply(msg)
+      let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
+      let lbwbody = pl_data
+      let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
+      lbw.push(lbwtitle)
+      lbw.push(lbwbody)
+      lbw.push(lbwtial)
+      await this.e.reply(await this.makeForwardMsg(e.user_id, "抖音", xmltitle, lbw))
     }
     else {
               //处理字符串(如果图鸡不是100张)
