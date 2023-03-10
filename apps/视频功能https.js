@@ -222,8 +222,7 @@ let access_token = tokendata.access_token
       let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
       console.log(oneimg.data)
-      await this.e.reply(await ArkMsg.Share(JSON.stringify(oneimg.data, e, null, null, true)))
-      
+      await this.e.reply(await ArkMsg.Share(JSON.stringify(oneimg.data)))
     }
     else {
               //处理评论数据
