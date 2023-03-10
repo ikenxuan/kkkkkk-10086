@@ -218,10 +218,12 @@ let access_token = tokendata.access_token
     if(imagenum === 100) {
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
-    } if (imagenum === 1) {
+    } else if (imagenum === 1) {
       let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
-      await ArkMsg.Share(JSON.stringify(oneimg.data, e))
+      console.log(oneimg.data)
+      await this.e.reply(await ArkMsg.Share(JSON.stringify(oneimg.data, e)))
+      
     }
     else {
               //处理评论数据
