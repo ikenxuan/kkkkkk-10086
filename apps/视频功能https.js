@@ -159,6 +159,25 @@ let access_token = tokendata.access_token
   let data = await sharedata.json();
   //返回评论数据(接口2)
   let comments = await comments_data.json();
+  //先把评论数据定位出来
+  let pl_data = []
+              if (comments) {
+                let comments_list = comments.comments_list.slice(0, 15);
+                let video_dz = []
+                for (let i = 0; i < comments_list.length; i++) {
+                  let text = comments_list[i].text;
+                  let ip = comments_list[i].ip_label;
+                  let digg_count = comments_list[i].digg_count;
+                  if(digg_count > 10000) {
+                    digg_count = (digg_count / 10000).toFixed(1) + "w"
+                  }
+                  video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
+                }
+                let dz_text = video_dz.join("\n\n")
+                pl_data.push(`🔥热门评论🔥\n${dz_text}`)
+              } else {
+                res.push("评论数据获取失败")
+              }
   if(data.aweme_list[0].video.bit_rate.length === 0) { //提取图集数据-------------------------------------------------------------------------------------------------------------------------------------
     let res = []
     if(data.aweme_list[0].images[0].url_list[0] === undefined) {
@@ -222,29 +241,14 @@ let access_token = tokendata.access_token
       let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
       console.log(oneimg.data)
-      await this.e.reply(await ArkMsg.Share(JSON.stringify(oneimg.data)))
+      e.reply(ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, true))
+      let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
+      await this.e.reply(msg)
     }
     else {
-              //处理评论数据
-              let pl_data = []
-              if (comments) {
-                let comments_list = comments.comments_list.slice(0, 15);
-                let video_dz = []
-                for (let i = 0; i < comments_list.length; i++) {
-                  let text = comments_list[i].text;
-                  let ip = comments_list[i].ip_label;
-                  let digg_count = comments_list[i].digg_count;
-                  if(digg_count > 10000) {
-                    digg_count = (digg_count / 10000).toFixed(1) + "w"
-                  }
-                  video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-                }
-                let dz_text = video_dz.join("\n\n")
-                pl_data.push(`🔥热门评论🔥\n${dz_text}`)
-              } else {
-                res.push("评论数据获取失败")
-              }
+              //处理字符串(如果图鸡不是100张)
               let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
+              //concat重新排列
               let resarr = textarr.concat(imgarr).concat(pl_data).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
           console.log(resarr)
           //制作合并转发消息
