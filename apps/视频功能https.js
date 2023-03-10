@@ -218,7 +218,7 @@ let access_token = tokendata.access_token
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
     } if (imagenum ===1) {
-      let image_url = aweme_list.images[j].url_list[0];
+      let image_url = aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
       await ArkMsg.Share(JSON.stringify(oneimg.data, e))
     }
