@@ -5,6 +5,7 @@ import fs from "fs";
 import YAML from "yaml"
 import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../xiaofei-plugin/model/uploadRecord.js';//小飞插件模块https://github.com/xfdown/xiaofei-plugin/blob/master/model/uploadRecord.js
+import { title } from 'process';
 const _path = process.cwd();
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -238,11 +239,12 @@ let access_token = tokendata.access_token
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
     } else if (imagenum === 1) {
+      let title = "                          抖音图集解析"
       let lbw =[]
       let image_url = data.aweme_list[0].images[0].url_list[0];
-      let oneimg = ArkMsg.ShareImage_JSON(image_url)
+      let oneimg = ArkMsg.ShareImage_JSON(image_url, title)
       console.log(oneimg.data)
-      e.reply(ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, true))
+      e.reply(ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, false))
       let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
       let lbwbody = pl_data
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
