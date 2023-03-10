@@ -1,21 +1,20 @@
 import plugin from "../../../lib/plugins/plugin.js";
-import xxCfg from "../model/xxCfg.js";
 import fs from "node:fs";
 import fetch from "node-fetch";
 import Bilibili from "../model/bilibili.js";
 
-let bilibiliSetFile = "./plugins/xianxin-plugin/config/bilibili.set.yaml";
+let bilibiliSetFile = "./plugins/kkkkkk-10086/config/bilibili.set.yaml";
 if (!fs.existsSync(bilibiliSetFile)) {
   fs.copyFileSync(
-    "./plugins/xianxin-plugin/defSet/bilibili/set.yaml",
+    "./plugins/kkkkkk-10086/defSet/bilibili/set.yaml",
     bilibiliSetFile
   );
 }
 
-let bilibiliPushFile = "./plugins/xianxin-plugin/config/bilibili.push.yaml";
+let bilibiliPushFile = "./plugins/kkkkkk-10086/config/bilibili.push.yaml";
 if (!fs.existsSync(bilibiliPushFile)) {
   fs.copyFileSync(
-    "./plugins/xianxin-plugin/defSet/bilibili/push.yaml",
+    "./plugins/kkkkkk-10086/defSet/bilibili/push.yaml",
     bilibiliPushFile
   );
 }
@@ -59,8 +58,6 @@ export class bilibili extends plugin {
         },
       ],
     });
-    this.bilibiliSetData = xxCfg.getConfig("bilibili", "set");
-    this.bilibiliPushData = xxCfg.getConfig("bilibili", "push");
 
     /** 定时任务 */
     this.task = {
@@ -111,7 +108,6 @@ export class bilibili extends plugin {
       });
 
       this.bilibiliPushData = data;
-      xxCfg.saveSet("bilibili", "push", "config", data);
       this.e.reply(`修改b站推送动态类型成功~\n${upData.name}：${uid}`);
       return;
     }
@@ -158,7 +154,6 @@ export class bilibili extends plugin {
 
     this.bilibiliPushData = data;
 
-    xxCfg.saveSet("bilibili", "push", "config", data);
 
     this.e.reply(`添加b站推送成功~\n${name}：${uid}`);
   }
@@ -210,7 +205,6 @@ export class bilibili extends plugin {
 
     this.bilibiliPushData = data;
 
-    xxCfg.saveSet("bilibili", "push", "config", data);
 
     this.e.reply(`${isDel ? "删除" : "修改"}b站推送成功~\n${uid}`);
   }
