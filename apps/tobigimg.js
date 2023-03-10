@@ -17,7 +17,47 @@ export class example extends plugin {
           }
   ]})}
   async douy(e) {
-    let imglocal = ('D:/GitHub/Yunzai-Bot/Yunzai-Bot/plugins/example/01.jpg')
+    /*let imglocal = ('D:/GitHub/Yunzai-Bot/Yunzai-Bot/plugins/example/01.jpg')
+    let json = {
+        "actionData": "",
+        "actionData_A" :"",
+        "app": "com.tencent.imagetextbot",
+        "appID": "",
+        "config": {
+            "ctime": 0,
+            "menuMode": 0,
+            "showSender": 0,
+            "token": 0,
+            "type": "normal"
+        },
+        "desc": "",
+        "extra": {},
+        "meta": {
+            "robot": {
+                "cover": "",
+                "jump_url": "",
+                "subtitle": "",
+                "title":{
+                    "qq":0,
+                    "type":"at"
+                    }
+            }
+        },
+        "prompt": '',
+        "sourceAd":"",
+        "sourceName":"",
+        "sourceUrl":"",
+        "text":"",
+        "ver":"1.0.0.11",
+        "view":"index"
+    }*/
+    let tiktokimg = "https://p9-pc-sign.douyinpic.com/tos-cn-i-0813c001/05fec3e2d8044e2bae10bdbaac884465~tplv-dy-aweme-images:q75.webp?x-expires=1679583600&x-signature=zhd20dLYPOL8lwTx6BLIQOZVcrk%3D&from=3213915784&s=PackSourceEnum_AWEME_DETAIL&se=false&biz_tag=aweme_images&l=202303092310500922A0992AD3E4329236"
+    //json.meta.robot.cover = img;
+    await this.e.reply(await ArkMsg.Share(JSON.stringify(ShareImage_JSON(tiktokimg)), e))
+    //console.log(json)
+}}
+// 定义一个函数，来生成一个只有图片的json数据
+function ShareImage_JSON(imgurl) {
     let json = {
         "actionData": "",
         "actionData_A" :"",
@@ -51,50 +91,7 @@ export class example extends plugin {
         "ver":"1.0.0.11",
         "view":"index"
     }
-    let tiktokimg = "https://p9-pc-sign.douyinpic.com/tos-cn-i-0813c001/05fec3e2d8044e2bae10bdbaac884465~tplv-dy-aweme-images:q75.webp?x-expires=1679583600&x-signature=zhd20dLYPOL8lwTx6BLIQOZVcrk%3D&from=3213915784&s=PackSourceEnum_AWEME_DETAIL&se=false&biz_tag=aweme_images&l=202303092310500922A0992AD3E4329236"
-    //json.meta.robot.cover = img;
-    await this.e.reply(await ArkMsg.Share(JSON.stringify(ShareImage_JSON(tiktokimg)), e))
-    //console.log(json)
-}}
-// 定义一个函数，来生成一个只有图片的json数据
-function ShareImage_JSON(imgurl) {
-    let json = {
-        "actionData": "",
-        "actionData_A" :"",
-        "app": "com.tencent.imagetextbot",
-        "appID": "",
-        "config": {
-            "ctime": 0,
-            "menuMode": 0,
-            "showSender": 0,
-            "token": 0,
-            "type": "normal"
-        },
-        "desc": "",
-        "extra": {},
-        "meta": {
-            "robot": {
-                "cover": "https://p9-pc-sign.douyinpic.com/tos-cn-i-0813c001/05fec3e2d8044e2bae10bdbaac884465~tplv-dy-aweme-images:q75.webp?x-expires=1679583600&x-signature=zhd20dLYPOL8lwTx6BLIQOZVcrk%3D&from=3213915784&s=PackSourceEnum_AWEME_DETAIL&se=false&biz_tag=aweme_images&l=202303092310500922A0992AD3E4329236",
-                "jump_url": "",
-                "subtitle": "",
-                "title":{
-                    "qq":0,
-                    "type":"at"
-                    }
-            }
-        },
-        "prompt": '',
-        "sourceAd":"",
-        "sourceName":"",
-        "sourceUrl":"",
-        "text":"",
-        "ver":"1.0.0.11",
-        "view":"index"
-    }
-    let path = json.meta.robot.cover
-    path.push({
-        url: imgurl
-    })
+    let imgurl = json.meta.robot.cover
     return { 
         data: json 
     }
