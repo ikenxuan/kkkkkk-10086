@@ -1,7 +1,7 @@
 import moment from "moment";
 import lodash from "lodash";
 import { segment } from "oicq";
-import base from "./base.js";
+import base from "./vf.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import fetch from "node-fetch";
 import common from "../../../lib/common/common.js";

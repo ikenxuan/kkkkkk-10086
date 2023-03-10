@@ -1,0 +1,28 @@
+# 全局b站推送任务状态，1 开启 0 关闭，保留添加的相关数据，但是不再推送
+pushStatus: 1
+
+# 检测b站推送定时任务，Cron表达式，每8分钟执行一次，如果想改成5分钟一次用后面的表达式 */5  * * * *
+pushTime: "*/8  * * * *"
+
+# 是否推送转发的动态 1 - 推送 0 - 不推送
+pushTransmit: 1
+
+# 推送动态时，限制发送多少张图片
+pushPicCountLimit: 3
+
+# 推送文字和图文动态时，限制字数是多少
+pushContentLenLimit: 100
+
+# 推送文字和图文动态时，限制多少行文本
+pushContentLineLimit: 5
+
+# 是否展示定时任务的日志，0 不显示 1 显示
+pushTaskLog: 0
+
+# 包含关键词不推送
+banWords:
+  - 关键词1
+  - 关键词2
+
+# 设置B站动态消息模式 0 文字模式 1 图片模式
+pushMsgMode: 1
