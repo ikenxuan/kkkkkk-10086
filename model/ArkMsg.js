@@ -2,41 +2,40 @@
 import { core } from "oicq"
 
 // 定义一个函数，来生成一个只有图片的json数据
-function ShareImage_JSON(imgurl) {
+function ShareImage_JSON(imgurl, title) {
     let json = {
+		"app": "com.tencent.imagetextbot",
+		"desc": "",
+		"bizsrc": "",
+		"view":"index",
+		"ver":"1.0.0.11",
+		"prompt": "[全屏图片]",
+		"appID": "",
+		"sourceName":"",
         "actionData": "",
         "actionData_A" :"",
-        "app": "com.tencent.imagetextbot",
-        "appID": "",
-        "config": {
+		"sourceUrl":"",
+        "meta": {
+            "robot": {
+                "cover": "",
+                "jump_url": "",
+                "subtitle": "",
+                "title": ""
+            }
+        },
+		"config": {
             "ctime": 0,
             "menuMode": 0,
             "showSender": 0,
             "token": 0,
             "type": "normal"
         },
-        "desc": "",
-        "extra": {},
-        "meta": {
-            "robot": {
-                "cover": "",
-                "jump_url": "",
-                "subtitle": "",
-                "title":{
-                    "qq":0,
-                    "type":"at"
-                    }
-            }
-        },
-        "prompt": '',
+		"text":"",
         "sourceAd":"",
-        "sourceName":"",
-        "sourceUrl":"",
-        "text":"",
-        "ver":"1.0.0.11",
-        "view":"index"
+		"extra": "",
     }
     json.meta.robot.cover = imgurl
+	json.meta.robot.title = title
     return { 
         data: json 
     }
