@@ -91,7 +91,7 @@ function ShareImage_JSON(imgurl) {
         "ver":"1.0.0.11",
         "view":"index"
     }
-    imgurl = json.meta.robot.cover
+    json.meta.robot.cover = imgurl
     return { 
         data: json 
     }
