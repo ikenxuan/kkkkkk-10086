@@ -9,8 +9,9 @@ const _path = process.cwd();
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
 const data = YAML.parse(file)
-const username = data.username //账号
+const username = data.account //账号
 const password = data.password //密码
+console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 //作者2066855608
 /**
@@ -217,8 +218,8 @@ let access_token = tokendata.access_token
     if(imagenum === 100) {
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
-    } if (imagenum ===1) {
-      let image_url = aweme_list[0].images[0].url_list[0];
+    } if (imagenum === 1) {
+      let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url)
       await ArkMsg.Share(JSON.stringify(oneimg.data, e))
     }
