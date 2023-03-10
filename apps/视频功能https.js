@@ -3,6 +3,7 @@ import fetch from 'node-fetch'
 import { segment } from 'oicq'
 import fs from "fs";
 import YAML from "yaml"
+import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../xiaofei-plugin/model/uploadRecord.js';//小飞插件模块https://github.com/xfdown/xiaofei-plugin/blob/master/model/uploadRecord.js
 const _path = process.cwd();
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
@@ -201,6 +202,7 @@ let access_token = tokendata.access_token
     for (let i=0; i<data.aweme_list.length; i++) {
       let aweme_list = data.aweme_list[i];
       for (let j=0; j<aweme_list.images.length; j++) {
+        //图片链接
         let image_url = aweme_list.images[j].url_list[0];
         imgarr.push(segment.image(image_url));
         imagenum++
@@ -215,7 +217,12 @@ let access_token = tokendata.access_token
     if(imagenum === 100) {
       let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
       await this.e.reply(msg)
-    } else {
+    } if (imagenum ===1) {
+      let image_url = aweme_list.images[j].url_list[0];
+      let oneimg = ArkMsg.ShareImage_JSON(image_url)
+      await ArkMsg.Share(JSON.stringify(oneimg.data, e))
+    }
+    else {
               //处理评论数据
               let pl_data = []
               if (comments) {
