@@ -244,7 +244,7 @@ let access_token = tokendata.access_token
       let image_url = data.aweme_list[0].images[0].url_list[0];
       let oneimg = ArkMsg.ShareImage_JSON(image_url, title)
       console.log(oneimg.data)
-      e.reply(ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, false))
+      await ArkMsg.Share(JSON.stringify(oneimg.data), e, null, null, false)
       let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
       let lbwbody = pl_data
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
