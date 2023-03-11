@@ -1,6 +1,11 @@
 //ark打包方法来源于小飞
 import { core } from "oicq"
-
+/**
+ * 
+ * @param {*} imgurl 图片链接
+ * @param {*} title 标题
+ * @returns 
+ */
 // 定义一个函数，来生成一个只有图片的json数据
 function ShareImage_JSON(imgurl, title) {
     let json = {
