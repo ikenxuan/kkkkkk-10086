@@ -30,7 +30,6 @@ function ShareImage_JSON(imgurl, title) {
         },
 		"config": {
             "ctime": 0,
-            "menuMode": 0,
             "showSender": 0,
             "token": 0,
             "type": "normal"
@@ -216,7 +215,7 @@ async function Share(json, e, to_uin = null, client_info = null, get_message = f
 	let recv_uin = 0;
 	let send_type = 0;
 	let recv_guild_id = 0;
-
+	//console.log('参数：e：', e)
 	if (e.isGroup && to_uin == null) {//群聊
 		recv_uin = e.group.gid;
 		send_type = 1;
