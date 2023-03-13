@@ -599,7 +599,7 @@ export class example extends plugin {
   }
   async dzhelp(e) {
     let res = []
-    res.push(Object.keys({dz2}).join("、"))
+    res.push(Object.keys(dz2).join("、"))
     await this.e.reply(await this.makeForwardMsg(e.user_id, "丁真盒", res))
   }
   //鸡汤--------------------------------------------------------------------------------------------------------------------------------------------------------------
