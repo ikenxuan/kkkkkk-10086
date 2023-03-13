@@ -53,7 +53,7 @@ function ShareImage_JSON(imgurl, title = false) {
  * @param {*} image_url 是否返回图片链接
  * @returns 
  */
-async function upload_image(file, image_url = false){
+async function upload_image(file, image_url = false) {
 	let image = (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file,true))).imgs[0];
 	//let image = await upload_image(file);
     let md5 = (image.md5.toString('hex') || '').toUpperCase();
