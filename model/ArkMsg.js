@@ -47,6 +47,24 @@ function ShareImage_JSON(imgurl, title = false) {
     }
 }
 
+/**
+ * 
+ * @param {*} file 图片文件(路径)
+ * @param {*} image_url 是否返回图片链接
+ * @returns 
+ */
+async function upload_image(file, image_url = false){
+	let image = (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file,true))).imgs[0];
+	//let image = await upload_image(file);
+    let md5 = (image.md5.toString('hex') || '').toUpperCase();
+	if(image_url) {
+		let url = 'https://c2cpicdw.qpic.cn/gchatpic_new/0/0-0-' + md5 + '/0'
+		return url
+	} else {
+		return md5
+	}
+	
+}
 
 async function Sign(json, client_info = null) {
 	return new Promise((resolve, reject) => {
@@ -353,7 +371,8 @@ async function Share(json, e, to_uin = null, client_info = null, get_message = f
 export default {
 	Sign,
 	Share,
-	ShareImage_JSON
+	ShareImage_JSON,
+	upload_image
 }
 //ark打包方法来源于小飞
 /**
