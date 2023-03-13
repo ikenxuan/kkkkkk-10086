@@ -591,9 +591,9 @@ export class example extends plugin {
     await this.e.reply(await this.makeForwardMsg(e.user_id, "鸡乐盒", res))
   }
   //丁真--------------------------------------------------------------------------------------------------------------------------------------------------------------
-  async dz(e) {
+  /*async dz(e) {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/dzh/res/${encodeURIComponent(dz[e.msg])}.mp3`, 0, false))
-  }
+  }*/
   async dz2(e) {
     e.reply(await uploadRecord(`file:///${_path}/丁真盒/${encodeURIComponent(dz2[e.msg])}.mp3`, 0, false))
   }
