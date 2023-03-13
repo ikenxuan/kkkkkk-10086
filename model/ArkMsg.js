@@ -7,7 +7,7 @@ import { core } from "oicq"
  * @returns 
  */
 // 定义一个函数，来生成一个只有图片的json数据
-function ShareImage_JSON(imgurl, title) {
+function ShareImage_JSON(imgurl, title = false) {
     let json = {
 		"app": "com.tencent.imagetextbot",
 		"desc": "",
@@ -39,7 +39,9 @@ function ShareImage_JSON(imgurl, title) {
 		"extra": "",
     }
     json.meta.robot.cover = imgurl
-	json.meta.robot.title = title
+	if(title) {
+		json.meta.robot.title = title
+	}
     return { 
         data: json 
     }
