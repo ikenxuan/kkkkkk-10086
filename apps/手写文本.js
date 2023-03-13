@@ -1,5 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from 'oicq'
+import ArkMsg from '../model/ArkMsg.js';
+const _path = process.cwd();
 
 export class wenan extends plugin {
     constructor () {
@@ -13,6 +15,11 @@ export class wenan extends plugin {
             reg: `^(手写)(.*)`,
             fnc: 'realtext'
           },
+          {
+            reg: `^开团$`,
+            fnc: 'kt'
+          },
+
         ]
       })
     }
@@ -27,6 +34,12 @@ export class wenan extends plugin {
         ]
       //发送消息
       e.reply(data);
+    }
 
+    async tk(e) {
+      let imgpath = `${_path}/plugins/kkkkkk-10086/resources/鸽鸽的照片/开团.jpg`
+      let imgjson = ArkMsg.ShareImage_JSON(imgpath)
+      await ArkMsg.Share(JSON.stringify(imgjson.data, e))
+      return true
     }
 }

@@ -5,7 +5,6 @@ import fs from "fs";
 import YAML from "yaml"
 import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../xiaofei-plugin/model/uploadRecord.js';//小飞插件模块https://github.com/xfdown/xiaofei-plugin/blob/master/model/uploadRecord.js
-import { title } from 'process';
 const _path = process.cwd();
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
