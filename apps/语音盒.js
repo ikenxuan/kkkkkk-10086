@@ -476,10 +476,10 @@ export class example extends plugin {
           fnc: 'jiji2'
         },
         //丁真
-        {
+        /*{
           reg: dzreg,
           fnc: 'dz1'
-        },
+        },*/
         {
           reg: dzreg2,
           fnc: 'dz2'
