@@ -36,14 +36,4 @@ export class wenan extends plugin {
       e.reply(data);
     }
 
-    async kt(e) {
-      //e.group = Bot.pickGroup(Number(groupID))
-      this.e.isGroup = true
-      this.e.group = Bot.pickGroup(e.group_id)
-      let imgpath = `${_path}/plugins/kkkkkk-10086/resources/鸽鸽的照片/开团.jpg`
-      let imgurl = await ArkMsg.upload_image(imgpath, true)
-      console.log(imgurl)
-      let imgjson = ArkMsg.ShareImage_JSON(imgurl)
-      await ArkMsg.Share(JSON.stringify(imgjson.data, e))
-    }
 }
