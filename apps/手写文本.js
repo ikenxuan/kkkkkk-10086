@@ -36,7 +36,7 @@ export class wenan extends plugin {
       e.reply(data);
     }
 
-    async tk(e) {
+    async kt(e) {
       let imgpath = `${_path}/plugins/kkkkkk-10086/resources/鸽鸽的照片/开团.jpg`
       let imgjson = ArkMsg.ShareImage_JSON(imgpath)
       await ArkMsg.Share(JSON.stringify(imgjson.data, e))
