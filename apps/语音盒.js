@@ -445,7 +445,7 @@ const sy = {
 const jireg = new RegExp(`^(${Object.keys(ji).join("|")})$`)
 const jireg2 = new RegExp(`^(${Object.keys(ji2).join("|")})$`)
 //丁真
-const dzreg = new RegExp(`^(${Object.keys(dz).join("|")})$`)
+//const dzreg = new RegExp(`^(${Object.keys(dz).join("|")})$`)
 const dzreg2 = new RegExp(`^(${Object.keys(dz2).join("|")})$`)
 //鸡汤
 const jitangreg = new RegExp(`^(${Object.keys(jitang).join("|")})$`)
