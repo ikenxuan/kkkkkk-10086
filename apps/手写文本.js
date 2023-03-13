@@ -1,7 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { segment } from 'oicq'
-import ArkMsg from '../model/ArkMsg.js';
-const _path = process.cwd();
 
 export class wenan extends plugin {
     constructor () {
@@ -15,11 +13,6 @@ export class wenan extends plugin {
             reg: `^(手写)(.*)`,
             fnc: 'realtext'
           },
-          {
-            reg: `^开团$`,
-            fnc: 'kt'
-          },
-
         ]
       })
     }
