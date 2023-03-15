@@ -4,7 +4,7 @@ import { segment } from 'oicq'
 export class wenan extends plugin {
     constructor () {
       super({
-        name: '手写文本',
+        name: '其他功能',
         dsc: '手写',
         event: 'message',
         priority: 1000,
@@ -12,6 +12,10 @@ export class wenan extends plugin {
           {
             reg: `^(手写)(.*)`,
             fnc: 'realtext'
+          },
+          {
+            reg: `^开团`,
+            fnc: 'kt'
           },
         ]
       })
@@ -28,5 +32,15 @@ export class wenan extends plugin {
       //发送消息
       e.reply(data);
     }
+        async dt(e) {
+        this.e.isGroup = true
+        this.e.group = Bot.pickGroup(e.group_id)
+        let imgpath = `${_path}/plugins/kkkkkk-10086/resources/开团.jpg`
+        let imgurl = await ArkMsg.upload_image(imgpath, true)
+        let card_json = ArkMsg.ShareImage_JSON(imgurl)
+        console.log(card_json)
+        await ArkMsg.Share(JSON.stringify(card_json.data), this.e)
+    }
+
 
 }
