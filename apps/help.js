@@ -1,44 +1,25 @@
 import plugin from '../../../lib/plugins/plugin.js'
-import puppeteer from '../../../lib/puppeteer/puppeteer.js'
-import Help from '../model/help.js'
-import md5 from 'md5'
 
-let helpData = {
-  md5: '',
-  img: ''
-}
 
 export class help extends plugin {
   constructor (e) {
     super({
-      name: '云崽帮助',
+      name: 'kkk帮助',
       dsc: '云崽帮助',
       event: 'message',
       priority: 500,
       rule: [
         {
-          reg: '^(#|kkk)*(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
+          reg: '^(KKK|kkk)*(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
           fnc: 'help'
         }
       ]
     })
   }
 
-  async help () {
-    let data = await Help.get(this.e)
-    if (!data) return
-
-    let img = await this.cache(data)
-    await this.reply(img)
+  async help (e) {
+    let text = '引用图片发大图\n语音盒\n解析抖音快手tiktok视频\n手写<文本>\n开奖\n'
+    e.reply(text)
   }
 
-  async cache (data) {
-    let tmp = md5(JSON.stringify(data))
-    if (helpData.md5 == tmp) return helpData.img
-
-    helpData.img = await puppeteer.screenshot('help', data)
-    helpData.md5 = tmp
-
-    return helpData.img
-  }
 }
