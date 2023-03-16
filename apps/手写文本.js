@@ -16,7 +16,7 @@ export class wenan extends plugin {
             fnc: 'realtext'
           },
           {
-            reg: `^开团`,
+            reg: `^(.*)开团(.*)`,
             fnc: 'kt'
           },
         ]
