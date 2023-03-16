@@ -571,7 +571,7 @@ export class example extends plugin {
     async help(e) {
       let res = []
       res.push(Object.keys({...ji,...ji2}).join("、"))
-      res.push(Object.keys({...dz,...dz2}).join("、"))
+      res.push(Object.keys(dz2).join("、"))
       res.push(Object.keys(jitang).join("、"))
       res.push(Object.keys(yy).join("、"))
       res.push(Object.keys(sy).join("、"))
