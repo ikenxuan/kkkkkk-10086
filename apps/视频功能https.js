@@ -1,11 +1,13 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
-import { segment } from 'oicq'
+//import { segment } from 'oicq'
 import fs from "fs";
 import YAML from "yaml"
-import ArkMsg from '../model/ArkMsg.js';
-import uploadRecord from '../../xiaofei-plugin/model/uploadRecord.js';//小飞插件模块https://github.com/xfdown/xiaofei-plugin/blob/master/model/uploadRecord.js
-const _path = process.cwd();
+import ArkMsg from '../ArkMsg.js';
+//import ArkMsg from '../model/ArkMsg.js';
+import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
+import { segment } from 'oicq';
+const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
 const data = YAML.parse(file)
@@ -241,12 +243,14 @@ let access_token = tokendata.access_token
       let title = `@${e.nickname}`
       let lbw =[]
       let image_url = data.aweme_list[0].images[0].url_list[0];
-      let oneimg = ArkMsg.ShareImage_JSON(image_url, false, title, '抖音图片解析')
-      console.log(oneimg.data)
-      await ArkMsg.Share(JSON.stringify(oneimg), e, null, null, false)
+      //霸屏小程序com.tencent.imagetextbot于2023/03/23 12:00 卒
+      //let oneimg = ArkMsg.ShareImage_JSON(image_url, false, title, '抖音图片解析')
+      //await ArkMsg.Share(JSON.stringify(oneimg), e, null, null, false)
+      e.reply(JSON.stringify(oneimg))
       let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
       let lbwbody = pl_data
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
+      e.reply(segment.image(image_url))
       lbw.push(lbwtitle)
       lbw.push(lbwbody)
       lbw.push(lbwtial)
