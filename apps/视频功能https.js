@@ -1,9 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
-//import { segment } from 'oicq'
 import fs from "fs";
 import YAML from "yaml"
-import ArkMsg from '../ArkMsg.js';
 //import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
 import { segment } from 'oicq';
