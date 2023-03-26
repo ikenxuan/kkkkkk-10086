@@ -244,7 +244,7 @@ let access_token = tokendata.access_token
       //霸屏小程序com.tencent.imagetextbot于2023/03/23 12:00 卒
       //let oneimg = ArkMsg.ShareImage_JSON(image_url, false, title, '抖音图片解析')
       //await ArkMsg.Share(JSON.stringify(oneimg), e, null, null, false)
-      e.reply(JSON.stringify(oneimg))
+      //e.reply(JSON.stringify(oneimg))
       let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
       let lbwbody = pl_data
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
