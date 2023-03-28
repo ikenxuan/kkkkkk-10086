@@ -147,7 +147,9 @@ const ji2 = {
   "one last kiss": "one last kiss",
   "鸡真没睡": "jzms",
   "鸡你太吵": "jntc",
-  "精卫": "jingwei"
+  "精卫": "jingwei",
+  "高启强巅峰曲": "kb",
+  "铃芽之旅": "lyzl"
 }
 //丁真
 const dz2 = {
