@@ -95,7 +95,7 @@ const ji2 = {
   "自由自在鸡": "ziyouzizaiji",
   "最伟大的作品": "zuiweidadezuopin",
   "圣安地列鸡": "shengandilieji",
-  "恋爱循环": "lianaixunh",
+  "恋爱循环": "lianaixunhuan",
   "铃儿响叮当": "lingerxiangdingdang",
   "我们的歌": "womendege",
   "老人与鸡": "laorenyuji",
