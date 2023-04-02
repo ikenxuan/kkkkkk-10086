@@ -104,7 +104,7 @@ if(numss > numbb){
   setTimeout(() => {
     e.reply(msp);
   }, 3000);
-	e.group.muteMember(qq,1200);
+	//e.group.muteMember(qq,1200);
 }else if(num4 < numbb){
 	await e.reply("正在开奖中.....");
 	
