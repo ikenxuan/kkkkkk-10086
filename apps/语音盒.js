@@ -151,7 +151,8 @@ const ji2 = {
   "高启强巅峰曲": "kb",
   "铃芽之旅": "lyzl",
   "walk thrn kun": "walkthrnkun",
-  "good time": "goodtime"
+  "good time": "goodtime",
+  "寄明月": "jmy"
 
 }
 //丁真
