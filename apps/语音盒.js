@@ -150,7 +150,7 @@ const ji2 = {
   "精卫": "jingwei",
   "高启强巅峰曲": "kb",
   "铃芽之旅": "lyzl",
-  "walk thru kun": "walk thru kun",
+  "walk thrn kun": "walk thrn kun",
   "good time": "good time"
 
 }
