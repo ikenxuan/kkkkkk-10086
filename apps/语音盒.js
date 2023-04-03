@@ -149,7 +149,10 @@ const ji2 = {
   "鸡你太吵": "jntc",
   "精卫": "jingwei",
   "高启强巅峰曲": "kb",
-  "铃芽之旅": "lyzl"
+  "铃芽之旅": "lyzl",
+  "walk thru kun": "walk thru kun",
+  "good time": "good time"
+
 }
 //丁真
 const dz2 = {
