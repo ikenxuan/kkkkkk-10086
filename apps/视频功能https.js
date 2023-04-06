@@ -53,10 +53,10 @@ export class example extends plugin {
           reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*))$',
           fnc: 'douy'
         },
-        {
-          reg: '^((.*)tiktok.com(.*))$',
-          fnc: 'Tiktok'
-        },
+        //{
+        //  reg: '^((.*)tiktok.com(.*))$',
+        //  fnc: 'Tiktok'
+        //},
         {
           reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
           fnc: 'kuaiscz'
