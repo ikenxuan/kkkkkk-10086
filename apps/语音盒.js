@@ -4,7 +4,6 @@ import uploadRecord from '../model/uploadRecord.js';
 const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/语音盒'
 //鸡
 const ji = {
-  "小黑子": "xhz",
   "鸡": "j",
   "你": "n",
   "太": "t",
@@ -62,6 +61,7 @@ const ji = {
 }
 const ji2 = {
   "圣诞鸡2": "shengdanji",
+  "小黑子": "xhz",
   "还珠格格": "huanzhujiji",
   "鸡铃声": "jilingshen",
   "baby鸡": "babyji",
