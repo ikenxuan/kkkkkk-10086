@@ -4,7 +4,6 @@ import fs from "fs";
 import YAML from "yaml"
 //import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
-import { segment } from 'oicq';
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -13,15 +12,6 @@ const username = data.account //账号
 const password = data.password //密码
 console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
-//作者2066855608
-/**
- * 休眠函数
- * @param ms 毫秒
- */
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
 /**
  * 
  * @param {*} count 过万整除
@@ -129,7 +119,7 @@ async douy(e){
 })
 //返回账号token
 let tokendata = await vdata.json();
-console.log(tokendata)
+//logger.mark(tokendata)
 let access_token = tokendata.access_token
 
 //提取链接
@@ -259,7 +249,7 @@ let access_token = tokendata.access_token
               let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
               //concat重新排列
               let resarr = textarr.concat(imgarr).concat(pl_data).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-          console.log(resarr)
+          logger.mark(resarr)
           //制作合并转发消息
           let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, resarr)
           await this.e.reply(msg)
@@ -343,7 +333,7 @@ let access_token = tokendata.access_token
     }
     res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
     //res2.push(`视频封面：${cover}`)
-    console.log(res2)
+    logger.mark(res2)
     let video_data = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res2)
     await this.e.reply(video_data)
     console.log("视频直链：", video)
@@ -479,7 +469,7 @@ async kuaiscz(e){
   
   
   let dat = await response.json();
-  console.log(dat.data)
+  //console.log(dat.data)
   
   let res = []
   if (dat.data.visionVideoDetail.status==1 ){
