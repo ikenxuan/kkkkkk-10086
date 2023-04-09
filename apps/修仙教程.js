@@ -1,4 +1,3 @@
-import { segment } from "oicq"
 import plugin from '../../../lib/plugins/plugin.js'
 export class anzhuohuoquck extends plugin {
     constructor() {

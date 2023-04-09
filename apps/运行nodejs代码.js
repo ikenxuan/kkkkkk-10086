@@ -1,6 +1,4 @@
 import {exec} from "child_process";
-import fs from "fs";
-import {segment} from "oicq";
 //import axios from "axios"
 //想在jsrun部分使用库请在这里导入，例如import axios from "axios"
 

@@ -1,8 +1,4 @@
-import { segment } from "oicq";
-import fetch from "node-fetch";
 import plugin from '../../../lib/plugins/plugin.js';
-import common from'../../../lib/common/common.js'
-import co from '../../../lib/common/common.js'
 import fs from 'fs'
 import YAML from 'yaml'
 const settings = await YAML.parse(fs.readFileSync('./plugins/kkkkkk-10086/config/cfg.yaml','utf8'));

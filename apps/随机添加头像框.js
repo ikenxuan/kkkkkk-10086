@@ -1,7 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
-import { segment } from 'oicq'
 import lodash from 'lodash'
-import fetch from 'node-fetch'
 
 export class wenan extends plugin {
   constructor () {

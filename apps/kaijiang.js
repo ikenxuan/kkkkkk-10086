@@ -1,5 +1,4 @@
 import plugin from '../../../lib/plugins/plugin.js'
-import { segment } from "oicq";
 import fs from 'node:fs'
 const xhz_path ='plugins/kkkkkk-10086/resources/鸽鸽的照片/'
 

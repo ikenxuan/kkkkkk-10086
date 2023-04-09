@@ -1,4 +1,3 @@
-import { segment } from "oicq"
 import plugin from '../../../lib/plugins/plugin.js'
 
 //项目路径
