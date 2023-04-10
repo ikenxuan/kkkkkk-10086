@@ -55,7 +55,7 @@ export class example extends plugin {
 
 /**
  * 
- * @param {*} qq 
+ * @param {*} qq icqq信息
  * @param {*} title xml标题
  * @param {*} msg 发送的内容
  * @returns 
@@ -166,7 +166,7 @@ let access_token = tokendata.access_token
                 let dz_text = video_dz.join("\n\n")
                 pl_data.push(`🔥热门评论🔥\n${dz_text}`)
               } else {
-                res.push("评论数据获取失败")
+                pl_data.push("评论数据获取失败")
               }
   if(data.aweme_list[0].video.bit_rate.length === 0) { //提取图集数据-------------------------------------------------------------------------------------------------------------------------------------
     let res = []
@@ -231,24 +231,28 @@ let access_token = tokendata.access_token
       let title = `@${e.nickname}`
       let lbw =[]
       let image_url = data.aweme_list[0].images[0].url_list[0];
-      //霸屏小程序com.tencent.imagetextbot于2023/03/23 12:00 卒
-      //let oneimg = ArkMsg.ShareImage_JSON(image_url, false, title, '抖音图片解析')
-      //await ArkMsg.Share(JSON.stringify(oneimg), e, null, null, false)
-      //e.reply(JSON.stringify(oneimg))
       let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
-      let lbwbody = pl_data
+      //let lbwbody = pl_data
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
+      let pldata = []
+      pldata.push(pl_data)
+      let forpldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', pldata)
       e.reply(segment.image(image_url))
       lbw.push(lbwtitle)
-      lbw.push(lbwbody)
+      lbw.push(forpldata)
       lbw.push(lbwtial)
       await this.e.reply(await this.makeForwardMsg(e.user_id, "抖音", xmltitle, lbw))
     }
     else {
+      //先合并转发一次评论数据
+      let image_pldata = []
+      image_pldata.push(pl_data)
+      let image_forpldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', image_pldata)
+
               //处理字符串(如果图鸡不是100张)
               let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
               //concat重新排列
-              let resarr = textarr.concat(imgarr).concat(pl_data).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
+              let resarr = textarr.concat(imgarr).concat(image_forpldata).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
           logger.mark(resarr)
           //制作合并转发消息
           let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, resarr)
@@ -315,7 +319,8 @@ let access_token = tokendata.access_token
     res2.push(`抖音号：${dyid}【${name}的视频作品】`)
     res2.push(`视频标题：${bt}`)
     res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
-    //处理评论数据
+    //处理评论数据(所有评论数据合并成一个字符串先)
+    let video_pldata = []
     if (comments) {
       let comments_list = comments.comments_list.slice(0, 15);
       let video_dz = []
@@ -327,10 +332,18 @@ let access_token = tokendata.access_token
         video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
       }
       let dz_text = video_dz.join("\n\n")
-      res2.push(`🔥热门评论🔥\n${dz_text}`)
+      video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
     } else {
-      res2.push("评论数据获取失败")
+      video_pldata.push("评论数据获取失败")
     }
+    //来到这先转发一次评论数据，然后再套娃到最终的合并转发消息中去
+    //一个新的字符串，用来转发评论数据(pldata)
+    let video_forpldata = []
+    video_forpldata.push(video_pldata)
+    //合并转发
+    let video_forwardmsg_pldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', video_forpldata)
+    //然后再合并到res2字符串中等待再次转发(套娃)
+    res2.push(video_forwardmsg_pldata)
     res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
     //res2.push(`视频封面：${cover}`)
     logger.mark(res2)
