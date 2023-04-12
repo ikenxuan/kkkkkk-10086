@@ -4,6 +4,7 @@ import fs from "fs";
 import YAML from "yaml"
 //import ArkMsg from '../model/ArkMsg.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
+import { error } from 'console';
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -152,7 +153,7 @@ let access_token = tokendata.access_token
   //先把评论数据抽出来
   let pl_data = []
               if (comments) {
-                let comments_list = comments.comments_list.slice(0, 15);
+                let comments_list = comments.comments_list.slice(0, 50);
                 let video_dz = []
                 for (let i = 0; i < comments_list.length; i++) {
                   let text = comments_list[i].text;
@@ -191,7 +192,7 @@ let access_token = tokendata.access_token
     pl = count(pl)
     fx = count(fx)
     sc = count(sc)
-    let xmltitle = (`该图集在抖音被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
+    let xmltitle = (`该图集被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
     //抖音号
     let dyid;
     if (data.aweme_list[0].author.unique_id === "") {
@@ -236,7 +237,7 @@ let access_token = tokendata.access_token
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
       let pldata = []
       pldata.push(pl_data)
-      let forpldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', pldata)
+      let forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', pldata)
       e.reply(segment.image(image_url))
       lbw.push(lbwtitle)
       lbw.push(forpldata)
@@ -247,7 +248,7 @@ let access_token = tokendata.access_token
       //先合并转发一次评论数据
       let image_pldata = []
       image_pldata.push(pl_data)
-      let image_forpldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', image_pldata)
+      let image_forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', image_pldata)
 
               //处理字符串(如果图鸡不是100张)
               let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
@@ -306,7 +307,7 @@ let access_token = tokendata.access_token
         pl = count(pl)
         fx = count(fx)
         sc = count(sc)    
-        let xmltitle = (`该视频在抖音被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
+        let xmltitle = (`该被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
     //BGM地址
     let music = data.aweme_list[0].music.play_url.uri
     let cause = data.aweme_list[0].music.offline_desc
@@ -322,7 +323,7 @@ let access_token = tokendata.access_token
     //处理评论数据(所有评论数据合并成一个字符串先)
     let video_pldata = []
     if (comments) {
-      let comments_list = comments.comments_list.slice(0, 15);
+      let comments_list = comments.comments_list.slice(0, 50);
       let video_dz = []
       for (let i = 0; i < comments_list.length; i++) {
         let text = comments_list[i].text;
@@ -341,7 +342,7 @@ let access_token = tokendata.access_token
     let video_forpldata = []
     video_forpldata.push(video_pldata)
     //合并转发
-    let video_forwardmsg_pldata = await this.makeForwardMsg(e.user_id, false, '前15条评论数据', video_forpldata)
+    let video_forwardmsg_pldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', video_forpldata)
     //然后再合并到res2字符串中等待再次转发(套娃)
     res2.push(video_forwardmsg_pldata)
     res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
