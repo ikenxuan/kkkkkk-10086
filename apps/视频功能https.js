@@ -137,7 +137,7 @@ let access_token = tokendata.access_token
     headers: headers2
   })
   //接口2(评论数据)
-  let comments_data = await fetch(`https://api.tikhub.io/douyin_video_comments/?douyin_video_url=${URL}cursor=0&count=20`,{
+  let comments_data = await fetch(`https://api.tikhub.io/douyin_video_comments/?douyin_video_url=${URL}cursor=0&count=80`,{
     method: "GET",
     headers: headers2
   })
