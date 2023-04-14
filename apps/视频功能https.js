@@ -142,7 +142,7 @@ let access_token = tokendata.access_token
     headers: headers2
   })
   //完整视频数据
-  let sharedata = await fetch (`https://api.tikhub.io/douyin_video_data/?douyin_video_url=${URL}`, {
+  let sharedata = await fetch (`https://api.tikhub.io/douyin/video_data/?douyin_video_url=${URL}&language=zh`, {
     method: "GET",
     headers: headers2
   })
