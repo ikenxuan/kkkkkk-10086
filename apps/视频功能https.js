@@ -150,7 +150,7 @@ let access_token = tokendata.access_token
   let data = await sharedata.json();
   //返回评论数据(接口2)
   let comments = await comments_data.json();
-  //先把评论数据抽出来
+  // 先把评论数据抽出来
   let pl_data = []
               if (comments) {
                 let comments_list = comments.comments_list.slice(0, 50);
