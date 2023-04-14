@@ -137,7 +137,7 @@ let access_token = tokendata.access_token
     headers: headers2
   })
   //接口2(评论数据)
-  let comments_data = await fetch(`https://api.tikhub.io/douyin_video_comments/?douyin_video_url=${URL}cursor=0&count=80`,{
+  let comments_data = await fetch(`https://api.tikhub.io/douyin_video_comments/?douyin_video_url=${URL}cursor=0&count=40`,{
     method: "GET",
     headers: headers2
   })
@@ -153,7 +153,7 @@ let access_token = tokendata.access_token
   // 先把评论数据抽出来
   let pl_data = []
               if (comments) {
-                let comments_list = comments.comments_list.slice(0, 50);
+                let comments_list = comments.comments_list.slice(0, 30);
                 let video_dz = []
                 for (let i = 0; i < comments_list.length; i++) {
                   let text = comments_list[i].text;
