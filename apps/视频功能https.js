@@ -137,7 +137,7 @@ let access_token = tokendata.access_token
     headers: headers2
   })
   //接口2(评论数据)
-  let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=50&count=50&language=zh`,{
+  let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=15&count=15&language=zh`,{
     method: "GET",
     headers: headers2
   })
@@ -153,7 +153,7 @@ let access_token = tokendata.access_token
   // 先把评论数据抽出来
   let pl_data = []
               if (comments) {
-                let comments_list = comments.comments_list.slice(0, 50);
+                let comments_list = comments.comments_list.slice(0, 15);
                 let video_dz = []
                 for (let i = 0; i < comments_list.length; i++) {
                   let text = comments_list[i].text;
@@ -237,7 +237,7 @@ let access_token = tokendata.access_token
       let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
       let pldata = []
       pldata.push(pl_data)
-      let forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', pldata)
+      let forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前15条评论数据', pldata)
       e.reply(segment.image(image_url))
       lbw.push(lbwtitle)
       lbw.push(forpldata)
@@ -248,7 +248,7 @@ let access_token = tokendata.access_token
       //先合并转发一次评论数据
       let image_pldata = []
       image_pldata.push(pl_data)
-      let image_forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', image_pldata)
+      let image_forpldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前15条评论数据', image_pldata)
 
               //处理字符串(如果图鸡不是100张)
               let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
@@ -323,7 +323,7 @@ let access_token = tokendata.access_token
     //处理评论数据(所有评论数据合并成一个字符串先)
     let video_pldata = []
     if (comments) {
-      let comments_list = comments.comments_list.slice(0, 50);
+      let comments_list = comments.comments_list.slice(0, 15);
       let video_dz = []
       for (let i = 0; i < comments_list.length; i++) {
         let text = comments_list[i].text;
@@ -342,7 +342,7 @@ let access_token = tokendata.access_token
     let video_forpldata = []
     video_forpldata.push(video_pldata)
     //合并转发
-    let video_forwardmsg_pldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前50条评论数据', video_forpldata)
+    let video_forwardmsg_pldata = await this.makeForwardMsg(e.user_id, '目前需转发此消息才可看见评论', '前15条评论数据', video_forpldata)
     //然后再合并到res2字符串中等待再次转发(套娃)
     res2.push(video_forwardmsg_pldata)
     res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
