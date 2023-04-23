@@ -138,7 +138,7 @@ export class example extends plugin {
       headers: headers2
     })
     let notedayjson = await noteday.json();
-    if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours","user_info') {
+    if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.warn('该账号24小时内不可多次签到')
     } else (logger.info('签到获取次数成功'))
     //接口2(评论数据)
