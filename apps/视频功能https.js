@@ -137,7 +137,7 @@ export class example extends plugin {
       method: "GET",
       headers: headers2
     })
-    console.log(JSON.stringify(noteday))
+    logger.info(JSON.stringify(noteday))
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
@@ -324,7 +324,7 @@ export class example extends plugin {
       res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
       //处理评论数据(所有评论数据合并成一个字符串先)
       let video_pldata = []
-      if (comments) {
+      if (comments && comments.comments_list) {
         let comments_list = comments.comments_list.slice(0, 80);
         let video_dz = []
         for (let i = 0; i < comments_list.length; i++) {
