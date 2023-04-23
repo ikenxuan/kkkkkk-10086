@@ -323,22 +323,22 @@ export class example extends plugin {
       res2.push(`视频标题：${bt}`)
       res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
       //处理评论数据(所有评论数据合并成一个字符串先)
-      //let video_pldata = []
-      //if (comments) {
-      //  let comments_list = comments.comments_list.slice(0, 80);
-      //  let video_dz = []
-      //  for (let i = 0; i < comments_list.length; i++) {
-      //    let text = comments_list[i].text;
-      //    let ip = comments_list[i].ip_label;
-      //    let digg_count = comments_list[i].digg_count;
-      //    digg_count = count(digg_count)
-      //    video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-      //  }
-      //  let dz_text = video_dz.join("\n\n\n")
-      //  video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
-      //} else {
-      //  video_pldata.push("评论数据获取失败")
-      //}
+      let video_pldata = []
+      if (comments) {
+        let comments_list = comments.comments_list.slice(0, 80);
+        let video_dz = []
+        for (let i = 0; i < comments_list.length; i++) {
+          let text = comments_list[i].text;
+          let ip = comments_list[i].ip_label;
+          let digg_count = comments_list[i].digg_count;
+          digg_count = count(digg_count)
+          video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
+        }
+        let dz_text = video_dz.join("\n\n\n")
+        video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
+      } else {
+        video_pldata.push("评论数据获取失败")
+      }
       //来到这先转发一次评论数据，然后再套娃到最终的合并转发消息中去
       //一个新的字符串，用来转发评论数据(pldata)
       let video_forpldata = []
