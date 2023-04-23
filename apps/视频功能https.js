@@ -151,9 +151,9 @@ export class example extends plugin {
     let data = await sharedata.json();
     //返回评论数据(接口2)
     let comments = await comments_data.json();
-    // 先把评论数据抽出来
+    // 先把评论数据抽出来-----------------------------------------------------------------------------------------------------------------------------------------------------
     let pl_data = []
-    if (comments) {
+    if (comments && comments.comments_list) {
       let comments_list = comments.comments_list.slice(0, 15);
       let video_dz = []
       for (let i = 0; i < comments_list.length; i++) {
@@ -170,7 +170,8 @@ export class example extends plugin {
     } else {
       pl_data.push("评论数据获取失败")
     }
-    if (data.aweme_list[0].video.bit_rate.length === 0) { //提取图集数据-------------------------------------------------------------------------------------------------------------------------------------
+    //提取图集数据---------------------------------------------------------------------------------------------------------------------------------------------------------------
+    if (data.aweme_list[0].video.bit_rate.length === 0) {
       let res = []
       if (data.aweme_list[0].images[0].url_list[0] === undefined) {
         e.reply("请求错误，请再试一次...")
@@ -321,28 +322,28 @@ export class example extends plugin {
       res2.push(`视频标题：${bt}`)
       res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
       //处理评论数据(所有评论数据合并成一个字符串先)
-      let video_pldata = []
-      if (comments) {
-        let comments_list = comments.comments_list.slice(0, 80);
-        let video_dz = []
-        for (let i = 0; i < comments_list.length; i++) {
-          let text = comments_list[i].text;
-          let ip = comments_list[i].ip_label;
-          let digg_count = comments_list[i].digg_count;
-          digg_count = count(digg_count)
-          video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-        }
-        let dz_text = video_dz.join("\n\n\n")
-        video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
-      } else {
-        video_pldata.push("评论数据获取失败")
-      }
+      //let video_pldata = []
+      //if (comments) {
+      //  let comments_list = comments.comments_list.slice(0, 80);
+      //  let video_dz = []
+      //  for (let i = 0; i < comments_list.length; i++) {
+      //    let text = comments_list[i].text;
+      //    let ip = comments_list[i].ip_label;
+      //    let digg_count = comments_list[i].digg_count;
+      //    digg_count = count(digg_count)
+      //    video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
+      //  }
+      //  let dz_text = video_dz.join("\n\n\n")
+      //  video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
+      //} else {
+      //  video_pldata.push("评论数据获取失败")
+      //}
       //来到这先转发一次评论数据，然后再套娃到最终的合并转发消息中去
       //一个新的字符串，用来转发评论数据(pldata)
       let video_forpldata = []
       video_forpldata.push(video_pldata)
       //合并转发
-      let video_forwardmsg_pldata = await common.makeForwardMsg(e, video_forpldata, '热门评论')
+      let video_forwardmsg_pldata = await common.makeForwardMsg(e, pl_data, '热门评论')
       //然后再合并到res2字符串中等待再次转发(套娃)
       res2.push(video_forwardmsg_pldata)
       res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
