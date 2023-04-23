@@ -137,7 +137,8 @@ export class example extends plugin {
       method: "GET",
       headers: headers2
     })
-    logger.info(JSON.stringify(noteday))
+    let notedayjson = await noteday.json();
+    logger.info(JSON.stringify(notedayjson))
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
