@@ -133,10 +133,11 @@ export class example extends plugin {
       "Authorization": `Bearer ${access_token}`,
     }
     //签到接口获请求次数
-    await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
+    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
       method: "GET",
       headers: headers2
     })
+    console.log(JSON.stringify(noteday))
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
