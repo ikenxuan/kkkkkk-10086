@@ -138,7 +138,9 @@ export class example extends plugin {
       headers: headers2
     })
     let notedayjson = await noteday.json();
-    logger.info(JSON.stringify(notedayjson))
+    if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours","user_info') {
+      logger.warn('该账号24小时内不可多次签到')
+    } else (logger.info('签到获取次数成功'))
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
