@@ -4,6 +4,7 @@ import fs from "fs";
 import YAML from "yaml"
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
+import token from '../config/token.json'
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -127,7 +128,7 @@ export class example extends plugin {
     //创建文件写入token
     // 判断token.json文件是否存在
     const tokenDir = _path 
-    const tokenFile = `${tokenDir}/token.json`
+    const tokenFile = `${tokenDir}/plugins/kkkkkk-10086/config/token.json`
     if (!fs.existsSync(tokenFile)) {
       // 文件不存在,创建文件
       fs.writeFileSync(tokenFile, '{}')
@@ -137,7 +138,7 @@ export class example extends plugin {
     }))
 
 
-    let token = require(tokenFile)
+    //let token = tokenFile
     let mine_token = token.access_token
     //提取链接
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
