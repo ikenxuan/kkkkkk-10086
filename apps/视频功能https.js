@@ -114,39 +114,40 @@ export class example extends plugin {
       "accept": "application/json",
       "Content-type": "application/x-www-form-urlencoded",
     }
-    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=1&keep_login=true`, {
-      method: "POST",
-      headers,
-      body
-    })
+    //let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
+    //let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=1&keep_login=true`, {
+    //  method: "POST",
+    //  headers,
+    //  body
+    //})
     //返回账号token
-    let tokendata = await vdata.json();
-    logger.mark(tokendata)
-    let access_token = tokendata.access_token
+    //let tokendata = await vdata.json();
+    //logger.mark(tokendata)
+    //let access_token = tokendata.access_token
 
     //创建文件写入token
     // 判断token.json文件是否存在
-    const tokenDir = _path 
-    const tokenFile = `${tokenDir}/plugins/kkkkkk-10086/config/token.json`
-    if (!fs.existsSync(tokenFile)) {
+    //const tokenDir = _path 
+    //const tokenFile = `${tokenDir}/plugins/kkkkkk-10086/config/token.json`
+    //if (!fs.existsSync(tokenFile)) {
       // 文件不存在,创建文件
-      fs.writeFileSync(tokenFile, '{}')
-    }
-    fs.writeFileSync(tokenFile, JSON.stringify({
-      access_token
-    }))
+    //  fs.writeFileSync(tokenFile, '{}')
+    //}
+    //fs.writeFileSync(tokenFile, JSON.stringify({
+    //  access_token
+    //}))
+    let access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQwMzUzMTksInVzZXJuYW1lIjoicXVkdTgyMDg5NDBjaGVuZ0AxMjYuY29tIiwiZW1haWwiOiJxdWR1ODIwODk0MGNoZW5nQDEyNi5jb20iLCJldmlsMSI6IiQyYiQxMiQ4YXRkNkJ0WDUubS5jejhLMy5zRGRPdmlSR21hVkJBMS8ua1pHd3ZaT05rVENBRGRSY2lGZSJ9.iphk7X6qLJ4tbuL6Z-TDlVAOa1uJcHAXOSFPTI6b_yk'
 
 
     //let token = tokenFile
-    let mine_token = token.access_token
+    //let mine_token = token.token.access_token
     //提取链接
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
     //处理请求头
     let headers2 = {
       "accept": "application/json",
-      "Authorization": `Bearer ${mine_token}`,
+      "Authorization": `Bearer ${access_token}`,
     }
     //签到接口获请求次数
     let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
