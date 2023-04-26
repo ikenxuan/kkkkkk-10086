@@ -126,7 +126,7 @@ export class example extends plugin {
 
     //创建文件写入token
     // 判断token.json文件是否存在
-    const tokenDir = '../config'  
+    const tokenDir = _path 
     const tokenFile = `${tokenDir}/token.json`
     if (!fs.existsSync(tokenFile)) {
       // 文件不存在,创建文件
