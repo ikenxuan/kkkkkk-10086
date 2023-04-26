@@ -123,14 +123,22 @@ export class example extends plugin {
     let tokendata = await vdata.json();
     logger.mark(tokendata)
     let access_token = tokendata.access_token
-
+    
+    //创建文件写入token
+    fs.writeFileSync('../config/token.json', JSON.stringify({
+      access_token
+    }))
+    
+    
+    let token = require('../config/token.json')
+    let mine_token = token.access_token
     //提取链接
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
     //处理请求头
     let headers2 = {
       "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
+      "Authorization": `Bearer ${mine_token}`,
     }
     //签到接口获请求次数
     let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
