@@ -4,7 +4,7 @@ import fs from "fs";
 import YAML from "yaml"
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
-import token from '../config/token.json'
+//import token from '../config/token.json'
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
