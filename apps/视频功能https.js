@@ -137,7 +137,7 @@ export class example extends plugin {
     }))
 
 
-    let token = require('../config/token.json')
+    let token = require(tokenFile)
     let mine_token = token.access_token
     //提取链接
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
