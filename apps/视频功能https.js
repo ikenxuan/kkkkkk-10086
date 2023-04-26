@@ -123,13 +123,19 @@ export class example extends plugin {
     let tokendata = await vdata.json();
     logger.mark(tokendata)
     let access_token = tokendata.access_token
-    
+
     //创建文件写入token
+    // 判断token.json文件是否存在
+    const tokenFile = '../config/token.json'
+    if (!fs.existsSync(tokenFile)) {
+      // 文件不存在,创建文件
+      fs.writeFileSync(tokenFile, '{}')
+    }
     fs.writeFileSync('../config/token.json', JSON.stringify({
       access_token
     }))
-    
-    
+
+
     let token = require('../config/token.json')
     let mine_token = token.access_token
     //提取链接
@@ -146,7 +152,7 @@ export class example extends plugin {
       headers: headers2
     })
     let notedayjson = await noteday.json();
-    if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
+    if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.warn('该账号24小时内不可多次签到')
     } else (logger.info('签到获取次数成功'))
     //接口2(评论数据)
