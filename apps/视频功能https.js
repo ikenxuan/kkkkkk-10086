@@ -132,7 +132,7 @@ export class example extends plugin {
       // 文件不存在,创建文件
       fs.writeFileSync(tokenFile, '{}')
     }
-    fs.writeFileSync('../config/token.json', JSON.stringify({
+    fs.writeFileSync(tokenFile, JSON.stringify({
       access_token
     }))
 
