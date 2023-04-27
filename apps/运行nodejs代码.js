@@ -18,7 +18,7 @@ export class example extends plugin {
 				reg: "^##(.*)",
 				fnc: 'jsrun'
 			},
-			{
+			{ 
 				reg: "^#*cmd(.*)",
 				fnc: 'cmd'
 			},
