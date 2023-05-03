@@ -40,6 +40,11 @@ export class example extends plugin {
           fnc: 'douy'
         },
         {
+          reg: '^#获取token$',
+          fnc: 'getnumber'
+        },
+
+        {
           reg: '^((.*)tiktok.com(.*))$',
           fnc: 'Tiktok'
         },
@@ -58,6 +63,9 @@ export class example extends plugin {
 
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
+    if (AccountFile.access_token === undefined) {
+      await this.getnumber
+    }
     let token = AccountFile.access_token
     let headers = {
       "accept": "application/json",
