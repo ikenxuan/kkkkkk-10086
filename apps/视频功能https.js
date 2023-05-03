@@ -121,6 +121,10 @@ export class example extends plugin {
     })
     //返回单个视频完整数据(接口3)
     let data = await sharedata.json();
+    if (data.detail.status === false && data.detail.message === '该账号订阅已过期/Account subscription has expired') {
+      logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`)
+      return true
+    }
     //返回评论数据(接口2)
     let comments = await comments_data.json();
     // 先把评论数据抽出来-----------------------------------------------------------------------------------------------------------------------------------------------------
