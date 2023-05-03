@@ -59,9 +59,14 @@ export class example extends plugin {
 
 
   async getnumber() {
+    let headers = {
+      "accept": "application/json",
+      "Authorization": `Bearer ${access_token}`,
+    }
+
     let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
         method: "GET",
-        headers: headers2
+        headers: headers
       });
       let notedayjson = await noteday.json();
       logger.mark(notedayjson);
@@ -111,25 +116,6 @@ export class example extends plugin {
     //提取链接
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
-    //处理请求头
-    let headers2 = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    }
-    //签到接口获请求次数
-
-      let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-        method: "GET",
-        headers: headers2
-      });
-      let notedayjson = await noteday.json();
-      logger.mark(notedayjson);
-      if (notedayjson.status === true) {
-        logger.info('获取签到次数成功')
-
-      } else {
-        logger.error('账号24小时内不可多次签到')
-      }
     
 
       
