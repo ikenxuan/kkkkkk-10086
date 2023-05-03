@@ -10,7 +10,7 @@ let outStateN=""
 export class example extends plugin {
 	constructor() {
 		super({
-			name: '指令运行工具',
+			name: 'kkkkkk-10086',
 			event: 'message',
 			priority: 500,
 			rule: [
