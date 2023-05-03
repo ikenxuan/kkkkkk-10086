@@ -50,7 +50,7 @@ export class example extends plugin {
       ]
     })
     this.task = {
-      cron: '0 0 3 * * ?',
+      cron: '0 0 0 * * ?',
       name: '视频解析签到获取次数',
       fnc: () => this.getnumber()
     }
@@ -64,7 +64,7 @@ export class example extends plugin {
       "Content-type": "application/x-www-form-urlencoded",
     }
     let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=1&keep_login=true`, {
+    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
       method: "POST",
       headers,
       body
@@ -95,28 +95,29 @@ export class example extends plugin {
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
     }
+    return doc.access_token
 
   }
 
 
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
-
+    const access_token = data.access_token
+    let headers = {
+      "accept": "application/json",
+      "Authorization": `Bearer ${access_token}`,
+    }
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
-
-
-
-
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
-      headers: headers2
+      headers: headers
     })
-    //完整视频数据
+    //完整视频数据(接口3)
     let sharedata = await fetch(`https://api.tikhub.io/douyin/video_data/?douyin_video_url=${URL}&language=zh`, {
       method: "GET",
-      headers: headers2
+      headers: headers
     })
     //返回单个视频完整数据(接口3)
     let data = await sharedata.json();
