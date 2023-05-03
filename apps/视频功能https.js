@@ -71,8 +71,15 @@ export class example extends plugin {
 async  xhs(e) {
   let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
   let URL = e.toString().match(regexp);
-
-  let response = await fetch(URL, { redirect: 'follow' });
+  const options = {
+    redirect: 'follow',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
+      'Referer': 'https://www.xiaohongshu.com/',
+      'Cookie': 'your-cookie-string-here'
+    }
+  };
+  let response = await fetch(URL, options);
   let longLink = response.url;
   console.log(longLink)
   e.reply(longLink);
