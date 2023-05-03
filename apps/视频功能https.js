@@ -73,10 +73,11 @@ export class example extends plugin {
     //返回账号token
     let tokendata = await vdata.json();
     logger.mark(tokendata)
+    //
     let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
-    let doc = YAML.safeLoad(fs.readFileSync(accountfile, 'utf8'));
+    let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
     doc.access_token = access_token;
-    fs.writeFileSync(accountfile, YAML.safeDump(doc), 'utf8');
+    fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8');
     //let access_token = tokendata.access_token
     let access_token = doc.access_token;
     let headers2 = {
