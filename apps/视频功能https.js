@@ -8,9 +8,9 @@ import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
-const data = YAML.parse(file)
-const username = data.account //账号
-const password = data.password //密码
+const AccountFile = YAML.parse(file)
+const username = AccountFile.account //账号
+const password = AccountFile.password //密码
 console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
@@ -102,10 +102,10 @@ export class example extends plugin {
 
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
-    const access_token = data.access_token
+    let token = AccountFile.access_token
     let headers = {
       "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
+      "Authorization": `Bearer ${token}`,
     }
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
