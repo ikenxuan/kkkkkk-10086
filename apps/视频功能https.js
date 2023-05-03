@@ -25,9 +25,6 @@ function count(count) {
     return count.toString();
   }
 }
-if (AccountFile.access_token === undefined) {
-  await this.getnumber
-}
 
 export class example extends plugin {
   constructor() {
@@ -489,7 +486,7 @@ export class example extends plugin {
     }
     return true
   }
-  async getnumber() {
+  async getnumber(e) {
     //接口1获取账号token
     let headers = {
       "accept": "application/json",
@@ -527,7 +524,7 @@ export class example extends plugin {
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
     }
-    return doc.access_token
+    e.reply('请求成功，该token拥有365天有效期')
 
   }
 
