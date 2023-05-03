@@ -468,7 +468,7 @@ const syreg = new RegExp(`^(${Object.keys(sy).join("|")})$`)
 export class example extends plugin {
   constructor() {
     super({
-      name: '语音盒',
+      name: 'kkkkkk-10086',
       event: 'message',
       priority: 200,
       rule: [
