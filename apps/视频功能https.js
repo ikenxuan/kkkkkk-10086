@@ -73,8 +73,12 @@ export class example extends plugin {
     //返回账号token
     let tokendata = await vdata.json();
     logger.mark(tokendata)
-    let access_token = tokendata.access_token
-
+    let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
+    let doc = YAML.safeLoad(fs.readFileSync(accountfile, 'utf8'));
+    doc.access_token = access_token;
+    fs.writeFileSync(accountfile, YAML.safeDump(doc), 'utf8');
+    //let access_token = tokendata.access_token
+    let access_token = doc.access_token;
     let headers2 = {
       "accept": "application/json",
       "Authorization": `Bearer ${access_token}`,
@@ -87,7 +91,7 @@ export class example extends plugin {
     let notedayjson = await noteday.json();
     logger.mark(notedayjson);
     if (notedayjson.status === true) {
-      logger.info('获取签到次数成功')
+      logger.info(notedayjson.message)
 
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
