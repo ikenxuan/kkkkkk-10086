@@ -39,10 +39,10 @@ export class example extends plugin {
           reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*))$',
           fnc: 'douy'
         },
-        //{
-        //  reg: '^((.*)tiktok.com(.*))$',
-        //  fnc: 'Tiktok'
-        //},
+        {
+          reg: '^((.*)tiktok.com(.*))$',
+          fnc: 'Tiktok'
+        },
         {
           reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
           fnc: 'kuaiscz'
@@ -56,50 +56,6 @@ export class example extends plugin {
     }
   }
 
-
-  async getnumber() {
-    //接口1获取账号token
-    let headers = {
-      "accept": "application/json",
-      "Content-type": "application/x-www-form-urlencoded",
-    }
-    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
-      method: "POST",
-      headers,
-      body
-    })
-    //返回账号token
-    let tokendata = await vdata.json();
-    //logger.mark(tokendata)
-    let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
-    let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
-    // 将获取到的 access_token 写入 doc 对象，并写回到文件中
-    doc.access_token = tokendata.access_token;
-    fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8');
-    let access_token = doc.access_token;
-    let headers2 = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    }
-
-    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-      method: "GET",
-      headers: headers2
-    });
-    let notedayjson = await noteday.json();
-    //logger.mark(notedayjson);
-    if (notedayjson.status === true) {
-      logger.info(notedayjson.message)
-
-    } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
-      logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
-    }
-    return doc.access_token
-
-  }
-
-
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
     let token = AccountFile.access_token
@@ -109,23 +65,21 @@ export class example extends plugin {
     }
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
-    //接口2(评论数据)
-    let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
-      method: "GET",
-      headers: headers
-    })
-    //完整视频数据(接口3)
+    //完整视频数据(接口2)
     let sharedata = await fetch(`https://api.tikhub.io/douyin/video_data/?douyin_video_url=${URL}&language=zh`, {
       method: "GET",
       headers: headers
     })
-    //返回单个视频完整数据(接口3)
     let data = await sharedata.json();
     if (data.hasOwnProperty('detail') && data.detail?.status === false && data.detail?.message === '该账号订阅已过期/Account subscription has expired') {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
     }
-    //返回评论数据(接口2)
+    //接口1(评论数据)
+    let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
+      method: "GET",
+      headers: headers
+    })
     let comments = await comments_data.json();
     // 先把评论数据抽出来-----------------------------------------------------------------------------------------------------------------------------------------------------
     let pl_data = []
@@ -526,6 +480,47 @@ export class example extends plugin {
       e.reply([`获取失败了！可能不是视频！`])
     }
     return true
+  }
+  async getnumber() {
+    //接口1获取账号token
+    let headers = {
+      "accept": "application/json",
+      "Content-type": "application/x-www-form-urlencoded",
+    }
+    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
+    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
+      method: "POST",
+      headers,
+      body
+    })
+    //返回账号token
+    let tokendata = await vdata.json();
+    //logger.mark(tokendata)
+    let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
+    let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
+    // 将获取到的 access_token 写入 doc 对象，并写回到文件中
+    doc.access_token = tokendata.access_token;
+    fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8');
+    let access_token = doc.access_token;
+    let headers2 = {
+      "accept": "application/json",
+      "Authorization": `Bearer ${access_token}`,
+    }
+
+    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
+      method: "GET",
+      headers: headers2
+    });
+    let notedayjson = await noteday.json();
+    //logger.mark(notedayjson);
+    if (notedayjson.status === true) {
+      logger.info(notedayjson.message)
+
+    } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
+      logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
+    }
+    return doc.access_token
+
   }
 
   /**
