@@ -1,7 +1,7 @@
 ![啊哈](resources/photos/photo1.jpg)
-<div align="center">
 
-<h1>kkkkkk-plugin<h1>
+
+# kkkkkk-10086
 
 创作历程：CTRL C + CTRL V
 #### [![访问](https://profile-counter.glitch.me/kkkkkk-10086/count.svg)](https://gitee.com/kkkkkkxuan/kkkkkk-10086.git)
@@ -10,15 +10,15 @@
 
 ## 使用gitee
 ```
-git clone --depth=1 https://gitee.com/kkkkkkxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 ## 使用GitHub
 ```
-git clone --depth=1 https://github.com/kkkkkk-10086/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 
-## 自用
-<div>
+# 自用
+>>>>>>> master
 
 
