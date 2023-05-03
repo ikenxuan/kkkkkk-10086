@@ -284,7 +284,7 @@ export class example extends plugin {
       res2.push(video_forwardmsg_pldata)
       res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
       //res2.push(`视频封面：${cover}`)
-      logger.mark(loogger.yellow(res2))
+      logger.mark(logger.yellow(res2))
       let video_data = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
