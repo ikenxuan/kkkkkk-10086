@@ -18,7 +18,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 `/plugins/kkkkkk-10086/config/account.yaml`
 
-重启后向机器人发送`#获取token`以获取账号APIKey(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)直接获取token)
+重启后向机器人发送`#获取token`以获取账号token(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)手动获取token)
 
 ## [点我直达注册页面](https://api.tikhub.io/#/Authorization/register_user_users_register__post)
 [![鸡](resources/photos/md.png)](https://api.tikhub.io/#/Authorization/register_user_users_register__post)

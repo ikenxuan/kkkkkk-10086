@@ -11,7 +11,7 @@ const file = fs.readFileSync(accountfile, 'utf-8')
 const AccountFile = YAML.parse(file)
 const username = AccountFile.account //账号
 const password = AccountFile.password //密码
-console.log(`账号：${username}\n密码：${password}`)
+//console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
  * 
@@ -39,10 +39,6 @@ export class example extends plugin {
           reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*))$',
           fnc: 'douy'
         },
-        {
-          reg: '^#获取token$',
-          fnc: 'getnumber'
-        },
 
         {
           reg: '^((.*)tiktok.com(.*))$',
@@ -52,6 +48,17 @@ export class example extends plugin {
           reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
           fnc: 'kuaiscz'
         },
+        {
+          reg: '^((.*)xhslink.com(.*))$',
+          fnc: 'xhs'
+        },
+
+
+        {
+          reg: '^#获取token$',
+          fnc: 'getnumber'
+        },
+
       ]
     })
     this.task = {
@@ -60,7 +67,16 @@ export class example extends plugin {
       fnc: () => this.getnumber()
     }
   }
+//小红书---------------------------------------------------------------------------------------------------------------
+async  xhs(e) {
+  let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
+  let URL = e.toString().match(regexp);
 
+  let response = await fetch(URL, { redirect: 'follow' });
+  let longLink = response.url;
+  console.log(longLink)
+  e.reply(longLink);
+}
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
     let token = AccountFile.access_token
