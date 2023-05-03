@@ -80,6 +80,8 @@ export class example extends plugin {
     if (data.hasOwnProperty('detail') && data.detail?.status === false && data.detail?.message === '该账号订阅已过期/Account subscription has expired') {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
+    } else {
+      logger.info('TikHub API' + logger.green('请求成功') + '正在获取视频：' + logger.yellow(URL) + '的数据')
     }
     //接口1(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
@@ -191,7 +193,7 @@ export class example extends plugin {
         let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
         //concat重新排列
         let resarr = textarr.concat(imgarr).concat(image_forpldata).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-        logger.mark(resarr)
+        //logger.mark(resarr)
         //制作合并转发消息
         let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, resarr)
         await this.e.reply(msg)
@@ -284,7 +286,7 @@ export class example extends plugin {
       res2.push(video_forwardmsg_pldata)
       res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
       //res2.push(`视频封面：${cover}`)
-      logger.mark(logger.yellow(res2))
+      //logger.mark(res2)
       let video_data = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
