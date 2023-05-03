@@ -81,8 +81,10 @@ async  xhs(e) {
   };
   let response = await fetch(URL, options);
   let longLink = response.url;
-  console.log(longLink)
-  e.reply(longLink);
+  let urlObj = new URL(longLink);
+  let baseUrl = urlObj.origin + urlObj.pathname;
+  console.log(baseUrl)
+  e.reply(baseUrl);
 }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
