@@ -76,7 +76,7 @@ export class example extends plugin {
       headers: headers
     })
     let data = await sharedata.json();
-    logger.info(data)
+    //logger.info(data)
     if (data.hasOwnProperty('detail') && data.detail?.status === false && data.detail?.message === '该账号订阅已过期/Account subscription has expired') {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
@@ -284,7 +284,7 @@ export class example extends plugin {
       res2.push(video_forwardmsg_pldata)
       res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
       //res2.push(`视频封面：${cover}`)
-      logger.mark(res2)
+      logger.mark(loogger.yellow(res2))
       let video_data = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
