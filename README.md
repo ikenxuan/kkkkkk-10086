@@ -13,11 +13,12 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 
 # 此插件为本人自用 ！自用 ！ 自用 ！
-若使用TikHub API功能需先注册TikHub账号，注册成功后将对应内容填写到`/plugins/kkkkkk-10086/config/account.yaml`
+### 若使用TikHub API功能需先注册TikHub账号，注册成功后将对应内容填写到
+`/plugins/kkkkkk-10086/config/account.yaml`
 
 重启后向机器人发送`#获取token`以获取账号APIKey
 
-## 点我直达注册页面
+## [点我直达注册页面](https://api.tikhub.io/#/Authorization/register_user_users_register__post)
 [![鸡](resources/photos/md.png)](https://api.tikhub.io/#/Authorization/register_user_users_register__post)
 ## 免责声明
 
