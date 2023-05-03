@@ -83,8 +83,8 @@ async  xhs(e) {
   let response = await fetch(URL, options);
   let longLink = response.url;
   let baseUrl = url.parse(longLink).pathname.split('?')[0];
-  console.log(baseUrl)
-  e.reply(baseUrl);
+  let shorturl = 'https://www.xiaohongshu.com' + baseUrl
+  e.reply(shorturl);
 }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
