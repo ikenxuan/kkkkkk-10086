@@ -1,5 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
+import url from 'url'
 import fs from "fs";
 import YAML from "yaml"
 import common from '../../../lib/common/common.js';
@@ -81,8 +82,7 @@ async  xhs(e) {
   };
   let response = await fetch(URL, options);
   let longLink = response.url;
-  let urlObj = new URL(longLink);
-  let baseUrl = urlObj.origin + urlObj.pathname;
+  let baseUrl = url.parse(longLink).pathname.split('?')[0];
   console.log(baseUrl)
   e.reply(baseUrl);
 }
