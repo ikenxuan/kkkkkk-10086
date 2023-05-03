@@ -11,7 +11,6 @@ const file = fs.readFileSync(accountfile, 'utf-8')
 const data = YAML.parse(file)
 const username = data.account //账号
 const password = data.password //密码
-//const access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
 console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
@@ -51,7 +50,7 @@ export class example extends plugin {
       ]
     })
     this.task = {
-      cron: '*/15 * * * * *',
+      cron: '0 0 3 * * ?',
       name: '视频解析签到获取次数',
       fnc: () => this.getnumber()
     }
@@ -72,8 +71,7 @@ export class example extends plugin {
     })
     //返回账号token
     let tokendata = await vdata.json();
-    logger.mark(tokendata)
-    //
+    //logger.mark(tokendata)
     let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
     let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
     // 将获取到的 access_token 写入 doc 对象，并写回到文件中
@@ -90,7 +88,7 @@ export class example extends plugin {
       headers: headers2
     });
     let notedayjson = await noteday.json();
-    logger.mark(notedayjson);
+    //logger.mark(notedayjson);
     if (notedayjson.status === true) {
       logger.info(notedayjson.message)
 
