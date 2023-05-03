@@ -11,7 +11,7 @@ const file = fs.readFileSync(accountfile, 'utf-8')
 const data = YAML.parse(file)
 const username = data.account //账号
 const password = data.password //密码
-const access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
+//const access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
 console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
@@ -52,74 +52,59 @@ export class example extends plugin {
     })
     this.task = {
       cron: '0 0 3 * * ?',
-      name: '视频解析获取签到次数',
-      fnc: () =>this.getnumber()
+      name: '视频解析签到获取次数',
+      fnc: () => this.getnumber()
     }
   }
 
 
   async getnumber() {
-    let headers = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    }
-
-    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-        method: "GET",
-        headers: headers
-      });
-      let notedayjson = await noteday.json();
-      logger.mark(notedayjson);
-      if (notedayjson.status === true) {
-        logger.info('获取签到次数成功')
-
-      } else if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
-        logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
-      }
-    
-  }
-
-
-  //抖音----------------------------------------------------------------------------------
-  async douy(e) {
     //接口1获取账号token
     let headers = {
       "accept": "application/json",
       "Content-type": "application/x-www-form-urlencoded",
     }
-    //let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    //let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=1&keep_login=true`, {
-    //  method: "POST",
-    //  headers,
-    //  body
-    //})
+    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
+    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=1&keep_login=true`, {
+      method: "POST",
+      headers,
+      body
+    })
     //返回账号token
-    //let tokendata = await vdata.json();
-    //logger.mark(tokendata)
-    //let access_token = tokendata.access_token
+    let tokendata = await vdata.json();
+    logger.mark(tokendata)
+    let access_token = tokendata.access_token
 
-    //创建文件写入token
-    // 判断token.json文件是否存在
-    //const tokenDir = _path 
-    //const tokenFile = `${tokenDir}/plugins/kkkkkk-10086/config/token.json`
-    //if (!fs.existsSync(tokenFile)) {
-    // 文件不存在,创建文件
-    //  fs.writeFileSync(tokenFile, '{}')
-    //}
-    //fs.writeFileSync(tokenFile, JSON.stringify({
-    //  access_token
-    //}))
+    let headers2 = {
+      "accept": "application/json",
+      "Authorization": `Bearer ${access_token}`,
+    }
+
+    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
+      method: "GET",
+      headers: headers2
+    });
+    let notedayjson = await noteday.json();
+    logger.mark(notedayjson);
+    if (notedayjson.status === true) {
+      logger.info('获取签到次数成功')
+
+    } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
+      logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
+    }
+
+  }
 
 
-    //let token = tokenFile
-    //let mine_token = token.token.access_token
-    //提取链接
+  //抖音----------------------------------------------------------------------------------
+  async douy(e) {
+
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
-    
 
-      
-  
+
+
+
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
@@ -535,55 +520,55 @@ export class example extends plugin {
     return true
   }
 
-    /**
-   * 
-   * @param {*} qq icqq信息
-   * @param {*} title xml标题
-   * @param {*} msg 发送的内容
-   * @returns 
-   */
-    async makeForwardMsg(qq, firsttitle, title, msg = []) {
-      let nickname = Bot.nickname
-      if (this.e.isGroup) {
-        let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-        nickname = info.card ?? info.nickname
-      }
-      let userInfo = {
-        user_id: this.e.user_id,
-        nickname: this.e.sender.card || this.e.user_id,
-      }
-  
-      let forwardMsg = []
-      msg.forEach(v => {
-        forwardMsg.push({
-          ...userInfo,
-          message: v
-        })
-      })
-  
-      /** 制作转发内容 */
-      if (this.e.isGroup) {
-        forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-      } else {
-        forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-      }
-  
-      /** 处理描述 */
-      forwardMsg.data = forwardMsg.data
-        .replace(/\n/g, '')
-        .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
-        .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
-        .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
-        .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
-        .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-        .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-        .replace(/<summary color="#808080" size="26">/g, '___')
-        .replace(/___+/, `<summary color="#808080">`)
-        .replace(/<source name="聊天记录">/g, '___')
-        .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
-  
-      return forwardMsg
+  /**
+ * 
+ * @param {*} qq icqq信息
+ * @param {*} title xml标题
+ * @param {*} msg 发送的内容
+ * @returns 
+ */
+  async makeForwardMsg(qq, firsttitle, title, msg = []) {
+    let nickname = Bot.nickname
+    if (this.e.isGroup) {
+      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
+      nickname = info.card ?? info.nickname
     }
-  
+    let userInfo = {
+      user_id: this.e.user_id,
+      nickname: this.e.sender.card || this.e.user_id,
+    }
+
+    let forwardMsg = []
+    msg.forEach(v => {
+      forwardMsg.push({
+        ...userInfo,
+        message: v
+      })
+    })
+
+    /** 制作转发内容 */
+    if (this.e.isGroup) {
+      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
+    } else {
+      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
+    }
+
+    /** 处理描述 */
+    forwardMsg.data = forwardMsg.data
+      .replace(/\n/g, '')
+      .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
+      .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
+      .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
+      .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
+      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
+      .replace(/<summary color="#808080" size="26">/g, '___')
+      .replace(/___+/, `<summary color="#808080">`)
+      .replace(/<source name="聊天记录">/g, '___')
+      .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
+
+    return forwardMsg
+  }
+
 
 }
