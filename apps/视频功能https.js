@@ -11,6 +11,7 @@ const file = fs.readFileSync(accountfile, 'utf-8')
 const data = YAML.parse(file)
 const username = data.account //账号
 const password = data.password //密码
+const access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
 console.log(`账号：${username}\n密码：${password}`)
 //必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
@@ -25,11 +26,6 @@ function count(count) {
     return count.toString();
   }
 }
-
-/*async function getjson(response) {
-  const text = await response.text();
-  return JSON.parse(text);
-}*/
 
 export class example extends plugin {
   constructor() {
@@ -54,56 +50,28 @@ export class example extends plugin {
         },
       ]
     })
+    this.task = {
+      cron: '*/15 * * * * *',
+      name: '视频解析获取签到次数',
+      fnc: () =>this.getnumber()
+    }
   }
 
-  /**
-   * 
-   * @param {*} qq icqq信息
-   * @param {*} title xml标题
-   * @param {*} msg 发送的内容
-   * @returns 
-   */
-  async makeForwardMsg(qq, firsttitle, title, msg = []) {
-    let nickname = Bot.nickname
-    if (this.e.isGroup) {
-      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-      nickname = info.card ?? info.nickname
-    }
-    let userInfo = {
-      user_id: this.e.user_id,
-      nickname: this.e.sender.card || this.e.user_id,
-    }
 
-    let forwardMsg = []
-    msg.forEach(v => {
-      forwardMsg.push({
-        ...userInfo,
-        message: v
-      })
-    })
+  async getnumber() {
+    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
+        method: "GET",
+        headers: headers2
+      });
+      let notedayjson = await noteday.json();
+      logger.mark(notedayjson);
+      if (notedayjson.status === true) {
+        logger.info('获取签到次数成功')
 
-    /** 制作转发内容 */
-    if (this.e.isGroup) {
-      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
-      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-    }
-
-    /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
-      .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
-      .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
-      .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-      .replace(/<summary color="#808080" size="26">/g, '___')
-      .replace(/___+/, `<summary color="#808080">`)
-      .replace(/<source name="聊天记录">/g, '___')
-      .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
-
-    return forwardMsg
+      } else if(notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
+        logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
+      }
+    
   }
 
 
@@ -136,7 +104,6 @@ export class example extends plugin {
     //fs.writeFileSync(tokenFile, JSON.stringify({
     //  access_token
     //}))
-    let access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
 
 
     //let token = tokenFile
@@ -151,16 +118,6 @@ export class example extends plugin {
     }
     //签到接口获请求次数
 
-      let now = new Date();
-      let g = await redis.get("xs", "bf", ":g");
-      let transferTimeout = 120000; // 请求超时时间为 2 分钟
-      g = parseInt(g);
-      if (now < g + transferTimeout) {
-        logger.warn('每一分钟请求一次');
-        return ; // 有 cd，停止请求  
-      } else {
-        await redis.set("xs", "bf", ":g", now);
-
       let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
         method: "GET",
         headers: headers2
@@ -173,7 +130,7 @@ export class example extends plugin {
       } else {
         logger.error('账号24小时内不可多次签到')
       }
-    }
+    
 
       
   
@@ -591,5 +548,56 @@ export class example extends plugin {
     }
     return true
   }
+
+    /**
+   * 
+   * @param {*} qq icqq信息
+   * @param {*} title xml标题
+   * @param {*} msg 发送的内容
+   * @returns 
+   */
+    async makeForwardMsg(qq, firsttitle, title, msg = []) {
+      let nickname = Bot.nickname
+      if (this.e.isGroup) {
+        let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
+        nickname = info.card ?? info.nickname
+      }
+      let userInfo = {
+        user_id: this.e.user_id,
+        nickname: this.e.sender.card || this.e.user_id,
+      }
+  
+      let forwardMsg = []
+      msg.forEach(v => {
+        forwardMsg.push({
+          ...userInfo,
+          message: v
+        })
+      })
+  
+      /** 制作转发内容 */
+      if (this.e.isGroup) {
+        forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
+      } else {
+        forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
+      }
+  
+      /** 处理描述 */
+      forwardMsg.data = forwardMsg.data
+        .replace(/\n/g, '')
+        .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
+        .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
+        .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
+        .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
+        .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+        .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
+        .replace(/<summary color="#808080" size="26">/g, '___')
+        .replace(/___+/, `<summary color="#808080">`)
+        .replace(/<source name="聊天记录">/g, '___')
+        .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
+  
+      return forwardMsg
+    }
+  
 
 }
