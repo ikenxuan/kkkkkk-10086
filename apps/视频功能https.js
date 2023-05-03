@@ -68,27 +68,57 @@ export class example extends plugin {
       fnc: () => this.getnumber()
     }
   }
-//小红书---------------------------------------------------------------------------------------------------------------
-async  xhs(e) {
-  let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-  let URL = e.toString().match(regexp);
-  const options = {
-    redirect: 'follow',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
-      'Referer': 'https://www.xiaohongshu.com/',
-      'Cookie': 'your-cookie-string-here'
+  //小红书---------------------------------------------------------------------------------------------------------------
+  async xhs(e) {
+    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
+    let URL = e.toString().match(regexp);
+    const options = {
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
+        'Referer': 'https://www.xiaohongshu.com/',
+        'Cookie': 'your-cookie-string-here'
+      }
+    };
+    //重新请求获取笔记长链接
+    let response = await fetch(URL, options);
+    let longLink = response.url;
+    //通过正则表达式匹配笔记id，并提取出来
+    let regExp2 = /^https:\/\/www.xiaohongshu.com\/explore\/([a-zA-Z0-9]+)\?/;
+    let matchResult = longLink.match(regExp2);
+    let note_id = matchResult && matchResult[1];
+    console.log(`笔记id：${note_id}`);
+    //请求接口获取数据
+    let token = AccountFile.access_token
+    let headers = {
+      "accept": "application/json",
+      "Authorization": `Bearer ${token}`,
     }
-  };
-  let response = await fetch(URL, options);
-  let longLink = response.url;
-  let regExp2 = /^https:\/\/www.xiaohongshu.com\/explore\/([a-zA-Z0-9]+)\?/;
-  let matchResult = longLink.match(regExp2);
-  let note_id = matchResult && matchResult[1];
+    let xhs_fetch = await fetch(`https://api.tikhub.io/xhs/get_note_data/?note_id=${note_id}`, {
+      method: "GET",
+      headers: headers
+    })
+    let xhs_comments_fetch = await fetch(`https://api.tikhub.io/xhs/get_note_comments/?note_id=${note_id}`, {
+      method: "GET",
+      headers: headers
+    })
+    let xhs_note_json = await xhs_fetch.json();
+    if (xhs_note_json.hasOwnProperty('detail') && xhs_note_json.detail?.status === false && xhs_note_json.detail?.message === '该账号订阅已过期/Account subscription has expired') {
+      logger.error(`请尝试获取新的TikHub账号！因为${xhs_note_json.detail.message}`);
+      return true;
+    } else {
+      logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
+    }
+    let xhs_comments_json = await xhs_comments_fetch.json();
 
-  console.log(note_id);
-  e.reply(note_id || '无法获取文章编号');
-}
+    // 遍历每个图片对象
+    let imageres = []
+    for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
+      let image_url = xhs_note_json.data.image_list[i].url;
+      imageres.puh(segment.image(image_url))
+    }
+    let xhs_data = await common.makeForwardMsg(e, imageres, '小红书笔记解析')
+  }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
     let token = AccountFile.access_token
@@ -109,7 +139,7 @@ async  xhs(e) {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
     } else {
-      logger.info('TikHub API' + logger.green('请求成功') + '正在获取视频：' + logger.yellow(URL) + '的数据')
+      logger.info('TikHub API' + logger.green('请求成功') + '，正在获取视频：' + logger.yellow(URL) + '的数据')
     }
     //接口1(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
