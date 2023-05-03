@@ -82,9 +82,12 @@ async  xhs(e) {
   };
   let response = await fetch(URL, options);
   let longLink = response.url;
-  let baseUrl = url.parse(longLink).pathname.split('?')[0];
-  let shorturl = 'https://www.xiaohongshu.com' + baseUrl
-  e.reply(shorturl);
+  let regExp2 = /^https:\/\/www.xiaohongshu.com\/explore\/([a-zA-Z0-9]+)\?/;
+  let matchResult = longLink.match(regExp2);
+  let note_id = matchResult && matchResult[1];
+
+  console.log(note_id);
+  e.reply(note_id || '无法获取文章编号');
 }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
