@@ -51,7 +51,7 @@ export class example extends plugin {
       ]
     })
     this.task = {
-      cron: '0 0 3 * * ?',
+      cron: '*/15 * * * * *',
       name: '视频解析签到获取次数',
       fnc: () => this.getnumber()
     }
