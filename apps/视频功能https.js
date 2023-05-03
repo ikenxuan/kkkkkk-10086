@@ -130,13 +130,13 @@ export class example extends plugin {
     //const tokenDir = _path 
     //const tokenFile = `${tokenDir}/plugins/kkkkkk-10086/config/token.json`
     //if (!fs.existsSync(tokenFile)) {
-      // 文件不存在,创建文件
+    // 文件不存在,创建文件
     //  fs.writeFileSync(tokenFile, '{}')
     //}
     //fs.writeFileSync(tokenFile, JSON.stringify({
     //  access_token
     //}))
-    let access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQwMzUzMTksInVzZXJuYW1lIjoicXVkdTgyMDg5NDBjaGVuZ0AxMjYuY29tIiwiZW1haWwiOiJxdWR1ODIwODk0MGNoZW5nQDEyNi5jb20iLCJldmlsMSI6IiQyYiQxMiQ4YXRkNkJ0WDUubS5jejhLMy5zRGRPdmlSR21hVkJBMS8ua1pHd3ZaT05rVENBRGRSY2lGZSJ9.iphk7X6qLJ4tbuL6Z-TDlVAOa1uJcHAXOSFPTI6b_yk'
+    let access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTQ0Nzg5NzcsInVzZXJuYW1lIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImVtYWlsIjoic2hhMDcxMzAxNTY3dHVAMTI2LmNvbSIsImV2aWwxIjoiJDJiJDEyJEd5VmltV1VIeXdpN0R1SjZHekllWHVrbHpIS01yMFJxYi9rYzdjNDlsaVNqeFd6T05ETHpTIn0.aJUo-Oekm_-OI1EBh8t60JQ7U5vZn27wOk1RVG-8iyY'
 
 
     //let token = tokenFile
@@ -150,14 +150,33 @@ export class example extends plugin {
       "Authorization": `Bearer ${access_token}`,
     }
     //签到接口获请求次数
-    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-      method: "GET",
-      headers: headers2
-    })
-    let notedayjson = await noteday.json();
-    if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
-      logger.warn('该账号24小时内不可多次签到')
-    } else (logger.info('签到获取次数成功'))
+
+      let now = new Date();
+      let g = await redis.get("xs", "bf", ":g");
+      let transferTimeout = 120000; // 请求超时时间为 2 分钟
+      g = parseInt(g);
+      if (now < g + transferTimeout) {
+        logger.warn('每一分钟请求一次');
+        return ; // 有 cd，停止请求  
+      } else {
+        await redis.set("xs", "bf", ":g", now);
+
+      let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
+        method: "GET",
+        headers: headers2
+      });
+      let notedayjson = await noteday.json();
+      logger.mark(notedayjson);
+      if (notedayjson.status === true) {
+        logger.info('获取签到次数成功')
+
+      } else {
+        logger.error('账号24小时内不可多次签到')
+      }
+    }
+
+      
+  
     //接口2(评论数据)
     let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
       method: "GET",
