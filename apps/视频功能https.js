@@ -76,7 +76,7 @@ export class example extends plugin {
       headers: headers
     })
     let data = await sharedata.json();
-    logger.info(JSON.stringify(data))
+    logger.info(data)
     if (data.hasOwnProperty('detail') && data.detail?.status === false && data.detail?.message === '该账号订阅已过期/Account subscription has expired') {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
