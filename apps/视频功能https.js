@@ -115,9 +115,9 @@ export class example extends plugin {
     let imageres = []
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
       let image_url = xhs_note_json.data.image_list[i].url;
-      imageres.puh(segment.image(image_url))
+      imageres.push(segment.image(image_url))
     }
-    let xhs_data = await common.makeForwardMsg(e, imageres, '小红书笔记解析')
+    await e.reply(await common.makeForwardMsg(e, imageres, '小红书笔记解析'))
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
