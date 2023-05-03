@@ -40,6 +40,11 @@ export class example extends plugin {
           fnc: 'douy'
         },
         {
+          reg: '^#获取token$',
+          fnc: 'getnumber'
+        },
+
+        {
           reg: '^((.*)tiktok.com(.*))$',
           fnc: 'Tiktok'
         },
@@ -71,6 +76,7 @@ export class example extends plugin {
       headers: headers
     })
     let data = await sharedata.json();
+    logger.info(data)
     if (data.hasOwnProperty('detail') && data.detail?.status === false && data.detail?.message === '该账号订阅已过期/Account subscription has expired') {
       logger.error(`请尝试获取新的TikHub账号！因为${data.detail.message}`);
       return true;
@@ -481,7 +487,7 @@ export class example extends plugin {
     }
     return true
   }
-  async getnumber() {
+  async getnumber(e) {
     //接口1获取账号token
     let headers = {
       "accept": "application/json",
@@ -519,7 +525,7 @@ export class example extends plugin {
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
     }
-    return doc.access_token
+    e.reply('请求成功，该token拥有365天有效期')
 
   }
 
