@@ -135,11 +135,13 @@ export class example extends plugin {
     let tag = xhs_note_json.data.tag_list[i]?.name
     xhs_tags_res.push(`#${tag}`)
     let tags = xhs_tags_res.join("\n")
-    xhs_tags.push(tags)
     
-    logger.info(xhs_data)
+    
+    
     }
-    xhs_data.push(xhs_tags)
+    //xhs_tags.push(tags)
+    xhs_data.push(tags)
+    logger.info(xhs_data)
     await e.reply(this.makeForwardMsg(e, xhs_title, interact_info, xhs_data))
   }
   //抖音----------------------------------------------------------------------------------
