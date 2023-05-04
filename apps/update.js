@@ -33,7 +33,7 @@ export class update extends plugin {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
             e.reply('kkkkkk-10086的资源文件下载成功！')
         }
-        
+
         // 执行 git fetch 命令以获取远程分支变化
         await promisify(exec)(`git -C "${localPath}" fetch`);
 
@@ -47,10 +47,11 @@ export class update extends plugin {
         // 判断本地分支是否是最新的，如果不是则执行 git pull 操作
         if (remoteSha.trim() !== localSha.trim()) {
             await promisify(exec)(`git -C "${localPath}" pull`);
-            return `从 ${repoUrl} 成功更新至 ${localPath}`;
+            e.reply(`从 ${repoUrl} 成功更新至 ${localPath}`);
+        } else {
+            e.reply(`${localPath} 目前已经是最新了`);
         }
 
-        e.reply(`${localPath} 目前已经是最新了`);
     }
 
     // 使用示例
