@@ -128,10 +128,11 @@ export class example extends plugin {
     xhs_data.push(image_data)
     let xhs_tag = []
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
-    let xhs_tag = xhs_note_json.data.tag_list[i].name
+    let tag = xhs_note_json.data.tag_list[i].name
+    xhs_data.push(tag)
+    }
     let xhs_tags = xhs_tag.join("\n")
     xhs_data.push(xhs_tags)
-    }
     await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
   }
   //抖音----------------------------------------------------------------------------------
