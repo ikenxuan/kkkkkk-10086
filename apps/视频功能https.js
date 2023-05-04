@@ -134,8 +134,10 @@ export class example extends plugin {
     //logger.info(tag)
     xhs_tags.push(tag)
     xhs_data.push(xhs_tags.join("\n"))
+    logger.warn(xhs_tags)
+    logger.info(xhs_data)
     }
-    xhs_data.push(xhs_tags.join("\n"))
+    //xhs_data.push(xhs_tags.join("\n"))
 
     await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
   }
