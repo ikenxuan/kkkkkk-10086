@@ -16,6 +16,11 @@ export class update extends plugin {
                     reg: "^#?(kkkkkk|kkk)(插件)?(强制)?更新$",
                     fnc: "update",
                 },
+                {
+                    reg: "^#?(kkkkkk|kkk)(插件)?下载资源$",
+                    fnc: "updateresources",
+                },
+
             ],
         });
     }
@@ -28,6 +33,7 @@ export class update extends plugin {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
             return `从 ${repoUrl} 成功克隆至 ${localPath}`;
         }
+        e.reply('正在下载kkkkkk-10086的资源文件')
 
         // 执行 git fetch 命令以获取远程分支变化
         await promisify(exec)(`git -C "${localPath}" fetch`);
