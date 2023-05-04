@@ -162,7 +162,7 @@ export class example extends plugin {
         .join('\n'); //使用换行符连接标签字符串
       xhs_data.push(`视频标签如下：\n\t\n${tags}`);
       xhs_data.push(`视频标题：${title}`)
-      xhs_data.push(`封面：${cover}`)
+      xhs_data.push('封面：\n\n' + segment.image(cover))
       logger.info(xhs_data);
       await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
 
