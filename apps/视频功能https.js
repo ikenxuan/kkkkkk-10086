@@ -147,7 +147,7 @@ export class example extends plugin {
       let cover = xhs_note_json.data.image_list[0].url //封面
       xhs_data.push(`视频标签如下：\n\t\n${tags}`);
       xhs_data.push(`视频标题：${xhs_title}`)
-      xhs_data.push('封面：\n\n' + segment.image(cover))
+      xhs_data.push(segment.image(cover))
       logger.info(xhs_data);
       await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
 
