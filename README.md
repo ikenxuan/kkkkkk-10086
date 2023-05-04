@@ -13,7 +13,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 
 # 此插件为本人自用 ！自用 ！ 自用 ！
-### 若使用TikHub API功能需先注册TikHub账号
+### 若使用TikHub API功能需先注册TikHub账号 (注意消耗次数)
 注册成功后将对应内容填写到
 
 `/plugins/kkkkkk-10086/config/account.yaml`
