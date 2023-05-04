@@ -133,11 +133,11 @@ export class example extends plugin {
     let tag = xhs_note_json.data.tag_list[i]?.name
     //logger.info(tag)
     xhs_tags.push(tag)
-    xhs_data.push(xhs_tags.join("\n"))
-    logger.warn(xhs_tags)
+    xhs_tags_text.push(xhs_tags.join("\n"))
+    //logger.warn(xhs_tags)
     logger.info(xhs_data)
     }
-    //xhs_data.push(xhs_tags.join("\n"))
+    xhs_data.push(xhs_tags_text)
 
     await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
   }
