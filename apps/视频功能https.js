@@ -128,7 +128,7 @@ export class example extends plugin {
     let image_data = await common.makeForwardMsg(e, imageres, '笔记图片')
     xhs_data.push(image_data)
 
-    let xhs_tags_res = []
+    /*let xhs_tags_res = []
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
       let tag = xhs_note_json.data.tag_list[i]?.name ?? '未知'
       if (tag) { // 检查 tag 是否是一个有效的字符串
@@ -137,8 +137,15 @@ export class example extends plugin {
     }
     let tags = xhs_tags_res.join("\n")
     xhs_data.push(tags)
-    logger.info(xhs_data)
-
+    logger.info(xhs_data)*/
+    let tagList = xhs_note_json.data.tag_list || [];
+    let tags = tagList
+      .filter((tag) => tag?.name) // 过滤掉没有 name 属性的元素
+      .map((tag) => `#${tag.name}`) // 将 name 映射到标签数组中
+      .join('\n'); // 使用换行符连接标签字符串
+    
+    xhs_data.push(tags);
+    logger.info(xhs_data);
     await e.reply(this.makeForwardMsg(e.user_id, xhs_title, interact_info, xhs_data))
   }
   //抖音----------------------------------------------------------------------------------
