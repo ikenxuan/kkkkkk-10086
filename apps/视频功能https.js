@@ -114,8 +114,8 @@ export class example extends plugin {
     let comment_count = xhs_note_json.data.interact_info.comment_count //评论
     let interact_info = (`这篇笔记有${liked_count}个赞，${collected_count}个收藏和${comment_count}条评论`)
     let xhs_comments_json = await xhs_comments_fetch.json();
-    xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
     let xhs_title = xhs_comments_json.data.title
+    xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
     let main_body = xhs_comments_json.data.desc
     xhs_data.push(`笔记正文内容：\n\t\n${main_body}`)
     // 遍历每个图片对象
