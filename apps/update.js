@@ -17,7 +17,7 @@ export class update extends plugin {
                     fnc: "update",
                 },
                 {
-                    reg: "^#?(kkkkkk|kkk)(插件)?下载资源$",
+                    reg: "^#?(kkkkkk|kkk|k)(插件)?(下载|更新|升级)资源$",
                     fnc: "updateresources",
                 },
 
@@ -31,10 +31,9 @@ export class update extends plugin {
         // 判断本地路径是否存在，如果不存在则执行 git clone 操作
         if (!fs.existsSync(localPath)) {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
-            return `从 ${repoUrl} 成功克隆至 ${localPath}`;
+            e.reply('kkkkkk-10086的资源文件下载成功！')
         }
-        e.reply('正在下载kkkkkk-10086的资源文件')
-
+        
         // 执行 git fetch 命令以获取远程分支变化
         await promisify(exec)(`git -C "${localPath}" fetch`);
 
@@ -51,7 +50,7 @@ export class update extends plugin {
             return `从 ${repoUrl} 成功更新至 ${localPath}`;
         }
 
-        return `${localPath} 目前已经是最新了`;
+        e.reply(`${localPath} 目前已经是最新了`);
     }
 
     // 使用示例

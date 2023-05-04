@@ -1,6 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import uploadRecord from '../model/uploadRecord.js';
-const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/语音盒'
+const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒'
 //鸡
 const ji = {
   "鸡": "j",
