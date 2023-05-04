@@ -108,17 +108,14 @@ export class example extends plugin {
     } else {
       logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
     }
-    let xhs_comments_json = await xhs_comments_fetch.json(); //这里是评论数据
+    let xhs_comments_json = await xhs_comments_fetch.json(); //这里是评论数据，待开工
 
     if (xhs_note_json.data.type === 'normal') { //这里判断类型，normal是笔记，video是视频
       //处理笔记部分
       let xhs_data = [] //总字符串
-      let liked_count = xhs_note_json.data.interact_info.liked_count //点赞
-      let collected_count = xhs_note_json.data.interact_info.collected_count //收藏
-      let comment_count = xhs_note_json.data.interact_info.comment_count //评论
-      let dz = count(liked_count)
-      let sc = count(collected_count)
-      let pl = count(comment_count)
+      let dz = count(xhs_note_json.data.interact_info.liked_count) //点赞
+      let sc = count(xhs_note_json.data.interact_info.collected_count) //收藏
+      let pl = count(xhs_note_json.data.interact_info.comment_count) //评论
       let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
 
       let xhs_title = xhs_note_json.data.title //笔记标题
@@ -145,12 +142,6 @@ export class example extends plugin {
     } else {
       //否则直接定义为视频
       let xhs_data = [] //总字符串
-      let liked_count = xhs_note_json.data.interact_info.liked_count //点赞
-      let collected_count = xhs_note_json.data.interact_info.collected_count //收藏
-      let comment_count = xhs_note_json.data.interact_info.comment_count //评论
-      let dz = count(liked_count)
-      let sc = count(collected_count)
-      let pl = count(comment_count)
       let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
       let title = xhs_note_json.data.title //标题
       let cover = xhs_note_json.data.image_list[0].url //封面
