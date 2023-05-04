@@ -54,6 +54,12 @@ export class update extends plugin {
 
     }
 
+    // 使用示例
+    //const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
+    //const localPath = path.join(__dirname, 'plugins', 'kkkkkk-10086', 'resources');
+
+
+
     async update() {
         if (!this.e.isMaster) return false;
         if (uping) {
