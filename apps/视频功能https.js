@@ -113,7 +113,10 @@ export class example extends plugin {
     let liked_count = xhs_note_json.data.interact_info.liked_count //点赞
     let collected_count = xhs_note_json.data.interact_info.collected_count //收藏
     let comment_count = xhs_note_json.data.interact_info.comment_count //评论
-    let interact_info = (`这篇笔记有${liked_count}个赞，${collected_count}个收藏和${comment_count}条评论`)
+    let dz = count(liked_count)
+    let sc = count(collected_count)
+    let pl = count(comment_count)
+    let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`)
     
     let xhs_title = xhs_note_json.data.title
     xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
@@ -125,7 +128,7 @@ export class example extends plugin {
       let image_url = xhs_note_json.data.image_list[i].url;
       imageres.push(segment.image(image_url))
     }
-    let image_data = await common.makeForwardMsg(e.user_id, imageres, '笔记图片')
+    let image_data = await common.makeForwardMsg(e, imageres, '笔记图片')
     xhs_data.push(image_data)
 
     let tagList = xhs_note_json.data.tag_list || [];
@@ -252,7 +255,7 @@ export class example extends plugin {
         let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
         let pldata = []
         pldata.push(pl_data)
-        let forpldata = await common.makeForwardMsg(e.user_id, pldata, '热门评论')
+        let forpldata = await common.makeForwardMsg(e, pldata, '热门评论')
         e.reply(segment.image(image_url))
         lbw.push(lbwtitle)
         lbw.push(forpldata)
@@ -263,7 +266,7 @@ export class example extends plugin {
         //先合并转发一次评论数据
         let image_pldata = []
         image_pldata.push(pl_data)
-        let image_forpldata = await common.makeForwardMsg(e.user_id, image_pldata, '热门评论')
+        let image_forpldata = await common.makeForwardMsg(e, image_pldata, '热门评论')
 
         //处理字符串(如果图鸡不是100张)
         let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
@@ -357,7 +360,7 @@ export class example extends plugin {
       let video_forpldata = []
       video_forpldata.push(video_pldata)
       //合并转发
-      let video_forwardmsg_pldata = await common.makeForwardMsg(e.user_id, pl_data, '热门评论')
+      let video_forwardmsg_pldata = await common.makeForwardMsg(e, pl_data, '热门评论')
       //然后再合并到res2字符串中等待再次转发(套娃)
       res2.push(video_forwardmsg_pldata)
       res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
