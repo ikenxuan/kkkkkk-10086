@@ -1,14 +1,14 @@
 import plugin from "../../../lib/plugins/plugin.js";
-import { createRequire } from "module";
 import lodash from "lodash";
+import fs from 'fs'
 import { Restart } from '../../other/restart.js'
-const require = createRequire(import.meta.url);
-const { exec, execSync } = require("child_process");
+import { exec, execSync } from "child_process";
+import { promisify } from "util";
 let uping = false;
 export class update extends plugin {
     constructor() {
         super({
-            name: "update",
+            name: "kkkkkk-10086",
             event: "message",
             priority: 1000,
             rule: [
@@ -16,10 +16,43 @@ export class update extends plugin {
                     reg: "^#?(kkkkkk|kkk)(插件)?(强制)?更新$",
                     fnc: "update",
                 },
+                {
+                    reg: "^#?(kkkkkk|kkk|k)(插件)?(下载|更新|升级)资源$",
+                    fnc: "updateresources",
+                },
+
             ],
         });
     }
+    async updateresources(e) {
+        const _path = process.cwd()
+        const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
+        const localPath = `${_path}/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources`
+        // 判断本地路径是否存在，如果不存在则执行 git clone 操作
+        if (!fs.existsSync(localPath)) {
+            await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
+            e.reply('kkkkkk-10086的资源文件下载成功！')
+        }
 
+        // 执行 git fetch 命令以获取远程分支变化
+        await promisify(exec)(`git -C "${localPath}" fetch`);
+
+        // 获取当前分支名称
+        const { stdout: branchName } = await promisify(exec)(`git -C "${localPath}" symbolic-ref --short HEAD`);
+
+        // 执行 git log 命令以获取最近一次提交的 SHA-1 值
+        const { stdout: remoteSha } = await promisify(exec)(`git -C "${localPath}" rev-parse origin/${branchName}`);
+        const { stdout: localSha } = await promisify(exec)(`git -C "${localPath}" rev-parse ${branchName}`);
+
+        // 判断本地分支是否是最新的，如果不是则执行 git pull 操作
+        if (remoteSha.trim() !== localSha.trim()) {
+            await promisify(exec)(`git -C "${localPath}" pull`);
+            e.reply(`从 ${repoUrl} 成功更新至 ${localPath}`);
+        } else {
+            e.reply(`${localPath} 目前已经是最新了`);
+        }
+
+    }
     async update() {
         if (!this.e.isMaster) return false;
         if (uping) {

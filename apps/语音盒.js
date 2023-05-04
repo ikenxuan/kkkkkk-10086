@@ -1,6 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import uploadRecord from '../model/uploadRecord.js';
-const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/语音盒'
+const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒'
 //鸡
 const ji = {
   "鸡": "j",
@@ -468,7 +468,7 @@ const syreg = new RegExp(`^(${Object.keys(sy).join("|")})$`)
 export class example extends plugin {
   constructor() {
     super({
-      name: '语音盒',
+      name: 'kkkkkk-10086',
       event: 'message',
       priority: 200,
       rule: [

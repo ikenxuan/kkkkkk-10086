@@ -7,11 +7,11 @@ import cfg from '../../../lib/config/config.js'
 export class gitupdate extends plugin{
     constructor(){
         super({
-            name:'检测仓库更新',
+            name:'kkkkkk-10086',
             dsc:'检测仓库更新',
             event:'message',
-            priority: 1,
-            rule:[
+            priority: 1234,
+            rule:[//cv清凉图（
                 {
                     reg:'^#?(订阅|删除)仓库$',
                     fnc:'add'

@@ -1,12 +1,12 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fs from 'node:fs'
-const xhz_path ='plugins/kkkkkk-10086/resources/鸽鸽的照片/'
+const xhz_path ='plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/鸽鸽的照片/'
 
 
 export class sjs extends plugin {
   constructor () {
     super({
-      name: '随机类游戏',
+      name: 'kkkkkk-10086',
       dsc: '随机类游戏',
       /** https://oicqjs.github.io/oicq/#events */
       event: 'message',
