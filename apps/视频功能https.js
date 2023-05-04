@@ -132,10 +132,10 @@ export class example extends plugin {
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
     let tag = xhs_note_json.data.tag_list[i]?.name
     //logger.info(tag)
-    xhs_tags.push(tag.join("\n"))
-    xhs_data.push(xhs_tags)
+    xhs_tags.push(tag)
+    xhs_data.push(xhs_tags.join("\n"))
     }
-    xhs_data.push(xhs_tags)
+    xhs_data.push(xhs_tags.join("\n"))
 
     await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
   }
