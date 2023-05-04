@@ -116,7 +116,6 @@ export class example extends plugin {
     let interact_info = (`这篇笔记有${liked_count}个赞，${collected_count}个收藏和${comment_count}条评论`)
     
     let xhs_title = xhs_note_json.data.title
-    logger.info(xhs_title)
     xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
     let main_body = xhs_note_json.data.desc
     xhs_data.push(`笔记正文内容：\n\t\n${main_body}`)
@@ -136,7 +135,7 @@ export class example extends plugin {
       .join('\n'); // 使用换行符连接标签字符串
     xhs_data.push(tags);
     logger.info(xhs_data);
-    await e.reply(this.makeForwardMsg(e.user_id, xhs_title, interact_info, xhs_data))
+    await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data))
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
@@ -615,6 +614,7 @@ export class example extends plugin {
   /**
  * 
  * @param {*} qq icqq信息
+ * @param {*} firsttitle 解析平台：？？？
  * @param {*} title xml标题
  * @param {*} msg 发送的内容
  * @returns 
