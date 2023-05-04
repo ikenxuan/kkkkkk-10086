@@ -109,18 +109,26 @@ export class example extends plugin {
       logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
     }
     let xhs_comments_json = await xhs_comments_fetch.json(); //这里是评论数据，待开工
-
+    //------------------------------------------------------------------------------------------------------------------------------------------------------
+    //这里是通用的先处理，避免代码重复
+    let dz = count(xhs_note_json.data.interact_info.liked_count) //点赞
+    let sc = count(xhs_note_json.data.interact_info.collected_count) //收藏
+    let pl = count(xhs_note_json.data.interact_info.comment_count) //评论
+    let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
+    let xhs_title = xhs_note_json.data.title //笔记标题
+    let main_body = xhs_note_json.data.desc //正文
+    //处理笔记tags
+    let tagList = xhs_note_json.data.tag_list || [];
+    let tags = tagList
+      .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
+      .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
+      .join('\n'); //使用换行符连接标签字符串
+      //-------------------------------------------------------------------------------------------------------------------------------------------------------
     if (xhs_note_json.data.type === 'normal') { //这里判断类型，normal是笔记，video是视频
       //处理笔记部分
       let xhs_data = [] //总字符串
-      let dz = count(xhs_note_json.data.interact_info.liked_count) //点赞
-      let sc = count(xhs_note_json.data.interact_info.collected_count) //收藏
-      let pl = count(xhs_note_json.data.interact_info.comment_count) //评论
-      let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
 
-      let xhs_title = xhs_note_json.data.title //笔记标题
       xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
-      let main_body = xhs_note_json.data.desc //正文
       xhs_data.push(`笔记正文内容：\n\t\n${main_body}`)
       // 遍历每个图片对象
       let imageres = [] //这里是图片数组
@@ -130,29 +138,15 @@ export class example extends plugin {
       }
       let image_data = await common.makeForwardMsg(e, imageres, '笔记图片') //先合并一次图片到xml卡片
       xhs_data.push(image_data)
-      //处理笔记tags
-      let tagList = xhs_note_json.data.tag_list || [];
-      let tags = tagList
-        .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
-        .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
-        .join('\n'); //使用换行符连接标签字符串
       xhs_data.push(`笔记标签如下：\n\t\n${tags}`);
       logger.info(xhs_data);
       await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
     } else {
       //否则直接定义为视频
       let xhs_data = [] //总字符串
-      let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
-      let title = xhs_note_json.data.title //标题
       let cover = xhs_note_json.data.image_list[0].url //封面
-      //处理笔记tags
-      let tagList = xhs_note_json.data.tag_list || [];
-      let tags = tagList
-        .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
-        .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
-        .join('\n'); //使用换行符连接标签字符串
       xhs_data.push(`视频标签如下：\n\t\n${tags}`);
-      xhs_data.push(`视频标题：${title}`)
+      xhs_data.push(`视频标题：${xhs_title}`)
       xhs_data.push('封面：\n\n' + segment.image(cover))
       logger.info(xhs_data);
       await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
@@ -599,7 +593,6 @@ export class example extends plugin {
     return true
   }
   async getnumber(e) {
-    //接口1获取账号token
     let headers = {
       "accept": "application/json",
       "Content-type": "application/x-www-form-urlencoded",
@@ -635,12 +628,13 @@ export class example extends plugin {
     })
     //logger.mark(notedayjson);
     if (notedayjson.status === true) {
-      logger.info(notedayjson.message)
+      notedayjson.message = responsesuccess
+      logger.info(responsesuccess)
 
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
     }
-    e.reply('请求成功，该token拥有365天有效期')
+    e.reply(`刷新token成功，${responsesuccess}`)
 
   }
 
