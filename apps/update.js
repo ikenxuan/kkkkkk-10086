@@ -53,7 +53,6 @@ export class update extends plugin {
         }
 
     }
-
     async update() {
         if (!this.e.isMaster) return false;
         if (uping) {
