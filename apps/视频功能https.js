@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
-import url from 'url'
 import fs from "fs";
 import YAML from "yaml"
 import common from '../../../lib/common/common.js';
@@ -109,15 +108,30 @@ export class example extends plugin {
     } else {
       logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
     }
+    let xhs_data = []
+    let liked_count = xhs_note_json.data.interact_info.liked_count //点赞
+    let collected_count = xhs_note_json.data.interact_info.collected_count //收藏
+    let comment_count = xhs_note_json.data.interact_info.comment_count //评论
+    let interact_info = (`这篇笔记有${liked_count}个赞，${collected_count}个收藏和${comment_count}条评论`)
     let xhs_comments_json = await xhs_comments_fetch.json();
-
+    xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
+    let xhs_title = xhs_comments_json.data.title
+    let main_body = xhs_comments_json.data.desc
+    xhs_data.push(`笔记正文内容：\n\t\n${main_body}`)
     // 遍历每个图片对象
     let imageres = []
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
       let image_url = xhs_note_json.data.image_list[i].url;
       imageres.push(segment.image(image_url))
     }
-    await e.reply(await common.makeForwardMsg(e, imageres, '小红书笔记解析'))
+    let image_data = await common.makeForwardMsg(e, imageres, '笔记图片')
+    xhs_data.push(image_data)
+    for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
+    let xhs_tag = xhs_comments_json.data.tag_list[i].name
+    let xhs_tags = xhs_tag.join('\n')
+    xhs_data.push(xhs_tags)
+    }
+    await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
