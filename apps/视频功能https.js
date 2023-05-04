@@ -103,7 +103,7 @@ export class example extends plugin {
     })
     let xhs_note_json = await xhs_fetch.json();
     if (xhs_note_json.hasOwnProperty('detail') || xhs_note_json.detail?.status === false) {
-      logger.error(logger.red(`请尝试获取新的TikHub账号！因为${data.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing' + '购买额外请求次数或者' + logger.green('注册新账号')));
+      logger.error(logger.red(`请尝试获取新的TikHub账号！因为${xhs_note_json.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing' + '购买额外请求次数或者' + logger.green('注册新账号')));
       return true;
     } else {
       logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
