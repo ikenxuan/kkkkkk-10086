@@ -139,7 +139,7 @@ export class example extends plugin {
     }
     xhs_data.push(xhs_tags_text)
 
-    await this.makeForwardMsg(e, xhs_title, interact_info, xhs_data)
+    await e.reply(this.makeForwardMsg(e, xhs_title, interact_info, xhs_data))
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
