@@ -27,7 +27,7 @@ export class update extends plugin {
     async updateresources(e) {
         const _path = process.cwd()
         const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
-        const localPath = _path.join(__dirname, 'plugins', 'kkkkkk-10086', 'resources');
+        const localPath = _path.join(_path.dirname(module.parent.filename), 'plugins', 'kkkkkk-10086', 'resources');
         // 判断本地路径是否存在，如果不存在则执行 git clone 操作
         if (!fs.existsSync(localPath)) {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
