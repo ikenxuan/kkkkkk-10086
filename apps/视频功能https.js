@@ -129,10 +129,11 @@ export class example extends plugin {
     xhs_data.push(image_data)
 
     let xhs_tags_res = []
-    
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
-    let tag = xhs_note_json.data.tag_list[i]?.name
-    xhs_tags_res.push(`#${tag}`)
+      let tag = xhs_note_json.data.tag_list[i]?.name ?? '未知'
+      if (tag) { // 检查 tag 是否是一个有效的字符串
+        xhs_tags_res.push(`#${tag}`)
+      }
     }
     let tags = xhs_tags_res.join("\n")
     xhs_data.push(tags)
@@ -599,7 +600,7 @@ export class example extends plugin {
       headers: headers2
     });
     let notedayjson = await noteday.json();
-    await fetch (`https://api.tikhub.io/promotion/claim?promotion_id=1`, {
+    await fetch(`https://api.tikhub.io/promotion/claim?promotion_id=1`, {
       method: "GET",
       headers: headers2
     })
