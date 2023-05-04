@@ -128,20 +128,16 @@ export class example extends plugin {
     let image_data = await common.makeForwardMsg(e, imageres, '笔记图片')
     xhs_data.push(image_data)
 
-    let xhs_tags = []
     let xhs_tags_res = []
     
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
     let tag = xhs_note_json.data.tag_list[i]?.name
     xhs_tags_res.push(`#${tag}`)
     let tags = xhs_tags_res.join("\n")
-    
-    
-    
-    }
-    //xhs_tags.push(tags)
     xhs_data.push(tags)
     logger.info(xhs_data)
+    }
+  
     await e.reply(this.makeForwardMsg(e, xhs_title, interact_info, xhs_data))
   }
   //抖音----------------------------------------------------------------------------------
