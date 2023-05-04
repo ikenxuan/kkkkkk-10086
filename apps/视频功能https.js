@@ -628,9 +628,8 @@ export class example extends plugin {
     })
     //logger.mark(notedayjson);
     if (notedayjson.status === true) {
-      notedayjson.message = responsesuccess
-      logger.info(responsesuccess)
-      e.reply(`刷新token成功，${responsesuccess}`)
+      logger.info(notedayjson.status)
+      e.reply(`刷新token成功，${notedayjson.status}`)
     } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
       logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
     }
