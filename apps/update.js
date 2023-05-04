@@ -19,6 +19,40 @@ export class update extends plugin {
             ],
         });
     }
+    async updateresources(e) {
+        const _path = process.cwd()
+        const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
+        const localPath = _path.join(__dirname, 'plugins', 'kkkkkk-10086', 'resources');
+        // 判断本地路径是否存在，如果不存在则执行 git clone 操作
+        if (!fs.existsSync(localPath)) {
+            await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
+            return `从 ${repoUrl} 成功克隆至 ${localPath}`;
+        }
+
+        // 执行 git fetch 命令以获取远程分支变化
+        await promisify(exec)(`git -C "${localPath}" fetch`);
+
+        // 获取当前分支名称
+        const { stdout: branchName } = await promisify(exec)(`git -C "${localPath}" symbolic-ref --short HEAD`);
+
+        // 执行 git log 命令以获取最近一次提交的 SHA-1 值
+        const { stdout: remoteSha } = await promisify(exec)(`git -C "${localPath}" rev-parse origin/${branchName}`);
+        const { stdout: localSha } = await promisify(exec)(`git -C "${localPath}" rev-parse ${branchName}`);
+
+        // 判断本地分支是否是最新的，如果不是则执行 git pull 操作
+        if (remoteSha.trim() !== localSha.trim()) {
+            await promisify(exec)(`git -C "${localPath}" pull`);
+            return `从 ${repoUrl} 成功更新至 ${localPath}`;
+        }
+
+        return `${localPath} 目前已经是最新了`;
+    }
+
+    // 使用示例
+    //const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
+    //const localPath = path.join(__dirname, 'plugins', 'kkkkkk-10086', 'resources');
+
+
 
     async update() {
         if (!this.e.isMaster) return false;
