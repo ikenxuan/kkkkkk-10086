@@ -129,6 +129,7 @@ export class example extends plugin {
     let xhs_tags = []
     for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
     let tag = xhs_note_json.data.tag_list[i].name
+    logger.info(tag)
     //let xhs_tag = tag.join("\n")
     xhs_tags.push(tag)
     }
