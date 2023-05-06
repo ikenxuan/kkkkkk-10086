@@ -17,15 +17,15 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 <details>
   <summary>#语音盒</summary>
 
-`#鸡音盒`
+`鸡音盒`
 
-`#丁真盒`
+`丁真盒`
 
-`#鸡汤盒`
+`鸡汤盒`
 
-`#耀阳盒`
+`耀阳盒`
 
-`#神鹰盒`
+`神鹰盒`
 </details>
 
 
