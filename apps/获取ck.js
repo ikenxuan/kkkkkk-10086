@@ -18,7 +18,6 @@ export class anzhuohuoquck extends plugin {
             ]
         })
     }
-
     async anzhuogetckhelp(e) {
         let msg = [
             segment.at(e.sender.user_id),
