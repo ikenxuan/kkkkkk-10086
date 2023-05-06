@@ -29,7 +29,7 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 </details>
 
 
-### 若使用TikHub API功能需先注册TikHub账号 (注意消耗次数)
+### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
 注册成功后将对应内容填写到
 
 `/plugins/kkkkkk-10086/config/account.yaml`
