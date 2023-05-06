@@ -2,9 +2,9 @@ import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import fs from "fs";
 import YAML from "yaml"
+import tikhub from '../model/tikhub.js';
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
-//import token from '../config/token.json'
 const _path = process.cwd()
 let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -56,15 +56,20 @@ export class example extends plugin {
 
         {
           reg: '^#获取token$',
+          fnc: 'gettoken'
+        },
+        {
+          reg: '^#tikhub签到$',
           fnc: 'getnumber'
         },
+
 
       ]
     })
     this.task = {
       cron: '0 0 0 * * ?',
       name: '视频解析签到获取次数',
-      fnc: () => this.getnumber()
+      fnc: () => this.tikhub.getnumber()
     }
   }
   //小红书---------------------------------------------------------------------------------------------------------------
@@ -123,7 +128,7 @@ export class example extends plugin {
       .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
       .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
       .join('\n'); //使用换行符连接标签字符串
-      //-------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
     if (xhs_note_json.data.type === 'normal') { //这里判断类型，normal是笔记，video是视频
       //处理笔记部分
       let xhs_data = [] //总字符串
@@ -169,6 +174,9 @@ export class example extends plugin {
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
+    let dydata = await tikhub.douyin()
+    console.log(JSON.stringify(dydata))
+    return
     let token = AccountFile.access_token
     let headers = {
       "accept": "application/json",
@@ -592,49 +600,18 @@ export class example extends plugin {
     }
     return true
   }
-  async getnumber(e) {
-    let headers = {
-      "accept": "application/json",
-      "Content-type": "application/x-www-form-urlencoded",
+  async gettoken(e) {
+    if (e.master) {
+      return true
     }
-    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
-      method: "POST",
-      headers,
-      body
-    })
-    //返回账号token
-    let tokendata = await vdata.json();
-    //logger.mark(tokendata)
-    let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
-    let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
-    // 将获取到的 access_token 写入 doc 对象，并写回到文件中
-    doc.access_token = tokendata.access_token;
-    fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8');
-    let access_token = doc.access_token;
-    let headers2 = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    }
-
-    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-      method: "GET",
-      headers: headers2
-    });
-    let notedayjson = await noteday.json();
-    await fetch(`https://api.tikhub.io/promotion/claim?promotion_id=1`, {
-      method: "GET",
-      headers: headers2
-    })
-    //logger.mark(notedayjson);
-    if (notedayjson.status === true) {
-      logger.info(notedayjson.status)
-      e.reply(`刷新token成功，${notedayjson.status}`)
-    } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
-      logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
-    }
-    
+    let message = await tikhub.gettoken()
+    e.reply(message)
   }
+  async getnumber() {
+    let message = await tikhub.getnumber()
+    e.reply(message)
+  }
+
 
   /**
  * 

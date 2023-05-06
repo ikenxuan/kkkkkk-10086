@@ -1,6 +1,3 @@
-#账号
-account: ""
-#密码
-password: ""
-#token
+account: 
+password: 
 access_token: 
