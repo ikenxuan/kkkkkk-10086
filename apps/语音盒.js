@@ -152,7 +152,11 @@ const ji2 = {
   "铃芽之旅": "lyzl",
   "walk thrn kun": "walkthrnkun",
   "good time": "goodtime",
-  "寄明月": "jmy"
+  "寄明月": "jmy",
+  "只因种花": "jiflower",
+  "鸡distance": "jidistance",
+  "哇什么情况": "whathappend",
+  "浮夸": "fukua"
 
 }
 //丁真
@@ -265,6 +269,8 @@ const dz2 = {
   "i got smoke": "104",
   "smoke boy": "105",
   "zood": "106",
+  "烟": "107",
+  "烟distance": "107",
 }
 //鸡汤
 const jitang = {
@@ -507,27 +513,27 @@ export class example extends plugin {
         },
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------        
         {
-          reg: "^(丁真)|(dz)盒$",
+          reg: "^#?(丁真)|(dz)盒$",
           fnc: 'dzhelp'
         },
         {
-          reg: "^鸡(音|乐)盒$",
+          reg: "^#?鸡(音|乐)盒$",
           fnc: 'jihelp'
         },
         {
-          reg: "^(鸡汤)|(jt)盒$",
+          reg: "^#?(鸡汤)|(jt)盒$",
           fnc: 'jitanghelp'
         },
         {
-          reg: "^(耀阳)|(yy)盒$",
+          reg: "^#?(耀阳)|(yy)盒$",
           fnc: 'yyhelp'
         },
         {
-          reg: "^(神鹰)|(sy)盒$",
+          reg: "^#?(神鹰)|(sy)盒$",
           fnc: 'syhelp'
         },
         {
-          reg: "^语音盒$",
+          reg: "^#?语音盒$",
           fnc: 'help'
         }
       ]
