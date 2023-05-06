@@ -13,19 +13,19 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 ### 语音盒额外歌曲
-使用`#kkk下载资源`下载所有歌曲资源，大多都是坤坤盒丁真的(如果有需要)
+使用`#kkk下载/升级资源`下载或升级所有歌曲资源，大多都是坤坤盒丁真的(如果有需要)
 <details>
   <summary>语音盒</summary>
 
-`鸡音盒`
+鸡音盒
 
-`丁真盒`
+丁真盒
 
-`鸡汤盒`
+鸡汤盒
 
-`耀阳盒`
+耀阳盒
 
-`神鹰盒`
+神鹰盒
 </details>
 
 
