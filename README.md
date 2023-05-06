@@ -15,7 +15,7 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 ### 语音盒额外歌曲
 使用`#kkk下载资源`下载所有歌曲资源，大多都是坤坤盒丁真的(如果有需要)
 <details>
-  <summary>#语音盒</summary>
+  <summary>语音盒</summary>
 
 `鸡音盒`
 
