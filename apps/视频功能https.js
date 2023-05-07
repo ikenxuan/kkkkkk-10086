@@ -1,20 +1,11 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import fs from "fs";
-import YAML from "yaml"
 import tikhub from '../model/tikhub.js';
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
 const _path = process.cwd()
-let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
-const file = fs.readFileSync(accountfile, 'utf-8')
-const AccountFile = YAML.parse(file)
-const username = AccountFile.account //账号
-const password = AccountFile.password //密码
-//console.log(`账号：${username}\n密码：${password}`)
-//必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
- * 
  * @param {*} count 过万整除
  * @returns 
  */
@@ -52,8 +43,6 @@ export class example extends plugin {
           reg: '^((.*)xhslink.com(.*))$',
           fnc: 'xhs'
         },
-
-
         {
           reg: '^#获取token$',
           fnc: 'gettoken'
@@ -174,16 +163,17 @@ export class example extends plugin {
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
-    let dydata = await tikhub.douyin()
-    console.log(JSON.stringify(dydata))
-    return
+    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
+    let URL = e.toString().match(regexp);
+    logger.info(`链接：${URL}`)
+    let dydata = await tikhub.douyin(URL)
+    console.log(dydata)
+    return true
     let token = AccountFile.access_token
     let headers = {
       "accept": "application/json",
       "Authorization": `Bearer ${token}`,
     }
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let URL = e.toString().match(regexp);
     //完整视频数据(接口2)
     let sharedata = await fetch(`https://api.tikhub.io/douyin/video_data/?douyin_video_url=${URL}&language=zh`, {
       method: "GET",

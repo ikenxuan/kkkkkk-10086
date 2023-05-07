@@ -1,36 +1,32 @@
 import fetch from "node-fetch"
 import fs from 'fs'
-import YAML from 'yaml'
 const _path = process.cwd()
-let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
+const accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`
 const file = fs.readFileSync(accountfile, 'utf-8')
-const AccountFile = YAML.parse(file)
+const AccountFile = JSON.parse(file)
 const username = AccountFile.account //账号
 const password = AccountFile.password //密码
 
-
+/**
+ * 
+ * @param {*} url 提取后的链接
+ * @returns 
+ */
 async function douyin(url) {
   const api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
   const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
   let api_v1_josn = await fetch(api_v1, {
     method: 'GET',
     headers: {
-      redirect: 'follow',
-      headers: {
         "accept": "application/json",
         "Content-type": "application/x-www-form-urlencoded",
-      }
     }
   })
   let api_v2_json = await fetch(api_v2, {
     method: 'GET',
     headers: {
-      redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
         "accept": "application/json",
         "Authorization": `Bearer ${AccountFile.access_token}`,
-      }
     }
   })
   let data_v1_json = await api_v1_josn.json()
@@ -54,11 +50,11 @@ async function gettoken() {
   //返回账号token
   let tokendata = await vdata.json();
   //logger.mark(tokendata)
-  let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
-  let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
+  let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
+  let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
   // 将获取到的 access_token 写入 doc 对象，并写回到文件中
   doc.access_token = tokendata.access_token;
-  fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8')
+  fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
   await getnumber()
   return ('刷新token成功，该token拥有365天有效期')
 }
