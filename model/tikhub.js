@@ -45,7 +45,7 @@ async function douyin(url) {
 async function get_dy_data (dydata) {
   let data_v1_json = dydata.data
   let message = data_v1_json.message
-  return message
+  return JSON.stringify(data_v1_json)
 }
 async function gettoken() {
   let headers = {
