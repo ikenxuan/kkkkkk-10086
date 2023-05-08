@@ -31,10 +31,16 @@ async function douyin(url) {
   })
   let data_v1_json = await api_v1_josn.json()
   let data_v2_json = await api_v2_json.json()
+  let result = {}
   if (data_v2_json.hasOwnProperty('detail') || data_v2_json.detail?.status === false) {
-    //logger.error(logger.red(`请尝试获取新的TikHub账号！因为${data_v2_json.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing ' + ' 购买额外请求次数或者' + logger.green('注册新账号')))
-    return data_v1_json
-  } else return data_v2_json
+    logger.error(logger.red(`请尝试获取新的TikHub账号！因为${data_v2_json.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing ' + ' 购买额外请求次数或者' + logger.green('注册新账号')))
+    result.data = data_v1_json
+    result.status = 1
+  } else {
+    result.data = data_v2_json
+    result.status = 2
+  }
+  return result
 }
 async function gettoken() {
   let headers = {

@@ -167,7 +167,12 @@ export class example extends plugin {
     let URL = e.toString().match(regexp);
     logger.info(`链接：${URL}`)
     let dydata = await tikhub.douyin(URL)
-    console.log(dydata)
+    if (dydata.status === 1) {
+      logger.info('使用了 v1 版本的 API')
+    } else if (dydata.status === 2) {
+      logger.info('使用了 v2 版本的 API')
+    }
+    console.log(dydata.data)
     return true
     let token = AccountFile.access_token
     let headers = {
