@@ -1,4 +1,4 @@
-# kkkkkk-10086
+# kkkkkk-10086 正在小重构中
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
 ###### 没骗你，真没学过js
 ## 安装
