@@ -172,7 +172,8 @@ export class example extends plugin {
     } else if (dydata.status === 2) {
       logger.info('使用了 v2 版本的 API')
     }
-    console.log(dydata.data)
+    let message = await tikhub.get_dy_data(dydata) // 将数据传递给 get_dy_data 函数，并等待返回结果
+    console.log(message)
     return true
     let token = AccountFile.access_token
     let headers = {
