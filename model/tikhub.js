@@ -42,6 +42,11 @@ async function douyin(url) {
   }
   return result
 }
+async function get_dy_data (dydata) {
+  let data_v1_json = dydata.data
+  let message = data_v1_json.message
+  return message
+}
 async function gettoken() {
   let headers = {
     "accept": "application/json",
@@ -93,5 +98,6 @@ export default {
   douyin,
   getnumber,
   gettoken,
+  get_dy_data,
 }
 
