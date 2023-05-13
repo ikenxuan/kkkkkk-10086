@@ -1,20 +1,12 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import fs from "fs";
-import YAML from "yaml"
+import tikhub from '../model/tikhub.js';
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
-//import token from '../config/token.json'
+import TikHub from '../model/tikhub.js';
 const _path = process.cwd()
-let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`
-const file = fs.readFileSync(accountfile, 'utf-8')
-const AccountFile = YAML.parse(file)
-const username = AccountFile.account //账号
-const password = AccountFile.password //密码
-//console.log(`账号：${username}\n密码：${password}`)
-//必须！到https://api.tikhub.io/注册账号（首页Authorization板块->Register User），注册成功后账号密码填在插件文件夹下的config/account.yaml
 /**
- * 
  * @param {*} count 过万整除
  * @returns 
  */
@@ -52,22 +44,63 @@ export class example extends plugin {
           reg: '^((.*)xhslink.com(.*))$',
           fnc: 'xhs'
         },
-
-
         {
           reg: '^#获取token$',
+          fnc: 'gettoken'
+        },
+        {
+          reg: '^#tikhub签到$',
           fnc: 'getnumber'
         },
+
 
       ]
     })
     this.task = {
       cron: '0 0 0 * * ?',
       name: '视频解析签到获取次数',
-      fnc: () => this.getnumber()
+      fnc: () => this.tikhub.getnumber() 
     }
   }
-  //小红书---------------------------------------------------------------------------------------------------------------
+  //抖音----------------------------------------------------------------------------------
+  async douy(e) {
+    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
+    let URL = e.toString().match(regexp);
+    let tikhub = new TikHub(this.e)
+    let dydata = await tikhub.douyin(URL)
+    await tikhub.gettype(dydata.tik_status, dydata.is_mp4, dydata)
+    return true
+  }
+
+
+
+  //tiktok------------------------------------------------------------------------------------------
+  async Tiktok(e) {
+    //JS 正则匹配 URL
+    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
+    let mr = e.msg.replace("Tiktok", "").trim();
+    let nrymsg = await fetch(`https://api.douyin.wtf/api?url=${mr}`, {
+      method: "GET"
+    });
+    let data = await nrymsg.json();
+    let qiy = {
+      "Server": "CWAP-waf",
+      "Content-Type": "video/mp4",
+    }
+
+    let mp4 = await fetch(`${data.video_data.nwm_video_url_HQ}`, { method: "get", headers: qiy });
+    e.reply([`发现Tik Tok分享...\n正在读取 URL...`]);
+    let lopp = await mp4.buffer();
+    let path = `${_path}/plugins/example/记录/video/Tiktok.mp4`;
+    fs.writeFile(path, lopp, "binary", function (err) {
+      if (!err) {
+        // 下载视频成功
+        e.reply([segment.video(path)]);
+        console.log("视频下载成功");
+      }
+      return true
+    })
+  }
   async xhs(e) {
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
@@ -123,7 +156,7 @@ export class example extends plugin {
       .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
       .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
       .join('\n'); //使用换行符连接标签字符串
-      //-------------------------------------------------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
     if (xhs_note_json.data.type === 'normal') { //这里判断类型，normal是笔记，video是视频
       //处理笔记部分
       let xhs_data = [] //总字符串
@@ -166,276 +199,6 @@ export class example extends plugin {
         return false
       })
     }
-  }
-  //抖音----------------------------------------------------------------------------------
-  async douy(e) {
-    let token = AccountFile.access_token
-    let headers = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${token}`,
-    }
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let URL = e.toString().match(regexp);
-    //完整视频数据(接口2)
-    let sharedata = await fetch(`https://api.tikhub.io/douyin/video_data/?douyin_video_url=${URL}&language=zh`, {
-      method: "GET",
-      headers: headers
-    })
-    let data = await sharedata.json();
-    //logger.info(data)
-    if (data.hasOwnProperty('detail') || data.detail?.status === false) {
-      logger.error(logger.red(`请尝试获取新的TikHub账号！因为${data.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing ' + ' 购买额外请求次数或者' + logger.green('注册新账号')));
-      return true;
-    } else {
-      logger.info('TikHub API' + logger.green('请求成功') + '，正在获取视频：' + logger.yellow(URL) + '的数据')
-    }
-    //接口1(评论数据)
-    let comments_data = await fetch(`https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${URL}&cursor=0&count=100&language=zh`, {
-      method: "GET",
-      headers: headers
-    })
-    let comments = await comments_data.json();
-    // 先把评论数据抽出来-----------------------------------------------------------------------------------------------------------------------------------------------------
-    let pl_data = []
-    if (comments && comments.comments_list) {
-      let comments_list = comments.comments_list.slice(0, 15);
-      let video_dz = []
-      for (let i = 0; i < comments_list.length; i++) {
-        let text = comments_list[i].text;
-        let ip = comments_list[i].ip_label;
-        let digg_count = comments_list[i].digg_count;
-        if (digg_count > 10000) {
-          digg_count = (digg_count / 10000).toFixed(1) + "w"
-        }
-        video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-      }
-      let dz_text = video_dz.join("\n\n\n")
-      pl_data.push(`🔥热门评论🔥\n${dz_text}`)
-    } else {
-      pl_data.push("评论数据获取失败")
-    }
-    //提取图集数据---------------------------------------------------------------------------------------------------------------------------------------------------------------
-    if (data.aweme_list[0].video.bit_rate.length === 0) {
-      let res = []
-      if (data.aweme_list[0].images[0].url_list[0] === undefined) {
-        e.reply("请求错误，请再试一次...")
-        return
-      }
-      //定位标题
-      let bt = data.aweme_list[0].desc
-      //作者头像
-      let tx = data.aweme_list[0].author.avatar_thumb.url_list[0]
-      //作者名称
-      let name = data.aweme_list[0].author.nickname
-      //BGM名字
-      let BGMname = data.aweme_list[0].music.title
-      //视频点赞、评论、分享、收藏
-      let dz = data.aweme_list[0].statistics.digg_count
-      let pl = data.aweme_list[0].statistics.comment_count
-      let fx = data.aweme_list[0].statistics.share_count
-      let sc = data.aweme_list[0].statistics.collect_count
-      dz = count(dz)
-      pl = count(pl)
-      fx = count(fx)
-      sc = count(sc)
-      let xmltitle = (`该图集被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
-      //抖音号
-      let dyid;
-      if (data.aweme_list[0].author.unique_id === "") {
-        if (data.aweme_list[0].author.short_id === "") {
-          dyid = "找不到他/她的抖音ID"
-        } else {
-          dyid = data.aweme_list[0].author.short_id;
-        }
-      } else {
-        dyid = data.aweme_list[0].author.unique_id;
-      }
-      //BGM直链
-      let music = data.aweme_list[0].music.play_url.uri
-      let cause = data.aweme_list[0].music.offline_desc
-      let imagenum = 0 //记录图片数量
-      //遍历图片数量
-      let imgarr = []
-      for (let i = 0; i < data.aweme_list.length; i++) {
-        let aweme_list = data.aweme_list[i];
-        for (let j = 0; j < aweme_list.images.length; j++) {
-          //图片链接
-          let image_url = aweme_list.images[j].url_list[0];
-          imgarr.push(segment.image(image_url));
-          imagenum++
-          if (imagenum >= 100) { //数量达到100跳出循环
-            break
-          }
-        }
-        if (imagenum >= 100) { //数量达到100跳出循环
-          break
-        }
-      }
-      if (imagenum === 100) {
-        let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res)
-        await this.e.reply(msg)
-      } else if (imagenum === 1) {
-        let lbw = []
-        let image_url = data.aweme_list[0].images[0].url_list[0];
-        let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
-        //let lbwbody = pl_data
-        let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-        let pldata = []
-        pldata.push(pl_data)
-        let forpldata = await common.makeForwardMsg(e, pldata, '热门评论')
-        e.reply(segment.image(image_url))
-        lbw.push(lbwtitle)
-        lbw.push(forpldata)
-        lbw.push(lbwtial)
-        await this.e.reply(await this.makeForwardMsg(e.user_id, "抖音", xmltitle, lbw))
-      }
-      else {
-        //先合并转发一次评论数据
-        let image_pldata = []
-        image_pldata.push(pl_data)
-        let image_forpldata = await common.makeForwardMsg(e, image_pldata, '热门评论')
-
-        //处理字符串(如果图鸡不是100张)
-        let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
-        //concat重新排列
-        let resarr = textarr.concat(imgarr).concat(image_forpldata).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-        //logger.mark(resarr)
-        //制作合并转发消息
-        let msg = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, resarr)
-        await this.e.reply(msg)
-      }
-      //如果音频直链为空
-      if (!music) {
-        e.reply(`无法上传，原因：${cause}`, false)
-        return
-      } else {
-        //发送高清语音
-        console.log(`音频直链${music}${cause}`)
-        e.reply(await uploadRecord(music, 0, false))
-      }
-    }
-    //获取视频数据---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    else {
-      let qiy = {
-        "Server": "CWAP-waf",
-        "Content-Type": "video/mp4",
-      }
-      let mp4 = await fetch(`${data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]}`, { method: "get", headers: qiy });
-      let res2 = []
-      let basic = "Successfully processed, please wait for video upload"
-      //标题
-      let bt = data.aweme_list[0].desc
-      //抖音头像
-      let tx = data.aweme_list[0].author.avatar_thumb.url_list[0]
-      //作者名称
-      let name = data.aweme_list[0].author.nickname
-      //BGM名字
-      let BGMname = data.aweme_list[0].music.title
-      //抖音号
-      //let dyid = data.author.unique_id
-      let dyid;
-      if (data.aweme_list[0].author.unique_id === "") {
-        if (data.aweme_list[0].author.short_id === "") {
-          dyid = "找不到他/她的抖音ID"
-        } else {
-          dyid = data.aweme_list[0].author.short_id;
-        }
-      } else {
-        dyid = data.aweme_list[0].author.unique_id;
-      }
-      //视频点赞、评论、分享、收藏
-      let dz = data.aweme_list[0].statistics.digg_count
-      let pl = data.aweme_list[0].statistics.comment_count
-      let fx = data.aweme_list[0].statistics.share_count
-      let sc = data.aweme_list[0].statistics.collect_count
-      dz = count(dz)
-      pl = count(pl)
-      fx = count(fx)
-      sc = count(sc)
-      let xmltitle = (`该被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
-      //BGM地址
-      let music = data.aweme_list[0].music.play_url.uri
-      let cause = data.aweme_list[0].music.offline_desc
-      //视频封面
-      //let cover = data.cover_data.dynamic_cover.url_list[0]
-      //视频直链
-      let video = data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
-      //处理基本信息
-      res2.push(basic)
-      res2.push(`抖音号：${dyid}【${name}的视频作品】`)
-      res2.push(`视频标题：${bt}`)
-      res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
-      //处理评论数据(所有评论数据合并成一个字符串先)
-      let video_pldata = []
-      if (comments && comments.comments_list) {
-        let comments_list = comments.comments_list.slice(0, 80);
-        let video_dz = []
-        for (let i = 0; i < comments_list.length; i++) {
-          let text = comments_list[i].text;
-          let ip = comments_list[i].ip_label;
-          let digg_count = comments_list[i].digg_count;
-          digg_count = count(digg_count)
-          video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-        }
-        let dz_text = video_dz.join("\n\n\n")
-        video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
-      } else {
-        video_pldata.push("评论数据获取失败")
-      }
-      //来到这先转发一次评论数据，然后再套娃到最终的合并转发消息中去
-      //一个新的字符串，用来转发评论数据(pldata)
-      let video_forpldata = []
-      video_forpldata.push(video_pldata)
-      //合并转发
-      let video_forwardmsg_pldata = await common.makeForwardMsg(e, pl_data, '热门评论')
-      //然后再合并到res2字符串中等待再次转发(套娃)
-      res2.push(video_forwardmsg_pldata)
-      res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-      //res2.push(`视频封面：${cover}`)
-      //logger.mark(res2)
-      let video_data = await this.makeForwardMsg(e.user_id, "抖音", xmltitle, res2)
-      await this.e.reply(video_data)
-      console.log("视频直链：", video)
-      let a = await mp4.buffer();
-      let path = `${_path}/plugins/example/douyin.mp4`;
-      fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          e.reply([segment.video(path)]);
-          console.log("视频下载成功");
-        }
-        return false
-      })
-    }
-  }
-
-
-
-  //tiktok------------------------------------------------------------------------------------------
-  async Tiktok(e) {
-    //JS 正则匹配 URL
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let mr = e.msg.replace("Tiktok", "").trim();
-    let nrymsg = await fetch(`https://api.douyin.wtf/api?url=${mr}`, {
-      method: "GET"
-    });
-    let data = await nrymsg.json();
-    let qiy = {
-      "Server": "CWAP-waf",
-      "Content-Type": "video/mp4",
-    }
-
-    let mp4 = await fetch(`${data.video_data.nwm_video_url_HQ}`, { method: "get", headers: qiy });
-    e.reply([`发现Tik Tok分享...\n正在读取 URL...`]);
-    let lopp = await mp4.buffer();
-    let path = `${_path}/plugins/example/记录/video/Tiktok.mp4`;
-    fs.writeFile(path, lopp, "binary", function (err) {
-      if (!err) {
-        // 下载视频成功
-        e.reply([segment.video(path)]);
-        console.log("视频下载成功");
-      }
-      return true
-    })
   }
 
   //--------快手-------------------------------------------------------------------------------------------------
@@ -592,49 +355,20 @@ export class example extends plugin {
     }
     return true
   }
-  async getnumber(e) {
-    let headers = {
-      "accept": "application/json",
-      "Content-type": "application/x-www-form-urlencoded",
+  async gettoken(e) {
+    if (e.master) {
+      return true
     }
-    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
-      method: "POST",
-      headers,
-      body
-    })
-    //返回账号token
-    let tokendata = await vdata.json();
-    //logger.mark(tokendata)
-    let accountfile = `${_path}/plugins/kkkkkk-10086/config/account.yaml`;
-    let doc = YAML.parse(fs.readFileSync(accountfile, 'utf8'));
-    // 将获取到的 access_token 写入 doc 对象，并写回到文件中
-    doc.access_token = tokendata.access_token;
-    fs.writeFileSync(accountfile, YAML.stringify(doc), 'utf8');
-    let access_token = doc.access_token;
-    let headers2 = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    }
-
-    let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
-      method: "GET",
-      headers: headers2
-    });
-    let notedayjson = await noteday.json();
-    await fetch(`https://api.tikhub.io/promotion/claim?promotion_id=1`, {
-      method: "GET",
-      headers: headers2
-    })
-    //logger.mark(notedayjson);
-    if (notedayjson.status === true) {
-      logger.info(notedayjson.status)
-      e.reply(`刷新token成功，${notedayjson.status}`)
-    } else if (notedayjson.message === '每24小时只能签到一次/You can only check in once every 24 hours') {
-      logger.error('账号24小时内不可多次签到\n' + notedayjson.message)
-    }
-    
+    let tikhub = new TikHub(this.e)
+    let message = await tikhub.gettoken()
+    e.reply(message)
   }
+  async getnumber() {
+    let tikhub = new TikHub(this.e)
+    let message = await tikhub.getnumber()
+    e.reply(message)
+  }
+
 
   /**
  * 

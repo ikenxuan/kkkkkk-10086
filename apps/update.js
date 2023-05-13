@@ -24,6 +24,7 @@ export class update extends plugin {
             ],
         });
     }
+    //参考了alts图鉴插件的代码
     async updateresources(e) {
         const _path = process.cwd()
         const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
@@ -31,7 +32,6 @@ export class update extends plugin {
         // 判断本地路径是否存在，如果不存在则执行 git clone 操作
         if (!fs.existsSync(localPath)) {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);
-            e.reply('kkkkkk-10086的资源文件下载成功！')
         }
 
         // 执行 git fetch 命令以获取远程分支变化
@@ -49,7 +49,7 @@ export class update extends plugin {
             await promisify(exec)(`git -C "${localPath}" pull`);
             e.reply(`从 ${repoUrl} 成功更新至 ${localPath}`);
         } else {
-            e.reply(`${localPath} 目前已经是最新了`);
+            e.reply('kkkkkk-10086-resources目前已经是最新了');
         }
 
     }
