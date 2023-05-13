@@ -59,23 +59,24 @@ export class example extends plugin {
     this.task = {
       cron: '0 0 0 * * ?',
       name: '视频解析签到获取次数',
-      fnc: () => this.tikhub.getnumber()
+      fnc: () => this.tikhub.getnumber() 
     }
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
-    logger.info(`链接：${URL}`)
     let tikhub = new TikHub(this.e)
-    let dydata = await tikhub.douyin(URL) //将解析出的url传递给 douyin 函数，并赋值给dydata，等待返回结果
+    let dydata = await tikhub.douyin(URL) // douyin() 是一个请求 api 后返回json列表的函数
     if (dydata.status === 1) {
-      let message = await tikhub.v1_dy_data(dydata) //将 douyin 函数的返回值传递给 get_dy_data 函数，并赋值给message，等待返回结果
-      e.reply(message)
-      console.log(`打印douyin字符串?${message}`) //打印douyin返回的json
+      await tikhub.v1_dy_data(dydata) //将 douyin() 返回的json传递给 get_dy_data() ，并赋值给message
+      if(dydata.is_mp4 === true) {
+        e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+      }
       logger.info('使用了 v1 版本的 API')
     }
     return true
+
     let token = AccountFile.access_token
     let headers = {
       "accept": "application/json",

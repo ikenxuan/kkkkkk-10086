@@ -1,6 +1,7 @@
 import fetch from "node-fetch"
 import fs from 'fs'
 import common from "../../../lib/common/common.js"
+import uploadRecord from "./uploadRecord.js"
 const _path = process.cwd()
 const accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`
 const file = fs.readFileSync(accountfile, 'utf-8')
@@ -20,6 +21,151 @@ export default class TikHub extends base {
     super(e);
     this.model = "TikHub";
   }
+  /**
+   * @param {*} count 过万整除
+   * @returns 
+   */
+  async count(count) {
+    if (count > 10000) {
+      return (count / 10000).toFixed(1) + "万";
+    } else {
+      return count.toString();
+    }
+  }
+
+  /**
+   * 
+   * @param {*} dydata 传入视频json列表
+   */
+  async v1_dy_data(dydata) {
+    this.e.gid = this.e.group_id
+    let v1data = dydata.data
+    let full_data = [] //总数组
+    //return JSON.stringify(v1data)
+    //这里获取图集信息-------------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].img_bitrate !== null) {
+      let image_data = []
+      let imageres = []
+      for (let i = 0; i < v1data.aweme_list[0].img_bitrate[1].images.length; i++) {
+        let image_url = v1data.aweme_list[0].img_bitrate[1].images[i].url_list[2] //图片地址
+        imageres.push(segment.image(image_url))
+      }
+      let dsc = '解析完的图集图片'
+      let res = await common.makeForwardMsg(this.e, imageres, dsc)
+      image_data.push(res)
+      full_data.push(image_data)
+    } else {
+      full_data.push('此视频不是图集噢~')
+    }
+    //return await common.makeForwardMsg(this.e, full_data, '抖音')
+
+    //这里判断是否使用剪映模板制作---------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].anchor_info) {
+      let jianying_data = []
+      let jianyingres = []
+      let parse = v1data.aweme_list[0].anchor_info.extra;
+      parse = parse.replace(/\\/g, '');
+      let jydata = JSON.parse(parse);
+      let name = jydata.anchor.name
+      let url = jydata.anchor.url
+      let get_jy_data = (`这条视频使用剪映模板\n"${name}" 制作\n模板链接:\n${url}`)
+      jianyingres.push(get_jy_data)
+      let dsc = `剪映模板名称：${name}`
+      let res = await common.makeForwardMsg(this.e, jianyingres, dsc)
+      jianying_data.push(res)
+      full_data.push(jianying_data)
+    } else {
+      full_data.push('未发现使用剪映模板制作')
+    }
+    //这里获取创作者信息------------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].author) {
+      let author_data = []
+      let authorres = []
+      const author = v1data.aweme_list[0].author
+      let sc = await this.count(author.favoriting_count) //收藏
+      let gz = await this.count(author.follower_count) //关注
+      let id = author.nickname //id
+      let jj = author.signature //简介
+      let age = author.user_age //年龄
+      let sczs = author.total_favorited
+      authorres.push(`创作者名称：${id}`)
+      authorres.push(`创作者：${id}拥有${gz}个粉丝，${sc}个收藏和${sczs}个收藏总数`)
+      authorres.push(`${id}今年${age}岁，Ta的简介是：\n${jj}`)
+      let dsc = '创作者信息'
+      let res = await common.makeForwardMsg(this.e, authorres, dsc)
+      author_data.push(res)
+      full_data.push(author_data)
+    }
+    //这里获取BGM信息------------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].music) {
+      let music_data = []
+      let musicres = []
+      const music = v1data.aweme_list[0].music
+      let music_id = music.author //BGM名字
+      let music_img = music.cover_hd.url_list[0] //BGM作者头像
+      let music_url = music.play_url.uri //BGM link
+      musicres.push(`BGM名字：${music_id}`)
+      musicres.push(`BGM下载直链：${music_url}`)
+      musicres.push(`BGM作者头像\n${music_img}`)
+      let dsc = 'BGM相关信息'
+      let res = await common.makeForwardMsg(this.e, musicres, dsc)
+      music_data.push(res)
+      full_data.push(music_data)
+      if (v1data.aweme_list[0].img_bitrate !== null) {
+        this.e.reply(await uploadRecord(music_url, 0, false))
+      }
+    }
+    //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].seo_info.ocr_content) {
+      let ocr_data = []
+      let ocrres = []
+      let text = v1data.aweme_list[0].seo_info.ocr_content
+      ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
+      ocrres.push(text)
+      let dsc = 'ocr视频信息识别'
+      let res = await common.makeForwardMsg(this.e, ocrres, dsc)
+      ocr_data.push(res)
+      full_data.push(ocr_data)
+    } else {
+      full_data.push('视频或图集中未发现可供ocr识别的文字信息')
+    }
+    //这里是获取视频信息------------------------------------------------------------------------------------------------------------
+    if (v1data.aweme_list[0].video.play_addr_h264) {
+      let video_data = []
+      let videores = []
+      const video = v1data.aweme_list[0].video
+      let FPS = video.bit_rate[0].FPS //FPS
+      let video_url = video.play_addr_h264.url_list[2] //video link
+      let cover = video.origin_cover.url_list[0] //video cover image
+      let title = v1data.aweme_list[0].preview_title //video title
+      videores.push(`标题：\n${title}`)
+      videores.push(`视频帧率：${"" + FPS}`)
+      videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
+      videores.push('视频封面：\n' + segment.image(cover))
+      let dsc = '视频基本信息'
+      let res = await common.makeForwardMsg(this.e, videores, dsc)
+      video_data.push(res)
+      full_data.push(video_data)
+      let qiy = {
+        "Server": "CWAP-waf",
+        "Content-Type": "video/mp4",
+      }
+      let mp4 = await fetch(`${video.play_addr_h264.url_list[2]}`, { method: "GET", headers: qiy });
+      let a = await mp4.buffer();
+      let path = `${_path}/plugins/example/douyin.mp4`;
+      fs.writeFile(path, a, "binary", function (err) {
+        if (!err) {
+          //this.e.sendMsg(segment.video(path))
+          console.log("视频下载成功");
+        }
+        return false
+      })
+    }
+    this.e.reply(await common.makeForwardMsg(this.e, full_data, '抖音'))
+    //return await common.makeForwardMsg(this.e, full_data, '抖音')
+  }
+
+
   async gettype(code) {
     if (code === 1) {
       await v1_dy_data()
@@ -30,67 +176,62 @@ export default class TikHub extends base {
       true
     }
   }
-  /**
-   * 
-   * @param {*} dydata 传入视频json列表
-   */
-  async v1_dy_data(dydata) {
-    let v1data = dydata.data
-    logger.warn(this.e.group_id)
-    this.e.group = Bot.pickGroup(Number(group_id))
-    //logger.info(this.e.user_id)
-    //logger.info(v1data)
-    if (v1data.aweme_list[0].images === null) {
-      let jianying = []
-      if (v1data.aweme_list[0].anchor_info) {
-        let extra = JSON.parse(v1data.aweme_list[0].anchor_info.extra)
-        let name = extra.anchor.name //剪映模板名称
-        let url = extra.anchor.url //剪映模板链接
-        jianying.push(`这条视频使用剪映模板 "${name}" 制作\n模板链接：${url}`)
-      }
-      let replymsg = await common.makeForwardMsg(this.e.user_id, jianying, 'test')
-      this.e.group.sendMsg(replymsg)
-      //let video = v1data.aweme_list[0].images
-    }
-  }
 
   /**
    * 
    * @param {*} url 提取后的链接
    * @returns 
    */
-  async douyin(url) {
+  async douyin(url) { //有部署本地的可将v1换成 http://127.0.0.1:8000/douyin_video_data/?douyin_video_url=
     const api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
-    let api_v1_josn = await fetch(api_v1, {
-      method: 'GET',
-      headers: {
-        "accept": "application/json",
-        "Content-type": "application/x-www-form-urlencoded",
+    //这里的逻辑是：
+    //1. 先请求v2接口
+    //2. 如果v2接口返回的json说明状态异常或者因为网络原因请求失败
+    //3. 就请求v1
+    let result = { status: 0 };
+    try {
+      let api_v2_json = await fetch(api_v2, {
+        method: 'GET',
+        headers: {
+          "accept": "application/json",
+          "Authorization": `Bearer ${AccountFile.access_token}`,
+        }
+      })
+      let data_v2_json = await api_v2_json.json()
+      if (data_v2_json.detail.status === false) {
+        logger.warn(`使用v2的接口时${data_v2_json.detail.message}，可前往 https://dash.tikhub.io/pricing 购买额外请求次数或者注册新的TikHbu账号`)
+        throw new Error('v2请求成功但返回错误,使用v1数据')
       }
-    })
-    let api_v2_json = await fetch(api_v2, {
-      method: 'GET',
-      headers: {
-        "accept": "application/json",
-        "Authorization": `Bearer ${AccountFile.access_token}`,
+      result.data = data_v2_json;
+      result.status = 2;
+      return result;
+    } catch (err) {
+      try {
+        let api_v1_josn = await fetch(api_v1, {
+          method: 'GET',
+          headers: {
+            "accept": "application/json",
+            "Content-type": "application/x-www-form-urlencoded",
+          }
+        })
+        let data_v1_json = await api_v1_josn.json()
+        result.data = data_v1_json;
+        if(data_v1_json.aweme_list[0].images === null) {
+          result.is_mp4 = true
+        }
+        result.status = 1;
+      } catch (err) {
+        console.log(err)
       }
-    })
-    let data_v1_json = await api_v1_josn.json()
-    let data_v2_json = await api_v2_json.json()
-    let result = {}
-    if (data_v2_json.hasOwnProperty('detail') || data_v2_json.detail?.status === false) {
-      logger.error(logger.red(`请尝试获取新的TikHub账号！因为${data_v2_json.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing ' + ' 购买额外请求次数或者' + logger.green('注册新账号')))
-      result.data = data_v1_json
-      result.status = 1
-      logger.info('使用了v1的API')
-    } else {
-      result.data = data_v2_json
-      result.status = 2
-      logger.info('使用了v2的API')
+      logger.warn(err);
     }
     return result
   }
+
+
+
+
   async gettoken() {
     let headers = {
       "accept": "application/json",
