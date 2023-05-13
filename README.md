@@ -28,8 +28,11 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 神鹰盒
 </details>
 
+### douyin作品解析功能
+提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
 
-### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
+~~使用公共接口请求可能遇到网络错误，有能力建议自行本地部署~~(还在研究怎么搞锅巴动态监听文件，先用着公共接口吧，咕咕咕)
+#### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
 注册成功后将对应内容填写到
 
 `/plugins/kkkkkk-10086/config/account.yaml`
