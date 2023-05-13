@@ -197,7 +197,7 @@ export default class TikHub extends base {
    * @returns 
    */                 //默认 https://api.douyin.wtf/douyin_video_data/?douyin_video_url=
   async douyin(url) { //有部署本地的可将v1换成 http://127.0.0.1:8000/douyin_video_data/?douyin_video_url=
-    const api_v1 = `http://127.0.0.1:8000/douyin_video_data/?douyin_video_url=${url}`
+    const api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
     //这里的逻辑是：
     //1. 先正常请求v2接口1次
