@@ -67,14 +67,8 @@ export class example extends plugin {
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
     let tikhub = new TikHub(this.e)
-    let dydata = await tikhub.douyin(URL) // douyin() 是一个请求 api 后返回json列表的函数
-    if (dydata.status === 1) {
-      await tikhub.v1_dy_data(dydata) //将 douyin() 返回的json传递给 get_dy_data() ，并赋值给message
-      if(dydata.is_mp4 === true) {
-        e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
-      }
-      logger.info('使用了 v1 版本的 API')
-    }
+    let dydata = await tikhub.douyin(URL) //douyin() 是一个请求 API 后返回json的函数
+    await tikhub.gettype(dydata.status, dydata.is_mp4, dydata) //这里tikhub去处理消息，发送消息
     return true
 
     let token = AccountFile.access_token

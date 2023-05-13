@@ -35,14 +35,14 @@ export default class TikHub extends base {
 
   /**
    * 
-   * @param {*} dydata 传入视频json列表
+   * @param {*} dydata 传入视频json
    */
   async v1_dy_data(dydata) {
     this.e.gid = this.e.group_id
     let v1data = dydata.data
     let full_data = [] //总数组
-    //return JSON.stringify(v1data)
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
+    let image_res = []
     if (v1data.aweme_list[0].img_bitrate !== null) {
       let image_data = []
       let imageres = []
@@ -53,13 +53,12 @@ export default class TikHub extends base {
       let dsc = '解析完的图集图片'
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
-      full_data.push(image_data)
+      image_res.push(image_data)
     } else {
-      full_data.push('此视频不是图集噢~')
+      image_res.push('此作品不是图集噢~')
     }
-    //return await common.makeForwardMsg(this.e, full_data, '抖音')
-
     //这里判断是否使用剪映模板制作---------------------------------------------------------------------------------------------------------
+    let jianying_res = []
     if (v1data.aweme_list[0].anchor_info) {
       let jianying_data = []
       let jianyingres = []
@@ -73,11 +72,12 @@ export default class TikHub extends base {
       let dsc = `剪映模板名称：${name}`
       let res = await common.makeForwardMsg(this.e, jianyingres, dsc)
       jianying_data.push(res)
-      full_data.push(jianying_data)
+      jianying_res.push(jianying_data)
     } else {
-      full_data.push('未发现使用剪映模板制作')
+      jianying_res.push('未发现使用剪映模板制作')
     }
     //这里获取创作者信息------------------------------------------------------------------------------------------------------------
+    let author_res = []
     if (v1data.aweme_list[0].author) {
       let author_data = []
       let authorres = []
@@ -94,9 +94,10 @@ export default class TikHub extends base {
       let dsc = '创作者信息'
       let res = await common.makeForwardMsg(this.e, authorres, dsc)
       author_data.push(res)
-      full_data.push(author_data)
+      author_res.push(author_data)
     }
     //这里获取BGM信息------------------------------------------------------------------------------------------------------------
+    let music_res = []
     if (v1data.aweme_list[0].music) {
       let music_data = []
       let musicres = []
@@ -110,12 +111,13 @@ export default class TikHub extends base {
       let dsc = 'BGM相关信息'
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
-      full_data.push(music_data)
+      music_res.push(music_data)
       if (v1data.aweme_list[0].img_bitrate !== null) {
         this.e.reply(await uploadRecord(music_url, 0, false))
       }
     }
     //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
+    let ocr_res = []
     if (v1data.aweme_list[0].seo_info.ocr_content) {
       let ocr_data = []
       let ocrres = []
@@ -125,11 +127,12 @@ export default class TikHub extends base {
       let dsc = 'ocr视频信息识别'
       let res = await common.makeForwardMsg(this.e, ocrres, dsc)
       ocr_data.push(res)
-      full_data.push(ocr_data)
+      ocr_res.push(ocr_data)
     } else {
-      full_data.push('视频或图集中未发现可供ocr识别的文字信息')
+      ocr_res.push('视频或图集中未发现可供ocr识别的文字信息')
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
+    let video_res = []
     if (v1data.aweme_list[0].video.play_addr_h264) {
       let video_data = []
       let videores = []
@@ -141,11 +144,11 @@ export default class TikHub extends base {
       videores.push(`标题：\n${title}`)
       videores.push(`视频帧率：${"" + FPS}`)
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
-      videores.push('视频封面：\n' + segment.image(cover))
+      videores.push(segment.image(cover))
       let dsc = '视频基本信息'
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
-      full_data.push(video_data)
+      video_res.push(video_data)
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
@@ -161,18 +164,29 @@ export default class TikHub extends base {
         return false
       })
     }
-    this.e.reply(await common.makeForwardMsg(this.e, full_data, '抖音'))
-    //return await common.makeForwardMsg(this.e, full_data, '抖音')
+    let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(jianying_res).concat(ocr_res)
+    this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
   }
 
 
-  async gettype(code) {
+  /**
+   * 
+   * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
+   * @param {*} is_mp4 douyin()添加的唯一状态码，判断是视频还是图集
+   * @param {*} dydata 视频json
+   * @returns 
+   */
+  async gettype(code, is_mp4, dydata) {
     if (code === 1) {
-      await v1_dy_data()
+      await this.v1_dy_data(dydata)
+      if(is_mp4 === true) {
+        this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+        logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+      }  
       return true
     }
     if (code === 2) {
-      await v2_dy_data()
+      await v2_dy_data() //还没写
       true
     }
   }
@@ -181,14 +195,14 @@ export default class TikHub extends base {
    * 
    * @param {*} url 提取后的链接
    * @returns 
-   */
+   */                 //默认 https://api.douyin.wtf/douyin_video_data/?douyin_video_url=
   async douyin(url) { //有部署本地的可将v1换成 http://127.0.0.1:8000/douyin_video_data/?douyin_video_url=
-    const api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
+    const api_v1 = `http://127.0.0.1:8000/douyin_video_data/?douyin_video_url=${url}`
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
     //这里的逻辑是：
-    //1. 先请求v2接口
-    //2. 如果v2接口返回的json说明状态异常或者因为网络原因请求失败
-    //3. 就请求v1
+    //1. 先正常请求v2接口1次
+    //2. 如果此次v2接口返回的json说明 状态异常 或者因为网络原因 请求失败
+    //3. 就请求v1，30s内无限请求v1，确保有数据返回，否则再打印日志
     let result = { status: 0 };
     try {
       let api_v2_json = await fetch(api_v2, {
@@ -200,13 +214,15 @@ export default class TikHub extends base {
       })
       let data_v2_json = await api_v2_json.json()
       if (data_v2_json.detail.status === false) {
-        logger.warn(`使用v2的接口时${data_v2_json.detail.message}，可前往 https://dash.tikhub.io/pricing 购买额外请求次数或者注册新的TikHbu账号`)
-        throw new Error('v2请求成功但返回错误,使用v1数据')
+        logger.warn(`使用 TikHub API 时${data_v2_json.detail.message}，可前往 https://dash.tikhub.io/pricing 购买额外请求次数或者注册新的TikHbu账号（理论上可以一直白嫖）`)
+        throw new Error('TikHub API 请求成功但返回错误，将使用 douyin.wtf API 再次请求')
       }
       result.data = data_v2_json;
       result.status = 2;
       return result;
     } catch (err) {
+      logger.error(`TikHub API 请求失败\n${err}`);
+      logger.info(`开始请求备用接口：${api_v1}`)
       try {
         let api_v1_josn = await fetch(api_v1, {
           method: 'GET',
@@ -217,18 +233,39 @@ export default class TikHub extends base {
         })
         let data_v1_json = await api_v1_josn.json()
         result.data = data_v1_json;
-        if(data_v1_json.aweme_list[0].images === null) {
+        if (data_v1_json.aweme_list[0].images === null) {
           result.is_mp4 = true
         }
         result.status = 1;
       } catch (err) {
-        console.log(err)
+        console.log(`使用v1的接口时${err}`)
+        let startTime = Date.now();
+        do {
+          try {
+            let api_v1_josn = await fetch(api_v1, {
+              method: 'GET',
+              headers: {
+                "accept": "application/json",
+                "Content-type": "application/x-www-form-urlencoded",
+              }
+            })
+            let data_v1_json = await api_v1_josn.json()
+            result.data = data_v1_json;
+            if (data_v1_json.aweme_list[0].images === null) {
+              result.is_mp4 = true
+            }
+            result.status = 1;
+          } catch (err) {
+            if (Date.now() - startTime > 30000) {
+              console.log('30秒内 douyin.wtf API 连续请求失败');
+              break;
+            }
+          }
+        } while (true);
       }
-      logger.warn(err);
     }
     return result
   }
-
 
 
 
