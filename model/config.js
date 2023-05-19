@@ -1,25 +1,26 @@
 import fs from 'fs'
 import lodash from 'lodash'
-
+const defaultConfig = {
+    "account": "",
+    "password": "",
+    "access_token": "",
+    "address": "",
+}
 let config = {}
-config = Object.assign({}, config) 
+config = Object.assign({}, defaultConfig, config)
 
 const _path = process.cwd()
 fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const data = fs.readFileSync(fullPath)
 if (data) {
-    try {
-        config = JSON.parse(data)
-    } catch (e) {
-        logger.error('kkkkkk-10086插件读取配置文件出错', e)
-    }
+    try { config = JSON.parse(data) } catch (e) { logger.error('kkkkkk-10086插件读取配置文件出错', e) }
 }
 export const Config = new Proxy(config, {
     set(target, property, value) {
         target[property] = value
         const change = lodash.transform(target, function (result, value, key) {
-            if (!lodash.isEqual(value)) {
+            if (!lodash.isEqual(value, defaultConfig[key])) {
                 result[key] = value
             }
         })

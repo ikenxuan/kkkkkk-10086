@@ -57,10 +57,10 @@ export function supportGuoba() {
                 {
                     field: 'address',
                     label: '请求接口API',
-                    bottomHelpMessage: '开源项目：https://github.com/Evil0ctal/Douyin_TikTok_Download_API',
+                    bottomHelpMessage: '没有部署可以不填，会使用 https://github.com/Evil0ctal/Douyin_TikTok_Download_API 的公共API',
                     component: 'Input',
                     componentProps: {
-                        placeholder: '本地部署填 127.0.0.1:8000 或者 IP + 端口号'
+                        placeholder: '127.0.0.1:8000 或者 IP + 端口号 或 域名'
                     },
                 },
             ],
