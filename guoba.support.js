@@ -49,12 +49,6 @@ export function supportGuoba() {
                     component: 'InputTextArea'
                 },
                 {
-                    field: 'password',
-                    label: 'TikHub 密码',
-                    bottomHelpMessage: '在此填写密码',
-                    component: 'InputTextArea'
-                },
-                {
                     field: 'access_token',
                     label: 'TikHub 鉴权密钥',
                     bottomHelpMessage: 'https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post 页面获取',
