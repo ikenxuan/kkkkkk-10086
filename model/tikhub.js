@@ -3,11 +3,11 @@ import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 const _path = process.cwd()
-const accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`
-const file = fs.readFileSync(accountfile, 'utf-8')
-const AccountFile = JSON.parse(file)
-const username = AccountFile.account //账号
-const password = AccountFile.password //密码
+let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`
+let file = fs.readFileSync(accountfile, 'utf-8')
+let AccountFile = JSON.parse(file)
+let username = AccountFile.account //账号
+let password = AccountFile.password //密码
 
 export class base {
   constructor(e = {}) {
@@ -419,14 +419,16 @@ export default class TikHub extends base {
 
   }
 
-
   /**
    * 
    * @param {*} url 提取后的链接
    * @returns 
-   */                 //api_v1默认 https://api.douyin.wtf/douyin_video_data/?douyin_video_url=
-  async douyin(url) { //有在本地部署的可将v1换成 http://127.0.0.1:8000/douyin_video_data/?douyin_video_url= //往后会增加锅巴配置项 咕咕咕
-    const api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
+   */
+  async douyin(url) {
+    let api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
+    if(AccountFile.address) {
+      api_v1 = `http://${AccountFile.address}/douyin_video_data/?douyin_video_url=${url}`
+    }
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh`
     let result = { tik_status: 0 };
