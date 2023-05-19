@@ -1,6 +1,5 @@
 import { Config } from './model/config.js'
 // 支持锅巴
-import { Config } from "./model/config.js"
 export function supportGuoba() {
     return {
         // 插件信息，将会显示在前端页面
@@ -15,7 +14,6 @@ export function supportGuoba() {
             isV3: true,
             isV2: false,
             description: '提供了视频解析功能，额外的语音盒资源。自用练手项目',
-            description: '提供了视频解析功能，额外的语音盒资源。练手项目',
             // 显示图标，此为个性化配置
             // 图标可在 https://icon-sets.iconify.design 这里进行搜索
             icon: 'emojione-v1:face-savoring-food',
@@ -40,19 +38,17 @@ export function supportGuoba() {
                     field: 'password',
                     label: 'TikHub 账号密码',
                     bottomHelpMessage: '获取方法同上',
-                    component: 'Input',
+                    component: 'InputPassword',
                     required: false,
                     componentProps: {
                         placeholder: '在此填写密码'
                     },
-                    bottomHelpMessage: '在此填写账号',
-                    component: 'InputTextArea'
                 },
                 {
                     field: 'access_token',
                     label: 'TikHub 鉴权密钥',
                     bottomHelpMessage: 'https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post 页面获取',
-                    component: 'Input',
+                    component: 'InputPassword',
                     required: false,
                     componentProps: {
                         placeholder: '在此填写鉴权密钥'
@@ -61,13 +57,11 @@ export function supportGuoba() {
                 {
                     field: 'address',
                     label: '请求接口API',
-                    bottomHelpMessage: '开源项目：https://github.com/Evil0ctal/Douyin_TikTok_Download_API',
+                    bottomHelpMessage: '没有部署可以不填，会使用 https://github.com/Evil0ctal/Douyin_TikTok_Download_API 的公共API',
                     component: 'Input',
                     componentProps: {
-                        placeholder: '本地部署填 127.0.0.1:8000 或者 IP + 端口号'
+                        placeholder: '127.0.0.1:8000 或者 IP + 端口号 或 域名'
                     },
-                    bottomHelpMessage: 'https://api.tikhub.io/#/Authorization页面获取',
-                    component: 'Input'
                 },
             ],
             // 获取配置数据方法（用于前端填充显示数据）
