@@ -2,7 +2,8 @@ import fs from 'fs'
 import lodash from 'lodash'
 
 let config = {}
-config = Object.assign({}, config)
+config = Object.assign({}, config) 
+
 const _path = process.cwd()
 fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
