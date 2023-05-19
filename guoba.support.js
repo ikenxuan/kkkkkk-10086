@@ -60,7 +60,7 @@ export function supportGuoba() {
                     bottomHelpMessage: '没有部署可以不填，将会使用公共API',
                     component: 'Input',
                     componentProps: {
-                        placeholder: '127.0.0.1:8000 或者 IP + 端口号 或 域名'
+                        placeholder: '127.0.0.1:8000 或者 IP+端口号 或 域名'
                     },
                 },
             ],
