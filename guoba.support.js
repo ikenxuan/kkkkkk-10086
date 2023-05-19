@@ -38,7 +38,7 @@ export function supportGuoba() {
                     field: 'password',
                     label: 'TikHub 账号密码',
                     bottomHelpMessage: '获取方法同上',
-                    component: 'Input',
+                    component: 'InputPassword',
                     required: false,
                     componentProps: {
                         placeholder: '在此填写密码'
@@ -48,7 +48,7 @@ export function supportGuoba() {
                     field: 'access_token',
                     label: 'TikHub 鉴权密钥',
                     bottomHelpMessage: 'https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post 页面获取',
-                    component: 'Input',
+                    component: 'InputPassword',
                     required: false,
                     componentProps: {
                         placeholder: '在此填写鉴权密钥'
