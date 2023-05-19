@@ -3,14 +3,13 @@
 ###### 没骗你，真没学过js
 ## 安装
 ### Yunzai-Bot或Miao-Yunzai目录下执行：
-#### 使用 GitHub
-```
-git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
-```
-
 #### 使用 Gitee
 ```
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+#### 使用 GitHub（可能更新不及时）
+```
+git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 ### 语音盒额外歌曲
 使用`#kkk下载/升级资源`下载或升级所有歌曲资源，大多都是坤坤盒丁真的(如果有需要)
@@ -28,16 +27,18 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 神鹰盒
 </details>
 
-### douyin作品解析功能
+### 小红书(需要Tik Hub鉴权token)、douyin作品解析功能
 提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
 
-~~使用公共接口请求可能遇到网络错误，有能力建议自行本地部署~~(还在研究怎么搞锅巴动态监听文件，先用着公共接口吧，咕咕咕)
+使用公共接口请求可能遇到网络错误，有能力建议自行本地部署
 #### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
-注册成功后将对应内容填写到
+* 建议使用[锅巴后台](https://gitee.com/guoba-yunzai/guoba-plugin)添加账号密码修改配置文件或 手动修改
 
-`/plugins/kkkkkk-10086/config/account.yaml`
+配置文件地址：
 
-重启后向机器人发送`#获取token`以获取账号token(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)手动获取token)
+`/plugins/kkkkkk-10086/config/config.json
+
+添加完账号密码后(如果上一步获取了token这一步可无视)向机器人发送`#获取token`以获取账号token(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)手动获取token)
 
 ## 免责声明
 
