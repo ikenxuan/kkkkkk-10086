@@ -3,12 +3,23 @@ import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 const _path = process.cwd()
-let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`
-let file = fs.readFileSync(accountfile, 'utf-8')
-let AccountFile = JSON.parse(file)
-let username = AccountFile.account //账号
-let password = AccountFile.password //密码
-
+let config 
+let AccountFile  
+let username  
+let password
+let address
+/** 监听config.json，热加载 */
+function reloadConfig() {
+  setTimeout(() => {
+    config = JSON.parse(fs.readFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`))
+    AccountFile = config 
+    username = config.account  
+    password = config.password
+    address = config.address
+  }, 100) //延迟100ms
+}
+reloadConfig()
+fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
 export class base {
   constructor(e = {}) {
     this.e = e;
