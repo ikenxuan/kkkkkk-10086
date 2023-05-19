@@ -1,4 +1,5 @@
-import { Config } from "./model/config.js"
+import { Config } from './model/config.js'
+// 支持锅巴
 export function supportGuoba() {
     return {
         // 插件信息，将会显示在前端页面
@@ -12,7 +13,7 @@ export function supportGuoba() {
             link: 'https://gitee.com/ikenxuan/kkkkkk-10086',
             isV3: true,
             isV2: false,
-            description: '提供了视频解析功能，额外的语音盒资源。练手项目',
+            description: '提供了视频解析功能，额外的语音盒资源。自用练手项目',
             // 显示图标，此为个性化配置
             // 图标可在 https://icon-sets.iconify.design 这里进行搜索
             icon: 'emojione-v1:face-savoring-food',
@@ -26,20 +27,41 @@ export function supportGuoba() {
                 {
                     field: 'account',
                     label: 'TikHub 账号',
-                    bottomHelpMessage: '在此填写账号',
-                    component: 'InputTextArea'
+                    bottomHelpMessage: '可到 https://api.tikhub.io/#/Authorization/register_user_users_register__post 注册账号',
+                    component: 'Input',
+                    required: false,
+                    componentProps: {
+                        placeholder: '在此填写账号'
+                    },
                 },
                 {
                     field: 'password',
-                    label: 'TikHub 密码',
-                    bottomHelpMessage: '在此填写密码',
-                    component: 'InputTextArea'
+                    label: 'TikHub 账号密码',
+                    bottomHelpMessage: '获取方法同上',
+                    component: 'Input',
+                    required: false,
+                    componentProps: {
+                        placeholder: '在此填写密码'
+                    },
                 },
                 {
                     field: 'access_token',
                     label: 'TikHub 鉴权密钥',
-                    bottomHelpMessage: 'https://api.tikhub.io/#/Authorization页面获取',
-                    component: 'Input'
+                    bottomHelpMessage: 'https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post 页面获取',
+                    component: 'Input',
+                    required: false,
+                    componentProps: {
+                        placeholder: '在此填写鉴权密钥'
+                    },
+                },
+                {
+                    field: 'address',
+                    label: '请求接口API',
+                    bottomHelpMessage: '开源项目：https://github.com/Evil0ctal/Douyin_TikTok_Download_API',
+                    component: 'Input',
+                    componentProps: {
+                        placeholder: '本地部署填 127.0.0.1:8000 或者 IP + 端口号'
+                    },
                 },
             ],
             // 获取配置数据方法（用于前端填充显示数据）

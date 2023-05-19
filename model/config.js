@@ -1,9 +1,9 @@
 import fs from 'fs'
 import lodash from 'lodash'
 
+let config = {}
 config = Object.assign({}, config)
 const _path = process.cwd()
-let config = {}
 fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const data = fs.readFileSync(fullPath)
@@ -14,7 +14,6 @@ if (data) {
         logger.error('kkkkkk-10086插件读取配置文件出错', e)
     }
 }
-
 export const Config = new Proxy(config, {
     set(target, property, value) {
         target[property] = value
@@ -32,3 +31,4 @@ export const Config = new Proxy(config, {
         return true
     }
 })
+
