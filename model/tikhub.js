@@ -10,11 +10,13 @@ let password
 let address
 /** 监听config.json，热加载 */
 function reloadConfig() {
-  config = JSON.parse(fs.readFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`))
-  AccountFile = config 
-  username = config.account  
-  password = config.password
-  address = config.address
+  setTimeout(() => {
+    config = JSON.parse(fs.readFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`))
+    AccountFile = config 
+    username = config.account  
+    password = config.password
+    address = config.address
+  }, 100) //延迟100ms
 }
 reloadConfig()
 fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
