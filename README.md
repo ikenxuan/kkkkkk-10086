@@ -27,8 +27,10 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 神鹰盒
 </details>
 
-### 小红书(需要Tik Hub鉴权token)、douyin作品解析功能
-提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
+### 小红书(需要Tik Hub鉴权token)、快手、douyin作品解析功能
+快手部分基于官方API
+
+douyin解析提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
 
 使用公共接口请求可能遇到网络错误，有能力建议自行本地部署
 #### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
