@@ -41,21 +41,31 @@ export default class TikHub extends base {
  * @returns 
  */
   async gettype(code, is_mp4, dydata) {
-    if (code === 1) {
-      await this.v1_dy_data(dydata)
-      if (is_mp4 === true) {
-        this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
-        logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+    try {
+      if (code === 1) {
+        await this.v1_dy_data(dydata)
+        if (is_mp4 === true) {
+          this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+          logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+        }
+        return
       }
-      return true
+    } catch (err) {
+      this.e.reply('任务执行报错\n' + err)
+      return
     }
     if (code === 2) {
-      await this.v2_dy_data(dydata)
-      if (is_mp4 === true) {
-        this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
-        logger.info('使用了 TikHub API 提供的解析服务')
+      try {
+        await this.v2_dy_data(dydata)
+        if (is_mp4 === true) {
+          this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+          logger.info('使用了 TikHub API 提供的解析服务')
+        }
+        return true
+      } catch (err) {
+        this.e.reply('任务执行报错\n' + err)
+        return
       }
-      return true
     }
   }
 

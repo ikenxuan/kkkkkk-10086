@@ -1,7 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import fs from "fs";
-import tikhub from '../model/tikhub.js';
 import common from '../../../lib/common/common.js';
 import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
 import TikHub from '../model/tikhub.js';
@@ -69,7 +68,7 @@ export class example extends plugin {
     let tikhub = new TikHub(this.e)
     let dydata = await tikhub.douyin(URL)
     await tikhub.gettype(dydata.tik_status, dydata.is_mp4, dydata)
-    return true
+    return
   }
 
 
