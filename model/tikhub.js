@@ -482,6 +482,7 @@ export default class TikHub extends base {
           } catch (err) {
             if (Date.now() - startTime > 30000) {
               logger.error('30秒内 douyin.wtf API 连续请求失败，任务结束');
+              this.e.reply('任务执行报错\n' + err)
               break;
             }
           }
