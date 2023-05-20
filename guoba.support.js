@@ -56,8 +56,8 @@ export function supportGuoba() {
                 },
                 {
                     field: 'address',
-                    label: '请求接口API',
-                    bottomHelpMessage: '没有部署可以不填，将会使用公共API',
+                    label: '抖音解析服务地址',
+                    bottomHelpMessage: '没有部署可不填，将会使用在线接口',
                     component: 'Input',
                     componentProps: {
                         placeholder: '127.0.0.1:8000 或者 IP+端口号 或 域名'
