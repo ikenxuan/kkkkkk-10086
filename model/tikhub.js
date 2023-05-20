@@ -2,20 +2,18 @@ import fetch from "node-fetch"
 import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
+import { segment } from "oicq"
 const _path = process.cwd()
-let config 
-let AccountFile  
-let username  
-let password
-let address
+let config
+let AccountFile
 /** 监听config.json，热加载 */
 function reloadConfig() {
   setTimeout(() => {
     config = JSON.parse(fs.readFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`))
-    AccountFile = config 
-    username = config.account  
-    password = config.password
-    address = config.address
+    AccountFile = config
+    AccountFile.username = config.account
+    AccountFile.password = config.password
+    AccountFile.address = config.address
   }, 100) //延迟100ms
 }
 reloadConfig()
@@ -44,6 +42,23 @@ export default class TikHub extends base {
     }
   }
 
+  /** 获取视频大小信息 */
+  async tosize() {
+    let path = `${_path}/plugins/example/douyin.mp4`
+    //把fs.stat包装成一个promise对象
+    return new Promise((resolve, reject) => {
+      fs.stat(path, (err, stats) => {
+        if (err) reject(err);
+        let totalSize //将定义放入回调函数内部
+        totalSize = stats.size;
+        let totalMB = totalSize / (1024 * 1024);
+        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 30 })
+        let size = String(totalMB.toFixed(2))
+        //在then方法里面return size
+        resolve(size)
+      })
+    })
+  }
   /**
  * 
  * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
@@ -52,11 +67,25 @@ export default class TikHub extends base {
  * @returns 
  */
   async gettype(code, is_mp4, dydata) {
+    let path = `${_path}/plugins/example/douyin.mp4`
     try {
       if (code === 1) {
         await this.v1_dy_data(dydata)
-        if (is_mp4 === true) {
-          this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+        if (is_mp4 === true) { //判断是否是视频
+          let mp4size = await this.tosize() //获取视频文件大小信息
+          if (mp4size >= 45) { //如果大小超过45MB，发文件
+            //群和私聊分开
+            this.e.reply('视频文件过大，尝试上传到群文件', false)
+            try {
+              if (this.e.isGroup) { this.e.group.fs.upload(path) }
+            } catch(err) {
+              this.e.reply('视频文件上传出错：' + err)
+              logger.error('视频文件上传出错：' + err)
+            }
+            if (this.e.isPrivate) { this.e.friend.sendFile(path) } //私聊目前似乎发不了文件？
+          } else {
+            this.e.reply(segment.video(path)) //否则直接发视频文件
+          }
           logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
         return
@@ -205,10 +234,7 @@ export default class TikHub extends base {
       let a = await mp4.buffer();
       let path = `${_path}/plugins/example/douyin.mp4`;
       fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          //this.e.sendMsg(segment.video(path))
-          console.log("视频下载成功");
-        }
+        if (!err) { console.log("视频下载成功") }
         return false
       })
     }
@@ -436,52 +462,53 @@ export default class TikHub extends base {
    * @returns 
    */
   async douyin(url) {
-    let api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}`
-    if(AccountFile.address) {
-      api_v1 = `http://${AccountFile.address}/douyin_video_data/?douyin_video_url=${url}`
+    let api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}` //赋值，v1视频信息接口
+    if (AccountFile.address) {
+      api_v1 = `http://${AccountFile.address}/douyin_video_data/?douyin_video_url=${url}` //如果v1自定义了接口地址，用自定义的
     }
-    const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh`
-    const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh`
+    const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
+    const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
       let data_v2_json = await api_v2_json.json()
-      if (data_v2_json.status === false) {
+      if (data_v2_json.status === false) { //判断鉴权token是否过期，过期为false
         logger.warn(`使用 TikHub API 时${data_v2_json.detail.message}，可前往 https://dash.tikhub.io/pricing 购买额外请求次数或者注册新的TikHbu账号（理论上可以一直白嫖）`)
-        throw new Error('TikHub API 请求成功但返回错误，将使用 douyin.wtf API 再次请求')
+        throw new Error('TikHub API 请求成功但返回错误，将使用 douyin.wtf API 再次请求') //手动抛出错误转入catch()
       } else {
-        try {
+        try { //否则继续请求评论数据接口
           let comments_data = await fetch(comment_v2, { method: "GET", headers: headers })
           let comments = await comments_data.json()
-          result.comments = comments
+          result.comments = comments //请求成功最后返回的json(rusult)中的comments值为解析后的json数据
         } catch (err) {
           logger.error(`请求 TikHub API 获取评论数据出错：${err}`)
-          result.comments = false
+          result.comments = false //如果评论数据接口请求失败，最后返回的json(rusult)中的comments值为false
         }
-        if (data_v2_json.aweme_list[0].video.play_addr_h264 !== undefined) {
-          result.is_mp4 = true
+        if (data_v2_json.aweme_list[0].video.play_addr_h264 !== undefined) { //这里判断v2的json中是否是视频
+          result.is_mp4 = true //是就打上true，否则false
         } else result.is_mp4 = false
-        result.data = data_v2_json;
-        result.tik_status = 2;
-        logger.info(JSON.stringify(result))
-        return result;
+        result.data = data_v2_json; //v2的json赋值给result中的data
+        result.tik_status = 2; //加一个状态码判断是v1还是v2，这里是v2
+        logger.info(logger.green('TikHub API 获取数据成功！'))
+        return result; //返回合并好的json
       }
-    } catch (err) {
-      logger.error(`TikHub API 请求失败\n${err}`);
+    } catch (err) { //上一步抛出了错误或报错才会来到此处
+      logger.error(`TikHub API 请求失败\n${err}`); //v2接口请求失败
       logger.info(`开始请求备用接口：${api_v1}`)
-      try {
+      try { //尝试请求v1接口
         let api_v1_josn = await fetch(api_v1, { method: 'GET', headers: { "accept": "application/json", "Content-type": "application/x-www-form-urlencoded", } })
         let data_v1_json = await api_v1_josn.json()
         result.data = data_v1_json;
         if (data_v1_json.aweme_list[0].images === null) {
-          result.is_mp4 = true
+          result.is_mp4 = true //这里判断v1的json中是否是视频
         }
-        result.tik_status = 1;
-      } catch (err) {
-        console.log(`use douyin.wtf API: ${err}`)
-        let startTime = Date.now();
-        do {
+        result.tik_status = 1; //加一个状态码判断是v1还是v2，这里是v1
+        logger.info(logger.green('douyin.wtf API 获取数据成功！'))
+      } catch (err) { //因为第一次请求v1报错了，下面是30秒内循环请求，拿到数据就跳出
+        logger.error(`use douyin.wtf API: ${err}\n`)
+        let startTime = Date.now(); //获取现在时间戳
+        do { //do，循环执行
           try {
             let api_v1_josn = await fetch(api_v1, { method: 'GET', headers: { "accept": "application/json", "Content-type": "application/x-www-form-urlencoded", } })
             let data_v1_json = await api_v1_josn.json()
@@ -490,18 +517,19 @@ export default class TikHub extends base {
               result.is_mp4 = true
             }
             result.tik_status = 1;
-          } catch (err) {
-            if (Date.now() - startTime > 30000) {
+            logger.info(logger.green('douyin.wtf API 获取数据成功！'))
+          } catch (err) { //报错了才会来到此处
+            if (Date.now() - startTime > 30000) { //30秒后跳出循环
               logger.error('30秒内 douyin.wtf API 连续请求失败，任务结束');
               this.e.reply('任务执行报错\n' + err)
               break;
             }
           }
-        } while (true);
+        } while (true); //跳出
       }
     }
     //logger.warn(JSON.stringify(result))
-    return result
+    return result //返回合并好的json，这里返回的是v1的，因为v2的请求如果成功，在请求v1前就已经返回了
   }
 
 
@@ -511,7 +539,7 @@ export default class TikHub extends base {
       "accept": "application/json",
       "Content-type": "application/x-www-form-urlencoded",
     }
-    let body = `grant_type=&username=${username}&password=${password}&scope=&client_id=&client_secret=`
+    let body = `grant_type=&username=${AccountFile.username}&password=${AccountFile.password}&scope=&client_id=&client_secret=`
     let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
       method: "POST",
       headers,
@@ -603,6 +631,15 @@ export default class TikHub extends base {
 
     return forwardMsg
   }
+  /**
+   * 
+   * @param {*} file 要上传的图片文件
+   * @returns 先放着，未来可能有用
+   */
+  async upload_image(file) {
+    return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0];
+  }
+  
 
 }
 
