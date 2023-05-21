@@ -68,7 +68,7 @@ export function supportGuoba() {
                     label: '删除视频文件',
                     bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()',
                     component: 'Switch',
-                    required: true,
+                    required: false,
                 },
 
             ],

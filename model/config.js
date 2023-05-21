@@ -5,7 +5,7 @@ const defaultConfig = {
     "password": "",
     "access_token": "",
     "address": "",
-    "rmmp4": "",
+    "rmmp4": true,
 }
 let config = {}
 config = Object.assign({}, defaultConfig, config)
