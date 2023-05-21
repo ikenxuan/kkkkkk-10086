@@ -40,7 +40,8 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 `/plugins/kkkkkk-10086/config/config.json
 
-添加完账号密码后(如果上一步获取了token这一步可无视)向机器人发送`#获取token`以获取账号token(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)手动获取token)
+~~添加完账号密码后(如果上一步获取了token这一步可无视)向机器人发送`#获取token`以获取账号token(或者在[这里](https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post)手动获取token)~~
+目前已经实现可自动通过账号密码获取Tik Hub鉴权token
 
 ## 免责声明
 
