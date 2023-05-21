@@ -75,7 +75,8 @@ export default class TikHub extends base {
             this.e.reply('视频过大，尝试通过文件上传', false)
             await this.upload_file(path)
           } else {
-            this.e.reply(segment.video(path)) //否则直接发视频
+            await this.e.reply(segment.video(path)) //否则直接发视频
+            await this.unmp4(path)
           }
           logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
@@ -88,8 +89,16 @@ export default class TikHub extends base {
     if (code === 2) {
       try {
         await this.v2_dy_data(dydata)
-        if (is_mp4 === true) {
-          this.e.reply(segment.video(`${_path}/plugins/example/douyin.mp4`));
+        if (is_mp4 === true) { //判断是否是视频
+          let mp4size = await this.tosize() //获取视频文件大小信息
+          if (mp4size >= 45) { //如果大小超过45MB，发文件
+            //群和私聊分开
+            this.e.reply('视频过大，尝试通过文件上传', false)
+            await this.upload_file(path)
+          } else {
+            await this.e.reply(segment.video(path)) //否则直接发视频
+            await this.unmp4(path)
+          }
           logger.info('使用了 TikHub API 提供的解析服务')
         }
         return true
@@ -634,11 +643,31 @@ export default class TikHub extends base {
    */
   async upload_file(file) {
     try {
-      if (this.e.isGroup) { this.e.group.fs.upload(file) }
-      else { if (this.e.isPrivate) { this.e.friend.sendFile(file) } }
+      if (this.e.isGroup) { 
+        this.e.group.fs.upload(file)
+        await this.unmp4(file)
+      }
+      else { 
+        if (this.e.isPrivate) { 
+          this.e.friend.sendFile(file)
+          await this.unmp4(file)
+        } 
+      }
     } catch (err) {
       this.e.reply('视频文件上传出错：' + err)
       logger.error('视频文件上传出错：' + err)
+    }
+
+  }
+  /**
+   * 
+   * @param {*} file 需要删除的视频文件
+   */
+  async unmp4(file){
+    if(AccountFile.rmmp4 = true) {
+      fs.unlink(file, (err) => {
+        if (err) throw err
+      })
     }
 
   }
