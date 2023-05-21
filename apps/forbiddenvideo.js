@@ -20,7 +20,7 @@ function count(count) {
 export class example extends plugin {
   constructor() {
     super({
-      name: '视频功能',
+      name: 'kkkkkk-视频功能',
       dsc: '视频',
       /* oicq文档：https://oicqjs.github.io/oicq/#events */
       event: 'message',

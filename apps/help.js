@@ -4,7 +4,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 export class help extends plugin {
   constructor (e) {
     super({
-      name: 'kkkkkk-10086',
+      name: 'kkkkkk-菜单',
       dsc: 'help',
       event: 'message',
       priority: 500,
