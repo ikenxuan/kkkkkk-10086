@@ -2,6 +2,7 @@ import fetch from "node-fetch"
 import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
+import path from "node:path"
 const _path = process.cwd()
 let config
 let AccountFile
@@ -17,6 +18,7 @@ function reloadConfig() {
 }
 reloadConfig()
 fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
+let globalmp4_path = { path: "" }
 export class base {
   constructor(e = {}) {
     this.e = e;
@@ -41,10 +43,9 @@ export default class TikHub extends base {
   }
   /** 获取视频大小信息 */
   async tosize() {
-    let path = `${_path}/plugins/example/douyin.mp4`
     //把fs.stat包装成一个promise对象
     return new Promise((resolve, reject) => {
-      fs.stat(path, (err, stats) => {
+      fs.stat(globalmp4_path, (err, stats) => {
         if (err) reject(err);
         let totalSize //将定义放入回调函数内部
         totalSize = stats.size;
@@ -64,7 +65,7 @@ export default class TikHub extends base {
   * @returns 
   */
   async gettype(code, is_mp4, dydata) {
-    let path = `${_path}/plugins/example/douyin.mp4`
+    //let path = `${_path}/plugins/example/douyin.mp4`
     try {
       if (code === 1) {
         await this.v1_dy_data(dydata)
@@ -73,10 +74,10 @@ export default class TikHub extends base {
           if (mp4size >= 45) { //如果大小超过45MB，发文件
             //群和私聊分开
             this.e.reply('视频过大，尝试通过文件上传', false)
-            await this.upload_file(path)
+            await this.upload_file(globalmp4_path)
           } else {
-            await this.e.reply(segment.video(path)) //否则直接发视频
-            await this.unmp4(path)
+            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+            await this.unmp4(globalmp4_path)
           }
           logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
@@ -94,10 +95,10 @@ export default class TikHub extends base {
           if (mp4size >= 45) { //如果大小超过45MB，发文件
             //群和私聊分开
             this.e.reply('视频过大，尝试通过文件上传', false)
-            await this.upload_file(path)
+            await this.upload_file(globalmp4_path)
           } else {
-            await this.e.reply(segment.video(path)) //否则直接发视频
-            await this.unmp4(path)
+            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+            await this.unmp4(globalmp4_path)
           }
           logger.info('使用了 TikHub API 提供的解析服务')
         }
@@ -233,9 +234,12 @@ export default class TikHub extends base {
       let mp4 = await fetch(`${video.play_addr_h264.url_list[2]}`, { method: "GET", headers: qiy });
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
-      let path = `${_path}/plugins/example/douyin.mp4`;
+      mkdirs('resources/kkkdownload/video')
+      let filename = `douyin_${nowtime()}.mp4`;
+      let path = `${_path}/resources/kkkdownload/video/${filename}`;
       fs.writeFile(path, a, "binary", function (err) {
         if (!err) { logger.info("视频下载成功") }
+        globalmp4_path = path
         return false
       })
     }
@@ -637,21 +641,19 @@ export default class TikHub extends base {
   async upload_image(file) {
     return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0];
   }
-  /**
-   * 
-   * @param {*} file 要上传的文件，私聊(需要加好友)
-   */
+
+  /** 要上传的视频文件，私聊需要加好友 */
   async upload_file(file) {
     try {
-      if (this.e.isGroup) { 
+      if (this.e.isGroup) {
         await this.e.group.fs.upload(file)
         await this.unmp4(file)
       }
-      else { 
-        if (this.e.isPrivate) { 
+      else {
+        if (this.e.isPrivate) {
           await this.e.friend.sendFile(file)
           await this.unmp4(file)
-        } 
+        }
       }
     } catch (err) {
       this.e.reply('视频文件上传出错：' + err)
@@ -659,17 +661,36 @@ export default class TikHub extends base {
     }
 
   }
-  /**
-   * 
-   * @param {*} file 需要删除的视频文件
-   */
-  async unmp4(file){
-    if(AccountFile.rmmp4 = true) {
+
+  /** 要删除的视频文件 */
+  async unmp4(file) {
+    if (AccountFile.rmmp4 === true) {
       fs.unlink(file, (err) => {
         if (err) throw err
       })
     }
-
   }
 }
+/** 获取当前系统时间，返回格式：年_月日_时分 */
+function nowtime() {
+  let date = new Date();
+  let year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  let hour = date.getHours();
+  let minute = date.getMinutes();
+  return `${year}_${month}${day}_${hour}${minute}`;
+}
+/** 文件夹名字 */
+function mkdirs(dirname) {
+  if (fs.existsSync(dirname)) {
+    return true
+  } else {
+    if (mkdirs(path.dirname(dirname))) {
+      fs.mkdirSync(dirname)
+      return true
+    }
+  }
+}
+
 
