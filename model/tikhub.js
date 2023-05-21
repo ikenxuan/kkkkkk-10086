@@ -39,7 +39,6 @@ export default class TikHub extends base {
       return count.toString();
     }
   }
-
   /** 获取视频大小信息 */
   async tosize() {
     let path = `${_path}/plugins/example/douyin.mp4`
