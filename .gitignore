@@ -1,3 +1,5 @@
 /resources/kkkkkk-10086-resources
 /config/*
 /config/config.json
+/node_modules
+/yarn.lock
