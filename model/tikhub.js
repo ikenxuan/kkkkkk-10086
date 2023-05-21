@@ -2,7 +2,6 @@ import fetch from "node-fetch"
 import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
-import { segment } from "oicq"
 const _path = process.cwd()
 let config
 let AccountFile
@@ -21,7 +20,6 @@ fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
 export class base {
   constructor(e = {}) {
     this.e = e;
-    this.userId = e?.user_id;
   }
 }
 
@@ -60,12 +58,12 @@ export default class TikHub extends base {
     })
   }
   /**
- * 
- * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
- * @param {*} is_mp4 douyin()添加的唯一状态码，判断是视频还是图集
- * @param {*} dydata 视频json
- * @returns 
- */
+  * 
+  * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
+  * @param {*} is_mp4 douyin()添加的唯一状态码，判断是视频还是图集
+  * @param {*} dydata 视频json
+  * @returns 
+  */
   async gettype(code, is_mp4, dydata) {
     let path = `${_path}/plugins/example/douyin.mp4`
     try {
@@ -75,16 +73,10 @@ export default class TikHub extends base {
           let mp4size = await this.tosize() //获取视频文件大小信息
           if (mp4size >= 45) { //如果大小超过45MB，发文件
             //群和私聊分开
-            this.e.reply('视频文件过大，尝试上传到群文件', false)
-            try {
-              if (this.e.isGroup) { this.e.group.fs.upload(path) }
-            } catch(err) {
-              this.e.reply('视频文件上传出错：' + err)
-              logger.error('视频文件上传出错：' + err)
-            }
-            if (this.e.isPrivate) { this.e.friend.sendFile(path) } //私聊目前似乎发不了文件？
+            this.e.reply('视频过大，尝试通过文件上传', false)
+            await this.upload_file(path)
           } else {
-            this.e.reply(segment.video(path)) //否则直接发视频文件
+            this.e.reply(segment.video(path)) //否则直接发视频
           }
           logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
@@ -231,10 +223,11 @@ export default class TikHub extends base {
         "Content-Type": "video/mp4",
       }
       let mp4 = await fetch(`${video.play_addr_h264.url_list[2]}`, { method: "GET", headers: qiy });
+      logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
       let path = `${_path}/plugins/example/douyin.mp4`;
       fs.writeFile(path, a, "binary", function (err) {
-        if (!err) { console.log("视频下载成功") }
+        if (!err) { logger.info("视频下载成功") }
         return false
       })
     }
@@ -469,6 +462,7 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
+    if (!AccountFile.access_token) { await this.gettoken() }
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
@@ -531,9 +525,6 @@ export default class TikHub extends base {
     //logger.warn(JSON.stringify(result))
     return result //返回合并好的json，这里返回的是v1的，因为v2的请求如果成功，在请求v1前就已经返回了
   }
-
-
-
   async gettoken() {
     let headers = {
       "accept": "application/json",
@@ -554,13 +545,12 @@ export default class TikHub extends base {
     doc.access_token = tokendata.access_token;
     fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
     await this.getnumber()
-    return ('刷新token成功，该token拥有365天有效期')
+    return ('手动刷新token成功，该token拥有365天有效期')
   }
   async getnumber() {
-    let access_token = AccountFile.access_token;
     let headers2 = {
       "accept": "application/json",
-      "Authorization": `Bearer ${access_token}`,
+      "Authorization": `Bearer ${AccountFile.access_token}`,
     }
 
     let noteday = await fetch(`https://api.tikhub.io/promotion/daily_check_in`, {
@@ -639,7 +629,19 @@ export default class TikHub extends base {
   async upload_image(file) {
     return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0];
   }
-  
+  /**
+   * 
+   * @param {*} file 要上传的文件，私聊(需要加好友)
+   */
+  async upload_file(file) {
+    try {
+      if (this.e.isGroup) { this.e.group.fs.upload(file) }
+      else { if (this.e.isPrivate) { this.e.friend.sendFile(file) } }
+    } catch (err) {
+      this.e.reply('视频文件上传出错：' + err)
+      logger.error('视频文件上传出错：' + err)
+    }
 
+  }
 }
 
