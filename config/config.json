@@ -1,6 +1,4 @@
 {
-  "account": "",
-  "password": "",
-  "access_token": "",
-  "address": ""
+  "address": "192.168.0.121:4321",
+  "rmmp4": true
 }

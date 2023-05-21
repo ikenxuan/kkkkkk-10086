@@ -644,12 +644,12 @@ export default class TikHub extends base {
   async upload_file(file) {
     try {
       if (this.e.isGroup) { 
-        this.e.group.fs.upload(file)
+        await this.e.group.fs.upload(file)
         await this.unmp4(file)
       }
       else { 
         if (this.e.isPrivate) { 
-          this.e.friend.sendFile(file)
+          await this.e.friend.sendFile(file)
           await this.unmp4(file)
         } 
       }
