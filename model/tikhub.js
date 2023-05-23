@@ -447,13 +447,12 @@ export default class TikHub extends base {
       let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
+      mkdirs('resources/kkkdownload/video')
       let a = await mp4.buffer();
-      let path = `${_path}/plugins/example/douyin.mp4`;
+      let path = `${_path}/resources/kkkdownload/video/${title.substring(0, 80)}.mp4`;
       fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          //this.e.reply(segment.video(path));
-          logger.info("视频下载成功");
-        }
+        if (!err) { logger.info("视频下载成功") }
+        globalmp4_path = path
         return false
       })
     }
