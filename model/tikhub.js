@@ -50,7 +50,7 @@ export default class TikHub extends base {
         let totalSize //将定义放入回调函数内部
         totalSize = stats.size;
         let totalMB = totalSize / (1024 * 1024);
-        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 30 })
+        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 20 })
         let size = String(totalMB.toFixed(2))
         //在then方法里面return size
         resolve(size)
