@@ -4,7 +4,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 export class help extends plugin {
   constructor (e) {
     super({
-      name: 'kkkkkk-10086',
+      name: 'kkkkkk-菜单',
       dsc: 'help',
       event: 'message',
       priority: 500,
@@ -18,7 +18,7 @@ export class help extends plugin {
   }
 
   async help (e) {
-    let text = '语音盒\n解析抖音快手tiktok视频\n手写<文本>\n开奖\n'
+    let text = '待开发，咕咕咕'
     e.reply(text)
   }
 
