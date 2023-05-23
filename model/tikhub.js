@@ -235,8 +235,8 @@ export default class TikHub extends base {
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
       mkdirs('resources/kkkdownload/video')
-      let filename = `douyin_${nowtime()}.mp4`;
-      let path = `${_path}/resources/kkkdownload/video/${filename}`;
+      //let filename = `douyin_${nowtime()}.mp4`;
+      let path = `${_path}/resources/kkkdownload/video/${title}.mp4`;
       fs.writeFile(path, a, "binary", function (err) {
         if (!err) { logger.info("视频下载成功") }
         globalmp4_path = path
