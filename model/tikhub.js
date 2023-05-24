@@ -637,12 +637,16 @@ export default class TikHub extends base {
     return forwardMsg
   }
   /**
-   * 
-   * @param {*} file 要上传的图片文件
-   * @returns 先放着，未来可能有用
+   * @param {*} file 上传图片到腾讯图床
+   * @returns 
    */
   async upload_image(file) {
     return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0];
+  }
+
+  /** 获取机器人上传的图片链接 */
+  async getHistoryLog() {
+    return((await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url)
   }
 
   /** 要上传的视频文件，私聊需要加好友 */
