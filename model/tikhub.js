@@ -473,7 +473,11 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
-    if (!AccountFile.access_token) { await this.gettoken() }
+    if (!AccountFile.access_token) {
+      try {
+        await this.gettoken()
+      } catch(err) { logger.error('你似乎没有提前设定好TikHub Token？我尝试帮你获取，但是访问失败了：' + err)}
+    }
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
