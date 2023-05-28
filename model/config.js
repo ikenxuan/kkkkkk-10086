@@ -1,16 +1,15 @@
 import fs from 'fs'
 import lodash from 'lodash'
+const _path = process.cwd()
 const defaultConfig = {
     "account": "",
     "password": "",
     "access_token": "",
     "address": "",
-    "rmmp4": true,
+    "rmmp4": ""
 }
 let config = {}
 config = Object.assign({}, defaultConfig, config)
-
-const _path = process.cwd()
 fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
 const data = fs.readFileSync(fullPath)
@@ -34,4 +33,3 @@ export const Config = new Proxy(config, {
         return true
     }
 })
-
