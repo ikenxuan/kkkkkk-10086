@@ -1,5 +1,5 @@
 import fetch from "node-fetch"
-import fs from 'fs'
+import fs, { read } from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
@@ -66,26 +66,26 @@ export default class TikHub extends base {
   */
   async gettype(code, is_mp4, dydata) {
     //try {
-      if (code === 1) {
-        await this.v1_dy_data(dydata)
-        if (is_mp4 === true) { //判断是否是视频
-          let mp4size = await this.tosize() //获取视频文件大小信息
-          if (mp4size >= 45) { //如果大小超过45MB，发文件
-            //群和私聊分开
-            this.e.reply('视频过大，尝试通过文件上传', false)
-            await this.upload_file(globalmp4_path)
-          } else {
-            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-            await this.unmp4(globalmp4_path)
-          }
-          logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+    if (code === 1) {
+      await this.v1_dy_data(dydata)
+      if (is_mp4 === true) { //判断是否是视频
+        let mp4size = await this.tosize() //获取视频文件大小信息
+        if (mp4size >= 45) { //如果大小超过45MB，发文件
+          //群和私聊分开
+          this.e.reply('视频过大，尝试通过文件上传', false)
+          await this.upload_file(globalmp4_path)
+        } else {
+          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+          await this.unmp4(globalmp4_path)
         }
-        //return
+        logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
       }
+      //return
+    }
     //} catch (err) {
     //  this.e.reply('任务执行报错function gettype()\n' + err)
-     // return
-   // }
+    // return
+    // }
     if (code === 2) {
       try {
         await this.v2_dy_data(dydata)
@@ -216,7 +216,7 @@ export default class TikHub extends base {
       let video_url //视频链接做特殊判断，抖音你是不是闲着发慌？
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
-      if(v1data.aweme_list[0].video.play_addr_h264) {video_url = video.play_addr_h264.url_list[2] } else if(v1data.aweme_list[0].video.play_addr) {video_url = video.play_addr.url_list[2]}
+      if (v1data.aweme_list[0].video.play_addr_h264) { video_url = video.play_addr_h264.url_list[2] } else if (v1data.aweme_list[0].video.play_addr) { video_url = video.play_addr.url_list[2] }
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
@@ -547,7 +547,7 @@ export default class TikHub extends base {
       method: "POST",
       headers,
       body
-    })
+    }, (err) => { if (err) throw err + '你是不是开了代理？' })
     //返回账号token
     let tokendata = await vdata.json();
     //logger.mark(tokendata)
@@ -643,7 +643,7 @@ export default class TikHub extends base {
 
   /** 获取机器人上传的图片链接 */
   async getHistoryLog() {
-    return((await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url)
+    return ((await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url)
   }
 
   /** 要上传的视频文件，私聊需要加好友 */
