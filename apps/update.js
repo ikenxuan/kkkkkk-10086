@@ -4,7 +4,7 @@ import fs from 'fs'
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
 const Plugin_Name = 'xiaofei-plugin'
-export class update extends plugin {
+export class example extends plugin {
     constructor() {
         super({
             name: "kkkkkk-更新",
