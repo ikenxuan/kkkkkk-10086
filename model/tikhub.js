@@ -65,8 +65,7 @@ export default class TikHub extends base {
   * @returns 
   */
   async gettype(code, is_mp4, dydata) {
-    //let path = `${_path}/plugins/example/douyin.mp4`
-    try {
+    //try {
       if (code === 1) {
         await this.v1_dy_data(dydata)
         if (is_mp4 === true) { //判断是否是视频
@@ -81,12 +80,12 @@ export default class TikHub extends base {
           }
           logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
-        return
+        //return
       }
-    } catch (err) {
-      this.e.reply('任务执行报错\n' + err)
-      return
-    }
+    //} catch (err) {
+    //  this.e.reply('任务执行报错function gettype()\n' + err)
+     // return
+   // }
     if (code === 2) {
       try {
         await this.v2_dy_data(dydata)
@@ -104,7 +103,7 @@ export default class TikHub extends base {
         }
         return true
       } catch (err) {
-        this.e.reply('任务执行报错\n' + err)
+        this.e.reply('任务执行报错function gettype()\n' + err)
         return
       }
     }
@@ -211,12 +210,13 @@ export default class TikHub extends base {
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
-    if (v1data.aweme_list[0].video.play_addr_h264) {
+    if (v1data.aweme_list[0].video.play_addr_h264 || v1data.aweme_list[0].video.play_addr) {
       let video_data = []
       let videores = []
+      let video_url //视频链接做特殊判断，抖音你是不是闲着发慌？
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
-      let video_url = video.play_addr_h264.url_list[2] //video link
+      if(v1data.aweme_list[0].video.play_addr_h264) {video_url = video.play_addr_h264.url_list[2] } else if(v1data.aweme_list[0].video.play_addr) {video_url = video.play_addr.url_list[2]}
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
@@ -231,7 +231,7 @@ export default class TikHub extends base {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
-      let mp4 = await fetch(`${video.play_addr_h264.url_list[2]}`, { method: "GET", headers: qiy });
+      let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
       mkdirs('resources/kkkdownload/video')
@@ -527,7 +527,7 @@ export default class TikHub extends base {
           } catch (err) { //报错了才会来到此处
             if (Date.now() - startTime > 30000) { //30秒后跳出循环
               logger.error('30秒内 douyin.wtf API 连续请求失败，任务结束');
-              this.e.reply('任务执行报错\n' + err)
+              this.e.reply('任务执行报错function gettype()\n' + err)
               break;
             }
           }
