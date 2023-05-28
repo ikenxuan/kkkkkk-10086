@@ -36,7 +36,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 快手解析部分基于官方API
 
 #### douyin解析提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
-
+此项目接口可直接下载官方签名好的视频文件，无损画质
 使用[在线](https://api.douyin.wtf/docs#/Douyin/get_douyin_video_data_douyin_video_data__get)接口请求可能遇到网络错误，有能力建议自行[本地部署](https://github.com/Evil0ctal/Douyin_TikTok_Download_API#%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%80-linux)或者用作者的(锅巴配置写了)
 #### 若使用TikHub API功能需先注册[TikHub](https://api.tikhub.io/#/Authorization/register_user_users_register__post)账号 (注意消耗次数)
 * 建议使用[锅巴后台](https://gitee.com/guoba-yunzai/guoba-plugin)添加账号密码修改配置文件或 手动修改
