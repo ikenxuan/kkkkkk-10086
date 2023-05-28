@@ -452,13 +452,14 @@ export default class TikHub extends base {
       console.log("视频直链：", video)
       let a = await mp4.buffer();
       let path = `${_path}/plugins/example/douyin.mp4`;
-      fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          //this.e.reply(segment.video(path));
-          logger.info("视频下载成功");
-        }
-        return false
-      })
+      try {
+        await fs.promises.writeFile(path, a, "binary")
+        logger.info('视频下载成功')
+        globalmp4_path = path
+      } catch(err) {
+        logger.error('视频写入(下载)失败' + err)
+        return
+      }
     }
 
 
