@@ -50,7 +50,7 @@ export default class TikHub extends base {
         let totalSize //将定义放入回调函数内部
         totalSize = stats.size;
         let totalMB = totalSize / (1024 * 1024);
-        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 20 })
+        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 30 })
         let size = String(totalMB.toFixed(2))
         //在then方法里面return size
         resolve(size)
@@ -447,12 +447,13 @@ export default class TikHub extends base {
       let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
-      mkdirs('resources/kkkdownload/video')
       let a = await mp4.buffer();
-      let path = `${_path}/resources/kkkdownload/video/${title.substring(0, 80)}.mp4`;
+      let path = `${_path}/plugins/example/douyin.mp4`;
       fs.writeFile(path, a, "binary", function (err) {
-        if (!err) { logger.info("视频下载成功") }
-        globalmp4_path = path
+        if (!err) {
+          //this.e.reply(segment.video(path));
+          logger.info("视频下载成功");
+        }
         return false
       })
     }
@@ -473,11 +474,7 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
-    if (!AccountFile.access_token) {
-      try {
-        await this.gettoken()
-      } catch(err) { logger.error('你似乎没有提前设定好TikHub Token？我尝试帮你获取，但是访问失败了：' + err)}
-    }
+    if (!AccountFile.access_token) { await this.gettoken() }
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
@@ -494,7 +491,7 @@ export default class TikHub extends base {
           logger.error(`请求 TikHub API 获取评论数据出错：${err}`)
           result.comments = false //如果评论数据接口请求失败，最后返回的json(rusult)中的comments值为false
         }
-        if (data_v2_json.aweme_list[0].video.play_addr_h264 !== undefined) { //这里判断v2的json中是否是视频
+        if (data_v2_json.aweme_list[0].video.play_addr_h264 !== undefined) { //这里判断v2的json中是否是视频 //此处待修复
           result.is_mp4 = true //是就打上true，否则false
         } else result.is_mp4 = false
         result.data = data_v2_json; //v2的json赋值给result中的data
