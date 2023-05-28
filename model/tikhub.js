@@ -1,5 +1,5 @@
 import fetch from "node-fetch"
-import fs, { read } from 'fs'
+import fs from 'fs'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
@@ -50,7 +50,7 @@ export default class TikHub extends base {
         let totalSize //将定义放入回调函数内部
         totalSize = stats.size;
         let totalMB = totalSize / (1024 * 1024);
-        this.e.reply('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频', true, { recallMsg: 30 })
+        logger.info(logger.green('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频'))
         let size = String(totalMB.toFixed(2))
         //在then方法里面return size
         resolve(size)
@@ -66,26 +66,26 @@ export default class TikHub extends base {
   */
   async gettype(code, is_mp4, dydata) {
     try {
-    if (code === 1) {
-      await this.v1_dy_data(dydata)
-      if (is_mp4 === true) { //判断是否是视频
-        let mp4size = await this.tosize() //获取视频文件大小信息
-        if (mp4size >= 45) { //如果大小超过45MB，发文件
-          //群和私聊分开
-          this.e.reply('视频过大，尝试通过文件上传', false)
-          await this.upload_file(globalmp4_path)
-        } else {
-          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-          await this.unmp4(globalmp4_path)
+      if (code === 1) {
+        await this.v1_dy_data(dydata)
+        if (is_mp4 === true) { //判断是否是视频
+          let mp4size = await this.tosize() //获取视频文件大小信息
+          if (mp4size >= 45) { //如果大小超过45MB，发文件
+            //群和私聊分开
+            this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+            await this.upload_file(globalmp4_path)
+          } else {
+            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+            await this.unmp4(globalmp4_path)
+          }
+          logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
         }
-        logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+        return
       }
-      return
-    }
     } catch (err) {
       this.e.reply('任务执行报错function gettype()\n' + err)
-     return
-     }
+      return
+    }
     if (code === 2) {
       try {
         await this.v2_dy_data(dydata)
@@ -237,11 +237,14 @@ export default class TikHub extends base {
       mkdirs('resources/kkkdownload/video')
       //let filename = `douyin_${nowtime()}.mp4`;
       let path = `${_path}/resources/kkkdownload/video/${title.substring(0, 80)}.mp4`;
-      await fs.writeFile(path, a, "binary", function (err) {
-        if (!err) { logger.info("视频下载成功") }
+      try {
+        await fs.promises.writeFile(path, a, "binary")
+        logger.info('视频下载成功')
         globalmp4_path = path
-        return false
-      })
+      } catch(err) {
+        logger.error('视频写入(下载)失败' + err)
+        return
+      }
     }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
@@ -467,11 +470,11 @@ export default class TikHub extends base {
    * @returns 
    */
   async douyin(url) {
-    let api_v1 = `https://api.douyin.wtf/douyin_video_data/?douyin_video_url=${url}` //赋值，v1视频信息接口
+    let api_v1 = `https://api.douyin.wtf/douyin_video_data/?video_id=${url}` //赋值，v1视频信息接口
     if (AccountFile.address) {
-      api_v1 = `http://${AccountFile.address}/douyin_video_data/?douyin_video_url=${url}` //如果v1自定义了接口地址，用自定义的
+      api_v1 = `http://${AccountFile.address}/douyin_video_data/?video_id=${url}` //如果v1自定义了接口地址，用自定义的
     }
-    const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
+    const api_v2 = `https://api.tikhub.io/douyin/video_data/?video_id=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
     if (!AccountFile.access_token && AccountFile.account && AccountFile.password) { await this.gettoken() }
@@ -548,8 +551,8 @@ export default class TikHub extends base {
       headers,
       body
     })
-    .then(response => response.json())
-    .catch(err => { throw new Error(err + '你是不是开了代理啊')})
+      .then(response => response.json())
+      .catch(err => { throw new Error(err + '你是不是开了代理啊') })
     //返回账号token
     let tokendata = await vdata.json();
     //logger.mark(tokendata)
