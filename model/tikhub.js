@@ -474,7 +474,7 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?douyin_video_url=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?douyin_video_url=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
-    if (!AccountFile.access_token) { await this.gettoken() }
+    if (!AccountFile.access_token && AccountFile.account && AccountFile.password) { await this.gettoken() }
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
@@ -547,7 +547,9 @@ export default class TikHub extends base {
       method: "POST",
       headers,
       body
-    }, (err) => { if (err) throw err + '你是不是开了代理？' })
+    })
+    .then(response => response.json())
+    .catch(err => { throw new Error(err + '你是不是开了代理啊')})
     //返回账号token
     let tokendata = await vdata.json();
     //logger.mark(tokendata)
@@ -556,7 +558,7 @@ export default class TikHub extends base {
     // 将获取到的 access_token 写入 doc 对象，并写回到文件中
     doc.access_token = tokendata.access_token;
     fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
-    await this.getnumber()
+    await this.getnumber() //顺便签到一次
     return ('手动刷新token成功，该token拥有365天有效期')
   }
   async getnumber() {
