@@ -3,7 +3,7 @@ import { update } from '../../other/update.js'
 import fs from 'fs'
 import { exec, execSync } from "child_process";
 import { promisify } from "util";
-const Plugin_Name = 'xiaofei-plugin'
+const Plugin_Name = 'kkkkkk-10086'
 export class example extends plugin {
     constructor() {
         super({
