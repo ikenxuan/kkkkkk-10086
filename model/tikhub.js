@@ -65,7 +65,7 @@ export default class TikHub extends base {
   * @returns 
   */
   async gettype(code, is_mp4, dydata) {
-    //try {
+    try {
     if (code === 1) {
       await this.v1_dy_data(dydata)
       if (is_mp4 === true) { //判断是否是视频
@@ -80,12 +80,12 @@ export default class TikHub extends base {
         }
         logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
       }
-      //return
+      return
     }
-    //} catch (err) {
-    //  this.e.reply('任务执行报错function gettype()\n' + err)
-    // return
-    // }
+    } catch (err) {
+      this.e.reply('任务执行报错function gettype()\n' + err)
+     return
+     }
     if (code === 2) {
       try {
         await this.v2_dy_data(dydata)
@@ -237,7 +237,7 @@ export default class TikHub extends base {
       mkdirs('resources/kkkdownload/video')
       //let filename = `douyin_${nowtime()}.mp4`;
       let path = `${_path}/resources/kkkdownload/video/${title.substring(0, 80)}.mp4`;
-      fs.writeFile(path, a, "binary", function (err) {
+      await fs.writeFile(path, a, "binary", function (err) {
         if (!err) { logger.info("视频下载成功") }
         globalmp4_path = path
         return false
