@@ -2,7 +2,6 @@ import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import fs from "fs";
 import common from '../../../lib/common/common.js';
-import uploadRecord from '../../kkkkkk-10086/model/uploadRecord.js';
 import TikHub from '../model/tikhub.js';
 const _path = process.cwd()
 /**
@@ -76,10 +75,11 @@ export class example extends plugin {
     //重新请求获取视频长链接
     let response = await fetch(URL, options);
     let longLink = response.url;
-    const videoIdMatch = longLink.match(/(video|note)\/(\d+)/)
-    const videoId = videoIdMatch ? videoIdMatch[2] : null
+    const matchRes = longLink.match(/(video|note)\/(\d+)/)
+    const videoId = matchRes ? matchRes[2] : null
     let tikhub = new TikHub(this.e)
     let dydata = await tikhub.douyin(videoId)
+    //console.log(JSON.stringify(dydata))
     await tikhub.gettype(dydata.tik_status, dydata.is_mp4, dydata)
     return
   }
