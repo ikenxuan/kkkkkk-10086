@@ -217,6 +217,7 @@ export default class TikHub extends base {
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
       if (v1data.aweme_list[0].video.play_addr_h264) { video_url = video.play_addr_h264.url_list[2] } else if (v1data.aweme_list[0].video.play_addr) { video_url = video.play_addr.url_list[2] }
+      console.log(video_url)
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
@@ -235,8 +236,10 @@ export default class TikHub extends base {
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
       mkdirs('resources/kkkdownload/video')
-      //let filename = `douyin_${nowtime()}.mp4`;
-      let path = `${_path}/resources/kkkdownload/video/${title.substring(0, 80)}.mp4`;
+      let filename = title.substring(0, 80)
+      .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
+      + '.mp4'
+      let path = `${_path}/resources/kkkdownload/video/${filename}`;
       try {
         await fs.promises.writeFile(path, a, "binary")
         logger.info('视频下载成功')
@@ -452,13 +455,14 @@ export default class TikHub extends base {
       console.log("视频直链：", video)
       let a = await mp4.buffer();
       let path = `${_path}/plugins/example/douyin.mp4`;
-      fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          //this.e.reply(segment.video(path));
-          logger.info("视频下载成功");
-        }
-        return false
-      })
+      try {
+        await fs.promises.writeFile(path, a, "binary")
+        logger.info('视频下载成功')
+        globalmp4_path = path
+      } catch(err) {
+        logger.error('视频写入(下载)失败' + err)
+        return
+      }
     }
 
 
