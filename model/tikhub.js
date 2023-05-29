@@ -454,7 +454,10 @@ export default class TikHub extends base {
       await this.e.reply(video_data)
       console.log("视频直链：", video)
       let a = await mp4.buffer();
-      let path = `${_path}/plugins/example/douyin.mp4`;
+      let filename = title.substring(0, 80)
+      .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
+      + '.mp4'
+      let path = `${_path}/resources/kkkdownload/video/${filename}`;
       try {
         await fs.promises.writeFile(path, a, "binary")
         logger.info('视频下载成功')
