@@ -76,7 +76,7 @@ export class example extends plugin {
     //重新请求获取视频长链接
     let response = await fetch(URL, options);
     let longLink = response.url;
-    const videoIdMatch = longLink.match(/\/video\/(\d+)/)
+    const videoIdMatch = longLink.match(/\/(video|note)\/(\d+)/)
     const videoId = videoIdMatch ? videoIdMatch[1] : null
     let tikhub = new TikHub(this.e)
     let dydata = await tikhub.douyin(videoId)
