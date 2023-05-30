@@ -51,7 +51,7 @@ export function supportGuoba() {
                     component: 'InputPassword',
                     required: false,
                     componentProps: {
-                        placeholder: '在此填写鉴权密钥'
+                        placeholder: '在此填写鉴权密钥。PS：填了账号密码后会自动获取'
                     },
                 },
                 {
@@ -65,8 +65,8 @@ export function supportGuoba() {
                 },
                 {
                     field: 'rmmp4',
-                    label: '删除视频文件',
-                    bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()',
+                    label: '删除视频/图集文件',
+                    bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
                     component: 'Switch',
                     required: false,
                 },
