@@ -251,7 +251,6 @@ export default class TikHub extends base {
       let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.buffer();
-      mkdirs('resources/kkkdownload/video')
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
         + '.mp4'
@@ -483,8 +482,8 @@ export default class TikHub extends base {
       console.log("视频直链：", video)
       let a = await mp4.buffer();
       let filename = title.substring(0, 80)
-      .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
-      + '.mp4'
+        .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
+        + '.mp4'
       let path = `${_path}/resources/kkkdownload/video/${filename}`;
       try {
         await fs.promises.writeFile(path, a, "binary")
@@ -708,9 +707,9 @@ export default class TikHub extends base {
 
   /** 要删除的视频文件 */
   async unmp4(file) {
-    if (AccountFile.rmmp4 === true) {
+    if (AccountFile.rmmp4 === true || AccountFile.rmmp4 === undefined) {
       fs.unlink(file, (err) => {
-        if (err) throw err
+        if (err) { throw err } else { console.log('视频缓存删除') }
       })
     }
   }
