@@ -23,7 +23,7 @@ for (const dir of dirs) {
 }
 
 const readmePath = path.join(kkkres, 'README.md');
-fs.writeFileSync(readmePath, '# 这是一个缓存文件夹\n\n## 开源项目[https://github.com/ikenxuan/kkkkkk-10086](https://github.com/ikenxuan/kkkkkk-10086)', { flag: 'a' });
+if (fs.existsSync(readmePath)) { return true } else { fs.writeFileSync(readmePath, '# 这是一个缓存文件夹\n\n## 开源项目[https://github.com/ikenxuan/kkkkkk-10086](https://github.com/ikenxuan/kkkkkk-10086)', { flag: 'a' }); }
 
 function mkdirs(dirname) {
   if (fs.existsSync(dirname)) {
