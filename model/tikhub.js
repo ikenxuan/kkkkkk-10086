@@ -588,7 +588,7 @@ export default class TikHub extends base {
       .then(response => response.json())
       .catch(err => { throw new Error(err + '你是不是开了代理啊') })
     //返回账号token
-    let tokendata = await vdata.json();
+    let tokendata = await vdata
     //logger.mark(tokendata)
     let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
     let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
