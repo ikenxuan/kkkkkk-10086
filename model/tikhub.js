@@ -511,12 +511,13 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?video_id=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?video_id=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
-    if (!AccountFile.access_token && AccountFile.account && AccountFile.password) { await this.gettoken() }
+    if ((!AccountFile.access_token || AccountFile.access_token === undefined) && AccountFile.account && AccountFile.password) { await this.gettoken() }
     try {
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
       let data_v2_json = await api_v2_json.json()
-      if (data_v2_json.status === false) { //判断鉴权token是否过期，过期为false
+      //console.log(data_v2_json)
+      if (data_v2_json.detail.status === false) { //判断鉴权token是否过期，过期为false
         logger.warn(`使用 TikHub API 时${data_v2_json.detail.message}，可前往 https://dash.tikhub.io/pricing 购买额外请求次数或者注册新的TikHbu账号（理论上可以一直白嫖）`)
         throw new Error('TikHub API 请求成功但返回错误，将使用 douyin.wtf API 再次请求') //手动抛出错误转入catch()
       } else {
@@ -574,6 +575,8 @@ export default class TikHub extends base {
     //logger.warn(JSON.stringify(result))
     return result //返回合并好的json，这里返回的是v1的，因为v2的请求如果成功，在请求v1前就已经返回了
   }
+
+  /**获取Tik Hub账号token */
   async gettoken() {
     let headers = {
       "accept": "application/json",
@@ -598,6 +601,8 @@ export default class TikHub extends base {
     await this.getnumber() //顺便签到一次
     return ('手动刷新token成功，该token拥有365天有效期')
   }
+
+  /**签到获取Tik Hub账号请求次数 */
   async getnumber() {
     let headers2 = {
       "accept": "application/json",
