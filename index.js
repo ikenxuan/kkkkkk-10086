@@ -14,7 +14,6 @@ fs.access(configFile, fs.constants.F_OK, (err) => {
 })
 const videodir = `${_path}/resources/kkkdownload/video`
 const imgdir = `${_path}/resources/kkkdownload/images`
-const kkkres = `${_path}/resources/kkkdownload`
 const dirs = [videodir, imgdir]
 for (const dir of dirs) {
   if (!fs.existsSync(dir)) {
@@ -22,7 +21,7 @@ for (const dir of dirs) {
   }
 }
 
-const readmePath = path.join(kkkres, 'README.md');
+const readmePath = `${_path}/resources/kkkdownload/README.md`
 if (fs.existsSync(readmePath)) {
   return true;
 } else {
