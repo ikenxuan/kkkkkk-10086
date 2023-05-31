@@ -71,7 +71,7 @@ export class example extends plugin {
         'Referer': 'https://www.xiaohongshu.com/',
         'Cookie': 'your-cookie-string-here'
       }
-    };
+    }
     //重新请求获取视频长链接
     let response = await fetch(URL, options);
     let longLink = response.url;
@@ -103,7 +103,7 @@ export class example extends plugin {
     let mp4 = await fetch(`${data.video_data.nwm_video_url_HQ}`, { method: "get", headers: qiy });
     e.reply([`发现Tik Tok分享...\n正在读取 URL...`]);
     let lopp = await mp4.buffer();
-    let path = `${_path}/plugins/example/记录/video/Tiktok.mp4`;
+    let path = `${_path}/plugins/example/Tiktok.mp4`;
     fs.writeFile(path, lopp, "binary", function (err) {
       if (!err) {
         // 下载视频成功

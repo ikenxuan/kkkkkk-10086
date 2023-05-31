@@ -25,7 +25,7 @@ const readmePath = `${_path}/resources/kkkdownload/README.md`
 if (!fs.existsSync(readmePath)) {
   fs.writeFileSync(
     readmePath,
-    '# 这是一个缓存文件夹\n\n## 开源项目[kkkkkk-10086](kkkkkk-10086)',
+    '# 这是一个缓存文件夹\n\n## 开源项目[kkkkkk-10086](https://github.com/ikenxuan/kkkkkk-10086)',
     { flag: 'w' }
   )
 }
