@@ -22,14 +22,12 @@ for (const dir of dirs) {
 }
 
 const readmePath = `${_path}/resources/kkkdownload/README.md`
-if (fs.existsSync(readmePath)) {
-  return true;
-} else {
+if (!fs.existsSync(readmePath)) {
   fs.writeFileSync(
     readmePath,
     '# 这是一个缓存文件夹\n\n## 开源项目[kkkkkk-10086](kkkkkk-10086)',
     { flag: 'w' }
-  );
+  )
 }
 function mkdirs(dirname) {
   if (fs.existsSync(dirname)) {
