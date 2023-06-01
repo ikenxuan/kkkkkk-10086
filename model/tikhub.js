@@ -127,14 +127,14 @@ export default class TikHub extends base {
       let imageres = []
       for (let i = 0; i < v1data.aweme_list[0].img_bitrate[1].images.length; i++) {
         let image_url = v1data.aweme_list[0].img_bitrate[1].images[i].url_list[2] //图片地址
-        title_global = v1data.aweme_list[0].preview_title
-        let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
+        //title_global = v1data.aweme_list[0].preview_title
+        let title = (v1data.aweme_list[0].preview_title).substring(0, 30)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         imageres.push(segment.image(image_url)) //合并图集字符串
         if (AccountFile.rmmp4 === false) {
-          mkdirs(`resources/kkkdownload/images/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')}`)
-          globalmp4_path = `resources/kkkdownload/images/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')}`
-          let path = `resources/kkkdownload/images/${title}/${i + 1}.png`
+          mkdirs(`resources/kkkdownload/images/${title}`)
+          title_global = `resources/kkkdownload/images/${title}`
+          let path = `resources/kkkdownload/images/${title_global}/${i + 1}.png`
           await fetch(image_url)
             .then(res => res.arrayBuffer())
             .then(data => fs.promises.writeFile(path, Buffer.from(data)))
@@ -269,7 +269,7 @@ export default class TikHub extends base {
       let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.arrayBuffer();
-      let filename = title.substring(0, 80)
+      let filename = title.substring(0, 30)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
         + '.mp4'
       let path = `${_path}/resources/kkkdownload/video/${filename}`;
@@ -356,7 +356,7 @@ export default class TikHub extends base {
         for (let j = 0; j < aweme_list.images.length; j++) {
           //图片链接
           let image_url = aweme_list.images[j].url_list[0];
-          let title = bt.substring(0, 50)
+          let title = bt.substring(0, 30)
             .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
           imageres.push(segment.image(image_url)) //合并图集字符串
           if (AccountFile.rmmp4 === false) {
