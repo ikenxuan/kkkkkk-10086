@@ -132,8 +132,8 @@ export default class TikHub extends base {
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         imageres.push(segment.image(image_url)) //合并图集字符串
         if (AccountFile.rmmp4 === false) {
-          mkdirs(`resources/kkkdownload/images/${title}`)
-          globalmp4_path = `resources/kkkdownload/images/${title}`
+          mkdirs(`resources/kkkdownload/images/${(title.substring(0, 80)).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')}`)
+          globalmp4_path = `resources/kkkdownload/images/${(title.substring(0, 80)).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')}`
           let path = `resources/kkkdownload/images/${title}/${i + 1}.png`
           await fetch(image_url)
             .then(res => res.arrayBuffer())
