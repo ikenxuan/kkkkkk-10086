@@ -36,7 +36,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 快手解析部分基于官方API
 
 #### douyin解析提供了一个在线接口，开源于 ☞ [Douyin_TikTok_Download_API](https://github.com/Evil0ctal/Douyin_TikTok_Download_API)
-此项目接口可直接下载带的视频文件，无损画质
+此项目接口可直接下载带签名的视频文件，无损画质
 
 默认使用[在线](https://api.douyin.wtf/docs#/Douyin/get_douyin_video_data_douyin_video_data__get)接口请求可能遇到网络错误或高峰期拥堵，有能力建议自行[本地部署](https://github.com/Evil0ctal/Douyin_TikTok_Download_API#%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%80-linux)或者用作者的
 #### 若使用TikHub API功能需先注册[TikHub](https://dash.tikhub.io/signin?next=/dashboard)账号 (注：此接口不开源，注意消耗次数)
@@ -48,7 +48,6 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 `/plugins/kkkkkk-10086/config/config.json
 
 ## TOOD
-- [ ] 抖音使用Tik Hub接口似乎出问题了（）
 - [ ] 咕咕咕
 ## 友情链接
 * Yunzai-Bot (V3): [☞GitHub](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [☞Gitee](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
