@@ -130,6 +130,9 @@ export default class TikHub extends base {
         let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
           title_global = title
+          if(i === 1) {
+            this.e.reply(segment.image(url_list[2]))
+          }
         imageres.push(segment.image(image_url)) //合并图集字符串
         if (AccountFile.rmmp4 === false) {
           mkdirs(`resources/kkkdownload/images/${title_global}`)
