@@ -47,7 +47,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 `/plugins/kkkkkk-10086/config/config.json
 
-## TOOD
+## TODO
 - [ ] 咕咕咕
 ## 友情链接
 * Yunzai-Bot (V3): [☞GitHub](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [☞Gitee](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
