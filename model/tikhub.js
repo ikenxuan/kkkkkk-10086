@@ -234,20 +234,24 @@ export default class TikHub extends base {
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
-    if (v1data.aweme_list[0].video.play_addr_h264 || v1data.aweme_list[0].video.play_addr[2]) {
+    if (v1data.aweme_list[0].video.play_addr_h264 || v1data.aweme_list[0].video.play_addr.url_list[2]) {
       //console.log(JSON.stringify(v1data))
       //return
       let video_data = []
       let videores = []
-      let video_url //视频链接做特殊判断，抖音你是不是闲着发慌？
+      let video_url //视频地址特殊判断：play_addr_h264、play_addr、
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
-      if (v1data.aweme_list[0].video.play_addr_h264) { video_url = video.play_addr_h264.url_list[2] } else if (v1data.aweme_list[0].video.play_addr) { video_url = video.play_addr.url_list[2] }
-      //console.log(video_url)
+      if (v1data.aweme_list[0].video.play_addr_h264) { 
+        video_url = video.play_addr_h264.url_list[2] 
+      } else if (v1data.aweme_list[0].video.play_addr) { 
+        video_url = video.play_addr.url_list[2] 
+      }
+      console.log('video url: ' + video_url)
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
-      //videores.push(`视频帧率：${"" + FPS}`)
+      videores.push(`视频帧率：${"" + FPS}`)
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
       videores.push(segment.image(cover))
       let dsc = '视频基本信息'
