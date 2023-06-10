@@ -38,10 +38,10 @@ export class example extends plugin {
           reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
           fnc: 'kuaiscz'
         },
-        {
-          reg: '^((.*)xhslink.com(.*))$',
-          fnc: 'xhs'
-        },
+        //{
+        //  reg: '^((.*)xhslink.com(.*))$',
+        //  fnc: 'xhs'
+        //},
         {
           reg: '^#获取token$',
           fnc: 'gettoken'
