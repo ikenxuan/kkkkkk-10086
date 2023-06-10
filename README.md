@@ -56,6 +56,15 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 ## TODO
 ***
 - [x] 咕咕咕
+
+## 参考项目
+ ***
+- 椰羊群的鸡音盒
+
+- https://gitee.com/xfdown/xiaofei-plugin
+
+- https://github.com/ikechan8370/chatgpt-plugin
+
 ## 友情链接
 ***
 * Yunzai-Bot (V3): [☞GitHub](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [☞Gitee](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
