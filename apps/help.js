@@ -7,10 +7,10 @@ export class help extends plugin {
       name: 'kkkkkk-菜单',
       dsc: 'help',
       event: 'message',
-      priority: 500,
+      priority: 5000,
       rule: [
         {
-          reg: '^(KKK|kkk)*(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
+          reg: '^(KKK|kkk|kkkkkk-10086)*(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
           fnc: 'help'
         }
       ]
