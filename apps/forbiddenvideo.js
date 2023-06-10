@@ -48,7 +48,8 @@ export class example extends plugin {
         },
         {
           reg: '^#tikhub签到$',
-          fnc: 'getnumber'
+          fnc: 'getnumber',
+          log: false
         },
 
 
@@ -57,7 +58,8 @@ export class example extends plugin {
     this.task = {
       cron: '0 0 0 * * ?',
       name: '视频解析签到获取次数',
-      fnc: () => this.tikhub.getnumber() 
+      fnc: () => this.tikhub.getnumber(),
+      log: false
     }
   }
   //抖音----------------------------------------------------------------------------------

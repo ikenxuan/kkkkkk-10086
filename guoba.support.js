@@ -16,7 +16,7 @@ export function supportGuoba() {
             description: '提供了视频解析功能，额外的语音盒资源。自用练手项目',
             // 显示图标，此为个性化配置
             // 图标可在 https://icon-sets.iconify.design 这里进行搜索
-            icon: 'skill-icons:nodejs-light',
+            icon: 'svg-spinners:blocks-shuffle-3',
             // 图标颜色，例：#FF0000 或 rgb(255, 0, 0)
             iconColor: '#00c3ff'
         },

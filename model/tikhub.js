@@ -6,6 +6,8 @@ import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
 const _path = process.cwd()
 let AccountFile
+
+
 /** 监听config.json，热加载 */
 function reloadConfig() {
   setTimeout(() => {
@@ -15,12 +17,12 @@ function reloadConfig() {
 reloadConfig()
 fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
 let globalmp4_path = { path: "" }
+
 export class base {
   constructor(e = {}) {
     this.e = e;
   }
 }
-
 export default class TikHub extends base {
   constructor(e) {
     super(e);
@@ -110,19 +112,19 @@ export default class TikHub extends base {
     let full_data = [] //总数组
     let title_global = '' //全局title变量
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
+    let imagenum = 0
     let image_res = []
     if (v1data.aweme_list[0].img_bitrate !== null) {
       let image_data = []
       let imageres = []
+      let image_url = ''
       for (let i = 0; i < v1data.aweme_list[0].img_bitrate[1].images.length; i++) {
-        let image_url = v1data.aweme_list[0].img_bitrate[1].images[i].url_list[2] //图片地址
+        image_url = v1data.aweme_list[0].img_bitrate[1].images[i].url_list[2] //图片地址
         let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
-          title_global = title
-          if(i === 1) {
-            this.e.reply(segment.image(url_list[2]))
-          }
+        title_global = title
         imageres.push(segment.image(image_url)) //合并图集字符串
+        imagenum++
         if (AccountFile.rmmp4 === false) {
           mkdirs(`resources/kkkdownload/images/${title_global}`)
           //globalmp4_path = `resources/kkkdownload/images/${title_global}`
@@ -132,6 +134,10 @@ export default class TikHub extends base {
             .then(data => fs.promises.writeFile(path, Buffer.from(data)))
         }
       }
+      if (imagenum === 1) {
+        await this.e.reply(segment.image(image_url))
+      }
+
       let dsc = '解析完的图集图片'
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
@@ -359,8 +365,8 @@ export default class TikHub extends base {
             mkdirs(`resources/kkkdownload/images/${title}`)
             let path = `resources/kkkdownload/images/${title}` + `/${i + 1}.png`
             await fetch(image_url)
-              .then(res => res.buffer())
-              .then(data => fs.promises.writeFile(path, data))
+              .then(res => res.arrayBuffer())
+              .then(data => fs.promises.writeFile(path, Buffer(data)))
           }
 
           imgarr.push(segment.image(image_url));
@@ -525,8 +531,9 @@ export default class TikHub extends base {
     const api_v2 = `https://api.tikhub.io/douyin/video_data/?video_id=${url}&language=zh` //赋值，v2视频信息接口
     const comment_v2 = `https://api.tikhub.io/douyin/video_comments/?video_id=${url}&cursor=0&count=50&language=zh` //赋值，评论数据接口
     let result = { tik_status: 0 };
-    if ((!AccountFile.access_token || AccountFile.access_token === undefined) && AccountFile.account && AccountFile.password) { await this.gettoken() }
+    if ((!AccountFile.access_token || AccountFile.access_token === '') && AccountFile.account && AccountFile.password) { await this.gettoken() }
     try {
+      if (!AccountFile.account || !AccountFile.password) { throw new Error('No TikHub API account or password is set, will use alternate API') }
       let headers = { "accept": "application/json", "Authorization": `Bearer ${AccountFile.access_token}` }
       let api_v2_json = await fetch(api_v2, { method: 'GET', headers: headers })
       let data_v2_json = await api_v2_json.json()
@@ -552,12 +559,12 @@ export default class TikHub extends base {
         return result; //返回合并好的json
       }
     } catch (err) { //上一步抛出了错误或报错才会来到此处
-      logger.error(`TikHub API 请求失败\n${err}`); //v2接口请求失败
+      logger.error(`TikHub API 请求失败${err}`); //v2接口请求失败
       logger.info(`开始请求备用接口：${api_v1}`)
       try { //尝试请求v1接口
         let api_v1_josn = await fetch(api_v1, { method: 'GET', headers: { "accept": "application/json", "Content-type": "application/x-www-form-urlencoded", } })
         let data_v1_json = await api_v1_josn.json()
-        result.data = data_v1_json;
+        result.data = data_v1_json
         if (data_v1_json.aweme_list[0].images === null) {
           result.is_mp4 = true //这里判断v1的json中是否是视频
           data_v1_json.is_mp4 = true
@@ -567,10 +574,11 @@ export default class TikHub extends base {
         }
         result.tik_status = 1; //加一个状态码判断是v1还是v2，这里是v1
         logger.info(logger.green('douyin.wtf API 获取数据成功！'))
-      } catch (err) { //因为第一次请求v1报错了，下面是30秒内循环请求，拿到数据就跳出
+
+      } catch (err) { //重试
         logger.error(`use douyin.wtf API: ${err}\n`)
-        let startTime = Date.now(); //获取现在时间戳
-        do { //do，循环执行
+        let retryfetch = 0
+        while (retryfetch < 20) {
           try {
             let api_v1_josn = await fetch(api_v1, { method: 'GET', headers: { "accept": "application/json", "Content-type": "application/x-www-form-urlencoded", } })
             let data_v1_json = await api_v1_josn.json()
@@ -584,14 +592,19 @@ export default class TikHub extends base {
             }
             result.tik_status = 1;
             logger.info(logger.green('douyin.wtf API 获取数据成功！'))
-          } catch (err) { //报错了才会来到此处
-            if (Date.now() - startTime > 30000) { //30秒后跳出循环
-              logger.error('30秒内 douyin.wtf API 连续请求失败，任务结束');
+            break //跳出
+          } catch (err) {
+            retryfetch++
+            if (retryfetch >= 20) {
+              logger.error('20次内 douyin.wtf API 连续请求失败，任务结束');
               this.e.reply('任务执行报错function douyin()\n' + err)
-              break;
+              break
             }
+            logger.mark(`第${retryfetch}次重试：${err.message}`)
+            await new Promise(resolve => setTimeout(resolve, 500)) //0.5s间隔
+            continue
           }
-        } while (true); //跳出
+        }
       }
     }
     //logger.warn(JSON.stringify(result))
@@ -614,7 +627,7 @@ export default class TikHub extends base {
       .catch(err => { throw new Error(err + '你是不是开了代理啊') })
     //返回账号token
     let tokendata = await vdata
-    //logger.mark(tokendata)
+    logger.mark(tokendata)
     let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
     let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
     // 将获取到的 access_token 写入 doc 对象，并写回到文件中
