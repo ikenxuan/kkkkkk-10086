@@ -39,11 +39,10 @@ export default class TikHub extends base {
   }
   /** 获取视频大小信息 */
   async tosize() {
-    //把fs.stat包装成一个promise对象
     return new Promise((resolve, reject) => {
       fs.stat(globalmp4_path, (err, stats) => {
-        if (err) reject(err);
-        let totalSize //将定义放入回调函数内部
+        if (err) reject(err)
+        let totalSize
         totalSize = stats.size;
         let totalMB = totalSize / (1024 * 1024);
         logger.info(logger.green('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频'))
@@ -62,7 +61,6 @@ export default class TikHub extends base {
   */
   async gettype(code, is_mp4, dydata) {
     if (code === 1) {
-      try {
         await this.v1_dy_data(dydata)
         if (is_mp4 === true) { //判断是否是视频
           //console.log(logger.green('这是一个视频链接噢1'))
@@ -81,13 +79,8 @@ export default class TikHub extends base {
         } else if (is_mp4 === false) {
           //await this.removeFileOrFolder(globalmp4_path)
         }
-      } catch (err) {
-        this.e.reply('任务执行报错function gettype()v1\n' + err)
-        return
-      }
     }
     if (code === 2) {
-      try {
         await this.v2_dy_data(dydata)
         if (is_mp4 === true) { //判断是否是视频
           console.log(logger.green('这是一个视频链接噢2'))
@@ -104,10 +97,6 @@ export default class TikHub extends base {
           logger.info('使用了 TikHub API 提供的解析服务')
         }
         return true
-      } catch (err) {
-        this.e.reply('任务执行报错function gettype()v2\n' + err)
-        return
-      }
     }
   }
 
