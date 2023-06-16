@@ -264,7 +264,7 @@ export default class TikHub extends base {
       let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
       let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
-
+      videores.push(`视频文件大小：${video_size_mb}MB`)
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
@@ -275,6 +275,7 @@ export default class TikHub extends base {
       let response = await fetch(video_url, {
         headers: qiy
       })
+      //写入流
       let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`);
       response.body.pipe(writer);
       await new Promise((resolve, reject) => {
@@ -283,12 +284,7 @@ export default class TikHub extends base {
       });
       logger.info('视频下载(写入)成功')
       globalmp4_path = writer.path;
-
-
-    
-  
-  
-  }
+    }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
@@ -429,6 +425,7 @@ export default class TikHub extends base {
     }
     //获取视频数据---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     else {
+      let video_url = v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
       let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
       let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
@@ -436,14 +433,13 @@ export default class TikHub extends base {
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
+        "Origin": "https://www.douyin.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
-      let video_url = v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
-      let mp4 = await axios.get(video_url, { 
-        responseType: 'arraybuffer', 
-        headers: qiy, 
-        maxContentLength: Infinity, 
-        maxBodyLength: Infinity 
-      });
+      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
+      let response = await fetch(video_url, {
+        headers: qiy
+      })
       let res2 = []
       let basic = "Successfully processed, please wait for video upload"
       //标题
@@ -483,7 +479,7 @@ export default class TikHub extends base {
       res2.push(basic)
       res2.push(`抖音号：${dyid}【${name}的视频作品】`)
       res2.push(`视频标题：${bt}`)
-      res2.push(`要是等不及视频上传，可以先看看这个 👇${video}`)
+      res2.push(`要是等不及视频上传（${video_size_mb}MB），可以先看看这个 👇${video}`)
       //处理评论数据(所有评论数据合并成一个字符串先)
       let video_pldata = []
       if (dydata.comments && dydata.comments.comments_list) {
@@ -515,19 +511,15 @@ export default class TikHub extends base {
       let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
-      let a = mp4.data
-      let filename = title.substring(0, 80)
-        .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
-        + '.mp4'
-      let path = `${_path}/resources/kkkdownload/video/${filename}`;
-      try {
-        await fs.promises.writeFile(path, Buffer.from(a), "binary")
-        logger.info('视频下载成功')
-        globalmp4_path = path
-      } catch (err) {
-        logger.error('视频写入(下载)失败' + err)
-        return
-      }
+      //写入流
+      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`);
+      response.body.pipe(writer);
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+      logger.info('视频下载(写入)成功')
+      globalmp4_path = writer.path;
     }
 
 
