@@ -51,7 +51,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 
 配置文件路径：
 
-`/plugins/kkkkkk-10086/config/config.json
+`/plugins/kkkkkk-10086/config/config.json`
 
 ## TODO
 ***
