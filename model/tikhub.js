@@ -65,8 +65,6 @@ export default class TikHub extends base {
     if (code === 1) {
         await this.v1_dy_data(dydata)
         if (is_mp4 === true) { //判断是否是视频
-          //console.log(logger.green('这是一个视频链接噢1'))
-          //await this.v1_dy_data(dydata)
           let mp4size = await this.tosize() //获取视频文件大小信息
           if (mp4size >= 45) { //如果大小超过45MB，发文件
             //群和私聊分开
@@ -268,6 +266,7 @@ export default class TikHub extends base {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
+      console.log(video_url)
       let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
       logger.info('XML合并成功，开始下载视频')
       let a = await mp4.arrayBuffer();
