@@ -5,8 +5,6 @@ import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
 import axios from "axios"
-import https from "https"
-const agent = new https.Agent({rejectUnauthorized: false})
 const _path = process.cwd()
 let AccountFile
 
@@ -274,28 +272,24 @@ export default class TikHub extends base {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
       logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
-      let mp4 = await axios.get(video_url, { 
-        responseType: 'arraybuffer', 
-        headers: qiy, 
-        maxContentLength: Infinity, 
-        maxBodyLength: Infinity, 
-        httpsAgent: agent
+      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`);
+      let response = await axios({
+        url: video_url,
+        method: 'GET',
+        responseType: 'stream',
+        headers: qiy,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
       });
-      let a = mp4.data;
-      let filename = title.substring(0, 80)
-        .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
-        + '.mp4'
-      let path = `${_path}/resources/kkkdownload/video/${filename}`;
-      try {
-        await fs.promises.writeFile(path, Buffer.from(a), "binary")
-        logger.info('视频下载(写入)成功')
-        globalmp4_path = path
-      } catch (err) {
-        logger.error('视频写入(下载)失败' + err)
-        return
-      }
-    }
+      response.data.pipe(writer);
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+      logger.info('视频下载(写入)成功')
+      globalmp4_path = writer.path;
 
+    }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
