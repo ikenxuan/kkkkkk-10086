@@ -270,7 +270,12 @@ export default class TikHub extends base {
         "Content-Type": "video/mp4",
       }
       logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
-      let mp4 = await axios.get(`${video_url}`, { responseType: 'arraybuffer', headers: qiy, maxContentLength: Infinity, maxBodyLength: Infinity });
+      let mp4 = await axios.get(video_url, { 
+        responseType: 'arraybuffer', 
+        headers: qiy, 
+        maxContentLength: Infinity, 
+        maxBodyLength: Infinity 
+      });
       let a = mp4.data;
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
@@ -426,11 +431,21 @@ export default class TikHub extends base {
     }
     //获取视频数据---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     else {
+      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
+      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
+      mp4size = video_size_mb
+      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
-      let mp4 = await fetch(`${v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]}`, { method: "get", headers: qiy });
+      let video_url = v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
+      let mp4 = await axios.get(video_url, { 
+        responseType: 'arraybuffer', 
+        headers: qiy, 
+        maxContentLength: Infinity, 
+        maxBodyLength: Infinity 
+      });
       let res2 = []
       let basic = "Successfully processed, please wait for video upload"
       //标题
@@ -502,7 +517,7 @@ export default class TikHub extends base {
       let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
-      let a = await mp4.arrayBuffer();
+      let a = mp4.data
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
         + '.mp4'
