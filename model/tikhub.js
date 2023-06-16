@@ -17,6 +17,7 @@ function reloadConfig() {
 reloadConfig()
 fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
 let globalmp4_path = { path: "" }
+let mp4size = ''
 
 export class base {
   constructor(e = {}) {
@@ -40,20 +41,20 @@ export default class TikHub extends base {
     }
   }
   /** 获取视频大小信息 */
-  async tosize() {
-    return new Promise((resolve, reject) => {
-      fs.stat(globalmp4_path, (err, stats) => {
-        if (err) reject(err)
-        let totalSize
-        totalSize = stats.size;
-        let totalMB = totalSize / (1024 * 1024);
-        logger.info(logger.green('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频'))
-        let size = String(totalMB.toFixed(2))
-        //在then方法里面return size
-        resolve(size)
-      })
-    })
-  }
+  //async tosize() {
+  //  return new Promise((resolve, reject) => {
+  //    fs.stat(globalmp4_path, (err, stats) => {
+  //      if (err) reject(err)
+  //      let totalSize
+  //      totalSize = stats.size;
+  //      let totalMB = totalSize / (1024 * 1024);
+  //      logger.info(logger.green('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频'))
+  //      let size = String(totalMB.toFixed(2))
+  //      //在then方法里面return size
+  //      resolve(size)
+  //    })
+  //  })
+  //}
   /**
   * 
   * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
@@ -63,40 +64,37 @@ export default class TikHub extends base {
   */
   async gettype(code, is_mp4, dydata) {
     if (code === 1) {
-        await this.v1_dy_data(dydata)
-        if (is_mp4 === true) { //判断是否是视频
-          let mp4size = await this.tosize() //获取视频文件大小信息
-          if (mp4size >= 45) { //如果大小超过45MB，发文件
-            //群和私聊分开
-            this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-            await this.upload_file(globalmp4_path)
-            await this.removeFileOrFolder(globalmp4_path)
-          } else {
-            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-            await this.removeFileOrFolder(globalmp4_path)
-          }
-          //logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
-        } else if (is_mp4 === false) {
-          //await this.removeFileOrFolder(globalmp4_path)
+      await this.v1_dy_data(dydata)
+      if (is_mp4 === true) { //判断是否是视频
+        //let mp4size = await this.tosize() //获取视频文件大小信息
+        if (mp4size >= 80) { //如果大小超过45MB，发文件
+          //群和私聊分开
+          this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+          await this.upload_file(globalmp4_path)
+          await this.removeFileOrFolder(globalmp4_path)
+        } else {
+          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+          await this.removeFileOrFolder(globalmp4_path)
         }
+        //logger.info('使用了 douyin.wtf API ，无法提供' + logger.yellow('评论') + '与' + logger.yellow('小红书') + '解析')
+      }
     }
     if (code === 2) {
-        await this.v2_dy_data(dydata)
-        if (is_mp4 === true) { //判断是否是视频
-          console.log(logger.green('这是一个视频链接噢2'))
-          let mp4size = await this.tosize() //获取视频文件大小信息
-          if (mp4size >= 45) { //如果大小超过45MB，发文件
-            //群和私聊分开
-            this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-            await this.upload_file(globalmp4_path)
-            await this.removeFileOrFolder(globalmp4_path)
-          } else {
-            await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-            await this.removeFileOrFolder(globalmp4_path)
-          }
-          logger.info('使用了 TikHub API 提供的解析服务')
+      await this.v2_dy_data(dydata)
+      if (is_mp4 === true) { //判断是否是视频
+        //let mp4size = await this.tosize() //获取视频文件大小信息
+        if (mp4size >= 80) { //如果大小超过45MB，发文件
+          //群和私聊分开
+          this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+          await this.upload_file(globalmp4_path)
+          await this.removeFileOrFolder(globalmp4_path)
+        } else {
+          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+          await this.removeFileOrFolder(globalmp4_path)
         }
-        return true
+        logger.info('使用了 TikHub API 提供的解析服务')
+      }
+      return true
     }
   }
 
@@ -246,12 +244,11 @@ export default class TikHub extends base {
       let video_url //视频地址特殊判断：play_addr_h264、play_addr、
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
-      if (v1data.aweme_list[0].video.play_addr_h264) { 
-        video_url = video.play_addr_h264.url_list[2] 
-      } else if (v1data.aweme_list[0].video.play_addr) { 
-        video_url = video.play_addr.url_list[2] 
+      if (v1data.aweme_list[0].video.play_addr_h264) {
+        video_url = video.play_addr_h264.url_list[2]
+      } else if (v1data.aweme_list[0].video.play_addr) {
+        video_url = video.play_addr.url_list[2]
       }
-      console.log('video url: ' + video_url)
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
@@ -262,12 +259,17 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
+
+      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
+      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
+      mp4size = video_size_mb
+
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
       let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
-      logger.info('XML合并成功，开始下载视频\n' + video_url)
+      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
       let a = await mp4.arrayBuffer();
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
@@ -275,13 +277,14 @@ export default class TikHub extends base {
       let path = `${_path}/resources/kkkdownload/video/${filename}`;
       try {
         await fs.promises.writeFile(path, Buffer.from(a), "binary")
-        logger.info('视频下载成功')
+        logger.info('视频下载(写入)成功')
         globalmp4_path = path
       } catch (err) {
         logger.error('视频写入(下载)失败' + err)
         return
       }
     }
+
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
