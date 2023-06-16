@@ -4,7 +4,6 @@ import fse from 'fs-extra'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
-import axios from "axios"
 const _path = process.cwd()
 let AccountFile
 
