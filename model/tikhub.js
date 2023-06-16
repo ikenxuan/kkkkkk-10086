@@ -619,6 +619,10 @@ export default class TikHub extends base {
 
   /**获取Tik Hub账号token */
   async gettoken() {
+    if(!AccountFile.account || !AccountFile.password) {
+      logger.error('未填写Tik Hub账号或密码，可在锅巴web后台填写')
+      return true
+    }
     let headers = {
       "accept": "application/json",
       "Content-type": "application/x-www-form-urlencoded",
@@ -630,21 +634,28 @@ export default class TikHub extends base {
       body
     })
       .then(response => response.json())
-      .catch(err => { throw new Error(err + '你是不是开了代理啊') })
+      .catch(err => { throw new Error('可能是你网络原因或者对面服务器抽风了\n' + err) })
     //返回账号token
     let tokendata = await vdata
     logger.mark(tokendata)
     let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
     let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
-    // 将获取到的 access_token 写入 doc 对象，并写回到文件中
+    // 写入
     doc.access_token = tokendata.access_token;
     fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
-    await this.getnumber() //顺便签到一次
+    try {
+      await this.getnumber()
+    } catch(err) {
+      logger.error(err)
+    }
     return ('手动刷新token成功，该token拥有365天有效期')
   }
 
   /**签到获取Tik Hub账号请求次数 */
   async getnumber() {
+    if(!AccountFile.access_token) {
+      return true
+    }
     let headers2 = {
       "accept": "application/json",
       "Authorization": `Bearer ${AccountFile.access_token}`,
