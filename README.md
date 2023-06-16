@@ -56,7 +56,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 ## TODO
 ***
 - [x] 咕咕咕
-
+- [ ] 开关
 ## 参考项目
  ***
 - 椰羊群的鸡音盒
