@@ -266,9 +266,8 @@ export default class TikHub extends base {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
-      console.log(video_url)
       let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
-      logger.info('XML合并成功，开始下载视频')
+      logger.info('XML合并成功，开始下载视频\n' + video_url)
       let a = await mp4.arrayBuffer();
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
