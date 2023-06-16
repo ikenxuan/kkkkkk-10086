@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
+import axios from "axios"
 const _path = process.cwd()
 let AccountFile
 
@@ -268,9 +269,9 @@ export default class TikHub extends base {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
       }
-      let mp4 = await fetch(`${video_url}`, { method: "GET", headers: qiy });
       logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
-      let a = await mp4.arrayBuffer();
+      let mp4 = await axios.get(`${video_url}`, { responseType: 'arraybuffer', headers: qiy, maxContentLength: Infinity, maxBodyLength: Infinity });
+      let a = mp4.data;
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
         + '.mp4'
@@ -501,13 +502,13 @@ export default class TikHub extends base {
       let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
       await this.e.reply(video_data)
       console.log("视频直链：", video)
-      let a = await mp4.buffer();
+      let a = await mp4.arrayBuffer();
       let filename = title.substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ')
         + '.mp4'
       let path = `${_path}/resources/kkkdownload/video/${filename}`;
       try {
-        await fs.promises.writeFile(path, a, "binary")
+        await fs.promises.writeFile(path, Buffer.from(a), "binary")
         logger.info('视频下载成功')
         globalmp4_path = path
       } catch (err) {
