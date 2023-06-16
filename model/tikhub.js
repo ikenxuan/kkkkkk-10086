@@ -256,14 +256,15 @@ export default class TikHub extends base {
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
       videores.push(segment.image(cover))
       let dsc = '视频基本信息'
-      let res = await common.makeForwardMsg(this.e, videores, dsc)
-      video_data.push(res)
-      video_res.push(video_data)
 
       let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
       let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
       videores.push(`视频文件大小：${video_size_mb}MB`)
+      let res = await common.makeForwardMsg(this.e, videores, dsc)
+      video_data.push(res)
+      video_res.push(video_data)
+
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
