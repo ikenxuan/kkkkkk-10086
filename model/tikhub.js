@@ -261,6 +261,7 @@ export default class TikHub extends base {
       let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
       videores.push(`视频文件大小：${video_size_mb}MB`)
+
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
