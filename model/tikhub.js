@@ -270,14 +270,16 @@ export default class TikHub extends base {
       let qiy = {
         "Server": "CWAP-waf",
         "Content-Type": "video/mp4",
+        "Origin": "https://www.douyin.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
       logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
       let mp4 = await axios.get(video_url, { 
         responseType: 'arraybuffer', 
-        headers: qiy, 
+        headers: agent, 
         maxContentLength: Infinity, 
         maxBodyLength: Infinity, 
-        httpsAgent: agent
+        //httpsAgent: agent
       });
       let a = mp4.data;
       let filename = title.substring(0, 80)
