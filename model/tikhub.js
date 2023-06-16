@@ -5,6 +5,8 @@ import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
 import axios from "axios"
+import https from "https"
+const agent = new https.Agent({rejectUnauthorized: false})
 const _path = process.cwd()
 let AccountFile
 
@@ -274,7 +276,8 @@ export default class TikHub extends base {
         responseType: 'arraybuffer', 
         headers: qiy, 
         maxContentLength: Infinity, 
-        maxBodyLength: Infinity 
+        maxBodyLength: Infinity, 
+        httpsAgent: agent
       });
       let a = mp4.data;
       let filename = title.substring(0, 80)
