@@ -7,6 +7,7 @@ const defaultConfig = {
     "address": "",
     "rmmp4": true,
     "voicebox": true,
+    "videotool": true,
     "version": "0.1.0"
 }
 let config = {}
@@ -15,7 +16,7 @@ if (fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)) {
     const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
     const data = fs.readFileSync(fullPath)
     if (data) {
-        try { config = JSON.parse(data) } catch (e) { logger.error('kkkkkk-10086插件读取配置文件出错', e) }
+        try { config = JSON.parse(data) } catch (e) { logger.error('kkkkkk-10086读取配置文件出错', e) }
     }
 }
 export const Config = new Proxy(config, {

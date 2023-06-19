@@ -32,6 +32,14 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: 'videotool',
+                    label: '视频解析',
+                    bottomHelpMessage: '是否开启视频解析工具',
+                    component: 'Switch',
+                    required: false,
+                },
+
+                {
                     field: 'account',
                     label: 'TikHub 账号',
                     bottomHelpMessage: '可到 https://dash.tikhub.io/signin?next=/dashboard 注册账号',

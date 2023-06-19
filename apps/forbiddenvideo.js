@@ -4,6 +4,21 @@ import fs from "fs";
 import common from '../../../lib/common/common.js';
 import TikHub from '../model/tikhub.js';
 const _path = process.cwd()
+const configpath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
+
+function reloadConfig() {
+  const AccountFile = JSON.parse(fs.readFileSync(configpath))
+  return AccountFile
+}
+
+
+reloadConfig()
+fs.watch(configpath, { persistent: true }, (event, filename) => {
+  setTimeout(() => {
+    reloadConfig()
+  }, 100)
+})
+
 /**
  * @param {*} count 过万整除
  * @returns 
@@ -18,42 +33,21 @@ function count(count) {
 
 export class example extends plugin {
   constructor() {
+    const AccountFile = reloadConfig()
+    const rule = AccountFile.videotool? [
+      { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
+      { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
+      { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' },
+      { reg: '^#获取token$', fnc: 'gettoken' },
+      { reg: '^#tikhub签到$', fnc: 'getnumber', log: false }
+    ] : [];
     super({
-      name: 'kkkkkk-视频功能',
+      name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       /* oicq文档：https://oicqjs.github.io/oicq/#events */
       event: 'message',
       priority: 50,
-      rule: [
-        {
-          reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$',
-          fnc: 'douy'
-        },
-
-        {
-          reg: '^((.*)tiktok.com(.*))$',
-          fnc: 'Tiktok'
-        },
-        {
-          reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
-          fnc: 'kuaiscz'
-        },
-        //{
-        //  reg: '^((.*)xhslink.com(.*))$',
-        //  fnc: 'xhs'
-        //},
-        {
-          reg: '^#获取token$',
-          fnc: 'gettoken'
-        },
-        {
-          reg: '^#tikhub签到$',
-          fnc: 'getnumber',
-          log: false
-        },
-
-
-      ]
+      rule: rule
     })
     this.task = {
       cron: '0 0 0 * * ?',
