@@ -249,18 +249,19 @@ export default class TikHub extends base {
       } else if (v1data.aweme_list[0].video.play_addr) {
         video_url = video.play_addr.url_list[2]
       }
+      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
+      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
+      mp4size = video_size_mb
+
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
-      videores.push(`视频帧率：${"" + FPS}`)
+
+      videores.push(`视频帧率：${"" + FPS}\n视频大小：${video_size_mb}MB`)
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
       videores.push(segment.image(cover))
       let dsc = '视频基本信息'
 
-      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
-      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
-      mp4size = video_size_mb
-      videores.push(`视频文件大小：${video_size_mb}MB`)
 
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
@@ -283,7 +284,7 @@ export default class TikHub extends base {
         writer.on('finish', resolve);
         writer.on('error', reject);
       });
-      logger.info('视频下载(写入)成功')
+      logger.info('视频下载(写入)成功，正在上传')
       globalmp4_path = writer.path;
     }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
@@ -519,7 +520,7 @@ export default class TikHub extends base {
         writer.on('finish', resolve);
         writer.on('error', reject);
       });
-      logger.info('视频下载(写入)成功')
+      logger.info('视频下载(写入)成功，正在上传')
       globalmp4_path = writer.path;
     }
 
