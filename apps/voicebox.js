@@ -5,23 +5,23 @@ const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/kkkkkk-10086-reso
 const configpath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
 
 function reloadConfig() {
-    const AccountFile = JSON.parse(fs.readFileSync(configpath))
-    return AccountFile
-  }
-  
+  const AccountFile = JSON.parse(fs.readFileSync(configpath))
+  return AccountFile
+}
+
 
 reloadConfig()
 fs.watch(configpath, { persistent: true }, (event, filename) => {
-    setTimeout(() => {
-        reloadConfig()
-    }, 100)
+  setTimeout(() => {
+    reloadConfig()
+  }, 100)
 })
 //鸡
 export class example extends plugin {
   constructor() {
     const AccountFile = reloadConfig()
 
-    const rule = AccountFile.voicebox? [
+    const rule = AccountFile.voicebox ? [
       { reg: jireg, fnc: 'jiji' },
       { reg: jireg2, fnc: 'jiji2' },
       { reg: dzreg2, fnc: 'dz2' },
@@ -41,60 +41,26 @@ export class example extends plugin {
       priority: 200,
       rule: rule
     })
-  } 
+  }
 
 
 
-    /**
- * 制作转发消息
- * @param e oicq消息e
- * @param title 转发描述
- * @param msg 消息数组
- */
-    async  makeForwardMsg (qq, title, msg = []) {
-      let nickname = Bot.nickname
-      if (this.e.isGroup) {
-        let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-        nickname = info.card ?? info.nickname
-      }
-      let userInfo = {
-        user_id: this.e.user_id,
-        nickname: this.e.sender.card || this.e.user_id,
-      }
-    
-      let forwardMsg = []
-      msg.forEach(v => {
-        forwardMsg.push({
-          ...userInfo,
-          message: v
-        })
-      })
-    
-      /** 制作转发内容 */
-      if (this.e.isGroup) {
-        forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-      } else {
-        forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-      }
-    
-      /** 处理描述 */
-      forwardMsg.data = forwardMsg.data
-        .replace(/\n/g, '')
-        .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-        .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-    
-      return forwardMsg
-    }
-    async help(e) {
-      let res = []
-      res.push(Object.keys({...ji,...ji2}).join("、"))
-      res.push(Object.keys(dz2).join("、"))
-      res.push(Object.keys(jitang).join("、"))
-      res.push(Object.keys(yy).join("、"))
-      res.push(Object.keys(sy).join("、"))
-      let data1 = await this.makeForwardMsg(e.user_id, "语音盒", res)
-      await this.e.reply(data1)
-    }
+  /**
+* 制作转发消息
+* @param e oicq消息e
+* @param title 转发描述
+* @param msg 消息数组
+*/
+  async help(e) {
+    let res = []
+    res.push(Object.keys({ ...ji, ...ji2 }).join("、"))
+    res.push(Object.keys(dz2).join("、"))
+    res.push(Object.keys(jitang).join("、"))
+    res.push(Object.keys(yy).join("、"))
+    res.push(Object.keys(sy).join("、"))
+    let data1 = await this.makeForwardMsg(e.user_id, "语音盒", res)
+    await this.e.reply(data1)
+  }
   //鸡--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async jiji(e) {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[e.msg])}.mp3`, 0, false))
@@ -104,7 +70,7 @@ export class example extends plugin {
   }
   async jihelp(e) {
     let res = []
-    res.push(Object.keys({...ji,...ji2}).join("、"))
+    res.push(Object.keys({ ...ji, ...ji2 }).join("、"))
     await this.e.reply(await this.makeForwardMsg(e.user_id, "鸡乐盒", res))
   }
   //丁真--------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -112,45 +78,6 @@ export class example extends plugin {
     e.reply(await uploadRecord(`http://jilehe.125ks.cn/Voice/dzh/res/${encodeURIComponent(dz[e.msg])}.mp3`, 0, false))
   }*/
   async dz2(e) {
-    const filepath = 'D:/GitHub/Yunzai-Bot/Yunzai-Bot/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒/丁真盒/55.mp3'
-    const fileData = fs.readFileSync(filepath); // 读取文件数据
-    const base64Data = Buffer.from(fileData).toString('base64'); // 将文件数据转为base64编码
-    const tempdir = 'D:/GitHub/Yunzai-Bot/Yunzai-Bot/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒/tpme' // 临时文件夹路径
-    const recordUrl = 'https://media.realkkkkkk.asia/audio'; // 上传地址
-    const recordBuffer = { // 构造上传数据
-      type: 'buffer',
-      data: [base64Data]
-    };
-    
-    try {
-      const response = await fetch(recordUrl, { // 发送上传请求
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          recordUrl,
-          recordBuffer
-        })
-      });
-      const data = await response.arrayBuffer(); // 获取响应数据
-      const audioBlob = new Blob([data], { type: 'audio/wav' }); // 将响应数据转为Blob对象
-      const audioUrl = URL.createObjectURL(audioBlob); // 生成Blob URL
-      const tempFilePath = `${tempdir}/audio.wav` // 临时文件路径
-      fs.writeFileSync(tempFilePath, data) // 将响应体保存为audio.wav到temp文件夹
-      e.reply({
-        type: 'file',
-        data: {
-          file: tempFilePath
-        }
-      }); // 发送音频文件
-    } catch (error) {
-      console.error(error);
-      e.reply("上传音频失败");
-    }
-  
-
-
     e.reply(await uploadRecord(`file:///${_path}/丁真盒/${encodeURIComponent(dz2[e.msg])}.mp3`, 0, false))
   }
   async dzhelp(e) {
@@ -185,6 +112,41 @@ export class example extends plugin {
     res.push(Object.keys(sy).join("、"))
     await this.e.reply(await this.makeForwardMsg(e.user_id, "神鹰盒", res))
   }
+  async makeForwardMsg(qq, title, msg = []) {
+    let nickname = Bot.nickname
+    if (this.e.isGroup) {
+      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
+      nickname = info.card ?? info.nickname
+    }
+    let userInfo = {
+      user_id: this.e.user_id,
+      nickname: this.e.sender.card || this.e.user_id,
+    }
+
+    let forwardMsg = []
+    msg.forEach(v => {
+      forwardMsg.push({
+        ...userInfo,
+        message: v
+      })
+    })
+
+    /** 制作转发内容 */
+    if (this.e.isGroup) {
+      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
+    } else {
+      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
+    }
+
+    /** 处理描述 */
+    forwardMsg.data = forwardMsg.data
+      .replace(/\n/g, '')
+      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
+
+    return forwardMsg
+  }
+
 }
 
 const ji = {
@@ -255,7 +217,7 @@ const ji2 = {
   "承诺鸡": "chengnuoji",
   "鸡鸡侠": "jijixia",
   "心墙鸡": "xinqiangji",
-  "自由飞翔":"ziyoujixiang",
+  "自由飞翔": "ziyoujixiang",
   "鸡祥三宝": "jixiangsanbao",
   "鸡的诱惑": "jideyouhuo",
   "泰罗奥特鸡": "tailuoaoteji",
@@ -445,8 +407,8 @@ const dz2 = {
   "讨口子": "97",
   "芝士我的个": "98",
   "音乐": "99",
-//}
-//const dz2 = {
+  //}
+  //const dz2 = {
   "最长的测码": "100",
   "醉赤壁": "101",
   "维新派降调": "102",
