@@ -57,11 +57,12 @@ export class example extends plugin {
         return true;
     }
 
-    //参考了alts图鉴插件的代码
+    //参考了atlas图鉴插件的代码
     async updateresources(e) {
         const _path = process.cwd()
         const repoUrl = 'https://gitee.com/ikenxuan/kkkkkk-10086-resources.git';
         const localPath = `${_path}/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources`
+        e.reply('Downloading')
         // 判断本地路径是否存在，如果不存在则执行 git clone 操作
         if (!fs.existsSync(localPath)) {
             await promisify(exec)(`git clone --depth=1 ${repoUrl} "${localPath}"`);

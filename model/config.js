@@ -6,6 +6,7 @@ const defaultConfig = {
     "access_token": "",
     "address": "",
     "rmmp4": true,
+    "voicebox": true,
     "version": "0.1.0"
 }
 let config = {}

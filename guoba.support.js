@@ -25,6 +25,13 @@ export function supportGuoba() {
             // 配置项 schemas
             schemas: [
                 {
+                    field: 'voicebox',
+                    label: '语音盒',
+                    bottomHelpMessage: '开启鸡音盒、丁真盒、鸡汤盒、耀阳盒、神鹰盒',
+                    component: 'Switch',
+                    required: false,
+                },
+                {
                     field: 'account',
                     label: 'TikHub 账号',
                     bottomHelpMessage: '可到 https://dash.tikhub.io/signin?next=/dashboard 注册账号',
