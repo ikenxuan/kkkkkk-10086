@@ -7,7 +7,7 @@ const Plugin_Name = 'kkkkkk-10086'
 export class example extends plugin {
     constructor() {
         super({
-            name: "kkkkkk-更新",
+            name: "kkkkkk-10086-更新",
             event: "message",
             priority: 1000,
             rule: [

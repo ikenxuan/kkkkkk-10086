@@ -36,7 +36,7 @@ export class example extends plugin {
       { reg: "^#?语音盒$", fnc: 'help' }
     ] : [];
     super({
-      name: 'kkkkkk-语音盒',
+      name: 'kkkkkk-10086-语音盒',
       event: 'message',
       priority: 200,
       rule: rule
