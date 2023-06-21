@@ -301,9 +301,19 @@ const ji2 = {
   "good time": "goodtime",
   "寄明月": "jmy",
   "只因种花": "jiflower",
+  "爸爸去哪儿": "babaqunaer",
   "鸡distance": "jidistance",
   "哇什么情况": "whathappend",
-  "浮夸": "fukua"
+  "浮夸": "fukua",
+  "你打我撒": "nidawosa",
+  "我是一颗跳跳糖": "woshiyiketang",
+  "耶耶耶耶耶": "yeyeyeyeye",
+  "笑纳": "xiaona",
+  "": "",
+  "": "",
+  "": "",
+  "": "",
+  "": "",
 
 }
 //丁真

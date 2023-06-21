@@ -631,21 +631,26 @@ export default class TikHub extends base {
       "Content-type": "application/x-www-form-urlencoded",
     }
     let body = `grant_type=&username=${AccountFile.username}&password=${AccountFile.password}&scope=&client_id=&client_secret=`
-    let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
-      method: "POST",
-      headers,
-      body
-    })
-      .then(response => response.json())
-      .catch(err => { throw new Error('可能是你网络原因或者对面服务器抽风了\n' + err) })
-    //返回账号token
-    let tokendata = await vdata
-    logger.mark(tokendata)
-    let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
-    let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
-    // 写入
-    doc.access_token = tokendata.access_token;
-    fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
+    try {
+      let vdata = await fetch(`https://api.tikhub.io/user/login?token_expiry_minutes=525600&keep_login=true`, {
+        method: "POST",
+        headers,
+        body
+      })
+        .then(response => response.json())
+        .catch(err => { throw new Error('可能是你网络原因或者对面服务器抽风了\n' + err) })
+      //返回账号token
+      let tokendata = await vdata
+      logger.mark(tokendata)
+      let accountfile = `${_path}/plugins/kkkkkk-10086/config/config.json`;
+      let doc = JSON.parse(fs.readFileSync(accountfile, 'utf8'));
+      // 写入
+      doc.access_token = tokendata.access_token;
+      fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
+  
+    } catch (err) {
+      logger.error
+    }
     try {
       await this.getnumber()
     } catch(err) {
