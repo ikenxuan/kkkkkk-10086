@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { Config } from './model/config.js'
 const _path = process.cwd()
 const files = fs.readdirSync('./plugins/kkkkkk-10086/apps').filter(file => file.endsWith('.js'))
 const configFile = `${_path}/plugins/kkkkkk-10086/config/config.json`
@@ -40,12 +41,11 @@ function mkdirs(dirname) {
   }
 }
 
-const config = JSON.parse(fs.readFileSync(`${_path}/plugins/kkkkkk-10086/config/config.example.json`)).version
 
 let ret = []
 
 logger.info('------------------------------------')
-logger.info(`kkkkkk-10086 v${config}
+logger.info(`kkkkkk-10086 v${Config.version}
  ██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗
  ██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝
  █████╔╝ █████╔╝ █████╔╝ █████╔╝ █████╔╝ █████╔╝ 
