@@ -4,6 +4,7 @@ import fse from 'fs-extra'
 import common from "../../../lib/common/common.js"
 import uploadRecord from "./uploadRecord.js"
 import path from "node:path"
+import md5 from "md5"
 const _path = process.cwd()
 let AccountFile
 
@@ -18,13 +19,14 @@ reloadConfig()
 fs.watch(`${_path}/plugins/kkkkkk-10086/config/config.json`, reloadConfig)
 let globalmp4_path = { path: "" }
 let mp4size = ''
+let _md5 = ''
 
 export class base {
   constructor(e = {}) {
     this.e = e;
   }
 }
-export default class TikHub extends base {
+export class TikHub extends base {
   constructor(e) {
     super(e);
     this.model = "TikHub";
@@ -40,21 +42,6 @@ export default class TikHub extends base {
       return count.toString();
     }
   }
-  /** 获取视频大小信息 */
-  //async tosize() {
-  //  return new Promise((resolve, reject) => {
-  //    fs.stat(globalmp4_path, (err, stats) => {
-  //      if (err) reject(err)
-  //      let totalSize
-  //      totalSize = stats.size;
-  //      let totalMB = totalSize / (1024 * 1024);
-  //      logger.info(logger.green('正在上传大小为' + String(totalMB.toFixed(2)) + 'MB的视频'))
-  //      let size = String(totalMB.toFixed(2))
-  //      //在then方法里面return size
-  //      resolve(size)
-  //    })
-  //  })
-  //}
   /**
   * 
   * @param {*} code douyin()添加的唯一状态码，判断用v1还是v2接口
@@ -67,12 +54,13 @@ export default class TikHub extends base {
       await this.v1_dy_data(dydata)
       if (is_mp4 === true) { //判断是否是视频
         //let mp4size = await this.tosize() //获取视频文件大小信息
-        if (mp4size >= 80) { //如果大小超过45MB，发文件
+        if (mp4size >= 60) {
           //群和私聊分开
           this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-          await this.upload_file(globalmp4_path)
-          await this.removeFileOrFolder(globalmp4_path)
+          await this.upload_file(globalmp4_path) //上传
+          await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
+          await getFileMd5(globalmp4_path)
           await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
           await this.removeFileOrFolder(globalmp4_path)
         }
@@ -86,8 +74,8 @@ export default class TikHub extends base {
         if (mp4size >= 80) { //如果大小超过45MB，发文件
           //群和私聊分开
           this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-          await this.upload_file(globalmp4_path)
-          await this.removeFileOrFolder(globalmp4_path)
+          await this.upload_file(globalmp4_path) //上传
+          await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
           await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
           await this.removeFileOrFolder(globalmp4_path)
@@ -249,10 +237,23 @@ export default class TikHub extends base {
       } else if (v1data.aweme_list[0].video.play_addr) {
         video_url = video.play_addr.url_list[2]
       }
-      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
-      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
+      let video_url_data = await fetch(video_url)
+      .then(res => {
+        if(!res.ok) {
+          throw new Error ('访问视频链接被拒绝，无法处理请求！')
+        }
+        let content_lenght = res.headers.get('content-length')
+        let content_md5 = res.headers.get('content-md5')
+        let LastUrl = res.url
+        return{
+          LastUrl,
+          content_lenght,
+          content_md5
+        }
+      })
+      video_url_data.content_md5 =_md5
+      let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
-
       let cover = video.origin_cover.url_list[0] //video cover image
       let title = v1data.aweme_list[0].preview_title //video title
       videores.push(`标题：\n${title}`)
@@ -273,7 +274,7 @@ export default class TikHub extends base {
         "Origin": "https://www.douyin.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
+      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
       let response = await fetch(video_url, {
         headers: qiy
       })
@@ -822,4 +823,14 @@ function mkdirs(dirname) {
   }
 }
 
+async function getFileMd5(filePath) {
+  try {
+    const data = await fs.promises.readFile(filePath)
+    const fileMd5 = md5(data)
+    console.log(`File MD5: ${fileMd5}`)
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
 
+export default TikHub

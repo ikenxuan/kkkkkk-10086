@@ -17,7 +17,7 @@ fs.watch(configpath, { persistent: true }, (event, filename) => {
   }, 100)
 })
 //鸡
-export class example extends plugin {
+export class ChickenVoiceBox extends plugin {
   constructor() {
     const AccountFile = reloadConfig()
 
@@ -146,8 +146,12 @@ export class example extends plugin {
 
     return forwardMsg
   }
-
+  async ChickenVoice(key) {
+    return `http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[key])}.mp3`
+  }
+  
 }
+export default ChickenVoiceBox.jiji
 
 const ji = {
   "鸡": "j",
