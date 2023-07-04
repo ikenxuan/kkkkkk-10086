@@ -46,7 +46,7 @@ export class example extends plugin {
       dsc: '视频',
       /* oicq文档：https://oicqjs.github.io/oicq/#events */
       event: 'message',
-      priority: AccountFile.priority,
+      priority: AccountFile.VideoToolPriority,
       rule: rule
     })
     this.task = {

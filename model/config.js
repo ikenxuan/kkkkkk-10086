@@ -1,7 +1,8 @@
 import fs from 'fs'
 const _path = process.cwd()
 const defaultConfig = {
-    "priority": "200",
+    "VoiceBoxPriority": "3000",
+    "VideoToolPriority": "200",
     "account": "",
     "password": "",
     "access_token": "",

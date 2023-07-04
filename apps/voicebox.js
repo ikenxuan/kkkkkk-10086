@@ -38,7 +38,7 @@ export class ChickenVoiceBox extends plugin {
     super({
       name: 'kkkkkk-10086-语音盒',
       event: 'message',
-      priority: 200,
+      priority: AccountFile.VoiceBoxPriority,
       rule: rule
     })
   }
