@@ -38,7 +38,7 @@ export class ChickenVoiceBox extends plugin {
     super({
       name: 'kkkkkk-10086-语音盒',
       event: 'message',
-      priority: AccountFile.VoiceBoxPriority,
+      priority: AccountFile.VoiceBoxPriority ? [3000] : [],
       rule: rule
     })
   }
@@ -149,7 +149,7 @@ export class ChickenVoiceBox extends plugin {
   async ChickenVoice(key) {
     return `http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[key])}.mp3`
   }
-  
+
 }
 export default ChickenVoiceBox.jiji
 

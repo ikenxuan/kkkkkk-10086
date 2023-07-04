@@ -34,7 +34,7 @@ function count(count) {
 export class example extends plugin {
   constructor() {
     const AccountFile = reloadConfig()
-    const rule = AccountFile.videotool? [
+    const rule = AccountFile.videotool ? [
       { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
       { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
       { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' },
@@ -46,7 +46,7 @@ export class example extends plugin {
       dsc: '视频',
       /* oicq文档：https://oicqjs.github.io/oicq/#events */
       event: 'message',
-      priority: AccountFile.VideoToolPriority,
+      priority: AccountFile.VideoToolPriority ? [200] : [],
       rule: rule
     })
     this.task = {
