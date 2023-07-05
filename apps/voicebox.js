@@ -17,7 +17,7 @@ fs.watch(configpath, { persistent: true }, (event, filename) => {
   }, 100)
 })
 //鸡
-export class example extends plugin {
+export class ChickenVoiceBox extends plugin {
   constructor() {
     const AccountFile = reloadConfig()
 
@@ -38,7 +38,7 @@ export class example extends plugin {
     super({
       name: 'kkkkkk-10086-语音盒',
       event: 'message',
-      priority: 200,
+      priority: 5000,
       rule: rule
     })
   }
@@ -146,8 +146,12 @@ export class example extends plugin {
 
     return forwardMsg
   }
+  async ChickenVoice(key) {
+    return `http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[key])}.mp3`
+  }
 
 }
+export default ChickenVoiceBox.jiji
 
 const ji = {
   "鸡": "j",
@@ -301,9 +305,19 @@ const ji2 = {
   "good time": "goodtime",
   "寄明月": "jmy",
   "只因种花": "jiflower",
+  "爸爸去哪儿": "babaqunaer",
   "鸡distance": "jidistance",
   "哇什么情况": "whathappend",
-  "浮夸": "fukua"
+  "浮夸": "fukua",
+  "你打我撒": "nidawosa",
+  "我是一颗跳跳糖": "woshiyiketang",
+  "耶耶耶耶耶": "yeyeyeyeye",
+  "笑纳": "xiaona",
+  "": "",
+  "": "",
+  "": "",
+  "": "",
+  "": "",
 
 }
 //丁真

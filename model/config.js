@@ -11,6 +11,7 @@ const defaultConfig = {
     "version": "0.1.0"
 }
 let config = {}
+config.version = defaultConfig.version
 config = Object.assign({}, defaultConfig, config)
 if (fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)) {
     const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
