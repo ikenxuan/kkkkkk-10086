@@ -1,6 +1,0 @@
-/resources/kkkkkk-10086-resources
-/config/*
-!/config/config.example.json
-!/config/请勿修改config.example.json.md
-/node_modules
-/yarn.lock
