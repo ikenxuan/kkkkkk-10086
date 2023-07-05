@@ -243,7 +243,7 @@ export class TikHub extends base {
         "Origin": "https://www.douyin.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
-      let video_url_data = await fetch(video_url, {headers: qiy})
+      let video_url_data = await fetch(video_url, {headers: headers})
       .then(res => {
         if(!res.ok) {
           throw new Error ('访问视频链接被拒绝，无法处理请求！')
