@@ -279,12 +279,12 @@ export class TikHub extends base {
         headers: headers
       })
       //写入流
-      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`);
-      video_url_data.body.pipe(writer);
+      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
+      response.body.pipe(writer)
       await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
+        writer.on('finish', resolve)
+        writer.on('error', reject)
+      })
       logger.info('视频下载(写入)成功，正在上传')
       globalmp4_path = writer.path;
     }
