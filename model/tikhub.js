@@ -60,7 +60,7 @@ export class TikHub extends base {
           await this.upload_file(globalmp4_path) //上传
           await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
-          await getFileMd5(globalmp4_path)
+          //await getFileMd5(globalmp4_path)
           await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
           await this.removeFileOrFolder(globalmp4_path)
         }
