@@ -1,0 +1,10 @@
+{
+  "account": "",
+  "password": "",
+  "access_token": "",
+  "address": "",
+  "rmmp4": true,
+  "voicebox": true,
+  "videotool": true,
+  "version": "0.1.0"
+}
