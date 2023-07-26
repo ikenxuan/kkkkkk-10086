@@ -13,7 +13,7 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 ```
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
-### 安装依赖：
+### 插件目录下执行：
 ```
 pnpm install -P
 ```
