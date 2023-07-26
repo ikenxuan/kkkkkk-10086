@@ -1,0 +1,8 @@
+{
+    "name": "kkkkkk-10086",
+    "author": "ikenxuan",
+    "type": "module",
+    "dependencies": {
+        "fs-extra": "^11.1.1"
+    }
+}
