@@ -13,6 +13,10 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 ```
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
+### 插件目录下执行：
+```
+pnpm install -P
+```
 
 ## 功能(其实就两个)
 ***
@@ -43,7 +47,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 此项目接口可直接下载带签名的视频文件，无损画质
 
 默认使用在线接口请求可能遇到网络错误或高峰期拥堵，有能力建议自行[本地部署](https://github.com/Evil0ctal/Douyin_TikTok_Download_API#%E9%83%A8%E7%BD%B2%E6%96%B9%E5%BC%8F%E4%B8%80-linux)
-#### 若使用TikHub API功能需先[注册](https://dash.tikhub.io/signin?next=/dashboard)TikHub账号 (注：此接口不开源，免费账号有效期7天，注意消耗次数)
+#### 若使用TikHub API功能需先[注册](https://dash.tikhub.io/signin?next=/dashboard)TikHub账号 (注：此接口不开源，免费账号有效期7天，注意消耗次数)TikHub API每次都要要换账号太麻烦了，可能会咕咕咕
 抖音解析使用TikHub API目前可解析评论（?）
 ***
 
@@ -56,7 +60,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 ## TODO
 ***
 - [x] 咕咕咕
-- [ ] 开关
+- [x] 开关
 ## 参考项目
  ***
 - 椰羊群的鸡音盒
