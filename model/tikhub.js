@@ -97,12 +97,13 @@ export class TikHub extends base {
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
-    if (v1data.aweme_list[0].images !== undefined) {
+    if (v1data.aweme_list[0].images !== null) {
       let image_data = []
       let imageres = []
       let image_url = ''
       for (let i = 0; i < v1data.aweme_list[0].images.length; i++) {
-        image_url = v1data.aweme_list[0].images[i].url_list[2] //图片地址
+        image_url = v1data.aweme_list[0].images[i].url_list[1] //图片地址
+        console.log(image_url)
         let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         title_global = title
@@ -242,21 +243,21 @@ export class TikHub extends base {
         "Origin": "https://www.douyin.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
-      let video_url_data = await fetch(video_url, {headers: headers})
-      .then(res => {
-        if(!res.ok) {
-          throw new Error ('访问视频链接被拒绝，无法处理请求！')
-        }
-        let content_lenght = res.headers.get('content-length')
-        let content_md5 = res.headers.get('content-md5')
-        let LastUrl = res.url
-        return{
-          LastUrl,
-          content_lenght,
-          content_md5
-        }
-      })
-      video_url_data.content_md5 =_md5
+      let video_url_data = await fetch(video_url, { headers: headers })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('访问视频链接被拒绝，无法处理请求！')
+          }
+          let content_lenght = res.headers.get('content-length')
+          let content_md5 = res.headers.get('content-md5')
+          let LastUrl = res.url
+          return {
+            LastUrl,
+            content_lenght,
+            content_md5
+          }
+        })
+      video_url_data.content_md5 = _md5
       let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
       let cover = video.origin_cover.url_list[0] //video cover image
@@ -616,13 +617,13 @@ export class TikHub extends base {
         }
       }
     }
-    logger.warn(JSON.stringify(result)) //最后返回的json
+    //logger.warn(JSON.stringify(result)) //最后返回的json
     return result //返回合并好的json，这里返回的是v1的，因为v2的请求如果成功，在请求v1前就已经返回了
   }
 
   /**获取Tik Hub账号token */
   async gettoken() {
-    if(!AccountFile.account || !AccountFile.password) {
+    if (!AccountFile.account || !AccountFile.password) {
       logger.error('未填写Tik Hub账号或密码，可在锅巴web后台填写')
       return true
     }
@@ -647,13 +648,13 @@ export class TikHub extends base {
       // 写入
       doc.access_token = tokendata.access_token;
       fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
-  
+
     } catch (err) {
       logger.error
     }
     try {
       await this.getnumber()
-    } catch(err) {
+    } catch (err) {
       logger.error(err)
     }
     return ('手动刷新token成功，该token拥有365天有效期')
@@ -661,7 +662,7 @@ export class TikHub extends base {
 
   /**签到获取Tik Hub账号请求次数 */
   async getnumber() {
-    if(!AccountFile.access_token) {
+    if (!AccountFile.access_token) {
       return true
     }
     let headers2 = {
