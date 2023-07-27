@@ -56,7 +56,7 @@ export class TikHub extends base {
         //let mp4size = await this.tosize() //获取视频文件大小信息
         if (mp4size >= 60) {
           //群和私聊分开
-          this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+          await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
           await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
@@ -73,7 +73,7 @@ export class TikHub extends base {
         //let mp4size = await this.tosize() //获取视频文件大小信息
         if (mp4size >= 80) { //如果大小超过45MB，发文件
           //群和私聊分开
-          this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+          await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
           await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
@@ -91,19 +91,19 @@ export class TikHub extends base {
    * @param {*} dydata 传入视频json
    */
   async v1_dy_data(dydata) {
-    this.e.gid = this.e.group_id
     let v1data = dydata.data
     let full_data = [] //总数组
     let title_global = '' //全局title变量
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
-    if (v1data.aweme_list[0].img_bitrate !== null) {
+    if (v1data.aweme_list[0].images !== null) {
       let image_data = []
       let imageres = []
       let image_url = ''
-      for (let i = 0; i < v1data.aweme_list[0].img_bitrate[1].images.length; i++) {
-        image_url = v1data.aweme_list[0].img_bitrate[1].images[i].url_list[2] //图片地址
+      for (let i = 0; i < v1data.aweme_list[0].images.length; i++) {
+        image_url = v1data.aweme_list[0].images[i].url_list[1] //图片地址
+        console.log(image_url)
         let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         title_global = title
@@ -203,8 +203,8 @@ export class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
       music_res.push(music_data)
-      if (v1data.aweme_list[0].img_bitrate !== null) {
-        this.e.reply(await uploadRecord(music_url, 0, false))
+      if (v1data.aweme_list[0].images !== null) {
+        await this.e.reply(await uploadRecord(music_url, 0, false))
       }
     }
     //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
@@ -243,21 +243,21 @@ export class TikHub extends base {
         "Origin": "https://www.douyin.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
       }
-      let video_url_data = await fetch(video_url, {headers: headers})
-      .then(res => {
-        if(!res.ok) {
-          throw new Error ('访问视频链接被拒绝，无法处理请求！')
-        }
-        let content_lenght = res.headers.get('content-length')
-        let content_md5 = res.headers.get('content-md5')
-        let LastUrl = res.url
-        return{
-          LastUrl,
-          content_lenght,
-          content_md5
-        }
-      })
-      video_url_data.content_md5 =_md5
+      let video_url_data = await fetch(video_url, { headers: headers })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('访问视频链接被拒绝，无法处理请求！')
+          }
+          let content_lenght = res.headers.get('content-length')
+          let content_md5 = res.headers.get('content-md5')
+          let LastUrl = res.url
+          return {
+            LastUrl,
+            content_lenght,
+            content_md5
+          }
+        })
+      video_url_data.content_md5 = _md5
       let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
       let cover = video.origin_cover.url_list[0] //video cover image
@@ -290,7 +290,7 @@ export class TikHub extends base {
     }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
-    this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
+    await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
   }
 
   /**
@@ -384,7 +384,7 @@ export class TikHub extends base {
         }
       }
       if (imagenum === 100) {
-        let msg = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res)
+        let msg = await common.makeForwardMsg(this.e, res, xmltitle)
         await this.e.reply(msg)
       } else if (imagenum === 1) {
         let lbw = []
@@ -395,11 +395,11 @@ export class TikHub extends base {
         let pldata = []
         pldata.push(pl_data)
         let forpldata = await common.makeForwardMsg(this.e, pldata, '热门评论')
-        this.e.reply(segment.image(image_url))
+        await this.e.reply(segment.image(image_url))
         lbw.push(lbwtitle)
         lbw.push(forpldata)
         lbw.push(lbwtial)
-        await this.e.reply(await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, lbw))
+        await this.e.reply(await common.makeForwardMsg(this.e, res, xmltitle))
       }
       else {
         //先合并转发一次评论数据
@@ -413,17 +413,17 @@ export class TikHub extends base {
         let resarr = textarr.concat(imgarr).concat(image_forpldata).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
         //logger.mark(resarr)
         //制作合并转发消息
-        let msg = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, resarr)
+        let msg = await common.makeForwardMsg(this.e, res, xmltitle)
         await this.e.reply(msg)
       }
       //如果音频直链为空
       if (!music) {
-        this.e.reply(`无法上传，原因：${cause}`, false)
+        await this.e.reply(`无法上传，原因：${cause}`, false)
         return
       } else {
         //发送高清语音
         console.log(`音频直链${music}${cause}`)
-        this.e.reply(await uploadRecord(music, 0, false))
+        await this.e.reply(await uploadRecord(music, 0, false))
       }
     }
     //获取视频数据---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -607,7 +607,7 @@ export class TikHub extends base {
             retryfetch++
             if (retryfetch >= 20) {
               logger.error('20次内 douyin.wtf API 连续请求失败，任务结束');
-              this.e.reply('任务执行报错function douyin()\n' + err)
+              await this.e.reply('任务执行报错function douyin()\n' + err)
               break
             }
             logger.mark(`第${retryfetch}次重试：${err.message}`)
@@ -617,13 +617,13 @@ export class TikHub extends base {
         }
       }
     }
-    //logger.warn(JSON.stringify(result))
+    //logger.warn(JSON.stringify(result)) //最后返回的json
     return result //返回合并好的json，这里返回的是v1的，因为v2的请求如果成功，在请求v1前就已经返回了
   }
 
   /**获取Tik Hub账号token */
   async gettoken() {
-    if(!AccountFile.account || !AccountFile.password) {
+    if (!AccountFile.account || !AccountFile.password) {
       logger.error('未填写Tik Hub账号或密码，可在锅巴web后台填写')
       return true
     }
@@ -648,13 +648,12 @@ export class TikHub extends base {
       // 写入
       doc.access_token = tokendata.access_token;
       fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
-  
     } catch (err) {
       logger.error
     }
     try {
       await this.getnumber()
-    } catch(err) {
+    } catch (err) {
       logger.error(err)
     }
     return ('手动刷新token成功，该token拥有365天有效期')
@@ -662,7 +661,7 @@ export class TikHub extends base {
 
   /**签到获取Tik Hub账号请求次数 */
   async getnumber() {
-    if(!AccountFile.access_token) {
+    if (!AccountFile.access_token) {
       return true
     }
     let headers2 = {
@@ -688,56 +687,7 @@ export class TikHub extends base {
       return ('账号24小时内不可多次签到\n' + notedayjson.message)
     }
   }
-  /**
-  * 
-  * @param {*} qq icqq信息
-  * @param {*} firsttitle 解析平台：抖音? 快手? 小红书? Tik Tok?
-  * @param {*} title xml标题
-  * @param {*} msg 发送的内容
-  * @returns 
-  */
-  async makeForwardMsg(qq, firsttitle, title, msg = []) {
-    let nickname = Bot.nickname
-    if (this.e.isGroup) {
-      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-      nickname = info.card ?? info.nickname
-    }
-    let userInfo = {
-      user_id: this.e.user_id,
-      nickname: this.e.sender.card || this.e.user_id,
-    }
 
-    let forwardMsg = []
-    msg.forEach(v => {
-      forwardMsg.push({
-        ...userInfo,
-        message: v
-      })
-    })
-
-    /** 制作转发内容 */
-    if (this.e.isGroup) {
-      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
-      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-    }
-
-    /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
-      .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
-      .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
-      .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-      .replace(/<summary color="#808080" size="26">/g, '___')
-      .replace(/___+/, `<summary color="#808080">`)
-      .replace(/<source name="聊天记录">/g, '___')
-      .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
-
-    return forwardMsg
-  }
   /**
    * @param {*} file 上传图片到腾讯图床
    * @returns 
@@ -765,7 +715,7 @@ export class TikHub extends base {
         }
       }
     } catch (err) {
-      this.e.reply('视频文件上传出错：' + err)
+      await this.e.reply('视频文件上传出错：' + err)
       logger.error('视频文件上传出错：' + err)
     }
 
