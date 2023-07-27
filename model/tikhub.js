@@ -648,7 +648,6 @@ export class TikHub extends base {
       // 写入
       doc.access_token = tokendata.access_token;
       fs.writeFileSync(accountfile, JSON.stringify(doc, null, 2), 'utf8')
-
     } catch (err) {
       logger.error
     }
