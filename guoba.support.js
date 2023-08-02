@@ -25,18 +25,6 @@ export function supportGuoba() {
             // 配置项 schemas
             schemas: [
                 {
-                    field: 'VoiceBoxPriority',
-                    label: '语音盒触发优先级',
-                    bottomHelpMessage: '默认3000',
-                    component: 'Input'
-                },
-                {
-                    field: 'VideoToolPriority',
-                    label: '视频解析工具触发优先级',
-                    bottomHelpMessage: '默认200',
-                    component: 'Input'
-                },
-                {
                     field: 'voicebox',
                     label: '语音盒',
                     bottomHelpMessage: '开启鸡音盒、丁真盒、鸡汤盒、耀阳盒、神鹰盒',
