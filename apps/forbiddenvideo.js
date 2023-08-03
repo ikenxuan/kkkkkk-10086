@@ -69,21 +69,20 @@ export class example extends plugin {
   //tiktok------------------------------------------------------------------------------------------
   async Tiktok(e) {
     //JS 正则匹配 URL
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let mr = e.msg.replace("Tiktok", "").trim();
+    let mr = e.msg.replace("Tiktok", "").trim()
     let nrymsg = await fetch(`https://api.douyin.wtf/api?url=${mr}`, {
       method: "GET"
-    });
-    let data = await nrymsg.json();
+    })
+    let data = await nrymsg.json()
     let qiy = {
       "Server": "CWAP-waf",
       "Content-Type": "video/mp4",
     }
 
-    let mp4 = await fetch(`${data.video_data.nwm_video_url_HQ}`, { method: "get", headers: qiy });
-    e.reply([`发现Tik Tok分享...\n正在读取 URL...`]);
+    let mp4 = await fetch(`${data.video_data.nwm_video_url_HQ}`, { method: "get", headers: qiy })
+    e.reply([`发现Tik Tok分享...\n正在读取 URL...`])
     let lopp = await mp4.buffer();
-    let path = `${_path}/plugins/example/Tiktok.mp4`;
+    let path = `${_path}/plugins/example/Tiktok.mp4`
     fs.writeFile(path, lopp, "binary", function (err) {
       if (!err) {
         // 下载视频成功
