@@ -1,40 +1,15 @@
 import plugin from '../../../lib/plugins/plugin.js'
+import common from '../../../lib/common/common.js'
+import TikHub from '../model/douyin/tikhub.js'
+import { Config } from '../model/config.js'
+import { Argument } from '../model/douyin/request.js'
 import fetch from 'node-fetch'
-import fs from "fs";
-import common from '../../../lib/common/common.js';
-import TikHub from '../model/tikhub.js';
+import fs from "fs"
 const _path = process.cwd()
-const configpath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
-
-function reloadConfig() {
-  const AccountFile = JSON.parse(fs.readFileSync(configpath))
-  return AccountFile
-}
-
-
-reloadConfig()
-fs.watch(configpath, { persistent: true }, (event, filename) => {
-  setTimeout(() => {
-    reloadConfig()
-  }, 100)
-})
-
-/**
- * @param {*} count 过万整除
- * @returns 
- */
-function count(count) {
-  if (count > 10000) {
-    return (count / 10000).toFixed(1) + "万";
-  } else {
-    return count.toString();
-  }
-}
 
 export class example extends plugin {
   constructor() {
-    const AccountFile = reloadConfig()
-    const rule = AccountFile.videotool ? [
+    const rule = Config.videotool ? [
       { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
       { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
       { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' },
@@ -49,35 +24,45 @@ export class example extends plugin {
       priority: 200,
       rule: rule
     })
-    this.task = {
-      cron: '0 0 0 * * ?',
-      name: '视频解析签到获取次数',
-      fnc: () => this.tikhub.getnumber(),
-      log: false
-    }
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
+    let tikhub = new TikHub(this.e)
+
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
     const options = {
+      followRedirects: true,
       redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
-        'Referer': 'https://www.xiaohongshu.com/',
-        'Cookie': 'your-cookie-string-here'
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36'
       }
     }
-    //重新请求获取视频长链接
-    let response = await fetch(URL, options);
-    let longLink = response.url;
-    const matchRes = longLink.match(/(video|note)\/(\d+)/)
-    const videoId = matchRes ? matchRes[2] : null
-    let tikhub = new TikHub(this.e)
-    let dydata = await tikhub.douyin(videoId)
-    //console.log(JSON.stringify(dydata))
-    await tikhub.gettype(dydata.tik_status, dydata.is_mp4, dydata)
-    return
+    let response = await fetch(URL, options)
+    let longLink = response.url
+    const matchVideo = longLink.match(/video\/(\d+)/)
+    const matchNote = longLink.match(/note\/(\d+)/)
+    let video_id
+    let data
+    let is_mp4
+    let is_V2 = false
+    if ((!Config.access_token || Config.access_token === '') && Config.account && Config.password) is_V2 = true
+
+    if (matchVideo) {
+      video_id = matchVideo[1]
+      is_mp4 = true
+      data = await Argument(video_id, is_mp4, is_V2)
+      //logger.info(JSON.stringify(data))
+      await tikhub.gettype(data, data.is_mp4, data.is_V2)
+      return
+    } else if (matchNote) {
+      video_id = matchNote[1]
+      is_mp4 = false
+      data = await Argument(video_id, is_mp4, is_V2)
+      await tikhub.gettype(data, data.is_mp4, data.is_V2)
+      return
+    }
   }
 
 
@@ -109,6 +94,7 @@ export class example extends plugin {
       return true
     })
   }
+
   async xhs(e) {
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp);
@@ -375,58 +361,6 @@ export class example extends plugin {
     let tikhub = new TikHub(this.e)
     let message = await tikhub.getnumber()
     e.reply(message)
-  }
-
-
-  /**
- * 
- * @param {*} qq icqq信息
- * @param {*} firsttitle 解析平台：？？？
- * @param {*} title xml标题
- * @param {*} msg 发送的内容
- * @returns 
- */
-  async makeForwardMsg(qq, firsttitle, title, msg = []) {
-    let nickname = Bot.nickname
-    if (this.e.isGroup) {
-      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-      nickname = info.card ?? info.nickname
-    }
-    let userInfo = {
-      user_id: this.e.user_id,
-      nickname: this.e.sender.card || this.e.user_id,
-    }
-
-    let forwardMsg = []
-    msg.forEach(v => {
-      forwardMsg.push({
-        ...userInfo,
-        message: v
-      })
-    })
-
-    /** 制作转发内容 */
-    if (this.e.isGroup) {
-      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
-      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-    }
-
-    /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<?xml version="1.0" encoding="utf-8"?>/g, '___')
-      .replace(/___+/, `<?xml version='1.0' encoding='UTF-8' standalone="yes"?>`)
-      .replace(/<title color="#000000" size="34">转发的聊天记录<\/title>/g, '___')
-      .replace(/___+/, `<title color="#000000" size="34">解析平台：${firsttitle}<\/title>`)
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-      .replace(/<summary color="#808080" size="26">/g, '___')
-      .replace(/___+/, `<summary color="#808080">`)
-      .replace(/<source name="聊天记录">/g, '___')
-      .replace(/___+/, `<source name="解析平台：${firsttitle}">`)
-
-    return forwardMsg
   }
 
 
