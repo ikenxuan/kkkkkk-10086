@@ -261,7 +261,7 @@ export class TikHub extends base {
    * 
    * @param {*} dydata 传入视频json
    */
-  async v2_dy_data(dydata, is_mp4, title_global) {
+  async v2_dy_data(dydata, is_mp4) {
     this.e.gid = this.e.group_id
     let v2data = data
     // 先把评论数据抽出来------------------------------------------------------------------------------------------------------------------------------------------------------
