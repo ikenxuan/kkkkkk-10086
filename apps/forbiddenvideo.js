@@ -2,7 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 import common from '../../../lib/common/common.js'
 import TikHub from '../model/douyin/tikhub.js'
 import { Config } from '../model/config.js'
-import { Argument } from '../model/douyin/request.js'
+import { Argument, TikHubLogin, TikHubDaily } from '../model/douyin/request.js'
 import fetch from 'node-fetch'
 import fs from "fs"
 const _path = process.cwd()
@@ -351,13 +351,14 @@ export class example extends plugin {
     if (e.master) {
       return true
     }
-    let tikhub = new TikHub(this.e)
-    let message = await tikhub.gettoken()
+    let message = await TikHubLogin()
     e.reply(message)
   }
-  async getnumber() {
-    let tikhub = new TikHub(this.e)
-    let message = await tikhub.getnumber()
+  async getnumber(e) {
+    if (e.master) {
+      return true
+    }
+    let message = await TikHubDaily()
     e.reply(message)
   }
 
