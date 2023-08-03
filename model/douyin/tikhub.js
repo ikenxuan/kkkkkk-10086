@@ -255,7 +255,7 @@ export class TikHub extends base {
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
-    await DownLoadVideo(globalvideo_url, global_title)
+    if (is_mp4 === true) { await DownLoadVideo(globalvideo_url, global_title) }
   }
 
   /**
@@ -622,7 +622,6 @@ function mkdirs(dirname) {
 }
 
 async function DownLoadVideo(globalvideo_url, global_title) {
-
   let response = await fetch(globalvideo_url, {
     headers: headers
   })
@@ -636,7 +635,8 @@ async function DownLoadVideo(globalvideo_url, global_title) {
   logger.info('视频下载(写入)成功，正在上传')
   globalmp4_path = writer.path
 }
-let headers = {
+
+const headers = {
   "Server": "CWAP-waf",
   "Content-Type": "video/mp4",
   "Origin": "https://www.douyin.com",
