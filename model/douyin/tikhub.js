@@ -8,7 +8,9 @@ import { Config } from "../config.js"
 const _path = process.cwd()
 let globalmp4_path = { path: "" }
 let mp4size = ''
-let _md5 = ''
+let globalvideo_url
+let global_title = ''
+
 
 export class base {
   constructor(e = {}) {
@@ -79,7 +81,6 @@ export class TikHub extends base {
   async v1_dy_data(dydata, is_mp4) {
     let v1data = dydata
     let full_data = [] //总数组
-    let title_global = '' //全局title变量
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
@@ -213,43 +214,36 @@ export class TikHub extends base {
       //return
       let video_data = []
       let videores = []
-      let video_url //视频地址特殊判断：play_addr_h264、play_addr、
+      //视频地址特殊判断：play_addr_h264、play_addr、
       const video = v1data.aweme_list[0].video
       let FPS = video.bit_rate[0].FPS //FPS
       if (v1data.aweme_list[0].video.play_addr_h264) {
-        video_url = video.play_addr_h264.url_list[2]
+        globalvideo_url = video.play_addr_h264.url_list[2]
       } else if (v1data.aweme_list[0].video.play_addr) {
-        video_url = video.play_addr.url_list[2]
+        globalvideo_url = video.play_addr.url_list[2]
       }
-      let headers = {
-        "Server": "CWAP-waf",
-        "Content-Type": "video/mp4",
-        "Origin": "https://www.douyin.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
-      }
-      let video_url_data = await fetch(video_url, { headers: headers })
+      let cover = video.origin_cover.url_list[0] //video cover image
+      let title = v1data.aweme_list[0].preview_title //video title
+      global_title = title
+      let video_url_data = await fetch(globalvideo_url, { headers: headers })
+
         .then(res => {
           if (!res.ok) {
             throw new Error('访问视频链接被拒绝，无法处理请求！')
           }
           let content_lenght = res.headers.get('content-length')
-          let content_md5 = res.headers.get('content-md5')
           let LastUrl = res.url
           return {
             LastUrl,
             content_lenght,
-            content_md5
           }
         })
-      video_url_data.content_md5 = _md5
       let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
-      let cover = video.origin_cover.url_list[0] //video cover image
-      let title = v1data.aweme_list[0].preview_title //video title
+      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
       videores.push(`标题：\n${title}`)
-
       videores.push(`视频帧率：${"" + FPS}\n视频大小：${video_size_mb}MB`)
-      videores.push(`等不及视频上传可以先看这个，视频直链：\n${video_url}`)
+      videores.push(`等不及视频上传可以先看这个，视频直链：\n${globalvideo_url}`)
       videores.push(segment.image(cover))
       let dsc = '视频基本信息'
 
@@ -257,24 +251,11 @@ export class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
-
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
-      let response = await fetch(video_url, {
-        headers: headers
-      })
-      //写入流
-      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
-      response.body.pipe(writer)
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve)
-        writer.on('error', reject)
-      })
-      logger.info('视频下载(写入)成功，正在上传')
-      globalmp4_path = writer.path;
     }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
+    await DownLoadVideo(globalvideo_url, global_title)
   }
 
   /**
@@ -638,6 +619,28 @@ function mkdirs(dirname) {
       return true
     }
   }
+}
+
+async function DownLoadVideo(globalvideo_url, global_title) {
+
+  let response = await fetch(globalvideo_url, {
+    headers: headers
+  })
+  //写入流
+  let writer = fs.createWriteStream(`resources/kkkdownload/video/${global_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
+  response.body.pipe(writer)
+  await new Promise((resolve, reject) => {
+    writer.on('finish', resolve)
+    writer.on('error', reject)
+  })
+  logger.info('视频下载(写入)成功，正在上传')
+  globalmp4_path = writer.path
+}
+let headers = {
+  "Server": "CWAP-waf",
+  "Content-Type": "video/mp4",
+  "Origin": "https://www.douyin.com",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
 }
 
 export default TikHub
