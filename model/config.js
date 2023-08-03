@@ -8,7 +8,6 @@ const defaultConfig = {
     "rmmp4": true,
     "voicebox": true,
     "videotool": true,
-    "version": "0.1.0"
 }
 let config = {}
 config.version = defaultConfig.version
@@ -24,13 +23,13 @@ export const Config = new Proxy(config, {
     set(target, property, value) {
         target[property] = value
         const merged = Object.assign({}, defaultConfig, target)
-        //const change = lodash.transform(config, function (result, value, key) {
-        //    if (!lodash.isEqual(value, defaultConfig[key])) {
-        //        result[key] = value
-        //    }
-        //})
+        const change = lodash.transform(config, function (result, value, key) {
+            if (!lodash.isEqual(value, defaultConfig[key])) {
+                result[key] = value
+            }
+        })
         try {
-            fs.writeFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`, JSON.stringify(merged, null, 2), { flag: 'w' })
+            fs.writeFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`, JSON.stringify(change, merged, null, 2), { flag: 'w' })
         } catch (err) {
             logger.error(err)
             return false
