@@ -11,6 +11,7 @@ let mp4size = ''
 let globalvideo_url
 let global_title = ''
 
+
 export class base {
   constructor(e = {}) {
     this.e = e;
@@ -225,6 +226,7 @@ export class TikHub extends base {
       let title = v1data.aweme_list[0].preview_title //video title
       global_title = title
       let video_url_data = await fetch(globalvideo_url, { headers: headers })
+
         .then(res => {
           if (!res.ok) {
             throw new Error('访问视频链接被拒绝，无法处理请求！')
@@ -249,7 +251,6 @@ export class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
-
     }
     let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
