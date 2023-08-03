@@ -93,13 +93,13 @@ export class TikHub extends base {
         console.log(image_url)
         let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
-        title_global = title
+        global_title = title
         imageres.push(segment.image(image_url)) //合并图集字符串
         imagenum++
         if (Config.rmmp4 === false) {
-          mkdirs(`resources/kkkdownload/images/${title_global}`)
-          //globalmp4_path = `resources/kkkdownload/images/${title_global}`
-          let path = `resources/kkkdownload/images/${title_global}/${i + 1}.png`
+          mkdirs(`resources/kkkdownload/images/${global_title}`)
+          //globalmp4_path = `resources/kkkdownload/images/${global_title}`
+          let path = `resources/kkkdownload/images/${global_title}/${i + 1}.png`
           await fetch(image_url)
             .then(res => res.arrayBuffer())
             .then(data => fs.promises.writeFile(path, Buffer.from(data)))
@@ -176,7 +176,7 @@ export class TikHub extends base {
       let music_img = music.cover_hd.url_list[0] //BGM作者头像
       let music_url = music.play_url.uri //BGM link
       if (is_mp4 === false && Config.rmmp4 === false) {
-        let path = `resources/kkkdownload/images/${title_global}/BGM.mp3`
+        let path = `resources/kkkdownload/images/${global_title}/BGM.mp3`
         await fetch(music_url)
           .then(bgmfile => bgmfile.arrayBuffer())
           .then(downloadbgm => fs.promises.writeFile(path, Buffer.from(downloadbgm)))
