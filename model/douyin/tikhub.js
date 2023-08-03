@@ -40,7 +40,6 @@ export class TikHub extends base {
    * @returns 
    */
   async gettype(dydata, is_mp4, is_V2) {
-    console.log(dydata)
     if (is_V2 === false) {
       await this.v1_dy_data(dydata, is_mp4)
       if (is_mp4 === true) { //判断是否是视频
@@ -640,3 +639,5 @@ function mkdirs(dirname) {
     }
   }
 }
+
+export default TikHub

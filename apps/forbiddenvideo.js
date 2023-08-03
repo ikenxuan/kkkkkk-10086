@@ -53,7 +53,6 @@ export class example extends plugin {
       video_id = matchVideo[1]
       is_mp4 = true
       data = await Argument(video_id, is_mp4, is_V2)
-      //logger.info(JSON.stringify(data))
       await tikhub.gettype(data, data.is_mp4, data.is_V2)
       return
     } else if (matchNote) {
