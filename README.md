@@ -13,9 +13,9 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 ```
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
-### 插件目录下执行：
+使用ghproxy代理加速
 ```
-pnpm install -P
+git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ## 功能(其实就两个)
