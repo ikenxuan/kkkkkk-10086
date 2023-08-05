@@ -183,7 +183,7 @@ export class TikHub extends base {
       }
       musicres.push(`BGM名字：${music_id}`)
       musicres.push(`BGM下载直链：${music_url}`)
-      musicres.push(`BGM作者头像\n${music_img}`)
+      musicres.push(segment.image(music_img))
       let dsc = 'BGM相关信息'
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
