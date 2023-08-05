@@ -14,13 +14,13 @@ let global_title = ''
 
 export class base {
   constructor(e = {}) {
-    this.e = e;
+    this.e = e
   }
 }
 export class TikHub extends base {
   constructor(e) {
     super(e);
-    this.model = "TikHub";
+    this.model = "TikHub"
   }
   /**
    * @param {*} count 过万整除
@@ -28,9 +28,9 @@ export class TikHub extends base {
    */
   async count(count) {
     if (count > 10000) {
-      return (count / 10000).toFixed(1) + "万";
+      return (count / 10000).toFixed(1) + "万"
     } else {
-      return count.toString();
+      return count.toString()
     }
   }
 
@@ -49,11 +49,11 @@ export class TikHub extends base {
           //群和私聊分开
           await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
-          await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
+          await removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
           //await getFileMd5(globalmp4_path)
           await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-          await this.removeFileOrFolder(globalmp4_path)
+          await removeFileOrFolder(globalmp4_path)
         }
       }
     } else if (is_V2 === true) {
@@ -63,10 +63,10 @@ export class TikHub extends base {
           //群和私聊分开
           await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
-          await this.removeFileOrFolder(globalmp4_path) //删除缓存(?)
+          await removeFileOrFolder(globalmp4_path) //删除缓存(?)
         } else {
           await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-          await this.removeFileOrFolder(globalmp4_path)
+          await removeFileOrFolder(globalmp4_path)
         }
         logger.info('使用了 TikHub API 提供的解析服务')
       }
@@ -331,7 +331,7 @@ export class TikHub extends base {
             .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
           imageres.push(segment.image(image_url)) //合并图集字符串
           if (Config.rmmp4 === false) {
-            mkdirs(`resources/kkkdownload/images/${title}`)
+            await mkdirs(`resources/kkkdownload/images/${title}`)
             let path = `resources/kkkdownload/images/${title}` + `/${i + 1}.png`
             await fetch(image_url)
               .then(res => res.arrayBuffer())
@@ -504,46 +504,39 @@ export class TikHub extends base {
 
   /** 要上传的视频文件，私聊需要加好友 */
   async upload_file(file) {
-    try {
-      if (this.e.isGroup) {
-        await this.e.group.fs.upload(file)
-        await this.removeFileOrFolder(file)
-      }
-      else {
-        if (this.e.isPrivate) {
-          await this.e.friend.sendFile(file)
-          await this.removeFileOrFolder(file)
-        }
-      }
-    } catch (err) {
-      await this.e.reply('视频文件上传出错：' + err)
-      logger.error('视频文件上传出错：' + err)
+    if (this.e.isGroup) {
+      await this.e.group.fs.upload(file)
+      await removeFileOrFolder(file)
     }
-
+    else if (this.e.isPrivate) {
+      await this.e.friend.sendFile(file)
+      await removeFileOrFolder(file)
+    }
   }
 
-  async removeFileOrFolder(path) {
-    if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
-      try {
-        const stats = await fs.promises.stat(path)
-        if (stats.isFile()) {
-          //指向文件
-          await fs.promises.unlink(path)
-          console.log(`文件缓存删除`)
-        } else if (stats.isDirectory()) {
-          //指向目录
-          await fse.remove(path)
-          console.log(`文件缓存删除`)
-        }
-      } catch (err) {
-        console.error('无法删除缓存文件\n', err)
+}
+
+async function removeFileOrFolder(path) {
+  if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
+    try {
+      const stats = await fs.promises.stat(path)
+      if (stats.isFile()) {
+        //指向文件
+        await fs.promises.unlink(path)
+        console.log(`文件缓存删除`)
+      } else if (stats.isDirectory()) {
+        //指向目录
+        await fse.remove(path)
+        console.log(`文件缓存删除`)
       }
+    } catch (err) {
+      console.error('无法删除缓存文件\n', err)
     }
   }
 }
 
 /** 文件夹名字 */
-function mkdirs(dirname) {
+async function mkdirs(dirname) {
   if (fs.existsSync(dirname)) {
     return true
   } else {
@@ -554,12 +547,12 @@ function mkdirs(dirname) {
   }
 }
 
-async function DownLoadVideo(globalvideo_url, global_title) {
-  let response = await fetch(globalvideo_url, {
+async function DownLoadVideo(video_url, title) {
+  let response = await fetch(video_url, {
     headers: headers
   })
   //写入流
-  let writer = fs.createWriteStream(`resources/kkkdownload/video/${global_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
+  let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
   response.body.pipe(writer)
   await new Promise((resolve, reject) => {
     writer.on('finish', resolve)
