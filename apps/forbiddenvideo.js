@@ -12,9 +12,7 @@ export class example extends plugin {
     const rule = Config.videotool ? [
       { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
       { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
-      { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' },
-      { reg: '^#获取token$', fnc: 'gettoken' },
-      { reg: '^#tikhub签到$', fnc: 'getnumber', log: false }
+      { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' }
     ] : [];
     super({
       name: 'kkkkkk-10086-视频功能',
