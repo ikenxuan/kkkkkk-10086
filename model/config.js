@@ -1,9 +1,6 @@
 import fs from 'fs'
 const _path = process.cwd()
 const defaultConfig = {
-    "account": "",
-    "password": "",
-    "access_token": "",
     "address": "",
     "rmmp4": true,
     "voicebox": true,

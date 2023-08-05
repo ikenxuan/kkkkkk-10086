@@ -19,7 +19,7 @@ export class base {
 }
 export class TikHub extends base {
   constructor(e) {
-    super(e);
+    super(e)
     this.model = "TikHub"
   }
   /**
@@ -38,40 +38,24 @@ export class TikHub extends base {
    * 
    * @param {*} dydata data
    * @param {*} is_mp4 true or false
-   * @param {*} is_V2 true or false
    * @returns 
    */
-  async gettype(dydata, is_mp4, is_V2) {
-    if (is_V2 === false) {
-      await this.v1_dy_data(dydata, is_mp4)
-      if (is_mp4 === true) { //判断是否是视频
-        if (mp4size >= 80) {
-          //群和私聊分开
-          await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-          await this.upload_file(globalmp4_path) //上传
-          await removeFileOrFolder(globalmp4_path) //删除缓存(?)
-        } else {
-          //await getFileMd5(globalmp4_path)
-          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-          await removeFileOrFolder(globalmp4_path)
-        }
+  async gettype(dydata, is_mp4) {
+    await this.v1_dy_data(dydata, is_mp4)
+    if (is_mp4 === true) { //判断是否是视频
+      if (mp4size >= 80) {
+        //群和私聊分开
+        await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+        await this.upload_file(globalmp4_path) //上传
+        await removeFileOrFolder(globalmp4_path) //删除缓存(?)
+      } else {
+        //await getFileMd5(globalmp4_path)
+        await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
+        await removeFileOrFolder(globalmp4_path)
       }
-    } else if (is_V2 === true) {
-      await this.v2_dy_data(dydata, is_mp4)
-      if (is_mp4 === true) { //判断是否是视频
-        if (mp4size >= 80) {
-          //群和私聊分开
-          await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
-          await this.upload_file(globalmp4_path) //上传
-          await removeFileOrFolder(globalmp4_path) //删除缓存(?)
-        } else {
-          await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-          await removeFileOrFolder(globalmp4_path)
-        }
-        logger.info('使用了 TikHub API 提供的解析服务')
-      }
-      return true
     }
+    return true
+
   }
 
   /**
@@ -259,237 +243,6 @@ export class TikHub extends base {
     await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
     if (is_mp4 === true) { await DownLoadVideo(globalvideo_url, global_title) }
   }
-
-  /**
-   * 
-   * @param {*} dydata 传入视频json
-   */
-  async v2_dy_data(dydata, is_mp4) {
-    this.e.gid = this.e.group_id
-    let v2data = data
-    // 先把评论数据抽出来------------------------------------------------------------------------------------------------------------------------------------------------------
-    let pl_data = []
-    if (dydata.comments && dydata.comments.comments_list) {
-      let comments_list = dydata.comments.comments_list.slice(0, 15);
-      let video_dz = []
-      for (let i = 0; i < comments_list.length; i++) {
-        let text = comments_list[i].text;
-        let ip = comments_list[i].ip_label;
-        let digg_count = comments_list[i].digg_count;
-        if (digg_count > 10000) {
-          digg_count = (digg_count / 10000).toFixed(1) + "w"
-        }
-        video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-      }
-      let dz_text = video_dz.join("\n\n\n")
-      pl_data.push(`🔥热门评论🔥\n${dz_text}`)
-    } else {
-      pl_data.push("评论数据获取失败")
-    }
-    //提取图集数据------------------------------------------------------------------------------------------------------------------------------------------------------
-    if (v2data.aweme_list[0].video.bit_rate.length === 0 || is_mp4 === false) {
-      let res = []
-      if (v2data.aweme_list[0].images[0].url_list[0] === undefined) {
-        e.reply("请求错误，请再试一次...")
-        return
-      }
-      //定位标题
-      let bt = v2data.aweme_list[0].desc
-      //作者头像
-      let tx = v2data.aweme_list[0].author.avatar_thumb.url_list[0]
-      //作者名称
-      let name = v2data.aweme_list[0].author.nickname
-      //BGM名字
-      let BGMname = v2data.aweme_list[0].music.title
-      //视频点赞、评论、分享、收藏
-      let dz = await this.count(v2data.aweme_list[0].statistics.digg_count)
-      let pl = await this.count(v2data.aweme_list[0].statistics.comment_count)
-      let fx = await this.count(v2data.aweme_list[0].statistics.share_count)
-      let sc = await this.count(v2data.aweme_list[0].statistics.collect_count)
-      let xmltitle = (`该图集被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
-      //抖音号
-      let dyid;
-      if (v2data.aweme_list[0].author.unique_id === "") {
-        if (v2data.aweme_list[0].author.short_id === "") {
-          dyid = "找不到他/她的抖音ID"
-        } else {
-          dyid = v2data.aweme_list[0].author.short_id;
-        }
-      } else {
-        dyid = v2data.aweme_list[0].author.unique_id;
-      }
-      //BGM直链
-      let music = v2data.aweme_list[0].music.play_url.uri
-      let cause = v2data.aweme_list[0].music.offline_desc
-      let imagenum = 0 //记录图片数量
-      //遍历图片数量
-      let imgarr = []
-      for (let i = 0; i < v2data.aweme_list.length; i++) {
-        let aweme_list = v2data.aweme_list[i];
-        for (let j = 0; j < aweme_list.images.length; j++) {
-          //图片链接
-          let image_url = aweme_list.images[j].url_list[0];
-          let title = bt.substring(0, 50)
-            .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
-          imageres.push(segment.image(image_url)) //合并图集字符串
-          if (Config.rmmp4 === false) {
-            await mkdirs(`resources/kkkdownload/images/${title}`)
-            let path = `resources/kkkdownload/images/${title}` + `/${i + 1}.png`
-            await fetch(image_url)
-              .then(res => res.arrayBuffer())
-              .then(data => fs.promises.writeFile(path, Buffer(data)))
-          }
-
-          imgarr.push(segment.image(image_url));
-          imagenum++
-          if (imagenum >= 100) { //数量达到100跳出循环
-            break
-          }
-        }
-        if (imagenum >= 100) { //数量达到100跳出循环
-          break
-        }
-      }
-      if (imagenum === 100) {
-        let msg = await common.makeForwardMsg(this.e, res, xmltitle)
-        await this.e.reply(msg)
-      } else if (imagenum === 1) {
-        let lbw = []
-        let image_url = v2data.aweme_list[0].images[0].url_list[0];
-        let lbwtitle = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
-        //let lbwbody = pl_data
-        let lbwtial = (`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-        let pldata = []
-        pldata.push(pl_data)
-        let forpldata = await common.makeForwardMsg(this.e, pldata, '热门评论')
-        await this.e.reply(segment.image(image_url))
-        lbw.push(lbwtitle)
-        lbw.push(forpldata)
-        lbw.push(lbwtial)
-        await this.e.reply(await common.makeForwardMsg(this.e, res, xmltitle))
-      }
-      else {
-        //先合并转发一次评论数据
-        let image_pldata = []
-        image_pldata.push(pl_data)
-        let image_forpldata = await common.makeForwardMsg(this.e, image_pldata, '热门评论')
-
-        //处理字符串(如果图鸡不是100张)
-        let textarr = [`抖音号：${dyid}【${name}的图文作品】`, `图集标题：${bt}`]
-        //concat重新排列
-        let resarr = textarr.concat(imgarr).concat(image_forpldata).concat(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-        //logger.mark(resarr)
-        let msg = await common.makeForwardMsg(this.e, res, xmltitle)
-        await this.e.reply(msg)
-      }
-      if (!music) {
-        await this.e.reply(`无法上传，原因：${cause}`, false)
-        return
-      } else {
-        //发送高清语音
-        console.log(`音频直链${music}${cause}`)
-        await this.e.reply(await uploadRecord(music, 0, false))
-      }
-    }
-    //获取视频数据---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    else {
-      let video_url = v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
-      let video_size = await fetch(video_url).then(res => res.headers.get('content-length'))
-      let video_size_mb = (video_size / 1024 / 1024).toFixed(2)
-      mp4size = video_size_mb
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
-      let qiy = {
-        "Server": "CWAP-waf",
-        "Content-Type": "video/mp4",
-        "Origin": "https://www.douyin.com",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
-      }
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url}`)
-      let response = await fetch(video_url, {
-        headers: qiy
-      })
-      let res2 = []
-      let basic = "Successfully processed, please wait for video upload"
-      //标题
-      let bt = v2data.aweme_list[0].desc
-      //抖音头像
-      let tx = v2data.aweme_list[0].author.avatar_thumb.url_list[0]
-      //作者名称
-      let name = v2data.aweme_list[0].author.nickname
-      //BGM名字
-      let BGMname = v2data.aweme_list[0].music.title
-      //抖音号
-      //let dyid = v2data.author.unique_id
-      let dyid;
-      if (v2data.aweme_list[0].author.unique_id === "") {
-        if (v2data.aweme_list[0].author.short_id === "") {
-          dyid = "找不到他/她的抖音ID"
-        } else {
-          dyid = v2data.aweme_list[0].author.short_id;
-        }
-      } else {
-        dyid = v2data.aweme_list[0].author.unique_id;
-      }
-      //视频点赞、评论、分享、收藏
-      let dz = await this.count(v2data.aweme_list[0].statistics.digg_count)
-      let pl = await this.count(v2data.aweme_list[0].statistics.comment_count)
-      let fx = await this.count(v2data.aweme_list[0].statistics.share_count)
-      let sc = await this.count(v2data.aweme_list[0].statistics.collect_count)
-      let xmltitle = (`该被点赞了${dz}次，拥有${pl}条评论，被分享了${fx}次`)
-      //BGM地址
-      let music = v2data.aweme_list[0].music.play_url.uri
-      let cause = v2data.aweme_list[0].music.offline_desc
-      //视频封面
-      //let cover = v2data.cover_data.dynamic_cover.url_list[0]
-      //视频直链
-      let video = v2data.aweme_list[0].video.bit_rate[0].play_addr.url_list[2]
-      //处理基本信息
-      res2.push(basic)
-      res2.push(`抖音号：${dyid}【${name}的视频作品】`)
-      res2.push(`视频标题：${bt}`)
-      res2.push(`要是等不及视频上传（${video_size_mb}MB），可以先看看这个 👇${video}`)
-      //处理评论数据(所有评论数据合并成一个字符串先)
-      let video_pldata = []
-      if (dydata.comments && dydata.comments.comments_list) {
-        let comments_list = dydata.comments.comments_list.slice(0, 80);
-        let video_dz = []
-        for (let i = 0; i < comments_list.length; i++) {
-          let text = comments_list[i].text;
-          let ip = comments_list[i].ip_label;
-          let digg_count = comments_list[i].digg_count;
-          digg_count = this.count(digg_count)
-          video_dz.push(`${text} \nip：${ip}            ♥${digg_count}`);
-        }
-        let dz_text = video_dz.join("\n\n\n")
-        video_pldata.push(`🔥热门评论🔥\n${dz_text}`)
-      } else {
-        video_pldata.push("评论数据获取失败")
-      }
-      let video_forpldata = []
-      video_forpldata.push(video_pldata)
-      //合并转发
-      let video_forwardmsg_pldata = await common.makeForwardMsg(this.e, pl_data, '热门评论')
-      //然后再合并到res2字符串中等待再次转发(套娃)
-      res2.push(video_forwardmsg_pldata)
-      res2.push(`BGM：${BGMname}\nBGM地址：${music}${cause}`)
-      //res2.push(`视频封面：${cover}`)
-      //logger.mark(res2)
-      let video_data = await this.makeForwardMsg(this.e.user_id, "抖音", xmltitle, res2)
-      await this.e.reply(video_data)
-      console.log("视频直链：", video)
-      let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`);
-      response.body.pipe(writer);
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
-      logger.info('视频下载(写入)成功，正在上传')
-      globalmp4_path = writer.path;
-    }
-
-
-  }
-
 
   /**
    * @param {*} file 上传图片到腾讯图床

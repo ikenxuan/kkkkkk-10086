@@ -2,7 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 import common from '../../../lib/common/common.js'
 import TikHub from '../model/douyin/tikhub.js'
 import { Config } from '../model/config.js'
-import { Argument, TikHubLogin, TikHubDaily } from '../model/douyin/request.js'
+import { Argument } from '../model/douyin/request.js'
 import fetch from 'node-fetch'
 import fs from "fs"
 const _path = process.cwd()
@@ -46,20 +46,18 @@ export class example extends plugin {
     let video_id
     let data
     let is_mp4
-    let is_V2 = false
-    if ((!Config.access_token || Config.access_token === '') && Config.account && Config.password) is_V2 = true
 
     if (matchVideo) {
       video_id = matchVideo[1]
       is_mp4 = true
-      data = await Argument(video_id, is_mp4, is_V2)
-      await tikhub.gettype(data, data.is_mp4, data.is_V2)
+      data = await Argument(video_id, is_mp4)
+      await tikhub.gettype(data, data.is_mp4)
       return
     } else if (matchNote) {
       video_id = matchNote[1]
       is_mp4 = false
-      data = await Argument(video_id, is_mp4, is_V2)
-      await tikhub.gettype(data, data.is_mp4, data.is_V2)
+      data = await Argument(video_id, is_mp4)
+      await tikhub.gettype(data, data.is_mp4)
       return
     }
   }
