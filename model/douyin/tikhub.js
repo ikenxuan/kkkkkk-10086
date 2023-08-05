@@ -45,7 +45,7 @@ export class TikHub extends base {
     if (is_V2 === false) {
       await this.v1_dy_data(dydata, is_mp4)
       if (is_mp4 === true) { //判断是否是视频
-        if (mp4size >= 60) {
+        if (mp4size >= 80) {
           //群和私聊分开
           await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
@@ -59,7 +59,7 @@ export class TikHub extends base {
     } else if (is_V2 === true) {
       await this.v2_dy_data(dydata, is_mp4)
       if (is_mp4 === true) { //判断是否是视频
-        if (mp4size >= 60) {
+        if (mp4size >= 80) {
           //群和私聊分开
           await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
           await this.upload_file(globalmp4_path) //上传
@@ -252,7 +252,9 @@ export class TikHub extends base {
       video_data.push(res)
       video_res.push(video_data)
     }
-    let res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
+    const tip = []
+    tip.push('视频正在上传')
+    let res = full_data.concat.tip.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
     if (is_mp4 === true) { await DownLoadVideo(globalvideo_url, global_title) }
