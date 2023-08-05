@@ -239,8 +239,8 @@ export class TikHub extends base {
     const tip = []
     tip.push('视频正在上传')
     let res
-    if (is_mp4 === true) { full_data.concat(tip).concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
-    else { full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    else { res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
     //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
     await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
     if (is_mp4 === true) { await DownLoadVideo(globalvideo_url, global_title) }
