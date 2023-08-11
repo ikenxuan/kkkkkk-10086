@@ -45,7 +45,7 @@ export class TikHub extends base {
     if (is_mp4 === true) { //判断是否是视频
       if (mp4size >= 80) {
         //群和私聊分开
-        await this.e.reply('视频过大，尝试通过文件上传', false, { recallMsg: 30 })
+        await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
         await this.upload_file(globalmp4_path) //上传
         await removeFileOrFolder(globalmp4_path) //删除缓存(?)
       } else {
