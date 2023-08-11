@@ -54,8 +54,9 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 
 ## TODO
 ***
+- [x] 移除TikHub API
+- [ ] 其他平台作品解析（饼）
 - [ ] 重构
-- [ ] 移除TikHub API (dev)
 
 ## 参考项目
  ***
