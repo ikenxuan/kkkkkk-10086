@@ -1,4 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
+import common from '../../../lib/common/common.js'
 import uploadRecord from '../model/uploadRecord.js';
 import fs from 'fs'
 const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒'
@@ -58,8 +59,8 @@ export class ChickenVoiceBox extends plugin {
     res.push(Object.keys(jitang).join("、"))
     res.push(Object.keys(yy).join("、"))
     res.push(Object.keys(sy).join("、"))
-    let data1 = await this.makeForwardMsg(e.user_id, "语音盒", res)
-    await this.e.reply(data1)
+    let data1 = await common.makeForwardMsg(e, res, "语音盒")
+    await e.reply(data1)
   }
   //鸡--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async jiji(e) {
@@ -71,7 +72,7 @@ export class ChickenVoiceBox extends plugin {
   async jihelp(e) {
     let res = []
     res.push(Object.keys({ ...ji, ...ji2 }).join("、"))
-    await this.e.reply(await this.makeForwardMsg(e.user_id, "鸡乐盒", res))
+    await e.reply(await common.makeForwardMsg(e, res, "鸡乐盒"))
   }
   //丁真--------------------------------------------------------------------------------------------------------------------------------------------------------------
   /*async dz(e) {
@@ -83,7 +84,7 @@ export class ChickenVoiceBox extends plugin {
   async dzhelp(e) {
     let res = []
     res.push(Object.keys(dz2).join("、"))
-    await this.e.reply(await this.makeForwardMsg(e.user_id, "丁真盒", res))
+    await e.reply(await common.makeForwardMsg(e, res, "丁真盒"))
   }
   //鸡汤--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async jitang(e) {
@@ -92,7 +93,7 @@ export class ChickenVoiceBox extends plugin {
   async jitanghelp(e) {
     let res = []
     res.push(Object.keys(jitang).join("、"))
-    await this.e.reply(await this.makeForwardMsg(e.user_id, "鸡汤盒", res))
+    await e.reply(await common.makeForwardMsg(e, res, "鸡汤盒"))
   }
   //耀阳--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async yy(e) {
@@ -101,7 +102,7 @@ export class ChickenVoiceBox extends plugin {
   async yyhelp(e) {
     let res = []
     res.push(Object.keys(yy).join("、"))
-    await this.e.reply(await this.makeForwardMsg(e.user_id, "耀阳盒", res))
+    await e.reply(await common.makeForwardMsg(e, res, "耀阳盒"))
   }
   //神鹰--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async sy(e) {
@@ -110,41 +111,7 @@ export class ChickenVoiceBox extends plugin {
   async syhelp(e) {
     let res = []
     res.push(Object.keys(sy).join("、"))
-    await this.e.reply(await this.makeForwardMsg(e.user_id, "神鹰盒", res))
-  }
-  async makeForwardMsg(qq, title, msg = []) {
-    let nickname = Bot.nickname
-    if (this.e.isGroup) {
-      let info = await Bot.getGroupMemberInfo(this.e.group_id, qq)
-      nickname = info.card ?? info.nickname
-    }
-    let userInfo = {
-      user_id: this.e.user_id,
-      nickname: this.e.sender.card || this.e.user_id,
-    }
-
-    let forwardMsg = []
-    msg.forEach(v => {
-      forwardMsg.push({
-        ...userInfo,
-        message: v
-      })
-    })
-
-    /** 制作转发内容 */
-    if (this.e.isGroup) {
-      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
-      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-    }
-
-    /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-
-    return forwardMsg
+    await e.reply(await common.makeForwardMsg(e, res, "神鹰盒"))
   }
   async ChickenVoice(key) {
     return `http://jilehe.125ks.cn/Voice/jlh/res/${encodeURIComponent(ji[key])}.mp3`

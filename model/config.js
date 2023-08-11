@@ -1,16 +1,12 @@
 import fs from 'fs'
 const _path = process.cwd()
 const defaultConfig = {
-    "account": "",
-    "password": "",
-    "access_token": "",
     "address": "",
     "rmmp4": true,
     "voicebox": true,
     "videotool": true,
 }
 let config = {}
-config.version = defaultConfig.version
 config = Object.assign({}, defaultConfig, config)
 if (fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)) {
     const fullPath = fs.realpathSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)
@@ -22,14 +18,13 @@ if (fs.existsSync(`${_path}/plugins/kkkkkk-10086/config/config.json`)) {
 export const Config = new Proxy(config, {
     set(target, property, value) {
         target[property] = value
-        const merged = Object.assign({}, defaultConfig, target)
         const change = lodash.transform(config, function (result, value, key) {
             if (!lodash.isEqual(value, defaultConfig[key])) {
                 result[key] = value
             }
         })
         try {
-            fs.writeFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`, JSON.stringify(change, merged, null, 2), { flag: 'w' })
+            fs.writeFileSync(`${_path}/plugins/kkkkkk-10086/config/config.json`, JSON.stringify(change, null, 2), { flag: 'w' })
         } catch (err) {
             logger.error(err)
             return false

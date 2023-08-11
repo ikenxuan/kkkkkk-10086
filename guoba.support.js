@@ -38,37 +38,6 @@ export function supportGuoba() {
                     component: 'Switch',
                     required: false,
                 },
-
-                {
-                    field: 'account',
-                    label: 'TikHub 账号',
-                    bottomHelpMessage: '可到 https://dash.tikhub.io/signin?next=/dashboard 注册账号',
-                    component: 'Input',
-                    required: false,
-                    componentProps: {
-                        placeholder: '在此填写账号'
-                    },
-                },
-                {
-                    field: 'password',
-                    label: 'TikHub 账号密码',
-                    bottomHelpMessage: '获取方法同上',
-                    component: 'InputPassword',
-                    required: false,
-                    componentProps: {
-                        placeholder: '在此填写密码'
-                    },
-                },
-                {
-                    field: 'access_token',
-                    label: 'TikHub 鉴权密钥',
-                    bottomHelpMessage: 'https://api.tikhub.io/#/Authorization/login_for_access_token_user_login_post 页面获取',
-                    component: 'InputPassword',
-                    required: false,
-                    componentProps: {
-                        placeholder: '在此填写鉴权密钥。PS：填了账号密码后会自动获取'
-                    },
-                },
                 {
                     field: 'address',
                     label: '抖音解析服务地址',
