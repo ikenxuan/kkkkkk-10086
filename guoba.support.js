@@ -39,23 +39,19 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: 'address',
-                    label: '抖音解析服务地址',
-                    bottomHelpMessage: '没有本地部署可不填，将会默认使用在线接口',
-                    component: 'Input',
-                    componentProps: {
-                        placeholder: '127.0.0.1:8000 或者 IP+端口号 或 域名'
-                    },
-                },
-                {
                     field: 'rmmp4',
                     label: '删除视频/图集文件',
                     bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
                     component: 'Switch',
                     required: false,
                 },
-
-            ],
+                {
+                    field: 'token',
+                    label: '解析服务token',
+                    bottomHelpMessage: '请勿修改，否则无法使用',
+                    component: 'InputPassword'
+                  },
+                ],
             // 获取配置数据方法（用于前端填充显示数据）
             getConfigData() {
                 return Config
