@@ -63,6 +63,7 @@ export class TikHub extends base {
    */
   async v1_dy_data(dydata, is_mp4) {
     let v1data = dydata
+    await fs.writeFile('res.json', JSON.stringify(v1data))
     let full_data = [] //总数组
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
