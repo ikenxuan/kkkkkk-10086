@@ -2,9 +2,9 @@ import plugin from '../../../lib/plugins/plugin.js'
 import common from '../../../lib/common/common.js'
 import TikHub from '../model/douyin/tikhub.js'
 import { Config } from '../model/config.js'
-import { Argument } from '../model/douyin/request.js'
+import { Argument } from '../model/douyin/getdata.js'
 import fetch from 'node-fetch'
-import fs from "fs"
+import fs from "fs/promises"
 const _path = process.cwd()
 
 export class example extends plugin {
@@ -17,7 +17,6 @@ export class example extends plugin {
     super({
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
-      /* oicq文档：https://oicqjs.github.io/oicq/#events */
       event: 'message',
       priority: 200,
       rule: rule
@@ -28,7 +27,7 @@ export class example extends plugin {
     let tikhub = new TikHub(this.e)
 
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let URL = e.toString().match(regexp);
+    let URL = e.toString().match(regexp)
     const options = {
       followRedirects: true,
       redirect: 'follow',
@@ -41,21 +40,16 @@ export class example extends plugin {
     let longLink = response.url
     const matchVideo = longLink.match(/video\/(\d+)/)
     const matchNote = longLink.match(/note\/(\d+)/)
-    let video_id
-    let data
-    let is_mp4
-
+    let video_id; let data; let is_mp4
     if (matchVideo) {
       video_id = matchVideo[1]
-      is_mp4 = true
-      data = await Argument(video_id, is_mp4)
-      await tikhub.gettype(data, data.is_mp4)
+      data = await Argument(video_id, is_mp4 = true)
+      await tikhub.gettype(data.VideoData.data, data.VideoData.is_mp4)
       return
     } else if (matchNote) {
       video_id = matchNote[1]
-      is_mp4 = false
-      data = await Argument(video_id, is_mp4)
-      await tikhub.gettype(data, data.is_mp4)
+      data = await Argument(video_id, is_mp4 = false)
+      await tikhub.gettype(data.VideoData.data, data.VideoData.is_mp4)
       return
     }
   }
@@ -79,7 +73,7 @@ export class example extends plugin {
     e.reply([`发现Tik Tok分享...\n正在读取 URL...`])
     let lopp = await mp4.buffer();
     let path = `${_path}/plugins/example/Tiktok.mp4`
-    fs.writeFile(path, lopp, "binary", function (err) {
+    await fs.writeFile(path, lopp, "binary", function (err) {
       if (!err) {
         // 下载视频成功
         e.reply([segment.video(path)]);
@@ -89,105 +83,6 @@ export class example extends plugin {
     })
   }
 
-  async xhs(e) {
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let URL = e.toString().match(regexp);
-    const options = {
-      redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36',
-        'Referer': 'https://www.xiaohongshu.com/',
-        'Cookie': 'your-cookie-string-here'
-      }
-    };
-    //重新请求获取笔记长链接
-    let response = await fetch(URL, options);
-    let longLink = response.url;
-    //通过正则表达式匹配笔记id，并提取出来
-    let regExp2 = /^https:\/\/www.xiaohongshu.com\/explore\/([a-zA-Z0-9]+)\?/;
-    let matchResult = longLink.match(regExp2);
-    let note_id = matchResult && matchResult[1];
-    console.log(`笔记id：${note_id}`);
-    //请求接口获取数据
-    let token = AccountFile.access_token
-    let headers = {
-      "accept": "application/json",
-      "Authorization": `Bearer ${token}`,
-    }
-    let xhs_fetch = await fetch(`https://api.tikhub.io/xhs/get_note_data/?note_id=${note_id}`, {
-      method: "GET",
-      headers: headers
-    })
-    let xhs_comments_fetch = await fetch(`https://api.tikhub.io/xhs/get_note_comments/?note_id=${note_id}`, {
-      method: "GET",
-      headers: headers
-    })
-    let xhs_note_json = await xhs_fetch.json();
-    if (xhs_note_json.hasOwnProperty('detail') || xhs_note_json.detail?.status === false) {
-      logger.error(logger.red(`请尝试获取新的TikHub账号！因为${xhs_note_json.detail.message}`) + '，可前往' + logger.blue('https://dash.tikhub.io/pricing ' + ' 购买额外请求次数或者' + logger.green('注册新账号')));
-      return true;
-    } else {
-      logger.info('TikHub API' + logger.green('请求成功') + '，正在获取笔记：' + logger.yellow(longLink) + '的数据')
-    }
-    let xhs_comments_json = await xhs_comments_fetch.json(); //这里是评论数据，待开工
-    //------------------------------------------------------------------------------------------------------------------------------------------------------
-    //这里是通用的先处理，避免代码重复
-    let dz = count(xhs_note_json.data.interact_info.liked_count) //点赞
-    let sc = count(xhs_note_json.data.interact_info.collected_count) //收藏
-    let pl = count(xhs_note_json.data.interact_info.comment_count) //评论
-    let interact_info = (`这篇笔记有${dz}个赞，${sc}个收藏和${pl}条评论`) //xml卡片的标题
-    let xhs_title = xhs_note_json.data.title //笔记标题
-    let main_body = xhs_note_json.data.desc //正文
-    //处理笔记tags
-    let tagList = xhs_note_json.data.tag_list || [];
-    let tags = tagList
-      .filter((tag) => tag?.name) //过滤掉没有 name 属性的元素
-      .map((tag) => `#${tag.name}`) //将 name 映射到标签数组中
-      .join('\n'); //使用换行符连接标签字符串
-    //-------------------------------------------------------------------------------------------------------------------------------------------------------
-    if (xhs_note_json.data.type === 'normal') { //这里判断类型，normal是笔记，video是视频
-      //处理笔记部分
-      let xhs_data = [] //总字符串
-
-      xhs_data.push(`笔记标题：\n\t\n${xhs_title}`)
-      xhs_data.push(`笔记正文内容：\n\t\n${main_body}`)
-      // 遍历每个图片对象
-      let imageres = [] //这里是图片数组
-      for (let i = 0; i < xhs_note_json.data.image_list.length; i++) {
-        let image_url = xhs_note_json.data.image_list[i].url;
-        imageres.push(segment.image(image_url))
-      }
-      let image_data = await common.makeForwardMsg(e, imageres, '笔记图片') //先合并一次图片到xml卡片
-      xhs_data.push(image_data)
-      xhs_data.push(`笔记标签如下：\n\t\n${tags}`);
-      logger.info(xhs_data);
-      await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
-    } else {
-      //否则直接定义为视频
-      let xhs_data = [] //总字符串
-      let cover = xhs_note_json.data.image_list[0].url //封面
-      xhs_data.push(`视频标签如下：\n\t\n${tags}`);
-      xhs_data.push(`视频标题：${xhs_title}`)
-      xhs_data.push(segment.image(cover))
-      logger.info(xhs_data);
-      await e.reply(this.makeForwardMsg(e.user_id, '小红书', interact_info, xhs_data)) //制作xml卡片并转发
-
-      //下载视频到本地上传
-      let mp4 = await fetch(`${xhs_note_json.data.video.media.stream.h264[0].master_url}`, {
-        method: "get",
-        headers: options
-      });
-      let a = await mp4.buffer();
-      let path = `${_path}/plugins/example/xiaohongshu.mp4`;
-      fs.writeFile(path, a, "binary", function (err) {
-        if (!err) {
-          e.reply([segment.video(path)]);
-          console.log("视频下载成功");
-        }
-        return false
-      })
-    }
-  }
 
   //--------快手-------------------------------------------------------------------------------------------------
   async kuaiscz(e) {
@@ -317,7 +212,7 @@ export class example extends plugin {
       res.push(`视频标题：${shipmx}`)
       res.push(`要是等不及视频上传，可以先看看这个 👇${shipdz}`)
       res.push(["视频封面：", segment.image(ship)])
-      let video_data = await this.makeForwardMsg(e.user_id, "快手", xmltitle, res)
+      let video_data = await common.makeForwardMsg(e, "快手", res, xmltitle)
       await this.e.reply(video_data)
       /*e.reply([segment.image(`${ship}`), `视频作者：${zuoz}\n作品描述：${shipmx}\n\n视频双击：${xhx}\n视频评论：${zugz}\n视频收藏：${zusoc}\n此视频播放量：${zusbfl}\n\n正在转化视频～请等待......`
       ]);*/
@@ -332,7 +227,7 @@ export class example extends plugin {
 
       let lopp = await mp4.buffer();
       let path = `${_path}/plugins/example/快手.mp4`;
-      fs.writeFile(path, lopp, "binary", function (err) {
+      await fs.writeFile(path, lopp, "binary", function (err) {
         console.log(err || "下载视频成功");
         if (!err) {
           e.reply([segment.video(path)]);
@@ -343,20 +238,4 @@ export class example extends plugin {
     }
     return true
   }
-  async gettoken(e) {
-    if (e.master) {
-      return true
-    }
-    let message = await TikHubLogin()
-    e.reply(message)
-  }
-  async getnumber(e) {
-    if (e.master) {
-      return true
-    }
-    let message = await TikHubDaily()
-    e.reply(message)
-  }
-
-
 }
