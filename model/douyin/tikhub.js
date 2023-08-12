@@ -1,5 +1,5 @@
 import fetch from "node-fetch"
-import fs from 'fs'
+import fs from 'fs/promises'
 import fse from 'fs-extra'
 import common from "../../../../lib/common/common.js"
 import uploadRecord from "../uploadRecord.js"
@@ -36,7 +36,7 @@ export class TikHub extends base {
   /**
    * 
    * @param {*} dydata data
-   * @param {*} is_mp4 true or false
+   * @param {*} is_mp4 
    * @returns 
    */
   async gettype(dydata, is_mp4) {
@@ -71,10 +71,10 @@ export class TikHub extends base {
       let image_data = []
       let imageres = []
       let image_url = ''
-      for (let i = 0; i < v1data.aweme_list[0].images.length; i++) {
-        image_url = v1data.aweme_list[0].images[i].url_list[1] //图片地址
+      for (let i = 0; i < v1data.aweme_detail.images.length; i++) {
+        image_url = v1data.aweme_detail.images[i].url_list[1] //图片地址
         console.log(image_url)
-        let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
+        let title = (v1data.aweme_detail.preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         global_title = title
         imageres.push(segment.image(image_url)) //合并图集字符串
@@ -100,10 +100,10 @@ export class TikHub extends base {
     //判断小程序(先搁置，有bug还没想到怎么修)---------------------------------------------------------------------------------------------------------
     let jianying_res = []
     /*try {
-      if (v1data.aweme_list[0].anchor_info) {
+      if (v1data.aweme_detail.anchor_info) {
         let jianying_data = []
         let jianyingres = []
-        let parse = v1data.aweme_list[0].anchor_info.extra
+        let parse = v1data.aweme_detail.anchor_info.extra
         //console.log(parse)
         parse = parse.replace(/\\/g, '')
         let str = ''
@@ -131,10 +131,10 @@ export class TikHub extends base {
     } catch (err) { logger.error(err) }*/
     //这里获取创作者信息------------------------------------------------------------------------------------------------------------
     let author_res = []
-    if (v1data.aweme_list[0].author) {
+    if (v1data.aweme_detail.author) {
       let author_data = []
       let authorres = []
-      const author = v1data.aweme_list[0].author
+      const author = v1data.aweme_detail.author
       let sc = await this.count(author.favoriting_count) //收藏
       let gz = await this.count(author.follower_count) //关注
       let id = author.nickname //id
@@ -151,10 +151,10 @@ export class TikHub extends base {
     }
     //这里获取BGM信息------------------------------------------------------------------------------------------------------------
     let music_res = []
-    if (v1data.aweme_list[0].music) {
+    if (v1data.aweme_detail.music) {
       let music_data = []
       let musicres = []
-      const music = v1data.aweme_list[0].music
+      const music = v1data.aweme_detail.music
       let music_id = music.author //BGM名字
       let music_img = music.cover_hd.url_list[0] //BGM作者头像
       let music_url = music.play_url.uri //BGM link
@@ -171,16 +171,16 @@ export class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
       music_res.push(music_data)
-      if (v1data.aweme_list[0].images !== null) {
+      if (v1data.aweme_detail.images !== null) {
         await this.e.reply(await uploadRecord(music_url, 0, false))
       }
     }
     //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
     let ocr_res = []
-    if (v1data.aweme_list[0].seo_info.ocr_content) {
+    if (v1data.aweme_detail.seo_info.ocr_content) {
       let ocr_data = []
       let ocrres = []
-      let text = v1data.aweme_list[0].seo_info.ocr_content
+      let text = v1data.aweme_detail.seo_info.ocr_content
       ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
       ocrres.push(text)
       let dsc = 'ocr视频信息识别'
@@ -192,21 +192,21 @@ export class TikHub extends base {
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
-    if (v1data.aweme_list[0].video.play_addr_h264 || v1data.aweme_list[0].video.play_addr.url_list[2]) {
+    if (v1data.aweme_detail.video.play_addr_h264 || v1data.aweme_detail.video.play_addr.url_list[2]) {
       //console.log(JSON.stringify(v1data))
       //return
       let video_data = []
       let videores = []
       //视频地址特殊判断：play_addr_h264、play_addr、
-      const video = v1data.aweme_list[0].video
+      const video = v1data.aweme_detail.video
       let FPS = video.bit_rate[0].FPS //FPS
-      if (v1data.aweme_list[0].video.play_addr_h264) {
+      if (v1data.aweme_detail.video.play_addr_h264) {
         globalvideo_url = video.play_addr_h264.url_list[2]
-      } else if (v1data.aweme_list[0].video.play_addr) {
+      } else if (v1data.aweme_detail.video.play_addr) {
         globalvideo_url = video.play_addr.url_list[2]
       }
       let cover = video.origin_cover.url_list[0] //video cover image
-      let title = v1data.aweme_list[0].preview_title //video title
+      let title = v1data.aweme_detail.preview_title //video title
       global_title = title
       let video_url_data = await fetch(globalvideo_url, { headers: headers })
 
@@ -275,10 +275,10 @@ export class TikHub extends base {
 async function removeFileOrFolder(path) {
   if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
     try {
-      const stats = await fs.promises.stat(path)
+      const stats = await fs.stat(path)
       if (stats.isFile()) {
         //指向文件
-        await fs.promises.unlink(path)
+        await fs.unlink(path)
         console.log(`文件缓存删除`)
       } else if (stats.isDirectory()) {
         //指向目录
@@ -293,17 +293,18 @@ async function removeFileOrFolder(path) {
 
 /** 文件夹名字 */
 async function mkdirs(dirname) {
-  if (fs.existsSync(dirname)) {
+  if (await fs.existsSync(dirname)) {
     return true
   } else {
     if (mkdirs(path.dirname(dirname))) {
-      fs.mkdirSync(dirname)
+      await fs.mkdirSync(dirname)
       return true
     }
   }
 }
 
 async function DownLoadVideo(video_url, title) {
+  const fs = await import('fs')
   let response = await fetch(video_url, {
     headers: headers
   })
