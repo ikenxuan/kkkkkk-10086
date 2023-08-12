@@ -50,7 +50,7 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 `/plugins/kkkkkk-10086/config/config.json`
 
 ## TODO
-- [x] 移除TikHub API
+- [ ] 抖音作品评论、直播、个人主页数据解析
 - [ ] 其他平台作品解析（咕咕咕）
 - [ ] 重构
 
