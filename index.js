@@ -1,18 +1,23 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { Config } from './model/config.js'
+import fs from 'fs'
+import path from 'path'
+
 const _path = process.cwd()
 const files = fs.readdirSync('./plugins/kkkkkk-10086/apps').filter(file => file.endsWith('.js'))
-const configFile = `${_path}/plugins/kkkkkk-10086/config/config.json`
-const configExampleFile = `${_path}/plugins/kkkkkk-10086/config/config.example.json`
-fs.access(configFile, fs.constants.F_OK, (err) => {
-  if (err) {
-    fs.copyFile(configExampleFile, configFile, (err) => {
-      if (err) throw err
-      logger.info(logger.green('检测到kkkkkk-10086配置文件不存在，已自动创建 config.json created success'));
-    })
-  }
-})
+
+async function configfile() {
+  const configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
+  const configExampleFile = process.cwd() + '/plugins/kkkkkk-10086/config/config.example.json'
+  fs.access(configPath, fs.constants.F_OK, (err) => {
+      if (err) {
+          fs.copyFile(configExampleFile, configPath, (err) => {
+              if (err) throw err
+              logger.info(logger.green('检测到kkkkkk-10086配置文件不存在，已自动创建 config.json created success'));
+          })
+      }
+  })
+}
+await configfile()
+
 const videodir = `${_path}/resources/kkkdownload/video`
 const imgdir = `${_path}/resources/kkkdownload/images`
 const dirs = [videodir, imgdir]
@@ -45,7 +50,7 @@ function mkdirs(dirname) {
 let ret = []
 
 logger.info('------------------------------------')
-logger.info(`kkkkkk-10086 v${Config.version}
+logger.info(`
  ██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗██╗  ██╗
  ██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝██║ ██╔╝
  █████╔╝ █████╔╝ █████╔╝ █████╔╝ █████╔╝ █████╔╝ 
