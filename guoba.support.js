@@ -46,6 +46,13 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: 'comments',
+                    label: '抖音开启评论解析',
+                    bottomHelpMessage: '相应速度可能会变慢',
+                    component: 'Switch',
+                    required: false,
+                },
+                {
                     field: 'token',
                     label: '解析服务token',
                     bottomHelpMessage: '请勿修改，否则无法使用',

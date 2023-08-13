@@ -1,4 +1,5 @@
 import { request } from '../../utils/request.js'
+import { Config } from '../config.js'
 import common from '../../../../lib/common/common.js'
 
 /**
@@ -36,7 +37,7 @@ async function Argument(video_id, is_mp4) {
         params: { aweme_id: video_id }
     }, is_mp4)
     await common.sleep(1500)
-    let CommentsData = await GetCommentsData({
+    let CommentsData = Config.comments? await GetCommentsData({
         url: '/dy/getVideoComments',
         method: 'GET',
         params: {
@@ -44,7 +45,7 @@ async function Argument(video_id, is_mp4) {
             count: 50,
             cursor: 0
         }
-    })
+    }) : null
     const DATA = {
         VideoData,
         CommentsData

@@ -59,11 +59,22 @@ export class TikHub extends base {
    * @param {*} is_mp4 boolean
    * @returns 
    */
-  async v1_dy_data(Data, is_mp4) {
+  async v1_dy_data(Data, CommentData, is_mp4) {
     let v1data = Data
     let g_video_url = ""
     let g_title
     let full_data = [] //总数组
+    //comments
+    let comments_res =  []
+    if(CommentData) {
+      let comments_data = []
+      for(let i = 0; i < CommentData.comments.length; i++) {
+        let comments = CommentData.comments[i].text
+        comments_data.push(comments.join('\n'))
+      }
+      comments_res.push(comments_data)
+      console.log(comments_res)
+    }
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
