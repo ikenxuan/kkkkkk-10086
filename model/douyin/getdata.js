@@ -1,10 +1,15 @@
 import { request } from '../../utils/request.js'
 import common from '../../../../lib/common/common.js'
 
-
+/**
+ * 
+ * @param {*} options opt
+ * @param {*} is_mp4 boolean
+ * @returns 
+ */
 async function GetVideoOrNoteData(options, is_mp4) {
     let result = await request(options)
-    if (is_mp4 === true) {
+    if (result.code === 200 || is_mp4) {
         result.is_mp4 = is_mp4
     }
     return result
@@ -30,7 +35,7 @@ async function Argument(video_id, is_mp4) {
         method: 'GET',
         params: { aweme_id: video_id }
     }, is_mp4)
-    await common.sleep(1000)
+    await common.sleep(1500)
     let CommentsData = await GetCommentsData({
         url: '/dy/getVideoComments',
         method: 'GET',
@@ -44,6 +49,7 @@ async function Argument(video_id, is_mp4) {
         VideoData,
         CommentsData
     }
+    console.log('Argument', DATA)
     return DATA
 }
 

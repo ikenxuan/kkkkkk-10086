@@ -17,12 +17,21 @@ let default_headers = {
  * @returns 
  */
 export async function request(options) {
-    const response = await axios({
-        url: `${base_url}${options.url}`,
-        method: options.method,
-        headers: default_headers,
-        data: options.data,
-        params: options.params
-    })
-    return response.data
+    try {
+        const response = await axios({
+            url: `${base_url}${options.url}`,
+            method: options.method,
+            headers: default_headers,
+            data: options.data,
+            params: options.params,
+            timeout: 5000,
+        })
+        return response.data
+    } catch (error) {
+        return {
+            code: 500,
+            message: error.message || '请求失败',
+            data: null
+        }
+    }
 }
