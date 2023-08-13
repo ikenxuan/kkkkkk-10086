@@ -3,6 +3,7 @@ import common from '../../../lib/common/common.js'
 import TikHub from '../model/douyin/tikhub.js'
 import { Config } from '../model/config.js'
 import { Argument } from '../model/douyin/getdata.js'
+import { judgment } from '../model/douyin/judgment.js'
 import fetch from 'node-fetch'
 import fs from "fs/promises"
 const _path = process.cwd()
@@ -28,34 +29,16 @@ export class example extends plugin {
 
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
     let URL = e.toString().match(regexp)
-    const options = {
-      followRedirects: true,
-      redirect: 'follow',
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36'
-      }
-    }
-    let response = await fetch(URL, options)
-    let longLink = response.url
-    const matchVideo = longLink.match(/video\/(\d+)/)
-    const matchNote = longLink.match(/note\/(\d+)/)
-    let video_id; let data; let is_mp4
-    if (matchVideo) {
-      video_id = matchVideo[1]
-      data = await Argument(video_id, is_mp4 = true)
-      await tikhub.gettype(data.VideoData.data, data.VideoData.is_mp4)
-      return
-    } else if (matchNote) {
-      video_id = matchNote[1]
-      data = await Argument(video_id, is_mp4 = false)
-      await tikhub.gettype(data.VideoData.data, data.VideoData.is_mp4)
-      return
-    }
+    let response = await fetch(URL, Config.options)
+    let iddata = await judgment(response)
+
+    let data = await Argument(iddata.video_id, iddata.is_mp4)
+    let res = await tikhub.v1_dy_data(data.VideoData.data, data.CommentsData.data, data.VideoData.is_mp4)
+
+    await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
+    await tikhub.gettype(iddata.is_mp4, res.g_video_url, res.g_title)
   }
-
-
-
+  
   //tiktok------------------------------------------------------------------------------------------
   async Tiktok(e) {
     //JS 正则匹配 URL
