@@ -39,9 +39,9 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: 'rmmp4',
-                    label: '删除视频缓存',
-                    bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
+                    field: 'defaulttool',
+                    label: '默认解析',
+                    bottomHelpMessage: '识别最高优先级',
                     component: 'Switch',
                     required: false,
                 },
@@ -53,9 +53,9 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: 'defaulttool',
-                    label: '默认解析',
-                    bottomHelpMessage: '识别最高优先级',
+                    field: 'rmmp4',
+                    label: '删除视频缓存',
+                    bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
                     component: 'Switch',
                     required: false,
                 },
@@ -64,8 +64,8 @@ export function supportGuoba() {
                     label: '解析服务token',
                     bottomHelpMessage: '请勿修改，否则无法使用',
                     component: 'InputPassword'
-                  },
-                ],
+                },
+            ],
             // 获取配置数据方法（用于前端填充显示数据）
             getConfigData() {
                 return Config
