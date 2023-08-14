@@ -39,7 +39,7 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 
 ### 作品解析(抖音快手)
 
-**快手**解析部分基于官方API
+**快手**解析部分基于官方API（暂停维护）
 
 **抖音**解析提供了一个在线接口，[在这](https://github.com/bxiaoj/video-parser)
 
@@ -50,7 +50,8 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 `/plugins/kkkkkk-10086/config/config.json`
 
 ## TODO
-- [ ] 抖音作品评论、直播、个人主页数据解析
+- [ ] 直播、个人主页数据解析
+- [x] 抖音作品评论
 - [ ] 其他平台作品解析（咕咕咕）
 - [ ] 重构
 
