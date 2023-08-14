@@ -53,6 +53,13 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: 'defaulttool',
+                    label: '默认解析',
+                    bottomHelpMessage: '识别最高优先级',
+                    component: 'Switch',
+                    required: false,
+                },
+                {
                     field: 'token',
                     label: '解析服务token',
                     bottomHelpMessage: '请勿修改，否则无法使用',

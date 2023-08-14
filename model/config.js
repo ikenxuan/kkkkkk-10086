@@ -18,7 +18,7 @@ const defaultConfig = {
         }
       },
     "comments": false,
-    "defaulttool": false
+    "defaulttool": false,
     
 }
 let config = {}

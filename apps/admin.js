@@ -39,7 +39,11 @@ export class admin extends plugin {
         {
           reg: '^#*(KKK|kkk|kkkkkk-10086)设置(默认视频解析|默认解析)(开启|关闭)$',
           fnc: 'defaulttool'
-        }
+        },
+        {
+            reg: '^#*(KKK|kkk|kkkkkk-10086)设置(评论解析|评论)(开启|关闭)$',
+            fnc: 'comments'
+        }  
       ]
     })
   }
@@ -58,5 +62,11 @@ export class admin extends plugin {
     const value = getValue(e.msg)
     await updateConfig('videotool', value, e)
   }
+
+  async comments(e) {
+    const value = getValue(e.msg)
+    await updateConfig('comments', value, e)
+  }
+
 
 }
