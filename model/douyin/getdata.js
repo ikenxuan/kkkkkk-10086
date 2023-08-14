@@ -1,6 +1,6 @@
+import common from '../../../../lib/common/common.js'
 import { request } from '../../utils/request.js'
 import { Config } from '../config.js'
-import common from '../../../../lib/common/common.js'
 
 /**
  * 
@@ -36,16 +36,23 @@ async function Argument(video_id, is_mp4) {
         method: 'GET',
         params: { aweme_id: video_id }
     }, is_mp4)
-    await common.sleep(1500)
-    let CommentsData = Config.comments? await GetCommentsData({
+    if (Config.comments === true) {
+        await common.sleep(5000)
+    }
+    let CommentsData = Config.comments ? await GetCommentsData({
         url: '/dy/getVideoComments',
         method: 'GET',
         params: {
             aweme_id: video_id,
-            count: 50,
+            count: 35,
             cursor: 0
-        }
-    }) : null
+        },
+        timeout: 15000
+    }) : {
+        code: 405,
+        message: 'user configured to close',
+        data: null
+    }
     const DATA = {
         VideoData,
         CommentsData

@@ -4,6 +4,7 @@ import common from "../../../../lib/common/common.js"
 import uploadRecord from "../uploadRecord.js"
 import path from "node:path"
 import { Config } from "../config.js"
+import { emojiMap } from '../../utils/DYemoji.js'
 const _path = process.cwd()
 let mp4size = ''
 
@@ -65,16 +66,32 @@ export class TikHub extends base {
     let g_title
     let full_data = [] //总数组
     //comments
-    let comments_res =  []
-    if(CommentData) {
+    let comments_res = []
+    if (CommentData.data !== null && Config.comments === true) {
       let comments_data = []
-      for(let i = 0; i < CommentData.comments.length; i++) {
-        let comments = CommentData.comments[i].text
-        comments_data.push(comments.join('\n'))
+      let commentsres = []
+      for (let i = 0; i < CommentData.comments.length; i++) {
+        let text = CommentData.comments[i].text
+
+        for (let emoji in emojiMap) {
+          const regex = new RegExp('\\[' + emoji + '\\]', 'g')
+          if (text.includes(emoji)) {
+            text = text.replace(regex, emojiMap[emoji]);
+          }
+        }
+
+        let digg_count = CommentData.comments[i].digg_count
+        if (digg_count > 10000) {
+          digg_count = (digg_count / 10000).toFixed(1) + "w"
+        }
+        console.log(`${text}\n`)
+        commentsres.push(`${text}\n♥${digg_count}`)
       }
+      let dsc = '评论数据'
+      let res = await common.makeForwardMsg(this.e, commentsres, dsc)
+      comments_data.push(res)
       comments_res.push(comments_data)
-      console.log(comments_res)
-    }
+    } else if (CommentData.data === null) { comments_res.push('评论数据获取失败') }
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
@@ -202,7 +219,7 @@ export class TikHub extends base {
         })
       let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
+      //logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
       videores.push(`标题：\n${title}`)
       videores.push(`视频帧率：${"" + FPS}\n视频大小：${video_size_mb}MB`)
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${g_video_url}`)
@@ -214,8 +231,8 @@ export class TikHub extends base {
     }
     const tip = ['视频正在上传']
     let res
-    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
-    else { res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    else { res = full_data.concat(video_res).concat(image_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
     return {
       res,
       g_video_url,

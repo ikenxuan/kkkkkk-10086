@@ -40,15 +40,15 @@ export function supportGuoba() {
                 },
                 {
                     field: 'rmmp4',
-                    label: '删除视频/图集文件',
+                    label: '删除视频缓存',
                     bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
                     component: 'Switch',
                     required: false,
                 },
                 {
                     field: 'comments',
-                    label: '抖音开启评论解析',
-                    bottomHelpMessage: '相应速度可能会变慢',
+                    label: '抖音评论解析',
+                    bottomHelpMessage: '响应速度将会变慢',
                     component: 'Switch',
                     required: false,
                 },

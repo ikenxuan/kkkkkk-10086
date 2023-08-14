@@ -30,7 +30,7 @@ export async function request(options) {
     } catch (error) {
         return {
             code: 500,
-            message: error.message || '请求失败',
+            message: error.message || 'Timeout',
             data: null
         }
     }

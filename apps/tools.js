@@ -33,7 +33,10 @@ export class example extends plugin {
     let iddata = await judgment(response)
 
     let data = await Argument(iddata.video_id, iddata.is_mp4)
-    let res = await tikhub.v1_dy_data(data.VideoData.data, data.CommentsData.data, data.VideoData.is_mp4)
+    let res = await tikhub.v1_dy_data(
+      data.VideoData.data, 
+      data.CommentsData?.data ?? {}, 
+      data.VideoData.is_mp4)
     await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
     if (iddata.is_mp4 === true) { await tikhub.gettype(iddata.is_mp4, res.g_video_url, res.g_title) }
   }
