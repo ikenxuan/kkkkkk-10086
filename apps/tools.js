@@ -8,10 +8,12 @@ import fetch from 'node-fetch'
 import fs from "fs/promises"
 const _path = process.cwd()
 
-function getPriority() {
-  if (Config.defaulttool) return -114514
-  return 800
+let getPriority = 800
+if (Config.defaulttool) {
+  getPriority = -114514
 }
+
+
 
 export class example extends plugin {
   constructor() {
@@ -24,7 +26,7 @@ export class example extends plugin {
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
-      priority: getPriority(),
+      priority: getPriority,
       rule: rule
     })
   }
@@ -39,8 +41,8 @@ export class example extends plugin {
 
     let data = await Argument(iddata.video_id, iddata.is_mp4)
     let res = await tikhub.v1_dy_data(
-      data.VideoData.data, 
-      data.CommentsData.data, 
+      data.VideoData.data,
+      data.CommentsData.data,
       data.VideoData.is_mp4)
     await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
     if (iddata.is_mp4 === true) { await tikhub.gettype(res.g_video_url, res.g_title) }

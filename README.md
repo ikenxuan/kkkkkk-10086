@@ -46,7 +46,9 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 ## 命令
 - #?(语音盒|鸡音盒|丁真盒|鸡汤盒|耀阳盒|神鹰盒)
 - #kkk设置语音盒(开启|关闭)
-- #kkk设置解析(开启|关闭)
+- #kkk设置视频解析(开启|关闭)
+- #kkk设置默认视频解析(开启|关闭)
+
 ### 建议使用[锅巴后台](https://gitee.com/guoba-yunzai/guoba-plugin)修改配置文件或 手动修改(不建议)
 
 配置文件路径：
