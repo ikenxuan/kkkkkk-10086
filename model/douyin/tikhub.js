@@ -317,8 +317,9 @@ async function DownLoadVideo(video_url, title) {
 const headers = {
   "Server": "CWAP-waf",
   "Content-Type": "video/mp4",
-  "Origin": "https://www.douyin.com",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
+  "referer": "https://www.douyin.com",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+  "cookie": "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
 }
 
 export default TikHub
