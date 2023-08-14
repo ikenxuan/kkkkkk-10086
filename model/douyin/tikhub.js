@@ -33,23 +33,20 @@ export class TikHub extends base {
 
   /**
    * 
-   * @param {*} is_mp4 boolean
    * @param {*} video_url work url
    * @param {*} title work title
    * @returns 
    */
-  async gettype(is_mp4, video_url, title) {
-    let path = `${_path}/${await DownLoadVideo(video_url, title)}`
-    if (is_mp4 === true) {
-      if (mp4size >= 80) {
-        //群和私聊分开
-        await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
-        await this.upload_file(path) //上传
-        await removeFileOrFolder(path) //删除缓存(?)
-      } else {
-        await this.e.reply(segment.video(path))
-        await removeFileOrFolder(path)
-      }
+  async gettype(video_url, title) {
+    let path = await DownLoadVideo(video_url, title)
+    if (mp4size >= 80) {
+      //群和私聊分开
+      await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
+      await this.upload_file(path)
+      await removeFileOrFolder(path)
+    } else {
+      await this.e.reply(segment.video(path))
+      await removeFileOrFolder(path)
     }
   }
 
@@ -62,12 +59,12 @@ export class TikHub extends base {
    */
   async v1_dy_data(Data, CommentData, is_mp4) {
     let v1data = Data
-    let g_video_url = ""
+    let g_video_url
     let g_title
     let full_data = [] //总数组
     //comments
     let comments_res = []
-    if (CommentData.data !== null && Config.comments === true) {
+    if (CommentData !== null && Config.comments) {
       let comments_data = []
       let commentsres = []
       for (let i = 0; i < CommentData.comments.length; i++) {
@@ -84,14 +81,14 @@ export class TikHub extends base {
         if (digg_count > 10000) {
           digg_count = (digg_count / 10000).toFixed(1) + "w"
         }
-        console.log(`${text}\n`)
+        //console.log(`${text}\n`)
         commentsres.push(`${text}\n♥${digg_count}`)
       }
       let dsc = '评论数据'
       let res = await common.makeForwardMsg(this.e, commentsres, dsc)
       comments_data.push(res)
       comments_res.push(comments_data)
-    } else if (CommentData.data === null) { comments_res.push('评论数据获取失败') }
+    } else comments_res.push('评论数据获取失败')
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
@@ -308,11 +305,10 @@ async function DownLoadVideo(video_url, title) {
     headers: headers
   })
   //写入流
-  let writer = fs.createWriteStream(`resources/kkkdownload/video/${title + '.mp4'}`)
+  let writer = fs.createWriteStream(`${_path}/resources/kkkdownload/video/${title}.mp4`)
   response.body.pipe(writer)
   return new Promise((resolve) => {
     writer.on('finish', () => {
-      console.log(writer.path)
       resolve(writer.path)
     })
   })
