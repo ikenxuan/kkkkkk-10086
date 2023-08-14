@@ -43,6 +43,10 @@ export class admin extends plugin {
         {
             reg: '^#*(KKK|kkk|kkkkkk-10086)设置(评论解析|评论)(开启|关闭)$',
             fnc: 'comments'
+        },
+        {
+            reg: '^#*(KKK|kkk|kkkkkk-10086)设置缓存删除(开启|关闭)$',
+            fnc: 'temp'
         }  
       ]
     })
@@ -68,5 +72,9 @@ export class admin extends plugin {
     await updateConfig('comments', value, e)
   }
 
+  async temp(e) {
+    const value = getValue(e.msg)
+    await updateConfig('rmmp4', value, e)
+  }
 
 }
