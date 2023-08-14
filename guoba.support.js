@@ -48,7 +48,7 @@ export function supportGuoba() {
                 {
                     field: 'comments',
                     label: '抖音评论解析',
-                    bottomHelpMessage: '响应速度将会变慢',
+                    bottomHelpMessage: '打开后响应速度将会变慢',
                     component: 'Switch',
                     required: false,
                 },
