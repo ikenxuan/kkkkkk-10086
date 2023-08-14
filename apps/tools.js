@@ -10,7 +10,7 @@ const _path = process.cwd()
 
 function getPriority() {
   if (Config.defaulttool) return -114514
-  return 200
+  return 800
 }
 
 export class example extends plugin {
