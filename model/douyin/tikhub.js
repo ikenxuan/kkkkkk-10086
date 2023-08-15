@@ -265,20 +265,21 @@ export class TikHub extends base {
 
 async function removeFileOrFolder(path) {
   if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
-    try {
-      const stats = await new Promise((resolve, reject) => {
-        fs.stat(path, (err, stats) => {
-          if (err) reject(err)
-          resolve(stats);
-        })
+    const stats = await new Promise((resolve, reject) => {
+      fs.stat(path, (err, stats) => {
+        if (err) reject(err)
+        resolve(stats);
       })
-      if (stats.isFile()) {
-        //指向文件
-        fs.unlink(path)
-        console.log(`文件缓存删除`)
-      }
-    } catch (err) {
-      console.error('无法删除缓存文件\n', err)
+    })
+    if (stats.isFile()) {
+      //指向文件
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error('删除缓存文件失败', err)
+        } else {
+          console.log('缓存文件删除成功')
+        }
+      })
     }
   }
 }
