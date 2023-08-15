@@ -1,28 +1,16 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import common from '../../../lib/common/common.js'
-import uploadRecord from '../model/uploadRecord.js';
-import fs from 'fs'
+import uploadRecord from '../model/uploadRecord.js'
+import { Config } from '../model/config.js'
 const _path = process.cwd() + '/plugins/kkkkkk-10086/resources/kkkkkk-10086-resources/语音盒'
-const configpath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
-
-function reloadConfig() {
-  const AccountFile = JSON.parse(fs.readFileSync(configpath))
-  return AccountFile
-}
 
 
-reloadConfig()
-fs.watch(configpath, { persistent: true }, (event, filename) => {
-  setTimeout(() => {
-    reloadConfig()
-  }, 100)
-})
+
 //鸡
 export class ChickenVoiceBox extends plugin {
   constructor() {
-    const AccountFile = reloadConfig()
 
-    const rule = AccountFile.voicebox ? [
+    const rule = Config.voicebox ? [
       { reg: jireg, fnc: 'jiji' },
       { reg: jireg2, fnc: 'jiji2' },
       { reg: dzreg2, fnc: 'dz2' },

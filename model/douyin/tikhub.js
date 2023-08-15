@@ -1,14 +1,12 @@
 import fetch from "node-fetch"
 import fs from 'fs'
-import fse from 'fs-extra'
 import common from "../../../../lib/common/common.js"
 import uploadRecord from "../uploadRecord.js"
 import path from "node:path"
 import { Config } from "../config.js"
-let globalmp4_path = { path: "" }
+import { emojiMap } from '../../utils/DYemoji.js'
+const _path = process.cwd()
 let mp4size = ''
-let globalvideo_url
-let global_title = ''
 
 
 export class base {
@@ -35,54 +33,79 @@ export class TikHub extends base {
 
   /**
    * 
-   * @param {*} dydata data
-   * @param {*} is_mp4 true or false
+   * @param {*} video_url work url
+   * @param {*} title work title
    * @returns 
    */
-  async gettype(dydata, is_mp4) {
-    await this.v1_dy_data(dydata, is_mp4)
-    if (is_mp4 === true) { //判断是否是视频
-      if (mp4size >= 80) {
-        //群和私聊分开
-        await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
-        await this.upload_file(globalmp4_path) //上传
-        await removeFileOrFolder(globalmp4_path) //删除缓存(?)
-      } else {
-        //await getFileMd5(globalmp4_path)
-        await this.e.reply(segment.video(globalmp4_path)) //否则直接发视频
-        await removeFileOrFolder(globalmp4_path)
-      }
+  async gettype(video_url, title) {
+    let path = await DownLoadVideo(video_url, title)
+    if (mp4size >= 80) {
+      //群和私聊分开
+      await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
+      await this.upload_file(path)
+      await removeFileOrFolder(path)
+    } else {
+      await this.e.reply(segment.video(path))
+      await removeFileOrFolder(path)
     }
-    return true
-
   }
 
   /**
    * 
-   * @param {*} dydata 传入视频json
+   * @param {*} Data video or note data
+   * @param {*} CommentData commments data
+   * @param {*} is_mp4 boolean
+   * @returns 
    */
-  async v1_dy_data(dydata, is_mp4) {
-    let v1data = dydata
+  async v1_dy_data(Data, CommentData, is_mp4) {
+    let v1data = Data
+    let g_video_url
+    let g_title
     let full_data = [] //总数组
+    //comments
+    let comments_res = []
+    if (CommentData !== null && Config.comments) {
+      let comments_data = []
+      let commentsres = []
+      for (let i = 0; i < CommentData.comments.length; i++) {
+        let text = CommentData.comments[i].text
+
+        for (let emoji in emojiMap) {
+          const regex = new RegExp('\\[' + emoji + '\\]', 'g')
+          if (text.includes(emoji)) {
+            text = text.replace(regex, emojiMap[emoji]);
+          }
+        }
+
+        let digg_count = CommentData.comments[i].digg_count
+        if (digg_count > 10000) {
+          digg_count = (digg_count / 10000).toFixed(1) + "w"
+        }
+        //console.log(`${text}\n`)
+        commentsres.push(`${text}\n♥${digg_count}`)
+      }
+      let dsc = '评论数据'
+      let res = await common.makeForwardMsg(this.e, commentsres, dsc)
+      comments_data.push(res)
+      comments_res.push(comments_data)
+    } else comments_res.push('评论数据获取失败')
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
     if (is_mp4 === false) {
       let image_data = []
       let imageres = []
-      let image_url = ''
-      for (let i = 0; i < v1data.aweme_list[0].images.length; i++) {
-        image_url = v1data.aweme_list[0].images[i].url_list[1] //图片地址
-        console.log(image_url)
-        let title = (v1data.aweme_list[0].preview_title).substring(0, 50)
+      let image_url
+      for (let i = 0; i < v1data.aweme_detail.images.length; i++) {
+        image_url = v1data.aweme_detail.images[i].url_list[1] //图片地址
+        let title = (v1data.aweme_detail.preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
-        global_title = title
+        g_title = title
         imageres.push(segment.image(image_url)) //合并图集字符串
         imagenum++
         if (Config.rmmp4 === false) {
-          mkdirs(`resources/kkkdownload/images/${global_title}`)
-          //globalmp4_path = `resources/kkkdownload/images/${global_title}`
-          let path = `resources/kkkdownload/images/${global_title}/${i + 1}.png`
+          await mkdirs(process.cwd() + `resources/kkkdownload/images/${g_title}`)
+          let path = process.cwd() + `resources/kkkdownload/images/${g_title}/${i + 1}.png`
           await fetch(image_url)
             .then(res => res.arrayBuffer())
             .then(data => fs.promises.writeFile(path, Buffer.from(data)))
@@ -97,44 +120,13 @@ export class TikHub extends base {
       image_data.push(res)
       image_res.push(image_data)
     }
-    //判断小程序(先搁置，有bug还没想到怎么修)---------------------------------------------------------------------------------------------------------
-    let jianying_res = []
-    /*try {
-      if (v1data.aweme_list[0].anchor_info) {
-        let jianying_data = []
-        let jianyingres = []
-        let parse = v1data.aweme_list[0].anchor_info.extra
-        //console.log(parse)
-        parse = parse.replace(/\\/g, '')
-        let str = ''
-        let inString = false
-        for (let i = 0; i < parse.length; i++) {
-          if (parse[i] === '"' && (i === 0 || parse[i - 1] !== '\\')) inString = !inString
-          if (parse[i] === '\\') continue   // 所有反斜杠替换为空
-          str += parse[i]
-        }
-        parse = str
-        let jydata = JSON.stringify(parse)
-        console.log(jydata)
-        if (jydata.anchor.name) { }
-        let name = jydata.anchor.name
-        let url = jydata.anchor.url
-        let get_jy_data = (`这条视频使用剪映模板\n"${name}" 制作\n模板链接:\n${url}`)
-        jianyingres.push(get_jy_data)
-        let dsc = `剪映模板名称：${name}`
-        let res = await common.makeForwardMsg(this.e, jianyingres, dsc)
-        jianying_data.push(res)
-        jianying_res.push(jianying_data)
-      } else {
-        jianying_res.push('未发现使用剪映模板制作')
-      }
-    } catch (err) { logger.error(err) }*/
+
     //这里获取创作者信息------------------------------------------------------------------------------------------------------------
     let author_res = []
-    if (v1data.aweme_list[0].author) {
+    if (v1data.aweme_detail.author) {
       let author_data = []
       let authorres = []
-      const author = v1data.aweme_list[0].author
+      const author = v1data.aweme_detail.author
       let sc = await this.count(author.favoriting_count) //收藏
       let gz = await this.count(author.follower_count) //关注
       let id = author.nickname //id
@@ -151,15 +143,15 @@ export class TikHub extends base {
     }
     //这里获取BGM信息------------------------------------------------------------------------------------------------------------
     let music_res = []
-    if (v1data.aweme_list[0].music) {
+    if (v1data.aweme_detail.music) {
       let music_data = []
       let musicres = []
-      const music = v1data.aweme_list[0].music
+      const music = v1data.aweme_detail.music
       let music_id = music.author //BGM名字
       let music_img = music.cover_hd.url_list[0] //BGM作者头像
       let music_url = music.play_url.uri //BGM link
-      if (is_mp4 === false && Config.rmmp4 === false) {
-        let path = `resources/kkkdownload/images/${global_title}/BGM.mp3`
+      if (is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
+        let path = process.cwd() + `resources/kkkdownload/images/${g_title}/BGM.mp3`
         await fetch(music_url)
           .then(bgmfile => bgmfile.arrayBuffer())
           .then(downloadbgm => fs.promises.writeFile(path, Buffer.from(downloadbgm)))
@@ -171,16 +163,17 @@ export class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
       music_res.push(music_data)
-      if (v1data.aweme_list[0].images !== null) {
+      if (music_url && is_mp4 === false && music_url !== undefined) {
         await this.e.reply(await uploadRecord(music_url, 0, false))
       }
     }
+    //return
     //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
     let ocr_res = []
-    if (v1data.aweme_list[0].seo_info.ocr_content) {
+    if (v1data.aweme_detail.seo_info.ocr_content) {
       let ocr_data = []
       let ocrres = []
-      let text = v1data.aweme_list[0].seo_info.ocr_content
+      let text = v1data.aweme_detail.seo_info.ocr_content
       ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
       ocrres.push(text)
       let dsc = 'ocr视频信息识别'
@@ -192,23 +185,23 @@ export class TikHub extends base {
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
-    if (v1data.aweme_list[0].video.play_addr_h264 || v1data.aweme_list[0].video.play_addr.url_list[2]) {
+    if (is_mp4 === true) {
       //console.log(JSON.stringify(v1data))
       //return
       let video_data = []
       let videores = []
       //视频地址特殊判断：play_addr_h264、play_addr、
-      const video = v1data.aweme_list[0].video
+      const video = v1data.aweme_detail.video
       let FPS = video.bit_rate[0].FPS //FPS
-      if (v1data.aweme_list[0].video.play_addr_h264) {
-        globalvideo_url = video.play_addr_h264.url_list[2]
-      } else if (v1data.aweme_list[0].video.play_addr) {
-        globalvideo_url = video.play_addr.url_list[2]
+      if (v1data.aweme_detail.video.play_addr_h264) {
+        g_video_url = video.play_addr_h264.url_list[2]
+      } else if (v1data.aweme_detail.video.play_addr) {
+        g_video_url = video.play_addr.url_list[2]
       }
       let cover = video.origin_cover.url_list[0] //video cover image
-      let title = v1data.aweme_list[0].preview_title //video title
-      global_title = title
-      let video_url_data = await fetch(globalvideo_url, { headers: headers })
+      let title = v1data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //video title
+      g_title = title
+      let video_url_data = await fetch(g_video_url, { headers: headers })
 
         .then(res => {
           if (!res.ok) {
@@ -223,26 +216,25 @@ export class TikHub extends base {
         })
       let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(2)
       mp4size = video_size_mb
-      logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
+      //logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
       videores.push(`标题：\n${title}`)
       videores.push(`视频帧率：${"" + FPS}\n视频大小：${video_size_mb}MB`)
-      videores.push(`等不及视频上传可以先看这个，视频直链：\n${globalvideo_url}`)
+      videores.push(`等不及视频上传可以先看这个，视频直链：\n${g_video_url}`)
       videores.push(segment.image(cover))
       let dsc = '视频基本信息'
-
-
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
     }
-    const tip = []
-    tip.push('视频正在上传')
+    const tip = ['视频正在上传']
     let res
-    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
-    else { res = full_data.concat(video_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
-    //let res = full_data.concat(image_res).concat(music_res).concat(author_res).concat(ocr_res)
-    await this.e.reply(await common.makeForwardMsg(this.e, res, '抖音'))
-    if (is_mp4 === true) { await DownLoadVideo(globalvideo_url, global_title) }
+    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    else { res = full_data.concat(video_res).concat(image_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    return {
+      res,
+      g_video_url,
+      g_title
+    }
   }
 
   /**
@@ -269,24 +261,25 @@ export class TikHub extends base {
       await removeFileOrFolder(file)
     }
   }
-
 }
 
 async function removeFileOrFolder(path) {
   if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
-    try {
-      const stats = await fs.promises.stat(path)
-      if (stats.isFile()) {
-        //指向文件
-        await fs.promises.unlink(path)
-        console.log(`文件缓存删除`)
-      } else if (stats.isDirectory()) {
-        //指向目录
-        await fse.remove(path)
-        console.log(`文件缓存删除`)
-      }
-    } catch (err) {
-      console.error('无法删除缓存文件\n', err)
+    const stats = await new Promise((resolve, reject) => {
+      fs.stat(path, (err, stats) => {
+        if (err) reject(err)
+        resolve(stats);
+      })
+    })
+    if (stats.isFile()) {
+      //指向文件
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error('删除缓存文件失败', err)
+        } else {
+          console.log('缓存文件删除成功')
+        }
+      })
     }
   }
 }
@@ -303,26 +296,31 @@ async function mkdirs(dirname) {
   }
 }
 
+/**
+ * 
+ * @param {*} video_url 
+ * @param {*} title 
+ */
 async function DownLoadVideo(video_url, title) {
   let response = await fetch(video_url, {
     headers: headers
   })
   //写入流
-  let writer = fs.createWriteStream(`resources/kkkdownload/video/${title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') + '.mp4'}`)
+  let writer = fs.createWriteStream(`${_path}/resources/kkkdownload/video/${title}.mp4`)
   response.body.pipe(writer)
-  await new Promise((resolve, reject) => {
-    writer.on('finish', resolve)
-    writer.on('error', reject)
+  return new Promise((resolve) => {
+    writer.on('finish', () => {
+      resolve(writer.path)
+    })
   })
-  logger.info('视频下载(写入)成功，正在上传')
-  globalmp4_path = writer.path
 }
 
 const headers = {
   "Server": "CWAP-waf",
   "Content-Type": "video/mp4",
-  "Origin": "https://www.douyin.com",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43"
+  "referer": "https://www.douyin.com",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
+  "cookie": "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
 }
 
 export default TikHub

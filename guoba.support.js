@@ -34,27 +34,37 @@ export function supportGuoba() {
                 {
                     field: 'videotool',
                     label: '视频解析',
-                    bottomHelpMessage: '是否开启视频解析工具',
+                    bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
                     component: 'Switch',
                     required: false,
                 },
                 {
-                    field: 'address',
-                    label: '抖音解析服务地址',
-                    bottomHelpMessage: '没有本地部署可不填，将会默认使用在线接口',
-                    component: 'Input',
-                    componentProps: {
-                        placeholder: '127.0.0.1:8000 或者 IP+端口号 或 域名'
-                    },
+                    field: 'defaulttool',
+                    label: '默认解析',
+                    bottomHelpMessage: '识别最高优先级',
+                    component: 'Switch',
+                    required: false,
+                },
+                {
+                    field: 'comments',
+                    label: '抖音评论解析',
+                    bottomHelpMessage: '打开后响应速度将会变慢',
+                    component: 'Switch',
+                    required: false,
                 },
                 {
                     field: 'rmmp4',
-                    label: '删除视频/图集文件',
+                    label: '删除视频缓存',
                     bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
                     component: 'Switch',
                     required: false,
                 },
-
+                {
+                    field: 'token',
+                    label: '解析服务token',
+                    bottomHelpMessage: '请勿修改，否则无法使用',
+                    component: 'InputPassword'
+                },
             ],
             // 获取配置数据方法（用于前端填充显示数据）
             getConfigData() {
