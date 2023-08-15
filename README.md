@@ -1,4 +1,4 @@
-# kkkkkk-10086（Develop开发分支）
+# kkkkkk-10086
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
 ###### 没骗你，真没学过js，全靠cv
 
@@ -45,6 +45,8 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 
 ## 命令
 - #?(语音盒|鸡音盒|丁真盒|鸡汤盒|耀阳盒|神鹰盒)
+---
+- #?kkk设置
 - #kkk设置语音盒(开启|关闭)
 - #kkk设置视频解析(开启|关闭)
 - #kkk设置默认视频解析(开启|关闭)
@@ -54,7 +56,7 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 
 配置文件路径：
 ```
-# 初次使用会自动创建
+# 初次使用自动创建
 /plugins/kkkkkk-10086/config/config.json
 ```
 
