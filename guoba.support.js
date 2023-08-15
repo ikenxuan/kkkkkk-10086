@@ -34,7 +34,7 @@ export function supportGuoba() {
                 {
                     field: 'videotool',
                     label: '视频解析',
-                    bottomHelpMessage: '是否开启视频解析工具',
+                    bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
                     component: 'Switch',
                     required: false,
                 },
