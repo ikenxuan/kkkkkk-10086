@@ -29,7 +29,7 @@ export async function request(options) {
         return response.data
     } catch (error) {
         return {
-            code: 500,
+            code: error.code,
             message: error.message || 'Timeout',
             data: null
         }
