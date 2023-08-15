@@ -39,7 +39,7 @@ export class example extends plugin {
     let iddata = await judgment(url)
     let data = await Argument(iddata)
 
-    await fs.writeFile('liveroom.json', JSON.stringify(data.data, null, 2))
+    //await fs.writeFile('liveroom.json', JSON.stringify(data.data, null, 2))
     let res = await tikhub.GetData(iddata.type, data)
     await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
     if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }
