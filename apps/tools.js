@@ -21,7 +21,7 @@ export class example extends plugin {
       { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
       { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
       { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' }
-    ] : [];
+    ] : []
     super({
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
@@ -34,18 +34,15 @@ export class example extends plugin {
   async douy(e) {
     let tikhub = new TikHub(this.e)
 
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig;
-    let URL = e.toString().match(regexp)
-    let response = await fetch(URL, Config.options)
-    let iddata = await judgment(response)
+    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
+    let url = e.toString().match(regexp)
+    let iddata = await judgment(url)
+    let data = await Argument(iddata)
 
-    let data = await Argument(iddata.video_id, iddata.is_mp4)
-    let res = await tikhub.v1_dy_data(
-      data.VideoData.data,
-      data.CommentsData.data,
-      data.VideoData.is_mp4)
+    await fs.writeFile('liveroom.json', JSON.stringify(data.data, null, 2))
+    let res = await tikhub.GetData(iddata.type, data)
     await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
-    if (iddata.is_mp4 === true) { await tikhub.gettype(res.g_video_url, res.g_title) }
+    if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }
   }
 
   //tiktok------------------------------------------------------------------------------------------
