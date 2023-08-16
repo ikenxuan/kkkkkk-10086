@@ -44,7 +44,7 @@ export default class TikHub extends base {
     let full_data = [] //总数组
     //comments
     let comments_res = []
-    if (CommentData !== null && Config.comments) {
+    if (CommentData !== null && CommentData !== undefined && Config.comments) {
       let comments_data = []
       let commentsres = []
       for (let i = 0; i < CommentData.comments.length; i++) {
