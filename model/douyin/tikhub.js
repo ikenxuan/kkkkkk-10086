@@ -5,53 +5,33 @@ import uploadRecord from "../uploadRecord.js"
 import path from "node:path"
 import { Config } from "../config.js"
 import { emojiMap } from '../../utils/DYemoji.js'
+import { segment } from "oicq"
 const _path = process.cwd()
 let mp4size = ''
-
 
 export class base {
   constructor(e = {}) {
     this.e = e
   }
 }
-export class TikHub extends base {
+export default class TikHub extends base {
   constructor(e) {
     super(e)
     this.model = "TikHub"
   }
-  /**
-   * @param {*} count 过万整除
-   * @returns 
-   */
-  async count(count) {
-    if (count > 10000) {
-      return (count / 10000).toFixed(1) + "万"
-    } else {
-      return count.toString()
+
+  async GetData(type, data) {
+    if (type === 'video' || type === 'note') {
+      return await this.v1_dy_data(
+        data.VideoData.data,
+        data.CommentsData.data,
+        data.VideoData.is_mp4)
+    } else if (type === 'live') {
+      return await this.dy_live_data(data)
     }
   }
 
   /**
-   * 
-   * @param {*} video_url work url
-   * @param {*} title work title
-   * @returns 
-   */
-  async gettype(video_url, title) {
-    let path = await DownLoadVideo(video_url, title)
-    if (mp4size >= 80) {
-      //群和私聊分开
-      await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
-      await this.upload_file(path)
-      await removeFileOrFolder(path)
-    } else {
-      await this.e.reply(segment.video(path))
-      await removeFileOrFolder(path)
-    }
-  }
-
-  /**
-   * 
    * @param {*} Data video or note data
    * @param {*} CommentData commments data
    * @param {*} is_mp4 boolean
@@ -127,8 +107,8 @@ export class TikHub extends base {
       let author_data = []
       let authorres = []
       const author = v1data.aweme_detail.author
-      let sc = await this.count(author.favoriting_count) //收藏
-      let gz = await this.count(author.follower_count) //关注
+      let sc = await count(author.favoriting_count) //收藏
+      let gz = await count(author.follower_count) //关注
       let id = author.nickname //id
       let jj = author.signature //简介
       let age = author.user_age //年龄
@@ -230,13 +210,81 @@ export class TikHub extends base {
     let res
     if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
     else { res = full_data.concat(video_res).concat(image_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
+
+    let dec
+    if (is_mp4 === true) { dec = '抖音视频作品数据' } else if (is_mp4 === false) { dec === '抖音图集作品数据' }
     return {
       res,
       g_video_url,
-      g_title
+      g_title,
+      dec
     }
   }
 
+  async dy_live_data(livedata) {
+    const data = livedata.data.data.room
+    let full_data = []
+    let res
+    let res1 = []
+    let res2 = []
+    let res3 = []
+
+    let picture_quality_text = [] //可选画质
+
+    const title = data.title //标题
+    const user_count = data.user_count //观看人数
+    const create_time = (data.finish_time - data.create_time) / 60 //开播时间
+    let is_sandbox = data.is_sandbox; if (is_sandbox === false) { is_sandbox = '不是' } else if (is_sandbox === true) { is_sandbox = '是' } //是否沙盒
+    let with_linkmic = data.with_linkmic; if (with_linkmic === false || with_linkmic === undefined) { with_linkmic = '不是' } else { with_linkmic = '是' } //语音直播间？
+    const cover = data.cover.url_list[0] //直播间封面
+    const share_url = data.share_url //直播间分享链接
+    for (let i = 0; i < data.stream_url.live_core_sdk_data.pull_data.options.qualities.length; i++) {
+      let picture_quality = data.stream_url.live_core_sdk_data.pull_data.options.qualities[i].name //可选画质
+      picture_quality_text.push(picture_quality)
+    }
+    const total_user = data.stats.total_user //粉丝团总数
+    const follow_count = data.stats.follow_count //关注数
+    const total_user_str = data.stats.total_user_str //总浏览人数
+    const nickname = data.owner.nickname //直播间账号名字
+    let gender = data.owner.gender; if (gender === 1) { gender = '男' } else if (gender === 2) { gender = '女' } //性别
+    const signature = data.owner.signature //主页介绍
+    const avatar_image = data.owner.avatar_large.url_list[0] //头像
+    const city = data.owner.city //城市
+    const badge_image = data.owner.badge_image_list[0].url_list[0] //荣誉等级图片
+    const alternative = data.owner.badge_image_list[0].content.alternative_text //荣誉等级
+    const following_count_str = data.owner.follow_info.following_count_str //直播间关注数
+    const follower_count = data.owner.follow_info.follower_count_str //粉丝数量
+    const video_feed_tag = data.video_feed_tag //直播状态
+    const display_short = data.room_view_stats.display_short //本场直播观看总人数
+
+    const dec = nickname + '的直播间' + video_feed_tag + '！'
+    res1.push(`标题：\n${title}`)
+    res1.push(`目前已开播: ${create_time}分钟`)
+    res1.push(`总观看人数: ${display_short}\n当前直播间人数: ${user_count}`)
+    res1.push(`总浏览人数: \n${total_user_str}`)
+    res1.push(segment.image(cover))
+
+    res2.push(`主页介绍: ${signature}`)
+    res2.push(`账号粉丝数量: ${follower_count}`)
+    res2.push(`粉丝团总数: ${total_user}`)
+    res2.push(`直播间关注数: ${following_count_str}`)
+    res2.push(alternative)
+    res2.push(segment.image(badge_image))
+
+    res3.push(`此直播间${is_sandbox}沙盒直播间`)
+    res3.push(`${with_linkmic}语音直播间`)
+    res3.push(`直播间分享链接: \n${share_url}`)
+    res3.push(`直播间可选画质: \n${picture_quality_text}`)
+
+    let res2_data = await common.makeForwardMsg(this.e, res2, `${nickname}的直播间`)
+    let res3_data = await common.makeForwardMsg(this.e, res3, '其他')
+    res = full_data.concat(res1).concat(res2_data).concat(res3_data)
+    return {
+      res,
+      dec
+    }
+  }
+  
   /**
    * @param {*} file 上传图片到腾讯图床
    * @returns 
@@ -248,6 +296,24 @@ export class TikHub extends base {
   /** 获取机器人上传的图片链接 */
   async getHistoryLog() {
     return ((await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url)
+  }
+
+  /**
+ * @param {*} video_url work url
+ * @param {*} title work title
+ * @returns 
+ */
+  async downloadvideofile(video_url, title) {
+    let path = await DownLoadVideo(video_url, title)
+    if (mp4size >= 80) {
+      //群和私聊分开
+      await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
+      await this.upload_file(path)
+      await removeFileOrFolder(path)
+    } else {
+      await this.e.reply(segment.video(path))
+      await removeFileOrFolder(path)
+    }
   }
 
   /** 要上传的视频文件，私聊需要加好友 */
@@ -281,6 +347,18 @@ async function removeFileOrFolder(path) {
         }
       })
     }
+  }
+}
+
+/**
+ * @param {*} count 过万整除
+ * @returns 
+ */
+async function count(count) {
+  if (count > 10000) {
+    return (count / 10000).toFixed(1) + "万"
+  } else {
+    return count.toString()
   }
 }
 
@@ -323,4 +401,3 @@ const headers = {
   "cookie": "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
 }
 
-export default TikHub
