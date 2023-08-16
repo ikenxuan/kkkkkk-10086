@@ -5,15 +5,15 @@
 ## 安装
 ### Yunzai-Bot或Miao-Yunzai跟目录下打开 CMD 执行：
 使用 Gitee
-```
+```sh
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 使用 GitHub
-```
+```sh
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 使用ghproxy代理加速
-```
+```sh
 git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
@@ -58,11 +58,37 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 ### 建议使用[锅巴后台](https://gitee.com/guoba-yunzai/guoba-plugin)修改配置文件或 手动修改(不建议)
 
 配置文件路径：
-```
+```sh
 # 初次使用自动创建
 /plugins/kkkkkk-10086/config/config.json
 ```
 
+## 常见问题
+### 数据获取失败
+程序会在控制台打印数据获取情况
+```js
+data {
+  VideoData: {
+    code: 200,
+    msg: 'success',
+    request_id: '20230816230149545rOk3Y4ks',
+    data: { aweme_detail: [Object], log_pb: [Object], status_code: 0 },
+    is_mp4: true
+  },
+  CommentsData: {
+    code: 'ECONNABORTED',
+    message: 'timeout of 5000ms exceeded',
+    data: null
+  }
+}
+```
+状态码说明: 
+```js
+200: 请求成功,
+403: 配置文件对应配置项为关闭状态
+ECONNABORTED: 请求超时未响应,
+ERR_BAD_RESPONSE: 服务器无法处理请求,
+```
 ## TODO
 - [ ] 个人主页数据解析
 - [x] 直播间、抖音作品评论

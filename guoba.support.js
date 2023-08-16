@@ -48,7 +48,7 @@ export function supportGuoba() {
                 {
                     field: 'comments',
                     label: '抖音评论解析',
-                    bottomHelpMessage: '打开后响应速度将会变慢',
+                    bottomHelpMessage: '打开后默认增加最大5秒响应时间',
                     component: 'Switch',
                     required: false,
                 },
@@ -56,7 +56,8 @@ export function supportGuoba() {
                     field: 'numcomments',
                     label: '评论解析数量',
                     bottomHelpMessage: '可选值1-100，默认为35，数值越大可能相应越慢',
-                    component: 'Input'
+                    component: 'Input',
+                    required: true
                 },
                 {
                     field: 'rmmp4',
@@ -69,7 +70,8 @@ export function supportGuoba() {
                     field: 'token',
                     label: '解析服务token',
                     bottomHelpMessage: '请勿修改，否则无法使用',
-                    component: 'InputPassword'
+                    component: 'InputPassword',
+                    required: true
                 },
             ],
             // 获取配置数据方法（用于前端填充显示数据）
