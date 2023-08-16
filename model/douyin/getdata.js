@@ -62,10 +62,10 @@ async function Argument(data) {
                 timeout: 15000
             }) : {
                 code: 405,
-                message: 'user configured to close',
+                msg: 'user configured to close',
                 data: null
             }
-            logger.info('\nArgument', { VideoData, CommentsData })
+            logger.info('\ndata', { VideoData, CommentsData })
             return { VideoData, CommentsData }
 
         case 'live':
@@ -75,7 +75,7 @@ async function Argument(data) {
                 method: 'POST',
                 data: { live_url: data.baseurl }
             })
-            logger.info('\nArgument_Livedata', LiveroomData)
+            logger.info('\ndata', LiveroomData)
             return LiveroomData
 
         case 'uservideos':
@@ -89,7 +89,7 @@ async function Argument(data) {
                     max_cursor: 0
                 }
             })
-            logger.info('\nArgument_UserVideosData', UserVideos)
+            logger.info('\ndata', UserVideos)
             return UserVideos
 
         default:
@@ -102,4 +102,4 @@ export {
     GetVideoOrNoteData,
     GetCommentsData,
     GetLiveroomData,
-}
+}  

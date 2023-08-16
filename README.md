@@ -1,9 +1,9 @@
 # kkkkkk-10086（develop）
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
-###### 没骗你，真没学过js，全靠cv
+###### 没学过，全靠cv
 
 ## 安装
-### Yunzai-Bot或Miao-Yunzai跟目录下打开 CMD 执行：
+### Yunzai-Bot或Miao-Yunzai根目录下打开 CMD 执行：
 使用 Gitee
 ```sh
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
@@ -71,23 +71,23 @@ data {
   VideoData: {
     code: 200,
     msg: 'success',
-    request_id: '20230816230149545rOk3Y4ks',
+    request_id: '',
     data: { aweme_detail: [Object], log_pb: [Object], status_code: 0 },
     is_mp4: true
   },
   CommentsData: {
-    code: 'ECONNABORTED',
-    message: 'timeout of 5000ms exceeded',
+    code: 405,
+    msg: 'user configured to close',
     data: null
   }
 }
 ```
 状态码说明: 
 ```js
-200: 请求成功,
-403: 配置文件对应配置项为关闭状态
-ECONNABORTED: 请求超时未响应,
-ERR_BAD_RESPONSE: 服务器无法处理请求,
+200: 请求成功
+400: 缺少必要请求参数 # 建议删除配置文件config.json后重启等待重新生成
+405: 配置文件对应配置项为关闭状态 # 可通过管理命令或锅巴后台修改
+500: 服务器无法处理请求 # 没得救
 ```
 ## TODO
 - [ ] 个人主页数据解析

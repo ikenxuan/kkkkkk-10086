@@ -28,10 +28,14 @@ export async function request(options) {
         })
         return response.data
     } catch (error) {
-        return {
-            code: error.code,
-            message: error.message || 'Timeout',
-            data: null
+        if (error.response.data) {
+            return error.response.data
+        } else {
+            return {
+                code: error.code,
+                message: error.message || 'Timeout',
+                data: null
+            }
         }
     }
 }
