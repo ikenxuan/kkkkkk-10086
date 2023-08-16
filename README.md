@@ -18,6 +18,13 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 ```
 
 ## 功能(其实就两个)
+
+### 作品解析(抖音快手)
+
+**快手**解析部分基于官方API（暂停维护）
+
+**抖音**解析提供了一个在线接口，[在这](https://github.com/bxiaoj/video-parser)
+
 ### 语音盒
 
 <details>
@@ -37,11 +44,7 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 为了缩小体积，占用资源文件不会打包进此项目
 使用`#kkk下载/升级资源`下载或升级所有歌曲资源，大多都是我家鸽鸽和丁真的(如果有需要)
 
-### 作品解析(抖音快手)
 
-**快手**解析部分基于官方API（暂停维护）
-
-**抖音**解析提供了一个在线接口，[在这](https://github.com/bxiaoj/video-parser)
 
 ## 命令
 - #?(语音盒|鸡音盒|丁真盒|鸡汤盒|耀阳盒|神鹰盒)
