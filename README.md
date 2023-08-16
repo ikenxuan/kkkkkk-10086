@@ -61,8 +61,8 @@ git clone --depth=1 https://ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086
 ```
 
 ## TODO
-- [ ] 直播、个人主页数据解析
-- [x] 抖音作品评论
+- [ ] 个人主页数据解析（要过验证码有点难搞）
+- [x] 直播间、抖音作品评论
 - [ ] 其他平台作品解析（咕咕咕）
 - [ ] 重构
 
