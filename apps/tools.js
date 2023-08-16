@@ -36,12 +36,13 @@ export class example extends plugin {
 
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
     let url = e.toString().match(regexp)
+    
     let iddata = await judgment(url)
     let data = await Argument(iddata)
-
-    //await fs.writeFile('liveroom.json', JSON.stringify(data.data, null, 2))
+    if (data.code === 'ECONNABORTED') { e.reply('请求超时，解析失败！可再次发送链接重试'); return }
+    
     let res = await tikhub.GetData(iddata.type, data)
-    await e.reply(await common.makeForwardMsg(e, res.res, '抖音'))
+    await e.reply(await common.makeForwardMsg(e, res.res, res.dec))
     if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }
   }
 

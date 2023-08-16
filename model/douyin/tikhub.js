@@ -210,10 +210,14 @@ export default class TikHub extends base {
     let res
     if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
     else { res = full_data.concat(video_res).concat(image_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
+
+    let dec
+    if (is_mp4 === true) { dec = '抖音视频作品数据' } else if (is_mp4 === false) { dec === '抖音图集作品数据' }
     return {
       res,
       g_video_url,
-      g_title
+      g_title,
+      dec
     }
   }
 
@@ -223,50 +227,64 @@ export default class TikHub extends base {
     let res
     let res1 = []
     let res2 = []
+    let res3 = []
 
-    let picture_quality = [] //可选画质
+    let picture_quality_text = [] //可选画质
 
     const title = data.title //标题
     const user_count = data.user_count //观看人数
     const create_time = (data.finish_time - data.create_time) / 60 //开播时间
-    const is_sandbox = data.is_sandbox //是否沙盒
-    const with_linkmic = data.with_linkmic //语音直播间？
-    const cover = data.cover //直播间封面
+    let is_sandbox = data.is_sandbox; if (is_sandbox === false) { is_sandbox = '不是' } else if (is_sandbox === true) { is_sandbox = '是' } //是否沙盒
+    let with_linkmic = data.with_linkmic; if (with_linkmic === false || with_linkmic === undefined) { with_linkmic = '不是' } else { with_linkmic = '是' } //语音直播间？
+    const cover = data.cover.url_list[0] //直播间封面
     const share_url = data.share_url //直播间分享链接
     for (let i = 0; i < data.stream_url.live_core_sdk_data.pull_data.options.qualities.length; i++) {
-      let picture_quality = data.stream_url.live_core_sdk_data.pull_data.options[i].name //可选画质
-      picture_quality.push(picture_quality)
+      let picture_quality = data.stream_url.live_core_sdk_data.pull_data.options.qualities[i].name //可选画质
+      picture_quality_text.push(picture_quality)
     }
     const total_user = data.stats.total_user //粉丝团总数
     const follow_count = data.stats.follow_count //关注数
     const total_user_str = data.stats.total_user_str //总浏览人数
     const nickname = data.owner.nickname //直播间账号名字
-    const gender = data.owner.gender ; if(gender === 1) { gender = '男' } else { gender = '女' } //性别
+    let gender = data.owner.gender; if (gender === 1) { gender = '男' } else if (gender === 2) { gender = '女' } //性别
     const signature = data.owner.signature //主页介绍
     const avatar_image = data.owner.avatar_large.url_list[0] //头像
     const city = data.owner.city //城市
     const badge_image = data.owner.badge_image_list[0].url_list[0] //荣誉等级图片
-    const alternative = data.owner.badge_image_list.alternative_text //荣誉等级
-    const following_count = data.follow_info.following_count //直播间关注数
-    const follower_count = data.follow_info.follower_count_str //粉丝数量
+    const alternative = data.owner.badge_image_list[0].content.alternative_text //荣誉等级
+    const following_count_str = data.owner.follow_info.following_count_str //直播间关注数
+    const follower_count = data.owner.follow_info.follower_count_str //粉丝数量
     const video_feed_tag = data.video_feed_tag //直播状态
     const display_short = data.room_view_stats.display_short //本场直播观看总人数
 
-    res1.push('标题' + title)
-    res1.push(nickname + '的直播间')
-    res2.purh(['总观看人数' + display_short, '当前直播间人数' + user_count])
-    res2.push('开播时间：' + create_time + '分钟')
-    res2.push(segment.image(cover))
-    //res2.push()
-    let res1_data = await common.makeForwardMsg(this.e, res2,)
-    let res2_data = await common.makeForwardMsg(this.e, res2, '关注相关')
-    res = full_data.concat(res1_data).concat(res2_data)
-    console.log(title)
+    const dec = nickname + '的直播间' + video_feed_tag + '！'
+    res1.push(`标题：\n${title}`)
+    res1.push(`目前已开播: ${create_time}分钟`)
+    res1.push(`总观看人数: ${display_short}\n当前直播间人数: ${user_count}`)
+    res1.push(`总浏览人数: \n${total_user_str}`)
+    res1.push(segment.image(cover))
 
-    return full_data
+    res2.push(`主页介绍: ${signature}`)
+    res2.push(`账号粉丝数量: ${follower_count}`)
+    res2.push(`粉丝团总数: ${total_user}`)
+    res2.push(`直播间关注数: ${following_count_str}`)
+    res2.push(alternative)
+    res2.push(segment.image(badge_image))
 
-    console.log(title)
+    res3.push(`此直播间${is_sandbox}沙盒直播间`)
+    res3.push(`${with_linkmic}语音直播间`)
+    res3.push(`直播间分享链接: \n${share_url}`)
+    res3.push(`直播间可选画质: \n${picture_quality_text}`)
+
+    let res2_data = await common.makeForwardMsg(this.e, res2, `${nickname}的直播间`)
+    let res3_data = await common.makeForwardMsg(this.e, res3, '其他')
+    res = full_data.concat(res1).concat(res2_data).concat(res3_data)
+    return {
+      res,
+      dec
+    }
   }
+  
   /**
    * @param {*} file 上传图片到腾讯图床
    * @returns 

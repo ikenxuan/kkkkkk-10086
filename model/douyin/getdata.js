@@ -16,11 +16,18 @@ async function GetVideoOrNoteData(options, is_mp4) {
     return result
 }
 
+/** 评论*/
 async function GetCommentsData(options) {
     return await request(options)
 }
 
+/** 直播间*/
 async function GetLiveroomData(options) {
+    return await request(options)
+}
+
+/** 用户主页*/
+async function GetUserVideos(options) {
     return await request(options)
 }
 
