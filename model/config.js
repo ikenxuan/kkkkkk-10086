@@ -11,7 +11,7 @@ const defaultConfig = {
     "token": "dd10ZSheAwkbML7P4Yv55tFXFVstyULL",
     "comments": false,
     "defaulttool": false,
-    
+    "numcomments": 35
 }
 let config = {}
 

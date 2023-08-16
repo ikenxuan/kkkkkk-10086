@@ -18,6 +18,9 @@ async function GetVideoOrNoteData(options, is_mp4) {
 
 /** 评论*/
 async function GetCommentsData(options) {
+    if(options.params.count > 100) {
+        options.params.count = 100
+    }
     return await request(options)
 }
 
@@ -54,7 +57,7 @@ async function Argument(data) {
                 method: 'GET',
                 params: {
                     aweme_id: data.id,
-                    count: 35,
+                    count: Config.numcomments,
                     cursor: 0
                 },
                 timeout: 15000

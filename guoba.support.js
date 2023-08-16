@@ -53,6 +53,12 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: 'numcomments',
+                    label: '评论解析数量',
+                    bottomHelpMessage: '可选值1-100，默认为35，数值越大可能相应越慢',
+                    component: 'Input'
+                },
+                {
                     field: 'rmmp4',
                     label: '删除视频缓存',
                     bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
