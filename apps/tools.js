@@ -39,8 +39,10 @@ export class example extends plugin {
     
     let iddata = await judgment(url)
     let data = await Argument(iddata)
-    if (data.code === 'ECONNABORTED') { e.reply('请求超时，解析失败！可再次发送链接重试'); return }
-    
+    if (data.code === 'ECONNABORTED' && data.code === 'ERR_BAD_RESPONSE') { e.reply('请求超时，解析失败！可再次发送链接重试'); return }
+    //await fs.writeFile('userInfoData.json', JSON.stringify(data, null, 2))
+    return
+
     let res = await tikhub.GetData(iddata.type, data)
     await e.reply(await common.makeForwardMsg(e, res.res, res.dec))
     if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }

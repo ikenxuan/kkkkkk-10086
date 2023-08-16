@@ -29,7 +29,7 @@ async function GetLiveroomData(options) {
     return await request(options)
 }
 
-/** 用户主页*/
+/** 用户主页视频*/
 async function GetUserVideos(options) {
     return await request(options)
 }
@@ -46,7 +46,6 @@ async function Argument(data) {
                 method: 'GET',
                 params: { aweme_id: data.id }
             }, data.is_mp4)
-
             if (Config.comments === true) {
                 await common.sleep(5000)
             }
@@ -66,7 +65,6 @@ async function Argument(data) {
                 message: 'user configured to close',
                 data: null
             }
-
             logger.info('\nArgument', { VideoData, CommentsData })
             return { VideoData, CommentsData }
 
@@ -77,9 +75,22 @@ async function Argument(data) {
                 method: 'POST',
                 data: { live_url: data.baseurl }
             })
-
             logger.info('\nArgument_Livedata', LiveroomData)
             return LiveroomData
+
+        case 'uservideos':
+            //uservideos data
+            let UserVideos = await GetUserVideos({
+                url: '/dy/getUserVideos',
+                method: 'GET',
+                params: {
+                    sec_uid: data.id,
+                    count: 15,
+                    max_cursor: 0
+                }
+            })
+            logger.info('\nArgument_UserVideosData', UserVideos)
+            return UserVideos
 
         default:
     }

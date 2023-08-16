@@ -16,6 +16,7 @@ export async function judgment(url) {
     } else {
         const matchVideo = longLink.match(/video\/(\d+)/)
         const matchNote = longLink.match(/note\/(\d+)/)
+        const matchUser = longLink.match(/user\/(\S+?)\?/)
         let id
         if (matchVideo) {
             id = matchVideo[1]
@@ -31,7 +32,14 @@ export async function judgment(url) {
                 id,
                 is_mp4: false
             }
+        } else if (matchUser) {
+            id = matchUser[1]
+            return {
+                type: 'uservideos',
+                id,
+            }
         }
+
     }
 }
 
