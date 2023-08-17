@@ -5,7 +5,6 @@ import uploadRecord from "../uploadRecord.js"
 import path from "node:path"
 import { Config } from "../config.js"
 import { emojiMap } from '../../utils/DYemoji.js'
-import { segment } from "oicq"
 const _path = process.cwd()
 let mp4size = ''
 
