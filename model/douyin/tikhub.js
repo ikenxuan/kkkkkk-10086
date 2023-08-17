@@ -131,10 +131,14 @@ export default class TikHub extends base {
       let music_img = music.cover_hd.url_list[0] //BGM作者头像
       let music_url = music.play_url.uri //BGM link
       if (is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
-        let path = process.cwd() + `resources/kkkdownload/images/${g_title}/BGM.mp3`
-        await fetch(music_url)
-          .then(bgmfile => bgmfile.arrayBuffer())
-          .then(downloadbgm => fs.promises.writeFile(path, Buffer.from(downloadbgm)))
+        try {
+          let path = process.cwd() + `resources/kkkdownload/images/${g_title}/BGM.mp3`
+          await fetch(music_url)
+            .then(bgmfile => bgmfile.arrayBuffer())
+            .then(downloadbgm => fs.promises.writeFile(path, Buffer.from(downloadbgm)))
+        } catch (error) {
+          console.log(error)
+        }
       }
       musicres.push(`BGM名字：${music_id}`)
       musicres.push(`BGM下载直链：${music_url}`)
@@ -284,7 +288,7 @@ export default class TikHub extends base {
       dec
     }
   }
-  
+
   /**
    * @param {*} file 上传图片到腾讯图床
    * @returns 
