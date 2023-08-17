@@ -36,7 +36,7 @@ export class ChickenVoiceBox extends plugin {
 
   /**
 * 制作转发消息
-* @param e oicq消息e
+* @param e icqq消息e
 * @param title 转发描述
 * @param msg 消息数组
 */
