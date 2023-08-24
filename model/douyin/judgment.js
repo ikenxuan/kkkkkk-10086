@@ -35,7 +35,7 @@ export async function judgment(url) {
         } else if (matchUser) {
             id = matchUser[1]
             return {
-                type: 'uservideos',
+                type: 'uservideoslist',
                 id,
             }
         }

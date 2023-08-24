@@ -75,11 +75,11 @@ async function Argument(data) {
                 method: 'POST',
                 data: { live_url: data.baseurl }
             })
-            logger.info('\ndata', LiveroomData)
+            logger.info('\nLiveRoom data', LiveroomData)
             return LiveroomData
 
-        case 'uservideos':
-            //uservideos data
+        case 'uservideoslist':
+            //uservideoslist data
             let UserVideos = await GetUserVideos({
                 url: '/dy/getUserVideos',
                 method: 'GET',
@@ -89,7 +89,7 @@ async function Argument(data) {
                     max_cursor: 0
                 }
             })
-            logger.info('\ndata', UserVideos)
+            logger.info('\nUser_Videos_List Data', UserVideos)
             return UserVideos
 
         default:
@@ -97,9 +97,4 @@ async function Argument(data) {
 
 }
 
-export {
-    Argument,
-    GetVideoOrNoteData,
-    GetCommentsData,
-    GetLiveroomData,
-}  
+export { Argument }  

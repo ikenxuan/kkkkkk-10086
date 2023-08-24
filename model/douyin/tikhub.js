@@ -25,8 +25,14 @@ export default class TikHub extends base {
         data.VideoData.data,
         data.CommentsData.data,
         data.VideoData.is_mp4)
-    } else if (type === 'live') {
+    }
+
+    if (type === 'live') {
       return await this.dy_live_data(data)
+    }
+
+    if (type === 'uservideoslist') {
+      return await this.dy_uservideoslist_data(data)
     }
   }
 
@@ -286,6 +292,32 @@ export default class TikHub extends base {
       res,
       dec
     }
+  }
+
+  async dy_uservideoslist_data(uservideoslist_data) {
+    const data = uservideoslist_data.data
+    let res
+    let video_res = []
+
+    for (let i = 0; i < data.aweme_list.length; i++) {
+      let video_info = []
+      let title = data.aweme_list[i].desc
+      let cover = data.aweme_list[i].video.cover.url_list[2]
+      let digg_count = data.aweme_list[i].statistics.digg_count
+      video_info.push(`作品标题: ${title}`)
+      video_info.push(`已积累点赞: ${await count(digg_count)}`)
+      video_info.push(segment.image(cover))
+      let video_data = await common.makeForwardMsg(this.e, video_info, title)
+      video_res.push(video_data)
+      video_info = []
+    }
+
+    res = video_res
+    return {
+      res,
+      dec: '抖音用户主页视频数据'
+    }
+
   }
 
   /**
