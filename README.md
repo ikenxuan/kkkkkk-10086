@@ -1,4 +1,4 @@
-# kkkkkk-10086（develop）
+# kkkkkk-10086
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
 ###### 没学过，全靠cv
 
@@ -90,8 +90,7 @@ data {
 500: 服务器无法处理请求 # 没得救
 ```
 ## TODO
-- [ ] 个人主页数据解析
-- [x] 直播间、抖音作品评论
+- [x] 直播间、抖音作品评论、个人主页数据
 - [ ] 其他平台作品解析（咕咕咕）
 - [ ] 重构
 
