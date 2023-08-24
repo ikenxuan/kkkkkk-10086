@@ -34,15 +34,15 @@ export class example extends plugin {
   async douy(e) {
     let tikhub = new TikHub(this.e)
 
+    //正则匹配url
     let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
     let url = e.toString().match(regexp)
     
+    //获取数据
     let iddata = await judgment(url)
     let data = await Argument(iddata)
-    if (data.code === 'ECONNABORTED' && data.code === 'ERR_BAD_RESPONSE') { e.reply('请求超时，解析失败！可再次发送链接重试'); return }
-    //await fs.writeFile('userInfoData.json', JSON.stringify(data, null, 2))
-    //return
 
+    //解析返回数据
     let res = await tikhub.GetData(iddata.type, data)
     await e.reply(await common.makeForwardMsg(e, res.res, res.dec))
     if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }

@@ -1,4 +1,4 @@
-# kkkkkk-10086
+# kkkkkk-10086（develop）
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
 ###### 没学过，全靠cv
 
