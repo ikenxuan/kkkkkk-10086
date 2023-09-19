@@ -2,7 +2,7 @@ import fetch from "node-fetch"
 import fs from 'fs'
 import common from "../../../../lib/common/common.js"
 import uploadRecord from "../uploadRecord.js"
-import path from "node:path"
+import path from 'path'
 import { Config } from "../config.js"
 import { emojiMap } from '../../utils/DYemoji.js'
 const _path = process.cwd()

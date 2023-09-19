@@ -47,8 +47,7 @@ export class ChickenVoiceBox extends plugin {
     res.push(Object.keys(jitang).join("、"))
     res.push(Object.keys(yy).join("、"))
     res.push(Object.keys(sy).join("、"))
-    let data1 = await common.makeForwardMsg(e, res, "语音盒")
-    await e.reply(data1)
+    return await e.reply(await common.makeForwardMsg(e, res, '语音盒'))
   }
   //鸡--------------------------------------------------------------------------------------------------------------------------------------------------------------
   async jiji(e) {
