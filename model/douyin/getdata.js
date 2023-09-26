@@ -1,6 +1,13 @@
 import common from '../../../../lib/common/common.js'
-import { request } from '../../utils/request.js'
+import { network } from '../../utils/network.js'
 import { Config } from '../config.js'
+
+let base_url = 'http://vproctol.zeed.ink/api/v1'
+let default_headers = {
+    'Authorization': `Bearer ${Config.token}`,
+    'Accept': 'text/html,application/json,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+}
 
 /**
  * 
@@ -9,7 +16,7 @@ import { Config } from '../config.js'
  * @returns 
  */
 async function GetVideoOrNoteData(options, is_mp4) {
-    let result = await request(options)
+    let result = await network(options)
     if (result.code === 200 || is_mp4) {
         result.is_mp4 = is_mp4
     } else result.is_mp4 = is_mp4
@@ -21,17 +28,17 @@ async function GetCommentsData(options) {
     if(options.params.count > 100) {
         options.params.count = 100
     }
-    return await request(options)
+    return await network(options)
 }
 
 /** 直播间*/
 async function GetLiveroomData(options) {
-    return await request(options)
+    return await network(options)
 }
 
 /** 用户主页视频*/
 async function GetUserVideos(options) {
-    return await request(options)
+    return await network(options)
 }
 
 async function Argument(data) {
@@ -42,8 +49,9 @@ async function Argument(data) {
         case 'note':
             //work data
             let VideoData = await GetVideoOrNoteData({
-                url: '/dy/getVideoDetail',
+                url: `${base_url}/dy/getVideoDetail`,
                 method: 'GET',
+                headers: default_headers,
                 params: { aweme_id: data.id }
             }, data.is_mp4)
             if (Config.comments === true) {
@@ -52,8 +60,9 @@ async function Argument(data) {
 
             //comments data
             let CommentsData = Config.comments ? await GetCommentsData({
-                url: '/dy/getVideoComments',
+                url: `${base_url}/dy/getVideoComments`,
                 method: 'GET',
+                headers: default_headers,
                 params: {
                     aweme_id: data.id,
                     count: Config.numcomments,
@@ -71,8 +80,9 @@ async function Argument(data) {
         case 'live':
             //liveroom data
             let LiveroomData = await GetLiveroomData({
-                url: '/dy/fetchLiveRoomInfo',
+                url: `${base_url}/dy/fetchLiveRoomInfo`,
                 method: 'POST',
+                headers: default_headers,
                 data: { live_url: data.baseurl }
             })
             logger.info('\nLiveRoom data', LiveroomData)
@@ -81,8 +91,9 @@ async function Argument(data) {
         case 'uservideoslist':
             //uservideoslist data
             let UserVideos = await GetUserVideos({
-                url: '/dy/getUserVideos',
+                url: `${base_url}/dy/getUserVideos`,
                 method: 'GET',
+                headers: default_headers,
                 params: {
                     sec_uid: data.id,
                     count: 15,
