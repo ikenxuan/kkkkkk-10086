@@ -8,7 +8,7 @@ import axios from 'axios'
  * @param options.params query参数
  * @returns 
  */
-export async function request(options) {
+export async function network(options) {
     try {
         const response = await axios({
             url: options.url,
