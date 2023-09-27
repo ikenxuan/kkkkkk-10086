@@ -19,6 +19,7 @@ export class example extends plugin {
   constructor() {
     const rule = Config.videotool ? [
       { reg: '^((.*)复制打开抖音(.*)|(.*)v.douyin.com(.*)|(.*)(douyin.com/video)(.*))$', fnc: 'douy' },
+      { reg: "(bilibili.com|b23.tv|t.bilibili.com)", fnc: 'bilibili', },
       { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
       { reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$', fnc: 'kuaiscz' }
     ] : []
@@ -32,20 +33,28 @@ export class example extends plugin {
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
-    let tikhub = new TikHub(this.e)
+    //创建Tikhub实例
+    const tikhub = new TikHub(this.e)
 
     //正则匹配url
-    let regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
-    let url = e.toString().match(regexp)
-    
+    const regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
+    const url = e.toString().match(regexp)
+
     //获取数据
-    let iddata = await judgment(url)
-    let data = await Argument(iddata)
+    const iddata = await judgment(url)
+    const data = await Argument(iddata)
 
     //解析返回数据
-    let res = await tikhub.GetData(iddata.type, data)
+    const res = await tikhub.GetData(iddata.type, data)
     await e.reply(await common.makeForwardMsg(e, res.res, res.dec))
     if (iddata.is_mp4 === true) { await tikhub.downloadvideofile(res.g_video_url, res.g_title) }
+  }
+
+  //B站
+  async bilibili(e) {
+    const regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
+    const url = e.toString().match(regexp)
+    console.log(url[0])
   }
 
   //tiktok------------------------------------------------------------------------------------------
