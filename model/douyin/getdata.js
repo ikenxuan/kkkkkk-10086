@@ -25,7 +25,7 @@ async function GetVideoOrNoteData(options, is_mp4) {
 
 /** 评论*/
 async function GetCommentsData(options) {
-    if(options.params.count > 100) {
+    if (options.params.count > 100) {
         options.params.count = 100
     }
     return await network(options)
@@ -41,7 +41,7 @@ async function GetUserVideos(options) {
     return await network(options)
 }
 
-async function Argument(data) {
+export async function Argument(data) {
 
     switch (data.type) {
 
@@ -107,5 +107,3 @@ async function Argument(data) {
     }
 
 }
-
-export { Argument }  
