@@ -13,7 +13,7 @@ export async function request(options) {
         const response = await axios({
             url: options.url,
             method: options.method,
-            headers: default_headers,
+            headers: options.headers,
             data: options.data,
             params: options.params,
             timeout: 5000,
