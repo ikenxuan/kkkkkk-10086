@@ -52,7 +52,8 @@ export async function Argument(data) {
                 url: `${base_url}/dy/getVideoDetail`,
                 method: 'GET',
                 headers: default_headers,
-                params: { aweme_id: data.id }
+                params: { aweme_id: data.id },
+                type: '图集或视频作品数据'
             }, data.is_mp4)
             if (Config.comments === true) {
                 await common.sleep(5000)
@@ -68,7 +69,8 @@ export async function Argument(data) {
                     count: Config.numcomments,
                     cursor: 0
                 },
-                timeout: 15000
+                timeout: 15000,
+                type: '作品评论数据'
             }) : {
                 code: 405,
                 msg: 'user configured to close',
@@ -83,7 +85,8 @@ export async function Argument(data) {
                 url: `${base_url}/dy/fetchLiveRoomInfo`,
                 method: 'POST',
                 headers: default_headers,
-                data: { live_url: data.baseurl }
+                data: { live_url: data.baseurl },
+                type: '抖音直播间数据'
             })
             logger.info('\nLiveRoom data', LiveroomData)
             return LiveroomData
@@ -98,7 +101,8 @@ export async function Argument(data) {
                     sec_uid: data.id,
                     count: 15,
                     max_cursor: 0
-                }
+                },
+                type: '用户主页视频数据'
             })
             logger.info('\nUser_Videos_List Data', UserVideos)
             return UserVideos

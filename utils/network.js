@@ -6,6 +6,7 @@ import axios from 'axios'
  * @param options.headers 请求头
  * @param options.data 请求体
  * @param options.params query参数
+ * @param options.type 数据类型
  * @returns 
  */
 export async function network(options) {
@@ -16,18 +17,20 @@ export async function network(options) {
             headers: options.headers,
             data: options.data,
             params: options.params,
-            timeout: 5000,
+            timeout: 10000,
+            type: options.type
         })
         return response.data
     } catch (error) {
-        if (error.response.data) {
-            return error.response.data
-        } else {
-            return {
-                code: error.code,
-                message: error.message || 'Timeout',
-                data: null
-            }
+        console.log(`获取${options.type}时，出现了以下错误：\n`, {
+            code: error.code,
+            message: error.message || 'Timeout',
+            data: null
+        })
+        return {
+            code: error.code,
+            message: error.message || 'Timeout',
+            data: null
         }
     }
 }
