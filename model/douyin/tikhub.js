@@ -172,8 +172,6 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, ocrres, dsc)
       ocr_data.push(res)
       ocr_res.push(ocr_data)
-    } else {
-      ocr_res.push('视频或图集中未发现可供ocr识别的文字信息')
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
