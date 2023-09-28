@@ -17,9 +17,12 @@ let default_headers = {
  */
 async function GetVideoOrNoteData(options, is_mp4) {
     let result = await network(options)
-    if (result.code === 200 || is_mp4) {
+    if (result.code === 200 && is_mp4) {
         result.is_mp4 = is_mp4
-    } else result.is_mp4 = is_mp4
+    } else if (result.code === 'ERR_BAD_RESPONSE' || 'ECONNABORTED') {
+        result.code = 'Timeout'
+        result.is_mp4 = is_mp4
+    }
     return result
 }
 

@@ -21,6 +21,9 @@ export default class TikHub extends base {
 
   async GetData(type, data) {
     if (type === 'video' || type === 'note') {
+      if(data.VideoData.code === 'ERR_BAD_RESPONSE' || 'ECONNABORTED') {
+        return this.e.reply('请求服务器错误或超时，请稍后再试')
+      }
       return await this.v1_dy_data(
         data.VideoData.data,
         data.CommentsData.data,
