@@ -21,7 +21,7 @@ export default class TikHub extends base {
 
   /** 原始数据 */
   async GetData(type, data) {
-    fs.writeFileSync(_path + '/plugins/kkkkkk-10086/res.json', JSON.stringify(data, null, 4))
+    // fs.writeFileSync(_path + '/plugins/kkkkkk-10086/res.json', JSON.stringify(data, null, 4))
     if (type === 'video' || type === 'note') {
       return await this.v1_dy_data(
         data.VideoData,
