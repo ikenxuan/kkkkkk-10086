@@ -1,8 +1,8 @@
 {
   "rmmp4": true,
-  "voicebox": true,
   "videotool": true,
-  "comments": false,
-  "defaulttool": false,
-  "numcomments": 35
+  "comments": true,
+  "defaulttool": true,
+  "numcomments": 35,
+  "ck": ""
 }
