@@ -25,13 +25,6 @@ export function supportGuoba() {
             // 配置项 schemas
             schemas: [
                 {
-                    field: 'voicebox',
-                    label: '语音盒',
-                    bottomHelpMessage: '开启鸡音盒、丁真盒、鸡汤盒、耀阳盒、神鹰盒',
-                    component: 'Switch',
-                    required: false,
-                },
-                {
                     field: 'videotool',
                     label: '视频解析',
                     bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
@@ -48,14 +41,14 @@ export function supportGuoba() {
                 {
                     field: 'comments',
                     label: '抖音评论解析',
-                    bottomHelpMessage: '打开后默认增加最大5秒响应时间',
+                    bottomHelpMessage: '可以解析评论',
                     component: 'Switch',
                     required: false,
                 },
                 {
                     field: 'numcomments',
                     label: '评论解析数量',
-                    bottomHelpMessage: '可选值1-100，默认为35，数值越大可能相应越慢',
+                    bottomHelpMessage: '可选值1-100，默认为35，数值越大可能响应越慢',
                     component: 'Input',
                     required: true
                 },
@@ -69,7 +62,7 @@ export function supportGuoba() {
                 {
                     field: 'ck',
                     label: '抖音ck',
-                    bottomHelpMessage: '登录https://www.douyin.com/使用F12输入document.cookie获取',
+                    bottomHelpMessage: '登录https://www.douyin.com/使用F12，进入控制台输入document.cookie获取',
                     component: 'InputPassword',
                     required: true
                 },
