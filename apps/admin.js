@@ -34,11 +34,6 @@ export class admin extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#*(KKK|kkk|kkkkkk-10086)设置语音盒(开启|关闭)$',
-                    fnc: 'voicebox',
-                    permission: 'master'
-                },
-                {
                     reg: '^#*(KKK|kkk|kkkkkk-10086)设置(视频解析|解析)(开启|关闭)$',
                     fnc: 'tools',
                     permission: 'master'
@@ -69,10 +64,6 @@ export class admin extends plugin {
             text.push(reg)
         }
         e.reply(text)
-    }
-    async voicebox(e) {
-        const value = getValue(e.msg)
-        await updateConfig('voicebox', value, e)
     }
 
     async defaulttool(e) {

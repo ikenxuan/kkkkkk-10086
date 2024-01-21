@@ -19,14 +19,13 @@ export default class TikHub extends base {
     this.model = "TikHub"
   }
 
+  /** 原始数据 */
   async GetData(type, data) {
+    fs.writeFileSync(_path + '/plugins/kkkkkk-10086/res.json', JSON.stringify(data, null, 4))
     if (type === 'video' || type === 'note') {
-      if(data.VideoData.code === 'ERR_BAD_RESPONSE' || 'ECONNABORTED') {
-        return this.e.reply('请求服务器错误或超时，请稍后再试')
-      }
       return await this.v1_dy_data(
-        data.VideoData.data,
-        data.CommentsData.data,
+        data.VideoData,
+        data.CommentsData,
         data.VideoData.is_mp4)
     }
 
@@ -46,7 +45,6 @@ export default class TikHub extends base {
    * @returns 
    */
   async v1_dy_data(Data, CommentData, is_mp4) {
-    let v1data = Data
     let g_video_url
     let g_title
     let full_data = [] //总数组
@@ -80,13 +78,15 @@ export default class TikHub extends base {
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
+    console.log(is_mp4)
     if (is_mp4 === false) {
       let image_data = []
       let imageres = []
       let image_url
-      for (let i = 0; i < v1data.aweme_detail.images.length; i++) {
-        image_url = v1data.aweme_detail.images[i].url_list[1] //图片地址
-        let title = (v1data.aweme_detail.preview_title).substring(0, 50)
+      for (let i = 0; i < Data.aweme_detail.images.length; i++) {
+        image_url = Data.aweme_detail.images[i].url_list[1] //图片地址
+        console.log(image_url)
+        let title = (Data.aweme_detail.preview_title).substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //标题，去除特殊字符
         g_title = title
         imageres.push(segment.image(image_url)) //合并图集字符串
@@ -107,14 +107,14 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
       image_res.push(image_data)
-    }
+    } else { image_res.push('图集信息解析失败')}
 
     //这里获取创作者信息------------------------------------------------------------------------------------------------------------
     let author_res = []
-    if (v1data.aweme_detail.author) {
+    if (Data.aweme_detail.author) {
       let author_data = []
       let authorres = []
-      const author = v1data.aweme_detail.author
+      const author = Data.aweme_detail.author
       let sc = await count(author.favoriting_count) //收藏
       let gz = await count(author.follower_count) //关注
       let id = author.nickname //id
@@ -131,10 +131,10 @@ export default class TikHub extends base {
     }
     //这里获取BGM信息------------------------------------------------------------------------------------------------------------
     let music_res = []
-    if (v1data.aweme_detail.music) {
+    if (Data.aweme_detail.music) {
       let music_data = []
       let musicres = []
-      const music = v1data.aweme_detail.music
+      const music = Data.aweme_detail.music
       let music_id = music.author //BGM名字
       let music_img = music.cover_hd.url_list[0] //BGM作者头像
       let music_url = music.play_url.uri //BGM link
@@ -162,10 +162,10 @@ export default class TikHub extends base {
     //return
     //这里是ocr识别信息-----------------------------------------------------------------------------------------------------------
     let ocr_res = []
-    if (v1data.aweme_detail.seo_info.ocr_content) {
+    if (Data.aweme_detail.seo_info.ocr_content) {
       let ocr_data = []
       let ocrres = []
-      let text = v1data.aweme_detail.seo_info.ocr_content
+      let text = Data.aweme_detail.seo_info.ocr_content
       ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
       ocrres.push(text)
       let dsc = 'ocr视频信息识别'
@@ -175,21 +175,21 @@ export default class TikHub extends base {
     }
     //这里是获取视频信息------------------------------------------------------------------------------------------------------------
     let video_res = []
-    if (is_mp4 === true) {
-      //console.log(JSON.stringify(v1data))
-      //return
+    if (is_mp4) {
       let video_data = []
       let videores = []
       //视频地址特殊判断：play_addr_h264、play_addr、
-      const video = v1data.aweme_detail.video
+      const video = Data.aweme_detail.video
       let FPS = video.bit_rate[0].FPS //FPS
-      if (v1data.aweme_detail.video.play_addr_h264) {
+      if (Data.aweme_detail.video.play_addr_h264) {
         g_video_url = video.play_addr_h264.url_list[2]
-      } else if (v1data.aweme_detail.video.play_addr) {
+        logger.info('视频地址', g_video_url)
+      } else if (Data.aweme_detail.video.play_addr) {
         g_video_url = video.play_addr.url_list[2]
+        logger.info('视频地址', g_video_url)
       }
       let cover = video.origin_cover.url_list[0] //video cover image
-      let title = v1data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //video title
+      let title = Data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') //video title
       g_title = title
       let video_url_data = await fetch(g_video_url, { headers: headers })
 
@@ -432,8 +432,8 @@ async function DownLoadVideo(video_url, title) {
 const headers = {
   "Server": "CWAP-waf",
   "Content-Type": "video/mp4",
-  "referer": "https://www.douyin.com",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
-  "cookie": "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
+  "Referer": "https://www.douyin.com",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+  "cookie": Config.ck
 }
 

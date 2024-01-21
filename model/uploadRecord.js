@@ -1,5 +1,4 @@
 import { core } from "icqq"
-import Contactable from "icqq"
 import querystring from "querystring"
 import fetch from "node-fetch"
 import fs from "fs"
@@ -8,80 +7,87 @@ import util from "util"
 import stream from "stream"
 import crypto from "crypto"
 import child_process from "child_process"
+
 var errors = {};
 
-
-async function uploadRecord(record_url, seconds = 0,transcoding = true) {
-	const result = await getPttBuffer(record_url, Bot.config.ffmpeg_path, transcoding);
-    if(!result.buffer){
+async function uploadRecord(record_url, seconds = 0, transcoding = true, brief = '') {
+    const result = await getPttBuffer(record_url, Bot.config.ffmpeg_path, transcoding);
+    if (!result.buffer) {
         return false;
     }
     let buf = result.buffer;
-    if(seconds == 0 && result.time) seconds = result.time.seconds;
+    if (seconds == 0 && result.time) seconds = result.time.seconds;
     const hash = (0, md5)(buf);
     const codec = String(buf.slice(0, 7)).includes("SILK") ? (transcoding ? 1 : 0) : 0;
     const body = core.pb.encode({
-		1: 3,
-		2: 3,
-		5: {
-			1: Contactable.target,
-			2: Bot.uin,
-			3: 0,
-			4: hash,
-			5: buf.length,
-			6: hash,
-			7: 5,
-			8: 9,
-			9: 4,
-			11: 0,
-			10: Bot.apk.version,
-			12: 1,
-			13: 1,
-			14: codec,
-			15: 1,
-		},
-	});
-	const payload = await Bot.sendUni("PttStore.GroupPttUp", body);
-	const rsp = core.pb.decode(payload)[5];
-	rsp[2] && (0, errors.drop)(rsp[2], rsp[3]);
-	const ip = rsp[5]?.[0] || rsp[5], port = rsp[6]?.[0] || rsp[6];
-	const ukey = rsp[7].toHex(), filekey = rsp[11].toHex();
-	const params = {
-		ver: 4679,
-		ukey, filekey,
-		filesize: buf.length,
-		bmd5: hash.toString("hex"),
-		mType: "pttDu",
-		voice_encodec: codec
-	};
-	const url = `http://${(0, int32ip2str)(ip)}:${port}/?` + querystring.stringify(params);
-	const headers = {
-		"User-Agent": `QQ/${Bot.apk.version} CFNetwork/1126`,
-		"Net-Type": "Wifi"
-	};
-	await fetch(url,{
-		method: 'POST',//post请求 
-		headers: headers,
-		body: buf
-	});
-	//await axios.post(url, buf, { headers });
-    
-	const fid = rsp[11].toBuffer();
-	const b = core.pb.encode({
-		1: 4,
-		2: Bot.uin,
-		3: fid,
-		4: hash,
-		5: hash.toString("hex") + ".amr",
-		6: seconds,
-		11: 1,
-		18: fid,
-		19: seconds,
-		30: Buffer.from([8, 0, 40, 0, 56, 0]),
-	});
-	return {
-		type: "record", file: "protobuf://" + Buffer.from(b).toString("base64")
-	};
+        1: 3,
+        2: 3,
+        5: {
+            1: Bot.uin,
+            2: Bot.uin,
+            3: 0,
+            4: hash,
+            5: buf.length,
+            6: hash,
+            7: 5,
+            8: 9,
+            9: 4,
+            11: 0,
+            10: Bot.apk.version,
+            12: 1,
+            13: 1,
+            14: codec,
+            15: 1,
+        },
+    });
+    const payload = await Bot.sendUni("PttStore.GroupPttUp", body);
+    const rsp = core.pb.decode(payload)[5];
+    rsp[2] && (0, errors.drop)(rsp[2], rsp[3]);
+    const ip = rsp[5]?.[0] || rsp[5], port = rsp[6]?.[0] || rsp[6];
+    const ukey = rsp[7].toHex(), filekey = rsp[11].toHex();
+    const params = {
+        ver: 4679,
+        ukey, filekey,
+        filesize: buf.length,
+        bmd5: hash.toString("hex"),
+        mType: "pttDu",
+        voice_encodec: codec
+    };
+    const url = `http://${(0, int32ip2str)(ip)}:${port}/?` + querystring.stringify(params);
+    const headers = {
+        "User-Agent": `QQ/${Bot.apk.version} CFNetwork/1126`,
+        "Net-Type": "Wifi"
+    };
+    await fetch(url, {
+        method: 'POST',//post请求 
+        headers: headers,
+        body: buf
+    });
+    //await axios.post(url, buf, { headers });
+
+    const fid = rsp[11].toBuffer();
+    const b = core.pb.encode({
+        1: 4,
+        2: Bot.uin,
+        3: fid,
+        4: hash,
+        5: hash.toString("hex") + ".amr",
+        6: seconds,
+        11: 1,
+        18: fid,
+        19: seconds,
+        29: codec,
+        30: {
+            1: 0,//是否为变声语音
+            5: 0,//是否显示评级
+            6: 'sss',//评级
+            7: 0,//未知参数
+            8: brief
+        }
+    });
+    return {
+        type: "record", file: "protobuf://" + Buffer.from(b).toString("base64")
+    };
 }
 
 export default uploadRecord
@@ -96,27 +102,28 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
         if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
             const tmpfile = TMP_DIR + '/' + (0, uuid)();
             await fs.promises.writeFile(tmpfile, buf);
-            let result = await getAudioTime(tmpfile,ffmpeg);
-            if(result.code == 1) time = result.data;
+            let result = await getAudioTime(tmpfile, ffmpeg);
+            if (result.code == 1) time = result.data;
             buf = await fs.promises.readFile(tmpfile);
-            fs.unlink(tmpfile,NOOP);
+            fs.unlink(tmpfile, NOOP);
             buffer = result.buffer || buf;
-        }else {
+        } else {
             const tmpfile = TMP_DIR + '/' + (0, uuid)();
-            let result = await getAudioTime(tmpfile,ffmpeg);
-            if(result.code == 1) time = result.data;
+            let result = await getAudioTime(tmpfile, ffmpeg);
+            if (result.code == 1) time = result.data;
             await fs.promises.writeFile(tmpfile, buf);
             buffer = await audioTrans(tmpfile, ffmpeg);
+            fs.unlink(tmpfile, NOOP);
         }
     }
     else if (file.startsWith("http://") || file.startsWith("https://")) {
         // 网络文件
         //const readable = (await axios.get(file, { responseType: "stream" })).data;
-        try{
+        try {
             const headers = {
                 "User-Agent": `Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)`,
             };
-            let response =  await fetch(file,{
+            let response = await fetch(file, {
                 method: 'GET',//post请求 
                 headers: headers
             });
@@ -125,30 +132,30 @@ async function getPttBuffer(file, ffmpeg = "ffmpeg", transcoding = true) {
             await fs.promises.writeFile(tmpfile, buf);
             //await (0, pipeline)(readable.pipe(new DownloadTransform), fs.createWriteStream(tmpfile));
             const head = await read7Bytes(tmpfile);
-            let result = await getAudioTime(tmpfile,ffmpeg);
-            if(result.code == 1) time = result.data;
+            let result = await getAudioTime(tmpfile, ffmpeg);
+            if (result.code == 1) time = result.data;
             if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
-                fs.unlink(tmpfile,NOOP);
                 buffer = result.buffer || buf;
             } else {
                 buffer = await audioTrans(tmpfile, ffmpeg);
             }
-        }catch(err){}
+            fs.unlink(tmpfile, NOOP);
+        } catch (err) { }
     }
     else {
         // 本地文件
         file = String(file).replace(/^file:\/{2}/, "");
         IS_WIN && file.startsWith("/") && (file = file.slice(1));
         const head = await read7Bytes(file);
-        let result = await getAudioTime(file,ffmpeg);
-        if(result.code == 1) time = result.data;
+        let result = await getAudioTime(file, ffmpeg);
+        if (result.code == 1) time = result.data;
         if (head.includes("SILK") || head.includes("AMR") || !transcoding) {
             buffer = result.buffer || await fs.promises.readFile(file);
         } else {
             buffer = await audioTrans(file, ffmpeg);
         }
     }
-    return {buffer: buffer, time: time}
+    return { buffer: buffer, time: time }
 }
 
 async function getAudioTime(file, ffmpeg = "ffmpeg") {
@@ -156,41 +163,65 @@ async function getAudioTime(file, ffmpeg = "ffmpeg") {
         let file_info = fs.statSync(file);
         let cmd = `${ffmpeg} -i "${file}"`;
         let is_aac = false;
-        if(file_info['size'] >= 10485760){
+        if (file_info['size'] >= 10485760) {
             cmd = `${ffmpeg} -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`;
             is_aac = true;
         }
         (0, child_process.exec)(cmd, async (error, stdout, stderr) => {
             try {
                 let buffer = null;
-                if(is_aac){
+                if (is_aac) {
                     buffer = fs.readFileSync(`${file}.mp3`);
                     fs.unlinkSync(`${file}.mp3`);
                 }
-				let time = stderr.split('Duration:')[1]?.split(',')[0].trim();
+                let time = stderr.split('Duration:')[1]?.split(',')[0].trim();
                 let arr = time?.split(':');
                 arr.reverse();
                 let n = 1;
                 let s = 0;
-                for(let val of arr){
-                    if(parseInt(val) > 0) s += parseInt(val) * n;
+                for (let val of arr) {
+                    if (parseInt(val) > 0) s += parseInt(val) * n;
                     n *= 60;
                 }
-                resolve({code: 1,buffer: buffer,data: {
-                    time: time,
-                    seconds: s,
-					exec_text: stderr,
-                    
-                }});
+                resolve({
+                    code: 1, buffer: buffer, data: {
+                        time: time,
+                        seconds: s,
+                        exec_text: stderr,
+
+                    }
+                });
             }
             catch {
-                resolve({code: -1});
+                resolve({ code: -1 });
             }
         });
     });
 }
 
 async function audioTrans(file, ffmpeg = "ffmpeg") {
+    let result = await new Promise((resolve, reject) => {
+        const tmpfile = TMP_DIR + '/' + (0, uuid)() + '.pcm';
+        (0, child_process.exec)(`${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`, async (error, stdout, stderr) => {
+            try {
+                const silk_worker = await import("./silk_worker/index.cjs");
+                let ret = await silk_worker.encode(tmpfile, 24000);
+                resolve(Buffer.from(ret.data));
+            }
+            catch {
+                logger.error("音频转码到pcm失败，请确认你的ffmpeg可以处理此转换");
+                resolve(false);
+            }
+            finally {
+                fs.unlink(tmpfile, NOOP);
+            }
+        });
+    });
+    if (result) return result;
+    return await audioTrans1(file, ffmpeg);
+}
+
+async function audioTrans1(file, ffmpeg = "ffmpeg") {
     return new Promise((resolve, reject) => {
         const tmpfile = TMP_DIR + '/' + (0, uuid)();
         (0, child_process.exec)(`${ffmpeg} -y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`, async (error, stdout, stderr) => {
@@ -199,7 +230,8 @@ async function audioTrans(file, ffmpeg = "ffmpeg") {
                 resolve(amr);
             }
             catch {
-                reject(new core.ApiRejection(errors.ErrorCode.FFmpegPttTransError, "音频转码到amr失败，请确认你的ffmpeg可以处理此转换"));
+                logger.error("音频转码到amr失败，请确认你的ffmpeg可以处理此转换");
+                resolve(false);
             }
             finally {
                 fs.unlink(tmpfile, NOOP);

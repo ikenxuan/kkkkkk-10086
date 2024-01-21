@@ -67,9 +67,9 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: 'token',
-                    label: '解析服务token',
-                    bottomHelpMessage: '请勿修改，否则无法使用',
+                    field: 'ck',
+                    label: '抖音ck',
+                    bottomHelpMessage: '登录https://www.douyin.com/使用F12输入document.cookie获取',
                     component: 'InputPassword',
                     required: true
                 },

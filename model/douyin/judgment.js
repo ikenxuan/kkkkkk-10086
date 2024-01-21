@@ -8,8 +8,9 @@ import fetch from 'node-fetch'
 export async function judgment(url) {
     let response = await fetch(url, options)
     let longLink = response.url
+    let result
     if (longLink.includes('webcast.amemv.com')) {
-        return {
+        result = {
             type: 'live',
             baseurl: url
         }
@@ -20,27 +21,29 @@ export async function judgment(url) {
         let id
         if (matchVideo) {
             id = matchVideo[1]
-            return {
+            result = {
                 type: 'video',
                 id,
                 is_mp4: true
             }
         } else if (matchNote) {
             id = matchNote[1]
-            return {
+            result = {
                 type: 'note',
                 id,
                 is_mp4: false
             }
         } else if (matchUser) {
             id = matchUser[1]
-            return {
+            result = {
                 type: 'uservideoslist',
                 id,
             }
         }
 
     }
+    console.log(result)
+    return result
 }
 
 
@@ -57,7 +60,7 @@ const options = {
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
     "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.4209.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
     },
     "X-Secsdk-Csrf-Token": "000100000001b08a10025237b760401317f3b80208d155801b641f496bbb9be24aecf151089c177b934f66506e3c"
 }
