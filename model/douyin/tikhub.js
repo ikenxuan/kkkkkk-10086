@@ -4,9 +4,11 @@ import common from "../../../../lib/common/common.js"
 import uploadRecord from "../uploadRecord.js"
 import path from 'path'
 import { Config } from "../config.js"
-import { emojiMap } from '../../utils/DYemoji.js'
+import { emojiMap } from './DYemoji.js'
 import { comments } from './comments.js'
 import image from '../../utils/image.js'
+import Argument from './getdata.js'
+import { Emoji } from './DYemoji2.js'
 
 const _path = process.cwd()
 let mp4size = ''
@@ -51,17 +53,22 @@ export default class TikHub extends base {
     let g_video_url
     let g_title
     let full_data = [] //总数组
-    //comments
+
+    //Comments
     let comments_res = []
     if (CommentData !== null && CommentData !== undefined && Config.comments) {
-      const commentsArray = await comments(CommentData)
+      const EmojiData = await (new Argument()).GetData({ type : 'emoji'})
+      const list = await Emoji(EmojiData)
+
+      const commentsArray = await comments(CommentData, list)
       const { img } = await image(this.e, 'comment', 'comment', {
         saveId: 'comment',
         cwd: _path,
-        CommentsData: commentsArray
+        CommentsData: commentsArray,
+        Commentlength: String(commentsArray.length)
       })
       this.e.reply(img)
-  
+
       let comments_data = []
       let commentsres = []
       for (let i = 0; i < CommentData.comments.length; i++) {

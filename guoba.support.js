@@ -48,7 +48,7 @@ export function supportGuoba() {
                 {
                     field: 'numcomments',
                     label: '评论解析数量',
-                    bottomHelpMessage: '可选值1-100，默认为35，数值越大可能响应越慢',
+                    bottomHelpMessage: '可选值1-50，默认为35，过高可能导致puppeteer渲染崩溃',
                     component: 'Input',
                     required: true
                 },

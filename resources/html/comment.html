@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-cn">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,7 +21,7 @@
 
       .comment {
         display: flex;
-        border-bottom: 1px solid #ccc;
+        /* border-bottom: 1px solid #e7d8d8; */
         padding: 70px; /* 调整填充以改善间距 */
       }
 
@@ -45,42 +45,117 @@
       }
 
       .comment-text {
-        margin-bottom: 20px; /* 调整边距 */
+        margin-bottom: 0px; /* 调整字边距 */
         font-size: 80px;
       }
 
       .like-section {
         display: flex;
         align-items: center;
+        justify-content: space-between; /* 将子元素分别靠左和靠右 */
         color: #555;
+        margin-top: 50px;
+      }
+
+      .info-content {
+        display: flex;
+        align-items: center;
+      }
+
+      .additional-info {
+        font-size: 60px;
+        color: #888; /* 灰色字体 */
+        letter-spacing: 8px; /* 调整字间距*/
+      }
+
+      .like-content {
+        display: flex;
+        align-items: center;
       }
 
       .like-icon {
+        margin-left: 500px;
         margin-right: 5px;
         cursor: pointer;
-        font-size: 65px;
       }
 
       .like-count {
         font-size: 60px; /* 调整字体大小 */
       }
+
+      .top-info {
+        text-align: center;
+        margin-top: 80px; /* 添加顶部间距 */
+        padding: 20px;
+        color: #272727;
+        font-weight: bold; /* 加粗 */
+        letter-spacing: 6px; /* 调整字间距*/
+        font-size: 75px;
+        margin-bottom: 20px; /* 添加底部间距 */
+      }
+
+      .end-message {
+        text-align: right;
+        padding: 0px;
+        color: #555; /* 深灰色字体颜色 */
+        margin-top: 40px; /* 添加顶部间距 */
+        margin-bottom: 50px;
+        margin-right: 250px;
+        letter-spacing: 4px; /* 调整字间距*/
+        font-size: 40px;
+      }
     </style>
   </head>
   <body>
     <div class="comment-container">
+      <div class="top-info">{{Commentlength}}条评论</div>
+
       {{each CommentsData val}}
       <div class="comment">
-        <img src="{{val.userimageurl}}" alt="{{val.nickname}}" class="user-avatar" />
+        <img src="{{val.userimageurl}}" class="user-avatar" />
         <div class="comment-content">
           <div class="user-info">{{val.nickname}}</div>
           <div class="comment-text">{{val.text}}</div>
+          <!-- <div class="comment-text" id="comment-text-{{val.id}}"></div> -->
           <div class="like-section">
-            <span class="like-icon">&#x1F44D;</span>
-            <span class="like-count">{{val.digg_count}}</span>
+            <div class="info-content">
+              <div class="additional-info">
+                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp回复
+              </div>
+              <div class="like-icon">
+                <svg
+                  width="100"
+                  height="100"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="FEC76vvL"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M7.646 4.168c-2.238 0-4.035 1.919-4.035 4.152l.002.13a.834.834 0 00-.001.073c.006.3.075.66.15.962.074.294.178.622.294.86.467 1.004 1.284 1.979 2.071 2.78a23.69 23.69 0 002.646 2.323l.015.012.012.01c.174.175.543.54 1.2.54h.019c.186 0 .63 0 1.028-.387l.033-.027c.033-.029.08-.067.14-.117l.003-.003c.436-.359 1.456-1.2 2.462-2.214.644-.646 1.312-1.396 1.822-2.17a7.94 7.94 0 00.2-.318.84.84 0 00.063-.13.956.956 0 01.11-.214.835.835 0 00.074-.144c.029-.073.05-.121.066-.154l.003-.007a.832.832 0 00.147-.29c.125-.444.21-.835.219-1.316a.82.82 0 00-.002-.067 5.39 5.39 0 00.002-.16c-.015-2.22-1.807-4.124-4.035-4.124-.845 0-1.667.262-2.316.789a4.029 4.029 0 00-2.392-.789zm7.076 "
+                    fill-opacity="0.9"
+                    opacity="0.9"
+                    stroke="#777"
+                    stroke-width="1"
+                  ></path>
+                </svg>
+                <span class="like-count">{{val.digg_count}}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
       {{/each}}
+      <div class="end-message">Miao-Yunzai & kkkkkk-10086</div>
     </div>
+    <!-- <script type="module">
+      import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+      for (const val of CommentsData) {
+        document.getElementById(`comment-text-${val.id}`).innerHTML =
+          marked.parse(val.text);
+      }
+    </script> -->
   </body>
 </html>
