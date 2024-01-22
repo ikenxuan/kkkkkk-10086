@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        width: 1920px;
+        height: auto;
+      }
+
+      .comment-container {
+        max-width: 100%; /* 宽度设置为百分之百，以适应不同屏幕大小 */
+        margin: 0 auto;
+        overflow: auto; /* 添加滚动条以处理大量评论 */
+      }
+
+      .comment {
+        display: flex;
+        border-bottom: 1px solid #ccc;
+        padding: 70px; /* 调整填充以改善间距 */
+      }
+
+      .user-avatar {
+        width: 250px; /* 调整尺寸 */
+        height: 250px; /* 调整尺寸 */
+        border-radius: 50%;
+        margin-right: 45px; /* 调整边距 */
+        object-fit: cover;
+        box-shadow: 0 20px 50px 0 rgb(0 0 0 / 30%);
+      }
+
+      .comment-content {
+        flex: 1;
+      }
+
+      .user-info {
+        font-weight: bold;
+        margin-bottom: 50px; /* 调整边距 */
+        font-size: 60px;
+      }
+
+      .comment-text {
+        margin-bottom: 20px; /* 调整边距 */
+        font-size: 80px;
+      }
+
+      .like-section {
+        display: flex;
+        align-items: center;
+        color: #555;
+      }
+
+      .like-icon {
+        margin-right: 5px;
+        cursor: pointer;
+        font-size: 65px;
+      }
+
+      .like-count {
+        font-size: 60px; /* 调整字体大小 */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="comment-container">
+      {{each CommentsData val}}
+      <div class="comment">
+        <img src="{{val.userimageurl}}" alt="{{val.nickname}}" class="user-avatar" />
+        <div class="comment-content">
+          <div class="user-info">{{val.nickname}}</div>
+          <div class="comment-text">{{val.text}}</div>
+          <div class="like-section">
+            <span class="like-icon">&#x1F44D;</span>
+            <span class="like-count">{{val.digg_count}}</span>
+          </div>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </body>
+</html>

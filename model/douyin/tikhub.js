@@ -5,6 +5,9 @@ import uploadRecord from "../uploadRecord.js"
 import path from 'path'
 import { Config } from "../config.js"
 import { emojiMap } from '../../utils/DYemoji.js'
+import { comments } from './comments.js'
+import image from '../../utils/image.js'
+
 const _path = process.cwd()
 let mp4size = ''
 
@@ -51,6 +54,14 @@ export default class TikHub extends base {
     //comments
     let comments_res = []
     if (CommentData !== null && CommentData !== undefined && Config.comments) {
+      const commentsArray = await comments(CommentData)
+      const { img } = await image(this.e, 'comment', 'comment', {
+        saveId: 'comment',
+        cwd: _path,
+        CommentsData: commentsArray
+      })
+      this.e.reply(img)
+  
       let comments_data = []
       let commentsres = []
       for (let i = 0; i < CommentData.comments.length; i++) {
@@ -71,6 +82,7 @@ export default class TikHub extends base {
         commentsres.push(`${text}\n♥${digg_count}`)
       }
       let dsc = '评论数据'
+      // fs.writeFileSync(_path + '/plugins/kkkkkk-10086/res.json', JSON.stringify(commentsres, null, 4))
       let res = await common.makeForwardMsg(this.e, commentsres, dsc)
       comments_data.push(res)
       comments_res.push(comments_data)
@@ -78,7 +90,6 @@ export default class TikHub extends base {
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
-    console.log(is_mp4)
     if (is_mp4 === false) {
       let image_data = []
       let imageres = []
@@ -218,7 +229,7 @@ export default class TikHub extends base {
     }
     const tip = ['视频正在上传']
     let res
-    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(image_res).concat(music_res).concat(author_res).concat(ocr_res) }
+    if (is_mp4 === true) { res = full_data.concat(tip).concat(video_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
     else { res = full_data.concat(video_res).concat(image_res).concat(comments_res).concat(music_res).concat(author_res).concat(ocr_res) }
 
     let dec

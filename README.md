@@ -16,15 +16,14 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 ```sh
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
-
+TRSS-Yunzai没测试不知道能不能装
 ## 功能(其实就一个)
 
 ### 抖音作品解析
 
-**抖音**使用官方接口，响应快
+**抖音**使用官方接口，解析评论并渲染图片返回
 
 - #?kkk设置
-- #kkk设置语音盒(开启|关闭)
 - #kkk设置视频解析(开启|关闭)
 - #kkk设置默认视频解析(开启|关闭)
 - #kkk设置缓存删除(开启|关闭)
@@ -40,7 +39,7 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 ## TODO
 - [ ] 重构
 
-## 参考(排名不分先后)
+## 参考
 
 - https://gitee.com/xfdown/xiaofei-plugin
 
