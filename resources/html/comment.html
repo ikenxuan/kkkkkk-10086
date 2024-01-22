@@ -115,8 +115,8 @@
         <img src="{{val.userimageurl}}" class="user-avatar" />
         <div class="comment-content">
           <div class="user-info">{{val.nickname}}</div>
-          <div class="comment-text">{{val.text}}</div>
-          <!-- <div class="comment-text" id="comment-text-{{val.id}}"></div> -->
+          <!-- 不转义渲染内容{{@val.text}} -->
+          <div class="comment-text" style="display: flex; align-items: center;">{{@val.text}}</div>
           <div class="like-section">
             <div class="info-content">
               <div class="additional-info">
@@ -150,12 +150,5 @@
       {{/each}}
       <div class="end-message">Miao-Yunzai & kkkkkk-10086</div>
     </div>
-    <!-- <script type="module">
-      import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-      for (const val of CommentsData) {
-        document.getElementById(`comment-text-${val.id}`).innerHTML =
-          marked.parse(val.text);
-      }
-    </script> -->
   </body>
 </html>
