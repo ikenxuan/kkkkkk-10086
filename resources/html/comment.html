@@ -9,7 +9,7 @@
         background-color: #f4f4f4;
         margin: 0;
         padding: 20px;
-        width: 1920px;
+        width: 1440px;
         height: auto;
       }
 
@@ -26,10 +26,10 @@
       }
 
       .user-avatar {
-        width: 250px; /* 调整尺寸 */
-        height: 250px; /* 调整尺寸 */
+        width: 187.5px; /* 调整尺寸 */
+        height: 187.5px; /* 调整尺寸 */
         border-radius: 50%;
-        margin-right: 45px; /* 调整边距 */
+        margin-right: 33.75px; /* 调整边距 */
         object-fit: cover;
         box-shadow: 0 20px 50px 0 rgb(0 0 0 / 30%);
       }
@@ -39,22 +39,30 @@
       }
 
       .user-info {
-        font-weight: bold;
+        font-weight: lighter;
         margin-bottom: 50px; /* 调整边距 */
-        font-size: 60px;
+        color: #888;
+        font-size: 45px;
       }
 
       .comment-text {
         margin-bottom: 0px; /* 调整字边距 */
-        font-size: 80px;
+        font-size: 60px;
+        align-items: center;
+      }
+
+      .comment-text img {
+        display: inline-block;
+        vertical-align: middle;
+        transform: scale(0.9); /* 调整缩放比例*/
       }
 
       .like-section {
         display: flex;
         align-items: center;
         justify-content: space-between; /* 将子元素分别靠左和靠右 */
-        color: #555;
-        margin-top: 50px;
+        color: #888;
+        margin-top: 37.5px;
       }
 
       .info-content {
@@ -63,9 +71,9 @@
       }
 
       .additional-info {
-        font-size: 60px;
+        font-size: 45px;
         color: #888; /* 灰色字体 */
-        letter-spacing: 8px; /* 调整字间距*/
+        letter-spacing: 6px; /* 调整字间距*/
       }
 
       .like-content {
@@ -74,13 +82,14 @@
       }
 
       .like-icon {
-        margin-left: 500px;
+        margin-left: 375px;
         margin-right: 5px;
         cursor: pointer;
       }
 
       .like-count {
-        font-size: 60px; /* 调整字体大小 */
+        margin: 0;
+        font-size: 45px; /* 调整字体大小 */
       }
 
       .top-info {
@@ -98,11 +107,11 @@
         text-align: right;
         padding: 0px;
         color: #555; /* 深灰色字体颜色 */
-        margin-top: 40px; /* 添加顶部间距 */
-        margin-bottom: 50px;
-        margin-right: 250px;
+        margin-top: 30px; /* 添加顶部间距 */
+        margin-bottom: 37.5px;
+        margin-right: 187.5px;
         letter-spacing: 4px; /* 调整字间距*/
-        font-size: 40px;
+        font-size: 30px;
       }
     </style>
   </head>
@@ -116,7 +125,7 @@
         <div class="comment-content">
           <div class="user-info">{{val.nickname}}</div>
           <!-- 不转义渲染内容{{@val.text}} -->
-          <div class="comment-text" style="display: flex; align-items: center;">{{@val.text}}</div>
+          <div class="comment-text">{{@val.text}}</div>
           <div class="like-section">
             <div class="info-content">
               <div class="additional-info">
@@ -124,8 +133,8 @@
               </div>
               <div class="like-icon">
                 <svg
-                  width="100"
-                  height="100"
+                  width="80"
+                  height="80"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   class="FEC76vvL"

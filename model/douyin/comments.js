@@ -46,11 +46,12 @@ export async function comments(data, emojidata) {
         // 检查是否存在中括号
         if (item1.text.includes("[") && item1.text.includes("]")) {
           item1.text = item1.text
-            .replace(/\[[^\]]*\]/g, `&#160<img src="${item2.url}" style="vertical-align: middle; transform: scale(1.1); "/>`)
+            .replace(/\[[^\]]*\]/g, `<img src="${item2.url}"/>`)
             .replace(/\\/g, "")
         } else {
-          item1.text = `&#160<img src="${item2.url}" style="vertical-align: middle; transform: scale(1.1); "/>`.replace(/\\/g, "")
+          item1.text = `<img src="${item2.url}"/>`
         }
+        item1.text += `&#160`
       }
     }
   }
@@ -66,11 +67,11 @@ async function getRelativeTimeFromTimestamp(timestamp) {
   } else if (differenceInSeconds < 3600) {
     return Math.floor(differenceInSeconds / 60) + "分钟前";
   } else if (differenceInSeconds < 86400) {
-    return Math.floor(differenceInSeconds / 3600) + "小时前";
+    return Math.floor(differenceInSeconds / 3600) + "个小时前";
   } else if (differenceInSeconds < 2592000) {
     return Math.floor(differenceInSeconds / 86400) + "天前";
   } else if (differenceInSeconds < 31536000) {
-    return Math.floor(differenceInSeconds / 2592000) + "月前";
+    return Math.floor(differenceInSeconds / 2592000) + "个月前";
   } else {
     return "更久之前";
   }

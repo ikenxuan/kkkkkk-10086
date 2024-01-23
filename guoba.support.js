@@ -13,7 +13,7 @@ export function supportGuoba() {
             link: 'https://gitee.com/ikenxuan/kkkkkk-10086',
             isV3: true,
             isV2: false,
-            description: '提供了视频解析功能，额外的语音盒资源。自用练手项目',
+            description: '提供了视频解析功能',
             // 显示图标，此为个性化配置
             // 图标可在 https://icon-sets.iconify.design 这里进行搜索
             icon: 'svg-spinners:blocks-shuffle-3',
@@ -48,7 +48,7 @@ export function supportGuoba() {
                 {
                     field: 'numcomments',
                     label: '评论解析数量',
-                    bottomHelpMessage: '可选值1-50，默认为35，过高可能导致puppeteer渲染崩溃',
+                    bottomHelpMessage: '可选值1-50，默认为20，过高可能导致渲染图片过大上传失败',
                     component: 'Input',
                     required: true
                 },

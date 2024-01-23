@@ -53,21 +53,20 @@ export default class TikHub extends base {
     let g_video_url
     let g_title
     let full_data = [] //总数组
-
     //Comments
     let comments_res = []
-    if (CommentData !== null && CommentData !== undefined && Config.comments) {
+    if (CommentData !== null && CommentData.comments && Config.comments) {
       const EmojiData = await (new Argument()).GetData({ type : 'emoji'})
       const list = await Emoji(EmojiData)
 
       const commentsArray = await comments(CommentData, list)
-      const { img } = await image(this.e, 'comment', 'comment', {
+      let { img } = await image(this.e, 'comment', 'comment', {
         saveId: 'comment',
         cwd: _path,
         CommentsData: commentsArray,
         Commentlength: String(commentsArray.length)
       })
-      this.e.reply(img)
+      await this.e.reply(img)
 
       let comments_data = []
       let commentsres = []
@@ -93,7 +92,7 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, commentsres, dsc)
       comments_data.push(res)
       comments_res.push(comments_data)
-    } else comments_res.push('评论数据获取失败')
+    } else comments_res.push('评论数据获取失败或这条视频没有评论')
     //这里获取图集信息-------------------------------------------------------------------------------------------------------------
     let imagenum = 0
     let image_res = []
