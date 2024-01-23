@@ -45,6 +45,21 @@
         font-size: 45px;
       }
 
+      .comment-imgbox {
+        position: relative;
+        display: flex;
+        margin: 20px 0;
+        width: 90%;
+        height: 600px;
+        overflow: hidden;
+      }
+      
+      .comment-imgbox_1 {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 15px;
+      }
+
       .comment-text {
         margin-bottom: 0px; /* 调整字边距 */
         font-size: 60px;
@@ -73,12 +88,7 @@
       .additional-info {
         font-size: 45px;
         color: #888; /* 灰色字体 */
-        letter-spacing: 6px; /* 调整字间距*/
-      }
-
-      .like-content {
-        display: flex;
-        align-items: center;
+        letter-spacing: 4px; /* 调整字间距*/
       }
 
       .like-icon {
@@ -126,10 +136,15 @@
           <div class="user-info">{{val.nickname}}</div>
           <!-- 不转义渲染内容{{@val.text}} -->
           <div class="comment-text">{{@val.text}}</div>
+          {{if val.commentimage != null}}
+          <div class="comment-imgbox">
+            <img class="comment-imgbox_1" src="{{val.commentimage}}" />
+          </div>
+          {{/if}}
           <div class="like-section">
             <div class="info-content">
               <div class="additional-info">
-                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp回复
+                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp<span style="color: #555;">回复</span>
               </div>
               <div class="like-icon">
                 <svg
@@ -161,3 +176,19 @@
     </div>
   </body>
 </html>
+
+<!-- .comment-imgbox {
+  display: flex;
+  margin: 20px 0;
+  overflow: hidden;
+  box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
+  flex: 1; /* 让容器自动调整大小 */
+}
+
+.comment-imgbox_1 {
+  border-radius: 15px;
+  object-fit: contain; /* 图片按原比例完整显示在容器内 */
+  width: 100%; /* 让图片宽度充满父容器 */
+  height: 100%; /* 让图片高度充满父容器 */
+} -->
