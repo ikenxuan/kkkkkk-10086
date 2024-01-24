@@ -114,7 +114,6 @@ export default class Argument extends base {
                 return { VideoData, CommentsData }
             
             case 'CommentReplyData':
-                console.log(`${URL[3]}&X-Bogus=${this.getParm(URL[3])}`)
                 let CommentReplyData = await GetCommentReplyData({
                     url: `${URL[3]}&X-Bogus=${this.getParm(URL[3])}`,
                     method: 'GET',

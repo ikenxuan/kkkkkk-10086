@@ -10,7 +10,6 @@ export async function comments(data, emojidata) {
   // fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
   let jsonArray = [];
 
-  function sort () {}
   for (let i = 0; i < data.comments.length; i++) {
     const cid = data.comments[i].cid;
     const aweme_id = data.comments[i].aweme_id;
@@ -55,7 +54,42 @@ export async function comments(data, emojidata) {
   //   JSON.stringify(CommentReplyData, null, 4)
   // );
 
-  // for (let i = 0; i < CommentReplyData.comments.length; i++) {}
+  let CommentReplyDataArray = []
+  for (let i = 0; i < CommentReplyData.comments.length; i++) {
+    const nickname = CommentReplyData.comments[i].user.nickname;
+    const userimageurl = CommentReplyData.comments[i].user.avatar_larger.url_list[0];
+    const text = CommentReplyData.comments[i].text;
+    const ip = CommentReplyData.comments[i].ip_label;
+    const time = CommentReplyData.comments[i].create_time;
+    let digg_count = CommentReplyData.comments[i].digg_count;
+    const imageurl =
+    CommentReplyData.comments[i].image_list &&
+    CommentReplyData.comments[i].image_list[0] &&
+    CommentReplyData.comments[i].image_list[0].origin_url &&
+    CommentReplyData.comments[i].image_list[0].origin_url.url_list
+        ? CommentReplyData.comments[i].image_list[0].origin_url.url_list[0]
+        : null;
+    const relativeTime = await getRelativeTimeFromTimestamp(time);
+
+    const commentreplyObj = {
+      id: i + 1,
+      nickname: nickname,
+      userimageurl: userimageurl,
+      text: text,
+      digg_count: digg_count,
+      ip_label: ip,
+      create_time: relativeTime,
+      commentimage: imageurl,
+    };
+
+    CommentReplyDataArray.push(commentreplyObj)
+  }
+
+  let CommentData = {
+    jsonArray: jsonArray,
+    CommentReplyData: CommentReplyDataArray
+  }
+  // fs.writeFileSync("CommentReplyDataArray.json", JSON.stringify(CommentData, null, 4));
 
   for (let i = 0; i < jsonArray.length; i++) {
     if (jsonArray[i].digg_count > 10000) {
@@ -64,7 +98,7 @@ export async function comments(data, emojidata) {
     }
   }
 
-  for (const item1 of jsonArray) {
+  for (const item1 of CommentData.jsonArray) {
     // 遍历emojidata中的每个元素
     for (const item2 of emojidata) {
       // 如果jsonArray中的text包含在emojidata中的name中
@@ -82,7 +116,7 @@ export async function comments(data, emojidata) {
     }
   }
   // fs.writeFileSync("res3.json", JSON.stringify(jsonArray, null, 4));
-  return jsonArray;
+  return CommentData;
 }
 
 async function getRelativeTimeFromTimestamp(timestamp) {

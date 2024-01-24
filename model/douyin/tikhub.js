@@ -103,7 +103,6 @@ export default class TikHub extends base {
       let image_url;
       for (let i = 0; i < Data.aweme_detail.images.length; i++) {
         image_url = Data.aweme_detail.images[i].url_list[1]; //图片地址
-        console.log(image_url);
         let title = Data.aweme_detail.preview_title
           .substring(0, 50)
           .replace(/[\\/:\*\?"<>\|\r\n]/g, " "); //标题，去除特殊字符
@@ -275,10 +274,10 @@ export default class TikHub extends base {
     }
 
     let dec;
-    if (is_mp4 === true) {
+    if (is_mp4 !== true) {
+      dec = "抖音图集作品数据";
+    } else {
       dec = "抖音视频作品数据";
-    } else if (is_mp4 === false) {
-      dec === "抖音图集作品数据";
     }
     return {
       res,
