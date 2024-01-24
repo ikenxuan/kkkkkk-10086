@@ -127,6 +127,7 @@
   </head>
   <body>
     <div class="comment-container">
+      <div class="top-info">{{Commentlength}}条评论</div>
       {{each CommentsData.jsonArray val}}
       <div class="comment">
         <img src="{{val.userimageurl}}" class="user-avatar" />
