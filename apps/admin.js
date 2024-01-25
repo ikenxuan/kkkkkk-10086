@@ -1,4 +1,3 @@
-import plugin from '../../../lib/plugins/plugin.js'
 import fs from 'fs/promises'
 
 let configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
@@ -52,6 +51,11 @@ export class admin extends plugin {
                     reg: '^#*(KKK|kkk|kkkkkk-10086)设置缓存删除(开启|关闭)$',
                     fnc: 'temp',
                     permission: 'master'
+                },
+                {
+                    reg: '^#*(KKK|kkk|kkkkkk-10086)设置抖音ck$',
+                    fnc: 'setdyck',
+                    permission: 'master'
                 }
             ]
         })
@@ -86,4 +90,18 @@ export class admin extends plugin {
         await updateConfig('rmmp4', value, e)
     }
 
+    async setdyck(e) {
+        this.setContext('savedyck')
+        await this.reply('请发送抖音ck', true)
+        return false
+    }
+    async savedyck() {
+        if (this.e.message[0].type != 'text') {
+            await this.reply('设置错误', true)
+            this.finish('savddyck')
+        }
+        const value = this.e.message[0].text
+        await updateConfig('ck', value, this.e)
+        this.finish('savedyck')
+    }
 }
