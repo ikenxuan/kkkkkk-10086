@@ -44,6 +44,16 @@
         font-size: 45px;
       }
 
+      .Z3o6vw6l {
+        display: inline-block; /* 使元素在一行显示 */
+        background: rgb(254, 44, 85); /* 红色背景 */
+        padding: 2px 20px; /* 调整内边距 */
+        border-radius: 10px; /* 添加圆角 */
+        margin-left: 10px; /* 调整左边距 */
+        color: #f4f4f4;
+        font-size: 35px
+      }
+
       .comment-imgbox {
         position: relative;
         display: flex;
@@ -52,7 +62,7 @@
         height: 700px;
         overflow: hidden;
       }
-      
+
       .comment-imgbox_1 {
         max-width: 100%;
         max-height: 100%;
@@ -131,7 +141,14 @@
       <div class="comment">
         <img src="{{val.userimageurl}}" class="user-avatar" />
         <div class="comment-content">
-          <div class="user-info">{{val.nickname}}</div>
+          <div class="user-info">
+            {{val.nickname}} {{if val.label_type == 1}}
+            <div class="Z3o6vw6l">
+              作者
+            </div>
+            {{/if}}
+          </div>
+
           <!-- 不转义渲染内容{{@val.text}} -->
           <div class="comment-text">{{@val.text}}</div>
           {{if val.commentimage != null}}
@@ -142,7 +159,10 @@
           <div class="like-section">
             <div class="info-content">
               <div class="additional-info">
-                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp<span style="color: #555;">回复</span>
+                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp<span
+                  style="color: #555"
+                  >回复</span
+                >
               </div>
               <div class="like-icon">
                 <svg

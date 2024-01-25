@@ -7,7 +7,7 @@ import Argument from "./getdata.js";
  * @returns obj
  */
 export async function comments(data, emojidata) {
-  // fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
+  fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
   let jsonArray = [];
 
   for (let i = 0; i < data.comments.length; i++) {
@@ -18,6 +18,9 @@ export async function comments(data, emojidata) {
     const text = data.comments[i].text;
     const ip = data.comments[i].ip_label;
     const time = data.comments[i].create_time;
+    const label_type = data.comments[i].label_type
+      ? data.comments[i].label_type
+      : -1;
     let digg_count = data.comments[i].digg_count;
     const imageurl =
       data.comments[i].image_list &&
@@ -38,11 +41,20 @@ export async function comments(data, emojidata) {
       ip_label: ip,
       create_time: relativeTime,
       commentimage: imageurl,
+      label_type: label_type,
     };
     jsonArray.push(commentObj);
   }
 
   jsonArray.sort((a, b) => b.digg_count - a.digg_count);
+  const indexLabelTypeOne = jsonArray.findIndex(
+    (comment) => comment.label_type === 1
+  );
+
+  if (indexLabelTypeOne !== -1) {
+    const commentTypeOne = jsonArray.splice(indexLabelTypeOne, 1)[0];
+    jsonArray.unshift(commentTypeOne);
+  }
 
   const CommentReplyData = await new Argument().GetData({
     type: "CommentReplyData",
