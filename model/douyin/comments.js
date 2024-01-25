@@ -7,6 +7,7 @@ import Argument from "./getdata.js";
  * @returns obj
  */
 export async function comments(data, emojidata) {
+  // fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
   let jsonArray = [];
 
   for (let i = 0; i < data.comments.length; i++) {
@@ -15,11 +16,14 @@ export async function comments(data, emojidata) {
     const nickname = data.comments[i].user.nickname;
     const userimageurl = data.comments[i].user.avatar_larger.url_list[0];
     const text = data.comments[i].text;
-    const ip = data.comments[i].ip_label;
+    const ip = data.comments[i].ip_label ? data.comments[i].ip_label : "未知";
     const time = data.comments[i].create_time;
     const label_type = data.comments[i].label_type
       ? data.comments[i].label_type
       : -1;
+    const sticker = data.comments[i].sticker
+      ? data.comments[i].sticker.animate_url.url_list[0]
+      : null;
     let digg_count = data.comments[i].digg_count;
     const imageurl =
       data.comments[i].image_list &&
@@ -28,6 +32,7 @@ export async function comments(data, emojidata) {
       data.comments[i].image_list[0].origin_url.url_list
         ? data.comments[i].image_list[0].origin_url.url_list[0]
         : null;
+    const status_label = data.comments[i].label_list ? data.comments[i].label_list[0].text : null
     const relativeTime = await getRelativeTimeFromTimestamp(time);
     const commentObj = {
       id: i + 1,
@@ -41,6 +46,8 @@ export async function comments(data, emojidata) {
       create_time: relativeTime,
       commentimage: imageurl,
       label_type: label_type,
+      sticker: sticker,
+      status_label: status_label
     };
     jsonArray.push(commentObj);
   }
@@ -134,17 +141,23 @@ async function getRelativeTimeFromTimestamp(timestamp) {
   const now = Math.floor(Date.now() / 1000); // 当前时间的时间戳
   const differenceInSeconds = now - timestamp;
 
-  if (differenceInSeconds < 60) {
-    return differenceInSeconds + "秒前";
+  if (differenceInSeconds < 30) {
+      return '刚刚';
+  } else if (differenceInSeconds < 60) {
+      return differenceInSeconds + "秒前";
   } else if (differenceInSeconds < 3600) {
-    return Math.floor(differenceInSeconds / 60) + "分钟前";
+      return Math.floor(differenceInSeconds / 60) + "分钟前";
   } else if (differenceInSeconds < 86400) {
-    return Math.floor(differenceInSeconds / 3600) + "个小时前";
+      return Math.floor(differenceInSeconds / 3600) + "个小时前";
   } else if (differenceInSeconds < 2592000) {
-    return Math.floor(differenceInSeconds / 86400) + "天前";
-  } else if (differenceInSeconds < 31536000) {
-    return Math.floor(differenceInSeconds / 2592000) + "个月前";
+      return Math.floor(differenceInSeconds / 86400) + "天前";
+  } else if (differenceInSeconds < 7776000) { // 三个月的秒数
+      return Math.floor(differenceInSeconds / 2592000) + "个月前";
   } else {
-    return "更久之前";
+      const date = new Date(timestamp * 1000); // 将时间戳转换为毫秒
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return year + '-' + month + '-' + day;
   }
 }
