@@ -49,10 +49,6 @@ export async function comments(data, emojidata) {
     cid: jsonArray[0].cid,
     id: jsonArray[0].aweme_id,
   });
-  // fs.writeFileSync(
-  //   "CommentReplyData.json",
-  //   JSON.stringify(CommentReplyData, null, 4)
-  // );
 
   let CommentReplyDataArray = []
   for (let i = 0; i < CommentReplyData.comments.length; i++) {
@@ -89,7 +85,6 @@ export async function comments(data, emojidata) {
     jsonArray: jsonArray,
     CommentReplyData: CommentReplyDataArray
   }
-  // fs.writeFileSync("CommentReplyDataArray.json", JSON.stringify(CommentData, null, 4));
 
   for (let i = 0; i < jsonArray.length; i++) {
     if (jsonArray[i].digg_count > 10000) {

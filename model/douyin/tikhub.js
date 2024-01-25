@@ -65,7 +65,7 @@ export default class TikHub extends base {
         saveId: "comment",
         cwd: _path,
         CommentsData: commentsArray,
-        Commentlength: String(commentsArray.length),
+        Commentlength: String(commentsArray.jsonArray.length),
       });
       await this.e.reply(img);
 
