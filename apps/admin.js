@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 
 let configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
+let _path = process.cwd()
 
 async function updateConfig(key, value, e) {
     const str = await fs.readFile(configPath, 'utf8')
@@ -92,7 +93,8 @@ export class admin extends plugin {
 
     async setdyck(e) {
         this.setContext('savedyck')
-        await this.reply('请发送抖音ck', true)
+        const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
+        await this.reply(['请发送抖音ck', segment.image(img)], true)
         return false
     }
     async savedyck() {
