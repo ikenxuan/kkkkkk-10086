@@ -7,7 +7,6 @@ import Argument from "./getdata.js";
  * @returns obj
  */
 export async function comments(data, emojidata) {
-  fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
   let jsonArray = [];
 
   for (let i = 0; i < data.comments.length; i++) {
