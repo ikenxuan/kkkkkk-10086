@@ -50,41 +50,46 @@ export async function comments(data, emojidata) {
     id: jsonArray[0].aweme_id,
   });
 
-  let CommentReplyDataArray = []
-  for (let i = 0; i < CommentReplyData.comments.length; i++) {
-    const nickname = CommentReplyData.comments[i].user.nickname;
-    const userimageurl = CommentReplyData.comments[i].user.avatar_larger.url_list[0];
-    const text = CommentReplyData.comments[i].text;
-    const ip = CommentReplyData.comments[i].ip_label;
-    const time = CommentReplyData.comments[i].create_time;
-    let digg_count = CommentReplyData.comments[i].digg_count;
-    const imageurl =
-    CommentReplyData.comments[i].image_list &&
-    CommentReplyData.comments[i].image_list[0] &&
-    CommentReplyData.comments[i].image_list[0].origin_url &&
-    CommentReplyData.comments[i].image_list[0].origin_url.url_list
-        ? CommentReplyData.comments[i].image_list[0].origin_url.url_list[0]
-        : null;
-    const relativeTime = await getRelativeTimeFromTimestamp(time);
+  let CommentReplyDataArray = [];
+  try {
+    for (let i = 0; i < CommentReplyData.comments.length; i++) {
+      const nickname = CommentReplyData.comments[i].user.nickname;
+      const userimageurl =
+        CommentReplyData.comments[i].user.avatar_larger.url_list[0];
+      const text = CommentReplyData.comments[i].text;
+      const ip = CommentReplyData.comments[i].ip_label;
+      const time = CommentReplyData.comments[i].create_time;
+      let digg_count = CommentReplyData.comments[i].digg_count;
+      const imageurl =
+        CommentReplyData.comments[i].image_list &&
+        CommentReplyData.comments[i].image_list[0] &&
+        CommentReplyData.comments[i].image_list[0].origin_url &&
+        CommentReplyData.comments[i].image_list[0].origin_url.url_list
+          ? CommentReplyData.comments[i].image_list[0].origin_url.url_list[0]
+          : null;
+      const relativeTime = await getRelativeTimeFromTimestamp(time);
 
-    const commentreplyObj = {
-      id: i + 1,
-      nickname: nickname,
-      userimageurl: userimageurl,
-      text: text,
-      digg_count: digg_count,
-      ip_label: ip,
-      create_time: relativeTime,
-      commentimage: imageurl,
-    };
+      const commentreplyObj = {
+        id: i + 1,
+        nickname: nickname,
+        userimageurl: userimageurl,
+        text: text,
+        digg_count: digg_count,
+        ip_label: ip,
+        create_time: relativeTime,
+        commentimage: imageurl,
+      };
 
-    CommentReplyDataArray.push(commentreplyObj)
+      CommentReplyDataArray.push(commentreplyObj);
+    }
+  } catch (error) {
+    CommentReplyDataArray.push({ commentreplyObj: null });
   }
 
   let CommentData = {
     jsonArray: jsonArray,
-    CommentReplyData: CommentReplyDataArray
-  }
+    CommentReplyData: CommentReplyDataArray,
+  };
 
   for (let i = 0; i < jsonArray.length; i++) {
     if (jsonArray[i].digg_count > 10000) {

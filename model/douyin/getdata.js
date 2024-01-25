@@ -1,7 +1,6 @@
 import networks from '../../utils/networks.js'
 import * as xbogus from '../douyin/xbogus.cjs'
 import { Config } from '../config.js'
-
 /**
  * 
  * @param {*} options opt
@@ -94,10 +93,7 @@ export default class Argument extends base {
                 let VideoData = await GetVideoOrNoteData({
                     url: `${URL[0]}&X-Bogus=${this.getParm(URL[0])}`,
                     method: 'GET',
-                    headers: {
-                        ...this.headers,
-                        'Referer': `https://www.douyin.com/video/${data.id}/`
-                    }
+                    headers: this.headers
                 }, data.is_mp4)
 
                 //comments data
