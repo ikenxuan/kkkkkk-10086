@@ -29,6 +29,11 @@ export class example extends plugin {
   }
   //抖音----------------------------------------------------------------------------------
   async douy(e) {
+    if(Config.ck === "") {
+      e.reply('抖音未设置ck，无法解析', true)
+      console.log('使用 [#kkk设置抖音ck] 以设置抖音ck')
+      return true
+    }
     //正则匹配url
     const regexp = /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/ig
     const url = e.toString().match(regexp)

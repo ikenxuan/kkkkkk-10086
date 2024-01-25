@@ -6,12 +6,11 @@ const configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
 
 const defaultConfig = {
     "rmmp4": true,
-    "voicebox": true,
     "videotool": true,
-    "token": "dd10ZSheAwkbML7P4Yv55tFXFVstyULL",
-    "comments": false,
-    "defaulttool": false,
-    "numcomments": 35
+    "comments": true,
+    "defaulttool": true,
+    "numcomments": 20,
+    "ck": ""
 }
 let config = {}
 

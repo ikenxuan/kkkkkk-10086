@@ -1,4 +1,3 @@
-import common from '../../../../lib/common/common.js'
 import networks from '../../utils/networks.js'
 import * as xbogus from '../douyin/xbogus.cjs'
 import { Config } from '../config.js'
