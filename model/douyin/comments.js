@@ -32,7 +32,16 @@ export async function comments(data, emojidata) {
       data.comments[i].image_list[0].origin_url.url_list
         ? data.comments[i].image_list[0].origin_url.url_list[0]
         : null;
-    const status_label = data.comments[i].label_list ? data.comments[i].label_list[0].text : null
+    const status_label = data.comments[i].label_list
+      ? data.comments[i].label_list[0].text
+      : null;
+    const userintextlongid =
+      data.comments[i].text_extra &&
+      data.comments[i].text_extra[0] &&
+      data.comments[i].text_extra[0].sec_uid
+        ? data.comments[i].text_extra[0].sec_uid
+        : null;
+    console.log(userintextlongid);
     const relativeTime = await getRelativeTimeFromTimestamp(time);
     const commentObj = {
       id: i + 1,
@@ -47,7 +56,8 @@ export async function comments(data, emojidata) {
       commentimage: imageurl,
       label_type: label_type,
       sticker: sticker,
-      status_label: status_label
+      status_label: status_label,
+      user_id: userintextlongid,
     };
     jsonArray.push(commentObj);
   }
@@ -62,11 +72,15 @@ export async function comments(data, emojidata) {
     jsonArray.unshift(commentTypeOne);
   }
 
+  /** 二级评论 咕咕咕*/
   const CommentReplyData = await new Argument().GetData({
     type: "CommentReplyData",
     cid: jsonArray[0].cid,
     id: jsonArray[0].aweme_id,
   });
+
+  // fs.writeFileSync("jsonArray.json", JSON.stringify(jsonArray, null, 4));
+  // const isat = await handling_at(jsonArray);
 
   let CommentReplyDataArray = [];
   try {
@@ -142,22 +156,40 @@ async function getRelativeTimeFromTimestamp(timestamp) {
   const differenceInSeconds = now - timestamp;
 
   if (differenceInSeconds < 30) {
-      return '刚刚';
+    return "刚刚";
   } else if (differenceInSeconds < 60) {
-      return differenceInSeconds + "秒前";
+    return differenceInSeconds + "秒前";
   } else if (differenceInSeconds < 3600) {
-      return Math.floor(differenceInSeconds / 60) + "分钟前";
+    return Math.floor(differenceInSeconds / 60) + "分钟前";
   } else if (differenceInSeconds < 86400) {
-      return Math.floor(differenceInSeconds / 3600) + "个小时前";
+    return Math.floor(differenceInSeconds / 3600) + "小时前";
   } else if (differenceInSeconds < 2592000) {
-      return Math.floor(differenceInSeconds / 86400) + "天前";
-  } else if (differenceInSeconds < 7776000) { // 三个月的秒数
-      return Math.floor(differenceInSeconds / 2592000) + "个月前";
+    return Math.floor(differenceInSeconds / 86400) + "天前";
+  } else if (differenceInSeconds < 7776000) {
+    // 三个月的秒数
+    return Math.floor(differenceInSeconds / 2592000) + "个月前";
   } else {
-      const date = new Date(timestamp * 1000); // 将时间戳转换为毫秒
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      return year + '-' + month + '-' + day;
+    const date = new Date(timestamp * 1000); // 将时间戳转换为毫秒
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return year + "-" + month + "-" + day;
+  }
+}
+
+async function handling_at(data) {
+  for (const item of data) {
+    // 检查 user_id 是否为 null
+    if (item.user_id !== null) {
+      const UserInfoData = await new Argument().GetData({
+        type: "UserInfoData",
+        user_id: item.user_id,
+      });
+
+      // 对比 UserInfoData.uid 和 data.user_id
+      if (UserInfoData.sec_uid === item.user_id) {
+        console.log(true);
+      }
+    }
   }
 }

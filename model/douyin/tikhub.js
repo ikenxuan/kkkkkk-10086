@@ -57,18 +57,6 @@ export default class TikHub extends base {
     //Comments
     let comments_res = [];
     if (CommentData !== null && CommentData.comments && Config.comments) {
-      const EmojiData = await new Argument().GetData({ type: "emoji" });
-      const list = await Emoji(EmojiData);
-
-      const commentsArray = await comments(CommentData, list);
-      let { img } = await image(this.e, "comment", "comment", {
-        saveId: "comment",
-        cwd: _path,
-        CommentsData: commentsArray,
-        Commentlength: String(commentsArray.jsonArray.length),
-      });
-      await this.e.reply(img);
-
       let comments_data = [];
       let commentsres = [];
       for (let i = 0; i < CommentData.comments.length; i++) {
@@ -111,11 +99,11 @@ export default class TikHub extends base {
         imagenum++;
         if (Config.rmmp4 === false) {
           await mkdirs(
-            process.cwd() + `resources/kkkdownload/images/${g_title}`
+            process.cwd() + `/resources/kkkdownload/images/${g_title}`
           );
           let path =
             process.cwd() +
-            `resources/kkkdownload/images/${g_title}/${i + 1}.png`;
+            `/resources/kkkdownload/images/${g_title}/${i + 1}.png`;
           await fetch(image_url)
             .then((res) => res.arrayBuffer())
             .then((data) => fs.promises.writeFile(path, Buffer.from(data)));
@@ -188,7 +176,12 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc);
       music_data.push(res);
       music_res.push(music_data);
-      if (music_url && is_mp4 === false && music_url !== undefined) {
+      if (
+        music_url &&
+        is_mp4 === false &&
+        music_url !== undefined &&
+        adapter === undefined
+      ) {
         await this.e.reply(await uploadRecord(music_url, 0, false));
       }
     }
@@ -253,6 +246,18 @@ export default class TikHub extends base {
       video_data.push(res);
       video_res.push(video_data);
     }
+    const EmojiData = await new Argument().GetData({ type: "emoji" });
+    const list = await Emoji(EmojiData);
+
+    const commentsArray = await comments(CommentData, list);
+    let { img } = await image(this.e, "comment", "comment", {
+      saveId: "comment",
+      CommentsData: commentsArray,
+      Commentlength: String(commentsArray.jsonArray.length),
+      VideoUrl: g_video_url,
+      Title: g_title,
+    });
+    await this.e.reply(img);
     const tip = ["视频正在上传"];
     let res;
     if (is_mp4 === true) {
@@ -522,5 +527,5 @@ const headers = {
   Referer: "https://www.douyin.com",
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-  cookie: Config.ck,
+  Cookie: Config.ck,
 };

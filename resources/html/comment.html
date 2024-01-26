@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
       body {
         font-family: "Arial", sans-serif;
@@ -137,9 +138,56 @@
         letter-spacing: 4px; /* 调整字间距*/
         font-size: 50px;
       }
+
+      .video_info_container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px; /* 根据需要调整最大宽度 */
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .svg_container {
+        width: 100px; /* 根据需要调整 SVG 容器的宽度 */
+      }
+
+      .svg_container img {
+        width: 500px;
+        height: auto;
+      }
+
+      .qrcode_box {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* 将二维码下面的文字垂直居中 */
+      }
+
+      .qrcode {
+        margin-top: 80px;
+      }
+
+      .qrcode_text {
+        font-size: 45px;
+        margin-top: 20px; /* 调整垂直间距 */
+      }
     </style>
   </head>
   <body>
+    <div id="text" style="display: none"></div>
+    <div class="video_info_container">
+      <div class="svg_container">
+        <img
+          src="https://p3-pc-weboff.byteimg.com/tos-cn-i-9r5gewecjs/logo-horizontal.svg"
+          alt="Logo"
+        />
+      </div>
+      <div class="qrcode_box">
+        <div class="qrcode" id="qrcode"></div>
+        <div class="qrcode_text">视频地址 扫码直接看</div>
+      </div>
+    </div>
+
     <div class="comment-container">
       <div class="top-info">{{Commentlength}}条评论</div>
       {{each CommentsData.jsonArray val}}
@@ -226,6 +274,17 @@
       {{/each}}
       <div class="end-message">Miao-Yunzai & kkkkkk-10086</div>
     </div>
+    <script type="text/javascript">
+      var videoUrl = "{{VideoUrl}}";
+      document.getElementById("text").innerText = videoUrl;
+      var qrcode = new QRCode(document.getElementById("qrcode"), {
+        width: 600,
+        height: 600,
+        colorDark: "#000000",
+        colorLight: "#f4f4f4",
+      });
+      qrcode.makeCode(videoUrl);
+    </script>
   </body>
 </html>
 
