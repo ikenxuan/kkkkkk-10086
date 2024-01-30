@@ -41,7 +41,7 @@ export async function comments(data, emojidata) {
       data.comments[i].text_extra[0].sec_uid
         ? data.comments[i].text_extra[0].sec_uid
         : null;
-    console.log(userintextlongid);
+    // console.log(userintextlongid);
     const relativeTime = await getRelativeTimeFromTimestamp(time);
     const commentObj = {
       id: i + 1,

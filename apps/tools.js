@@ -6,6 +6,7 @@ import Argument from "../model/douyin/getdata.js";
 import { judgment } from "../model/douyin/judgment.js";
 import fetch from "node-fetch";
 import fs from "fs/promises";
+import cfg from "../../../lib/config/config.js";
 const _path = process.cwd();
 
 let getPriority = 800;
@@ -39,7 +40,7 @@ export class example extends plugin {
       console.log("使用 [#kkk设置抖音ck] 以设置抖音ck");
       return true;
     }
-    
+
     //正则匹配url
     const regexp =
       /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/gi;
@@ -51,9 +52,9 @@ export class example extends plugin {
 
     //解析返回数据
     const res = await new TikHub(e).GetData(iddata.type, data);
-    if (e.adapter == "QQGuild || QQBot") return true;
+    if (cfg.bot.skip_login) return true;
     await e.reply(await common.makeForwardMsg(e, res.res, res.dec));
-    if (iddata.is_mp4 === true) {
+    if (iddata.is_mp4) {
       await new TikHub(e).downloadvideofile(res.g_video_url, res.g_title);
     }
   }

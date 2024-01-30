@@ -4,6 +4,7 @@ import common from "../../../../lib/common/common.js";
 import uploadRecord from "../uploadRecord.js";
 import path from "path";
 import { Config } from "../config.js";
+import cfg from "../../../../lib/config/config.js";
 import { emojiMap } from "./DYemoji.js";
 import { comments } from "./comments.js";
 import image from "../../utils/image.js";
@@ -73,7 +74,7 @@ export default class TikHub extends base {
         if (digg_count > 10000) {
           digg_count = (digg_count / 10000).toFixed(1) + "w";
         }
-        //console.log(`${text}\n`)
+        // console.log(`${text}\n`)
         commentsres.push(`${text}\n♥${digg_count}`);
       }
       let dsc = "评论数据";
@@ -107,6 +108,9 @@ export default class TikHub extends base {
           await fetch(image_url)
             .then((res) => res.arrayBuffer())
             .then((data) => fs.promises.writeFile(path, Buffer.from(data)));
+        }
+        if (cfg.bot.skip_login) {
+          this.e.reply(segment.image(image_url));
         }
       }
       if (imagenum === 1) {
@@ -180,7 +184,7 @@ export default class TikHub extends base {
         music_url &&
         is_mp4 === false &&
         music_url !== undefined &&
-        adapter === undefined
+        this.e.adapter === undefined
       ) {
         await this.e.reply(await uploadRecord(music_url, 0, false));
       }
@@ -254,13 +258,13 @@ export default class TikHub extends base {
       saveId: "comment",
       CommentsData: commentsArray,
       Commentlength: String(commentsArray.jsonArray.length),
-      VideoUrl: g_video_url,
+      VideoUrl: g_video_url ? g_video_url : "https://www.douyin.com", // 图集不管怎么扫都是302到抖音下载页
       Title: g_title,
     });
     await this.e.reply(img);
     const tip = ["视频正在上传"];
     let res;
-    if (is_mp4 === true) {
+    if (is_mp4) {
       res = full_data
         .concat(tip)
         .concat(video_res)
