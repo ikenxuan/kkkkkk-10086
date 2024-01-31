@@ -36,7 +36,7 @@ export async function judgment(url) {
         } else if (matchUser) {
             id = matchUser[1]
             result = {
-                type: 'uservideoslist',
+                type: 'UserVideosList',
                 id,
             }
         }
@@ -48,7 +48,6 @@ export async function judgment(url) {
 
 
 const options = {
-    "method": "POST",
     "Accept": "application/json, text/plain, */*",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
@@ -60,7 +59,7 @@ const options = {
     "Sec-Fetch-Mode": "cors",
     "Sec-Fetch-Site": "same-origin",
     "headers": {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     },
     "X-Secsdk-Csrf-Token": "000100000001b08a10025237b760401317f3b80208d155801b641f496bbb9be24aecf151089c177b934f66506e3c"
 }

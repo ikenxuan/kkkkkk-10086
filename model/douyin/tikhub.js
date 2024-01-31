@@ -40,7 +40,7 @@ export default class TikHub extends base {
       return await this.dy_live_data(data);
     }
 
-    if (type === "uservideoslist") {
+    if (type === "UserVideosList") {
       return await this.dy_uservideoslist_data(data);
     }
   }
@@ -385,21 +385,13 @@ export default class TikHub extends base {
   }
 
   async dy_uservideoslist_data(uservideoslist_data) {
-    const data = uservideoslist_data.data;
-    let res;
     let video_res = [];
 
-    for (let i = 0; i < data.aweme_list.length; i++) {
-      let video_info = [];
-      let title = data.aweme_list[i].desc;
-      let cover = data.aweme_list[i].video.cover.url_list[2];
-      let digg_count = data.aweme_list[i].statistics.digg_count;
-      video_info.push(`作品标题: ${title}`);
-      video_info.push(`已积累点赞: ${await count(digg_count)}`);
-      video_info.push(segment.image(cover));
-      let video_data = await common.makeForwardMsg(this.e, video_info, title);
-      video_res.push(video_data);
-      video_info = [];
+    let res;
+    for (let i = 0; i < uservideoslist_data.aweme_list.length; i++) {
+      let title = uservideoslist_data.aweme_list[i].desc;
+      let cover = uservideoslist_data.aweme_list[i].share_url;
+      video_res.push(`作品标题: ${title}\n${cover}`);
     }
 
     res = video_res;

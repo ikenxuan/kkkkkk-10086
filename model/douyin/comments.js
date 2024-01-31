@@ -39,9 +39,19 @@ export async function comments(data, emojidata) {
       data.comments[i].text_extra &&
       data.comments[i].text_extra[0] &&
       data.comments[i].text_extra[0].sec_uid
-        ? data.comments[i].text_extra[0].sec_uid
+        ? data.comments[i].text_extra[0].sec_uid &&
+          data.comments[i].text_extra.map((extra) => extra.sec_uid)
         : null;
-    // console.log(userintextlongid);
+    const search_text =
+      data.comments[i].text_extra &&
+      data.comments[i].text_extra[0] &&
+      data.comments[i].text_extra[0].search_text
+        ? data.comments[i].text_extra[0].search_text &&
+          data.comments[i].text_extra.map((extra) => ({
+            search_text: extra.search_text,
+            search_query_id: extra.search_query_id,
+          }))
+        : null;
     const relativeTime = await getRelativeTimeFromTimestamp(time);
     const commentObj = {
       id: i + 1,
@@ -57,7 +67,8 @@ export async function comments(data, emojidata) {
       label_type: label_type,
       sticker: sticker,
       status_label: status_label,
-      user_id: userintextlongid,
+      is_At_user_id: userintextlongid,
+      search_text: search_text,
     };
     jsonArray.push(commentObj);
   }
@@ -80,7 +91,9 @@ export async function comments(data, emojidata) {
   });
 
   // fs.writeFileSync("jsonArray.json", JSON.stringify(jsonArray, null, 4));
-  // const isat = await handling_at(jsonArray);
+  jsonArray.text = await handling_at(jsonArray);
+  jsonArray.text = await search_text(jsonArray);
+  // fs.writeFileSync("handling_at.json", JSON.stringify(isat, null, 4));
 
   let CommentReplyDataArray = [];
   try {
@@ -179,16 +192,52 @@ async function getRelativeTimeFromTimestamp(timestamp) {
 
 async function handling_at(data) {
   for (const item of data) {
-    // 检查 user_id 是否为 null
-    if (item.user_id !== null) {
-      const UserInfoData = await new Argument().GetData({
-        type: "UserInfoData",
-        user_id: item.user_id,
-      });
+    if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
+      for (const secUid of item.is_At_user_id) {
+        const UserInfoData = await new Argument().GetData({
+          type: "UserInfoData",
+          user_id: secUid,
+        });
+        if (UserInfoData.user.sec_uid === secUid) {
+          /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
+          const regex = new RegExp(`@${UserInfoData.user.nickname}`, "g");
+          item.text = item.text.replace(regex, (match) => {
+            return `<span style="color: rgb(3,72,141);">${match}</span>`;
+          });
+        }
+      }
+    }
+  }
+}
 
-      // 对比 UserInfoData.uid 和 data.user_id
-      if (UserInfoData.sec_uid === item.user_id) {
-        console.log(true);
+async function search_text(data) {
+  for (const item of data) {
+    if (item.search_text !== null && Array.isArray(item.search_text)) {
+      for (const search_text of item.search_text) {
+        const SuggestWordsData = await new Argument().GetData({
+          type: "SuggestWords",
+          query: search_text.search_text,
+        });
+        if (
+          SuggestWordsData.data &&
+          SuggestWordsData.data[0] &&
+          SuggestWordsData.data[0].params &&
+          SuggestWordsData.data[0].params.query_id &&
+          SuggestWordsData.data[0].params.query_id ===
+            search_text.search_query_id
+        ) {
+          const regex = new RegExp(`${search_text.search_text}`, "g");
+          item.text = item.text.replace(regex, (match) => {
+            return `<span style="color: rgb(3,72,141); position: relative; display: inline-block;">
+            ${match}
+            <sup style="position: absolute; top: 0em; right: -0.65em;">
+                <svg style="fill: rgb(3,72,141); width: 30px; height: 30px;" xmlns="http://www.w3.org/2000/svg" class="F12FH4eE" viewBox="0 0 9 9">
+                    <path clip-rule="evenodd" d="M1.2 4.024c0-1.375 1.05-2.426 2.426-2.426 1.217 0 2.269 1.051 2.269 2.426 0 1.218-1.051 2.269-2.27 2.269-1.374 0-2.425-1.051-2.425-2.269zM3.626.398C1.588.398 0 1.987 0 4.024 0 5.96 1.645 7.493 3.626 7.493c.729 0 1.414-.239 1.98-.64l1.57 1.57a.6.6 0 00.848-.85l-1.57-1.57c.402-.565.64-1.25.64-1.979 0-1.98-1.533-3.626-3.468-3.626z"></path>
+                </svg>
+            </sup>
+        </span>&nbsp&nbsp;`;
+          });
+        }
       }
     }
   }
