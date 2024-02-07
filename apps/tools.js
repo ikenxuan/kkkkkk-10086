@@ -51,7 +51,7 @@ export class example extends plugin {
     const data = await new Argument().GetData(iddata);
 
     //解析返回数据
-    const res = await new TikHub(e).GetData(iddata.type, data);
+    const res = await new TikHub(e).GetData(iddata.type, data, url);
     if (cfg.bot.skip_login) return true;
     await e.reply(await common.makeForwardMsg(e, res.res, res.dec));
     if (iddata.is_mp4) {

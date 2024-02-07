@@ -77,7 +77,7 @@ export default class Argument extends base {
       case "note":
         let VideoData = await this.GetVideoOrNoteData(
           {
-            url: `${URL[0]}&X-Bogus=${await this.getParm(URL[0])}`,
+            url: `${URL[0]}&X-Bogus=${await this.Sign(URL[0])}`,
             method: "GET",
             headers: this.headers,
           },
@@ -86,7 +86,7 @@ export default class Argument extends base {
 
         let CommentsData = Config.comments
           ? await this.GlobalGetData({
-              url: `${URL[1]}&X-Bogus=${await this.getParm(URL[1])}`,
+              url: `${URL[1]}&X-Bogus=${await this.Sign(URL[1])}`,
               method: "GET",
               headers: this.headers,
             })
@@ -99,7 +99,7 @@ export default class Argument extends base {
 
       case "CommentReplyData":
         let CommentReplyData = await this.GlobalGetData({
-          url: `${URL[3]}&X-Bogus=${await this.getParm(URL[3])}`,
+          url: `${URL[3]}&X-Bogus=${await this.Sign(URL[3])}`,
           method: "GET",
           headers: this.headers,
         });
@@ -107,7 +107,7 @@ export default class Argument extends base {
 
       case "UserInfoData":
         let UserInfoData = await this.GlobalGetData({
-          url: `${URL[5]}&X-Bogus=${await this.getParm(URL[5])}`,
+          url: `${URL[5]}&X-Bogus=${await this.Sign(URL[5])}`,
           method: "GET",
           headers: {
             ...this.headers,
@@ -117,7 +117,7 @@ export default class Argument extends base {
 
         return UserInfoData;
 
-      case "emoji":
+      case "Emoji":
         let EmojiData = await this.GlobalGetData({
           url: URL[2],
           headers: this.headers,
@@ -126,7 +126,7 @@ export default class Argument extends base {
 
       case "UserVideosList":
         let UserVideoListData = await this.GlobalGetData({
-          url: `${URL[4]}&X-Bogus=${await this.getParm(URL[4])}`,
+          url: `${URL[4]}&X-Bogus=${await this.Sign(URL[4])}`,
           method: "GET",
           headers: {
             ...this.headers,
@@ -137,7 +137,7 @@ export default class Argument extends base {
 
       case "SuggestWords":
         let SuggestWordsData = await this.GlobalGetData({
-          url: `${URL[6]}&X-Bogus=${await this.getParm(URL[6])}`,
+          url: `${URL[6]}&X-Bogus=${await this.Sign(URL[6])}`,
           method: "GET",
           headers: {
             ...this.headers,
@@ -151,7 +151,7 @@ export default class Argument extends base {
       // case 'live':
       //     //liveroom data
       //     let LiveroomData = await GetLiveroomData({
-      //         url: `${url}&X-Bogus=${await this.getParm(url)}`,
+      //         url: `${url}&X-Bogus=${await this.Sign(url)}`,
       //         method: 'POST',
       //         headers: this.headers,
       //         data: { live_url: data.baseurl },
@@ -191,7 +191,7 @@ export default class Argument extends base {
     return result;
   }
 
-  async getParm(url) {
+  async Sign(url) {
     return xbogus.sign(
       new URLSearchParams(new URL(url).search).toString(),
       this.headers["User-Agent"]

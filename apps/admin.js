@@ -94,7 +94,7 @@ export class admin extends plugin {
   async setdyck(e) {
     this.setContext("savedyck");
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`;
-    await this.reply(["请发送抖音ck", segment.image(img)], true);
+    await this.reply(["请发送抖音ck\n", "https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n", segment.image(img)], true);
     return false;
   }
   async savedyck() {

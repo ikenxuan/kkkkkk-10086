@@ -26,7 +26,7 @@ export default class TikHub extends base {
   }
 
   /** 原始数据 */
-  async GetData(type, data) {
+  async GetData(type, data, url) {
     // fs.writeFileSync(_path + '/plugins/kkkkkk-10086/res.json', JSON.stringify(data, null, 4))
     if (type === "video" || type === "note") {
       return await this.v1_dy_data(
@@ -51,7 +51,7 @@ export default class TikHub extends base {
    * @param {*} is_mp4 boolean
    * @returns
    */
-  async v1_dy_data(Data, CommentData, is_mp4) {
+  async v1_dy_data(Data, CommentData, is_mp4, url) {
     let g_video_url;
     let g_title;
     let full_data = []; //总数组
@@ -223,26 +223,9 @@ export default class TikHub extends base {
         .substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, " "); //video title
       g_title = title;
-      let video_url_data = await fetch(g_video_url, { headers: headers }).then(
-        (res) => {
-          if (!res.ok) {
-            throw new Error("访问视频链接被拒绝，无法处理请求！");
-          }
-          let content_lenght = res.headers.get("content-length");
-          let LastUrl = res.url;
-          return {
-            LastUrl,
-            content_lenght,
-          };
-        }
-      );
-      let video_size_mb = (video_url_data.content_lenght / 1024 / 1024).toFixed(
-        2
-      );
-      mp4size = video_size_mb;
-      //logger.info(`正在下载大小为${video_size_mb}MB的视频\n${video_url_data.LastUrl}`)
+      mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
       videores.push(`标题：\n${title}`);
-      videores.push(`视频帧率：${"" + FPS}\n视频大小：${video_size_mb}MB`);
+      videores.push(`视频帧率：${"" + FPS}\n视频大小：${mp4size}MB`);
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${g_video_url}`);
       videores.push(segment.image(cover));
       let dsc = "视频基本信息";
@@ -250,7 +233,7 @@ export default class TikHub extends base {
       video_data.push(res);
       video_res.push(video_data);
     }
-    const EmojiData = await new Argument().GetData({ type: "emoji" });
+    const EmojiData = await new Argument().GetData({ type: "Emoji" });
     const list = await Emoji(EmojiData);
 
     const commentsArray = await comments(CommentData, list);
@@ -258,7 +241,7 @@ export default class TikHub extends base {
       saveId: "comment",
       CommentsData: commentsArray,
       Commentlength: String(commentsArray.jsonArray.length),
-      VideoUrl: g_video_url ? g_video_url : "https://www.douyin.com", // 图集不管怎么扫都是302到抖音下载页
+      VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url, // 图集不管怎么扫都是302到抖音下载页
       Title: g_title,
     });
     await this.e.reply(img);

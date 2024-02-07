@@ -1,7 +1,7 @@
 # kkkkkk-10086
 一个[Yunzai-Bot (V3)](https://github.com/yoimiya-kokomi/Miao-Yunzai)的自用辅助插件
 ###### 没学过，全靠cv
-
+窝：[795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
 ## 安装
 ### Yunzai-Bot或Miao-Yunzai根目录下打开 CMD 执行：
 使用 Gitee
