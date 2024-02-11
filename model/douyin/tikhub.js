@@ -241,7 +241,7 @@ export default class TikHub extends base {
       saveId: "comment",
       CommentsData: commentsArray,
       Commentlength: String(commentsArray.jsonArray.length),
-      VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url, // 图集不管怎么扫都是302到抖音下载页
+      VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url,
       Title: g_title,
     });
     await this.e.reply(img);
@@ -274,7 +274,7 @@ export default class TikHub extends base {
       dec = "抖音视频作品数据";
     }
     return {
-      res,
+      res: (!cfg.bot.skip_login ? res : []),
       g_video_url,
       g_title,
       dec,
@@ -409,19 +409,24 @@ export default class TikHub extends base {
    */
   async downloadvideofile(video_url, title) {
     let path = await DownLoadVideo(video_url, title);
-    if (mp4size >= 80) {
-      //群和私聊分开
-      await this.e.reply(
-        "视频过大，尝试通过文件上传，请稍后移步群文件查看",
-        false,
-        { recallMsg: 30 }
-      );
-      await this.upload_file(path);
+    if (cfg.bot.skip_login) {
+      await this.e.reply(segment.video(Bot.videoToUrl = video_url));
       await removeFileOrFolder(path);
-    } else {
-      await this.e.reply(segment.video(path));
-      await removeFileOrFolder(path);
-    }
+    } else
+      if (mp4size >= 80) {
+        //群和私聊分开
+        await this.e.reply(
+          "视频过大，尝试通过文件上传，请稍后移步群文件查看",
+          false,
+          { recallMsg: 30 }
+        );
+        await this.upload_file(path);
+        await removeFileOrFolder(path);
+      } else {
+        await this.e.reply(segment.video(path));
+        await removeFileOrFolder(path);
+      }
+
   }
 
   /** 要上传的视频文件，私聊需要加好友 */

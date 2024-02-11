@@ -18,12 +18,12 @@ export class example extends plugin {
   constructor() {
     const rule = Config.videotool
       ? [
-          {
-            reg: "^((.*)复制打开抖音(.*)|(.*)(v|jx).douyin.com(.*)|(.*)(douyin.com/(video|note))(.*))$",
-            fnc: "douy",
-          },
-          { reg: "^((.*)tiktok.com(.*))$", fnc: "Tiktok" },
-        ]
+        {
+          reg: "^((.*)复制打开抖音(.*)|(.*)(v|jx).douyin.com(.*)|(.*)(douyin.com/(video|note))(.*))$",
+          fnc: "douy",
+        },
+        { reg: "^((.*)tiktok.com(.*))$", fnc: "Tiktok" },
+      ]
       : [];
     super({
       name: "kkkkkk-10086-视频功能",
@@ -52,8 +52,7 @@ export class example extends plugin {
 
     //解析返回数据
     const res = await new TikHub(e).GetData(iddata.type, data, url);
-    if (cfg.bot.skip_login) return true;
-    await e.reply(await common.makeForwardMsg(e, res.res, res.dec));
+    await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()));
     if (iddata.is_mp4) {
       await new TikHub(e).downloadvideofile(res.g_video_url, res.g_title);
     }
