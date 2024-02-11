@@ -88,9 +88,9 @@ export async function comments(data, emojidata) {
     id: jsonArray[0].aweme_id,
   });
 
+  jsonArray.text = await br(jsonArray);
   jsonArray.text = await handling_at(jsonArray);
   jsonArray.text = await search_text(jsonArray);
-  jsonArray.text = await br(jsonArray);
 
   let CommentReplyDataArray = [];
   try {
