@@ -223,7 +223,7 @@ export default class TikHub extends base {
         .substring(0, 80)
         .replace(/[\\/:\*\?"<>\|\r\n]/g, " "); //video title
       g_title = title;
-      mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
+      mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2);
       videores.push(`标题：\n${title}`);
       videores.push(`视频帧率：${"" + FPS}\n视频大小：${mp4size}MB`);
       videores.push(`等不及视频上传可以先看这个，视频直链：\n${g_video_url}`);
@@ -250,6 +250,7 @@ export default class TikHub extends base {
     if (is_mp4) {
       res = full_data
         .concat(tip)
+        .concat(img)
         .concat(video_res)
         .concat(comments_res)
         .concat(music_res)
@@ -257,6 +258,7 @@ export default class TikHub extends base {
         .concat(ocr_res);
     } else {
       res = full_data
+        .concat(img)
         .concat(video_res)
         .concat(image_res)
         .concat(comments_res)

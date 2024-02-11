@@ -1,5 +1,4 @@
 import Argument from "./getdata.js";
-// import fs from "fs";
 /**
  *
  * @param {*} data 完整的评论数据
@@ -7,7 +6,6 @@ import Argument from "./getdata.js";
  * @returns obj
  */
 export async function comments(data, emojidata) {
-  // fs.writeFileSync("comments.json", JSON.stringify(data, null, 4));
   let jsonArray = [];
 
   for (let i = 0; i < data.comments.length; i++) {
@@ -90,10 +88,9 @@ export async function comments(data, emojidata) {
     id: jsonArray[0].aweme_id,
   });
 
-  // fs.writeFileSync("jsonArray.json", JSON.stringify(jsonArray, null, 4));
   jsonArray.text = await handling_at(jsonArray);
   jsonArray.text = await search_text(jsonArray);
-  // fs.writeFileSync("handling_at.json", JSON.stringify(isat, null, 4));
+  jsonArray.text = await br(jsonArray);
 
   let CommentReplyDataArray = [];
   try {
@@ -160,7 +157,6 @@ export async function comments(data, emojidata) {
       }
     }
   }
-  // fs.writeFileSync("res3.json", JSON.stringify(jsonArray, null, 4));
   return CommentData;
 }
 
@@ -241,4 +237,14 @@ async function search_text(data) {
       }
     }
   }
+}
+
+async function br(data) {
+  for (let i = 0; i < data.length; i++) {
+    let text = data[i].text;
+
+    text = text.replace(/\n/g, "<br>");
+    data[i].text = text;
+  }
+  return data;
 }

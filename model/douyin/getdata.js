@@ -2,7 +2,6 @@ import networks from "../../utils/networks.js";
 import * as xbogus from "../douyin/xbogus.cjs";
 import { Config } from "../config.js";
 import crypto from "crypto";
-// import fs from "fs";
 // /** 直播间*/
 // async function GetLiveroomData(options) {
 //     return await network(options)
