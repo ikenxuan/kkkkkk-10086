@@ -41,16 +41,13 @@ export class example extends plugin {
       return true;
     }
 
-    //正则匹配url
     const regexp =
       /((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/gi;
     const url = e.toString().match(regexp);
 
-    //获取数据
     const iddata = await judgment(url);
     const data = await new Argument().GetData(iddata);
 
-    //解析返回数据
     const res = await new TikHub(e).GetData(iddata.type, data, url);
     await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()));
     if (iddata.is_mp4) {
