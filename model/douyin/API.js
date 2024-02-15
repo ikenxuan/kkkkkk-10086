@@ -1,6 +1,7 @@
 import { Sign } from './sign/Sign.js'
 import base from '../base.js'
 
+/** 封装所有接口供调用 */
 export default class API extends base {
 	/**
 	 *
