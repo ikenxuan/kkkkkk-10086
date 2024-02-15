@@ -3,7 +3,7 @@ import common from '../../../lib/common/common.js'
 import TikHub from '../model/douyin/tikhub.js'
 import { Config } from '../model/config.js'
 import Argument from '../model/douyin/getdata.js'
-import { judgment } from '../model/douyin/judgment.js'
+import { GetID } from '../model/douyin/judgment.js'
 import fetch from 'node-fetch'
 import fs from 'fs/promises'
 import cfg from '../../../lib/config/config.js'
@@ -22,7 +22,7 @@ export class example extends plugin {
 						reg: '^.*((www|v|jx)\\.douyin\\.com|douyin\\.com\\/(video|note)).*',
 						fnc: 'douy',
 					},
-					{ reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
+					// { reg: '^((.*)tiktok.com(.*))$', fnc: 'Tiktok' },
 			  ]
 			: []
 		super({
@@ -42,10 +42,9 @@ export class example extends plugin {
 		}
 
 		const regexp = /(http|https):\/\/.*\.douyin\.com\/[^ ]+/g
-
 		const url = e.toString().match(regexp)
 
-		const iddata = await judgment(url)
+		const iddata = await GetID(url)
 		const data = await new Argument().GetData(iddata)
 
 		const res = await new TikHub(e).GetData(iddata.type, data)
@@ -55,16 +54,8 @@ export class example extends plugin {
 				: Promise.resolve())
 		)
 		if (iddata.is_mp4) {
-			await new TikHub(e).downloadvideofile(res.g_video_url, res.g_title)
+			await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title)
 		}
-	}
-
-	//B站
-	async bilibili(e) {
-		const regexp =
-			/((http|https):\/\/([\w\-]+\.)+[\w\-]+(\/[\w\u4e00-\u9fa5\-\.\/?\@\%\!\&=\+\~\:\#\;\,]*)?)/gi
-		const url = e.toString().match(regexp)
-		console.log(url[0])
 	}
 
 	//tiktok------------------------------------------------------------------------------------------

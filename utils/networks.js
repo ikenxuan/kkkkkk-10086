@@ -5,6 +5,17 @@ import { Response } from 'node-fetch'
 let controller = new AbortController()
 let signal = controller.signal
 export default class networks {
+	/**
+	 * 构造一个网络请求对象。
+	 * @param {string} data.url 请求地址
+	 * @param {object} [data.headers = {}] 请求头对象
+	 * @param {string} [data.type = 'json'] 返回参数类型, 可选值包括 'json', 'text', 'arrayBuffer', 'blob'
+	 * @param {string} [data.method = 'GET'] 请求方法, 可选值包括 'GET' 和 'POST'
+	 * @param {*} [data.body = ''] 请求体数据。对于 POST 请求，可设置请求体内容
+	 * @param {boolean} [data.isAgent = false] 是否启用 HTTPS 代理
+	 * @param {AbortSignal} [data.issignal] 用于中止请求的信号对象
+	 * @param {number} [data.timeout = 15000] 请求超时时间，单位毫秒
+	 */
 	constructor(data) {
 		this.url = data.url
 		this.headers = data.headers || {}
@@ -65,6 +76,16 @@ export default class networks {
 			})
 		}
 		return fetch(this.url, this.config)
+	}
+
+	async getLongLink() {
+		try {
+			let result = await this.returnResult()
+			return result.url
+		} catch (error) {
+			console.log(error)
+			return ''
+		}
 	}
 
 	async getData(new_fetch = '') {

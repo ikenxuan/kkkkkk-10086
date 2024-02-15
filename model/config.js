@@ -1,5 +1,4 @@
 import fs from 'fs'
-import lodash from 'lodash'
 
 const configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
 
