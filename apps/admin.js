@@ -56,6 +56,11 @@ export class admin extends plugin {
 					fnc: 'setdyck',
 					permission: 'master',
 				},
+				{
+					reg: '^#*(KKK|kkk|kkkkkk-10086)设置评论图片(开启|关闭)$',
+					fnc: 'commentsimg',
+					permission: 'master',
+				},
 			],
 		})
 	}
@@ -97,7 +102,7 @@ export class admin extends plugin {
 		await this.reply(
 			[
 				'请发送抖音ck\n',
-				'https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n',
+				'教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n',
 				segment.image(img),
 			],
 			true
@@ -112,5 +117,10 @@ export class admin extends plugin {
 		const value = this.e.message[0].text
 		await updateConfig('ck', value, this.e)
 		this.finish('savedyck')
+	}
+
+	async commentsimg(e) {
+		const value = getValue(e.msg)
+		await updateConfig('commentsimg', value, e)
 	}
 }

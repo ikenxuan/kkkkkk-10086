@@ -8,9 +8,8 @@ import { comments } from './comments.js'
 import image from '../../utils/image.js'
 import Argument from './getdata.js'
 import { Emoji } from './emoji.js'
-// import sizeOf from 'image-size'
+import { Config } from '../config.js'
 
-const _path = process.cwd()
 let mp4size = ''
 
 export default class TikHub extends base {
@@ -39,14 +38,14 @@ export default class TikHub extends base {
 	 * @param {*} is_mp4 boolean
 	 * @returns
 	 */
-	async v1_dy_data(Data, CommentData, is_mp4, url) {
+	async v1_dy_data(Data, CommentData, is_mp4) {
 		let g_video_url
 		let g_title
 		let full_data = []
 
 		/** 评论 */
 		let comments_res = []
-		if (CommentData !== null && CommentData.comments && this.Config.comments) {
+		if (CommentData !== null && CommentData.comments && Config.comments) {
 			let comments_data = []
 			let commentsres = []
 			for (let i = 0; i < CommentData.comments.length; i++) {
@@ -78,7 +77,7 @@ export default class TikHub extends base {
 				g_title = title
 				imageres.push(segment.image(image_url)) // 合并图集字符串
 				imagenum++
-				if (this.Config.rmmp4 === false) {
+				if (Config.rmmp4 === false) {
 					await mkdirs(
 						process.cwd() + `/resources/kkkdownload/images/${g_title}`
 					)
@@ -89,22 +88,6 @@ export default class TikHub extends base {
 						.then((res) => res.arrayBuffer())
 						.then((data) => fs.promises.writeFile(path, Buffer.from(data)))
 				}
-				// const getImageDimensions = async (imageUrl) => {
-				// 	try {
-				// 		const response = await fetch(imageUrl)
-				// 		const buffer = await response.buffer()
-				// 		const dimensions = sizeOf(buffer)
-				// 		return {
-				// 			width: dimensions.width,
-				// 			height: dimensions.height,
-				// 			url: imageUrl,
-				// 		}
-				// 	} catch (error) {
-				// 		throw error
-				// 	}
-				// }
-
-				// const newimg = await getImageDimensions(image_url)
 				if (this.botCfg.bot.skip_login) {
 					this.e.reply(segment.image(image_url))
 				}
@@ -155,7 +138,7 @@ export default class TikHub extends base {
 			let music_url = music.play_url.uri // BGM link
 			if (
 				is_mp4 === false &&
-				this.Config.rmmp4 === false &&
+				Config.rmmp4 === false &&
 				music_url !== undefined
 			) {
 				try {
@@ -231,24 +214,29 @@ export default class TikHub extends base {
 			video_data.push(res)
 			video_res.push(video_data)
 		}
-		const EmojiData = await new Argument().GetData({ type: 'Emoji' })
-		const list = await Emoji(EmojiData)
 
-		const commentsArray = await comments(CommentData, list)
-		let { img } = await image(this.e, 'comment', 'comment', {
-			saveId: 'comment',
-			CommentsData: commentsArray,
-			Commentlength: String(commentsArray.jsonArray.length),
-			VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url,
-			Title: g_title,
-		})
-		await this.e.reply(img)
+		let file = null
+		if (Config.commentsimg) {
+			const EmojiData = await new Argument().GetData({ type: 'Emoji' })
+			const list = await Emoji(EmojiData)
+			const commentsArray = await comments(CommentData, list)
+			let { img } = await image(this.e, 'comment', 'comment', {
+				saveId: 'comment',
+				CommentsData: commentsArray,
+				Commentlength: String(commentsArray.jsonArray.length),
+				VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url,
+				Title: g_title,
+			})
+			file = img
+			await this.e.reply(img)
+		}
+
 		const tip = ['视频正在上传']
 		let res
 		if (is_mp4) {
 			res = full_data
 				.concat(tip)
-				.concat(img)
+				.concat(Config.commentsimg ? file : null)
 				.concat(video_res)
 				.concat(comments_res)
 				.concat(music_res)
@@ -256,7 +244,7 @@ export default class TikHub extends base {
 				.concat(ocr_res)
 		} else {
 			res = full_data
-				.concat(img)
+				.concat(Config.commentsimg ? file : null)
 				.concat(video_res)
 				.concat(image_res)
 				.concat(comments_res)
@@ -393,7 +381,7 @@ export default class TikHub extends base {
 	}
 
 	async removeFileOrFolder(path) {
-		if (this.Config.rmmp4 === true || this.Config.rmmp4 === undefined) {
+		if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
 			const stats = await new Promise((resolve, reject) => {
 				fs.stat(path, (err, stats) => {
 					if (err) reject(err)

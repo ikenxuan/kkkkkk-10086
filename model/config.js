@@ -9,6 +9,7 @@ const defaultConfig = {
 	defaulttool: true,
 	numcomments: 20,
 	ck: '',
+	commentsimg: true,
 }
 let config = {}
 
@@ -36,6 +37,9 @@ export const Config = new Proxy(config, {
 	},
 
 	set(target, property, value) {
+		if (typeof value === 'number') {
+			value = Number(value)
+		}
 		target[property] = value
 		const merged = Object.assign({}, defaultConfig, target)
 		try {
