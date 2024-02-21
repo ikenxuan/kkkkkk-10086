@@ -143,7 +143,7 @@ export default class TikHub extends base {
 			) {
 				try {
 					let path =
-						process.cwd() + `resources/kkkdownload/images/${g_title}/BGM.mp3`
+						process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
 					await fetch(music_url)
 						.then((bgmfile) => bgmfile.arrayBuffer())
 						.then((downloadbgm) =>
