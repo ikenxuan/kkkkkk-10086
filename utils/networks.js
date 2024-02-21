@@ -88,6 +88,7 @@ export default class networks {
 		}
 	}
 
+	/** 获取数据并处理数据的格式化，默认json */
 	async getData(new_fetch = '') {
 		try {
 			if (!new_fetch) {

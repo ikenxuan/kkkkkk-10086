@@ -10,6 +10,7 @@ const defaultConfig = {
 	numcomments: 20,
 	ck: '',
 	commentsimg: true,
+	newui: false,
 }
 let config = {}
 

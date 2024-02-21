@@ -54,18 +54,20 @@
 			}
 
 			.comment-imgbox {
-				position: relative;
 				display: flex;
 				margin: 20px 0;
-				width: 90%;
-				height: 600px;
 				overflow: hidden;
+				box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.3);
+				border-radius: 15px;
+				width: 95%;
+				flex: 1; /* 让容器自动调整大小 */
 			}
 
 			.comment-imgbox_1 {
-				max-width: 100%;
-				max-height: 100%;
 				border-radius: 15px;
+				object-fit: contain; /* 图片按原比例完整显示在容器内 */
+				width: 100%; /* 让图片宽度充满父容器 */
+				height: 100%; /* 让图片高度充满父容器 */
 			}
 
 			.comment-text {
@@ -287,19 +289,3 @@
 		</script>
 	</body>
 </html>
-
-<!-- .comment-imgbox {
-  display: flex;
-  margin: 20px 0;
-  overflow: hidden;
-  box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.3);
-  border-radius: 15px;
-  flex: 1; /* 让容器自动调整大小 */
-}
-
-.comment-imgbox_1 {
-  border-radius: 15px;
-  object-fit: contain; /* 图片按原比例完整显示在容器内 */
-  width: 100%; /* 让图片宽度充满父容器 */
-  height: 100%; /* 让图片高度充满父容器 */
-} -->

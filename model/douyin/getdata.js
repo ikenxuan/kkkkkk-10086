@@ -9,7 +9,7 @@ export default class Argument extends base {
 			case 'video':
 			case 'note':
 				this.URL = await DouyinAPI.视频或图集(data.id)
-				let VideoData = await this.GetVideoOrNoteData(
+				let VideoData = await this.GlobalGetData(
 					{
 						url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
 						method: 'GET',
@@ -83,36 +83,18 @@ export default class Argument extends base {
 				})
 				return SuggestWordsData
 
-			/** 竟然不校验_singature */
-			// case 'Live':
-			// 	let LiveData = await this.GlobalGetData({
-			// 		url: `${URL[7]}&X-Bogus=${await Sign.XB(
-			// 			URL[7]
-			// 		)}&_signature=${await Sign.XB(URL[7])}`,
-			// 		headers: {
-			// 			...this.headers,
-			// 			Referer: 'https://live.douyin.com',
-			// 		},
-			// 	})
-			// 	return LiveData
-
 			default:
 		}
 	}
 
-	async GlobalGetData(options) {
-		let result = await new networks(options).getData()
-		return result
-	}
 	/**
-	 *
 	 * @param {*} options opt
 	 * @param {*} is_mp4 boolean
 	 * @returns
 	 */
-	async GetVideoOrNoteData(options, is_mp4) {
+	async GlobalGetData(options, is_mp4 = false) {
 		let result = await new networks(options).getData()
-		if (result && String(is_mp4)) {
+		if (typeof is_mp4 === 'boolean') {
 			result.is_mp4 = is_mp4
 		}
 		return result

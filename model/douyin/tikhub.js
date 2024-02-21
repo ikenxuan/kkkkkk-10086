@@ -220,13 +220,18 @@ export default class TikHub extends base {
 			const EmojiData = await new Argument().GetData({ type: 'Emoji' })
 			const list = await Emoji(EmojiData)
 			const commentsArray = await comments(CommentData, list)
-			let { img } = await image(this.e, 'comment', 'comment', {
-				saveId: 'comment',
-				CommentsData: commentsArray,
-				Commentlength: String(commentsArray.jsonArray.length),
-				VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url,
-				Title: g_title,
-			})
+			let { img } = await image(
+				this.e,
+				`comment_${Config.newui ? 'new' : 'old'}`,
+				`comment_${Config.newui ? 'new' : 'old'}`,
+				{
+					saveId: 'comment',
+					CommentsData: commentsArray,
+					Commentlength: String(commentsArray.jsonArray.length),
+					VideoUrl: g_video_url ? g_video_url : Data.aweme_detail.share_url,
+					Title: g_title,
+				}
+			)
 			file = img
 			await this.e.reply(img)
 		}

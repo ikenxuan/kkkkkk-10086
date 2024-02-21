@@ -61,7 +61,14 @@ export function supportGuoba() {
 					component: 'Input',
 					required: true,
 				},
-
+				{
+					field: 'newui',
+					label: '使用新UI',
+					bottomHelpMessage:
+						'如果评论内容中图片占比过多，那么10条评论图片可能就会突破8MB，酌情选择',
+					component: 'Switch',
+					required: false,
+				},
 				{
 					field: 'ck',
 					label: '抖音ck',
@@ -69,6 +76,9 @@ export function supportGuoba() {
 						'登录https://www.douyin.com/获取请求头中的Cookie或使用 [#kkk设置抖音ck] 查看教程',
 					component: 'InputPassword',
 					required: false,
+					componentProps: {
+						placeholder: '请输入抖音Cookies',
+					},
 				},
 				{
 					field: 'rmmp4',
