@@ -9,32 +9,32 @@ import cfg from '../../../lib/config/config.js'
  * @returns
  */
 async function image(e, file, name, obj) {
-	let botname = cfg.package.name
-	if (cfg.package.name == `yunzai`) {
-		botname = `Yunzai-Bot`
-	} else if (cfg.package.name == `miao-yunzai`) {
-		botname = `Miao-Yunzai`
-	} else if (cfg.package.name == `trss-yunzai`) {
-		botname = `TRSS-Yunzai`
-	} else if (cfg.package.name == `a-yunzai`) {
-		botname = `A-Yunzai`
-	} else if (cfg.package.name == `biscuit-yunzai`) {
-		botname = `Biscuit-Yunzai`
-	}
-	let data = {
-		quality: 100,
-		tplFile: `./plugins/kkkkkk-10086/resources/html/${file}.html`,
-		...obj,
-	}
-	let img = await puppeteer.screenshot(name, {
-		botname,
-		MiaoV: cfg.package.version,
-		...data,
-	})
+  let botname = cfg.package.name
+  if (cfg.package.name == `yunzai`) {
+    botname = `Yunzai-Bot`
+  } else if (cfg.package.name == `miao-yunzai`) {
+    botname = `Miao-Yunzai`
+  } else if (cfg.package.name == `trss-yunzai`) {
+    botname = `TRSS-Yunzai`
+  } else if (cfg.package.name == `a-yunzai`) {
+    botname = `A-Yunzai`
+  } else if (cfg.package.name == `biscuit-yunzai`) {
+    botname = `Biscuit-Yunzai`
+  }
+  let data = {
+    quality: 100,
+    tplFile: `./plugins/kkkkkk-10086/resources/html/${file}.html`,
+    ...obj,
+  }
+  let img = await puppeteer.screenshot(name, {
+    botname,
+    MiaoV: cfg.package.version,
+    ...data,
+  })
 
-	return {
-		img,
-	}
+  return {
+    img,
+  }
 }
 
 export default image
