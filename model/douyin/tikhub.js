@@ -187,7 +187,6 @@ export default class TikHub extends base {
 			let res = await common.makeForwardMsg(this.e, videores, dsc)
 			video_data.push(res)
 			video_res.push(video_data)
-			g_video_url = video.play_addr_h264.url_list[2]
 		}
 
 		let file = null
@@ -199,9 +198,7 @@ export default class TikHub extends base {
 				saveId: 'comment',
 				CommentsData: commentsArray,
 				Commentlength: String(commentsArray.jsonArray.length),
-				VideoUrl: g_video_url
-					? Data.aweme_detail.video.play_addr_h264.url_list[0] || Data.aweme_detail.video.play_addr.url_list[0]
-					: Data.aweme_detail.share_url,
+				VideoUrl: g_video_url,
 				Title: g_title,
 			})
 			file = img
