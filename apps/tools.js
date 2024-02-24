@@ -44,9 +44,9 @@ export class example extends plugin {
 		const data = await new Argument().GetData(iddata)
 
 		const res = await new TikHub(e).GetData(iddata.type, data)
-		// await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()))
-		// if (iddata.is_mp4) {
-		//   await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title)
-		// }
+		await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()))
+		if (iddata.is_mp4) {
+			await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title)
+		}
 	}
 }
