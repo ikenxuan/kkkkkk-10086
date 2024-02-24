@@ -161,13 +161,14 @@ export default class TikHub extends base {
 		}
 
 		/** 视频 */
+		let FPS
 		let video_res = []
 		if (is_mp4) {
 			let video_data = []
 			let videores = []
 			// 视频地址特殊判断：play_addr_h264、play_addr、
 			const video = Data.aweme_detail.video
-			let FPS = video.bit_rate[0].FPS // FPS
+			FPS = video.bit_rate[0].FPS // FPS
 			if (Data.aweme_detail.video.play_addr_h264) {
 				g_video_url = video.play_addr_h264.url_list[0]
 				logger.info('视频地址', g_video_url)
@@ -196,10 +197,14 @@ export default class TikHub extends base {
 			const commentsArray = await comments(CommentData, list)
 			let { img } = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, `comment_${Config.newui ? 'new' : 'old'}`, {
 				saveId: 'comment',
+				Type: is_mp4 ? '视频' : '图集',
 				CommentsData: commentsArray,
-				Commentlength: String(commentsArray.jsonArray.length),
-				VideoUrl: g_video_url,
+				CommentLength: String(commentsArray.jsonArray.length),
+				VideoUrl: g_video_url || Data.aweme_detail.share_url,
 				Title: g_title,
+				VideoSize: mp4size,
+				VideoFPS: FPS,
+				ImageLength: imagenum,
 			})
 			file = img
 			await this.e.reply(img)
