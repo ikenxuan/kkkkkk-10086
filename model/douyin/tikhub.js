@@ -1,4 +1,3 @@
-import fetch from 'node-fetch'
 import fs from 'fs'
 import common from '../../../../lib/common/common.js'
 import base from '../base.js'
@@ -9,7 +8,7 @@ import image from '../../utils/image.js'
 import Argument from './getdata.js'
 import { Emoji } from './emoji.js'
 import { Config } from '../config.js'
-
+// import sharp from 'sharp'
 let mp4size = ''
 
 export default class TikHub extends base {
@@ -66,7 +65,7 @@ export default class TikHub extends base {
 			let imageres = []
 			let image_url
 			for (let i = 0; i < Data.aweme_detail.images.length; i++) {
-				image_url = Data.aweme_detail.images[i].url_list[1] // 图片地址
+				image_url = Data.aweme_detail.images[i].url_list[3] || Data.aweme_detail.images[i].url_list[1] // 图片地址
 				let title = Data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
 				g_title = title
 				imageres.push(segment.image(image_url)) // 合并图集字符串
@@ -74,16 +73,22 @@ export default class TikHub extends base {
 				if (Config.rmmp4 === false) {
 					await mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
 					let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
-					await fetch(image_url)
-						.then((res) => res.arrayBuffer())
+					await new this.networks({ url: image_url, type: 'arrayBuffer' })
+						.getData()
 						.then((data) => fs.promises.writeFile(path, Buffer.from(data)))
 				}
 				if (this.botCfg.bot.skip_login) {
-					this.e.reply(segment.image(image_url))
+					/** 该死的腾讯不支持webp webp转png */
+					let sharp
+					try {
+						;({ default: sharp } = await import('sharp'))
+						let resp = new Uint8Array(await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData())
+						resp = await sharp(resp).toFormat('png').toBuffer()
+						await this.e.reply(segment.image(resp))
+					} catch {
+						await this.e.reply(segment.image(image_url))
+					}
 				}
-			}
-			if (imagenum === 1) {
-				await this.e.reply(segment.image(image_url))
 			}
 
 			let dsc = '解析完的图集图片'
@@ -127,9 +132,9 @@ export default class TikHub extends base {
 			if (is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
 				try {
 					let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
-					await fetch(music_url)
-						.then((bgmfile) => bgmfile.arrayBuffer())
-						.then((downloadbgm) => fs.promises.writeFile(path, Buffer.from(downloadbgm)))
+					await new this.networks({ url: music_url, type: 'arrayBuffer' })
+						.getData()
+						.then((data) => fs.promises.writeFile(path, Buffer.from(data)))
 				} catch (error) {
 					console.log(error)
 				}
@@ -170,10 +175,10 @@ export default class TikHub extends base {
 			const video = Data.aweme_detail.video
 			FPS = video.bit_rate[0].FPS // FPS
 			if (Data.aweme_detail.video.play_addr_h264) {
-				g_video_url = video.play_addr_h264.url_list[0]
+				g_video_url = await new this.networks({ url: video.play_addr_h264.url_list[2], headers: this.headers }).getLongLink()
 				logger.info('视频地址', g_video_url)
 			} else if (Data.aweme_detail.video.play_addr) {
-				g_video_url = video.play_addr.url_list[0]
+				g_video_url = await new this.networks({ url: video.play_addr.url_list[0], headers: this.headers }).getLongLink()
 				logger.info('视频地址', g_video_url)
 			}
 			let cover = video.origin_cover.url_list[0] // video cover image
@@ -182,7 +187,8 @@ export default class TikHub extends base {
 			mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
 			videores.push(`标题：\n${title}`)
 			videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
-			videores.push(`等不及视频上传可以先看这个，视频直链：\n${g_video_url}`)
+			videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
+			videores.push(`永久直链\n(302跳转)需要主动访问一次抖音网页版[https://www.douyin.com]才可正常跳转\n${video.play_addr.url_list[2]}`)
 			videores.push(segment.image(cover))
 			let dsc = '视频基本信息'
 			let res = await common.makeForwardMsg(this.e, videores, dsc)
@@ -337,9 +343,7 @@ export default class TikHub extends base {
 	 * @returns
 	 */
 	async DownLoadFile(video_url, title) {
-		let response = await fetch(video_url, {
-			headers: this.headers,
-		})
+		let response = await new this.networks({ url: video_url, headers: this.headers }).getfetch()
 		// 写入流
 		let writer = fs.createWriteStream(`${this._path}/resources/kkkdownload/video/${title}.mp4`)
 		response.body.pipe(writer)
