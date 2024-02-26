@@ -1,6 +1,4 @@
 import networks from '../../../utils/networks.js'
-import fetch from 'node-fetch'
-// import base from '../../base.js'
 import * as ac_signature from './ac_signature.cjs'
 
 export async function dyck() {
