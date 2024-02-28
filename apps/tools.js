@@ -1,10 +1,11 @@
 import plugin from '../../../lib/plugins/plugin.js'
-import common from '../../../lib/common/common.js'
-import TikHub from '../model/douyin/tikhub.js'
-import { Config } from '../model/config.js'
-import Argument from '../model/douyin/getdata.js'
 import { GetID } from '../model/douyin/judgment.js'
+import common from '../../../lib/common/common.js'
 import cfg from '../../../lib/config/config.js'
+import TikHub from '../model/douyin/tikhub.js'
+import iKun from '../model/douyin/getdata.js'
+import { Config } from '../model/config.js'
+import push from '../model/douyin/push.js'
 
 let getPriority = 800
 if (Config.defaulttool) {
@@ -16,7 +17,7 @@ export class example extends plugin {
     const rule = Config.videotool
       ? [
           {
-            reg: '^.*((www|v|jx)\\.douyin\\.com|douyin\\.com\\/(video|note)).*',
+            reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
             fnc: 'douy',
           },
         ]
@@ -26,27 +27,44 @@ export class example extends plugin {
       dsc: '视频',
       event: 'message',
       priority: getPriority,
-      rule: rule,
+      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy' }, { reg: '开始', fnc: 'pushdouy' }],
     })
+    this.task = Config.douyinpush
+      ? {
+          cron: '0 */10 * * * *',
+          name: '抖音更新推送',
+          fnc: () => this.pushdouy(),
+          log: true,
+        }
+      : {}
   }
 
   async douy(e) {
-    if (Config.ck === '') {
-      e.reply('抖音未设置ck，无法解析', true)
-      console.log('使用 [#kkk设置抖音ck] 以设置抖音ck')
-      return true
-    }
-
-    const regexp = /(http|https):\/\/.*\.douyin\.com\/[^ ]+/g
+    const regexp = /(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g
     const url = e.toString().match(regexp)
 
     const iddata = await GetID(url)
-    const data = await new Argument().GetData(iddata)
+    const data = await new iKun(iddata.type).GetData(iddata)
 
     const res = await new TikHub(e).GetData(iddata.type, data)
     await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()))
     if (iddata.is_mp4) {
       await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title)
+    }
+    return true
+  }
+
+  async pushdouy() {
+    await new push(this.e).action()
+  }
+
+  async setpushdouy(e) {
+    const data = await new iKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
+    if (data.data[0].type === 4) {
+      const resp = await new push(e).setting(data)
+      e.reply(resp)
+    } else {
+      e.reply('无法获取用户信息，请确认抖音号是否正确')
     }
   }
 }
