@@ -9,7 +9,8 @@ export default class push extends base {
   async action() {
     let data
     const cache = await redis.get('kkk:douyPush')
-    if (!cache) {
+
+    if (cache == '[]' || !cache) {
       /** 如果redis里没有，就重新获取并写入 */
       data = await this.getuserdata()
     } else {
@@ -54,14 +55,12 @@ export default class push extends base {
 
     for (const group_id in this.Config.douyinpushlist) {
       if (Object.hasOwnProperty.call(this.Config.douyinpushlist, group_id)) {
-        const sec_uids = this.Config.douyinpushlist[group_id]
-        for (let i = 0; i < sec_uids.length; i++) {
-          const data = await new iKun('UserVideosList').GetData({ user_id: sec_uids[i] })
-          const aweme_id = data.aweme_list[0].aweme_id
-          const create_time = data.aweme_list[0].create_time
-          aweme_idlist.push({ create_time: create_time, sec_id: sec_uids[i], aweme_id: aweme_id })
-          Array.push({ create_time: create_time, group_id: group_id, sec_id: sec_uids[i], aweme_id: aweme_id })
-        }
+        const sec_uids = this.Config.douyinpushlist[group_id].sec_uids
+        const data = await new iKun('UserVideosList').GetData({ user_id: sec_uids })
+        const aweme_id = data.aweme_list[0].aweme_id
+        const create_time = data.aweme_list[0].create_time
+        aweme_idlist.push({ create_time: create_time, sec_id: sec_uids, aweme_id: aweme_id })
+        Array.push({ create_time: create_time, group_id: group_id, sec_id: sec_uids, aweme_id: aweme_id })
       }
     }
     await redis.set('kkk:douyPush', JSON.stringify(aweme_idlist))
