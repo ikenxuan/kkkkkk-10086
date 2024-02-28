@@ -37,7 +37,7 @@ export async function GetID(url) {
       id = matchUser[1]
       result = {
         type: 'UserVideosList',
-        id,
+        user_id: id,
       }
     }
   }

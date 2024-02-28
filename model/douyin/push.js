@@ -70,6 +70,7 @@ export default class push extends base {
   }
 
   async setting(data) {
+    logger.info('命令使用#设置抖音推送+抖音号即可自动获取uid，使用锅巴配置需访问网页端个人主页，地址栏user/后的便是uid')
     const sec_uid = data.data[0].user_list[0].user_info.sec_uid
 
     // 读取config.json文件

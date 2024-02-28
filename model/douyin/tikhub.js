@@ -5,7 +5,7 @@ import uploadRecord from '../uploadRecord.js'
 import path from 'path'
 import { comments } from './comments.js'
 import image from '../../utils/image.js'
-import Argument from './getdata.js'
+import iKun from './getdata.js'
 import { Emoji } from './emoji.js'
 import { Config } from '../config.js'
 let mp4size = ''
@@ -195,7 +195,7 @@ export default class TikHub extends base {
 
     let file = null
     if (Config.commentsimg) {
-      const EmojiData = await new Argument().GetData({ type: 'Emoji' })
+      const EmojiData = await new iKun('Emoji').GetData()
       const list = await Emoji(EmojiData)
       const commentsArray = await comments(CommentData, list)
       let { img } = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, `comment_${Config.newui ? 'new' : 'old'}`, {

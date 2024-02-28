@@ -204,21 +204,18 @@ async function getAudioTime(file, ffmpeg = 'ffmpeg') {
 async function audioTrans(file, ffmpeg = 'ffmpeg') {
   let result = await new Promise((resolve, reject) => {
     const tmpfile = TMP_DIR + '/' + (0, uuid)() + '.pcm'
-    ;(0, child_process.exec)(
-      `${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`,
-      async (error, stdout, stderr) => {
-        try {
-          const silk_worker = await import('./silk_worker/index.cjs')
-          let ret = await silk_worker.encode(tmpfile, 24000)
-          resolve(Buffer.from(ret.data))
-        } catch {
-          logger.error('音频转码到pcm失败，请确认你的ffmpeg可以处理此转换')
-          resolve(false)
-        } finally {
-          fs.unlink(tmpfile, NOOP)
-        }
+    ;(0, child_process.exec)(`${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`, async (error, stdout, stderr) => {
+      try {
+        const silk_worker = await import('./silk_worker/index.cjs')
+        let ret = await silk_worker.encode(tmpfile, 24000)
+        resolve(Buffer.from(ret.data))
+      } catch {
+        logger.error('音频转码到pcm失败，请确认你的ffmpeg可以处理此转换')
+        resolve(false)
+      } finally {
+        fs.unlink(tmpfile, NOOP)
       }
-    )
+    })
   })
   if (result) return result
   return await audioTrans1(file, ffmpeg)
