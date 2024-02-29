@@ -87,24 +87,23 @@ export default class push extends base {
       if (existingGroupIdIndex !== -1) {
         // 如果存在相同的 group_id，则删除它
         existingItem.group_id.splice(existingGroupIdIndex, 1)
-        logger.info(`删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
-        msg = `删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
+        logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
+        msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
 
         // 如果删除后 group_id 数组为空，则删除整个属性
         if (existingItem.group_id.length === 0) {
           const index = config.douyinpushlist.indexOf(existingItem)
           config.douyinpushlist.splice(index, 1)
-          console.log('删除整个属性')
         }
       } else {
         // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
         existingItem.group_id.push(group_id)
-        logger.info(`设置成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
-        msg = `添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
+        logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
       }
     } else {
       // 如果不存在相同的 sec_uid，则新增一个属性
-      config.douyinpushlist.push({ sec_uid, group_id: [group_id] })
+      config.douyinpushlist.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname })
+      msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
     }
 
     fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2), 'utf8')

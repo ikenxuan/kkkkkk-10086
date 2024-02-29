@@ -62,7 +62,7 @@ export class example extends plugin {
     const data = await new iKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
     if (data.data[0].type === 4) {
       const resp = await new push(e).setting(data)
-      e.reply(resp)
+      await e.reply(resp)
     } else {
       e.reply('无法获取用户信息，请确认抖音号是否正确')
     }
