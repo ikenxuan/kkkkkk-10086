@@ -4,5 +4,9 @@
   "comments": true,
   "defaulttool": true,
   "numcomments": 20,
-  "ck": ""
+  "ck": "",
+  "commentsimg": true,
+  "newui": true,
+  "douyinpush": false,
+  "douyinpushlist": []
 }
