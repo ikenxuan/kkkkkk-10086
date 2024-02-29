@@ -25,8 +25,18 @@ export function supportGuoba() {
       // 配置项 schemas
       schemas: [
         {
+          component: 'Divider',
+          label: '抖音 Cookie 配置',
+          helpMessage: '目前所有请求都将需要该 Cookie',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
           field: 'ck',
           label: '抖音ck',
+          helpMessage: '必填项',
           bottomHelpMessage: '登录https://www.douyin.com/获取请求头中的Cookie或使用 [#kkk设置抖音ck] 查看教程',
           component: 'InputPassword',
           required: true,
@@ -35,8 +45,16 @@ export function supportGuoba() {
           },
         },
         {
+          component: 'Divider',
+          label: '视频解析配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
           field: 'videotool',
-          label: '视频解析',
+          label: '总开关',
           bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
           component: 'Switch',
           required: false,
@@ -50,32 +68,22 @@ export function supportGuoba() {
         },
         {
           field: 'comments',
-          label: '抖音评论解析',
+          label: '评论解析',
           bottomHelpMessage: '可以解析评论，修改后重启生效',
           component: 'Switch',
           required: false,
         },
         {
           field: 'commentsimg',
-          label: '发送评论图片',
+          label: '发送评论图',
           bottomHelpMessage: '将获取到的评论数据渲染成图片发送，评论内容中的每一个艾特和每一个热点词都会增加一次请求',
           component: 'Switch',
           required: false,
         },
         {
-          field: 'numcomments',
-          label: '评论解析数量',
-          bottomHelpMessage: '可选值1-50，默认为20，过高可能导致渲染图片过大上传失败',
-          component: 'InputNumber',
-          required: true,
-          componentProps: {
-            placeholder: '请输入需要解析的评论数量，如20',
-            addonAfter: '条',
-          },
-        },
-        {
           field: 'newui',
-          label: '评论图片UI版本',
+          label: '图片UI版本',
+          helpMessage: '优化版更好看',
           bottomHelpMessage: '第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积会非常大）',
           component: 'Select',
           componentProps: {
@@ -83,21 +91,35 @@ export function supportGuoba() {
               { label: '第一版', value: false },
               { label: '优化版', value: true },
             ],
-            placeholder: '请选择体力模板类型',
+            placeholder: '请选择图片模板类型',
           },
           required: false,
         },
         {
-          field: 'rmmp4',
-          label: '删除视频缓存',
-          bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
-          component: 'Switch',
-          required: false,
+          field: 'numcomments',
+          label: '评论解析数量',
+          helpMessage: '必填项',
+          component: 'InputNumber',
+          required: true,
+          componentProps: {
+            placeholder: '范围：0 ~ 50',
+            min: 0,
+            max: 50,
+            addonAfter: '条',
+          },
+        },
+        {
+          component: 'Divider',
+          label: '抖音 推送配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
         },
         {
           field: 'douyinpush',
           label: '抖音推送',
-          bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]设置推送列表',
+          bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]设置推送列表，修改后重启生效',
           component: 'Switch',
           required: false,
         },
@@ -111,18 +133,52 @@ export function supportGuoba() {
             schemas: [
               {
                 field: 'sec_uid',
-                label: '用户uid，注意不是抖音号，此uid需要访问网页版个人主页，地址栏user/后面的便是uid',
+                label: '用户uid',
+                helpMessage: '如：MS4wLjABAAAAw6_Jq4rDqlUKujFUvw0mjwTE8Y4uYuqJoKIQWO43oBYTd5_FlhU3qZ-PbOS7MP35',
+                bottomHelpMessage: '此uid需要访问抖音网页版个人主页，地址栏user/后面的便是uid',
                 component: 'Input',
-                required: false,
+                componentProps: {
+                  placeholder: '注意！不是抖音号',
+                },
+                required: true,
               },
               {
                 field: 'group_id',
                 label: '设置推送的群',
-                bottomHelpMessage: '请选择',
+                componentProps: {
+                  placeholder: '点击选择要推送的群',
+                },
                 component: 'GSelectGroup',
+                required: true,
+              },
+              {
+                field: 'remark',
+                label: '备注',
+                bottomHelpMessage: '给这个推送id添加备注',
+                component: 'Input',
+                componentProps: {
+                  placeholder: '请在此填写备注',
+                },
+                required: true,
               },
             ],
           },
+        },
+        {
+          component: 'Divider',
+          label: '其他配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: 'rmmp4',
+          label: '删除视频缓存',
+          helpMessage: '意义不明，但对作者有用',
+          bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
+          component: 'Switch',
+          required: false,
         },
       ],
       // 获取配置数据方法（用于前端填充显示数据）
