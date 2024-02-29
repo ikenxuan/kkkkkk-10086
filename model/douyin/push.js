@@ -22,11 +22,10 @@ export default class push extends base {
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].aweme_id == cachedata[i].aweme_id) {
-          return true
         } else if (data.create_time > cachedata.create_time) {
           const result = await this.getdata(data[i])
-          await redis.set('kkk:douyPush', JSON.stringify({ create_time: result.create_time, aweme_id: result.aweme_id, sec_id: cachedata.sec_id }))
-          logger.info(`[${cachedata.create_time}] => [${data.create_time}]`)
+          await redis.set('kkk:douyPush', JSON.stringify({ create_time: result.create_time, aweme_id: result.aweme_id, sec_id: cachedata[i].sec_id }))
+          logger.info(`[kkkkkk-10086-douyPush] 更新视频aweme_id: [${cachedata[i].create_time}] -> [${data[i].create_time}]`)
         }
       }
     }
@@ -45,59 +44,73 @@ export default class push extends base {
     const user_img = Array[1].user.avatar_larger.url_list[0]
 
     const Msg = `${nickname} 有新作品啦\n\n标题：${desc}\n发布时间：${create_time}\n\n`
-    await Bot.pickGroup(Number(data.group_id)).sendMsg([Msg, segment.image(user_img), share_url])
+    for (let i = 0; i < data.group_id.length; i++) {
+      await Bot.pickGroup(Number(data.group_id[i])).sendMsg([Msg, segment.image(user_img), share_url])
+    }
     return { aweme_id, create_time: Array[0].aweme_list[0].create_time }
   }
 
   async getuserdata() {
-    let aweme_idlist = []
-    let Array = []
+    let result = []
 
-    for (const group_id in this.Config.douyinpushlist) {
-      if (Object.hasOwnProperty.call(this.Config.douyinpushlist, group_id)) {
-        const sec_uids = this.Config.douyinpushlist[group_id].sec_uids
-        const data = await new iKun('UserVideosList').GetData({ user_id: sec_uids })
-        const aweme_id = data.aweme_list[0].aweme_id
-        const create_time = data.aweme_list[0].create_time
-        aweme_idlist.push({ create_time: create_time, sec_id: sec_uids, aweme_id: aweme_id })
-        Array.push({ create_time: create_time, group_id: group_id, sec_id: sec_uids, aweme_id: aweme_id })
-      }
+    for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
+      const group_id = this.Config.douyinpushlist[i].group_id
+      const secUid = this.Config.douyinpushlist[i].sec_uid
+      const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
+      const awemeId = data.aweme_list[0].aweme_id
+      const createTime = data.aweme_list[0].create_time
+      result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
     }
-    await redis.set('kkk:douyPush', JSON.stringify(aweme_idlist))
+    await redis.set('kkk:douyPush', JSON.stringify(result))
 
-    return Array
+    return result
   }
-
   async setting(data) {
-    logger.info('命令使用#设置抖音推送+抖音号即可自动获取uid，使用锅巴配置需访问网页端个人主页，地址栏user/后的便是uid')
+    let msg
     const sec_uid = data.data[0].user_list[0].user_info.sec_uid
+    const UserInfoData = await new iKun('UserInfoData').GetData({ user_id: sec_uid })
 
-    // 读取config.json文件
     const config = JSON.parse(fs.readFileSync(this.ConfigPath, 'utf8'))
     const group_id = this.e.group_id
 
     // 初始化 group_id 对应的数组
     if (!config.douyinpushlist) {
-      config.douyinpushlist = {}
-    }
-    if (!config.douyinpushlist[group_id]) {
-      config.douyinpushlist[group_id] = []
+      config.douyinpushlist = []
     }
 
-    // 检查是否已经存在相同的 sec_uid
-    const existingIndex = config.douyinpushlist[group_id].indexOf(sec_uid)
+    // 查找是否存在相同的 sec_uid
+    const existingItem = config.douyinpushlist.find((item) => item.sec_uid === sec_uid)
 
-    if (existingIndex !== -1) {
-      // 如果已经存在相同的 sec_uid，则删除已存在的项
-      config.douyinpushlist[group_id].splice(existingIndex, 1)
-      console.log('删除成功')
+    if (existingItem) {
+      // 如果已经存在相同的 sec_uid，则检查是否存在相同的 group_id
+      const existingGroupIdIndex = existingItem.group_id.indexOf(group_id)
+      if (existingGroupIdIndex !== -1) {
+        // 如果存在相同的 group_id，则删除它
+        existingItem.group_id.splice(existingGroupIdIndex, 1)
+        logger.info(`删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
+        msg = `删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
+
+        // 如果删除后 group_id 数组为空，则删除整个属性
+        if (existingItem.group_id.length === 0) {
+          const index = config.douyinpushlist.indexOf(existingItem)
+          config.douyinpushlist.splice(index, 1)
+          console.log('删除整个属性')
+        }
+      } else {
+        // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
+        existingItem.group_id.push(group_id)
+        logger.info(`设置成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
+        msg = `添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
+      }
     } else {
-      config.douyinpushlist[group_id].push(sec_uid)
+      // 如果不存在相同的 sec_uid，则新增一个属性
+      config.douyinpushlist.push({ sec_uid, group_id: [group_id] })
     }
 
     fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2), 'utf8')
-    return
+    return msg
   }
+
   async convertTimestampToDateTime(timestamp) {
     const date = new Date(timestamp * 1000)
     const year = date.getFullYear()

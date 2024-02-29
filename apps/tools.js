@@ -31,7 +31,7 @@ export class example extends plugin {
     })
     this.task = Config.douyinpush
       ? {
-          cron: '0 */10 * * * *',
+          cron: '*/5 * * * *',
           name: '抖音更新推送',
           fnc: () => this.pushdouy(),
           log: true,
