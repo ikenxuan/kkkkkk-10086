@@ -7,25 +7,28 @@ export default class push extends base {
     super(e)
   }
   async action() {
+    await this.checkremark()
     let data
     const cache = await redis.get('kkk:douyPush')
 
     if (cache == '[]' || !cache) {
       /** 如果redis里没有，就重新获取并写入 */
-      data = await this.getuserdata()
+      data = await this.getuserdata(true)
     } else {
-      const cachedata = JSON.parse(cache)
-      data = await this.getuserdata()
+      let cachedata = JSON.parse(cache)
+      data = await this.getuserdata(false)
+      cachedata = await this.findMismatchedAwemeIds(data, cachedata)
+
       if (data.length == 0) {
-        logger.warn('[kkkkkk-10086-douyPush]尚未配置抖音推送列表，任务结束，推送失败')
+        logger.warn('[kkkkkk-10086-推送]尚未配置抖音推送列表，任务结束，推送失败')
         return true
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].aweme_id == cachedata[i].aweme_id) {
-        } else if (data.create_time > cachedata.create_time) {
-          const result = await this.getdata(data[i])
-          await redis.set('kkk:douyPush', JSON.stringify({ create_time: result.create_time, aweme_id: result.aweme_id, sec_id: cachedata[i].sec_id }))
+          return true
+        } else if (data[i].create_time > cachedata[i].create_time) {
           logger.info(`[kkkkkk-10086-douyPush] 更新视频aweme_id: [${cachedata[i].create_time}] -> [${data[i].create_time}]`)
+          await this.getdata(data[i])
         }
       }
     }
@@ -50,18 +53,29 @@ export default class push extends base {
     return { aweme_id, create_time: Array[0].aweme_list[0].create_time }
   }
 
-  async getuserdata() {
+  async getuserdata(write, sec_idlist) {
     let result = []
 
-    for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
-      const group_id = this.Config.douyinpushlist[i].group_id
-      const secUid = this.Config.douyinpushlist[i].sec_uid
-      const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-      const awemeId = data.aweme_list[0].aweme_id
-      const createTime = data.aweme_list[0].create_time
-      result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
+    if (write && sec_idlist) {
+      for (let i = 0; i < sec_idlist.length; i++) {
+        const group_id = this.Config.douyinpushlist[i].group_id
+        const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
+        const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
+        const awemeId = data.aweme_list[0].aweme_id
+        const createTime = data.aweme_list[0].create_time
+        result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
+      }
+    } else {
+      for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
+        const group_id = this.Config.douyinpushlist[i].group_id
+        const secUid = this.Config.douyinpushlist[i].sec_uid
+        const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
+        const awemeId = data.aweme_list[0].aweme_id
+        const createTime = data.aweme_list[0].create_time
+        result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
+      }
     }
-    await redis.set('kkk:douyPush', JSON.stringify(result))
+    if (write) await redis.set('kkk:douyPush', JSON.stringify(result))
 
     return result
   }
@@ -70,7 +84,7 @@ export default class push extends base {
     const sec_uid = data.data[0].user_list[0].user_info.sec_uid
     const UserInfoData = await new iKun('UserInfoData').GetData({ user_id: sec_uid })
 
-    const config = JSON.parse(fs.readFileSync(this.ConfigPath, 'utf8'))
+    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const group_id = this.e.group_id
 
     // 初始化 group_id 对应的数组
@@ -106,7 +120,7 @@ export default class push extends base {
       msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
     }
 
-    fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2), 'utf8')
+    fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
     return msg
   }
 
@@ -119,5 +133,51 @@ export default class push extends base {
     const minutes = String(date.getMinutes()).padStart(2, '0')
 
     return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
+
+  async findMismatchedAwemeIds(data, cachedata) {
+    const mismatchedIds = []
+    const sec_idlist = []
+    let resources = []
+    for (let i = 0; i < data.length; i++) {
+      if (data[i].aweme_id !== cachedata[i]?.aweme_id) {
+        mismatchedIds.push(data[i].aweme_id)
+        sec_idlist.push(data[i].sec_id)
+      }
+    }
+    if (mismatchedIds.length > 0) {
+      let newdata = []
+      for (let i = 0; i < sec_idlist.length; i++) {
+        newdata = await this.getuserdata(true, sec_idlist)
+      }
+      resources = data.concat(newdata)
+    }
+    return resources.length > 0 ? resources : data
+  }
+
+  async checkremark() {
+    let config = JSON.parse(fs.readFileSync(this.ConfigPath))
+    const abclist = []
+    for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
+      const remark = this.Config.douyinpushlist[i].remark
+      const group_id = this.Config.douyinpushlist[i].group_id
+      const sec_uid = this.Config.douyinpushlist[i].sec_uid
+
+      if (remark == undefined || remark === '') {
+        abclist.push({ sec_uid, group_id })
+      }
+    }
+    if (abclist.length > 0) {
+      for (let i = 0; i < abclist.length; i++) {
+        const resp = await new iKun('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
+        const remark = resp.user.nickname
+        const matchingItemIndex = config.douyinpushlist.findIndex((item) => item.sec_uid === abclist[i].sec_uid)
+        if (matchingItemIndex !== -1) {
+          // 更新匹配的对象的 remark
+          config.douyinpushlist[matchingItemIndex].remark = remark
+        }
+      }
+      fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+    }
   }
 }

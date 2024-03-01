@@ -13,6 +13,8 @@ const defaultConfig = {
   newui: true,
   douyinpush: false,
   douyinpushlist: [],
+  douyinpushlog: true,
+  douyinpushcron: '*/10 * * * *',
 }
 let config = {}
 

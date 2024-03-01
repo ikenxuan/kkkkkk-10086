@@ -1,5 +1,3 @@
-import plugin from '../../../lib/plugins/plugin.js'
-
 export class help extends plugin {
   constructor(e) {
     super({

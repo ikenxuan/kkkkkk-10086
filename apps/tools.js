@@ -1,4 +1,3 @@
-import plugin from '../../../lib/plugins/plugin.js'
 import { GetID } from '../model/douyin/judgment.js'
 import common from '../../../lib/common/common.js'
 import cfg from '../../../lib/config/config.js'
@@ -27,14 +26,14 @@ export class example extends plugin {
       dsc: '视频',
       event: 'message',
       priority: getPriority,
-      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy' }, { reg: '开始', fnc: 'pushdouy' }],
+      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: 'admin' }],
     })
     this.task = Config.douyinpush
       ? {
-          cron: '*/5 * * * *',
+          cron: Config.douyinpushcron,
           name: '抖音更新推送',
           fnc: () => this.pushdouy(),
-          log: true,
+          log: Config.douyinpushlog,
         }
       : {}
   }
@@ -59,10 +58,11 @@ export class example extends plugin {
   }
 
   async setpushdouy(e) {
+    if (e.isPrivate) return true
     const data = await new iKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
     if (data.data[0].type === 4) {
       const resp = await new push(e).setting(data)
-      await e.reply(resp)
+      await this.reply(resp)
     } else {
       e.reply('无法获取用户信息，请确认抖音号是否正确')
     }

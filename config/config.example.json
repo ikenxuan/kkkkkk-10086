@@ -8,5 +8,7 @@
   "commentsimg": true,
   "newui": true,
   "douyinpush": false,
-  "douyinpushlist": []
+  "douyinpushlist": [],
+  "douyinpushlog": false,
+  "douyinpushcron": "*/10 * * * *"
 }

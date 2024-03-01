@@ -99,6 +99,7 @@ export function supportGuoba() {
           field: 'numcomments',
           label: '评论解析数量',
           helpMessage: '必填项',
+          bottomHelpMessage: '请在此输入数字',
           component: 'InputNumber',
           required: true,
           componentProps: {
@@ -134,7 +135,7 @@ export function supportGuoba() {
               {
                 field: 'sec_uid',
                 label: '用户uid',
-                helpMessage: '如：MS4wLjABAAAAw6_Jq4rDqlUKujFUvw0mjwTE8Y4uYuqJoKIQWO43oBYTd5_FlhU3qZ-PbOS7MP35',
+                helpMessage: '如原神的：\nMS4wLjABAAAAw6_Jq4rDqlUKujFUvw0mjwTE8Y4uYuqJoKIQWO43oBYTd5_FlhU3qZ-PbOS7MP35',
                 bottomHelpMessage: '此uid需要访问抖音网页版个人主页，地址栏user/后面的便是uid',
                 component: 'Input',
                 componentProps: {
@@ -144,7 +145,8 @@ export function supportGuoba() {
               },
               {
                 field: 'group_id',
-                label: '设置推送的群',
+                helpMessage: '可多选',
+                label: '推送群',
                 componentProps: {
                   placeholder: '点击选择要推送的群',
                 },
@@ -154,15 +156,43 @@ export function supportGuoba() {
               {
                 field: 'remark',
                 label: '备注',
+                helpMessage: '可不填，推送过程中会自动获取并写入',
                 bottomHelpMessage: '给这个推送id添加备注',
                 component: 'Input',
                 componentProps: {
                   placeholder: '请在此填写备注',
                 },
-                required: true,
+                required: false,
               },
             ],
           },
+        },
+        {
+          component: 'douyinpushcron',
+          label: 'Cron表达式',
+          helpMessage: '',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: 'douyinpushcron',
+          label: 'Cron表达式',
+          bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
+          component: 'Input',
+          required: false,
+          componentProps: {
+            placeholder: '默认每10分钟推送一次',
+          },
+        },
+        {
+          field: 'douyinpushlog',
+          label: '定时任务日志',
+          helpMessage: '修改后重启生效',
+          bottomHelpMessage: '打开或关闭定时任务日志',
+          component: 'Switch',
+          required: false,
         },
         {
           component: 'Divider',
