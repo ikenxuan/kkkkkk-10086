@@ -191,6 +191,7 @@ export default class push extends base {
       } else {
         // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
         existingItem.group_id.push(group_id)
+        msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
         logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
       }
     } else {
