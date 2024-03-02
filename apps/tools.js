@@ -6,11 +6,6 @@ import iKun from '../model/douyin/getdata.js'
 import { Config } from '../model/config.js'
 import push from '../model/douyin/push.js'
 
-let getPriority = 800
-if (Config.defaulttool) {
-  getPriority = -1145141919180
-}
-
 export class example extends plugin {
   constructor() {
     const rule = Config.videotool
@@ -25,7 +20,7 @@ export class example extends plugin {
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
-      priority: getPriority,
+      priority: Config.defaulttool ? -Infinity : 800,
       rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: 'master' }],
     })
     this.task = Config.douyinpush

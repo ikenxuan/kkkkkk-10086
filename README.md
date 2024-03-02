@@ -28,21 +28,23 @@ npm install --production
 
 TRSS-Yunzai 还未测试
 
-## 功能(其实就一个)
+## 功能
 
-### 抖音作品解析
+> - 非`官方Bot`会自动识别抖音分享链接
+> - 抖音用户更新推送（刚写完，可能有 bug）
+
+---
 
 > [!NOTE]  
-> 使用前需要配置抖音 Cookie
-> **抖音**使用官方接口，解析视频并渲染评论图片返回
+> 使用前需要配置抖音 Cookie  
+> 使用**抖音**官方接口，解析视频并渲染评论图片返回
 
 - #?kkk 设置
 - #kkk 设置视频解析(开启|关闭)
 - #kkk 设置默认视频解析(开启|关闭)
-- #kkk 设置缓存删除(开启|关闭)
 
 > [!TIP]  
-> 本插件配置文件非常见的`YAML`格式，为使用`JSON`格式，强烈建议使用 [**Guoba-Plugin**](https://gitee.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。配置文件路径：
+> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，，强烈建议使用 [**Guoba-Plugin**](https://gitee.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。配置文件路径：
 >
 > ```sh
 > # 初次使用自动创建
