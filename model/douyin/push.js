@@ -70,9 +70,9 @@ export default class push extends base {
     const user_img = Array[1].user.avatar_larger.url_list[0]
     const Msg = `${nickname} 有新作品啦\n\n标题：${desc}\n发布时间：${create_time}\n\n`
     for (let i = 0; i < data.group_id.length; i++) {
-      let key = `kkk:douyPush-${data.group_id[i]}-${data.sec_id}`
+      let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
       if (await redis.get(key)) {
-        await redis.set(key, 1, { EX: 8 * 60 * 60 })
+        return true
       } else {
         await Bot.pickGroup(Number(data.group_id[i])).sendMsg([Msg, segment.image(user_img), share_url])
         await redis.set(key, 1, { EX: 8 * 60 * 60 })
