@@ -14,7 +14,7 @@ export class example extends plugin {
           fnc: 'update_plugin',
         },
         {
-          reg: '^#?(kkkkkk|kkk|k)(插件)?更新日志$',
+          reg: '^#?(kkkkkk|kkk|k)(插件)?更新(日志|记录)$',
           fnc: 'update_log',
         },
       ],

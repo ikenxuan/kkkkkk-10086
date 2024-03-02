@@ -27,11 +27,10 @@ export default class push extends base {
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].create_time == cachedata[i].create_time) {
-          return true
         } else if (data[i].create_time > cachedata[i].create_time) {
           await this.getdata(data[i])
           await redis.set('kkk:douyPush', JSON.stringify(data))
-          logger.info(`[kkkkkk-10086-douyPush] 更新视频aweme_id: [${cachedata[i].aweme_id}] -> [${data[i].aweme_id}]`)
+          logger.info(`aweme_id: [${cachedata[i].aweme_id}] --> [${data[i].aweme_id}]`)
         }
       }
     }
@@ -41,8 +40,7 @@ export default class push extends base {
     const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
     const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
     let Array = [videolist, userinfo]
-    let aweme_id,
-      nickname,
+    let nickname,
       desc,
       share_url,
       create_time,
@@ -61,7 +59,6 @@ export default class push extends base {
         break
       }
     }
-    aweme_id = Array[0].aweme_list[a].aweme_id
     nickname = Array[0].aweme_list[a].author.nickname
     desc = Array[0].aweme_list[a].desc
     share_url = Array[0].aweme_list[a].share_url
@@ -72,14 +69,35 @@ export default class push extends base {
     for (let i = 0; i < data.group_id.length; i++) {
       let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
       if (await redis.get(key)) {
+        console.log(await redis.get(key))
         return true
       } else {
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg([Msg, segment.image(user_img), share_url])
+        /** node_modules/icqq/lib/internal/contactable.js#L507 */
+        const forwardMsg = await Bot.pickGroup(Number(data.group_id[i])).makeForwardMsg({
+          user_id: Bot.uin,
+          message: [Msg, segment.image(user_img), share_url],
+        })
+        /** 处理描述 */
+        if (typeof forwardMsg.data === 'object') {
+          let detail = forwardMsg.data?.meta?.detail
+          if (detail) {
+            detail.news = [{ text: '点击查看详情' }]
+            detail.source = `「${nickname}」\n在抖音发布新作品啦 ~`
+            detail.summary = 'DouYin 推送'
+          }
+        }
+        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(forwardMsg)
         await redis.set(key, 1, { EX: 8 * 60 * 60 })
       }
     }
   }
 
+  /**
+   *
+   * @param {*} write 是否写入
+   * @param {*} sec_idlist 要获取aweme_id的用户uid列表
+   * @returns
+   */
   async getuserdata(write, sec_idlist) {
     let result = []
 
@@ -200,21 +218,21 @@ export default class push extends base {
     const mismatchedIds = []
     const sec_idlist = []
     let resources = []
-    // 确保 cachedata 数组的长度不超过 data 数组的长度
-    const minLength = Math.min(data.length, cachedata.length)
-    // 只对比 data 数组和 cachedata 数组中的相同数量的元素
-    for (let i = 0; i < minLength.length; i++) {
-      if (data[i].sec_id !== cachedata[i]?.sec_id) {
-        mismatchedIds.push(data[i].aweme_id)
-        sec_idlist.push(data[i].sec_id)
+    if (data.length > cachedata.length) {
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].sec_id !== cachedata[i]?.sec_id) {
+          mismatchedIds.push(data[i].aweme_id)
+          sec_idlist.push(data[i].sec_id)
+        }
+      }
+      if (sec_idlist.length > 0) {
+        let newdata = []
+        newdata = await this.getuserdata(false, sec_idlist)
+        resources = cachedata.concat(newdata)
+        await redis.set('kkk:douyPush', JSON.stringify(resources))
       }
     }
-    if (sec_idlist.length > 0) {
-      let newdata = []
-      newdata = await this.getuserdata(false, sec_idlist)
-      resources = cachedata.concat(newdata)
-      await redis.set('kkk:douyPush', JSON.stringify(resources))
-    }
+
     return sec_idlist.length > 0 ? resources : cachedata
   }
 

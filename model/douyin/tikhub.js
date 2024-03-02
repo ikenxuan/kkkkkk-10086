@@ -75,7 +75,7 @@ export default class TikHub extends base {
           await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
         }
         if (this.botCfg.bot.skip_login) {
-          /** 该死的腾讯不支持webp webp转png */
+          /** 辣鸡的腾讯不支持webp webp转png */
           let sharp
           try {
             ;({ default: sharp } = await import('sharp'))
