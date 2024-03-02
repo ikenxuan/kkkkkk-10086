@@ -14,7 +14,7 @@ export default class push extends base {
     if (cache == '[]' || !cache) {
       /** 如果redis里没有，就重新获取并写入 */
       data = await this.getuserdata(true)
-      console.log('写入新数据到redis', data)
+      await redis.set('kkk:douyPush', JSON.stringify(data))
     } else {
       let cachedata = JSON.parse(cache)
       /** 获取最新那一条 */
