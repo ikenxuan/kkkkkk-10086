@@ -79,7 +79,12 @@ export default class TikHub extends base {
           let sharp
           try {
             ;({ default: sharp } = await import('sharp'))
-            let resp = new Uint8Array(await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData())
+            let resp = new Uint8Array(
+              await new this.networks({
+                url: image_url,
+                type: 'arrayBuffer',
+              }).getData(),
+            )
             resp = await sharp(resp).toFormat('png').toBuffer()
             await this.e.reply(segment.image(resp))
           } catch {
@@ -172,10 +177,16 @@ export default class TikHub extends base {
       const video = Data.aweme_detail.video
       FPS = video.bit_rate[0].FPS // FPS
       if (Data.aweme_detail.video.play_addr_h264) {
-        g_video_url = await new this.networks({ url: video.play_addr_h264.url_list[2], headers: this.headers }).getLongLink()
+        g_video_url = await new this.networks({
+          url: video.play_addr_h264.url_list[2],
+          headers: this.headers,
+        }).getLongLink()
         logger.info('视频地址', g_video_url)
       } else if (Data.aweme_detail.video.play_addr) {
-        g_video_url = await new this.networks({ url: video.play_addr.url_list[0], headers: this.headers }).getLongLink()
+        g_video_url = await new this.networks({
+          url: video.play_addr.url_list[0],
+          headers: this.headers,
+        }).getLongLink()
         logger.info('视频地址', g_video_url)
       }
       let cover = video.origin_cover.url_list[0] // video cover image
@@ -341,7 +352,10 @@ export default class TikHub extends base {
    * @returns
    */
   async DownLoadFile(video_url, title) {
-    let response = await new this.networks({ url: video_url, headers: this.headers }).getfetch()
+    let response = await new this.networks({
+      url: video_url,
+      headers: this.headers,
+    }).getfetch()
     // 写入流
     let writer = fs.createWriteStream(`${this._path}/resources/kkkdownload/video/${title}.mp4`)
     response.body.pipe(writer)

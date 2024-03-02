@@ -17,6 +17,17 @@ export default class iKun extends base {
     super()
     this.type = type
   }
+
+  /**
+   *
+   * [ video | note ] {data.id}
+   * [ CommentReplyData ] {data.id, data.cid}
+   * [ UserInfoData ] {data.user_id}
+   * [ Emoji ] {}
+   * [ UserVideosList ] {data.user_id}
+   * [ SuggestWords ] {data.query}
+   * [ Search ] {data.query}
+   */
   async GetData(data) {
     if (!this.allow) throw new Error('请使用 [#kkk设置抖音ck] 以设置抖音ck')
     switch (this.type) {
@@ -32,7 +43,7 @@ export default class iKun extends base {
               Cookie: this.Config.ck,
             },
           },
-          data.is_mp4
+          data.is_mp4,
         )
 
         this.URL = await DouyinAPI.评论(data.id)
@@ -109,6 +120,16 @@ export default class iKun extends base {
           },
         })
         return SearchData
+
+      /** 无法实现 */
+      case 'ShortUrl':
+        let a = new URL(data.target)
+        this.URL = await DouyinAPI.制作短链(protocol + encodeURIComponent('//' + a.host + a.pathname + a.search))
+        let ShortUrlData = await this.GlobalGetData({
+          url: `${this.URL}&X-Bougs=${await Sign.XB(this.URL)}`,
+          headers: this.headers,
+        })
+        return ShortUrlData
 
       default:
     }

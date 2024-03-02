@@ -8,14 +8,16 @@ export default class push extends base {
   }
   async action() {
     await this.checkremark()
-    let data
     const cache = await redis.get('kkk:douyPush')
+    let data
 
     if (cache == '[]' || !cache) {
       /** 如果redis里没有，就重新获取并写入 */
       data = await this.getuserdata(true)
+      console.log('写入新数据到redis', data)
     } else {
       let cachedata = JSON.parse(cache)
+      /** 获取最新那一条 */
       data = await this.getuserdata(false)
       cachedata = await this.findMismatchedAwemeIds(data, cachedata)
 
@@ -24,11 +26,12 @@ export default class push extends base {
         return true
       }
       for (let i = 0; i < data.length; i++) {
-        if (data[i].aweme_id == cachedata[i].aweme_id) {
+        if (data[i].create_time == cachedata[i].create_time) {
           return true
         } else if (data[i].create_time > cachedata[i].create_time) {
-          logger.info(`[kkkkkk-10086-douyPush] 更新视频aweme_id: [${cachedata[i].create_time}] -> [${data[i].create_time}]`)
           await this.getdata(data[i])
+          await redis.set('kkk:douyPush', JSON.stringify(data))
+          logger.info(`[kkkkkk-10086-douyPush] 更新视频aweme_id: [${cachedata[i].aweme_id}] -> [${data[i].aweme_id}]`)
         }
       }
     }
@@ -38,31 +41,71 @@ export default class push extends base {
     const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
     const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
     let Array = [videolist, userinfo]
+    let aweme_id,
+      nickname,
+      desc,
+      share_url,
+      create_time,
+      a,
+      shouldBreak = false
+    for (let j = 0; j < Array[0].aweme_list.length; j++) {
+      let isTop = Array[0].aweme_list[j].is_top
+      /** 处理置顶 */
+      while (isTop === 1 && j < Array[0].aweme_list.length - 1) {
+        j++
+        isTop = Array[0].aweme_list[j].is_top
+      }
+      shouldBreak = isTop !== 1
+      if (shouldBreak) {
+        a = j
+        break
+      }
+    }
+    aweme_id = Array[0].aweme_list[a].aweme_id
+    nickname = Array[0].aweme_list[a].author.nickname
+    desc = Array[0].aweme_list[a].desc
+    share_url = Array[0].aweme_list[a].share_url
+    create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[a].create_time)
 
-    const aweme_id = Array[0].aweme_list[0].aweme_id
-    const nickname = Array[0].aweme_list[0].author.nickname
-    const desc = Array[0].aweme_list[0].desc
-    const share_url = Array[0].aweme_list[0].share_url
-    const create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[0].create_time)
     const user_img = Array[1].user.avatar_larger.url_list[0]
-
     const Msg = `${nickname} 有新作品啦\n\n标题：${desc}\n发布时间：${create_time}\n\n`
     for (let i = 0; i < data.group_id.length; i++) {
-      await Bot.pickGroup(Number(data.group_id[i])).sendMsg([Msg, segment.image(user_img), share_url])
+      let key = `kkk:douyPush-${data.group_id[i]}-${data.sec_id}`
+      if (await redis.get(key)) {
+        await redis.set(key, 1, { EX: 8 * 60 * 60 })
+      } else {
+        await Bot.pickGroup(Number(data.group_id[i])).sendMsg([Msg, segment.image(user_img), share_url])
+        await redis.set(key, 1, { EX: 8 * 60 * 60 })
+      }
     }
-    return { aweme_id, create_time: Array[0].aweme_list[0].create_time }
   }
 
   async getuserdata(write, sec_idlist) {
     let result = []
 
-    if (write && sec_idlist) {
+    if (sec_idlist) {
       for (let i = 0; i < sec_idlist.length; i++) {
         const group_id = this.Config.douyinpushlist[i].group_id
         const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-        const awemeId = data.aweme_list[0].aweme_id
-        const createTime = data.aweme_list[0].create_time
+        let a,
+          awemeId,
+          isTop = data.aweme_list[i].is_top,
+          shouldBreak = false
+        for (let j = 0; j < data.aweme_list.length; j++) {
+          /** 处理置顶 */
+          while (isTop === 1 && j < data.aweme_list.length - 1) {
+            j++
+            awemeId = data.aweme_list[j].aweme_id
+            isTop = data.aweme_list[j].is_top
+          }
+          shouldBreak = isTop !== 1
+          if (shouldBreak) {
+            a = j
+            break
+          }
+        }
+        const createTime = data.aweme_list[a].create_time
         result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
       }
     } else {
@@ -70,15 +113,33 @@ export default class push extends base {
         const group_id = this.Config.douyinpushlist[i].group_id
         const secUid = this.Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-        const awemeId = data.aweme_list[0].aweme_id
-        const createTime = data.aweme_list[0].create_time
+        let a,
+          awemeId,
+          isTop = data.aweme_list[i].is_top,
+          shouldBreak = false
+        for (let j = 0; j < data.aweme_list.length; j++) {
+          /** 处理置顶 */
+          while (isTop === 1 && j < data.aweme_list.length - 1) {
+            j++
+            awemeId = data.aweme_list[j].aweme_id
+            isTop = data.aweme_list[j].is_top
+          }
+          shouldBreak = isTop !== 1
+          if (shouldBreak) {
+            a = j
+            break
+          }
+        }
+        const createTime = data.aweme_list[a].create_time
         result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
       }
     }
-    if (write) await redis.set('kkk:douyPush', JSON.stringify(result))
-
+    if (write) {
+      await redis.set('kkk:douyPush', JSON.stringify(result))
+    }
     return result
   }
+
   async setting(data) {
     let msg
     const sec_uid = data.data[0].user_list[0].user_info.sec_uid
@@ -139,20 +200,22 @@ export default class push extends base {
     const mismatchedIds = []
     const sec_idlist = []
     let resources = []
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].aweme_id !== cachedata[i]?.aweme_id) {
+    // 确保 cachedata 数组的长度不超过 data 数组的长度
+    const minLength = Math.min(data.length, cachedata.length)
+    // 只对比 data 数组和 cachedata 数组中的相同数量的元素
+    for (let i = 0; i < minLength.length; i++) {
+      if (data[i].sec_id !== cachedata[i]?.sec_id) {
         mismatchedIds.push(data[i].aweme_id)
         sec_idlist.push(data[i].sec_id)
       }
     }
-    if (mismatchedIds.length > 0) {
+    if (sec_idlist.length > 0) {
       let newdata = []
-      for (let i = 0; i < sec_idlist.length; i++) {
-        newdata = await this.getuserdata(true, sec_idlist)
-      }
-      resources = data.concat(newdata)
+      newdata = await this.getuserdata(false, sec_idlist)
+      resources = cachedata.concat(newdata)
+      await redis.set('kkk:douyPush', JSON.stringify(resources))
     }
-    return resources.length > 0 ? resources : data
+    return sec_idlist.length > 0 ? resources : cachedata
   }
 
   async checkremark() {

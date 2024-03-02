@@ -44,8 +44,6 @@ function mkdirs(dirname) {
 
 let ret = []
 
-logger.info('kkkkkk-10086初始化\n交流群：795874649')
-
 files.forEach((file) => {
   ret.push(import(`./apps/${file}`))
 })
@@ -63,4 +61,11 @@ for (let i in files) {
   }
   apps[name] = ret[i].value[Object.keys(ret[i].value)[0]]
 }
+
+logger.info('------------ ￣y▽￣ ------------')
+logger.info('kkkkkk-10086初始化~')
+logger.info('交流群：795874649')
+logger.info('Created By ikenxuan')
+logger.info('---------------------------------')
+
 export { apps }

@@ -179,11 +179,12 @@ export function supportGuoba() {
         {
           field: 'douyinpushcron',
           label: 'Cron表达式',
+          helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
           component: 'Input',
           required: false,
           componentProps: {
-            placeholder: '默认每10分钟推送一次',
+            placeholder: '已内置默认每10分钟推送一次 */10 * * * *',
           },
         },
         {
