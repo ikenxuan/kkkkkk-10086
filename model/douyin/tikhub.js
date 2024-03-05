@@ -213,7 +213,7 @@ export default class TikHub extends base {
         saveId: 'comment',
         Type: is_mp4 ? '视频' : '图集',
         CommentsData: commentsArray,
-        CommentLength: String(commentsArray.jsonArray.length),
+        CommentLength: String(commentsArray.jsonArray?.length ? commentsArray.jsonArray.length : 0),
         VideoUrl: g_video_url || Data.aweme_detail.share_url,
         Title: g_title,
         VideoSize: mp4size,

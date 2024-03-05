@@ -7,6 +7,7 @@ import iKun from './getdata.js'
  */
 export async function comments(data, emojidata) {
   let jsonArray = []
+  if (data.comments === null) return []
 
   for (let i = 0; i < data.comments.length; i++) {
     const cid = data.comments[i].cid
