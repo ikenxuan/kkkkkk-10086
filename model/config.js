@@ -15,6 +15,8 @@ const defaultConfig = {
   douyinpushlist: [],
   douyinpushlog: true,
   douyinpushcron: '*/10 * * * *',
+  // douyinpushparse: true,
+  douyinpushGroup: 'master',
 }
 let config = {}
 

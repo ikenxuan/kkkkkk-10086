@@ -188,6 +188,19 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'douyinpushGroup',
+          label: '设置权限',
+          component: 'RadioGroup',
+          bottomHelpMessage: '推送设置权限',
+          componentProps: {
+            options: [
+              { label: '所有群员都可以添加', value: 'all' },
+              { label: '群主和管理员才能添加', value: 'owner' },
+              { label: '只有主人才能添加', value: 'master' },
+            ],
+          },
+        },
+        {
           field: 'douyinpushlog',
           label: '定时任务日志',
           helpMessage: '修改后重启生效',

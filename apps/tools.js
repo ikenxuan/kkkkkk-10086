@@ -21,7 +21,7 @@ export class example extends plugin {
       dsc: '视频',
       event: 'message',
       priority: Config.defaulttool ? -Infinity : 800,
-      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: 'admin' }],
+      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup }],
     })
     this.task = Config.douyinpush
       ? {

@@ -8,6 +8,7 @@
   "author": "ikenxuan",
   "license": "MIT",
   "dependencies": {
+    "node-fetch": "^3.3.2",
     "sharp": "^0.33.2"
   }
 }

@@ -1,3 +1,5 @@
+import TikHub from './tikhub.js'
+import { GetID } from './judgment.js'
 import iKun from './getdata.js'
 import base from '../base.js'
 import fs from 'fs'
@@ -73,10 +75,12 @@ export default class push extends base {
         return true
       } else {
         /** node_modules/icqq/lib/internal/contactable.js#L507 */
-        const forwardMsg = await Bot.pickGroup(Number(data.group_id[i])).makeForwardMsg({
-          user_id: Bot.uin,
-          message: [Msg, segment.image(user_img), share_url],
-        })
+        const forwardMsg = await Bot.pickGroup(Number(data.group_id[i])).makeForwardMsg([
+          {
+            user_id: Bot.uin,
+            message: [Msg, segment.image(user_img), share_url],
+          },
+        ])
         /** 处理描述 */
         if (typeof forwardMsg.data === 'object') {
           let detail = forwardMsg.data?.meta?.detail
@@ -88,6 +92,16 @@ export default class push extends base {
         }
         await Bot.pickGroup(Number(data.group_id[i])).sendMsg(forwardMsg)
         await redis.set(key, 1, { EX: 8 * 60 * 60 })
+        // if (this.Config.douyinpushparse) {
+        //   const pushe = {
+        //     is_push: true,
+        //     group_id: data.group_id[i],
+        //   }
+        //   const id = await GetID(share_url)
+        //   const workdata = await new iKun(id.type).GetData(id)
+        //   const res = await new TikHub(this.e).GetData(id.type, workdata, pushe)
+        //   await Bot.pickGroup(Number(data.group_id[i])).sendMsg(res.res[2])
+        // }
       }
     }
   }

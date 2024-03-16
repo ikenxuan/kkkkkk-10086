@@ -1,4 +1,3 @@
-import { core } from 'icqq'
 import querystring from 'querystring'
 import fetch from 'node-fetch'
 import fs from 'fs'
@@ -7,11 +6,17 @@ import util from 'util'
 import stream from 'stream'
 import crypto from 'crypto'
 import child_process from 'child_process'
+let core
+try {
+  ;({ core } = await import('icqq'))
+} catch {
+  ;({ core } = await import(`file://${process.cwd()}/plugins/ICQQ-Plugin/node_modules/icqq/lib/index.js`))
+}
 
 var errors = {}
 
 async function uploadRecord(record_url, seconds = 0, transcoding = true, brief = '') {
-  const result = await getPttBuffer(record_url, Bot.config.ffmpeg_path, transcoding)
+  const result = await getPttBuffer(record_url, Bot.config?.ffmpeg_path, transcoding)
   if (!result.buffer) {
     return false
   }

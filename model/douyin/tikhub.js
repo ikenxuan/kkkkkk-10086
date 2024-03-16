@@ -74,22 +74,27 @@ export default class TikHub extends base {
           let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
           await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
         }
-        if (this.botCfg.bot.skip_login) {
-          /** 辣鸡的腾讯不支持webp webp转png */
-          let sharp
-          try {
-            ;({ default: sharp } = await import('sharp'))
-            let resp = new Uint8Array(
-              await new this.networks({
-                url: image_url,
-                type: 'arrayBuffer',
-              }).getData(),
-            )
-            resp = await sharp(resp).toFormat('png').toBuffer()
-            await this.e.reply(segment.image(resp))
-          } catch {
+        switch (this.botCfg.package.name) {
+          case 'miao-yunzai':
+            if (this.botCfg.bot.skip_login) {
+              /** 辣鸡腾讯不支持webp webp转png */
+              let sharp
+              try {
+                ;({ default: sharp } = await import('sharp'))
+                let resp = new Uint8Array(
+                  await new this.networks({
+                    url: image_url,
+                    type: 'arrayBuffer',
+                  }).getData(),
+                )
+                resp = await sharp(resp).toFormat('png').toBuffer()
+                await this.e.reply(segment.image(resp))
+              } catch {
+                await this.e.reply(segment.image(image_url))
+              }
+            }
+          case 'trss-yunzai':
             await this.e.reply(segment.image(image_url))
-          }
         }
       }
 
@@ -146,10 +151,20 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
       music_res.push(music_data)
-      if (music_url && is_mp4 == false && music_url !== undefined && this.botCfg.bot.skip_login == false) {
-        await this.e.reply(await uploadRecord(music_url, 0, false))
-      } else if (this.botCfg.bot.skip_login && is_mp4 == false) {
-        await this.e.reply(segment.record(music_url))
+      switch (this.botCfg.package.name) {
+        case 'miao-yunzai':
+          if (music_url && is_mp4 == false && music_url !== undefined && this.botCfg.bot.skip_login == false) {
+            try {
+              await this.e.reply(await uploadRecord(music_url, 0, false))
+            } catch {}
+          } else if (this.botCfg.bot.skip_login && is_mp4 == false) {
+            await this.e.reply(segment.record(music_url))
+          }
+        case 'trss-yunzai':
+          if (music_url && is_mp4 == false && music_url !== undefined) {
+            await this.e.reply(segment.record(music_url))
+          }
+        default:
       }
     }
 
