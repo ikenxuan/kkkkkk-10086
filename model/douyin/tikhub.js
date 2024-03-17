@@ -95,7 +95,6 @@ export default class TikHub extends base {
             }
             break
           case 'trss-yunzai':
-            await this.e.reply(segment.image(image_url))
             break
         }
       }

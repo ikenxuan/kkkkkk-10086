@@ -132,6 +132,7 @@ export default class iKun extends base {
         return ShortUrlData
 
       default:
+        break
     }
   }
 

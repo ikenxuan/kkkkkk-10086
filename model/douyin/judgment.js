@@ -1,46 +1,53 @@
 import networks from '../../utils/networks.js'
+
 /**
  * return aweme_id
- * @param {*} response 响应数据
+ * @param {*} url 分享连接
  * @returns
  */
 export async function GetID(url) {
   let longLink = await new networks({ url: url }).getLongLink()
   let result
-  if (longLink.includes('webcast.amemv.com')) {
-    result = {
-      type: 'Live',
-      baseurl: url,
-    }
-    console.log('暂未支持解析')
-    return {}
-  } else {
-    const matchVideo = longLink.match(/video\/(\d+)/)
-    const matchNote = longLink.match(/note\/(\d+)/)
-    const matchUser = longLink.match(/user\/(\S+?)\?/)
-    let id
-    if (matchVideo) {
-      id = matchVideo[1]
+
+  switch (true) {
+    case longLink.includes('webcast.amemv.com'):
+      result = {
+        type: 'Live',
+        baseurl: url,
+      }
+      logger.warn('暂未支持解析')
+      return {}
+
+    case /video\/(\d+)/.test(longLink):
+      const videoMatch = longLink.match(/video\/(\d+)/)
       result = {
         type: 'video',
-        id,
+        id: videoMatch[1],
         is_mp4: true,
       }
-    } else if (matchNote) {
-      id = matchNote[1]
+      break
+
+    case /note\/(\d+)/.test(longLink):
+      const noteMatch = longLink.match(/note\/(\d+)/)
       result = {
         type: 'note',
-        id,
+        id: noteMatch[1],
         is_mp4: false,
       }
-    } else if (matchUser) {
-      id = matchUser[1]
+      break
+
+    case /user\/(\S+?)\?/.test(longLink):
+      const userMatch = longLink.match(/user\/(\S+?)\?/)
       result = {
         type: 'UserVideosList',
-        user_id: id,
+        user_id: userMatch[1],
       }
-    }
+      break
+
+    default:
+      break
   }
+
   console.log(result)
   return result
 }
