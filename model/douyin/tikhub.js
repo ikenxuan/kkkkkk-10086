@@ -93,8 +93,10 @@ export default class TikHub extends base {
                 await this.e.reply(segment.image(image_url))
               }
             }
+            break
           case 'trss-yunzai':
             await this.e.reply(segment.image(image_url))
+            break
         }
       }
 
@@ -160,11 +162,12 @@ export default class TikHub extends base {
           } else if (this.botCfg.bot.skip_login && is_mp4 == false) {
             await this.e.reply(segment.record(music_url))
           }
+          break
         case 'trss-yunzai':
           if (music_url && is_mp4 == false && music_url !== undefined) {
             await this.e.reply(segment.record(music_url))
           }
-        default:
+          break
       }
     }
 
