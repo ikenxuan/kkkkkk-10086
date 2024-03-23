@@ -1,6 +1,6 @@
 # kkkkkk-10086
 
-[**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
+[**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai / ICQQ 适配器**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
 
 反馈群：[795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
 
@@ -42,38 +42,42 @@ npm install --production
 
 <details><summary>管理命令</summary>
 
-- #?kkk 设置
-- #kkk 设置抖音 ck
-- #kkk 设置视频解析(开启|关闭)
-- #kkk 设置默认视频解析(开启|关闭)
-- #kkk 设置缓存删除(开启|关闭)
-- #kkk 设置评论(开启|关闭)
-- #kkk 设置评论图片(开启|关闭)
+- #?kkk设置
+- #kkk设置抖音ck
+- #kkk设置视频解析(开启|关闭)
+- #kkk设置默认视频解析(开启|关闭)
+- #kkk设置缓存删除(开启|关闭)
+- #kkk设置评论(开启|关闭)
+- #kkk设置评论图片(开启|关闭)
 </details>
 
 > [!TIP]  
-> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，，强烈建议使用 [**Guoba-Plugin**](https://gitee.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。配置文件路径：
+> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin.git) 进行配置文件的修改。配置文件路径：
 >
 > ```sh
 > # 初次使用自动创建
-> ./plugins/kkkkkk-10086/config/config.json
+> 机器人目录/plugins/kkkkkk-10086/config/config.json
 > ```
 
 ## TODO
 
-~~- [ ] 重构~~
+**先挖坑，可能会咕咕咕**
+
+- [ ] TRSS-Yunzai 的更多适配器
+- [ ] Miao-Yunzai / [Lain-Plugin](https://github.com/Loli-Lain/Lain-plugin) 的更多适配器
+- [ ] 重构
 
 ## 参考
 
-- https://gitee.com/xfdown/xiaofei-plugin
+- [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 
-- https://github.com/ikechan8370/chatgpt-plugin
+- [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
 
-- https://github.com/B1gM8c/X-Bogus
+- [X-Bogus](https://github.com/B1gM8c/X-Bogus)
 
-- https://gitee.com/kyrzy0416/rconsole-plugin
+- [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
 
-- https://gitee.com/think-first-sxs/reset-qianyu-plugin
+- [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
 
 ## 友情链接
 
