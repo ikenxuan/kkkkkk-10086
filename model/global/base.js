@@ -1,6 +1,6 @@
-import cfg from '../../../lib/config/config.js'
-import networks from '../utils/networks.js'
-import { Config } from './config.js'
+import cfg from '../../../../lib/config/config.js'
+import networks from './networks.js'
+import { Config } from '../config.js'
 
 export default class base {
   constructor(e = {}) {

@@ -1,13 +1,9 @@
+import { common, base, iKun, Config, uploadRecord, image } from '../common.js'
 import fs from 'fs'
-import common from '../../../../lib/common/common.js'
-import base from '../base.js'
-import uploadRecord from '../uploadRecord.js'
 import path from 'path'
 import { comments } from './comments.js'
-import image from '../../utils/image.js'
-import iKun from './getdata.js'
 import { Emoji } from './emoji.js'
-import { Config } from '../config.js'
+
 let mp4size = ''
 
 export default class TikHub extends base {

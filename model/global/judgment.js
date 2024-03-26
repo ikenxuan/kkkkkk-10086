@@ -1,4 +1,4 @@
-import networks from '../../utils/networks.js'
+import { networks } from '../common.js'
 
 /**
  * return aweme_id
@@ -41,6 +41,13 @@ export async function GetID(url) {
       result = {
         type: 'UserVideosList',
         user_id: userMatch[1],
+      }
+      break
+
+    case /video\/([A-Za-z0-9]+)/.test(longLink):
+      const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)/)
+      result = {
+        id: bvideoMatch[1],
       }
       break
 

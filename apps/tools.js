@@ -1,10 +1,5 @@
-import { GetID } from '../model/douyin/judgment.js'
-import common from '../../../lib/common/common.js'
+import { GetID, TikHub, push, iKun, common, Config, BiLiBiLi } from '../model/common.js'
 import cfg from '../../../lib/config/config.js'
-import TikHub from '../model/douyin/tikhub.js'
-import iKun from '../model/douyin/getdata.js'
-import { Config } from '../model/config.js'
-import push from '../model/douyin/push.js'
 
 export class example extends plugin {
   constructor() {
@@ -13,6 +8,10 @@ export class example extends plugin {
           {
             reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
             fnc: 'douy',
+          },
+          {
+            reg: '^.*(www\\.(bilibili|b23)\\.com|tv).*',
+            fnc: 'bilib',
           },
         ]
       : []
@@ -33,6 +32,17 @@ export class example extends plugin {
       : {}
   }
 
+  async pushdouy() {
+    await new push(this.e).action()
+  }
+
+  async bilib(e) {
+    const url = e.toString().match(/(http|https):\/\/(?:www\.)?(?:b23\.tv|bilibili\.com)\/[^ ]+/g)
+    const bvid = await GetID(url)
+    const data = await new BiLiBiLi(e).GetData(bvid.id)
+    await new BiLiBiLi(e).RESOURCES(data)
+  }
+
   async douy(e) {
     const url = e.toString().match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetID(url)
@@ -40,10 +50,6 @@ export class example extends plugin {
     const res = await new TikHub(e).GetData(iddata.type, data)
     await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()))
     iddata.is_mp4 ? await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title) : null
-  }
-
-  async pushdouy() {
-    await new push(this.e).action()
   }
 
   async setpushdouy(e) {

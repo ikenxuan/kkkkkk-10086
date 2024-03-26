@@ -1,5 +1,5 @@
 import { Sign } from './sign/Sign.js'
-import base from '../base.js'
+import base from '../global/base.js'
 import { DouyinAPI } from './API.js'
 
 export default class iKun extends base {

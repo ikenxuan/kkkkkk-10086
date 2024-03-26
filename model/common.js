@@ -1,0 +1,15 @@
+import { GetID } from './global/judgment.js'
+import { DouyinAPI } from './douyin/API.js'
+import { BiLiBiLiAPI } from './bilibili/API.js'
+import TikHub from './douyin/tikhub.js'
+import BiLiBiLi from '../model/bilibili/bilibili.js'
+import push from './douyin/push.js'
+import iKun from './douyin/getdata.js'
+import common from '../../../lib/common/common.js'
+import { Config } from './config.js'
+import base from './global/base.js'
+import uploadRecord from './uploadRecord.js'
+import image from './global/image.js'
+import networks from './global/networks.js'
+
+export { GetID, TikHub, push, iKun, common, Config, base, uploadRecord, image, networks, DouyinAPI, BiLiBiLiAPI, BiLiBiLi }
