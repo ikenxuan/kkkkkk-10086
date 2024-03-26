@@ -1,4 +1,4 @@
-import { GetID, TikHub, push, iKun, common, Config, BiLiBiLi } from '../model/common.js'
+import { GetID, TikHub, push, iKun, common, Config, BiLiBiLi, bilidata } from '../model/common.js'
 import cfg from '../../../lib/config/config.js'
 
 export class example extends plugin {
@@ -10,7 +10,7 @@ export class example extends plugin {
             fnc: 'douy',
           },
           {
-            reg: '^.*(www\\.(bilibili|b23)\\.com|tv).*',
+            reg: /(http|https):\/\/(?:www\.)?(?:b23\.tv|bilibili\.com)\/[^ ]+/g,
             fnc: 'bilib',
           },
         ]
@@ -39,8 +39,8 @@ export class example extends plugin {
   async bilib(e) {
     const url = e.toString().match(/(http|https):\/\/(?:www\.)?(?:b23\.tv|bilibili\.com)\/[^ ]+/g)
     const bvid = await GetID(url)
-    const data = await new BiLiBiLi(e).GetData(bvid.id)
-    await new BiLiBiLi(e).RESOURCES(data)
+    const data = await new bilidata().GetData(bvid.id)
+    await new BiLiBiLi(e, data.TYPE).RESOURCES(data)
   }
 
   async douy(e) {

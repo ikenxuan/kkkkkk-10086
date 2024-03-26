@@ -3,31 +3,13 @@ import base from '../global/base.js'
 import { DouyinAPI } from './API.js'
 
 export default class iKun extends base {
-  /**
-   *
-   * @param {string} type [ video | note ] 视频或图集
-   * @param {string} type [ CommentReplyData ] 二级评论
-   * @param {string} type [ UserInfoData ] 用户主页信息
-   * @param {string} type [ Emoji ] 表情
-   * @param {string} type [ UserVideosList ] 用户主页视频
-   * @param {string} type [ SuggestWords ] 热点词
-   * @param {string} type [ Search ] 搜索
-   */
   constructor(type) {
     super()
     this.type = type
+    this.headers['Referer'] = 'https://www.douyin.com/'
+    this.headers['Cookie'] = this.Config.ck
   }
 
-  /**
-   *
-   * [ video | note ] {data.id}
-   * [ CommentReplyData ] {data.id, data.cid}
-   * [ UserInfoData ] {data.user_id}
-   * [ Emoji ] {}
-   * [ UserVideosList ] {data.user_id}
-   * [ SuggestWords ] {data.query}
-   * [ Search ] {data.query}
-   */
   async GetData(data) {
     if (!this.allow) throw new Error('请使用 [#kkk设置抖音ck] 以设置抖音ck')
     switch (this.type) {
@@ -38,10 +20,7 @@ export default class iKun extends base {
           {
             url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
             method: 'GET',
-            headers: {
-              ...this.headers,
-              Cookie: this.Config.ck,
-            },
+            headers: this.headers,
           },
           data.is_mp4,
         )
@@ -89,7 +68,6 @@ export default class iKun extends base {
 
       case 'UserVideosList':
         this.URL = await DouyinAPI.用户主页视频(data.user_id)
-        // console.log(`${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`)
         let UserVideoListData = await this.GlobalGetData({
           url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
           headers: {

@@ -6,9 +6,9 @@
 
 ## 安装
 
-### 机器人根目录下打开终端任选一条执行
-
 ```sh
+# 机器人目录下打开终端任选一条执行
+
 # （国外推荐）使用 GitHub
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 
@@ -19,9 +19,13 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
-```sh
+```
 cd plugins/kkkkkk-10086
-# 安装依赖 任选一个（可装可不装）
+```
+
+```sh
+
+# 安装依赖 任选一条
 yarn --production
 pnpm install -P
 npm install --production
@@ -29,26 +33,38 @@ npm install --production
 
 ## 功能
 
-> 使用**抖音**官方接口，解析视频并渲染评论图片返回
->
-> - 会自动识别抖音分享链接并进行解析
-> - 抖音用户更新推送（刚写完，可能有 bug）
+**抖音** | **bilibili** 视频解析
+
+- 抖音支持:
+
+  - [x] 视频
+  - [x] 图集
+  - [x] 评论
+  - [x] 用户主页视频列表
+  - [x] 咕咕咕
+
+  <br>
+
+- B 站支持:
+
+  - [x] 视频
+  - ~~咕咕咕~~
 
 ---
 
 > [!CAUTION]  
-> `TRSS-Yunzai`用户必须安装依赖，否则无法使用  
 > 使用前必须配置抖音 Cookie
+> 设置 B 站 ck 后是获取当前 ck 对应账号所支持的最高分辨率的视频，可能导致视频上传失败。不设置 ck 则为`240p`
 
 <details><summary>管理命令</summary>
 
-- #?kkk设置
-- #kkk设置抖音ck
-- #kkk设置视频解析(开启|关闭)
-- #kkk设置默认视频解析(开启|关闭)
-- #kkk设置缓存删除(开启|关闭)
-- #kkk设置评论(开启|关闭)
-- #kkk设置评论图片(开启|关闭)
+- #?kkk 设置
+- #kkk 设置抖音 ck
+- #kkk 设置视频解析(开启|关闭)
+- #kkk 设置默认视频解析(开启|关闭)
+- #kkk 设置缓存删除(开启|关闭)
+- #kkk 设置评论(开启|关闭)
+- #kkk 设置评论图片(开启|关闭)
 </details>
 
 > [!TIP]  
@@ -64,10 +80,12 @@ npm install --production
 **先挖坑，可能会咕咕咕**
 
 - [ ] TRSS-Yunzai 的更多适配器
-- [ ] Miao-Yunzai / [Lain-Plugin](https://github.com/Loli-Lain/Lain-plugin) 的更多适配器
+- [ ] ~~Miao-Yunzai / [Lain-Plugin](https://github.com/Loli-Lain/Lain-plugin) 的更多适配器~~
 - [ ] 重构
 
 ## 参考
+
+排名不分先后
 
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 

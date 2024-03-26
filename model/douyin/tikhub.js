@@ -344,7 +344,7 @@ export default class TikHub extends base {
     }
   }
   async DownLoadVideo(video_url, title) {
-    let path = await this.DownLoadFile(video_url, title)
+    let path = await this.DownLoadFile(video_url, title, this.headers)
     if (this.botCfg.bot.skip_login) {
       await this.e.reply(segment.video((Bot.videoToUrl = video_url)))
       await this.removeFileOrFolder(path)
@@ -364,13 +364,13 @@ export default class TikHub extends base {
    * @param {*} title work title
    * @returns
    */
-  async DownLoadFile(video_url, title) {
+  async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
     let response = await new this.networks({
       url: video_url,
-      headers: this.headers,
+      headers: headers,
     }).getfetch()
     // 写入流
-    let writer = fs.createWriteStream(`${this._path}/resources/kkkdownload/video/${title}.mp4`)
+    let writer = fs.createWriteStream(`${this._path}/resources/kkkdownload/video/${title}${type}`)
     response.body.pipe(writer)
     return new Promise((resolve) => {
       writer.on('finish', () => {

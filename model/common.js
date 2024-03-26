@@ -11,5 +11,6 @@ import base from './global/base.js'
 import uploadRecord from './uploadRecord.js'
 import image from './global/image.js'
 import networks from './global/networks.js'
+import bilidata from './bilibili/getdata.js'
 
-export { GetID, TikHub, push, iKun, common, Config, base, uploadRecord, image, networks, DouyinAPI, BiLiBiLiAPI, BiLiBiLi }
+export { GetID, TikHub, push, iKun, common, Config, base, uploadRecord, image, networks, DouyinAPI, BiLiBiLiAPI, BiLiBiLi, bilidata }

@@ -8,6 +8,8 @@
   "author": "ikenxuan",
   "license": "MIT",
   "dependencies": {
+    "child_process": "^1.0.2",
+    "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "sharp": "^0.33.2"
   }
