@@ -1,4 +1,3 @@
-import { segment } from 'icqq'
 import { base, BiLiBiLiAPI, networks, TikHub } from '../common.js'
 
 export default class BiLiBiLi extends base {
