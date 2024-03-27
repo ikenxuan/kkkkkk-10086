@@ -64,7 +64,7 @@ npm install --production
 </details>
 
 > [!TIP]  
-> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin.git) 进行配置文件的修改。配置文件路径：
+> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin.git) 进行配置文件的修改。配置文件路径：
 >
 > ```sh
 > # 初次使用自动创建
@@ -72,12 +72,12 @@ npm install --production
 > ```
 
 > [!CAUTION]  
-> 抖音解析使用前必须配置抖音 `ck`
+> 抖音解析使用前必须配置抖音 `ck`  
 > B 站解析可以不设置 `ck`，但默认画质为 `360p`，设置后默认解析当前账号可支持的 `最高画质`
 >
-> **如何获取 ck？**(抖音 / B 站同理)
-> 找到携带 Cookie 的请求复制请求头中的 Cookie
-> ![img](.\resources\pic\pic1.png)
+> **如何获取 ck？**(抖音 / B 站同理)  
+> 找到携带 Cookie 的请求复制请求头中的 Cookie  
+> ![img](./resources/pic/pic1.png)
 
 ## TODO
 

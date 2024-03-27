@@ -10,5 +10,9 @@ export default class API {
   async VIDEO(avid, cid) {
     return `https://api.bilibili.com/x/player/playurl?avid=${avid}&cid=${cid}`
   }
+
+  async COMMENTS() {
+    return `https://api.bilibili.com/x/v2/reply/reply`
+  }
 }
 export const BiLiBiLiAPI = new API()
