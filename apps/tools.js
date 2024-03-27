@@ -10,7 +10,7 @@ export class example extends plugin {
             fnc: 'douy',
           },
           {
-            reg: /(http|https):\/\/(?:www\.)?(?:b23\.tv|bilibili\.com)\/[^ ]+/g,
+            reg: '(bilibili.com|b23.tv|t.bilibili.com)',
             fnc: 'bilib',
           },
         ]
@@ -37,7 +37,14 @@ export class example extends plugin {
   }
 
   async bilib(e) {
-    const url = e.toString().match(/(http|https):\/\/(?:www\.)?(?:b23\.tv|bilibili\.com)\/[^ ]+/g)
+    const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g
+    const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g
+    let url = e.msg === undefined ? e.message.shift().data.replaceAll('\\', '') : e.msg.trim().replaceAll('\\', '')
+    if (url.includes('b23.tv')) {
+      url = bShortRex.exec(url)?.[0]
+    } else if (url.includes('www.bilibili.com')) {
+      url = urlRex.exec(url)[0]
+    }
     const bvid = await GetID(url)
     const data = await new bilidata().GetData(bvid.id)
     await new BiLiBiLi(e, data.TYPE).RESOURCES(data)

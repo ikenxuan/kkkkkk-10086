@@ -7,7 +7,7 @@ export default class BiLiBiLi extends base {
     super()
     this.e = e
     this.TYPE = TYPE
-    this.标题 = ''
+    this.downloadfilename = ''
   }
 
   async RESOURCES(OBJECT) {
@@ -16,6 +16,7 @@ export default class BiLiBiLi extends base {
     const up头像 = OBJECT.INFODATA.data.owner.face
     const 封面 = OBJECT.INFODATA.data.pic
     this.标题 = OBJECT.INFODATA.data.title
+    this.downloadfilename = this.标题.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
     const 硬币 = await this.count(OBJECT.INFODATA.data.stat.coin)
     const 点赞 = await this.count(OBJECT.INFODATA.data.stat.like)
     const 转发 = await this.count(OBJECT.INFODATA.data.stat.share)
@@ -51,12 +52,15 @@ export default class BiLiBiLi extends base {
             bmp3,
             this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`,
             async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${OBJECT.INFODATA.data.title}.mp4`
+              const filePath = this._path + `/resources/kkkdownload/video/${this.downloadfilename}.mp4`
               fs.renameSync(this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`, filePath)
+              await this.removeFileOrFolder(bmp4, true)
+              await this.removeFileOrFolder(bmp3, true)
+
               const stats = fs.statSync(filePath)
-              const fileSizeInMB = stats.size / (1024 * 1024)
+              const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 70) {
-                this.e.reply('视频文件正通过群文件上传中...')
+                this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file(filePath)
               } else {
                 await this.e.reply(segment.video(filePath))
@@ -70,7 +74,7 @@ export default class BiLiBiLi extends base {
         }
         break
       case '!isLogin':
-        await new TikHub(this.e).DownLoadVideo(OBJECT.DATA.data.durl[0].url, this.标题)
+        await new TikHub(this.e).DownLoadVideo(OBJECT.DATA.data.durl[0].url, this.downloadfilename)
         break
     }
   }
@@ -95,8 +99,8 @@ export default class BiLiBiLi extends base {
     }
   }
 
-  async removeFileOrFolder(path) {
-    if (this.Config.rmmp4 === true || this.Config.rmmp4 === undefined) {
+  async removeFileOrFolder(path, force = false) {
+    if (this.Config.rmmp4 || this.Config.rmmp4 === undefined) {
       const stats = await new Promise((resolve, reject) => {
         fs.stat(path, (err, stats) => {
           if (err) reject(err)
@@ -113,6 +117,14 @@ export default class BiLiBiLi extends base {
           }
         })
       }
+    } else if (force) {
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error('删除缓存文件失败', err)
+        } else {
+          console.log('缓存文件删除成功')
+        }
+      })
     }
   }
 }

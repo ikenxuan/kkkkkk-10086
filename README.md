@@ -48,13 +48,9 @@ npm install --production
 - B 站支持:
 
   - [x] 视频
-  - ~~咕咕咕~~
+  - [ ] 咕咕咕
 
 ---
-
-> [!CAUTION]  
-> 使用前必须配置抖音 Cookie
-> 设置 B 站 ck 后是获取当前 ck 对应账号所支持的最高分辨率的视频，可能导致视频上传失败。不设置 ck 则为`240p`
 
 <details><summary>管理命令</summary>
 
@@ -74,6 +70,14 @@ npm install --production
 > # 初次使用自动创建
 > 机器人目录/plugins/kkkkkk-10086/config/config.json
 > ```
+
+> [!CAUTION]  
+> 抖音解析使用前必须配置抖音 `ck`
+> B 站解析可以不设置 `ck`，但默认画质为 `360p`，设置后默认解析当前账号可支持的 `最高画质`
+>
+> **如何获取 ck？**(抖音 / B 站同理)
+> 找到携带 Cookie 的请求复制请求头中的 Cookie
+> ![img](.\resources\pic\pic1.png)
 
 ## TODO
 
@@ -102,4 +106,4 @@ npm install --production
 - Miao-Yunzai ☞ [**GitHub**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**Gitee**](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
 - TRSS-Yunzai ☞ [**GitHub**](https://github.com/TimeRainStarSky/Yunzai) | [**Gitee**](https://gitee.com/TimeRainStarSky/Yunzai)
 - Yunzai-Bot 插件库 ☞ [**Github**](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) | [**Gitee**](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
-- Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)
+- ~~Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
