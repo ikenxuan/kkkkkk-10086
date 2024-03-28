@@ -41,7 +41,18 @@ export function supportGuoba() {
           component: 'InputPassword',
           required: true,
           componentProps: {
-            placeholder: '很重要！不设置将无法使用本插件',
+            placeholder: '很重要！不设置将无法使用抖音解析',
+          },
+        },
+        {
+          field: 'bilibilick',
+          label: 'B站ck',
+          helpMessage: '必填项',
+          bottomHelpMessage: '登录https://www.bilibili.com/获取请求头中的Cookie填入',
+          component: 'InputPassword',
+          required: true,
+          componentProps: {
+            placeholder: '很重要！不设置将无法使用B站解析',
           },
         },
         {

@@ -10,5 +10,6 @@
   "douyinpush": false,
   "douyinpushlist": [],
   "douyinpushlog": false,
-  "douyinpushcron": "*/10 * * * *"
+  "douyinpushcron": "*/10 * * * *",
+  "bilibilick": ""
 }

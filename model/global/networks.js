@@ -1,6 +1,9 @@
 import fetch from 'node-fetch'
 import https from 'https'
 import { Response } from 'node-fetch'
+import ProgressBar from 'progress'
+import fs from 'fs'
+
 let controller = new AbortController()
 let signal = controller.signal
 export default class networks {
@@ -31,6 +34,7 @@ export default class networks {
     this.timeout = data.timeout || 15000
     this.isGetResult = false
     this.timer = ''
+    this.filepath = data.filepath
   }
 
   get config() {
@@ -146,6 +150,67 @@ export default class networks {
     }
   }
 
+  async downloadStream(progressCallback) {
+    try {
+      const response = await fetch(this.url, this.config)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${this.url}. Status: ${response.status} ${response.statusText}`)
+      }
+
+      const contentLength = response.headers.get('content-length')
+      const totalBytes = parseInt(contentLength, 10)
+      let downloadedBytes = 0
+      let lastPrintedPercentage = -1
+
+      const writer = fs.createWriteStream(this.filepath)
+
+      const progress = new ProgressBar('  downloading [:bar] :rate/bps :percent :etas', {
+        total: totalBytes,
+        width: 40,
+        incomplete: ' ',
+        complete: '=',
+        clear: true,
+        renderThrottle: 500,
+      })
+
+      const printProgress = () => {
+        // 计算当前下载进度百分比
+        const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
+
+        // 控制日志打印频率，只在百分比变化时打印日志
+        if (progressPercentage !== lastPrintedPercentage) {
+          progressCallback(downloadedBytes, totalBytes)
+          lastPrintedPercentage = progressPercentage
+        }
+      }
+
+      // 每0.5秒打印一次下载进度
+      const intervalId = setInterval(printProgress, 500)
+
+      response.body.on('data', (chunk) => {
+        downloadedBytes += chunk.length
+        progress.tick(chunk.length)
+      })
+
+      response.body.pipe(writer)
+
+      return new Promise((resolve, reject) => {
+        writer.on('finish', () => {
+          clearInterval(intervalId) // 停止定时器
+          printProgress() // 打印最终下载进度
+          resolve(this.filepath)
+        })
+
+        writer.on('error', (err) => {
+          reject(err)
+        })
+      })
+    } catch (error) {
+      console.error('Download failed:', error)
+      throw error
+    }
+  }
   async Tojson() {
     if (this.fetch.headers.get('content-type').includes('json')) {
       this.fetch = await this.fetch.json()

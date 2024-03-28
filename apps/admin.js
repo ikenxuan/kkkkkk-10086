@@ -61,6 +61,11 @@ export class admin extends plugin {
           fnc: 'commentsimg',
           permission: 'master',
         },
+        {
+          reg: '^#*(KKK|kkk|kkkkkk-10086)设置B站ck$',
+          fnc: 'setbilick',
+          permission: 'master',
+        },
       ],
     })
   }
@@ -96,6 +101,27 @@ export class admin extends plugin {
     await updateConfig('rmmp4', value, e)
   }
 
+  async setbilick(e) {
+    this.setContext('savedyck')
+    const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
+    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    return false
+  }
+  async savebilick() {
+    if (this.e.message[0].type != 'text') {
+      await this.reply('设置错误', true)
+      this.finish('savdbilick')
+    }
+    const value = this.e.message[0].text
+    await updateConfig('ck', value, this.e)
+    this.finish('savebilick')
+  }
+
+  async commentsimg(e) {
+    const value = getValue(e.msg)
+    await updateConfig('commentsimg', value, e)
+  }
+
   async setdyck(e) {
     this.setContext('savedyck')
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
@@ -108,12 +134,7 @@ export class admin extends plugin {
       this.finish('savddyck')
     }
     const value = this.e.message[0].text
-    await updateConfig('ck', value, this.e)
+    await updateConfig('bilibilick', value, this.e)
     this.finish('savedyck')
-  }
-
-  async commentsimg(e) {
-    const value = getValue(e.msg)
-    await updateConfig('commentsimg', value, e)
   }
 }
