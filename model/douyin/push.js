@@ -1,7 +1,7 @@
 import TikHub from './tikhub.js'
-import { GetID } from './judgment.js'
+import { GetID } from '../global/judgment.js'
 import iKun from './getdata.js'
-import base from '../base.js'
+import base from '../global/base.js'
 import fs from 'fs'
 
 export default class push extends base {

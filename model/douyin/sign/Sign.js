@@ -1,7 +1,7 @@
-import base from '../../base.js'
+import base from '../../global/base.js'
 import { MsToken } from './MsToken.js'
 import * as xbogus from './X-Bogus.cjs'
-import networks from '../../../utils/networks.js'
+import networks from '../../global/networks.js'
 
 export default class sign extends base {
   async Mstoken(length) {
@@ -23,8 +23,8 @@ export default class sign extends base {
             cookie: 'device_web_cpu_core=12; device_web_memory_size=8; architecture=amd64; IsDouyinActive=false',
             'User-Agent': this.headers['User-Agent'],
           },
-        }).getHeaders()
-      )['set-cookie']
+        }).getHeaders(),
+      )['set-cookie'],
     )[1]
   }
 }

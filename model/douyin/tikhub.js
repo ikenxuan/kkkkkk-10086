@@ -1,13 +1,9 @@
+import { common, base, iKun, Config, uploadRecord, image } from '../common.js'
 import fs from 'fs'
-import common from '../../../../lib/common/common.js'
-import base from '../base.js'
-import uploadRecord from '../uploadRecord.js'
 import path from 'path'
 import { comments } from './comments.js'
-import image from '../../utils/image.js'
-import iKun from './getdata.js'
 import { Emoji } from './emoji.js'
-import { Config } from '../config.js'
+
 let mp4size = ''
 
 export default class TikHub extends base {
@@ -348,13 +344,13 @@ export default class TikHub extends base {
     }
   }
   async DownLoadVideo(video_url, title) {
-    let path = await this.DownLoadFile(video_url, title)
+    let path = await this.DownLoadFile(video_url, title, this.headers)
     if (this.botCfg.bot.skip_login) {
       await this.e.reply(segment.video((Bot.videoToUrl = video_url)))
       await this.removeFileOrFolder(path)
     } else if (mp4size >= 80) {
       // 群和私聊分开
-      await this.e.reply('视频过大，尝试通过文件上传，请稍后移步群文件查看', false, { recallMsg: 30 })
+      await this.e.reply(`视频大小: ${mp4size}MB 正通过群文件上传中...`)
       await this.upload_file(path)
       await this.removeFileOrFolder(path)
     } else {
@@ -364,23 +360,23 @@ export default class TikHub extends base {
   }
 
   /**
-   * @param {*} video_url work url
-   * @param {*} title work title
+   *
+   * @param {*} video_url 下载地址
+   * @param {*} title 文件名
+   * @param {*} headers 请求头
+   * @param {*} type 下载文件类型，默认.mp4
    * @returns
    */
-  async DownLoadFile(video_url, title) {
-    let response = await new this.networks({
+  async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
+    await new this.networks({
       url: video_url,
-      headers: this.headers,
-    }).getfetch()
-    // 写入流
-    let writer = fs.createWriteStream(`${this._path}/resources/kkkdownload/video/${title}.mp4`)
-    response.body.pipe(writer)
-    return new Promise((resolve) => {
-      writer.on('finish', () => {
-        resolve(writer.path)
-      })
+      headers: headers,
+      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
+    }).downloadStream((downloadedBytes, totalBytes) => {
+      const progressPercentage = (downloadedBytes / totalBytes) * 100
+      console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
     })
+    return `${this._path}/resources/kkkdownload/video/${title}${type}`
   }
 
   async removeFileOrFolder(path) {

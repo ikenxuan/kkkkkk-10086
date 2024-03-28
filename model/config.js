@@ -17,6 +17,7 @@ const defaultConfig = {
   douyinpushcron: '*/10 * * * *',
   // douyinpushparse: true,
   douyinpushGroup: 'master',
+  bilibilick: '',
 }
 let config = {}
 
