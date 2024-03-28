@@ -18,6 +18,7 @@ const defaultConfig = {
   // douyinpushparse: true,
   douyinpushGroup: 'master',
   bilibilick: '',
+  bilibilirefresh_token: '',
 }
 let config = {}
 

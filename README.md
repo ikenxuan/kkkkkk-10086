@@ -48,19 +48,22 @@ npm install --production
 - B 站支持:
 
   - [x] 视频
+  - [ ] 评论
+  - [x] 扫码登录取 ck
+  - [ ] ck 自刷新
   - [ ] 咕咕咕
 
 ---
 
 <details><summary>管理命令</summary>
 
-- #?kkk设置
-- #kkk设置抖音 ck
-- #kkk设置视频解析(开启|关闭)
-- #kkk设置默认视频解析(开启|关闭)
-- #kkk设置缓存删除(开启|关闭)
-- #kkk设置评论(开启|关闭)
-- #kkk设置评论图片(开启|关闭)
+- #?kkk 设置
+- #kkk 设置抖音 ck
+- #kkk 设置视频解析(开启|关闭)
+- #kkk 设置默认视频解析(开启|关闭)
+- #kkk 设置缓存删除(开启|关闭)
+- #kkk 设置评论(开启|关闭)
+- #kkk 设置评论图片(开启|关闭)
 </details>
 
 > [!TIP]  
@@ -73,15 +76,17 @@ npm install --production
 
 > [!CAUTION]  
 > 抖音解析使用前必须配置抖音 `ck`  
-> B 站解析不设置 `ck` 画质为 `360p`，设置后最高可解析 `4K HDR` 需要视频支持与 `大会员` 
+> B 站解析不设置 `ck` 画质为 `360p`，设置后最高可解析 `4K HDR` 需要视频支持与 `大会员`
 
 > [!NOTE]
-> ### **如何获取 ck？**(抖音 / 哔哩哔哩同理)  
-> - 浏览器  
-> 找到携带 Cookie 的请求复制请求头中的 Cookie  
-> ![img](./resources/pic/pic1.png)
-> - 手机  
-> 使用 [via浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [抖音](https://www.douyin.com/)/[哔哩哔哩](https://www.bilibili.com/) 网页版并登录，点击左上角 `按钮` => `查看 Cookies` => `复制文本`
+>
+> ### **如何获取 ck？**
+>
+> - **浏览器** (抖音 / 哔哩哔哩同理)  
+>   找到携带 Cookie 的请求复制请求头中的 Cookie  
+>   ![img](./resources/pic/pic1.png)
+> - **手机**  
+>   使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [抖音](https://www.douyin.com/)/[哔哩哔哩](https://www.bilibili.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
 
 ## TODO
 
@@ -89,6 +94,7 @@ npm install --production
 
 - [ ] TRSS-Yunzai 的更多适配器
 - [ ] ~~Miao-Yunzai / [Lain-Plugin](https://github.com/Loli-Lain/Lain-plugin) 的更多适配器~~
+- [ ] 快手
 - [ ] 重构
 
 ## 参考
@@ -104,6 +110,8 @@ npm install --production
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
 
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
+
+- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect/)
 
 ## 友情链接
 

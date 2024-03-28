@@ -1,15 +1,11 @@
-import fs from 'fs/promises'
+import { Config } from '../model/config.js'
+import BiLogin from '../model/bilibili/login.js'
+import { refresh_token } from '../model/bilibili/cookie.js'
 
-let configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
 let _path = process.cwd()
 
 async function updateConfig(key, value, e) {
-  const str = await fs.readFile(configPath, 'utf8')
-  const config = JSON.parse(str)
-
-  config[key] = value
-
-  await fs.writeFile(configPath, JSON.stringify(config, null, 2))
+  Config[key] = value
   e.reply('设置成功！')
 }
 
@@ -66,14 +62,33 @@ export class admin extends plugin {
           fnc: 'setbilick',
           permission: 'master',
         },
+        {
+          reg: '^#?(kkk)?B站(扫码)?登录$',
+          fnc: 'Blogin',
+          permission: 'master',
+        },
       ],
     })
+    // this.task = {
+    //   cron: '0 1 * * *',
+    //   name: '刷新B站ck',
+    //   fnc: () => this.refresh_token(),
+    //   log: true,
+    // }
+  }
+
+  async refresh_token() {
+    await refresh_token()
+  }
+
+  async Blogin(e) {
+    await new BiLogin(e).Login()
   }
 
   async set(e) {
     let text = []
     for (let i = 0; i < this.rule.length; i++) {
-      let reg = this.rule[i].reg
+      let reg = this.rule[i].reg + '\n'
       text.push(reg)
     }
     e.reply(text)

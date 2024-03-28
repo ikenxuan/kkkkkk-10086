@@ -9,9 +9,11 @@
   "license": "MIT",
   "dependencies": {
     "child_process": "^1.0.2",
+    "jsdom": "^24.0.0",
     "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "progress": "^2.0.3",
+    "qrcode": "^1.5.3",
     "sharp": "^0.33.2"
   }
 }

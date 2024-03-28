@@ -46,7 +46,7 @@ export class example extends plugin {
       url = urlRex.exec(url)[0]
     }
     const bvid = await GetID(url)
-    const data = await new bilidata().GetData(bvid.id)
+    const data = await new bilidata(bvid.type).GetData(bvid)
     await new BiLiBiLi(e, data.TYPE).RESOURCES(data)
   }
 

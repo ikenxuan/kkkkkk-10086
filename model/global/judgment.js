@@ -47,6 +47,7 @@ export async function GetID(url) {
     case /video\/([A-Za-z0-9]+)/.test(longLink):
       const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)/)
       result = {
+        type: 'bilibilivideo',
         id: bvideoMatch[1],
       }
       break

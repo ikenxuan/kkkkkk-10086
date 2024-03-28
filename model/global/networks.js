@@ -23,7 +23,7 @@ export default class networks {
     this.headers = data.headers || {}
     this.type = data.type || 'json'
     this.method = data.method || 'GET'
-    this.body = data.body || ''
+    this.body = data.body || '' //用于POST请求
     this.data = {}
     this.agent = data.isAgent
       ? new https.Agent({
@@ -147,6 +147,53 @@ export default class networks {
     } catch (error) {
       console.log('获取响应头失败:', error)
       return null
+    }
+  }
+
+  async getHeadersAndData() {
+    try {
+      // 发起网络请求获取响应对象
+      this.fetch = await this.returnResult()
+
+      // 初始化响应头和响应数据
+      let headers = null
+      let data = null
+
+      if (this.fetch) {
+        // 获取响应头
+        if (this.fetch.headers) {
+          headers = {}
+          const fetchHeaders = this.fetch.headers
+          for (const [key, value] of fetchHeaders.entries()) {
+            headers[key] = value
+          }
+        } else {
+          console.log('未获取到响应头')
+        }
+
+        // 获取响应数据
+        switch (this.type) {
+          case 'json':
+            data = await this.fetch.json()
+            break
+          case 'text':
+            data = await this.fetch.text()
+            break
+          case 'arrayBuffer':
+            data = await this.ToArrayBuffer()
+            break
+          case 'blob':
+            data = await this.ToBlob()
+            break
+        }
+      } else {
+        console.log('未获取到响应对象')
+      }
+
+      return { headers, data }
+    } catch (error) {
+      console.log('获取响应头和数据失败:', error)
+      return { headers: null, data: null }
     }
   }
 
