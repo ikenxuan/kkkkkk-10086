@@ -11,21 +11,14 @@ export default class BiLiBiLi extends base {
   }
 
   async RESOURCES(OBJECT) {
-    const 简介 = OBJECT.INFODATA.data.desc
-    const up名字 = OBJECT.INFODATA.data.owner.name
-    const up头像 = OBJECT.INFODATA.data.owner.face
-    const 封面 = OBJECT.INFODATA.data.pic
-    this.标题 = OBJECT.INFODATA.data.title
-    this.downloadfilename = this.标题.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
-    const 硬币 = await this.count(OBJECT.INFODATA.data.stat.coin)
-    const 点赞 = await this.count(OBJECT.INFODATA.data.stat.like)
-    const 转发 = await this.count(OBJECT.INFODATA.data.stat.share)
-    const 播放量 = await this.count(OBJECT.INFODATA.data.stat.view)
-    const 收藏 = await this.count(OBJECT.INFODATA.data.stat.favorite)
-    const 弹幕 = await this.count(OBJECT.INFODATA.data.stat.danmaku)
+    const { desc, owner, pic, title, stat } = OBJECT.INFODATA.data
+    const { name, face } = owner
+    const { coin, like, share, view, favorite, danmaku } = stat
+    this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
+
     await this.e.reply([
       segment.image(封面),
-      `标题: ${this.标题}\n\n作者: ${up名字}\n播放量: ${播放量},    弹幕: ${弹幕}\n点赞: ${点赞},    投币: ${硬币}\n转发: ${转发},    收藏: ${收藏}`,
+      `标题: ${title}\n\n作者: ${name}\n播放量: ${view},    弹幕: ${danmaku}\n点赞: ${like},    投币: ${coin}\n转发: ${share},    收藏: ${favorite}`,
     ])
     await this.getvideo(OBJECT)
   }
