@@ -1,6 +1,8 @@
 import cfg from '../../../../lib/config/config.js'
 import networks from './networks.js'
 import { Config } from '../config.js'
+import fs from 'fs'
+import path from 'path'
 
 export default class base {
   constructor(e = {}) {
@@ -21,5 +23,95 @@ export default class base {
   }
   get allow() {
     return Config.ck !== ''
+  }
+
+  /** 要上传的视频文件，私聊需要加好友 */
+  async upload_file(file) {
+    if (this.e.isGroup) {
+      await this.e.group.fs.upload(file)
+      await this.removeFileOrFolder(file)
+    } else if (this.e.isPrivate) {
+      await this.e.friend.sendFile(file)
+      await this.removeFileOrFolder(file)
+    }
+  }
+  async DownLoadVideo(video_url, title) {
+    let res = await this.DownLoadFile(video_url, title, this.headers)
+    res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
+    if (this.botCfg.bot.skip_login) {
+      await this.e.reply(segment.video((Bot.videoToUrl = video_url)))
+      await this.removeFileOrFolder(res.filepath)
+    } else if (res.totalBytes >= 80) {
+      // 群和私聊分开
+      await this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
+      await this.upload_file(res.filepath)
+      await this.removeFileOrFolder(res.filepath)
+    } else {
+      await this.e.reply(segment.video(res.filepath))
+      await this.removeFileOrFolder(res.filepath)
+    }
+  }
+
+  /**
+   *
+   * @param {*} video_url 下载地址
+   * @param {*} title 文件名
+   * @param {*} headers 请求头
+   * @param {*} type 下载文件类型，默认.mp4
+   * @returns
+   */
+  async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
+    const { filepath, totalBytes } = await new this.networks({
+      url: video_url,
+      headers: headers,
+      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
+    }).downloadStream((downloadedBytes, totalBytes) => {
+      const progressPercentage = (downloadedBytes / totalBytes) * 100
+      console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
+    })
+    return { filepath, totalBytes }
+  }
+
+  /** 删文件 */
+  async removeFileOrFolder(path) {
+    if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
+      const stats = await new Promise((resolve, reject) => {
+        fs.stat(path, (err, stats) => {
+          if (err) reject(err)
+          resolve(stats)
+        })
+      })
+      if (stats.isFile()) {
+        // 指向文件
+        fs.unlink(path, (err) => {
+          if (err) {
+            console.error('删除缓存文件失败', err)
+          } else {
+            console.log('缓存文件删除成功')
+          }
+        })
+      }
+    }
+  }
+
+  /** 过万整除 */
+  async count(count) {
+    if (count > 10000) {
+      return (count / 10000).toFixed(1) + '万'
+    } else {
+      return count.toString()
+    }
+  }
+
+  /** 文件夹名字 */
+  async mkdirs(dirname) {
+    if (fs.existsSync(dirname)) {
+      return true
+    } else {
+      if (mkdirs(path.dirname(dirname))) {
+        fs.mkdirSync(dirname)
+        return true
+      }
+    }
   }
 }

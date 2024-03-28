@@ -47,12 +47,12 @@ export function supportGuoba() {
         {
           field: 'bilibilick',
           label: 'B站ck',
-          helpMessage: '必填项',
+          helpMessage: '不设置 `ck` 画质为 `360p`，设置后最高可解析 `4K HDR` 需要视频支持与 `大会员`',
           bottomHelpMessage: '登录https://www.bilibili.com/获取请求头中的Cookie填入',
           component: 'InputPassword',
-          required: true,
+          required: false,
           componentProps: {
-            placeholder: '很重要！不设置将无法使用B站解析',
+            placeholder: '建议设置',
           },
         },
         {

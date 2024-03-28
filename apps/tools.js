@@ -1,4 +1,4 @@
-import { GetID, TikHub, push, iKun, common, Config, BiLiBiLi, bilidata } from '../model/common.js'
+import { base, GetID, TikHub, push, iKun, common, Config, BiLiBiLi, bilidata } from '../model/common.js'
 import cfg from '../../../lib/config/config.js'
 
 export class example extends plugin {
@@ -56,7 +56,7 @@ export class example extends plugin {
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new TikHub(e).GetData(iddata.type, data)
     await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve()))
-    iddata.is_mp4 ? await new TikHub(e).DownLoadVideo(res.g_video_url, res.g_title) : null
+    iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, res.g_title) : null
   }
 
   async setpushdouy(e) {

@@ -199,7 +199,7 @@ export default class networks {
         writer.on('finish', () => {
           clearInterval(intervalId) // 停止定时器
           printProgress() // 打印最终下载进度
-          resolve(this.filepath)
+          resolve({ filepath: this.filepath, totalBytes })
         })
 
         writer.on('error', (err) => {

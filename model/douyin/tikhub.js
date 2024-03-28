@@ -1,6 +1,5 @@
 import { common, base, iKun, Config, uploadRecord, image } from '../common.js'
 import fs from 'fs'
-import path from 'path'
 import { comments } from './comments.js'
 import { Emoji } from './emoji.js'
 
@@ -109,8 +108,8 @@ export default class TikHub extends base {
       let author_data = []
       let authorres = []
       const author = Data.aweme_detail.author
-      let sc = await count(author.favoriting_count) // 收藏
-      let gz = await count(author.follower_count) // 关注
+      let sc = await this.count(author.favoriting_count) // 收藏
+      let gz = await this.count(author.follower_count) // 关注
       let id = author.nickname // id
       let jj = author.signature // 简介
       let age = author.user_age // 年龄
@@ -332,103 +331,12 @@ export default class TikHub extends base {
   async getHistoryLog() {
     return (await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url
   }
-
-  /** 要上传的视频文件，私聊需要加好友 */
-  async upload_file(file) {
-    if (this.e.isGroup) {
-      await this.e.group.fs.upload(file)
-      await this.removeFileOrFolder(file)
-    } else if (this.e.isPrivate) {
-      await this.e.friend.sendFile(file)
-      await this.removeFileOrFolder(file)
-    }
-  }
-  async DownLoadVideo(video_url, title) {
-    let path = await this.DownLoadFile(video_url, title, this.headers)
-    if (this.botCfg.bot.skip_login) {
-      await this.e.reply(segment.video((Bot.videoToUrl = video_url)))
-      await this.removeFileOrFolder(path)
-    } else if (mp4size >= 80) {
-      // 群和私聊分开
-      await this.e.reply(`视频大小: ${mp4size}MB 正通过群文件上传中...`)
-      await this.upload_file(path)
-      await this.removeFileOrFolder(path)
-    } else {
-      await this.e.reply(segment.video(path))
-      await this.removeFileOrFolder(path)
-    }
-  }
-
-  /**
-   *
-   * @param {*} video_url 下载地址
-   * @param {*} title 文件名
-   * @param {*} headers 请求头
-   * @param {*} type 下载文件类型，默认.mp4
-   * @returns
-   */
-  async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
-    await new this.networks({
-      url: video_url,
-      headers: headers,
-      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
-    }).downloadStream((downloadedBytes, totalBytes) => {
-      const progressPercentage = (downloadedBytes / totalBytes) * 100
-      console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
-    })
-    return `${this._path}/resources/kkkdownload/video/${title}${type}`
-  }
-
-  async removeFileOrFolder(path) {
-    if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
-      const stats = await new Promise((resolve, reject) => {
-        fs.stat(path, (err, stats) => {
-          if (err) reject(err)
-          resolve(stats)
-        })
-      })
-      if (stats.isFile()) {
-        // 指向文件
-        fs.unlink(path, (err) => {
-          if (err) {
-            console.error('删除缓存文件失败', err)
-          } else {
-            console.log('缓存文件删除成功')
-          }
-        })
-      }
-    }
-  }
-}
-
-/**
- * @param {*} count 过万整除
- * @returns
- */
-async function count(count) {
-  if (count > 10000) {
-    return (count / 10000).toFixed(1) + '万'
-  } else {
-    return count.toString()
-  }
-}
-
-/** 文件夹名字 */
-async function mkdirs(dirname) {
-  if (fs.existsSync(dirname)) {
-    return true
-  } else {
-    if (mkdirs(path.dirname(dirname))) {
-      fs.mkdirSync(dirname)
-      return true
-    }
-  }
 }
 
 /** 销毁时间 = 现在时间 + 3小时 */
 async function destroyTime() {
   const currentDate = new Date()
-  currentDate.setHours(currentDate.getHours() + 3)
+  currentDate.setHours(currentDate.getHours() + 2)
 
   const year = currentDate.getFullYear().toString()
   const month = (currentDate.getMonth() + 1).toString()
