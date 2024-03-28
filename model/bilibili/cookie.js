@@ -1,8 +1,10 @@
-import { Config, BiLiBiLiAPI, networks } from '../common.js'
+import { Config, BiLiBiLiAPI, networks, bilidata } from '../common.js'
 import { wbi_sign } from './sign/wbi.js'
+import { getCorrespondPath } from './sign/CorrespondPath.js'
+import { JSDOM } from 'jsdom'
 
 export async function checkuser(BASEURL) {
-  if (Config.bilibilick == '') return { QUERY: 'platform=html5', TYPE: '!isLogin' }
+  if (Config.bilibilick == '') return { QUERY: '&platform=html5', TYPE: '!isLogin' }
   const logininfo = await new networks({ url: await BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.bilibilick } }).getData()
   let sign = await wbi_sign(BASEURL)
 
@@ -12,4 +14,30 @@ export async function checkuser(BASEURL) {
   if (isvip) {
     return { QUERY: `&fnval=16&fourk=1&${sign}`, TYPE: 'isLogin' }
   } else return { QUERY: `&qn=${qn[3]}&fnval=16`, TYPE: 'isLogin' }
+}
+
+export async function refresh_token() {
+  const csrfMatch = Config.bilibilick.match(/bili_jct=([^;]+)/)
+  const csrf = csrfMatch ? csrfMatch[1] : null
+  const result = await new bilidata('检查是否需要刷新').GetData(csrf)
+
+  switch (result.data.refresh) {
+    case false:
+      const timestamp = result.data.timestamp
+      const CorrespondPath = await getCorrespondPath(timestamp)
+      const html = await new bilidata('refresh_csrf').GetData(CorrespondPath)
+
+      /** 提取 refresh_csrf*/
+      const { document } = new JSDOM(html).window
+      const refresh_csrf = document.querySelector('div[id="1-name"]').textContent
+
+      const refreshdata = await new bilidata('刷新Cookie').GetData({
+        csrf: csrf,
+        refresh_csrf: refresh_csrf,
+        source: 'main_web',
+        refresh_token: Config.bilibilirefresh_token,
+      })
+      Config.bilibilirefresh_token = refreshdata.data.refresh_token
+    // ...
+  }
 }
