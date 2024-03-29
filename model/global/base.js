@@ -46,7 +46,7 @@ export default class base {
     let res = await this.DownLoadFile(video_url, title, this.headers)
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
     if (this.botCfg.bot.skip_login) {
-      await this.e.reply(segment.video((Bot.videoToUrl = video_url)))
+      await this.e.reply(segment.video(video_url))
       await this.removeFileOrFolder(res.filepath)
     } else if (res.totalBytes >= 80) {
       // 群和私聊分开

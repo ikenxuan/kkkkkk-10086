@@ -19,6 +19,7 @@ const defaultConfig = {
   douyinpushGroup: 'master',
   bilibilick: '',
   bilibilirefresh_token: '',
+  sendforwardmsg: true,
 }
 let config = {}
 

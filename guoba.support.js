@@ -121,6 +121,13 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'sendforwardmsg',
+          label: '发送合并转发消息',
+          bottomHelpMessage: '字面意思',
+          component: 'Switch',
+          required: false,
+        },
+        {
           component: 'Divider',
           label: '抖音 推送配置',
           componentProps: {
