@@ -51,7 +51,7 @@ export class example extends plugin {
   }
 
   async douy(e) {
-    const url = e.toString().match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
+    const url = e.msg.toString().match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new TikHub(e).GetData(iddata.type, data)

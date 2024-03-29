@@ -10,7 +10,11 @@ let core
 try {
   ;({ core } = await import('icqq'))
 } catch {
-  ;({ core } = await import(`file://${process.cwd()}/plugins/ICQQ-Plugin/node_modules/icqq/lib/index.js`))
+  try {
+    ;({ core } = await import(`file://${process.cwd()}/plugins/ICQQ-Plugin/node_modules/icqq/lib/index.js`))
+  } catch {
+    ;({ core } = {})
+  }
 }
 
 var errors = {}
