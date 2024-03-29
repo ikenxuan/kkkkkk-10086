@@ -23,47 +23,47 @@ export class admin extends plugin {
       priority: 5000,
       rule: [
         {
-          reg: '^#?(KKK|kkk|kkkkkk-10086)设置$',
+          reg: /^#?(kkk)?s*设置$/,
           fnc: 'set',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置(视频解析|解析)(开启|关闭)$',
+          reg: /^#?(kkk)?s*设置(视频解析|解析)s*(开启|关闭)$/,
           fnc: 'tools',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置(默认视频解析|默认解析)(开启|关闭)$',
+          reg: /^#?(kkk)?s*设置(默认视频解析|默认解析)s*(开启|关闭)$/,
           fnc: 'defaulttool',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置(评论解析|评论)(开启|关闭)$',
+          reg: /^#?(kkk)?s*设置(评论|评论解析)s*(开启|关闭)$/,
           fnc: 'comments',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置缓存删除(开启|关闭)$',
+          reg: /^#?(kkk)?s*设置缓存删除s*(开启|关闭)$/,
           fnc: 'temp',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置抖音ck$',
+          reg: /^#?(kkk)?s*设置抖音ck$/i,
           fnc: 'setdyck',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置评论图片(开启|关闭)$',
+          reg: /^#?(kkk)?s*设置评论图片s*(开启|关闭)$/,
           fnc: 'commentsimg',
           permission: 'master',
         },
         {
-          reg: '^#*(KKK|kkk|kkkkkk-10086)设置B站ck$',
+          reg: /^#?(kkk)?s*设置s*(B站)ck$/i,
           fnc: 'setbilick',
           permission: 'master',
         },
         {
-          reg: '^#?(kkk)?B站(扫码)?登录$',
+          reg: /^#?(kkk)?\s*B站\s*(扫码)?\s*登录$/i,
           fnc: 'Blogin',
           permission: 'master',
         },
@@ -88,7 +88,7 @@ export class admin extends plugin {
   async set(e) {
     let text = []
     for (let i = 0; i < this.rule.length; i++) {
-      let reg = this.rule[i].reg + '\n'
+      let reg = this.rule[i].reg + '\n\n'
       text.push(reg)
     }
     e.reply(text)
@@ -117,18 +117,15 @@ export class admin extends plugin {
   }
 
   async setbilick(e) {
-    this.setContext('savedyck')
+    this.setContext('savebilick')
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }
+
   async savebilick() {
-    if (this.e.message[0].type != 'text') {
-      await this.reply('设置错误', true)
-      this.finish('savdbilick')
-    }
-    const value = this.e.message[0].text
-    await updateConfig('ck', value, this.e)
+    const value = this.e.msg
+    await updateConfig('bilibilick', value, this.e)
     this.finish('savebilick')
   }
 
@@ -149,7 +146,7 @@ export class admin extends plugin {
       this.finish('savddyck')
     }
     const value = this.e.message[0].text
-    await updateConfig('bilibilick', value, this.e)
+    await updateConfig('ck', value, this.e)
     this.finish('savedyck')
   }
 }

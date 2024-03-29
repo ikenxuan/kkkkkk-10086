@@ -28,7 +28,14 @@ export default class base {
   /** 要上传的视频文件，私聊需要加好友 */
   async upload_file(file) {
     if (this.e.isGroup) {
-      await this.e.group.fs.upload(file)
+      switch (this.botCfg.package.name) {
+        case 'trss-yunzai':
+          this.e.group.sendFile(file)
+          break
+        case 'miao-yunzai':
+          await this.e.group.fs.upload(file)
+          break
+      }
       await this.removeFileOrFolder(file)
     } else if (this.e.isPrivate) {
       await this.e.friend.sendFile(file)

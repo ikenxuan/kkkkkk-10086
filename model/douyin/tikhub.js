@@ -93,7 +93,6 @@ export default class TikHub extends base {
             break
         }
       }
-
       let dsc = '解析完的图集图片'
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
@@ -205,12 +204,17 @@ export default class TikHub extends base {
       let title = Data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
       g_title = title
       mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
-      videores.push(`标题：\n${title}`)
-      videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
-      videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
-      videores.push(`永久直链\n(302跳转)需要主动访问一次抖音网页版[https://www.douyin.com]才可正常跳转\n${video.play_addr.url_list[2]}`)
-      videores.push(segment.image(cover))
-      let dsc = '视频基本信息'
+      switch (this.botCfg.package.name) {
+        case 'miao-yunzai':
+          videores.push(`标题：\n${title}`)
+          videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
+          videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
+          videores.push(`永久直链\n(302跳转)需要主动访问一次抖音网页版[https://www.douyin.com]才可正常跳转\n${video.play_addr.url_list[2]}`)
+          videores.push(segment.image(cover))
+        case 'trss-yunzai':
+          break
+      }
+      let dsc = this.botCfg.package.name == 'miao-yunzai' ? '视频基本信息' : null
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
@@ -239,24 +243,34 @@ export default class TikHub extends base {
 
     const tip = ['视频正在上传']
     let res
-    if (is_mp4) {
-      res = full_data
-        .concat(tip)
-        .concat(Config.commentsimg ? file : null)
-        .concat(video_res)
-        .concat(comments_res)
-        .concat(music_res)
-        .concat(author_res)
-        .concat(ocr_res)
-    } else {
-      res = full_data
-        .concat(Config.commentsimg ? file : null)
-        .concat(video_res)
-        .concat(image_res)
-        .concat(comments_res)
-        .concat(music_res)
-        .concat(author_res)
-        .concat(ocr_res)
+
+    switch (this.botCfg.package.name) {
+      case 'miao-yunzai':
+        if (is_mp4) {
+          res = full_data
+            .concat(tip)
+            .concat(Config.commentsimg ? file : null)
+            .concat(video_res)
+            .concat(comments_res)
+            .concat(music_res)
+            .concat(author_res)
+            .concat(ocr_res)
+        } else {
+          res = full_data
+            .concat(Config.commentsimg ? file : null)
+            .concat(video_res)
+            .concat(image_res)
+            .concat(comments_res)
+            .concat(music_res)
+            .concat(author_res)
+            .concat(ocr_res)
+        }
+      case 'trss-yunzai':
+        if (is_mp4) {
+          res = full_data.concat(video_res)
+        } else {
+          res = full_data.concat(image_res)
+        }
     }
 
     let dec
@@ -269,7 +283,7 @@ export default class TikHub extends base {
       res: !this.botCfg.bot.skip_login ? res : [],
       g_video_url,
       g_title,
-      dec,
+      dec: this.botCfg.package.name == 'miao-yunzai' ? dec : null,
     }
   }
 
