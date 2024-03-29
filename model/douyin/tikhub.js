@@ -221,7 +221,7 @@ export default class TikHub extends base {
     }
 
     let file = null
-    if (Config.commentsimg) {
+    if (Config.commentsimg && Config.comments) {
       const EmojiData = await new iKun('Emoji').GetData()
       const list = await Emoji(EmojiData)
       const commentsArray = await comments(CommentData, list)
@@ -243,7 +243,6 @@ export default class TikHub extends base {
 
     const tip = ['视频正在上传']
     let res
-
     switch (this.botCfg.package.name) {
       case 'miao-yunzai':
         if (is_mp4) {
@@ -265,12 +264,14 @@ export default class TikHub extends base {
             .concat(author_res)
             .concat(ocr_res)
         }
+        break
       case 'trss-yunzai':
         if (is_mp4) {
           res = full_data.concat(video_res)
         } else {
           res = full_data.concat(image_res)
         }
+        break
     }
 
     let dec

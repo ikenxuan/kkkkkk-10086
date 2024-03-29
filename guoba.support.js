@@ -231,7 +231,7 @@ export function supportGuoba() {
           field: 'rmmp4',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
-          bottomHelpMessage: '可以偷偷看群友解析的视频都是什么玩意()；保存目录/resources/kkkdownload',
+          bottomHelpMessage: '偷偷存片；保存目录/resources/kkkdownload。非必要勿修改',
           component: 'Switch',
           required: false,
         },

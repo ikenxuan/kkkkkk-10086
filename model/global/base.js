@@ -71,7 +71,7 @@ export default class base {
     const { filepath, totalBytes } = await new this.networks({
       url: video_url,
       headers: headers,
-      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
+      filepath: `${this._path}/resources/kkkdownload/video/${Config.rmmp4 ? `kkktemp_${Date.now()}` : title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
       const progressPercentage = (downloadedBytes / totalBytes) * 100
       console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
