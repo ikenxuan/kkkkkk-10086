@@ -11,7 +11,9 @@
   "douyinpushlist": [],
   "douyinpushlog": false,
   "douyinpushcron": "*/10 * * * *",
+  "douyinpushGroup": "master",
   "bilibilick": "",
   "bilibilirefresh_token": "",
-  "sendforwardmsg": true
+  "sendforwardmsg": true,
+  "bilibilicommentsimg": true
 }

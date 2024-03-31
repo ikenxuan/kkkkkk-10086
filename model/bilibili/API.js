@@ -35,8 +35,12 @@ export default class API {
     return `https://api.bilibili.com/x/player/playurl?avid=${avid}&cid=${cid}`
   }
 
-  async COMMENTS() {
-    return `https://api.bilibili.com/x/v2/reply/reply`
+  async COMMENTS(type, oid) {
+    return `https://api.bilibili.com/x/v2/reply?sort=1&ps=20&type=${type}&oid=${oid}`
+  }
+
+  async EMOJI() {
+    return 'https://api.bilibili.com/x/emote/user/panel/web?business=reply&web_location=0.0'
   }
 }
 export const BiLiBiLiAPI = new API()

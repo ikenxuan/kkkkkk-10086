@@ -208,12 +208,14 @@ export default class TikHub extends base {
         case 'miao-yunzai':
           videores.push(`标题：\n${title}`)
           videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
+          videores.push(`永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
           videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
-          videores.push(`永久直链\n(302跳转)需要主动访问一次抖音网页版[https://www.douyin.com]才可正常跳转\n${video.play_addr.url_list[2]}`)
           videores.push(segment.image(cover))
         case 'trss-yunzai':
           break
       }
+      g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+      logger.info('视频地址', g_video_url)
       let dsc = this.botCfg.package.name == 'miao-yunzai' ? '视频基本信息' : null
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
@@ -225,12 +227,12 @@ export default class TikHub extends base {
       const EmojiData = await new iKun('Emoji').GetData()
       const list = await Emoji(EmojiData)
       const commentsArray = await comments(CommentData, list)
-      let { img } = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, `comment_${Config.newui ? 'new' : 'old'}`, {
+      let { img } = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086', {
         saveId: 'comment',
         Type: is_mp4 ? '视频' : '图集',
         CommentsData: commentsArray,
         CommentLength: String(commentsArray.jsonArray?.length ? commentsArray.jsonArray.length : 0),
-        VideoUrl: g_video_url || Data.aweme_detail.share_url,
+        VideoUrl: `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0` || Data.aweme_detail.share_url,
         Title: g_title,
         VideoSize: mp4size,
         VideoFPS: FPS,

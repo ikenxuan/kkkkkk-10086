@@ -71,7 +71,7 @@ export default class base {
     const { filepath, totalBytes } = await new this.networks({
       url: video_url,
       headers: headers,
-      filepath: `${this._path}/resources/kkkdownload/video/${Config.rmmp4 ? `kkktemp_${Date.now()}` : title}${type}`,
+      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
       const progressPercentage = (downloadedBytes / totalBytes) * 100
       console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
@@ -80,7 +80,7 @@ export default class base {
   }
 
   /** 删文件 */
-  async removeFileOrFolder(path) {
+  async removeFileOrFolder(path, force) {
     if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
       const stats = await new Promise((resolve, reject) => {
         fs.stat(path, (err, stats) => {
@@ -92,12 +92,20 @@ export default class base {
         // 指向文件
         fs.unlink(path, (err) => {
           if (err) {
-            console.error('删除缓存文件失败', err)
+            console.error(path + ' 删除失败！', err)
           } else {
-            console.log('缓存文件删除成功')
+            console.log(path + ' 删除成功！')
           }
         })
       }
+    } else if (force) {
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error(path + ' 删除失败！', err)
+        } else {
+          console.log(path + ' 删除成功！')
+        }
+      })
     }
   }
 

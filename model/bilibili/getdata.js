@@ -1,5 +1,6 @@
 import { base, BiLiBiLiAPI } from '../common.js'
 import { checkuser } from './cookie.js'
+import { wbi_sign } from './sign/wbi.js'
 
 export default class bilidata extends base {
   constructor(type) {
@@ -20,7 +21,19 @@ export default class bilidata extends base {
           url: (await BiLiBiLiAPI.VIDEO(INFODATA.data.aid, INFODATA.data.cid)) + SIGN.QUERY,
           headers: this.headers,
         })
-        return { INFODATA, DATA, TYPE: SIGN.TYPE }
+
+        const PARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
+        const COMMENTSDATA = await this.GlobalGetData({ url: (await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid)) + PARAM, headers: this.headers })
+        const EMOJIDATA = await this.GlobalGetData({ url: await BiLiBiLiAPI.EMOJI() })
+        return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, TYPE: SIGN.TYPE }
+
+      case 'COMMENTS':
+        const aPARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
+        const aCOMMENTSDATA = await this.GlobalGetData({ url: (await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid)) + aPARAM, headers: this.headers })
+        return aCOMMENTSDATA
+
+      case 'EMOJI':
+        return await this.GlobalGetData({ url: await BiLiBiLiAPI.EMOJI() })
 
       case '申请二维码':
         return await this.GlobalGetData({ url: await BiLiBiLiAPI.申请二维码() })

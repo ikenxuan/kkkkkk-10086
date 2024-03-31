@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
+      @font-face {
+        font-family: 'HarmonyOS_Sans';
+        src: url('../../../plugins/kkkkkk-10086/resources/font/HarmonyOS_Sans_SC_Regular.ttf');
+        font-weight: normal;
+        font-style: normal;
+      }
       body {
-        font-family: 'Arial', sans-serif;
+        font-family: 'HarmonyOS_Sans', Arial, sans-serif;
         background-color: #f4f4f4;
         margin: 0;
         padding: 20px;
@@ -27,6 +33,7 @@
       }
 
       .user-avatar {
+        margin-bottom: 50px;
         width: 187.5px; /* 调整尺寸 */
         height: 187.5px; /* 调整尺寸 */
         border-radius: 50%;
@@ -40,9 +47,10 @@
       }
 
       .user-info {
-        margin-bottom: 50px; /* 调整边距 */
-        color: #888;
+        margin-bottom: 50px;
         font-size: 50px;
+        color: #888;
+        position: relative; /* 将容器设置为相对定位 */
       }
 
       .Z3o6vw6l {
@@ -73,14 +81,14 @@
       .comment-text {
         font-size: 60px;
         align-items: center;
-        letter-spacing: 0.5px; /* 调整字间距*/
+        letter-spacing: 0.5px;
+        position: relative;
       }
 
       .comment-text img {
         display: inline-block;
         vertical-align: middle;
-        transform: scale(0.9); /* 调整缩放比例*/
-        margin-bottom: 15px;
+        transform: translateY(-10%) scale(0.9);
       }
 
       .like-section {
@@ -166,7 +174,8 @@
       .qrcode_box {
         display: flex;
         flex-direction: column;
-        align-items: center; /* 将二维码下面的文字垂直居中 */
+        align-items: center;
+        margin-right: -40px;
       }
 
       .qrcode {
@@ -206,6 +215,7 @@
     <div class="comment-container">
       <!-- <div class="top-info">{{Commentlength}}条评论</div> -->
       {{each CommentsData.jsonArray val}}
+
       <div class="comment">
         <img src="{{val.userimageurl}}" class="user-avatar" />
         <div class="comment-content">
@@ -226,10 +236,8 @@
           <div class="like-section">
             <div class="info-content">
               <div class="additional-info">
-                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp {{if val.reply_comment_total > 0}}<span
-                  style="color: #b9b9b9; letter-spacing: 3px"
-                  >共{{val.reply_comment_total}}条回复</span
-                >
+                {{val.create_time}} · {{val.ip_label}}&nbsp&nbsp&nbsp&nbsp {{if val.reply_comment_total > 0}}
+                <span style="color: #b9b9b9; letter-spacing: 3px">共{{val.reply_comment_total}}条回复</span>
                 {{else}}
                 <span style="color: #555">回复</span>
                 {{/if}}

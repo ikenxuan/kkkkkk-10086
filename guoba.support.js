@@ -26,8 +26,8 @@ export function supportGuoba() {
       schemas: [
         {
           component: 'Divider',
-          label: '抖音 Cookie 配置',
-          helpMessage: '目前所有请求都将需要该 Cookie',
+          label: 'Cookie 配置',
+          helpMessage: '建议配置 Cookie',
           componentProps: {
             orientation: 'left',
             plain: true,
@@ -57,7 +57,7 @@ export function supportGuoba() {
         },
         {
           component: 'Divider',
-          label: '视频解析配置',
+          label: '全局配置，修改后没效果就重启',
           componentProps: {
             orientation: 'left',
             plain: true,
@@ -78,16 +78,25 @@ export function supportGuoba() {
           required: false,
         },
         {
-          field: 'comments',
-          label: '评论解析',
-          bottomHelpMessage: '可以解析评论，修改后重启生效',
+          field: 'sendforwardmsg',
+          label: '发送合并转发消息',
+          bottomHelpMessage: '字面意思',
           component: 'Switch',
           required: false,
         },
+        /** 抖音视频解析配置 */
+        {
+          component: 'Divider',
+          label: '抖音视频解析配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
         {
           field: 'commentsimg',
-          label: '发送评论图',
-          bottomHelpMessage: '将获取到的评论数据渲染成图片发送，评论内容中的每一个艾特和每一个热点词都会增加一次请求',
+          label: '评论图',
+          bottomHelpMessage: '发送抖音作品评论图',
           component: 'Switch',
           required: false,
         },
@@ -95,7 +104,7 @@ export function supportGuoba() {
           field: 'newui',
           label: '图片UI版本',
           helpMessage: '优化版更好看',
-          bottomHelpMessage: '第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积会非常大）',
+          bottomHelpMessage: '即将废除第一版！第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积会非常大）',
           component: 'Select',
           componentProps: {
             options: [
@@ -118,21 +127,6 @@ export function supportGuoba() {
             min: 0,
             max: 50,
             addonAfter: '条',
-          },
-        },
-        {
-          field: 'sendforwardmsg',
-          label: '发送合并转发消息',
-          bottomHelpMessage: '字面意思',
-          component: 'Switch',
-          required: false,
-        },
-        {
-          component: 'Divider',
-          label: '抖音 推送配置',
-          componentProps: {
-            orientation: 'left',
-            plain: true,
           },
         },
         {
@@ -186,15 +180,6 @@ export function supportGuoba() {
           },
         },
         {
-          component: 'douyinpushcron',
-          label: 'Cron表达式',
-          helpMessage: '',
-          componentProps: {
-            orientation: 'left',
-            plain: true,
-          },
-        },
-        {
           field: 'douyinpushcron',
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
@@ -209,7 +194,7 @@ export function supportGuoba() {
           field: 'douyinpushGroup',
           label: '设置权限',
           component: 'RadioGroup',
-          bottomHelpMessage: '推送设置权限',
+          bottomHelpMessage: '抖音推送添加权限',
           componentProps: {
             options: [
               { label: '所有群员都可以添加', value: 'all' },
@@ -221,8 +206,23 @@ export function supportGuoba() {
         {
           field: 'douyinpushlog',
           label: '定时任务日志',
-          helpMessage: '修改后重启生效',
+          helpMessage: '抖音推送日志，修改后重启生效',
           bottomHelpMessage: '打开或关闭定时任务日志',
+          component: 'Switch',
+          required: false,
+        },
+        {
+          component: 'Divider',
+          label: '哔哩哔哩视频解析配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: 'bilibilicommentsimg',
+          label: '评论图',
+          bottomHelpMessage: '发送哔哩哔哩作品评论图',
           component: 'Switch',
           required: false,
         },

@@ -15,11 +15,11 @@ const defaultConfig = {
   douyinpushlist: [],
   douyinpushlog: true,
   douyinpushcron: '*/10 * * * *',
-  // douyinpushparse: true,
   douyinpushGroup: 'master',
   bilibilick: '',
   bilibilirefresh_token: '',
   sendforwardmsg: true,
+  bilibilicommentsimg: true,
 }
 let config = {}
 

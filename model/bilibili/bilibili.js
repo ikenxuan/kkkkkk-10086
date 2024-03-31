@@ -1,5 +1,6 @@
-import { base } from '../common.js'
+import { base, image, Config } from '../common.js'
 import ffmpeg from '../ffmpeg.js'
+import { bilicomments } from './comments.js'
 import fs from 'fs'
 
 export default class BiLiBiLi extends base {
@@ -22,10 +23,27 @@ export default class BiLiBiLi extends base {
         like,
       )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
     ])
+
+    const commentsdata = await bilicomments(OBJECT)
+    let file = null
+    let { img } = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+      saveId: 'bilicomment',
+      Type: '视频',
+      CommentsData: commentsdata,
+      CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
+      VideoUrl: 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid,
+      VideoSize: '？？？',
+      VideoFPS: '？？？',
+      ImageLength: 0,
+      DestroyTime: '过期不了',
+    })
+    file = img
+    Config.commentsimg ? await this.e.reply(img) : null
     await this.getvideo(OBJECT)
   }
 
   async getvideo(OBJECT) {
+    /** 获取视频 => FFMPEG合成 */
     await ffmpeg.checkEnv()
     switch (this.TYPE) {
       case 'isLogin':
@@ -46,8 +64,9 @@ export default class BiLiBiLi extends base {
             bmp4.filepath,
             bmp3.filepath,
             this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`,
+            /** 根据配置文件 `rmmp4` 重命名 */
             async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${this.downloadfilename}.mp4`
+              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'kkktemp_' + Date.now() : this.downloadfilename}.mp4`
               fs.renameSync(this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`, filePath)
               await this.removeFileOrFolder(bmp4.filepath, true)
               await this.removeFileOrFolder(bmp3.filepath, true)
