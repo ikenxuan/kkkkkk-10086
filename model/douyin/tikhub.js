@@ -97,6 +97,7 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
       image_res.push(image_data)
+      !Config.sendforwardmsg && this.e.bot?.sendUni ? await this.e.reply(res) : null
     } else {
       image_res.push('图集信息解析失败')
     }
