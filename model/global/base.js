@@ -45,7 +45,7 @@ export default class base {
         await this.removeFileOrFolder(res.filepath)
       } else {
         if (this.e.bot?.adapter === 'LagrangeCore') {
-          await this.upload_file(filePath)
+          await this.upload_file(res.filepath)
         } else {
           await this.e.reply(segment.video(video_url))
         }
