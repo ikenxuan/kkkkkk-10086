@@ -35,7 +35,7 @@ export default class BiLiBiLi extends base {
       VideoSize: '？？？',
       VideoFPS: '？？？',
       ImageLength: 0,
-      DestroyTime: '过期不了',
+      shareurl: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
     })
     file = img
     Config.commentsimg ? await this.e.reply(img) : null

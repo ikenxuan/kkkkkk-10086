@@ -192,13 +192,11 @@ export default class TikHub extends base {
           url: video.play_addr_h264.url_list[2],
           headers: this.headers,
         }).getLongLink()
-        logger.info('视频地址', g_video_url)
       } else if (Data.aweme_detail.video.play_addr) {
         g_video_url = await new this.networks({
           url: video.play_addr.url_list[0],
           headers: this.headers,
         }).getLongLink()
-        logger.info('视频地址', g_video_url)
       }
       let cover = video.origin_cover.url_list[0] // video cover image
       let title = Data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
