@@ -25,40 +25,74 @@ export default class base {
     return Config.ck !== ''
   }
 
-  /** 要上传的视频文件，私聊需要加好友 */
-  async upload_file(file) {
-    if (this.e.bot?.sendUni) {
-      /** 是icqq */
-      await this.e.group.fs.upload(file)
-    } else {
-      /** 其他协议端 */
-      await this.e.group.sendFile(file)
+  /**
+   *
+   * @param {object} file 视频文件数据
+   * @param {string} file.filepath 要上传的视频文件地址
+   * @param {number} file.totalBytes 要上传的视频文件大小，单位：MB
+   * @param {string} video_url 要上传的视频直链
+   * @param {boolean} groupfile 是否使用群文件，默认false
+   */
+  async upload_file(file, video_url, groupfile = false) {
+    try {
+      switch (this.botCfg.package.name) {
+        case 'miao-yunzai':
+          if (this.e.bot?.sendUni) {
+            /** 登陆了icqq */
+            groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(video_url || file.filepath))
+          } else {
+            /** 其他协议端 */
+            switch (this.e.bot?.adapter) {
+              case 'LagrangeCore':
+                /** 拉格朗视频时好时坏，默认传群文件 */
+                await this.e.group.sendFile(file.filepath)
+                break
+              case 'QQBot':
+                file.totalBytes >= 10
+                  ? (() => {
+                      return new Promise((resolve, reject) => {
+                        try {
+                          /** 尝试硬发 */
+                          this.e.reply(segment.video(video_url || file.filepath))
+                        } catch {
+                          reject(new Error('视频太大了，发不出来'))
+                        }
+                      })
+                    })()
+                  : await this.e.reply(segment.video(video_url || file.filepath))
+                break
+            }
+          }
+          break
+
+        case 'trss-yunzai':
+          switch (this.e.bot?.adapter?.name) {
+            case 'Lagrange':
+              logger.warn('TRSS-Yunzai & Lagrange适配器暂不支持上传视频')
+            case 'QQBot':
+              file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
+              break
+            case 'ICQQ':
+              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(video_url || file.filepath))
+              break
+          }
+          break
+      }
+    } catch {
+      await this.removeFileOrFolder(file.filepath)
     }
-    await this.removeFileOrFolder(file)
+    await this.removeFileOrFolder(file.filepath)
   }
   async DownLoadVideo(video_url, title) {
     let res = await this.DownLoadFile(video_url, title, this.headers)
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
-    if (this.botCfg.bot.skip_login) {
-      if (res.totalBytes >= 75) {
-        await this.upload_file(res.filepath)
-        await this.removeFileOrFolder(res.filepath)
-      } else {
-        if (this.e.bot?.adapter === 'LagrangeCore') {
-          await this.upload_file(res.filepath)
-        } else {
-          await this.e.reply(segment.video(video_url))
-        }
-        await this.removeFileOrFolder(res.filepath)
-      }
-    } else if (res.totalBytes >= 75) {
-      // 群和私聊分开
-      await this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
-      await this.upload_file(res.filepath)
-      await this.removeFileOrFolder(res.filepath)
+    if (res.totalBytes > 75) {
+      this.botCfg.package.name === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
+      /** 使用群文件 */
+      await this.upload_file(res, video_url, true)
     } else {
-      await this.e.reply(segment.video(res.filepath))
-      await this.removeFileOrFolder(res.filepath)
+      /** 不使用群文件 */
+      await this.upload_file(res, video_url)
     }
   }
 

@@ -74,16 +74,11 @@ export default class BiLiBiLi extends base {
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 75) {
-                this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
-                await this.upload_file(filePath)
+                this.botCfg.package.name === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                await this.upload_file(filePath, null, true)
               } else {
-                /** 如果是QQBot的话(lain-plugin和trss/QQbot-plugin)，只能本地上传了，因为合并后的视频没有https地址 */
-                /** 拉格朗的视频时好时坏，直接群文件 */
-                if (this.e.bot?.adapter === 'LagrangeCore') {
-                  await this.upload_file(filePath)
-                } else {
-                  await this.e.reply(segment.video(filePath))
-                }
+                /** 因为本地合成，没有视频直链 */
+                await this.upload_file(filePath, null)
               }
             },
             async () => {
