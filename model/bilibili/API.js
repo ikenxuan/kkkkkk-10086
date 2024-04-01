@@ -1,3 +1,5 @@
+import { Config } from '../common.js'
+
 export default class API {
   async 申请二维码() {
     return 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
@@ -36,7 +38,7 @@ export default class API {
   }
 
   async COMMENTS(type, oid) {
-    return `https://api.bilibili.com/x/v2/reply?sort=1&ps=20&type=${type}&oid=${oid}`
+    return `https://api.bilibili.com/x/v2/reply?sort=1&ps=${Config.bilibilinumcomments}&type=${type}&oid=${oid}`
   }
 
   async EMOJI() {

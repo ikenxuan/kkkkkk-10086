@@ -20,6 +20,7 @@ const defaultConfig = {
   bilibilirefresh_token: '',
   sendforwardmsg: true,
   bilibilicommentsimg: true,
+  bilibilinumcomments: 20,
 }
 let config = {}
 
