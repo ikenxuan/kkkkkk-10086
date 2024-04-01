@@ -27,28 +27,31 @@ export default class base {
 
   /** 要上传的视频文件，私聊需要加好友 */
   async upload_file(file) {
-    if (this.e.isGroup) {
-      switch (this.botCfg.package.name) {
-        case 'trss-yunzai':
-          this.e.group.sendFile(file)
-          break
-        case 'miao-yunzai':
-          await this.e.group.fs.upload(file)
-          break
-      }
-      await this.removeFileOrFolder(file)
-    } else if (this.e.isPrivate) {
-      await this.e.friend.sendFile(file)
-      await this.removeFileOrFolder(file)
+    if (this.e.bot?.sendUni) {
+      /** 是icqq */
+      await this.e.group.fs.upload(file)
+    } else {
+      /** 其他协议端 */
+      await this.e.group.sendFile(file)
     }
+    await this.removeFileOrFolder(file)
   }
   async DownLoadVideo(video_url, title) {
     let res = await this.DownLoadFile(video_url, title, this.headers)
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
     if (this.botCfg.bot.skip_login) {
-      await this.e.reply(segment.video(video_url))
-      await this.removeFileOrFolder(res.filepath)
-    } else if (res.totalBytes >= 80) {
+      if (res.totalBytes >= 75) {
+        await this.upload_file(res.filepath)
+        await this.removeFileOrFolder(res.filepath)
+      } else {
+        if (this.e.bot?.adapter === 'LagrangeCore') {
+          await this.upload_file(filePath)
+        } else {
+          await this.e.reply(segment.video(video_url))
+        }
+        await this.removeFileOrFolder(res.filepath)
+      }
+    } else if (res.totalBytes >= 75) {
       // 群和私聊分开
       await this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
       await this.upload_file(res.filepath)
