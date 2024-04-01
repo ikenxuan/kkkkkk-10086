@@ -1,6 +1,6 @@
 # kkkkkk-10086
 
-[**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai /**](https://github.com/TimeRainStarSky/Yunzai) [**ICQQ 适配器**](https://github.com/TimeRainStarSky/Yunzai-ICQQ-Plugin) 的自用辅助插件
+[**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
 
 反馈群：[795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
 
@@ -48,7 +48,7 @@ npm install --production
 - B 站支持:
 
   - [x] 视频
-  - [ ] 评论
+  - [x] 评论
   - [x] 扫码登录取 ck
   - [ ] ck 自刷新
   - [ ] 咕咕咕
@@ -76,7 +76,7 @@ npm install --production
 
 > [!CAUTION]  
 > 抖音解析使用前必须配置抖音 `ck`  
-> B 站解析不设置 `ck` 画质为 `360p`，设置后最高可解析 `4K HDR` 需要视频支持与 `大会员`
+> B 站解析不设置 `ck` 画质为 `360p`，设置后默认解析当前视频 `最高画质` 可能需要视频支持与 `大会员`
 
 > [!NOTE]
 >
