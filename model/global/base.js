@@ -39,7 +39,7 @@ export default class base {
         case 'miao-yunzai':
           if (this.e.bot?.sendUni) {
             /** 登陆了icqq */
-            groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(video_url || file.filepath))
+            groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
           } else {
             /** 其他协议端 */
             switch (this.e.bot?.adapter) {
@@ -73,7 +73,7 @@ export default class base {
               file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
             case 'ICQQ':
-              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(video_url || file.filepath))
+              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
           break
@@ -125,6 +125,7 @@ export default class base {
           resolve(stats)
         })
       })
+
       if (stats.isFile()) {
         // 指向文件
         fs.unlink(path, (err) => {
