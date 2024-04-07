@@ -5,6 +5,7 @@ export async function bilicomments(OBJECT) {
     const ctime = getRelativeTimeFromTimestamp(OBJECT.COMMENTSDATA.data.replies[i].ctime)
     const message = OBJECT.COMMENTSDATA.data.replies[i].content.message
     const avatar = OBJECT.COMMENTSDATA.data.replies[i].member.avatar
+    const frame = OBJECT.COMMENTSDATA.data.replies[i].member.pendant.image
     const uname = checkvip(OBJECT.COMMENTSDATA.data.replies[i].member)
     const level = OBJECT.COMMENTSDATA.data.replies[i].member.level_info.current_level
     const viptype = OBJECT.COMMENTSDATA.data.replies[i].member.vip.vipType
@@ -37,6 +38,7 @@ export async function bilicomments(OBJECT) {
       ctime: ctime,
       message: message,
       avatar: avatar,
+      frame: frame,
       uname: uname,
       level: level,
       viptype: viptype,
@@ -78,7 +80,17 @@ export async function bilicomments(OBJECT) {
   let res
   res = checklevel(jsonArray)
   res = br(res)
+  res = space(res)
   return res
+}
+
+function space(data) {
+  for (let i = 0; i < data.length; i++) {
+    if (data[i].message) {
+      data[i].message = data[i].message.replace(/\s/g, '&nbsp;')
+    }
+  }
+  return data
 }
 
 /** 换行符转<br> */
