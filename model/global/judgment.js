@@ -37,7 +37,7 @@ export async function GetID(url) {
       break
 
     case /user\/(\S+?)\?/.test(longLink):
-      const userMatch = longLink.match(/user\/(\S+?)\?/)
+      const userMatch = longLink.match(/user\/(\S+?)\//)
       result = {
         type: 'UserVideosList',
         user_id: userMatch[1],
