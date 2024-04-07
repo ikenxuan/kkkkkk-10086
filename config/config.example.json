@@ -15,5 +15,6 @@
   "bilibilick": "",
   "bilibilirefresh_token": "",
   "sendforwardmsg": true,
-  "bilibilicommentsimg": true
+  "bilibilicommentsimg": true,
+  "bilibilinumcomments": 20
 }

@@ -23,7 +23,7 @@
       .comment-container {
         max-width: 100%; /* 宽度设置为百分之百，以适应不同屏幕大小 */
         margin: 0 auto;
-        overflow: auto; /* 添加滚动条以处理大量评论 */
+        /* overflow: auto; */
       }
 
       .comment {
@@ -34,25 +34,28 @@
       }
 
       .user-avatar {
-        content: '';
         margin-top: 50px;
         width: 187.5px;
         height: 187.5px;
         border-radius: 50%;
         margin-right: 33.75px;
-        object-fit: cover;
         box-shadow: 0 20px 50px 0 rgb(0 0 0 / 30%);
         background: url('https://i0.hdslb.com/bfs/face/member/noface.jpg');
+        position: absolute;
       }
 
-      .user-avatar::before {
-        content: '';
-        position: absolute;
-        z-index: 1;
-        width: 187.5px;
-        height: 187.5px;
-        border-radius: 50%;
-        background: url('https://i2.hdslb.com/bfs/garb/item/9508b883de7e71e263b7dda3ee65be35404a8a8b.png@240w_240h_!web-avatar-comment.avif');
+      .user-avatar-1 {
+        width: 220px;
+        height: 220px;
+        margin-right: 33.75px;
+        margin-top: 50px;
+        transform: translateY(-7%) translateX(-8%) scale(1.5);
+      }
+
+      /* 当img元素为空时，设置元素透明度为0，图裂图标将被隐藏 */
+      img[src=''],
+      img:not([src]) {
+        opacity: 0;
       }
 
       .comment-content {
@@ -242,6 +245,7 @@
       {{each CommentsData val}}
       <div class="comment">
         <img src="{{val.avatar}}" class="user-avatar" />
+        <img src="{{val.frame}}" class="user-avatar-1" />
         <div class="comment-content">
           <div class="user-info">
             {{@val.uname}} {{if val.label_type == 1}}
