@@ -90,10 +90,12 @@ export default class TikHub extends base {
             }
             break
           case 'trss-yunzai':
+            // this.e.reply(segment.image(image_url))
             break
         }
       }
       let dsc = '解析完的图集图片'
+      this.botCfg.package.name === 'trss-yunzai' ? this.e.reply(imageres) : null
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
       image_res.push(image_data)
@@ -231,7 +233,9 @@ export default class TikHub extends base {
         Type: is_mp4 ? '视频' : '图集',
         CommentsData: commentsArray,
         CommentLength: String(commentsArray.jsonArray?.length ? commentsArray.jsonArray.length : 0),
-        VideoUrl: `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0` || Data.aweme_detail.share_url,
+        VideoUrl: is_mp4
+          ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+          : Data.aweme_detail.share_url,
         Title: g_title,
         VideoSize: mp4size,
         VideoFPS: FPS,
@@ -239,15 +243,38 @@ export default class TikHub extends base {
         DestroyTime: await destroyTime(),
       })
       file = img
-      await this.e.reply([
-        img,
-        // Bot.Button([
-        //   {
-        //     label: '视频直链',
-        //     link: `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`,
-        //   },
-        // ]),
-      ])
+      switch (this.botCfg.package.name) {
+        case 'miao-yunzai':
+          await this.e.reply([
+            img,
+            this.e.bot?.adapter === 'LagrangeCore'
+              ? Bot.Button([
+                  {
+                    text: is_mp4 ? '视频直链' : '图集分享链接',
+                    link: is_mp4
+                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+                      : Data.aweme_detail.share_url,
+                  },
+                ])
+              : null,
+          ])
+          break
+        case 'trss-yunzai':
+          await this.e.reply([
+            img,
+            this.e.bot?.adapter?.name === 'QQBot'
+              ? segment.button([
+                  {
+                    text: is_mp4 ? '视频直链' : '图集分享链接',
+                    link: is_mp4
+                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+                      : Data.aweme_detail.share_url,
+                  },
+                ])
+              : null,
+          ])
+          break
+      }
     }
 
     const tip = ['视频正在上传']

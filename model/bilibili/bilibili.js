@@ -22,7 +22,6 @@ export default class BiLiBiLi extends base {
       `标题: ${title}\n\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
         like,
       )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
-      // Bot.Button([{ label: 'b23.tv/' + OBJECT.INFODATA.data.bvid, link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid }]),
     ])
 
     const commentsdata = await bilicomments(OBJECT)
@@ -39,7 +38,36 @@ export default class BiLiBiLi extends base {
       shareurl: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
     })
     file = img
-    Config.commentsimg ? await this.e.reply(img) : null
+    const msg = (() => {
+      switch (this.botCfg.package.name) {
+        case 'miao-yunzai':
+          return [
+            img,
+            this.e.bot?.adapter === 'LagrangeCore'
+              ? Bot.Button([
+                  {
+                    text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
+                    link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+                  },
+                ])
+              : null,
+          ]
+        case 'trss-yunzai':
+          return [
+            img,
+            this.e.bot?.adapter?.name === 'QQBot'
+              ? segment.button([
+                  {
+                    text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
+                    link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+                  },
+                ])
+              : null,
+          ]
+      }
+    })()
+
+    Config.commentsimg ? await this.e.reply(msg) : null
     await this.getvideo(OBJECT)
   }
 
