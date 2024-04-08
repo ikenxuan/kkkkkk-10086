@@ -69,33 +69,11 @@ export default class TikHub extends base {
           let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
           await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
         }
-        switch (this.botCfg.package.name) {
-          case 'miao-yunzai':
-            if (this.botCfg.bot.skip_login) {
-              /** 辣鸡腾讯不支持webp webp转png */
-              let sharp
-              try {
-                ;({ default: sharp } = await import('sharp'))
-                let resp = new Uint8Array(
-                  await new this.networks({
-                    url: image_url,
-                    type: 'arrayBuffer',
-                  }).getData(),
-                )
-                resp = await sharp(resp).toFormat('png').toBuffer()
-                await this.e.reply(segment.image(resp))
-              } catch {
-                await this.e.reply(segment.image(image_url))
-              }
-            }
-            break
-          case 'trss-yunzai':
-            // this.e.reply(segment.image(image_url))
-            break
-        }
+      }
+      if (this.botadapter === 'QQBot') {
+        await this.e.reply(imageres)
       }
       let dsc = '解析完的图集图片'
-      this.botCfg.package.name === 'trss-yunzai' ? this.e.reply(imageres) : null
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
       image_res.push(image_data)
