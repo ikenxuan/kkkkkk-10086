@@ -239,7 +239,15 @@ export default class TikHub extends base {
         DestroyTime: await destroyTime(),
       })
       file = img
-      await this.e.reply(img)
+      await this.e.reply([
+        img,
+        // Bot.Button([
+        //   {
+        //     label: '视频直链',
+        //     link: `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`,
+        //   },
+        // ]),
+      ])
     }
 
     const tip = ['视频正在上传']

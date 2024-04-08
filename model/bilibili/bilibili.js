@@ -22,6 +22,7 @@ export default class BiLiBiLi extends base {
       `标题: ${title}\n\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
         like,
       )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
+      // Bot.Button([{ label: 'b23.tv/' + OBJECT.INFODATA.data.bvid, link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid }]),
     ])
 
     const commentsdata = await bilicomments(OBJECT)
@@ -32,8 +33,8 @@ export default class BiLiBiLi extends base {
       CommentsData: commentsdata,
       CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
       VideoUrl: 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid,
-      VideoSize: '？？？',
-      VideoFPS: '？？？',
+      Clarity: OBJECT.DATA.data.accept_description[0],
+      VideoSize: await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url),
       ImageLength: 0,
       shareurl: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
     })
@@ -92,5 +93,19 @@ export default class BiLiBiLi extends base {
         await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, this.downloadfilename)
         break
     }
+  }
+
+  async getvideosize(videourl, audiourl) {
+    const videoheaders = await new this.networks({ url: videourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
+    const audioheaders = await new this.networks({ url: audiourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
+
+    const videoSize = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
+    const audioSize = audioheaders['content-length'] ? parseInt(audioheaders['content-length'], 10) : 0
+
+    const videoSizeInMB = (videoSize / (1024 * 1024)).toFixed(2)
+    const audioSizeInMB = (audioSize / (1024 * 1024)).toFixed(2)
+
+    const totalSizeInMB = parseFloat(videoSizeInMB) + parseFloat(audioSizeInMB)
+    return totalSizeInMB
   }
 }

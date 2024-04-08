@@ -150,6 +150,7 @@ export default class networks {
     }
   }
 
+  /** 一次性获取响应头和响应体 */
   async getHeadersAndData() {
     try {
       // 发起网络请求获取响应对象
@@ -197,6 +198,7 @@ export default class networks {
     }
   }
 
+  /** 流 */
   async downloadStream(progressCallback) {
     try {
       const response = await fetch(this.url, this.config)
