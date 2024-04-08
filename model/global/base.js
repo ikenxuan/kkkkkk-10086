@@ -21,8 +21,42 @@ export default class base {
     this.ConfigPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
     this.networks = networks
   }
+
   get allow() {
     return Config.ck !== ''
+  }
+
+  /** 获取鸡鸡人名字 */
+  get botname() {
+    return this.botCfg.package.name === 'miao-yunzai' ? 'miao-yunzai' : 'trss-yunzai'
+  }
+
+  /** 获取登录协议 */
+  get botadapter() {
+    if (this.botCfg.package.name === 'miao-yunzai') {
+      if (this.e.bot?.sendUni) {
+        return 'icqq'
+      }
+      switch (true) {
+        case this.e.bot?.adapter === 'LagrangeCore':
+          return 'LagrangeCore'
+        case this.e.bot?.adapter === 'QQBot':
+          return 'QQBot'
+        default:
+          return '无法判断协议端'
+      }
+    } else if (this.botCfg.package.name === 'trss-yunzai') {
+      switch (true) {
+        case this.e.bot?.adapter?.name === 'ICQQ':
+          return 'icqq'
+        case this.e.bot?.adapter?.name === 'Lagrange':
+          return 'LagrangeCore'
+        case this.e.bot?.adapter?.name === 'QQBot':
+          return 'QQBot'
+        default:
+          return '无法判断协议端'
+      }
+    }
   }
 
   /**
@@ -35,44 +69,40 @@ export default class base {
    */
   async upload_file(file, video_url, groupfile = false) {
     try {
-      switch (this.botCfg.package.name) {
+      switch (this.botname) {
         case 'miao-yunzai':
-          if (this.e.bot?.sendUni) {
-            /** 登陆了icqq */
-            groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
-          } else {
-            /** 其他协议端 */
-            switch (this.e.bot?.adapter) {
-              case 'LagrangeCore':
-                /** 拉格朗视频时好时坏，默认传群文件 */
-                await this.e.group.sendFile(file.filepath)
-                break
-              case 'QQBot':
-                file.totalBytes >= 10
-                  ? (() => {
-                      return new Promise((resolve, reject) => {
-                        try {
-                          /** 尝试硬发 */
-                          this.e.reply(segment.video(video_url || file.filepath))
-                        } catch {
-                          reject(new Error('视频太大了，发不出来'))
-                        }
-                      })
-                    })()
-                  : await this.e.reply(segment.video(video_url || file.filepath))
-                break
-            }
+          switch (this.botadapter) {
+            case 'icqq':
+              groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+            case 'LagrangeCore':
+              /** 拉格朗视频时好时坏，默认传群文件 */
+              await this.e.group.sendFile(file.filepath)
+              break
+            case 'QQBot':
+              file.totalBytes >= 10
+                ? (() => {
+                    return new Promise((resolve, reject) => {
+                      try {
+                        /** 尝试硬发 */
+                        this.e.reply(segment.video(video_url || file.filepath))
+                      } catch {
+                        reject(new Error('视频太大了，发不出来'))
+                      }
+                    })
+                  })()
+                : await this.e.reply(segment.video(video_url || file.filepath))
+              break
           }
           break
 
         case 'trss-yunzai':
           switch (this.e.bot?.adapter?.name) {
-            case 'Lagrange':
+            case 'LagrangeCore':
               logger.warn('TRSS-Yunzai & Lagrange适配器暂不支持上传视频')
             case 'QQBot':
               file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
-            case 'ICQQ':
+            case 'icqq':
               groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
@@ -83,6 +113,7 @@ export default class base {
     }
     await this.removeFileOrFolder(file.filepath)
   }
+
   async DownLoadVideo(video_url, title) {
     let res = await this.DownLoadFile(video_url, title, this.headers)
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
@@ -161,7 +192,7 @@ export default class base {
     if (fs.existsSync(dirname)) {
       return true
     } else {
-      if (mkdirs(path.dirname(dirname))) {
+      if (this.mkdirs(path.dirname(dirname))) {
         fs.mkdirSync(dirname)
         return true
       }

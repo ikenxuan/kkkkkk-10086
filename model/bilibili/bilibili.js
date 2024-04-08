@@ -39,31 +39,44 @@ export default class BiLiBiLi extends base {
     })
     file = img
     const msg = (() => {
-      switch (this.botCfg.package.name) {
+      switch (this.botname) {
         case 'miao-yunzai':
-          return [
-            img,
-            this.e.bot?.adapter === 'LagrangeCore'
-              ? Bot.Button([
+          switch (this.botadapter) {
+            case 'icqq':
+              return [img]
+            case 'QQBot':
+            case 'LagrangeCore':
+              return [
+                img,
+                Bot.Button([
                   {
                     text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
                     link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
                   },
-                ])
-              : null,
-          ]
+                ]),
+              ]
+            default:
+              return [img]
+          }
         case 'trss-yunzai':
-          return [
-            img,
-            this.e.bot?.adapter?.name === 'QQBot'
-              ? segment.button([
+          switch (this.botadapter) {
+            case 'icqq':
+            case 'LagrangeCore':
+              return [img]
+              break
+            case 'QQBot':
+              return [
+                img,
+                segment.button([
                   {
                     text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
                     link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
                   },
-                ])
-              : null,
-          ]
+                ]),
+              ]
+          }
+        default:
+          return [img]
       }
     })()
 

@@ -65,7 +65,7 @@ export default class TikHub extends base {
         imageres.push(segment.image(image_url)) // 合并图集字符串
         imagenum++
         if (Config.rmmp4 === false) {
-          await mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
+          await this.mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
           let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
           await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
         }
@@ -243,36 +243,50 @@ export default class TikHub extends base {
         DestroyTime: await destroyTime(),
       })
       file = img
-      switch (this.botCfg.package.name) {
+      switch (this.botname) {
         case 'miao-yunzai':
-          await this.e.reply([
-            img,
-            this.e.bot?.adapter === 'LagrangeCore'
-              ? Bot.Button([
+          switch (this.botadapter) {
+            case 'icqq':
+              this.e.reply(img)
+              break
+            case 'QQBot':
+            case 'LagrangeCore':
+              this.e.reply([
+                img,
+                Bot.Button([
                   {
                     text: is_mp4 ? '视频直链' : '图集分享链接',
                     link: is_mp4
                       ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
                       : Data.aweme_detail.share_url,
                   },
-                ])
-              : null,
-          ])
+                ]),
+              ])
+              break
+          }
           break
         case 'trss-yunzai':
-          await this.e.reply([
-            img,
-            this.e.bot?.adapter?.name === 'QQBot'
-              ? segment.button([
+          switch (this.botadapter) {
+            case 'icqq':
+            case 'LagrangeCore':
+              this.e.reply(img)
+              break
+            case 'QQBot':
+              this.e.reply([
+                img,
+                Bot.Button([
                   {
                     text: is_mp4 ? '视频直链' : '图集分享链接',
                     link: is_mp4
                       ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
                       : Data.aweme_detail.share_url,
                   },
-                ])
-              : null,
-          ])
+                ]),
+              ])
+          }
+          break
+        default:
+          this.e.reply(img)
           break
       }
     }
