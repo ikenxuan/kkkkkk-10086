@@ -94,6 +94,13 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'douyintip',
+          label: '提示',
+          bottomHelpMessage: '发送提示信息：“检测到抖音链接，开始解析”',
+          component: 'Switch',
+          required: false,
+        },
+        {
           field: 'commentsimg',
           label: '评论图',
           bottomHelpMessage: '发送抖音作品评论图',
@@ -241,6 +248,13 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'bilibilitip',
+          label: '提示',
+          bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
+          component: 'Switch',
+          required: false,
+        },
+        {
           component: 'Divider',
           label: '其他配置',
           componentProps: {
@@ -252,7 +266,7 @@ export function supportGuoba() {
           field: 'rmmp4',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
-          bottomHelpMessage: '偷偷存片；保存目录/resources/kkkdownload。非必要勿修改',
+          bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
           component: 'Switch',
           required: false,
         },

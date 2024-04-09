@@ -21,6 +21,8 @@ const defaultConfig = {
   sendforwardmsg: true,
   bilibilicommentsimg: true,
   bilibilinumcomments: 20,
+  bilibilitip: true,
+  douyintip: true,
 }
 let config = {}
 

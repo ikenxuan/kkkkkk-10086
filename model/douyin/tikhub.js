@@ -28,6 +28,7 @@ export default class TikHub extends base {
    * @returns
    */
   async v1_dy_data(Data, CommentData, is_mp4) {
+    this.reply(false, '检测到抖音链接，开始解析')
     let g_video_url
     let g_title
     let full_data = []
@@ -71,13 +72,13 @@ export default class TikHub extends base {
         }
       }
       if (this.botadapter === 'QQBot') {
-        await this.e.reply(imageres)
+        await this.reply(false, imageres)
       }
       let dsc = '解析完的图集图片'
       let res = await common.makeForwardMsg(this.e, imageres, dsc)
       image_data.push(res)
       image_res.push(image_data)
-      !Config.sendforwardmsg && this.e.bot?.sendUni ? await this.e.reply(res) : null
+      !Config.sendforwardmsg && this.e.bot?.sendUni ? await this.reply(false, res) : null
     } else {
       image_res.push('图集信息解析失败')
     }
@@ -131,15 +132,15 @@ export default class TikHub extends base {
         case 'miao-yunzai':
           if (music_url && is_mp4 == false && music_url !== undefined && this.botCfg.bot.skip_login == false) {
             try {
-              await this.e.reply(await uploadRecord(music_url, 0, false))
+              await this.reply(false, await uploadRecord(music_url, 0, false))
             } catch {}
           } else if (this.botCfg.bot.skip_login && is_mp4 == false) {
-            await this.e.reply(segment.record(music_url))
+            await this.reply(false, segment.record(music_url))
           }
           break
         case 'trss-yunzai':
           if (music_url && is_mp4 == false && music_url !== undefined) {
-            await this.e.reply(segment.record(music_url))
+            await this.reply(false, segment.record(music_url))
           }
           break
       }
@@ -221,52 +222,18 @@ export default class TikHub extends base {
         DestroyTime: await destroyTime(),
       })
       file = img
-      switch (this.botname) {
-        case 'miao-yunzai':
-          switch (this.botadapter) {
-            case 'icqq':
-              await this.e.reply(img)
-              break
-            case 'QQBot':
-            case 'LagrangeCore':
-              await this.e.reply([
-                img,
-                Bot.Button([
-                  {
-                    text: is_mp4 ? '视频直链' : '图集分享链接',
-                    link: is_mp4
-                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                      : Data.aweme_detail.share_url,
-                  },
-                ]),
-              ])
-              break
-          }
-          break
-        case 'trss-yunzai':
-          switch (this.botadapter) {
-            case 'icqq':
-            case 'LagrangeCore':
-              await this.e.reply(img)
-              break
-            case 'QQBot':
-              await this.e.reply([
-                img,
-                segment.Button([
-                  {
-                    text: is_mp4 ? '视频直链' : '图集分享链接',
-                    link: is_mp4
-                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                      : Data.aweme_detail.share_url,
-                  },
-                ]),
-              ])
-          }
-          break
-        default:
-          this.e.reply(img)
-          break
-      }
+      this.reply(
+        true,
+        [
+          {
+            text: is_mp4 ? '视频直链' : '图集分享链接',
+            link: is_mp4
+              ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+              : Data.aweme_detail.share_url,
+          },
+        ],
+        img,
+      )
     }
 
     const tip = ['视频正在上传']

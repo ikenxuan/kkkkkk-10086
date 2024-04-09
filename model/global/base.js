@@ -20,8 +20,27 @@ export default class base {
     this._path = process.cwd()
     this.ConfigPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
     this.networks = networks
+    /**
+     * 若要发送按钮，第一值传递true，第二值为消息数组（包含按钮数组）
+     * @param {*} withButtons 是否发送按钮
+     * @param  {...any} args 消息数组
+     * @returns
+     */
+    this.reply = async (withButtons = false, ...args) => {
+      if (withButtons && Array.isArray(args[0]) && args[0].every((item) => typeof item === 'object')) {
+        const btns = await this.mkbutton(args[0])
+        if (this.botname === 'miao-yunzai') {
+          return await this.e.reply([...args.slice(1), btns])
+        } else if (this.botname === 'trss-yunzai') {
+          return await this.e.reply([...args.slice(1)[0], btns])
+        }
+      } else {
+        return await this.e.reply(...args)
+      }
+    }
   }
 
+  /** 检查是或否设置抖音ck */
   get allow() {
     return Config.ck !== ''
   }
@@ -56,6 +75,24 @@ export default class base {
         default:
           return '无法判断协议端'
       }
+    }
+  }
+
+  /**
+   *
+   * @param {Array} btn 按钮数组
+   * @returns
+   */
+  async mkbutton(btn) {
+    switch (this.botname) {
+      case 'miao-yunzai':
+        if (this.e.bot.config?.markdown.type !== 0 || undefined) {
+          return Bot.Button(btn)
+        } else {
+          return null
+        }
+      case 'trss-yunzai':
+        return segment.button(btn)
     }
   }
 

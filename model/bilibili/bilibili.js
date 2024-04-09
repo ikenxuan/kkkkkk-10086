@@ -12,17 +12,28 @@ export default class BiLiBiLi extends base {
   }
 
   async RESOURCES(OBJECT) {
+    this.reply(false, '检测到B站链接，开始解析')
     const { desc, owner, pic, title, stat } = OBJECT.INFODATA.data
     const { name, face } = owner
     const { coin, like, share, view, favorite, danmaku } = stat
     this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
-    await this.e.reply([
-      segment.image(pic),
-      `标题: ${title}\n\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
-        like,
-      )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
-    ])
+    await this.reply(
+      true,
+      [
+        {
+          text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+          link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+        },
+      ],
+      [
+        segment.image(pic),
+        `\n# 标题: ${title}\n`,
+        `\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
+          like,
+        )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
+      ],
+    )
 
     const commentsdata = await bilicomments(OBJECT)
     let file = null
@@ -35,52 +46,22 @@ export default class BiLiBiLi extends base {
       Clarity: OBJECT.DATA.data.accept_description[0],
       VideoSize: await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url),
       ImageLength: 0,
-      shareurl: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
+      shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
     })
     file = img
-    const msg = (() => {
-      switch (this.botname) {
-        case 'miao-yunzai':
-          switch (this.botadapter) {
-            case 'icqq':
-              return [img]
-            case 'QQBot':
-            case 'LagrangeCore':
-              return [
-                img,
-                Bot.Button([
-                  {
-                    text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
-                    link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-                  },
-                ]),
-              ]
-            default:
-              return [img]
-          }
-        case 'trss-yunzai':
-          switch (this.botadapter) {
-            case 'icqq':
-            case 'LagrangeCore':
-              return [img]
-              break
-            case 'QQBot':
-              return [
-                img,
-                segment.button([
-                  {
-                    text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
-                    link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-                  },
-                ]),
-              ]
-          }
-        default:
-          return [img]
-      }
-    })()
 
-    Config.commentsimg ? await this.e.reply(msg) : null
+    Config.commentsimg
+      ? await this.reply(
+          true,
+          [
+            {
+              text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
+              link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+            },
+          ],
+          img,
+        )
+      : null
     await this.getvideo(OBJECT)
   }
 
@@ -116,7 +97,7 @@ export default class BiLiBiLi extends base {
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 75) {
-                this.botCfg.package.name === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                this.botCfg.package.name === 'trss-yunzai' ? null : this.reply(false, `视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
               } else {
                 /** 因为本地合成，没有视频直链 */

@@ -16,5 +16,7 @@
   "bilibilirefresh_token": "",
   "sendforwardmsg": true,
   "bilibilicommentsimg": true,
-  "bilibilinumcomments": 20
+  "bilibilinumcomments": 20,
+  "bilibilitip": true,
+  "douyintip": true
 }
