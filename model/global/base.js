@@ -27,12 +27,26 @@ export default class base {
      * @returns
      */
     this.reply = async (withButtons = false, ...args) => {
+      let iaa = [
+        [
+          {
+            type: 'image',
+            file: 'http://i2.hdslb.com/bfs/archive/22f7ccb2c16df77d594e5a5fcf34bf7f8b1bce91.jpg',
+            name: undefined,
+          },
+          '\n# 标题: 你们都什么大学的？\n',
+          '\n作者: 空空子SAMA\n播放量: 36.5万,    弹幕: 155\n点赞: 4.3万,    投币: 147\n转发: 799,    收藏: 6395',
+        ],
+      ]
       if (withButtons && Array.isArray(args[0]) && args[0].every((item) => typeof item === 'object')) {
         const btns = await this.mkbutton(args[0])
         if (this.botname === 'miao-yunzai') {
           return await this.e.reply([...args.slice(1), btns])
         } else if (this.botname === 'trss-yunzai') {
-          return await this.e.reply([...args.slice(1)[0], btns])
+          /** slice(1): 从args第二个数组开始 */
+          /** flat(Infinity): flat 方法是 ES2019 引入的一个新的数组方法，它用于将嵌套数组展平成一个新数组。flat 方法可以接受一个参数，即深度（deep），指定要展平的层数。如果使用 Infinity 作为参数，flat 方法会递归地展平数组中的所有嵌套层级。
+在你的代码中，...args.slice(1).flat(Infinity) 首先通过 slice 方法获取 args 数组的子集（从第二个元素开始到结束），然后对这个子集使用 flat(Infinity) 来递归地展平所有嵌套的数组结构。 */
+          return await this.e.reply([...args.slice(1).flat(Infinity), btns])
         }
       } else {
         return await this.e.reply(...args)
