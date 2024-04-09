@@ -74,6 +74,7 @@ export default class base {
           switch (this.botadapter) {
             case 'icqq':
               groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              break
             case 'LagrangeCore':
               /** 拉格朗视频时好时坏，默认传群文件 */
               await this.e.group.sendFile(file.filepath)

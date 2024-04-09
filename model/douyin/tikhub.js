@@ -225,11 +225,11 @@ export default class TikHub extends base {
         case 'miao-yunzai':
           switch (this.botadapter) {
             case 'icqq':
-              this.e.reply(img)
+              await this.e.reply(img)
               break
             case 'QQBot':
             case 'LagrangeCore':
-              this.e.reply([
+              await this.e.reply([
                 img,
                 Bot.Button([
                   {
@@ -247,12 +247,12 @@ export default class TikHub extends base {
           switch (this.botadapter) {
             case 'icqq':
             case 'LagrangeCore':
-              this.e.reply(img)
+              await this.e.reply(img)
               break
             case 'QQBot':
-              this.e.reply([
+              await this.e.reply([
                 img,
-                Bot.Button([
+                segment.Button([
                   {
                     text: is_mp4 ? '视频直链' : '图集分享链接',
                     link: is_mp4
