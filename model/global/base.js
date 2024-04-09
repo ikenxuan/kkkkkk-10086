@@ -27,17 +27,6 @@ export default class base {
      * @returns
      */
     this.reply = async (withButtons = false, ...args) => {
-      let iaa = [
-        [
-          {
-            type: 'image',
-            file: 'http://i2.hdslb.com/bfs/archive/22f7ccb2c16df77d594e5a5fcf34bf7f8b1bce91.jpg',
-            name: undefined,
-          },
-          '\n# 标题: 你们都什么大学的？\n',
-          '\n作者: 空空子SAMA\n播放量: 36.5万,    弹幕: 155\n点赞: 4.3万,    投币: 147\n转发: 799,    收藏: 6395',
-        ],
-      ]
       if (withButtons && Array.isArray(args[0]) && args[0].every((item) => typeof item === 'object')) {
         const btns = await this.mkbutton(args[0])
         if (this.botname === 'miao-yunzai') {
