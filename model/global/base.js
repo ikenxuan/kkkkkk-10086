@@ -20,27 +20,6 @@ export default class base {
     this._path = process.cwd()
     this.ConfigPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
     this.networks = networks
-    /**
-     * 若要发送按钮，第一值传递true，第二值为消息数组（包含按钮数组）
-     * @param {*} withButtons 是否发送按钮
-     * @param  {...any} args 消息数组
-     * @returns
-     */
-    this.reply = async (withButtons = false, ...args) => {
-      if (withButtons && Array.isArray(args[0]) && args[0].every((item) => typeof item === 'object')) {
-        const btns = await this.mkbutton(args[0])
-        if (this.botname === 'miao-yunzai') {
-          return await this.e.reply([...args.slice(1), btns])
-        } else if (this.botname === 'trss-yunzai') {
-          /** slice(1): 从args第二个数组开始 */
-          /** flat(Infinity): flat 方法是 ES2019 引入的一个新的数组方法，它用于将嵌套数组展平成一个新数组。flat 方法可以接受一个参数，即深度（deep），指定要展平的层数。如果使用 Infinity 作为参数，flat 方法会递归地展平数组中的所有嵌套层级。
-在你的代码中，...args.slice(1).flat(Infinity) 首先通过 slice 方法获取 args 数组的子集（从第二个元素开始到结束），然后对这个子集使用 flat(Infinity) 来递归地展平所有嵌套的数组结构。 */
-          return await this.e.reply([...args.slice(1).flat(Infinity), btns])
-        }
-      } else {
-        return await this.e.reply(...args)
-      }
-    }
   }
 
   /** 检查是或否设置抖音ck */
@@ -83,10 +62,28 @@ export default class base {
 
   /**
    *
+   * @param {Array|String} msg 消息
+   * @param {Array} btns 按钮数组
+   * @returns
+   */
+  mkMsg(msg, btns = []) {
+    if (!Array.isArray(msg)) {
+      msg = [msg]
+    }
+    if (btns.length) {
+      btns = this.mkbutton(btns)
+      return [...msg, btns]
+    } else {
+      return msg
+    }
+  }
+
+  /**
+   *
    * @param {Array} btn 按钮数组
    * @returns
    */
-  async mkbutton(btn) {
+  mkbutton(btn) {
     switch (this.botname) {
       case 'miao-yunzai':
         if (this.e.bot.config?.markdown.type !== 0 || undefined) {

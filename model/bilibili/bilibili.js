@@ -12,29 +12,36 @@ export default class BiLiBiLi extends base {
   }
 
   async RESOURCES(OBJECT) {
-    this.reply(false, '检测到B站链接，开始解析')
+    this.e.reply('检测到B站链接，开始解析')
     const { desc, owner, pic, title, stat } = OBJECT.INFODATA.data
     const { name, face } = owner
     const { coin, like, share, view, favorite, danmaku } = stat
     this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
-    await this.reply(
-      true,
-      [
-        {
-          text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-          link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-        },
-      ],
-      [
-        segment.image(pic),
-        `\n# 标题: ${title}\n`,
-        `\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
-          like,
-        )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
-      ],
+    await this.e.reply(
+      this.mkMsg(
+        [
+          segment.image(pic),
+          `\n# 标题: ${title}\n`,
+          `\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
+            like,
+          )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
+        ],
+        [
+          {
+            text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+            link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+          },
+        ],
+      ),
     )
 
+    let videoSize
+    if (this.TYPE === 'isLogin') {
+      videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url)
+    } else {
+      videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
+    }
     const commentsdata = await bilicomments(OBJECT)
     let file = null
     let { img } = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
@@ -44,22 +51,20 @@ export default class BiLiBiLi extends base {
       CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
       VideoUrl: 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid,
       Clarity: OBJECT.DATA.data.accept_description[0],
-      VideoSize: await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url),
+      VideoSize: videoSize,
       ImageLength: 0,
       shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
     })
     file = img
 
     Config.commentsimg
-      ? await this.reply(
-          true,
-          [
+      ? await this.e.reply(
+          this.mkMsg(img, [
             {
-              text: 'b23.tv/' + OBJECT.INFODATA.data.bvid,
+              text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
               link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
             },
-          ],
-          img,
+          ]),
         )
       : null
     await this.getvideo(OBJECT)
@@ -128,6 +133,6 @@ export default class BiLiBiLi extends base {
     const audioSizeInMB = (audioSize / (1024 * 1024)).toFixed(2)
 
     const totalSizeInMB = parseFloat(videoSizeInMB) + parseFloat(audioSizeInMB)
-    return totalSizeInMB
+    return totalSizeInMB.toFixed(2)
   }
 }
