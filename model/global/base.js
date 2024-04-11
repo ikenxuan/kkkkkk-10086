@@ -84,7 +84,7 @@ export default class base {
   mkbutton(btn) {
     switch (this.botname) {
       case 'miao-yunzai':
-        if (this.e.bot?.sendUni || this.e.bot.config?.markdown?.type !== 0 || !undefined) {
+        if (this.e.bot?.sendUni && this.e.bot.config?.markdown?.type !== 0) {
           return null
         }
         if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
