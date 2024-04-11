@@ -12,7 +12,7 @@ export default class BiLiBiLi extends base {
   }
 
   async RESOURCES(OBJECT) {
-    this.e.reply('检测到B站链接，开始解析')
+    Config.bilibilitip ? this.e.reply('检测到B站链接，开始解析') : null
     const { desc, owner, pic, title, stat } = OBJECT.INFODATA.data
     const { name, face } = owner
     const { coin, like, share, view, favorite, danmaku } = stat

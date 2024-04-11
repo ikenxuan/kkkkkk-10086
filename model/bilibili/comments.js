@@ -60,7 +60,7 @@ export async function bilicomments(OBJECT) {
       jsonArray[i].like = (jsonArray[i].like / 10000).toFixed(1) + 'w'
     }
   }
-
+  jsonArray = space(jsonArray)
   /** 检查评论是否带表情，是则添加img标签 */
   for (const item1 of jsonArray) {
     // 遍历emojidata中的每个元素
@@ -80,7 +80,6 @@ export async function bilicomments(OBJECT) {
   let res
   res = checklevel(jsonArray)
   res = br(res)
-  res = space(res)
   return res
 }
 

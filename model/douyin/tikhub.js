@@ -28,7 +28,7 @@ export default class TikHub extends base {
    * @returns
    */
   async v1_dy_data(Data, CommentData, is_mp4) {
-    this.e.reply('检测到抖音链接，开始解析')
+    Config.douyintip ? this.e.reply('检测到抖音链接，开始解析') : null
     let g_video_url
     let g_title
     let full_data = []
