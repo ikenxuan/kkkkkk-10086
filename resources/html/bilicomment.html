@@ -29,8 +29,7 @@
       .comment {
         display: flex;
         /* border-bottom: 1px solid #e7d8d8; */
-        /* padding: 0px 40px 0px 40px; */
-        padding: 40px;
+        padding: 0px 40px 0px 40px;
         position: relative;
       }
 
@@ -174,6 +173,7 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
+        color: #3a3a3a;
       }
 
       .svg_container {
@@ -193,7 +193,7 @@
         /* margin-top: 50px; 添加顶部间距 */
         align-items: center;
         padding: 10px;
-        color: #272727;
+
         letter-spacing: 6px; /* 调整字间距*/
         font-size: 45px;
         white-space: normal; /* 允许自动换行 */
@@ -215,6 +215,76 @@
       .qrcode_text {
         font-size: 45px;
         margin-top: 20px; /* 调整垂直间距 */
+      }
+
+      /* 深色模式样式 */
+      .dark-mode {
+        background-color: #121212;
+        color: #fff;
+        /* 其他深色模式下的样式 */
+      }
+
+      /* 浅色模式样式 */
+      .light-mode {
+        background-color: #f4f4f4;
+        color: #333;
+        /* 其他浅色模式下的样式 */
+      }
+
+      /* 针对特定元素的样式 */
+      .dark-mode .comment-text {
+        color: #f4f4f4;
+      }
+      .dark-mode .video_info_container {
+        color: #c3c3c3;
+      }
+
+      .dark-mode .comment-text img {
+        display: inline-block;
+        vertical-align: middle;
+        transform: translateY(-10%) scale(0.9);
+      }
+
+      .light-mode .comment-text {
+        color: #333;
+      }
+
+      .light-mode .comment-imgbox {
+        display: flex;
+        margin: 20px 0;
+        overflow: hidden;
+        box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.3);
+        border-radius: 25px;
+        width: 95%;
+        flex: 1;
+      }
+      .user-avatar .comment-imgbox {
+        display: flex;
+        margin: 20px 0;
+        overflow: hidden;
+        box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.3);
+        border-radius: 25px;
+        width: 95%;
+        flex: 1;
+      }
+      .dark-mode .comment-imgbox {
+        display: flex;
+        margin: 20px 0;
+        overflow: hidden;
+        box-shadow: 0 20px 50px 0 rgb(255 255 255 / 30%);
+        border-radius: 25px;
+        width: 95%;
+        flex: 1;
+      }
+
+      .dark-mode .user-avatar {
+        margin-bottom: 50px;
+        width: 187.5px;
+        height: 187.5px;
+        border-radius: 50%;
+        margin-right: 33.75px;
+        object-fit: cover;
+        box-shadow: 0 20px 50px 0 rgb(255 255 255 / 30%);
       }
     </style>
   </head>
@@ -319,16 +389,48 @@
         />
       </div>
     </div>
-    <script type="text/javascript">
-      var videoUrl = '{{VideoUrl}}'
-      document.getElementById('text').innerText = videoUrl
-      var qrcode = new QRCode(document.getElementById('qrcode'), {
+  </body>
+  <script>
+    function applyDarkMode() {
+      document.body.classList.add('dark-mode')
+      document.body.classList.remove('light-mode')
+    }
+
+    function applyLightMode() {
+      document.body.classList.add('light-mode')
+      document.body.classList.remove('dark-mode')
+    }
+
+    function renderqrcode(darkmode) {
+      qrcode = new QRCode(document.getElementById('qrcode'), {
         width: 600,
         height: 600,
-        colorDark: '#000000',
-        colorLight: '#f4f4f4',
+        colorDark: darkmode ? '#cccccc' : '#3a3a3a',
+        colorLight: darkmode ? '#121212' : '#f4f4f4',
       })
-      qrcode.makeCode(videoUrl)
-    </script>
-  </body>
+      qrcode.makeCode('{{VideoUrl}}')
+    }
+
+    function applyThemeBasedOnTime() {
+      const currentHour = new Date().getHours()
+      let darkmode
+      if (currentHour >= 18 || currentHour < 6) {
+        darkmode = true
+      } else {
+        darkmode = false
+      }
+      if (darkmode === true) {
+        applyDarkMode()
+        renderqrcode(true)
+        console.log('深色模式')
+      } else {
+        applyLightMode()
+        renderqrcode(false)
+        console.log('浅色模式')
+      }
+    }
+
+    // 页面加载时应用主题
+    document.addEventListener('DOMContentLoaded', applyThemeBasedOnTime)
+  </script>
 </html>
