@@ -114,7 +114,7 @@ export default class base {
               groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'LagrangeCore':
-              /** 拉格朗视频时好时坏，默认传群文件 */
+              /** 拉格朗视频默认传群文件 */
               await this.e.group.sendFile(file.filepath)
               break
             case 'QQBot':
@@ -168,10 +168,10 @@ export default class base {
 
   /**
    *
-   * @param {*} video_url 下载地址
-   * @param {*} title 文件名
-   * @param {*} headers 请求头
-   * @param {*} type 下载文件类型，默认.mp4
+   * @param {String} video_url 下载地址
+   * @param {String} title 文件名
+   * @param {Object} headers 请求头
+   * @param {String} type 下载文件类型，默认.mp4
    * @returns
    */
   async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
