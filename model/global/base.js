@@ -70,12 +70,10 @@ export default class base {
     if (!Array.isArray(msg)) {
       msg = [msg]
     }
-    if (btns.length) {
-      btns = this.mkbutton(btns)
+    btns = this.mkbutton(btns)
+    if (btns) {
       return [...msg, btns]
-    } else {
-      return msg
-    }
+    } else return msg
   }
 
   /**
@@ -86,7 +84,10 @@ export default class base {
   mkbutton(btn) {
     switch (this.botname) {
       case 'miao-yunzai':
-        if (this.e.bot.config?.markdown.type !== 0 || undefined) {
+        if (this.e.bot?.sendUni || this.e.bot.config?.markdown?.type !== 0 || !undefined) {
+          return null
+        }
+        if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
           return Bot.Button(btn)
         } else {
           return null

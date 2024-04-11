@@ -9,6 +9,7 @@ export default class BiLiBiLi extends base {
     this.e = e
     this.TYPE = TYPE
     this.downloadfilename = ''
+    this.islogin = this.TYPE === 'isLogin' ? true : false
   }
 
   async RESOURCES(OBJECT) {
@@ -29,15 +30,15 @@ export default class BiLiBiLi extends base {
         ],
         [
           {
-            text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-            link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+            text: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链',
+            link: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
           },
         ],
       ),
     )
 
     let videoSize
-    if (this.TYPE === 'isLogin') {
+    if (this.islogin) {
       videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url)
     } else {
       videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
@@ -49,11 +50,11 @@ export default class BiLiBiLi extends base {
       Type: '视频',
       CommentsData: commentsdata,
       CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
-      VideoUrl: 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid,
+      VideoUrl: this.islogin ? 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
       Clarity: OBJECT.DATA.data.accept_description[0],
       VideoSize: videoSize,
       ImageLength: 0,
-      shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+      shareurl: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链(永久)',
     })
     file = img
 
@@ -61,8 +62,8 @@ export default class BiLiBiLi extends base {
       ? await this.e.reply(
           this.mkMsg(img, [
             {
-              text: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-              link: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+              text: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链',
+              link: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
             },
           ]),
         )

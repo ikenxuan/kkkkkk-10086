@@ -227,6 +227,13 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'bilibilitip',
+          label: '提示',
+          bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
+          component: 'Switch',
+          required: false,
+        },
+        {
           field: 'bilibilicommentsimg',
           label: '评论图',
           bottomHelpMessage: '发送哔哩哔哩作品评论图',
