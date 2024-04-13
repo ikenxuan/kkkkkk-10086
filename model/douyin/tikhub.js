@@ -184,19 +184,14 @@ export default class TikHub extends base {
       let title = Data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
       g_title = title
       mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
-      switch (this.botCfg.package.name) {
-        case 'miao-yunzai':
-          videores.push(`标题：\n${title}`)
-          videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
-          videores.push(`永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
-          videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
-          videores.push(segment.image(cover))
-        case 'trss-yunzai':
-          break
-      }
+      videores.push(`标题：\n${title}`)
+      videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
+      videores.push(`永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
+      videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
+      videores.push(segment.image(cover))
       g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
       logger.info('视频地址', g_video_url)
-      let dsc = this.botCfg.package.name == 'miao-yunzai' ? '视频基本信息' : null
+      let dsc = this.botname == 'miao-yunzai' ? '视频基本信息' : null
       let res = await common.makeForwardMsg(this.e, videores, dsc)
       video_data.push(res)
       video_res.push(video_data)
@@ -236,37 +231,25 @@ export default class TikHub extends base {
 
     const tip = ['视频正在上传']
     let res
-    switch (this.botCfg.package.name) {
-      case 'miao-yunzai':
-        if (is_mp4) {
-          res = full_data
-            .concat(tip)
-            .concat(Config.commentsimg ? file : null)
-            .concat(video_res)
-            .concat(comments_res)
-            .concat(music_res)
-            .concat(author_res)
-            .concat(ocr_res)
-        } else {
-          res = full_data
-            .concat(Config.commentsimg ? file : null)
-            .concat(video_res)
-            .concat(image_res)
-            .concat(comments_res)
-            .concat(music_res)
-            .concat(author_res)
-            .concat(ocr_res)
-        }
-        break
-      case 'trss-yunzai':
-        if (is_mp4) {
-          res = full_data.concat(video_res)
-        } else {
-          res = full_data.concat(image_res)
-        }
-        break
+    if (is_mp4) {
+      res = full_data
+        .concat(tip)
+        .concat(Config.commentsimg ? file : null)
+        .concat(video_res)
+        .concat(comments_res)
+        .concat(music_res)
+        .concat(author_res)
+        .concat(ocr_res)
+    } else {
+      res = full_data
+        .concat(Config.commentsimg ? file : null)
+        .concat(video_res)
+        .concat(image_res)
+        .concat(comments_res)
+        .concat(music_res)
+        .concat(author_res)
+        .concat(ocr_res)
     }
-
     let dec
     if (is_mp4 !== true) {
       dec = '抖音图集作品数据'
@@ -274,7 +257,7 @@ export default class TikHub extends base {
       dec = '抖音视频作品数据'
     }
     return {
-      res: !this.botadapter === 'QQBot' ? res : [],
+      res: this.botadapter !== 'QQBot' ? res : [],
       g_video_url,
       g_title,
       dec: this.botname === 'miao-yunzai' ? dec : null,

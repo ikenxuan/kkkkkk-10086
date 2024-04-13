@@ -53,6 +53,7 @@ export async function GetID(url) {
       break
 
     default:
+      logger.warn('无法获取作品ID')
       break
   }
 

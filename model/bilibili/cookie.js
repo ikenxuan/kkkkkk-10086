@@ -6,6 +6,10 @@ import { JSDOM } from 'jsdom'
 export async function checkuser(BASEURL) {
   if (Config.bilibilick == '') return { QUERY: '&platform=html5', TYPE: '!isLogin' }
   const logininfo = await new networks({ url: await BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.bilibilick } }).getData()
+  if ((logininfo.code = -101)) {
+    logger.warn('B站ck已过期！')
+    return { QUERY: '&platform=html5', TYPE: '!isLogin' }
+  }
   let sign = await wbi_sign(BASEURL)
 
   let qn = [6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]

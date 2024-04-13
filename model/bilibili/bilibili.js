@@ -103,7 +103,7 @@ export default class BiLiBiLi extends base {
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 75) {
-                this.botCfg.package.name === 'trss-yunzai' ? null : this.reply(false, `视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                this.botname === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
               } else {
                 /** 因为本地合成，没有视频直链 */

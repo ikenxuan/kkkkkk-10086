@@ -135,7 +135,7 @@ export default class base {
           break
 
         case 'trss-yunzai':
-          switch (this.e.bot?.adapter?.name) {
+          switch (this.botadapter) {
             case 'LagrangeCore':
               logger.warn('TRSS-Yunzai & Lagrange适配器暂不支持上传视频')
             case 'QQBot':

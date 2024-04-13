@@ -55,7 +55,7 @@ export class example extends plugin {
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new TikHub(e).GetData(iddata.type, data)
-    Config.sendforwardmsg ? await e.reply(await (!cfg.bot.skip_login ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve())) : null
+    Config.sendforwardmsg ? await e.reply(await (new base(e).botadapter !== 'QQBot' ? common.makeForwardMsg(e, res.res, res.dec) : Promise.resolve())) : null
     iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'kkktemp_' + Date.now() : res.g_title) : null
   }
 
