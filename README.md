@@ -24,7 +24,6 @@ cd plugins/kkkkkk-10086
 ```
 
 ```sh
-
 # 安装依赖 任选一条
 yarn --production
 pnpm install -P
@@ -41,7 +40,7 @@ npm install --production
   - [x] 图集
   - [x] 评论
   - [x] 用户主页视频列表
-  - [x] 咕咕咕
+  - [ ] ...
 
   <br>
 
@@ -50,8 +49,9 @@ npm install --production
   - [x] 视频
   - [x] 评论
   - [x] 扫码登录取 ck
-  - [ ] ck 自刷新
-  - [ ] 咕咕咕
+  - [ ] ...
+
+想到什么写什么(有时间精力的情况下)
 
 ---
 
