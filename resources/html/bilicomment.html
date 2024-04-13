@@ -423,9 +423,9 @@
       const currentHour = new Date().getHours()
       let darkmode
       if (currentHour >= 18 || currentHour < 6) {
-        darkmode = false
-      } else {
         darkmode = true
+      } else {
+        darkmode = false
       }
       if (darkmode === true) {
         applyDarkMode()
