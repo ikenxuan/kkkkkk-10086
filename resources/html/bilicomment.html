@@ -52,6 +52,13 @@
         transform: translateY(-7%) translateX(-8%) scale(1.5);
       }
 
+      .user-avatar-2 {
+        width: 145px;
+        height: 145px;
+        margin-right: -140px;
+        transform: translateY(97%) translateX(-116%) scale(0.5);
+      }
+
       /* 当img元素为空时，设置元素透明度为0，图裂图标将被隐藏 */
       img[src=''],
       img:not([src]) {
@@ -317,6 +324,7 @@
       <div class="comment">
         <img src="{{val.avatar}}" class="user-avatar" />
         <img src="{{val.frame}}" class="user-avatar-1" />
+        <img src="{{val.icon_big_vip}}" class="user-avatar-2" />
         <div class="comment-content">
           <div class="user-info">
             {{@val.uname}} {{if val.label_type == 1}}
@@ -415,9 +423,9 @@
       const currentHour = new Date().getHours()
       let darkmode
       if (currentHour >= 18 || currentHour < 6) {
-        darkmode = true
-      } else {
         darkmode = false
+      } else {
+        darkmode = true
       }
       if (darkmode === true) {
         applyDarkMode()

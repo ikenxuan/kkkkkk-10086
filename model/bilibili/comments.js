@@ -46,6 +46,7 @@ export async function bilicomments(OBJECT) {
       replylength: replylength,
       location: location,
       like: like,
+      icon_big_vip: viptype === 2 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
     }
 
     jsonArray.push(obj)
