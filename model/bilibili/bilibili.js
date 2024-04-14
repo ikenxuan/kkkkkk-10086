@@ -55,6 +55,7 @@ export default class BiLiBiLi extends base {
       VideoSize: videoSize,
       ImageLength: 0,
       shareurl: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链(永久)',
+      Botadapter: this.botadapter,
     })
     file = img
 

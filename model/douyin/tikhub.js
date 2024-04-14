@@ -215,6 +215,7 @@ export default class TikHub extends base {
         VideoFPS: FPS,
         ImageLength: imagenum,
         DestroyTime: await destroyTime(),
+        Botadapter: this.botadapter,
       })
       file = img
       this.e.reply(
