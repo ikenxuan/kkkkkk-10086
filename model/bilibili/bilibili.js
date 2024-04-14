@@ -78,13 +78,13 @@ export default class BiLiBiLi extends base {
       case 'isLogin':
         const bmp4 = await this.DownLoadFile(
           OBJECT.DATA.data.dash.video[0].base_url,
-          `Bil_Video_${OBJECT.INFODATA.data.bvid}`,
+          `Bil_V_${OBJECT.INFODATA.data.bvid}`,
           (this.headers = { ...this.headers, Referer: 'https://api.bilibili.com/' }),
           '.mp4',
         )
         const bmp3 = await this.DownLoadFile(
           OBJECT.DATA.data.dash.audio[0].base_url,
-          `Bil_Aaudio_${OBJECT.INFODATA.data.bvid}`,
+          `Bil_A_${OBJECT.INFODATA.data.bvid}`,
           (this.headers = { ...this.headers, Referer: 'https://api.bilibili.com/' }),
           '.mp3',
         )
@@ -95,7 +95,7 @@ export default class BiLiBiLi extends base {
             this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`,
             /** 根据配置文件 `rmmp4` 重命名 */
             async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'kkktemp_' + Date.now() : this.downloadfilename}.mp4`
+              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'ktmp_' + Date.now() : this.downloadfilename}.mp4`
               fs.renameSync(this._path + `/resources/kkkdownload/video/Bil_Result_${OBJECT.INFODATA.data.bvid}.mp4`, filePath)
               await this.removeFileOrFolder(bmp4.filepath, true)
               await this.removeFileOrFolder(bmp3.filepath, true)
@@ -118,7 +118,7 @@ export default class BiLiBiLi extends base {
         break
       case '!isLogin':
         /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
-        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, this.downloadfilename)
+        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.rmmp4 ? 'ktmp_' + Date.now() : this.downloadfilename)
         break
     }
   }

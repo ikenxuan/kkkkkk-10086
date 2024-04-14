@@ -211,46 +211,29 @@ export default class networks {
       const totalBytes = parseInt(contentLength, 10)
       let downloadedBytes = 0
       let lastPrintedPercentage = -1
-
       const writer = fs.createWriteStream(this.filepath)
-
-      const progress = new ProgressBar('  downloading [:bar] :rate/bps :percent :etas', {
-        total: totalBytes,
-        width: 40,
-        incomplete: ' ',
-        complete: '=',
-        clear: true,
-        renderThrottle: 500,
-      })
-
       const printProgress = () => {
         // 计算当前下载进度百分比
         const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
-
         // 控制日志打印频率，只在百分比变化时打印日志
         if (progressPercentage !== lastPrintedPercentage) {
           progressCallback(downloadedBytes, totalBytes)
           lastPrintedPercentage = progressPercentage
         }
       }
-
       // 每0.5秒打印一次下载进度
       const intervalId = setInterval(printProgress, 500)
-
       response.body.on('data', (chunk) => {
         downloadedBytes += chunk.length
-        progress.tick(chunk.length)
+        // progress.tick(chunk.length) // 暂时停用
       })
-
       response.body.pipe(writer)
-
       return new Promise((resolve, reject) => {
         writer.on('finish', () => {
           clearInterval(intervalId) // 停止定时器
           printProgress() // 打印最终下载进度
           resolve({ filepath: this.filepath, totalBytes })
         })
-
         writer.on('error', (err) => {
           reject(err)
         })
@@ -260,6 +243,7 @@ export default class networks {
       throw error
     }
   }
+
   async Tojson() {
     if (this.fetch.headers.get('content-type').includes('json')) {
       this.fetch = await this.fetch.json()
@@ -276,6 +260,7 @@ export default class networks {
   async ToArrayBuffer() {
     this.fetch = await this.fetch.arrayBuffer()
   }
+
   async ToBlob() {
     this.fetch = await this.fetch.blob()
   }

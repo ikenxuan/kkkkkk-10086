@@ -180,8 +180,22 @@ export default class base {
       headers: headers,
       filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
+      // const progressPercentage = (downloadedBytes / totalBytes) * 100
+      // console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
+      const barLength = 45
+      function generateProgressBar(progressPercentage) {
+        // 计算进度条中应填充的 '#' 符号数量
+        const filledLength = Math.floor((progressPercentage / 100) * barLength)
+        // 计算进度条样式
+        let progress = ''
+        progress += '#'.repeat(filledLength)
+        progress += '-'.repeat(Math.max(0, barLength - filledLength - 1))
+        const formattedProgress = progressPercentage.toFixed(2) + '%'
+        console.log(`DownLoading ${title}${type} [${progress}] ${formattedProgress}\r`)
+      }
+      // 计算进度百分比
       const progressPercentage = (downloadedBytes / totalBytes) * 100
-      console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
+      generateProgressBar(progressPercentage)
     })
     return { filepath, totalBytes }
   }
