@@ -1,7 +1,6 @@
 import fetch from 'node-fetch'
 import https from 'https'
 import { Response } from 'node-fetch'
-import ProgressBar from 'progress'
 import fs from 'fs'
 
 let controller = new AbortController()
