@@ -113,7 +113,11 @@ export default class base {
         case 'miao-yunzai':
           switch (this.botadapter) {
             case 'ICQQ':
-              groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              if (this.e.isGroup) {
+                groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              } else {
+                groupfile ? await this.e.friend.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              }
               break
             case 'LagrangeCore':
               /** 拉格朗视频默认传群文件 */
@@ -144,7 +148,11 @@ export default class base {
               file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
             case 'ICQQ':
-              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              if (this.e.isGroup) {
+                groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              } else {
+                groupfile ? await this.e.friend.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              }
               break
           }
           break
