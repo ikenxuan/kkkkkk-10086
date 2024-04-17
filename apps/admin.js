@@ -119,7 +119,7 @@ export class admin extends plugin {
   async setbilick(e) {
     this.setContext('savebilick')
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }
 
