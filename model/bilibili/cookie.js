@@ -4,7 +4,7 @@ import { getCorrespondPath } from './sign/CorrespondPath.js'
 import { JSDOM } from 'jsdom'
 
 export async function checkuser(BASEURL) {
-  if (Config.bilibilick == '') return { QUERY: '&platform=html5', TYPE: '!isLogin' }
+  if (Config.bilibilick == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
   const logininfo = await new networks({ url: await BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.bilibilick } }).getData()
   let sign = await wbi_sign(BASEURL)
 
@@ -12,8 +12,8 @@ export async function checkuser(BASEURL) {
   let isvip
   logininfo.data.vipStatus === 1 ? (isvip = true) : (isvip = false)
   if (isvip) {
-    return { QUERY: `&fnval=16&fourk=1&${sign}`, TYPE: 'isLogin' }
-  } else return { QUERY: `&qn=${qn[3]}&fnval=16`, TYPE: 'isLogin' }
+    return { QUERY: `&fnval=16&fourk=1&${sign}`, STATUS: 'isLogin', isvip }
+  } else return { QUERY: `&qn=${qn[3]}&fnval=16`, STATUS: 'isLogin', isvip }
 }
 
 export async function refresh_token() {

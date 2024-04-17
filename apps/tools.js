@@ -1,5 +1,4 @@
 import { base, GetID, TikHub, push, iKun, common, Config, BiLiBiLi, bilidata } from '../model/common.js'
-import cfg from '../../../lib/config/config.js'
 
 export class example extends plugin {
   constructor() {
@@ -12,6 +11,10 @@ export class example extends plugin {
           {
             reg: '(bilibili.com|b23.tv|t.bilibili.com)',
             fnc: 'bilib',
+          },
+          {
+            reg: '第(\\d{1,3})集',
+            fnc: 'next',
           },
         ]
       : []
@@ -36,6 +39,14 @@ export class example extends plugin {
     await new push(this.e).action()
   }
 
+  async next(e) {
+    if (user[this.e.user_id] === 'bilib') {
+      const regex = String(e.msg).match(/第(\d+)集/)
+      OBJECT.Episode = regex[1]
+      await new BiLiBiLi(e, OBJECT).RESOURCES(OBJECT, true)
+    }
+  }
+
   async bilib(e) {
     const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g
     const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g
@@ -47,11 +58,15 @@ export class example extends plugin {
     }
     const bvid = await GetID(url)
     const data = await new bilidata(bvid.type).GetData(bvid)
-    await new BiLiBiLi(e, data.TYPE).RESOURCES(data)
+    await new BiLiBiLi(e, data).RESOURCES(data)
+    user[this.e.user_id] = 'bilib'
+    setTimeout(() => {
+      delete user[this.e.user_id]
+    }, 1000 * 60)
   }
 
   async douy(e) {
-    const url = e.msg.toString().match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
+    const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new TikHub(e).GetData(iddata.type, data)
@@ -65,3 +80,5 @@ export class example extends plugin {
     data.data[0].type === 4 ? await e.reply(await new push(e).setting(data)) : e.reply('无法获取用户信息，请确认抖音号是否正确')
   }
 }
+
+let user = {}

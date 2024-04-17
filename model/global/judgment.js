@@ -52,6 +52,14 @@ export async function GetID(url) {
       }
       break
 
+    case /play\/(\S+?)\??/.test(longLink):
+      const playMatch = longLink.match(/play\/(\w+)/)
+      result = {
+        type: 'bangumivideo',
+        id: playMatch[1],
+      }
+      break
+
     default:
       logger.warn('无法获取作品ID')
       break

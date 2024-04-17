@@ -32,7 +32,6 @@ export default class API {
     return `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`
   }
 
-  /** 参数在后续逻辑补全 */
   async VIDEO(avid, cid) {
     return `https://api.bilibili.com/x/player/playurl?avid=${avid}&cid=${cid}`
   }
@@ -43,6 +42,14 @@ export default class API {
 
   async EMOJI() {
     return 'https://api.bilibili.com/x/emote/user/panel/web?business=reply&web_location=0.0'
+  }
+
+  async bangumivideo(id, isep) {
+    return `https://api.bilibili.com/pgc/view/web/season?${isep ? 'ep_id' : 'season_id'}=${id}`
+  }
+
+  async bangumidata(cid, ep_id) {
+    return `https://api.bilibili.com/pgc/player/web/playurl?cid=${cid}&ep_id=${ep_id}`
   }
 }
 export const BiLiBiLiAPI = new API()

@@ -8,7 +8,7 @@ export async function bilicomments(OBJECT) {
     const frame = OBJECT.COMMENTSDATA.data.replies[i].member.pendant.image
     const uname = checkvip(OBJECT.COMMENTSDATA.data.replies[i].member)
     const level = OBJECT.COMMENTSDATA.data.replies[i].member.level_info.current_level
-    const viptype = OBJECT.COMMENTSDATA.data.replies[i].member.vip.vipType
+    const vipstatus = OBJECT.COMMENTSDATA.data.replies[i].member.vip.status
     const like = OBJECT.COMMENTSDATA.data.replies[i].like
     const contentObject = OBJECT.COMMENTSDATA.data.replies[i].content
     const replylength = OBJECT.COMMENTSDATA.data.replies[i].rcount
@@ -41,12 +41,12 @@ export async function bilicomments(OBJECT) {
       frame: frame,
       uname: uname,
       level: level,
-      viptype: viptype,
+      vipstatus: vipstatus,
       img_src: img_src,
       replylength: replylength,
       location: location,
       like: like,
-      icon_big_vip: viptype === 2 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
+      icon_big_vip: vipstatus === 1 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
     }
 
     jsonArray.push(obj)

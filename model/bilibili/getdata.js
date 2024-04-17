@@ -25,7 +25,7 @@ export default class bilidata extends base {
         const PARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
         const COMMENTSDATA = await this.GlobalGetData({ url: (await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid)) + PARAM, headers: this.headers })
         const EMOJIDATA = await this.GlobalGetData({ url: await BiLiBiLiAPI.EMOJI() })
-        return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, TYPE: SIGN.TYPE }
+        return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, STATUS: SIGN.TYPE, TYPE: 'bilibilivideo' }
 
       case 'COMMENTS':
         const aPARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
@@ -73,6 +73,23 @@ export default class bilidata extends base {
           body: data,
           headers: this.headers,
         })
+
+      case 'bangumivideo':
+        let isep
+        if (data.id.startsWith('ss')) {
+          data.id = data.id.replace('ss', '')
+          isep = false
+        } else if (data.id.startsWith('ep')) {
+          data.id = data.id.replace('ep', '')
+          isep = true
+        }
+        const QUERY = await checkuser(await BiLiBiLiAPI.bangumivideo(data.id, isep))
+        const INFO = await this.GlobalGetData({
+          url: await BiLiBiLiAPI.bangumivideo(data.id, isep),
+          headers: this.headers,
+        })
+        result = { INFODATA: INFO, USER: QUERY, TYPE: 'bangumivideo' }
+        return result
     }
   }
 
