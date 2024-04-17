@@ -12,10 +12,12 @@ export class example extends plugin {
         {
           reg: '^#?(kkkkkk|kkk|k)(插件)?(强制)?更新$',
           fnc: 'update_plugin',
+          permission: 'master',
         },
         {
           reg: '^#?(kkkkkk|kkk|k)(插件)?更新(日志|记录)$',
           fnc: 'update_log',
+          permission: 'master',
         },
       ],
     })
