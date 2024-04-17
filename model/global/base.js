@@ -36,7 +36,7 @@ export default class base {
   get botadapter() {
     if (this.botCfg.package.name === 'miao-yunzai') {
       if (this.e.bot?.sendUni) {
-        return 'icqq'
+        return 'ICQQ'
       }
       switch (true) {
         case this.e.bot?.adapter === 'LagrangeCore':
@@ -49,7 +49,7 @@ export default class base {
     } else if (this.botCfg.package.name === 'trss-yunzai') {
       switch (true) {
         case this.e.bot?.adapter?.name === 'ICQQ':
-          return 'icqq'
+          return 'ICQQ'
         case this.e.bot?.adapter?.name === 'Lagrange':
           return 'LagrangeCore'
         case this.e.bot?.adapter?.name === 'QQBot':
@@ -70,10 +70,12 @@ export default class base {
     if (!Array.isArray(msg)) {
       msg = [msg]
     }
-    btns = this.mkbutton(btns)
-    if (btns) {
-      return [...msg, btns]
-    } else return msg
+    if (btns.length > 0) {
+      btns = this.mkbutton(btns)
+      if (btns) {
+        return [...msg, btns]
+      } else return msg
+    } else return msg.flat(Infinity)
   }
 
   /**
@@ -110,7 +112,7 @@ export default class base {
       switch (this.botname) {
         case 'miao-yunzai':
           switch (this.botadapter) {
-            case 'icqq':
+            case 'ICQQ':
               groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'LagrangeCore':
@@ -141,7 +143,7 @@ export default class base {
             case 'QQBot':
               file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
-            case 'icqq':
+            case 'ICQQ':
               groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
@@ -157,7 +159,7 @@ export default class base {
     let res = await this.DownLoadFile(video_url, title, this.headers)
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
     if (res.totalBytes > 75) {
-      this.botCfg.package.name === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
+      this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
       /** 使用群文件 */
       await this.upload_file(res, video_url, true)
     } else {
