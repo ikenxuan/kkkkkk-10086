@@ -25,7 +25,7 @@ export default class bilidata extends base {
         const PARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
         const COMMENTSDATA = await this.GlobalGetData({ url: (await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid)) + PARAM, headers: this.headers })
         const EMOJIDATA = await this.GlobalGetData({ url: await BiLiBiLiAPI.EMOJI() })
-        return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, STATUS: SIGN.TYPE, TYPE: 'bilibilivideo' }
+        return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
 
       case 'COMMENTS':
         const aPARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
