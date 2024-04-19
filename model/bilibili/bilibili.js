@@ -106,7 +106,13 @@ export default class BiLiBiLi extends base {
           })
           global.OBJECT = OBJECT
           this.botadapter === 'ICQQ'
-            ? this.e.reply(this.mkMsg(img))
+            ? this.e.reply(
+                this.mkMsg(img, [
+                  { text: '第1集', callback: '第1集' },
+                  { text: '第2集', callback: '第2集' },
+                  { text: '第?集', input: '第' },
+                ]),
+              )
             : this.e.reply(
                 this.mkMsg(
                   [`# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\n---\n`],
