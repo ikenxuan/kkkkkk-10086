@@ -7,6 +7,9 @@ import fs from 'fs'
 export default class push extends base {
   constructor(e) {
     super(e)
+    if (this.botadapter === 'QQBot') {
+      return true
+    }
   }
   async action() {
     await this.checkremark()

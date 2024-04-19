@@ -86,9 +86,13 @@ export default class base {
   mkbutton(btn) {
     switch (this.botname) {
       case 'miao-yunzai':
-        if (this.e.bot?.sendUni && this.e.bot.config?.markdown?.type !== 0) {
+        /** 判断是否ICQQ */
+        if (Config.sendbutton) {
+          return Bot.Button(btn)
+        } else if (this.e.bot?.sendUni && this.e.bot.config?.markdown?.type !== 0) {
           return null
         }
+
         if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
           return Bot.Button(btn)
         } else {

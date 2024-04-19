@@ -84,6 +84,13 @@ export function supportGuoba() {
           component: 'Switch',
           required: false,
         },
+        {
+          field: 'sendbutton',
+          label: '发送按钮',
+          bottomHelpMessage: '喵崽/ICQQ的按钮开关，不是QQBot的，如果没有对应发送Markdown方法开启后可能会报错，默认关闭',
+          component: 'Switch',
+          required: false,
+        },
         /** 抖音视频解析配置 */
         {
           component: 'Divider',

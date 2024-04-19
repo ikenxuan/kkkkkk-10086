@@ -18,5 +18,6 @@
   "bilibilicommentsimg": true,
   "bilibilinumcomments": 20,
   "bilibilitip": true,
-  "douyintip": true
+  "douyintip": true,
+  "sendbutton": false
 }
