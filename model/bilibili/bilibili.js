@@ -92,10 +92,10 @@ export default class BiLiBiLi extends base {
               short_link,
             })
             msg.push([
-              `> ## 第${i + 1}集\n`,
-              `> 标题: ${long_title}\n`,
-              `> 🔒 播放要求: **${badge === '预告' || badge === '' ? '暂无' : badge}**\n`,
-              `> 🔗 分享链接: ${short_link}\n`,
+              `\n> ## 第${i + 1}集`,
+              `\n> 标题: ${long_title}`,
+              `\n> 🔒 播放要求: **${badge === '预告' || badge === '' ? '暂无' : badge}**`,
+              `\n> 🔗 分享链接: 114514\r`,
             ])
           }
           let { img } = await image(this.e, 'bangumi', 'kkkkkk-10086', {
@@ -108,7 +108,14 @@ export default class BiLiBiLi extends base {
           this.botadapter === 'ICQQ'
             ? this.e.reply(this.mkMsg(img))
             : this.e.reply(
-                this.mkMsg([`# ${OBJECT.INFODATA.result.season_title}\n---\n`, msg, '\n---\n输入 **第?集** 进行选集\n~~温馨提示:~~ 你有60秒的时间进行选择']),
+                this.mkMsg(
+                  [`# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\n---\n`],
+                  [
+                    { text: '第1集', callback: '第1集' },
+                    { text: '第2集', callback: '第2集' },
+                    { text: '第?集', input: '第' },
+                  ],
+                ),
               )
         } else {
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
