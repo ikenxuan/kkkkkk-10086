@@ -54,12 +54,32 @@ export default class base {
           return 'LagrangeCore'
         case this.e.bot?.adapter?.name === 'QQBot':
           return 'QQBot'
+        case this.e.bot?.adapter?.name === 'OneBotv11':
+          return 'OneBotv11'
+        case this.e.bot?.adapter?.name === 'KOOKBot':
+          return 'KOOKBot'
         default:
           return '无法判断协议端'
       }
     }
   }
 
+  resultMsg(forwardmsg) {
+    if (this.botname === 'miao-yunzai') {
+      return forwardmsg
+    } else if (this.botname === 'trss-yunzai') {
+      switch (this.botadapter) {
+        case 'ICQQ':
+        case 'LagrangeCore':
+        case 'QQBot':
+        case 'OneBotv11':
+        default:
+          return forwardmsg
+        case 'KOOKBot':
+          return null
+      }
+    }
+  }
   /**
    *
    * @param {Array|String} msg 消息
@@ -157,6 +177,10 @@ export default class base {
               } else {
                 groupfile ? await this.e.friend.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               }
+              break
+            case 'OneBotv11':
+            case 'KOOKBot':
+              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
           break
