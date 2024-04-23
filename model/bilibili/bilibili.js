@@ -94,8 +94,9 @@ export default class BiLiBiLi extends base {
             msg.push([
               `\n> ## 第${i + 1}集`,
               `\n> 标题: ${long_title}`,
-              `\n> 🔒 播放要求: **${badge === '预告' || badge === '' ? '暂无' : badge}**`,
-              `\n> 🔗 分享链接: 114514\r`,
+              `\n> 类型: ${badge !== '预告' ? '正片' : '预告'}`,
+              `\n> 🔒 播放要求: ${badge === '预告' || badge === '' ? '暂无' : badge}`,
+              this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : '',
             ])
           }
           let { img } = await image(this.e, 'bangumi', 'kkkkkk-10086', {
@@ -105,24 +106,19 @@ export default class BiLiBiLi extends base {
             title: OBJECT.INFODATA.result.title,
           })
           global.OBJECT = OBJECT
-          this.botadapter === 'ICQQ'
-            ? this.e.reply(
-                this.mkMsg(img, [
-                  { text: '第1集', callback: '第1集' },
-                  { text: '第2集', callback: '第2集' },
-                  { text: '第?集', input: '第' },
-                ]),
-              )
-            : this.e.reply(
-                this.mkMsg(
-                  [`# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\n---\n`],
-                  [
-                    { text: '第1集', callback: '第1集' },
-                    { text: '第2集', callback: '第2集' },
-                    { text: '第?集', input: '第' },
-                  ],
-                ),
-              )
+          msg = msg
+            .flat(Infinity)
+            .map((str) => {
+              return str.replace(/,\s*$/, '')
+            })
+            .join('')
+          this.e.reply(
+            this.mkMsg(this.botadapter === 'ICQQ' ? img : `# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数`, [
+              { text: '第1集', callback: '第1集' },
+              { text: '第2集', callback: '第2集' },
+              { text: '第?集', input: '第' },
+            ]),
+          )
         } else {
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
           const bangumidataBASEURL = await BiLiBiLiAPI.bangumidata(

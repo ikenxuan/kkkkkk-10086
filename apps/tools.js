@@ -42,6 +42,7 @@ export class example extends plugin {
   async next(e) {
     if (user[this.e.user_id] === 'bilib') {
       const regex = String(e.msg).match(/第(\d+)集/)
+      e.reply(`收到请求，第${regex[1]}集正在下载中`)
       OBJECT.Episode = regex[1]
       await new BiLiBiLi(e, OBJECT).RESOURCES(OBJECT, true)
     }
