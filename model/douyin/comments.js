@@ -188,7 +188,7 @@ async function handling_at(data) {
         })
         if (UserInfoData.user.sec_uid === secUid) {
           /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
-          const regex = new RegExp(`@${UserInfoData.user.nickname}`, 'g')
+          const regex = new RegExp(`@${UserInfoData.user.nickname.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&')}`, 'g')
           item.text = item.text.replace(regex, (match) => {
             if (mode == 'dark') {
               return `<span style="color: #face15;">${match}</span>`
