@@ -6,6 +6,7 @@ import util from 'util'
 import stream from 'stream'
 import crypto from 'crypto'
 import child_process from 'child_process'
+
 let core
 try {
   ;({ core } = await import('icqq'))
@@ -19,8 +20,9 @@ try {
 
 var errors = {}
 
-async function uploadRecord(record_url, seconds = 0, transcoding = true, brief = '') {
-  const result = await getPttBuffer(record_url, Bot.config?.ffmpeg_path, transcoding)
+async function uploadRecord(e, record_url, seconds = 0, transcoding = true, brief = '') {
+  const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
+  const result = await getPttBuffer(record_url, bot.config?.ffmpeg_path, transcoding)
   if (!result.buffer) {
     return false
   }
@@ -32,8 +34,8 @@ async function uploadRecord(record_url, seconds = 0, transcoding = true, brief =
     1: 3,
     2: 3,
     5: {
-      1: Bot.uin,
-      2: Bot.uin,
+      1: bot.uin,
+      2: bot.uin,
       3: 0,
       4: hash,
       5: buf.length,
@@ -42,14 +44,14 @@ async function uploadRecord(record_url, seconds = 0, transcoding = true, brief =
       8: 9,
       9: 4,
       11: 0,
-      10: Bot.apk.version,
+      10: bot.apk?.version || '9.0.50',
       12: 1,
       13: 1,
       14: codec,
       15: 1,
     },
   })
-  const payload = await Bot.sendUni('PttStore.GroupPttUp', body)
+  const payload = await bot.sendUni('PttStore.GroupPttUp', body)
   const rsp = core.pb.decode(payload)[5]
   rsp[2] && (0, errors.drop)(rsp[2], rsp[3])
   const ip = rsp[5]?.[0] || rsp[5],
@@ -67,7 +69,7 @@ async function uploadRecord(record_url, seconds = 0, transcoding = true, brief =
   }
   const url = `http://${(0, int32ip2str)(ip)}:${port}/?` + querystring.stringify(params)
   const headers = {
-    'User-Agent': `QQ/${Bot.apk.version} CFNetwork/1126`,
+    'User-Agent': `QQ/${bot.apk.version} CFNetwork/1126`,
     'Net-Type': 'Wifi',
   }
   await fetch(url, {
@@ -80,7 +82,7 @@ async function uploadRecord(record_url, seconds = 0, transcoding = true, brief =
   const fid = rsp[11].toBuffer()
   const b = core.pb.encode({
     1: 4,
-    2: Bot.uin,
+    2: bot.uin,
     3: fid,
     4: hash,
     5: hash.toString('hex') + '.amr',

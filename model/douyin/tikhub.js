@@ -128,19 +128,34 @@ export default class TikHub extends base {
       let res = await common.makeForwardMsg(this.e, musicres, dsc)
       music_data.push(res)
       music_res.push(music_data)
-      switch (this.botCfg.package.name) {
+      switch (this.botname) {
         case 'miao-yunzai':
           if (music_url && is_mp4 == false && music_url !== undefined && this.botCfg.bot.skip_login == false) {
             try {
-              await this.e.reply(await uploadRecord(music_url, 0, false))
+              await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
             } catch {}
           } else if (this.botCfg.bot.skip_login && is_mp4 == false) {
             await this.e.reply(segment.record(music_url))
           }
           break
         case 'trss-yunzai':
-          if (music_url && is_mp4 == false && music_url !== undefined) {
-            await this.e.reply(segment.record(music_url))
+          switch (this.botadapter) {
+            case 'QQBot':
+            case 'OneBotv11':
+            case 'LagrangeCore':
+            case 'KOOKBot':
+              if (music_url && is_mp4 == false && music_url !== undefined) {
+                await this.e.reply(segment.record(music_url))
+              }
+              break
+            case 'ICQQ':
+              try {
+                await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+              } catch (error) {
+                logger.error('高清语音发送失败', error)
+                await this.e.reply(segment.record(music_url))
+              }
+              break
           }
           break
       }
