@@ -1,6 +1,6 @@
-import plugin from '../../../lib/plugins/plugin.js'
 import { update } from '../../other/update.js'
 import { exec, execSync } from 'child_process'
+
 const Plugin_Name = 'kkkkkk-10086'
 export class example extends plugin {
   constructor() {

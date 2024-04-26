@@ -1,7 +1,5 @@
-import TikHub from './tikhub.js'
-import { GetID } from '../global/judgment.js'
-import iKun from './getdata.js'
-import base from '../global/base.js'
+import { iKun } from '#douyin'
+import { base } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
@@ -102,7 +100,7 @@ export default class push extends base {
         //   }
         //   const id = await GetID(share_url)
         //   const workdata = await new iKun(id.type).GetData(id)
-        //   const res = await new TikHub(this.e).GetData(id.type, workdata, pushe)
+        //   const res = await new DouYin(this.e).GetData(id.type, workdata, pushe)
         //   await Bot.pickGroup(Number(data.group_id[i])).sendMsg(res.res[2])
         // }
       }

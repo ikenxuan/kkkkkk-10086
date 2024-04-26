@@ -13,5 +13,10 @@
     "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.3"
+  },
+  "imports": {
+    "#modules": "./model/modules.js",
+    "#douyin": "./model/douyin.js",
+    "#bilibili": "./model/bilibili.js"
   }
 }

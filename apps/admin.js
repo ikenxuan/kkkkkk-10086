@@ -1,6 +1,5 @@
-import { Config } from '../model/config.js'
-import BiLogin from '../model/bilibili/login.js'
-import { refresh_token } from '../model/bilibili/cookie.js'
+import { Config } from '#modules'
+import { BiLogin, refresh_token } from '#bilibili'
 
 let _path = process.cwd()
 

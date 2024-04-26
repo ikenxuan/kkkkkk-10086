@@ -1,6 +1,4 @@
-import cfg from '../../../../lib/config/config.js'
-import networks from './networks.js'
-import { Config } from '../config.js'
+import { botCfg, networks, Config } from '#modules'
 import fs from 'fs'
 import path from 'path'
 
@@ -15,7 +13,7 @@ export default class base {
     this.numcomments = Config.numcomments
     this.comments = Config.comments
     this.URL = ''
-    this.botCfg = cfg
+    this.botCfg = botCfg
     this.Config = Config
     this._path = process.cwd()
     this.ConfigPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'

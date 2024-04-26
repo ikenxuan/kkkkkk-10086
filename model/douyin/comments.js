@@ -1,4 +1,4 @@
-import iKun from './getdata.js'
+import { iKun } from '#douyin'
 /**
  *
  * @param {*} data 完整的评论数据

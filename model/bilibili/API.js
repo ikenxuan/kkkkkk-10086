@@ -1,4 +1,4 @@
-import { Config } from '../common.js'
+import { Config } from '#modules'
 
 export default class API {
   async 申请二维码() {

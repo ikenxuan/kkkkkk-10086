@@ -1,8 +1,7 @@
-import { base, image, Config, BiLiBiLiAPI, bilidata } from '../common.js'
+import { base, image, Config } from '#modules'
+import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
 import ffmpeg from '../ffmpeg.js'
-import { bilicomments } from './comments.js'
 import fs from 'fs'
-import { checkuser } from './cookie.js'
 
 export default class BiLiBiLi extends base {
   constructor(e = {}, data) {

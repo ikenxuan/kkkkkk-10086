@@ -1,4 +1,4 @@
-import { networks } from '../common.js'
+import { networks } from '#modules'
 
 /**
  * return aweme_id

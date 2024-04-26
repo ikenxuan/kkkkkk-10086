@@ -1,6 +1,5 @@
-import { Config, BiLiBiLiAPI, networks, bilidata } from '../common.js'
-import { wbi_sign } from './sign/wbi.js'
-import { getCorrespondPath } from './sign/CorrespondPath.js'
+import { Config, networks } from '#modules'
+import { BiLiBiLiAPI, bilidata, wbi_sign, getCorrespondPath } from '#bilibili'
 import { JSDOM } from 'jsdom'
 
 export async function checkuser(BASEURL) {

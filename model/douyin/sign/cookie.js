@@ -1,4 +1,4 @@
-import networks from '../../../utils/networks.js'
+import { networks } from '#modules'
 import * as ac_signature from './ac_signature.cjs'
 
 export async function dyck() {

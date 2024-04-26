@@ -1,7 +1,6 @@
-import base from '../../global/base.js'
+import { base, networks } from '#modules'
 import { MsToken } from './MsToken.js'
 import * as xbogus from './X-Bogus.cjs'
-import networks from '../../global/networks.js'
 
 export default class sign extends base {
   async Mstoken(length) {

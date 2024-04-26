@@ -1,4 +1,5 @@
-import { Config, bilidata, common, base } from '../common.js'
+import { Config, common, base } from '#modules'
+import { bilidata } from '#bilibili'
 import QRCode from 'qrcode'
 
 export default class BiLogin extends base {

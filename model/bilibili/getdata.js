@@ -1,6 +1,5 @@
-import { base, BiLiBiLiAPI } from '../common.js'
-import { checkuser } from './cookie.js'
-import { wbi_sign } from './sign/wbi.js'
+import { BiLiBiLiAPI, checkuser, wbi_sign } from '#bilibili'
+import { base } from '#modules'
 
 export default class bilidata extends base {
   constructor(type) {

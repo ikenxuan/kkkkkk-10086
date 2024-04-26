@@ -1,6 +1,5 @@
-import { Sign } from './sign/Sign.js'
-import base from '../global/base.js'
-import { DouyinAPI } from './API.js'
+import { base } from '#modules'
+import { DouyinAPI, Sign } from '#douyin'
 
 export default class iKun extends base {
   constructor(type) {

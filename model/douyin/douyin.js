@@ -1,11 +1,10 @@
-import { common, base, iKun, Config, uploadRecord, image } from '../common.js'
+import { common, base, Config, uploadRecord, image } from '#modules'
+import { iKun, Emoji, comments } from '#douyin'
 import fs from 'fs'
-import { comments } from './comments.js'
-import { Emoji } from './emoji.js'
 
 let mp4size = ''
 
-export default class TikHub extends base {
+export default class DouYin extends base {
   /** 原始数据 */
   async GetData(type, data) {
     if (type === 'video' || type === 'note') {
@@ -150,10 +149,10 @@ export default class TikHub extends base {
               break
             case 'ICQQ':
               try {
-                await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+                music_url && is_mp4 == false && music_url !== undefined ? await this.e.reply(await uploadRecord(this.e, music_url, 0, false)) : null
               } catch (error) {
                 logger.error('高清语音发送失败', error)
-                await this.e.reply(segment.record(music_url))
+                music_url && is_mp4 == false && music_url !== undefined ? await this.e.reply(segment.record(music_url)) : null
               }
               break
           }

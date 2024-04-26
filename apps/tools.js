@@ -1,6 +1,8 @@
-import { base, GetID, TikHub, push, iKun, common, Config, BiLiBiLi, bilidata } from '../model/common.js'
+import { base, GetID, common, Config } from '#modules'
+import { DouYin, push, iKun } from '#douyin'
+import { BiLiBiLi, bilidata } from '#bilibili'
 
-export class example extends plugin {
+export class Tools extends plugin {
   constructor() {
     const rule = Config.videotool
       ? [
@@ -70,7 +72,7 @@ export class example extends plugin {
     const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
-    const res = await new TikHub(e).GetData(iddata.type, data)
+    const res = await new DouYin(e).GetData(iddata.type, data)
     Config.sendforwardmsg ? await e.reply(await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec))) : null
     iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'ktmp_' + Date.now() : res.g_title) : null
   }

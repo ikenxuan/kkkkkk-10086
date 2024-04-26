@@ -1,5 +1,5 @@
-import { Sign } from './sign/Sign.js'
-import { Config } from '../config.js'
+import { Sign } from '#douyin'
+import { Config } from '#modules'
 
 /** 封装所有接口供调用 */
 export default class API {
