@@ -1,5 +1,5 @@
 import { iKun } from '#douyin'
-import { base, image, GetID } from '#modules'
+import { base, image, GetID, common, Config } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
@@ -10,7 +10,7 @@ export default class push extends base {
     }
     this.e = e
     this.headers['Referer'] = 'https://www.douyin.com'
-    this.headers['Cookie'] = this.Config.ck
+    this.headers['Cookie'] = Config.ck
   }
   async action() {
     await this.checkremark()
@@ -33,6 +33,8 @@ export default class push extends base {
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].create_time == cachedata[i].create_time) {
+          Config.douyinpushlog ? console.log(data[i].sec_id, '无新视频') : null
+          common.sleep(1000)
         } else if (data[i].create_time > cachedata[i].create_time) {
           /** 下面两行是执行推送代码 */
           await this.getdata(data[i])
@@ -96,7 +98,8 @@ export default class push extends base {
       let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
       /** 如果这个群推送过这个aweme_id，返回。没推送过的话，key不会从redis里面找到 */
       if (await redis.get(key)) {
-        return true
+        console.log('这个视频在这个群推送过了！')
+        continue
       } else {
         const iddata = await GetID(share_url)
         const videodata = await new iKun(iddata.type).GetData(iddata)
@@ -137,7 +140,7 @@ export default class push extends base {
 
     if (sec_idlist) {
       for (let i = 0; i < sec_idlist.length; i++) {
-        const group_id = this.Config.douyinpushlist[i].group_id
+        const group_id = Config.douyinpushlist[i].group_id
         const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
         let a,
@@ -161,9 +164,9 @@ export default class push extends base {
         result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
       }
     } else {
-      for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
-        const group_id = this.Config.douyinpushlist[i].group_id
-        const secUid = this.Config.douyinpushlist[i].sec_uid
+      for (let i = 0; i < Config.douyinpushlist.length; i++) {
+        const group_id = Config.douyinpushlist[i].group_id
+        const secUid = Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
         let a,
           awemeId,
@@ -277,10 +280,10 @@ export default class push extends base {
   async checkremark() {
     let config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
-    for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
-      const remark = this.Config.douyinpushlist[i].remark
-      const group_id = this.Config.douyinpushlist[i].group_id
-      const sec_uid = this.Config.douyinpushlist[i].sec_uid
+    for (let i = 0; i < Config.douyinpushlist.length; i++) {
+      const remark = Config.douyinpushlist[i].remark
+      const group_id = Config.douyinpushlist[i].group_id
+      const sec_uid = Config.douyinpushlist[i].sec_uid
 
       if (remark == undefined || remark === '') {
         abclist.push({ sec_uid, group_id })

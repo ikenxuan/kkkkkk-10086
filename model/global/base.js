@@ -42,7 +42,7 @@ export default class base {
         case this.e.bot?.adapter === 'QQBot':
           return 'QQBot'
         default:
-          return '无法判断协议端'
+          return '无法判断适配器'
       }
     } else if (this.botCfg.package.name === 'trss-yunzai') {
       switch (true) {
@@ -57,7 +57,7 @@ export default class base {
         case this.e.bot?.adapter?.name === 'KOOKBot':
           return 'KOOKBot'
         default:
-          return '无法判断协议端'
+          return '无法判断适配器'
       }
     }
   }
