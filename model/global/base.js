@@ -171,14 +171,14 @@ export default class base {
               break
             case 'ICQQ':
               if (this.e.isGroup) {
-                groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               } else {
-                groupfile ? await this.e.friend.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               }
               break
             case 'OneBotv11':
             case 'KOOKBot':
-              groupfile ? await this.e.group.sendFile(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
           break
