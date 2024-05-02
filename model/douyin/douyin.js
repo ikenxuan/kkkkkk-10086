@@ -216,7 +216,7 @@ export default class DouYin extends base {
       const EmojiData = await new iKun('Emoji').GetData()
       const list = await Emoji(EmojiData)
       const commentsArray = await comments(CommentData, list)
-      let { img } = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086', {
+      let img = await image(this.e, `comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086', {
         saveId: 'comment',
         Type: is_mp4 ? '视频' : '图集',
         CommentsData: commentsArray,

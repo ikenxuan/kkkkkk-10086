@@ -1,20 +1,18 @@
-import { iKun } from '#douyin'
-import { base, image, GetID, common, Config } from '#modules'
+import { bilidata } from '#bilibili'
+
+import { base, Config } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
-  constructor(e = {}) {
-    super()
+  constructor(e) {
+    super(e)
     if (this.botadapter === 'QQBot') {
       return true
     }
-    this.e = e
-    this.headers['Referer'] = 'https://www.douyin.com'
-    this.headers['Cookie'] = Config.ck
   }
   async action() {
     await this.checkremark()
-    const cache = await redis.get('kkk:douyPush')
+    const cache = await redis.get('kkk:biliPush')
     let data
 
     if (cache == '[]' || !cache) {
@@ -33,10 +31,7 @@ export default class push extends base {
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].create_time == cachedata[i].create_time) {
-          Config.douyinpushlog ? console.log(data[i].sec_id, '无新视频') : null
-          common.sleep(1000)
         } else if (data[i].create_time > cachedata[i].create_time) {
-          /** 下面两行是执行推送代码 */
           await this.getdata(data[i])
           await redis.set('kkk:douyPush', JSON.stringify(data))
           logger.info(`aweme_id: [${cachedata[i].aweme_id}] --> [${data[i].aweme_id}]`)
@@ -49,22 +44,12 @@ export default class push extends base {
     const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
     const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
     let Array = [videolist, userinfo]
-
     let nickname,
       desc,
       share_url,
       create_time,
       a,
-      shouldBreak = false,
-      cover,
-      collect_count,
-      comment_count,
-      digg_count,
-      share_count,
-      follow_count,
-      user_shortid,
-      total_favorited,
-      following_count
+      shouldBreak = false
     for (let j = 0; j < Array[0].aweme_list.length; j++) {
       let isTop = Array[0].aweme_list[j].is_top
       /** 处理置顶 */
@@ -82,49 +67,43 @@ export default class push extends base {
     desc = Array[0].aweme_list[a].desc
     share_url = Array[0].aweme_list[a].share_url
     create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[a].create_time)
-    cover = Array[0].aweme_list[a].video.animated_cover.url_list[0]
-    collect_count = await this.count(Array[0].aweme_list[a].statistics.collect_count)
-    comment_count = await this.count(Array[0].aweme_list[a].statistics.comment_count)
-    digg_count = await this.count(Array[0].aweme_list[a].statistics.digg_count)
-    share_count = await this.count(Array[0].aweme_list[a].statistics.share_count)
-    follow_count = await this.count(Array[1].user.follower_count)
-    const user_img = Array[1].user.avatar_larger.url_list[0]
-    /** 处理抖音号 */
-    Array[1].user.unique_id == '' ? (user_shortid = Array[1].user.short_id) : (user_shortid = Array[1].user.unique_id)
-    total_favorited = await this.count(Array[1].user.total_favorited)
-    following_count = await this.count(Array[1].user.following_count)
 
+    const user_img = Array[1].user.avatar_larger.url_list[0]
+    const Msg = `${nickname} 有新作品啦\n\n标题：${desc}\n发布时间：${create_time}\n\n`
     for (let i = 0; i < data.group_id.length; i++) {
       let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
-      /** 如果这个群推送过这个aweme_id，返回。没推送过的话，key不会从redis里面找到 */
       if (await redis.get(key)) {
-        console.log('这个视频在这个群推送过了！')
-        continue
+        console.log(await redis.get(key))
+        return true
       } else {
-        const iddata = await GetID(share_url)
-        const videodata = await new iKun(iddata.type).GetData(iddata)
-        let img = await image(this.e, 'douyininfo', 'kkkkkk-10086', {
-          saveId: 'douyininfo',
-          image_url: cover,
-          desc: desc,
-          dianzan: digg_count,
-          pinglun: comment_count,
-          share: share_count,
-          shouchang: collect_count,
-          create_time: create_time,
-          avater_url: user_img,
-          share_url: iddata.is_mp4
-            ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videodata.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-            : videodata.VideoData.aweme_detail.share_url,
-          username: nickname,
-          fans: follow_count,
-          user_shortid: user_shortid,
-          total_favorited: total_favorited,
-          following_count: following_count,
-          Botadapter: this.botadapter,
-        })
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+        /** node_modules/icqq/lib/internal/contactable.js#L507 */
+        const forwardMsg = await Bot.pickGroup(Number(data.group_id[i])).makeForwardMsg([
+          {
+            user_id: Bot.uin,
+            message: [Msg, segment.image(user_img), share_url],
+          },
+        ])
+        /** 处理描述 */
+        if (typeof forwardMsg.data === 'object') {
+          let detail = forwardMsg.data?.meta?.detail
+          if (detail) {
+            detail.news = [{ text: '点击查看详情' }]
+            detail.source = `「${nickname}」\n在抖音发布新作品啦 ~`
+            detail.summary = 'DouYin 推送'
+          }
+        }
+        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(forwardMsg)
         await redis.set(key, 1, { EX: 8 * 60 * 60 })
+        // if (this.Config.douyinpushparse) {
+        //   const pushe = {
+        //     is_push: true,
+        //     group_id: data.group_id[i],
+        //   }
+        //   const id = await GetID(share_url)
+        //   const workdata = await new iKun(id.type).GetData(id)
+        //   const res = await new DouYin(this.e).GetData(id.type, workdata, pushe)
+        //   await Bot.pickGroup(Number(data.group_id[i])).sendMsg(res.res[2])
+        // }
       }
     }
   }
@@ -202,9 +181,6 @@ export default class push extends base {
 
     const config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const group_id = this.e.group_id
-    /** 处理抖音号 */
-    let user_shortid
-    UserInfoData.user.unique_id == '' ? (user_shortid = UserInfoData.user.short_id) : (user_shortid = UserInfoData.user.unique_id)
 
     // 初始化 group_id 对应的数组
     if (!config.douyinpushlist) {
@@ -220,8 +196,8 @@ export default class push extends base {
       if (existingGroupIdIndex !== -1) {
         // 如果存在相同的 group_id，则删除它
         existingItem.group_id.splice(existingGroupIdIndex, 1)
-        logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
-        msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+        logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
+        msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
 
         // 如果删除后 group_id 数组为空，则删除整个属性
         if (existingItem.group_id.length === 0) {
@@ -231,13 +207,13 @@ export default class push extends base {
       } else {
         // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
         existingItem.group_id.push(group_id)
-        msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-        logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
+        msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
+        logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}\nsec_id：${UserInfoData.user.sec_uid}`)
       }
     } else {
       // 如果不存在相同的 sec_uid，则新增一个属性
       config.douyinpushlist.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname })
-      msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+      msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${UserInfoData.user.unique_id}`
     }
 
     fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
@@ -280,10 +256,10 @@ export default class push extends base {
   async checkremark() {
     let config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
-    for (let i = 0; i < Config.douyinpushlist.length; i++) {
-      const remark = Config.douyinpushlist[i].remark
-      const group_id = Config.douyinpushlist[i].group_id
-      const sec_uid = Config.douyinpushlist[i].sec_uid
+    for (let i = 0; i < this.Config.douyinpushlist.length; i++) {
+      const remark = this.Config.douyinpushlist[i].remark
+      const group_id = this.Config.douyinpushlist[i].group_id
+      const sec_uid = this.Config.douyinpushlist[i].sec_uid
 
       if (remark == undefined || remark === '') {
         abclist.push({ sec_uid, group_id })

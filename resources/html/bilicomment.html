@@ -278,7 +278,7 @@
         display: flex;
         margin: 20px 0;
         overflow: hidden;
-        box-shadow: 0 20px 50px 0 rgb(255 255 255 / 30%);
+        box-shadow: 0px 10px 100px 0px #96969642;
         border-radius: 25px;
         width: 95%;
         flex: 1;
@@ -291,7 +291,7 @@
         border-radius: 50%;
         margin-right: 33.75px;
         object-fit: cover;
-        box-shadow: 0 20px 50px 0 rgb(255 255 255 / 30%);
+        box-shadow: 0px 10px 20px 0px #96969642;
       }
     </style>
   </head>
@@ -310,6 +310,8 @@
         <div class="top-info">视频画质：{{Clarity}}</div>
         {{else if Type == '图集'}}
         <div class="top-info">图片数量：{{ImageLength}}张</div>
+        {{else if Type == '动态'}}
+        <div class="top-info">附带图片：{{ImageLength}}张</div>
         {{/if}}
       </div>
       <div class="qrcode_box">

@@ -60,6 +60,14 @@ export async function GetID(url) {
       }
       break
 
+    case /^https:\/\/t\.bilibili\.com\/(\d+)/.test(longLink):
+      const dynamic_id = longLink.match(/^https:\/\/t\.bilibili\.com\/(\d+)/)
+      result = {
+        type: 'bilibilidynamic',
+        dynamic_id: dynamic_id[1],
+      }
+      break
+
     default:
       logger.warn('无法获取作品ID')
       break

@@ -32,9 +32,7 @@ async function image(e, file, name, obj) {
     ...data,
   })
 
-  return {
-    img,
-  }
+  return img
 }
 
 export default image

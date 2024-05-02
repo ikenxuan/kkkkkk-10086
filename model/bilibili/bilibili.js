@@ -1,16 +1,17 @@
-import { base, image, Config } from '#modules'
+import { base, image, Config, common } from '#modules'
 import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
 import ffmpeg from '../ffmpeg.js'
 import fs from 'fs'
+import exp from 'constants'
 
 export default class BiLiBiLi extends base {
   constructor(e = {}, data) {
     super()
     this.e = e
-    this.STATUS = data.USER.STATUS
-    this.ISVIP = data.USER.isvip
+    this.STATUS = data.USER?.STATUS
+    this.ISVIP = data.USER?.isvip
     this.TYPE = data.TYPE
-    this.islogin = data.USER.STATUS === 'isLogin' ? true : false
+    this.islogin = data.USER?.STATUS === 'isLogin' ? true : false
     this.downloadfilename = ''
     this.headers['Referer'] = 'https://api.bilibili.com/'
     this.headers['Cookie'] = this.Config.bilibilick
@@ -50,7 +51,7 @@ export default class BiLiBiLi extends base {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         const commentsdata = await bilicomments(OBJECT)
-        let { img } = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+        let img = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
           saveId: 'bilicomment',
           Type: '视频',
           CommentsData: commentsdata,
@@ -98,7 +99,7 @@ export default class BiLiBiLi extends base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : '',
             ])
           }
-          let { img } = await image(this.e, 'bangumi', 'kkkkkk-10086', {
+          let img = await image(this.e, 'bangumi', 'kkkkkk-10086', {
             saveId: 'bangumi',
             bangumiData: barray,
             Botadapter: this.botadapter,
@@ -120,7 +121,7 @@ export default class BiLiBiLi extends base {
           )
         } else {
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
-          const bangumidataBASEURL = await BiLiBiLiAPI.bangumidata(
+          const bangumidataBASEURL = BiLiBiLiAPI.bangumidata(
             OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].cid,
             OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].ep_id,
           )
@@ -136,6 +137,76 @@ export default class BiLiBiLi extends base {
             video_url: this.ISVIP ? OBJECT.DATA.result.dash.video[0].base_url : OBJECT.DATA.result.dash.video[0].base_url,
             audio_url: OBJECT.DATA.result.dash.audio[0].base_url,
           })
+        }
+      case 'bilibilidynamic':
+        switch (OBJECT.dynamicINFO.data.item.type) {
+          /** 图文、纯图 */
+          case 'DYNAMIC_TYPE_DRAW':
+            const imgArray = []
+            for (const img of OBJECT.dynamicINFO.data.item.modules.module_dynamic.major.draw.items) {
+              imgArray.push(segment.image(img.src))
+            }
+            const commentsdata = await bilicomments(OBJECT)
+            let img = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+              saveId: 'bilicomment',
+              Type: '动态',
+              CommentsData: commentsdata,
+              CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
+              VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+              ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
+              shareurl: '动态分享链接',
+              Botadapter: this.botadapter,
+            })
+            switch (this.botadapter) {
+              case 'ICQQ':
+              case 'LagrangeCore':
+              case 'OneBotv11':
+                imgArray.length > 1 ? await this.e.reply(await common.makeForwardMsg(this.e, imgArray)) : await this.e.reply(imgArray[0])
+                Config.bilibilicommentsimg ? await this.e.reply(img) : null
+                break
+              case 'QQBot':
+              case 'KOOKBot':
+                imgArray.length > 1 ? this.e.reply(await common.makeForwardMsg(this.e, imgArray)) : await this.e.reply(imgArray[0])
+                Config.bilibilicommentsimg ? await this.e.reply(img) : null
+                break
+            }
+            break
+          /** 纯文 */
+          case 'DYNAMIC_TYPE_WORD':
+            const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
+            this.e.reply(
+              await image(this.e, 'biliinfo', 'kkkkkk-10086', {
+                saveId: 'biliinfo',
+                text: text,
+                dianzan: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+                pinglun: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+                share: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+                create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
+                avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
+                share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+                username: checkvip(OBJECT.USERDATA.data.card),
+                fans: await this.count(OBJECT.USERDATA.data.follower),
+                user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
+                total_favorited: await this.count(OBJECT.USERDATA.data.like_num),
+                following_count: await this.count(OBJECT.USERDATA.data.card.attention),
+                Botadapter: this.botadapter,
+              }),
+            )
+            this.e.reply(
+              await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+                saveId: 'bilicomment',
+                Type: '动态',
+                CommentsData: await bilicomments(OBJECT),
+                CommentLength: String((await bilicomments(OBJECT)?.length) ? await bilicomments(OBJECT).length : 0),
+                VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+                ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
+                shareurl: '动态分享链接',
+                Botadapter: this.botadapter,
+              }),
+            )
+            break
+          /** 转发 */
+          case 'DYNAMIC_TYPE_FORWARD':
         }
     }
   }
@@ -214,4 +285,9 @@ export default class BiLiBiLi extends base {
     const totalSizeInMB = parseFloat(videoSizeInMB) + parseFloat(audioSizeInMB)
     return totalSizeInMB.toFixed(2)
   }
+}
+function checkvip(member) {
+  return member.vip.vipStatus === 1
+    ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
+    : `<span style="color: #606060">${member.name}</span>`
 }
