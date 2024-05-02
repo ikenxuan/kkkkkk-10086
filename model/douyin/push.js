@@ -32,16 +32,14 @@ export default class push extends base {
         return true
       }
       for (let i = 0; i < data.length; i++) {
-        if (data[i].create_time == cachedata[i].create_time) {
+        if (data[i].create_time == cachedata[i]?.create_time) {
           Config.douyinpushlog ? console.log(data[i].sec_id, '无新视频') : null
-          common.sleep(1000)
-        } else if (data[i].create_time > cachedata[i].create_time) {
-          /** 下面两行是执行推送代码 */
+        } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
           await this.getdata(data[i])
-          await redis.set('kkk:douyPush', JSON.stringify(data))
-          logger.info(`aweme_id: [${cachedata[i].aweme_id}] --> [${data[i].aweme_id}]`)
+          logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] --> [${data[i].aweme_id}]`)
         }
       }
+      await redis.set('kkk:douyPush', JSON.stringify(data))
     }
   }
 
@@ -49,13 +47,11 @@ export default class push extends base {
     const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
     const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
     let Array = [videolist, userinfo]
-
+    let nonTopIndex = 0
     let nickname,
       desc,
       share_url,
       create_time,
-      a,
-      shouldBreak = false,
       cover,
       collect_count,
       comment_count,
@@ -65,28 +61,20 @@ export default class push extends base {
       user_shortid,
       total_favorited,
       following_count
-    for (let j = 0; j < Array[0].aweme_list.length; j++) {
-      let isTop = Array[0].aweme_list[j].is_top
-      /** 处理置顶 */
-      while (isTop === 1 && j < Array[0].aweme_list.length - 1) {
-        j++
-        isTop = Array[0].aweme_list[j].is_top
-      }
-      shouldBreak = isTop !== 1
-      if (shouldBreak) {
-        a = j
-        break
-      }
+    /** 处理置顶 */
+    while (nonTopIndex < Array[0].aweme_list.length && Array[0].aweme_list[nonTopIndex].is_top === 1) {
+      nonTopIndex++ // 跳过所有置顶视频
     }
-    nickname = Array[0].aweme_list[a].author.nickname
-    desc = Array[0].aweme_list[a].desc
-    share_url = Array[0].aweme_list[a].share_url
-    create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[a].create_time)
-    cover = Array[0].aweme_list[a].video.animated_cover.url_list[0]
-    collect_count = await this.count(Array[0].aweme_list[a].statistics.collect_count)
-    comment_count = await this.count(Array[0].aweme_list[a].statistics.comment_count)
-    digg_count = await this.count(Array[0].aweme_list[a].statistics.digg_count)
-    share_count = await this.count(Array[0].aweme_list[a].statistics.share_count)
+
+    nickname = Array[0].aweme_list[nonTopIndex].author.nickname
+    desc = Array[0].aweme_list[nonTopIndex].desc
+    share_url = Array[0].aweme_list[nonTopIndex].share_url
+    create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[nonTopIndex].create_time)
+    cover = Array[0].aweme_list[nonTopIndex].video?.animated_cover?.url_list[0] || Array[0].aweme_list[nonTopIndex].video?.cover?.url_list[0]
+    collect_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.collect_count)
+    comment_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.comment_count)
+    digg_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.digg_count)
+    share_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.share_count)
     follow_count = await this.count(Array[1].user.follower_count)
     const user_img = Array[1].user.avatar_larger.url_list[0]
     /** 处理抖音号 */
@@ -99,7 +87,6 @@ export default class push extends base {
       /** 如果这个群推送过这个aweme_id，返回。没推送过的话，key不会从redis里面找到 */
       if (await redis.get(key)) {
         console.log('这个视频在这个群推送过了！')
-        continue
       } else {
         const iddata = await GetID(share_url)
         const videodata = await new iKun(iddata.type).GetData(iddata)
@@ -143,24 +130,17 @@ export default class push extends base {
         const group_id = Config.douyinpushlist[i].group_id
         const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-        let a,
-          awemeId,
-          isTop = data.aweme_list[i].is_top,
-          shouldBreak = false
-        for (let j = 0; j < data.aweme_list.length; j++) {
-          /** 处理置顶 */
-          while (isTop === 1 && j < data.aweme_list.length - 1) {
-            j++
-            awemeId = data.aweme_list[j].aweme_id
-            isTop = data.aweme_list[j].is_top
-          }
-          shouldBreak = isTop !== 1
-          if (shouldBreak) {
-            a = j
-            break
-          }
+        let awemeId,
+          createTime,
+          nonTopIndex = 0
+        /** 处理置顶 */
+        while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
+          nonTopIndex++ // 跳过所有置顶视频
         }
-        const createTime = data.aweme_list[a].create_time
+        if (nonTopIndex < data.aweme_list.length) {
+          createTime = data.aweme_list[nonTopIndex].create_time
+          awemeId = data.aweme_list[nonTopIndex].aweme_id
+        }
         result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
       }
     } else {
@@ -168,24 +148,19 @@ export default class push extends base {
         const group_id = Config.douyinpushlist[i].group_id
         const secUid = Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-        let a,
-          awemeId,
-          isTop = data.aweme_list[i].is_top,
-          shouldBreak = false
-        for (let j = 0; j < data.aweme_list.length; j++) {
-          /** 处理置顶 */
-          while (isTop === 1 && j < data.aweme_list.length - 1) {
-            j++
-            awemeId = data.aweme_list[j].aweme_id
-            isTop = data.aweme_list[j].is_top
-          }
-          shouldBreak = isTop !== 1
-          if (shouldBreak) {
-            a = j
-            break
-          }
+        await common.sleep(200)
+        let awemeId,
+          createTime,
+          nonTopIndex = 0
+        /** 处理置顶 */
+        while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
+          nonTopIndex++ // 跳过所有置顶视频
         }
-        const createTime = data.aweme_list[a].create_time
+        if (nonTopIndex < data.aweme_list.length) {
+          createTime = data.aweme_list[nonTopIndex].create_time
+          awemeId = data.aweme_list[nonTopIndex].aweme_id
+        }
+
         result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
       }
     }
@@ -272,6 +247,16 @@ export default class push extends base {
         resources = cachedata.concat(newdata)
         await redis.set('kkk:douyPush', JSON.stringify(resources))
       }
+    } else {
+      // 过滤掉cachedata中data.sec_id不存在的对象
+      let filteredCacheData = cachedata.filter((item) => {
+        return data.some((dataItem) => dataItem.sec_id === item.sec_id)
+      })
+      // 重新排序cachedata，使得其顺序与data的顺序相匹配
+      let reorderedCacheData = data.map((dataItem) => {
+        return filteredCacheData.find((cacheItem) => cacheItem.sec_id === dataItem.sec_id)
+      })
+      cachedata = reorderedCacheData
     }
 
     return sec_idlist.length > 0 ? resources : cachedata
