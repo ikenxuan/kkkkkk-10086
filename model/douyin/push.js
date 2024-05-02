@@ -33,7 +33,12 @@ export default class push extends base {
       }
       for (let i = 0; i < data.length; i++) {
         if (data[i].create_time == cachedata[i]?.create_time) {
-          Config.douyinpushlog ? console.log(data[i].sec_id, '无新视频') : null
+          for (const key of data[i].group_id) {
+            if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
+              await this.getdata(data[i])
+              break
+            }
+          }
         } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
           await this.getdata(data[i])
           logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] --> [${data[i].aweme_id}]`)
