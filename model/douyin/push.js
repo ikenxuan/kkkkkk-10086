@@ -116,7 +116,7 @@ export default class push extends base {
           Botadapter: this.botadapter,
         })
         await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
-        await redis.set(key, 1, { EX: 8 * 60 * 60 })
+        await redis.set(key, 1)
       }
     }
   }
