@@ -47,9 +47,9 @@
         padding: 0 0 0 50px;
       }
       .bitop img {
-        width: 150px;
+        width: 220px;
         height: auto;
-        margin-right: 10px;
+        margin-right: -15px;
       }
       .cover {
         display: flex;
@@ -82,11 +82,16 @@
 
       .info_text {
         font-size: 40px;
-        align-items: center;
-        letter-spacing: 0.5px;
+        letter-spacing: 1.5px;
         position: relative;
         word-wrap: break-word;
       }
+      .shipinbiaoti {
+        margin: -79px 0 15px 0;
+        color: #ffffff;
+        letter-spacing: 33.5px;
+      }
+
       .background-square {
         display: flex;
         border: 1px solid #c0c0c0;
@@ -177,7 +182,7 @@
         color: #808080;
         font-size: 45px;
         text-align: right;
-        margin: -1px 0 -20px 0;
+        margin: 0 30px -20px 0;
         z-index: -1;
       }
     </style>
@@ -188,7 +193,7 @@
       <div class="bitop">
         <img src="https://p3-pc-weboff.byteimg.com/tos-cn-i-9r5gewecjs/logo-horizontal.svg" alt="Logo" />
         &nbsp;&nbsp;&nbsp;&nbsp;
-        <span style="font-size: 20px">|</span>
+        <span style="font-size: 50px">|</span>
         &nbsp;&nbsp;&nbsp;&nbsp;抖音 记录美好生活
       </div>
       <div class="spacer2"></div>
@@ -199,7 +204,10 @@
       </div>
       <div class="spacer3"></div>
       <div class="info">
-        <div class="info_text">{{desc}}</div>
+        <div class="info_text">
+          <div class="shipinbiaoti">TITLE OF WORK</div>
+          {{desc}}
+        </div>
         <div class="spacer4"></div>
         <div class="info_text" style="font-size: 30px; color: #808080">{{dianzan}}点赞 · {{pinglun}}评论 · {{shouchang}}收藏 · {{share}}分享</div>
         <div class="spacer5"></div>
@@ -234,8 +242,9 @@
       </div>
       <div style="height: 30px; background-color: #ececec"></div>
       <div style="background-color: #ececec">
-        <div class="info_text" style="color: #cdcdcd; font-size: 22px; padding-left: 100px; letter-spacing: 5px">{{botname}} | kkkkkk-10086</div>
+        <div class="info_text" style="color: #cdcdcd; font-size: 25px; padding-left: 25px; letter-spacing: 20px">{{botname}}</div>
       </div>
+      <div style="height: 10px; background-color: #ececec"></div>
     </div>
   </body>
   <script>
