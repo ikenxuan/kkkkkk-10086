@@ -84,13 +84,6 @@ export function supportGuoba() {
           component: 'Switch',
           required: false,
         },
-        {
-          field: 'sendbutton',
-          label: '发送按钮',
-          bottomHelpMessage: '喵崽/ICQQ的按钮开关，不是QQBot的，如果没有对应发送Markdown方法开启后可能会报错，默认关闭',
-          component: 'Switch',
-          required: false,
-        },
         /** 抖音视频解析配置 */
         {
           component: 'Divider',
@@ -118,7 +111,7 @@ export function supportGuoba() {
           field: 'newui',
           label: '图片UI版本',
           helpMessage: '优化版更好看',
-          bottomHelpMessage: '即将废除第一版！第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积会非常大）',
+          bottomHelpMessage: '第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积可能会非常大）',
           component: 'Select',
           componentProps: {
             options: [
@@ -260,13 +253,6 @@ export function supportGuoba() {
             max: 20,
             addonAfter: '条',
           },
-        },
-        {
-          field: 'bilibilitip',
-          label: '提示',
-          bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
-          component: 'Switch',
-          required: false,
         },
         {
           component: 'Divider',

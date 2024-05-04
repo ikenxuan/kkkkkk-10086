@@ -23,7 +23,6 @@ const defaultConfig = {
   bilibilinumcomments: 20,
   bilibilitip: true,
   douyintip: true,
-  sendbutton: false,
 }
 let config = {}
 
