@@ -140,11 +140,7 @@ export class admin extends plugin {
     return false
   }
   async savedyck() {
-    if (this.e.message[0].type != 'text') {
-      await this.reply('设置错误', true)
-      this.finish('savddyck')
-    }
-    const value = this.e.message[0].text
+    const value = this.e.msg
     await updateConfig('ck', value, this.e)
     this.finish('savedyck')
   }
