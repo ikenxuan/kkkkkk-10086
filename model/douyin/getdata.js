@@ -108,6 +108,14 @@ export default class iKun extends base {
         })
         return ShortUrlData
 
+      case 'Music':
+        this.URL = await DouyinAPI.音乐(data.music_id)
+        let MusicData = await this.GlobalGetData({
+          url: `${this.URL}&X-Bougs=${await Sign.XB(this.URL)}`,
+          headers: this.headers,
+        })
+        return MusicData
+
       default:
         break
     }

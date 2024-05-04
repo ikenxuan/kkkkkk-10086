@@ -18,6 +18,10 @@ export class Tools extends plugin {
             reg: '第(\\d{1,3})集',
             fnc: 'next',
           },
+          {
+            reg: '#?(语音|高清语音|背景音乐|BGM|bgm)',
+            fnc: 'uploadrecord',
+          },
         ]
       : []
     super({
@@ -45,7 +49,7 @@ export class Tools extends plugin {
     if (user[this.e.user_id] === 'bilib') {
       const regex = String(e.msg).match(/第(\d+)集/)
       e.reply(`收到请求，第${regex[1]}集正在下载中`)
-      OBJECT.Episode = regex[1]
+      BILIBILIOBJECT.Episode = regex[1]
       await new BiLiBiLi(e, OBJECT).RESOURCES(OBJECT, true)
     }
   }
@@ -68,13 +72,23 @@ export class Tools extends plugin {
     }, 1000 * 60)
   }
 
+  async uploadrecord(e) {
+    if (user[this.e.user_id] === 'douy') {
+      await new DouYin(e).uploadrecord(DOUYINMUSICDATA)
+    }
+  }
+
   async douy(e) {
     const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
-    const res = await new DouYin(e).GetData(iddata.type, data)
-    Config.sendforwardmsg ? await e.reply(await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec))) : null
+    const res = await new DouYin(e, iddata).RESOURCES(data)
+    Config.sendforwardmsg ? await e.reply(res ? await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec)) : null) : null
     iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'ktmp_' + Date.now() : res.g_title) : null
+    user[this.e.user_id] = 'douy'
+    setTimeout(() => {
+      delete user[this.e.user_id]
+    }, 1000 * 120)
   }
 
   async setpushdouy(e) {

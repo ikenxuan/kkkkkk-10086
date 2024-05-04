@@ -51,7 +51,7 @@ export default class BiLiBiLi extends base {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         const commentsdata = await bilicomments(OBJECT)
-        let img = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+        let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
           saveId: 'bilicomment',
           Type: '视频',
           CommentsData: commentsdata,
@@ -99,13 +99,13 @@ export default class BiLiBiLi extends base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : '',
             ])
           }
-          let img = await image(this.e, 'bangumi', 'kkkkkk-10086', {
+          let img = await image(this.e, 'bilibili/bangumi', 'kkkkkk-10086/douyin/musicinfo', {
             saveId: 'bangumi',
             bangumiData: barray,
             Botadapter: this.botadapter,
             title: OBJECT.INFODATA.result.title,
           })
-          global.OBJECT = OBJECT
+          global.BILIBILIOBJECT = OBJECT
           msg = msg
             .flat(Infinity)
             .map((str) => {
@@ -147,7 +147,7 @@ export default class BiLiBiLi extends base {
               imgArray.push(segment.image(img.src))
             }
             const commentsdata = await bilicomments(OBJECT)
-            let img = await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+            let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
               saveId: 'bilicomment',
               Type: '动态',
               CommentsData: commentsdata,
@@ -175,7 +175,7 @@ export default class BiLiBiLi extends base {
           case 'DYNAMIC_TYPE_WORD':
             const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
             this.e.reply(
-              await image(this.e, 'biliinfo', 'kkkkkk-10086', {
+              await image(this.e, 'bilibili/biliinfo', 'kkkkkk-10086/douyin/musicinfo', {
                 saveId: 'biliinfo',
                 text: text,
                 dianzan: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
@@ -193,7 +193,7 @@ export default class BiLiBiLi extends base {
               }),
             )
             this.e.reply(
-              await image(this.e, 'bilicomment', 'kkkkkk-10086', {
+              await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
                 saveId: 'bilicomment',
                 Type: '动态',
                 CommentsData: await bilicomments(OBJECT),

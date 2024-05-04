@@ -36,11 +36,19 @@ export async function GetID(url) {
       }
       break
 
-    case /user\/(\S+?)\?/.test(longLink):
-      const userMatch = longLink.match(/user\/(\S+?)\//)
+    case /https:\/\/(?:www\.douyin\.com|www\.iesdouyin\.com)\/share\/user\/(\S+)/.test(longLink):
+      const userMatch = longLink.match(/user\/([a-zA-Z0-9_]+)\b/)
       result = {
         type: 'UserVideosList',
         user_id: userMatch[1],
+      }
+      break
+
+    case /music\/(\d+)/.test(longLink):
+      const musicMatch = longLink.match(/music\/(\d+)/)
+      result = {
+        type: 'Music',
+        music_id: musicMatch[1],
       }
       break
 

@@ -72,7 +72,7 @@ export default class push extends base {
     }
 
     nickname = Array[0].aweme_list[nonTopIndex].author.nickname
-    desc = Array[0].aweme_list[nonTopIndex].desc
+    desc = this.desc(Array[0].aweme_list[nonTopIndex].text_extra, Array[0].aweme_list[nonTopIndex].desc)
     share_url = Array[0].aweme_list[nonTopIndex].share_url
     create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[nonTopIndex].create_time)
     cover = Array[0].aweme_list[nonTopIndex].video?.animated_cover?.url_list[0] || Array[0].aweme_list[nonTopIndex].video?.cover?.url_list[0]
@@ -95,7 +95,7 @@ export default class push extends base {
       } else {
         const iddata = await GetID(share_url)
         const videodata = await new iKun(iddata.type).GetData(iddata)
-        let img = await image(this.e, 'douyininfo', 'kkkkkk-10086', {
+        let img = await image(this.e, 'douyin/douyininfo', 'kkkkkk-10086/douyin/musicinfo', {
           saveId: 'douyininfo',
           image_url: cover,
           desc: desc,
@@ -299,5 +299,21 @@ export default class push extends base {
       }
       fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
     }
+  }
+
+  desc(video_obj, text) {
+    if (Array.isArray(video_obj) && video_obj.length > 0) {
+      const regex = new RegExp(video_obj.map((obj) => `#${obj.hashtag_name}`).join('|'), 'g')
+      // 使用正则表达式替换匹配到的话题标签
+      text = text.replace(regex, (match) => {
+        // 对于每个匹配的话题标签，检查它是否在video_obj中存在
+        const matchedObj = video_obj.find((obj) => `#${obj.hashtag_name}` === match)
+        if (matchedObj) {
+          return `<span style="font-weight: bold; color: #cfcfcf">${match}</span>`
+        }
+        return match
+      })
+    }
+    return text
   }
 }
