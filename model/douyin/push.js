@@ -176,52 +176,60 @@ export default class push extends base {
   }
 
   async setting(data) {
-    let msg
-    const sec_uid = data.data[0].user_list[0].user_info.sec_uid
-    const UserInfoData = await new iKun('UserInfoData').GetData({ user_id: sec_uid })
+    try {
+      let index = 0
+      while (data.data[index].card_unique_name !== 'user') {
+        index++
+      }
+      let msg
+      const sec_uid = data.data[index].user_list[0].user_info.sec_uid
+      const UserInfoData = await new iKun('UserInfoData').GetData({ user_id: sec_uid })
 
-    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
-    const group_id = this.e.group_id
-    /** 处理抖音号 */
-    let user_shortid
-    UserInfoData.user.unique_id == '' ? (user_shortid = UserInfoData.user.short_id) : (user_shortid = UserInfoData.user.unique_id)
+      const config = JSON.parse(fs.readFileSync(this.ConfigPath))
+      const group_id = this.e.group_id
+      /** 处理抖音号 */
+      let user_shortid
+      UserInfoData.user.unique_id == '' ? (user_shortid = UserInfoData.user.short_id) : (user_shortid = UserInfoData.user.unique_id)
 
-    // 初始化 group_id 对应的数组
-    if (!config.douyinpushlist) {
-      config.douyinpushlist = []
-    }
+      // 初始化 group_id 对应的数组
+      if (!config.douyinpushlist) {
+        config.douyinpushlist = []
+      }
 
-    // 查找是否存在相同的 sec_uid
-    const existingItem = config.douyinpushlist.find((item) => item.sec_uid === sec_uid)
+      // 查找是否存在相同的 sec_uid
+      const existingItem = config.douyinpushlist.find((item) => item.sec_uid === sec_uid)
 
-    if (existingItem) {
-      // 如果已经存在相同的 sec_uid，则检查是否存在相同的 group_id
-      const existingGroupIdIndex = existingItem.group_id.indexOf(group_id)
-      if (existingGroupIdIndex !== -1) {
-        // 如果存在相同的 group_id，则删除它
-        existingItem.group_id.splice(existingGroupIdIndex, 1)
-        logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
-        msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+      if (existingItem) {
+        // 如果已经存在相同的 sec_uid，则检查是否存在相同的 group_id
+        const existingGroupIdIndex = existingItem.group_id.indexOf(group_id)
+        if (existingGroupIdIndex !== -1) {
+          // 如果存在相同的 group_id，则删除它
+          existingItem.group_id.splice(existingGroupIdIndex, 1)
+          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
+          msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
 
-        // 如果删除后 group_id 数组为空，则删除整个属性
-        if (existingItem.group_id.length === 0) {
-          const index = config.douyinpushlist.indexOf(existingItem)
-          config.douyinpushlist.splice(index, 1)
+          // 如果删除后 group_id 数组为空，则删除整个属性
+          if (existingItem.group_id.length === 0) {
+            const index = config.douyinpushlist.indexOf(existingItem)
+            config.douyinpushlist.splice(index, 1)
+          }
+        } else {
+          // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
+          existingItem.group_id.push(group_id)
+          msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
         }
       } else {
-        // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
-        existingItem.group_id.push(group_id)
+        // 如果不存在相同的 sec_uid，则新增一个属性
+        config.douyinpushlist.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname })
         msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-        logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
       }
-    } else {
-      // 如果不存在相同的 sec_uid，则新增一个属性
-      config.douyinpushlist.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname })
-      msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-    }
 
-    fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
-    return msg
+      fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+      return msg
+    } catch {
+      return '无法获取用户信息，请确认抖音号是否正确'
+    }
   }
 
   async convertTimestampToDateTime(timestamp) {

@@ -80,7 +80,7 @@ export class Tools extends plugin {
   async setpushdouy(e) {
     if (e.isPrivate) return true
     const data = await new iKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
-    data.data[0].type === 4 ? await e.reply(await new push(e).setting(data)) : e.reply('无法获取用户信息，请确认抖音号是否正确')
+    return await e.reply(await new push(e).setting(data))
   }
 }
 
