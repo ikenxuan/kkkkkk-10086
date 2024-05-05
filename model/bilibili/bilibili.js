@@ -51,7 +51,7 @@ export default class BiLiBiLi extends base {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         const commentsdata = await bilicomments(OBJECT)
-        let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
+        let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
           saveId: 'bilicomment',
           Type: '视频',
           CommentsData: commentsdata,
@@ -99,7 +99,7 @@ export default class BiLiBiLi extends base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : '',
             ])
           }
-          let img = await image(this.e, 'bilibili/bangumi', 'kkkkkk-10086/douyin/musicinfo', {
+          let img = await image(this.e, 'bilibili/bangumi', 'kkkkkk-10086/bilibili/bangumi', {
             saveId: 'bangumi',
             bangumiData: barray,
             Botadapter: this.botadapter,
@@ -147,7 +147,7 @@ export default class BiLiBiLi extends base {
               imgArray.push(segment.image(img.src))
             }
             const commentsdata = await bilicomments(OBJECT)
-            let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
+            let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
               saveId: 'bilicomment',
               Type: '动态',
               CommentsData: commentsdata,

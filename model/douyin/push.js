@@ -95,7 +95,7 @@ export default class push extends base {
       } else {
         const iddata = await GetID(share_url)
         const videodata = await new iKun(iddata.type).GetData(iddata)
-        let img = await image(this.e, 'douyin/douyininfo', 'kkkkkk-10086/douyin/musicinfo', {
+        let img = await image(this.e, 'douyin/douyininfo', 'kkkkkk-10086/douyin/douyininfo', {
           saveId: 'douyininfo',
           image_url: cover,
           desc: desc,
