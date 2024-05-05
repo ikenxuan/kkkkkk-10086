@@ -238,6 +238,7 @@ export default class DouYin extends base {
                 ? {
                     text: '背景音乐',
                     input: 'BGM',
+                    send: true,
                   }
                 : null,
             ]),

@@ -41,7 +41,7 @@ export default class push extends base {
           }
         } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
           await this.getdata(data[i])
-          logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] --> [${data[i].aweme_id}]`)
+          logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
         }
       }
       await redis.set('kkk:douyPush', JSON.stringify(data))
