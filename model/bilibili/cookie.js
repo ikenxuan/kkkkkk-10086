@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom'
 
 export async function checkuser(BASEURL) {
   if (Config.bilibilick == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
-  const logininfo = await new networks({ url: await BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.bilibilick } }).getData()
+  const logininfo = await new networks({ url: BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.bilibilick } }).getData()
   let sign = await wbi_sign(BASEURL)
 
   let qn = [6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]

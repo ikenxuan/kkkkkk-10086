@@ -1,8 +1,7 @@
-import { base, image, Config, common } from '#modules'
+import { base, image, Config, common, networks } from '#modules'
 import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
 import ffmpeg from '../ffmpeg.js'
 import fs from 'fs'
-import exp from 'constants'
 
 export default class BiLiBiLi extends base {
   constructor(e = {}, data) {
@@ -26,6 +25,11 @@ export default class BiLiBiLi extends base {
         const { coin, like, share, view, favorite, danmaku } = stat
         this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
+        const nocd_data = await new networks({
+          url: BiLiBiLiAPI.VIDEO(OBJECT.INFODATA.data.aid, OBJECT.INFODATA.data.cid) + '&platform=html5',
+          headers: this.headers,
+        }).getData()
+
         await this.e.reply(
           this.mkMsg(
             [
@@ -37,8 +41,8 @@ export default class BiLiBiLi extends base {
             ],
             [
               {
-                text: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链',
-                link: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
+                text: "视频直链 ['流畅 360P']",
+                link: nocd_data.data.durl[0].url,
               },
             ],
           ),
@@ -56,19 +60,19 @@ export default class BiLiBiLi extends base {
           Type: '视频',
           CommentsData: commentsdata,
           CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
-          VideoUrl: this.islogin ? 'https://www.bilibili.com/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
+          VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
           Clarity: OBJECT.DATA.data.accept_description[0],
           VideoSize: videoSize,
           ImageLength: 0,
-          shareurl: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链(永久)',
+          shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
           Botadapter: this.botadapter,
         })
         Config.commentsimg
           ? await this.e.reply(
               this.mkMsg(img, [
                 {
-                  text: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : '视频直链',
-                  link: this.islogin ? 'https://b23.tv/' + OBJECT.INFODATA.data.bvid : OBJECT.DATA.data.durl[0].url,
+                  text: "视频直链 ['流畅 360P']",
+                  link: nocd_data.data.durl[0].url,
                 },
               ]),
             )

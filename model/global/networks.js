@@ -18,18 +18,18 @@ export default class networks {
    * @param {number} [data.timeout = 15000] 请求超时时间，单位毫秒
    */
   constructor(data) {
+    this.Headers = new Headers()
+    if (data.headers && Object.keys(data.headers).length > 0) {
+      for (const [key, value] of Object.entries(data.headers)) {
+        this.Headers.append(key, value)
+      }
+    } else this.Headers = {}
+
     this.url = data.url
-    this.headers = data.headers || {}
     this.type = data.type || 'json'
     this.method = data.method || 'GET'
     this.body = data.body || '' //用于POST请求
     this.data = {}
-    this.agent = data.isAgent
-      ? new https.Agent({
-          rejectUnauthorized: false,
-        })
-      : ''
-    this.signal = data.issignal ? signal : undefined
     this.timeout = data.timeout || 15000
     this.isGetResult = false
     this.timer = ''
@@ -38,10 +38,8 @@ export default class networks {
 
   get config() {
     let data = {
-      headers: this.headers,
+      headers: this.Headers,
       method: this.method,
-      agent: this.agent,
-      signal: this.signal,
     }
     if (this.method == 'post') {
       data = { ...data, body: JSON.stringify(this.body) || '' }
@@ -67,14 +65,7 @@ export default class networks {
   }
 
   async returnResult() {
-    if (this.timeout && this.signal) {
-      return Promise.race([this.timeoutPromise(this.timeout), fetch(this.url, this.config)]).then((res) => {
-        console.log(this.timer)
-        clearTimeout(this.timer)
-        return res
-      })
-    }
-    return fetch(this.url, this.config)
+    return await fetch(this.url, this.config)
   }
 
   /** 首个302跳转 */

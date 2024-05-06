@@ -7,9 +7,8 @@ export default class bilidata extends base {
     this.type = type
     this.headers['Referer'] = 'https://api.bilibili.com/'
     this.headers['Cookie'] = this.Config.bilibilick
-    this.headers['Host'] = 'api.bilibili.com'
-    this.headers['Connection'] = 'keep-alive'
   }
+
   async GetData(data) {
     let result, COMMENTSDATA, EMOJIDATA, INFODATA, PARAM
     switch (this.type) {
@@ -22,7 +21,7 @@ export default class bilidata extends base {
           headers: this.headers,
         })
 
-        PARAM = await wbi_sign(await BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
+        PARAM = await wbi_sign(BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
         COMMENTSDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid) + PARAM, headers: this.headers })
         EMOJIDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.EMOJI() })
         return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
