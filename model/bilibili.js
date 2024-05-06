@@ -1,7 +1,7 @@
 import { BiLiBiLiAPI } from './bilibili/API.js'
 import BiLiBiLi from '../model/bilibili/bilibili.js'
 import bilidata from './bilibili/getdata.js'
-import BiLogin from './bilibili/bilibili.js'
+import BiLogin from './bilibili/login.js'
 import { refresh_token } from './bilibili/cookie.js'
 import { bilicomments } from './bilibili/comments.js'
 import { checkuser } from './bilibili/cookie.js'
