@@ -73,9 +73,8 @@ export class Tools extends plugin {
   }
 
   async uploadrecord(e) {
-    if (user[this.e.user_id] === 'douy') {
-      await new DouYin(e).uploadrecord(DOUYINMUSICDATA)
-    }
+    const music_id = String(e.msg).match(/BGM(\d+)/)
+    await new DouYin(e).uploadrecord(music_id[1])
   }
 
   async douy(e) {

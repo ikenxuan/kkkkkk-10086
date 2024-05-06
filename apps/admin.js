@@ -14,7 +14,7 @@ function getValue(msg) {
 }
 
 export class admin extends plugin {
-  constructor(e) {
+  constructor() {
     super({
       name: 'kkkkkk-10086-管理',
       dsc: 'admin',

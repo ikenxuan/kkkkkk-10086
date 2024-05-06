@@ -14,20 +14,20 @@ export default class iKun extends base {
     switch (this.type) {
       case 'video':
       case 'note':
-        this.URL = await DouyinAPI.视频或图集(data.id)
+        this.URL = DouyinAPI.视频或图集(data.id)
         let VideoData = await this.GlobalGetData(
           {
-            url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+            url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
             method: 'GET',
             headers: this.headers,
           },
           data.is_mp4,
         )
 
-        this.URL = await DouyinAPI.评论(data.id)
+        this.URL = DouyinAPI.评论(data.id)
         let CommentsData = this.comments
           ? await this.GlobalGetData({
-              url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+              url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
               method: 'GET',
               headers: this.headers,
             })
@@ -39,17 +39,17 @@ export default class iKun extends base {
         return { VideoData, CommentsData }
 
       case 'CommentReplyData':
-        this.URL = await DouyinAPI.二级评论(data.id, data.cid)
+        this.URL = DouyinAPI.二级评论(data.id, data.cid)
         let CommentReplyData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
           headers: this.headers,
         })
         return CommentReplyData
 
       case 'UserInfoData':
-        this.URL = await DouyinAPI.用户主页信息(data.user_id)
+        this.URL = DouyinAPI.用户主页信息(data.user_id)
         let UserInfoData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
           headers: {
             ...this.headers,
             Referer: `https://www.douyin.com/user/${data.user_id}`,
@@ -58,7 +58,7 @@ export default class iKun extends base {
         return UserInfoData
 
       case 'Emoji':
-        this.URL = await DouyinAPI.表情()
+        this.URL = DouyinAPI.表情()
         let EmojiData = await this.GlobalGetData({
           url: this.URL,
           headers: this.headers,
@@ -66,9 +66,9 @@ export default class iKun extends base {
         return EmojiData
 
       case 'UserVideosList':
-        this.URL = await DouyinAPI.用户主页视频(data.user_id)
+        this.URL = DouyinAPI.用户主页视频(data.user_id)
         let UserVideoListData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
           headers: {
             ...this.headers,
             Referer: `https://www.douyin.com/user/${data.user_id}`,
@@ -77,9 +77,9 @@ export default class iKun extends base {
         return UserVideoListData
 
       case 'SuggestWords':
-        this.URL = await DouyinAPI.热点词(data.query)
+        this.URL = DouyinAPI.热点词(data.query)
         let SuggestWordsData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bogus=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
           headers: {
             ...this.headers,
             Referer: `https://www.douyin.com/search/${encodeURIComponent(data.query)}`,
@@ -88,9 +88,9 @@ export default class iKun extends base {
         return SuggestWordsData
 
       case 'Search':
-        this.URL = await DouyinAPI.搜索(data.query)
+        this.URL = DouyinAPI.搜索(data.query)
         let SearchData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bougs=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
           headers: {
             ...this.headers,
             Referer: `https://www.douyin.com/https://www.douyin.com/search/${encodeURIComponent(data.query)}`,
@@ -101,17 +101,17 @@ export default class iKun extends base {
       /** 无法实现 */
       case 'ShortUrl':
         let a = new URL(data.target)
-        this.URL = await DouyinAPI.制作短链(protocol + encodeURIComponent('//' + a.host + a.pathname + a.search))
+        this.URL = DouyinAPI.制作短链(protocol + encodeURIComponent('//' + a.host + a.pathname + a.search))
         let ShortUrlData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bougs=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
           headers: this.headers,
         })
         return ShortUrlData
 
       case 'Music':
-        this.URL = await DouyinAPI.音乐(data.music_id)
+        this.URL = DouyinAPI.音乐(data.music_id)
         let MusicData = await this.GlobalGetData({
-          url: `${this.URL}&X-Bougs=${await Sign.XB(this.URL)}`,
+          url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
           headers: this.headers,
         })
         return MusicData
@@ -127,7 +127,7 @@ export default class iKun extends base {
    * @returns
    */
   async GlobalGetData(options, is_mp4) {
-    let result = await new this.networks(options).getData()
+    let result = new this.networks(options).getData()
     if (result === '') {
       logger.error('获取数据失败，可能是抖音ck失效。。。')
       return {}

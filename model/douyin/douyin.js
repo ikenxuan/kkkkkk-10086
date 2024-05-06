@@ -1,10 +1,10 @@
-import { common, base, Config, uploadRecord, image } from '#modules'
+import { common, base, Config, uploadRecord, image, networks } from '#modules'
 import { iKun, Emoji, comments } from '#douyin'
-import fs, { link } from 'fs'
-import internal from 'stream'
+import fs from 'fs'
 
-let mp4size = ''
-let img
+let mp4size = '',
+  img,
+  m_id
 
 export default class DouYin extends base {
   constructor(e = {}, iddata) {
@@ -50,20 +50,29 @@ export default class DouYin extends base {
           let imageres = []
           let image_url
           for (let i = 0; i < data.VideoData.aweme_detail.images.length; i++) {
-            image_url = data.VideoData.aweme_detail.images[i].url_list[3] || data.VideoData.aweme_detail.images[i].url_list[1] // 图片地址
+            image_url = data.VideoData.aweme_detail.images[i].url_list[2] || data.VideoData.aweme_detail.images[i].url_list[1] // 图片地址
             let title = data.VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
             g_title = title
-            imageres.push(segment.image(image_url)) // 合并图集字符串
+            let imgresp
+            if (this.botadapter === 'QQBot') {
+              let sharp
+              try {
+                ;({ default: sharp } = await import('sharp'))
+                imgresp = new Uint8Array(await new networks({ url: image_url, type: 'arrayBuffer' }).getData())
+                imgresp = await sharp(imgresp).toFormat('jpeg').toBuffer()
+              } catch {
+                logger.error('依赖: sharp 未正确安装，QQBot发送图集图片可能出现异常')
+              }
+            }
+            imageres.push(segment.image(this.botadapter === 'QQBot' ? imgresp : image_url))
             imagenum++
             if (Config.rmmp4 === false) {
               await this.mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
               let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
-              await new this.networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+              await new networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             }
           }
-          if (this.botadapter === 'QQBot') {
-            await this.e.reply(imageres)
-          }
+          await this.e.reply(imageres)
           let dsc = '解析完的图集图片'
           let res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
@@ -100,18 +109,19 @@ export default class DouYin extends base {
           let music_data = []
           let musicres = []
           const music = data.VideoData.aweme_detail.music
-          let music_id = music.author // BGM名字
+          m_id = music.mid
+          let music_name = music.author // BGM名字
           let music_img = music.cover_hd.url_list[0] // BGM作者头像
           let music_url = music.play_url.uri // BGM link
           if (this.is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
             try {
               let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
-              await new this.networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+              await new networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             } catch (error) {
               console.log(error)
             }
           }
-          musicres.push(`BGM名字：${music_id}`)
+          musicres.push(`BGM名字：${music_name}`)
           musicres.push(`BGM下载直链：${music_url}`)
           musicres.push(segment.image(music_img))
           let dsc = 'BGM相关信息'
@@ -176,12 +186,12 @@ export default class DouYin extends base {
           const video = data.VideoData.aweme_detail.video
           FPS = video.bit_rate[0].FPS // FPS
           if (data.VideoData.aweme_detail.video.play_addr_h264) {
-            g_video_url = await new this.networks({
+            g_video_url = await new networks({
               url: video.play_addr_h264.url_list[2],
               headers: this.headers,
             }).getLongLink()
           } else if (data.VideoData.aweme_detail.video.play_addr) {
-            g_video_url = await new this.networks({
+            g_video_url = await new networks({
               url: video.play_addr.url_list[0],
               headers: this.headers,
             }).getLongLink()
@@ -237,10 +247,10 @@ export default class DouYin extends base {
               this.is_mp4
                 ? {
                     text: '背景音乐',
-                    input: 'BGM',
+                    input: 'BGM' + m_id,
                     send: true,
                   }
-                : null,
+                : {},
             ]),
           )
         }
@@ -337,9 +347,10 @@ export default class DouYin extends base {
     }
   }
 
-  async uploadrecord(music) {
-    let title = music.title // BGM名字
-    let music_url = music.play_url.uri // BGM link
+  async uploadrecord(music_id) {
+    const data = await new iKun('Music').GetData({ music_id: music_id })
+    let title = data.music_info.title // BGM名字
+    let music_url = data.music_info.play_url.uri // BGM link
     if (this.botname === 'miao-yunzai') {
       if (this.botadapter === 'ICQQ') {
         await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
@@ -383,7 +394,7 @@ export default class DouYin extends base {
 
 /**
  * 传递整数，返回x小时后的时间
- * @param {internal} delay
+ * @param {integer} delay
  * @returns
  */
 function Time(delay) {
