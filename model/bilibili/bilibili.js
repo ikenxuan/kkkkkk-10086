@@ -117,7 +117,7 @@ export default class BiLiBiLi extends base {
             })
             .join('')
           this.e.reply(
-            this.mkMsg(this.botadapter === 'ICQQ' ? img : `# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数`, [
+            this.mkMsg(this.botadapter === 'QQBot' ? `# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数` : img, [
               { text: '第1集', callback: '第1集' },
               { text: '第2集', callback: '第2集' },
               { text: '第?集', input: '第' },
