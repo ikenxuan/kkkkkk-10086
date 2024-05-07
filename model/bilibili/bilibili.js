@@ -135,7 +135,7 @@ export default class BiLiBiLi extends base {
             headers: this.headers,
           })
           if (OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].badge === '会员' && !this.ISVIP) return logger.warn('该CK不是大会员，无法获取视频流')
-          OBJECT.DATA = bangumiDATA
+          BILIBILIOBJECT.DATA = bangumiDATA
           await this.getvideo({
             ...OBJECT,
             video_url: this.ISVIP ? OBJECT.DATA.result.dash.video[0].base_url : OBJECT.DATA.result.dash.video[0].base_url,

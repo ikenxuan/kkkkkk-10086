@@ -41,6 +41,8 @@ export default class base {
           return 'LagrangeCore'
         case this.e.bot?.adapter === 'QQBot':
           return 'QQBot'
+        case this.e.bot?.adapter === 'OneBotv11':
+          return 'OneBotv11'
         default:
           return '无法判断适配器'
       }
@@ -64,6 +66,7 @@ export default class base {
 
   resultMsg(forwardmsg) {
     if (this.botname === 'miao-yunzai') {
+      if (this.botadapter === 'OneBotv11') return null
       return forwardmsg
     } else if (this.botname === 'trss-yunzai') {
       switch (this.botadapter) {
@@ -105,17 +108,21 @@ export default class base {
     switch (this.botname) {
       case 'miao-yunzai':
         /** 判断是否ICQQ */
-        if (Config.sendbutton) {
-          return Bot.Button(btn)
-        } else if (this.e.bot?.sendUni && this.e.bot.config?.markdown?.type !== 0) {
-          return null
+        switch (this.botadapter) {
+          case 'ICQQ':
+          case 'LagrangeCore':
+          case 'OneBotv11':
+            return null
+          case 'QQBot':
+            if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
+              return Bot.Button(btn)
+            } else {
+              return null
+            }
+          default:
+            return null
         }
 
-        if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
-          return Bot.Button(btn)
-        } else {
-          return null
-        }
       case 'trss-yunzai':
         return segment.button(btn)
     }
@@ -144,6 +151,9 @@ export default class base {
             case 'LagrangeCore':
               /** 拉格朗视频默认传群文件 */
               await this.e.group.sendFile(file.filepath)
+              break
+            case 'OneBotv11':
+              groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'QQBot':
               file.totalBytes >= 10

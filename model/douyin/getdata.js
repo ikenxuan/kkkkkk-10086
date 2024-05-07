@@ -127,7 +127,7 @@ export default class iKun extends base {
    * @returns
    */
   async GlobalGetData(options, is_mp4) {
-    let result = new this.networks(options).getData()
+    let result = await new this.networks(options).getData()
     if (result === '') {
       logger.error('获取数据失败，可能是抖音ck失效。。。')
       return {}

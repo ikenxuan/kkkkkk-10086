@@ -236,7 +236,7 @@ export default class DouYin extends base {
             Botadapter: this.botadapter,
           })
           file = img
-          this.e.reply(
+          await this.e.reply(
             this.mkMsg(img, [
               {
                 text: this.is_mp4 ? '视频直链' : '图集分享链接',
@@ -337,7 +337,9 @@ export default class DouYin extends base {
           Botadapter: this.botadapter,
         })
 
-        this.e.reply(this.mkMsg([img, `\n正在上传 ${music_title}\n`, `作曲: ${author}\n`, `music_id: ${music_id}`], [{ text: '音乐文件', link: play_url }]))
+        await this.e.reply(
+          this.mkMsg([img, `\n正在上传 ${music_title}\n`, `作曲: ${author}\n`, `music_id: ${music_id}`], [{ text: '音乐文件', link: play_url }]),
+        )
 
         if (this.botadapter === 'ICQQ') {
           await this.e.reply(await uploadRecord(this.e, play_url, 0, false))
