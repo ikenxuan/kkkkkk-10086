@@ -1,0 +1,299 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    width: 1440px;
+    height: auto;
+}
+
+.comment-container {
+    max-width: 100%;
+    /* 宽度设置为百分之百，以适应不同屏幕大小 */
+    margin: 0 auto;
+    overflow: auto;
+    /* 添加滚动条以处理大量评论 */
+}
+
+.comment {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    /* border-bottom: 1px solid #e7d8d8; */
+    padding: 40px;
+    /* 调整填充以改善间距 */
+}
+
+.user-avatar {
+    width: 187.5px;
+    /* 调整尺寸 */
+    height: 187.5px;
+    /* 调整尺寸 */
+    border-radius: 50%;
+    margin-right: 33.75px;
+    /* 调整边距 */
+    -o-object-fit: cover;
+    object-fit: cover;
+    -webkit-box-shadow: 0 20px 50px 0 rgb(0 0 0 / 30%);
+    box-shadow: 0 20px 50px 0 rgb(0 0 0 / 30%);
+}
+
+.comment-content {
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+.user-info {
+    margin-bottom: 50px;
+    /* 调整边距 */
+    color: #888;
+    font-size: 50px;
+}
+
+.Z3o6vw6l {
+    display: inline-block;
+    /* 使元素在一行显示 */
+    padding: 0px 20px 2px 20px;
+    /* 调整内边距 */
+    border-radius: 10px;
+    /* 添加圆角 */
+    margin-left: 10px;
+    /* 调整左边距 */
+    font-size: 45px;
+}
+
+.comment-imgbox {
+    position: relative;
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    margin: 20px 0;
+    width: 90%;
+    height: 600px;
+    overflow: hidden;
+}
+
+.comment-imgbox_1 {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 15px;
+}
+
+.comment-text {
+    font-size: 60px;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    letter-spacing: 0.5px;
+    /* 调整字间距*/
+}
+
+.comment-text img {
+    display: inline-block;
+    vertical-align: middle;
+    -webkit-transform: scale(0.9);
+    -moz-transform: scale(0.9);
+    -ms-transform: scale(0.9);
+    -o-transform: scale(0.9);
+    transform: scale(0.9);
+    /* 调整缩放比例*/
+    margin-bottom: 15px;
+}
+
+.like-section {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -moz-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    /* 将子元素分别靠左和靠右 */
+    color: #888;
+    margin-top: 37.5px;
+    white-space: nowrap;
+    /* 防止文本换行 */
+}
+
+.info-content {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-flex: 1;
+    -webkit-flex: 1;
+    -moz-box-flex: 1;
+    -ms-flex: 1;
+    flex: 1;
+}
+
+.additional-info {
+    font-size: 45px;
+    letter-spacing: 2px;
+    /* 调整字间距*/
+}
+
+.like_info {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    margin-left: auto;
+}
+
+.like-icon {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    margin-left: auto;
+}
+
+.like-count {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    font-size: 50px;
+    /* 调整字体大小 */
+    margin-left: auto;
+}
+
+.top-info {
+    /* margin-top: 50px; 添加顶部间距 */
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    padding: 10px;
+    color: #272727;
+    letter-spacing: 6px;
+    /* 调整字间距*/
+    font-size: 45px;
+    white-space: normal;
+    /* 允许自动换行 */
+    word-break: break-all;
+    /* 如果单词过长,允许在任意位置换行 */
+    text-align: left;
+}
+
+.end-message {
+    text-align: right;
+    padding: 0px;
+    color: #555;
+    /* 深灰色字体颜色 */
+    margin-top: 60px;
+    /* 添加顶部间距 */
+    margin-bottom: 37.5px;
+    margin-right: 87.5px;
+    letter-spacing: 4px;
+    /* 调整字间距*/
+    font-size: 50px;
+}
+
+.video_info_container {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -moz-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    /* 垂直居中 */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.svg_container {
+    margin-top: 10px;
+    /* 添加顶部间距 */
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+}
+
+.svg_container img {
+    width: 500px;
+    height: auto;
+}
+
+.qrcode_box {
+    display: -webkit-box;
+    display: -webkit-flex;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -webkit-flex-direction: column;
+    -moz-box-orient: vertical;
+    -moz-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -moz-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    /* 将二维码下面的文字垂直居中 */
+}
+
+.qrcode {
+    margin-top: 80px;
+}
+
+.qrcode_text {
+    font-size: 45px;
+    margin-top: 20px;
+    /* 调整垂直间距 */
+}
