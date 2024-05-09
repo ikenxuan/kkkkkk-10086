@@ -50,12 +50,17 @@ export default class base {
       switch (true) {
         case this.e.bot?.adapter?.name === 'ICQQ':
           return 'ICQQ'
-        case this.e.bot?.adapter?.name === 'Lagrange':
-          return 'LagrangeCore'
         case this.e.bot?.adapter?.name === 'QQBot':
           return 'QQBot'
         case this.e.bot?.adapter?.name === 'OneBotv11':
-          return 'OneBotv11'
+          switch (this.e.bot?.version?.app_name) {
+            case 'Lagrange.OneBot':
+              return 'Lagrange.OneBot'
+            default:
+              return 'OneBotv11'
+          }
+        case this.e.bot?.adapter?.name === 'Lagrange':
+          return 'LagrangeCore'
         case this.e.bot?.adapter?.name === 'KOOKBot':
           return 'KOOKBot'
         default:
@@ -109,10 +114,6 @@ export default class base {
       case 'miao-yunzai':
         /** 判断是否ICQQ */
         switch (this.botadapter) {
-          case 'ICQQ':
-          case 'LagrangeCore':
-          case 'OneBotv11':
-            return null
           case 'QQBot':
             if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
               return Bot.Button(btn)
@@ -175,7 +176,11 @@ export default class base {
         case 'trss-yunzai':
           switch (this.botadapter) {
             case 'LagrangeCore':
-              logger.warn('TRSS-Yunzai & Lagrange适配器暂不支持上传视频')
+              logger.warn('TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange')
+              break
+            case 'Lagrange.OneBot':
+              await this.e.group.sendFile(file.filepath)
+              break
             case 'QQBot':
               file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
@@ -193,7 +198,8 @@ export default class base {
           }
           break
       }
-    } catch {
+    } catch (error) {
+      logger.error('视频上传错误,' + error)
       await this.removeFileOrFolder(file.filepath)
     }
     await this.removeFileOrFolder(file.filepath)
