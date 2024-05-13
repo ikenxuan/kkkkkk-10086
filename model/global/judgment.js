@@ -1,4 +1,4 @@
-import { networks } from '#modules'
+import { networks, base } from '#modules'
 
 /**
  * return aweme_id
@@ -6,7 +6,7 @@ import { networks } from '#modules'
  * @returns
  */
 export async function GetID(url) {
-  let longLink = await new networks({ url: url }).getLongLink()
+  let longLink = await new networks({ url }).getLongLink()
   let result
 
   switch (true) {
@@ -24,6 +24,7 @@ export async function GetID(url) {
         type: 'video',
         id: videoMatch[1],
         is_mp4: true,
+        Platform: '抖音',
       }
       break
 
@@ -33,6 +34,7 @@ export async function GetID(url) {
         type: 'note',
         id: noteMatch[1],
         is_mp4: false,
+        Platform: '抖音',
       }
       break
 
@@ -41,6 +43,7 @@ export async function GetID(url) {
       result = {
         type: 'UserVideosList',
         user_id: userMatch[1],
+        Platform: '抖音',
       }
       break
 
@@ -49,6 +52,7 @@ export async function GetID(url) {
       result = {
         type: 'Music',
         music_id: musicMatch[1],
+        Platform: '抖音',
       }
       break
 
@@ -57,6 +61,7 @@ export async function GetID(url) {
       result = {
         type: 'bilibilivideo',
         id: bvideoMatch[1],
+        Platform: '哔哩哔哩',
       }
       break
 
@@ -65,14 +70,18 @@ export async function GetID(url) {
       result = {
         type: 'bangumivideo',
         id: playMatch[1],
+        Platform: '哔哩哔哩',
       }
       break
 
-    case /^https:\/\/t\.bilibili\.com\/(\d+)/.test(longLink):
-      const dynamic_id = longLink.match(/^https:\/\/t\.bilibili\.com\/(\d+)/)
+    case /^https:\/\/t\.bilibili\.com\/(\d+)/.test(longLink) || /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.test(longLink):
+      const tMatch = longLink.match(/^https:\/\/t\.bilibili\.com\/(\d+)/)
+      const opusMatch = longLink.match(/^https:\/\/www\.bilibili\.com\/opus\/(\d+)/)
+      const dynamic_id = tMatch || opusMatch
       result = {
         type: 'bilibilidynamic',
         dynamic_id: dynamic_id[1],
+        Platform: '哔哩哔哩',
       }
       break
 

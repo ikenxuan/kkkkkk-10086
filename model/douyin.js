@@ -6,4 +6,4 @@ import { Emoji } from './douyin/emoji.js'
 import { comments } from './douyin/comments.js'
 import { Sign } from './douyin/sign/Sign.js'
 
-export { DouyinAPI, DouYin, push, iKun, Emoji, comments, Sign }
+export { DouyinAPI, DouYin, push as DouYinpush, iKun, Emoji, comments, Sign }

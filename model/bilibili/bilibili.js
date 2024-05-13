@@ -3,6 +3,8 @@ import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
 import ffmpeg from '../ffmpeg.js'
 import fs from 'fs'
 
+let img
+
 export default class BiLiBiLi extends base {
   constructor(e = {}, data) {
     super()
@@ -35,9 +37,9 @@ export default class BiLiBiLi extends base {
             [
               segment.image(pic),
               `\n# 标题: ${title}\n`,
-              `\n作者: ${name}\n播放量: ${await this.count(view)},    弹幕: ${await this.count(danmaku)}\n点赞: ${await this.count(
-                like,
-              )},    投币: ${await this.count(coin)}\n转发: ${await this.count(share)},    收藏: ${await this.count(favorite)}`,
+              `\n作者: ${name}\n播放量: ${this.count(view)},    弹幕: ${this.count(danmaku)}\n点赞: ${this.count(like)},    投币: ${this.count(
+                coin,
+              )}\n转发: ${this.count(share)},    收藏: ${this.count(favorite)}`,
             ],
             [
               {
@@ -55,7 +57,7 @@ export default class BiLiBiLi extends base {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         const commentsdata = await bilicomments(OBJECT)
-        let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
+        img = await image('bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
           saveId: 'bilicomment',
           Type: '视频',
           CommentsData: commentsdata,
@@ -103,7 +105,7 @@ export default class BiLiBiLi extends base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : '',
             ])
           }
-          let img = await image(this.e, 'bilibili/bangumi', 'kkkkkk-10086/bilibili/bangumi', {
+          img = await image('bilibili/bangumi', 'kkkkkk-10086/bilibili/bangumi', {
             saveId: 'bangumi',
             bangumiData: barray,
             Botadapter: this.botadapter,
@@ -151,7 +153,7 @@ export default class BiLiBiLi extends base {
               imgArray.push(segment.image(img.src))
             }
             const commentsdata = await bilicomments(OBJECT)
-            let img = await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
+            img = await image('bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
               saveId: 'bilicomment',
               Type: '动态',
               CommentsData: commentsdata,
@@ -161,43 +163,65 @@ export default class BiLiBiLi extends base {
               shareurl: '动态分享链接',
               Botadapter: this.botadapter,
             })
-            switch (this.botadapter) {
-              case 'ICQQ':
-              case 'LagrangeCore':
-              case 'OneBotv11':
-                imgArray.length > 1 ? await this.e.reply(await common.makeForwardMsg(this.e, imgArray)) : await this.e.reply(imgArray[0])
-                Config.bilibilicommentsimg ? await this.e.reply(img) : null
-                break
-              case 'QQBot':
-              case 'KOOKBot':
-                imgArray.length > 1 ? this.e.reply(await common.makeForwardMsg(this.e, imgArray)) : await this.e.reply(imgArray[0])
-                Config.bilibilicommentsimg ? await this.e.reply(img) : null
-                break
+            imgArray.length > 1
+              ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray))
+              : await this.e.reply(imgArray[0])
+            Config.bilibilicommentsimg ? await this.e.reply(img) : null
+
+            const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
+            const cover = () => {
+              const imgArray = []
+              for (let i = 0; i < dynamicCARD.item.pictures.length; i++) {
+                const obj = {
+                  image_src: dynamicCARD.item.pictures[i].img_src,
+                }
+                imgArray.push(obj)
+              }
+              return imgArray
             }
+            img = await image('bilibili/bilibilipush', 'kkkkkk-10086/bilibili', {
+              saveId: 'bilibilipush',
+              image_url: cover(),
+              text: br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text),
+              dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+              pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+              share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+              create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
+              avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
+              share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+              username: checkvip(OBJECT.USERDATA.data.card),
+              fans: this.count(OBJECT.USERDATA.data.follower),
+              user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
+              total_favorited: this.count(OBJECT.USERDATA.data.like_num),
+              following_count: this.count(OBJECT.USERDATA.data.card.attention),
+              Botadapter: this.botadapter,
+            })
+            Config.bilibilicommentsimg ? await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }])) : null
             break
+
           /** 纯文 */
           case 'DYNAMIC_TYPE_WORD':
             const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
             this.e.reply(
-              await image(this.e, 'bilibili/biliinfo', 'kkkkkk-10086/douyin/musicinfo', {
+              await image('bilibili/biliinfo', 'kkkkkk-10086/bilibili', {
                 saveId: 'biliinfo',
                 text: text,
-                dianzan: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
-                pinglun: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
-                share: await this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+                dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+                pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+                share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
                 create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
                 avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
                 share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
                 username: checkvip(OBJECT.USERDATA.data.card),
-                fans: await this.count(OBJECT.USERDATA.data.follower),
+                fans: this.count(OBJECT.USERDATA.data.follower),
                 user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
-                total_favorited: await this.count(OBJECT.USERDATA.data.like_num),
-                following_count: await this.count(OBJECT.USERDATA.data.card.attention),
+                total_favorited: this.count(OBJECT.USERDATA.data.like_num),
+                following_count: this.count(OBJECT.USERDATA.data.card.attention),
                 Botadapter: this.botadapter,
               }),
             )
             this.e.reply(
-              await image(this.e, 'bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
+              await image('bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
                 saveId: 'bilicomment',
                 Type: '动态',
                 CommentsData: await bilicomments(OBJECT),
@@ -294,4 +318,8 @@ function checkvip(member) {
   return member.vip.vipStatus === 1
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
     : `<span style="color: #606060">${member.name}</span>`
+}
+
+function br(data) {
+  return (data = data.replace(/\n/g, '<br>'))
 }

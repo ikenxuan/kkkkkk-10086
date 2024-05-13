@@ -284,7 +284,7 @@ export default class base {
   }
 
   /** 过万整除 */
-  async count(count) {
+  count(count) {
     if (count > 10000) {
       return (count / 10000).toFixed(1) + '万'
     } else {

@@ -23,6 +23,11 @@ const defaultConfig = {
   bilibilinumcomments: 20,
   bilibilitip: true,
   douyintip: true,
+  bilibilipush: false,
+  bilibilipushlist: [],
+  bilibilipushlog: true,
+  bilibilipushcron: '*/10 * * * *',
+  bilibilipushGroup: 'master',
 }
 let config = {}
 

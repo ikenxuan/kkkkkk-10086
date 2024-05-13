@@ -7,5 +7,6 @@ import { bilicomments } from './bilibili/comments.js'
 import { checkuser } from './bilibili/cookie.js'
 import { wbi_sign } from './bilibili/sign/wbi.js'
 import { getCorrespondPath } from './bilibili/sign/CorrespondPath.js'
+import push from './bilibili/push.js'
 
-export { BiLiBiLiAPI, BiLiBiLi, bilidata, BiLogin, refresh_token, bilicomments, checkuser, wbi_sign, getCorrespondPath }
+export { BiLiBiLiAPI, BiLiBiLi, bilidata, BiLogin, refresh_token, bilicomments, checkuser, wbi_sign, getCorrespondPath, push as Bilibilipush }

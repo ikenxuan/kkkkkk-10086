@@ -1,5 +1,5 @@
 import { BiLiBiLiAPI, checkuser, wbi_sign } from '#bilibili'
-import { base } from '#modules'
+import { base, networks } from '#modules'
 
 export default class bilidata extends base {
   constructor(type) {
@@ -91,6 +91,7 @@ export default class bilidata extends base {
         return result
 
       case '获取用户空间动态':
+        delete this.headers['Referer']
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.获取用户空间动态(data),
           headers: this.headers,
@@ -112,13 +113,33 @@ export default class bilidata extends base {
         })
         EMOJIDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.EMOJI() })
         const USERDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.用户名片信息(dynamicINFO.data.item.modules.module_author.mid) })
-        return { dynamicINFO, COMMENTSDATA, EMOJIDATA, USERDATA, TYPE: 'bilibilidynamic' }
+        return { dynamicINFO, dynamicINFO_CARD, COMMENTSDATA, EMOJIDATA, USERDATA, TYPE: 'bilibilidynamic' }
+
+      case '用户名片信息':
+        result = await this.GlobalGetData({
+          url: BiLiBiLiAPI.用户名片信息(data),
+          headers: this.headers,
+        })
+        return result
+
+      case '动态详情':
+        delete this.headers['Referer']
+        result = await this.GlobalGetData({
+          url: BiLiBiLiAPI.动态详情(data.dynamic_id),
+          headers: this.headers,
+        })
+        return result
+
+      case '动态卡片信息':
+        delete this.headers['Referer']
+        result = await this.GlobalGetData({ url: BiLiBiLiAPI.动态卡片信息(data.dynamic_id) })
+        return result
     }
   }
 
   async GlobalGetData(options) {
-    let result = await new this.networks(options).getData()
-    return result
+    let result = await new networks(options).getData()
+    return result ? result : logger.error('获取响应数据失败！类型：' + this.type + '\n请求URL：' + options.url)
   }
 }
 function mapping_table(type) {

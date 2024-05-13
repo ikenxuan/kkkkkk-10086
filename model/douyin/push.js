@@ -36,7 +36,7 @@ export default class push extends base {
           for (const key of data[i].group_id) {
             if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
               await this.getdata(data[i])
-              break
+              logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
             }
           }
         } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
@@ -95,7 +95,7 @@ export default class push extends base {
       } else {
         const iddata = await GetID(share_url)
         const videodata = await new iKun(iddata.type).GetData(iddata)
-        let img = await image(this.e, 'douyin/douyininfo', 'kkkkkk-10086/douyin/douyininfo', {
+        let img = await image('douyin/douyininfo', 'kkkkkk-10086/douyin/douyininfo', {
           saveId: 'douyininfo',
           image_url: cover,
           desc: desc,

@@ -54,7 +54,7 @@ export default class API {
   }
 
   获取用户空间动态(host_mid) {
-    return `https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space${host_mid}`
+    return `https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space?host_mid=${host_mid}`
   }
 
   动态详情(dynamic_id) {

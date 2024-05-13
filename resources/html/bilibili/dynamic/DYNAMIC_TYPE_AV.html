@@ -13,7 +13,7 @@
         position: relative;
         font-family: 'HarmonyOS_Sans', Arial, sans-serif;
         background-color: #f4f4f4;
-        width: 831px;
+        width: 1440px;
         height: auto;
       }
       .spacer1 {
@@ -35,21 +35,28 @@
         height: 80px;
       }
       .container {
-        max-width: 100%;
+        width: 100% !important;
         margin: 0 auto;
-        overflow: auto;
       }
       .bitop {
         color: #3e3e3eb8;
         font-size: 30px;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
         display: flex;
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -moz-box-align: center;
+        -ms-flex-align: center;
         align-items: center;
         padding: 0 0 0 50px;
       }
+
       .bitop svg {
-        width: 150px;
+        width: 320px;
         height: auto;
-        margin-right: 10px;
       }
       .cover {
         display: flex;
@@ -63,7 +70,7 @@
         overflow: hidden;
         box-shadow: 0px 10px 20px 0px #4343434f;
         border-radius: 25px;
-        width: 85%;
+        width: 90%;
         flex: 1;
       }
 
@@ -76,23 +83,22 @@
 
       .info {
         display: flex !important;
-        flex-direction: column !important;
-        padding: 0 60px 0 60px !important;
+        flex-direction: column;
+        padding: 0 6em 0 6em !important;
       }
-
       .info_text {
-        font-size: 40px;
+        font-size: 5vw;
         align-items: center;
-        letter-spacing: 0.5px;
+        letter-spacing: 1.5px;
         position: relative;
         word-wrap: break-word;
       }
       .background-square {
         display: flex;
-        border: 1px solid #c0c0c0;
+        border: 0.1em solid #c0c0c0;
         background-color: #f4f4f4;
-        width: 100%;
-        height: 35px;
+        /* width: 100%; */
+        /* height: 3em; */
         align-items: center;
       }
       .under {
@@ -102,10 +108,24 @@
       }
       .rectangular_box {
         height: auto;
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -moz-box;
+        display: -ms-flexbox;
         display: flex;
+        -webkit-box-pack: justify;
+        -webkit-justify-content: space-between;
+        -moz-box-pack: justify;
+        -ms-flex-pack: justify;
         justify-content: space-between;
-        padding: 30px 0 15px 0;
-        background-color: #ececec;
+        padding: 3em 0 2em 0;
+        background-color: #ececec3d;
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
+        -webkit-box-align: center;
+        -webkit-align-items: center;
+        -moz-box-align: center;
+        -ms-flex-align: center;
         align-items: center;
       }
       .user {
@@ -118,7 +138,7 @@
       }
       .userinfo_text {
         display: flex;
-        font-size: 22px;
+        font-size: 2em;
         color: #2f2f2fb8;
         padding: 25px 0 0 150px;
         flex-direction: column;
@@ -140,25 +160,24 @@
       }
 
       .avatar {
-        margin: 0px 30px 0 0;
+        margin: 0px 2em 0 0;
         border-radius: 50%;
         height: auto;
-        width: 120px;
+        width: 12em;
         box-shadow: 0px 10px 20px 0px #4343434f;
       }
       .username {
         font-weight: bolder;
-        /* color: #606060; */
-        font-size: 50px;
+        font-size: 3em;
       }
       .qrcode_box {
         display: flex !important;
-        margin: 0 35px -50px 0 !important;
+        margin: 2em 4em 0em 0 !important;
         align-items: center !important;
         flex-direction: column-reverse;
       }
       .qrcode_text {
-        font-size: 25px;
+        font-size: 3em;
         color: #2f2f2fb8;
         margin-left: 10px;
         text-align: right;
@@ -170,14 +189,14 @@
         border-radius: 3%;
       }
       #qrcode img {
-        width: 200px;
-        height: 200px;
+        width: 25em;
+        height: 25em;
       }
       .other_text {
         color: #808080;
-        font-size: 45px;
+        font-size: 5em;
         text-align: right;
-        margin: -1px 0 -20px 0;
+        margin: 0 0.5em -0.7em 0;
         z-index: -1;
       }
     </style>
@@ -199,34 +218,37 @@
           ></path>
         </svg>
         &nbsp;&nbsp;&nbsp;&nbsp;
-        <span style="font-size: 20px">|</span>
-        &nbsp;&nbsp;&nbsp;&nbsp;你感兴趣的视频都在哔哩哔哩
+        <span style="font-size: 50px">|</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <span style="font-size: 50px">你感兴趣的视频都在哔哩哔哩</span>
       </div>
       <div class="spacer2"></div>
-      {{if cover!= null}}
+      {{each image_url val}}
       <div class="cover">
         <div class="imgbox">
-          <img class="imgbox_1" src="{{image_url}}" alt="封面" />
+          <img class="imgbox_1" src="{{val.image_src}}" alt="封面" />
         </div>
       </div>
-      {{/if}}
-      <div class="spacer3"></div>
+      <div style="height: 20px"></div>
+      {{/each}}
       <div class="info">
-        <div class="info_text">{{text}}</div>
+        <div class="info_text">{{@text}}</div>
         <div class="spacer4"></div>
-        <div class="info_text" style="font-size: 30px; color: #808080">{{dianzan}}点赞 · {{pinglun}}评论 · {{share}}分享</div>
+        <div class="info_text" style="font-size: 2em; color: #ababab">{{@desc}}</div>
+        <div class="spacer1"></div>
+        <div class="info_text" style="font-size: 3em; color: #808080; letter-spacing: normal">{{dianzan}}点赞 · {{pinglun}}评论 · {{share}}分享</div>
         <div class="spacer5"></div>
         <div class="background-square">
-          <div class="info_text" style="font-size: 25px; padding: 0 12px; white-space: nowrap; color: #bcbcbc">发布于{{create_time}}</div>
+          <div class="info_text" style="font-size: 2.5em; padding: 0 0.5em; white-space: nowrap; color: #bcbcbc">发布于{{create_time}}</div>
         </div>
       </div>
       <div class="spacer6"></div>
-      <div class="other_text">哔哩哔哩纯文动态</div>
+      <div class="other_text">哔哩哔哩{{dynamicTYPE}}动态推送</div>
       <div class="under">
         <div class="rectangular_box">
           <div class="user" style="align-items: center">
             <div class="userinfo">
-              <div style="margin-left: 50px"><img src="{{avater_url}}" alt="头像" class="avatar" /></div>
+              <div style="margin-left: 3em"><img src="{{avater_url}}" alt="头像" class="avatar" /></div>
               <div class="name_and_followers">
                 <div class="username"><span>{{@username}}</span></div>
               </div>
@@ -244,10 +266,10 @@
           </div>
         </div>
       </div>
-      <div style="height: 30px; background-color: #ececec"></div>
-      <div style="background-color: #ececec">
-        <div class="info_text" style="color: #cdcdcd; font-size: 22px; padding-left: 100px; letter-spacing: 5px">{{botname}} | kkkkkk-10086</div>
+      <div style="background-color: #ececec3d">
+        <div class="info_text" style="color: #3838383d; font-size: 2.5em; padding-left: 2em; letter-spacing: 0.2em">{{botname}} | kkkkkk-10086</div>
       </div>
+      <div style="height: 30px; background-color: #ececec3d"></div>
     </div>
   </body>
   <script>
@@ -270,7 +292,7 @@
       width: 500,
       height: 500,
       colorDark: '#808080',
-      colorLight: '#ECECEC',
+      colorLight: '#F2F2F2',
     })
     qrcode.makeCode('{{share_url}}')
   </script>

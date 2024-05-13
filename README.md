@@ -36,21 +36,22 @@ npm install --production
 
 | 功能           | 支持情况 | 是否需要配置 ck | 平台 |
 | -------------- | -------- | --------------- | ---- |
-| 视频           | 支持     | 是              | 抖音 |
-| 图集           | 支持     | 是              | 抖音 |
-| 评论           | 支持     | 是              | 抖音 |
-| 用户主视频列表 | 初步支持 | 是              | 抖音 |
-| 视频更新推送   | 支持     | 是              | 抖音 |
+| 视频           | 支持     | 必须            | 抖音 |
+| 图集           | 支持     | 必须            | 抖音 |
+| 评论           | 支持     | 必须            | 抖音 |
+| 用户主视频列表 | 初步支持 | 必须            | 抖音 |
+| 视频更新推送   | 支持     | 必须            | 抖音 |
 | ...            | ...      | ...             | ...  |
 
-| 功能                 | 支持情况 | 是否需要配置 ck                     | 是否需要大会员 | 平台 |
-| -------------------- | -------- | ----------------------------------- | -------------- | ---- |
-| 视频                 | 支持     | 默认画质 `360p` 设置后 `720p/1080p` | 有则最高 `4K`  | B 站 |
-| 评论                 | 支持     | 否                                  | 否             | B 站 |
-| 番剧                 | 支持     | 是                                  | 看剧集是否需要 | B 站 |
-| 动态(图文/纯文/纯图) | 支持     | 是                                  | 否             | B 站 |
-| 扫码登录取 ck        | 支持     |                                     |                | B 站 |
-| ...                  | ...      | ...                                 | ...            | ...  |
+| 功能          | 支持情况         | 是否需要配置 ck                     | 是否需要大会员 | 平台 |
+| ------------- | ---------------- | ----------------------------------- | -------------- | ---- |
+| 视频          | 支持             | 默认画质 `360p` 设置后 `720p/1080p` | 有则最高 `4K`  | B 站 |
+| 评论          | 支持             | 否                                  | 否             | B 站 |
+| 番剧          | 支持             | 可能                                | 看剧集是否需要 | B 站 |
+| 动态          | (图文/纯文/纯图) | 必须                                | 否             | B 站 |
+| 扫码登录取 ck | 支持             |                                     | ？？？         | B 站 |
+| 动态推送      | (图文/纯文/视频) | 必须                                | 否             | B 站 |
+| ...           | ...              | ...                                 | ...            | ...  |
 
 想到什么写什么(有时间精力的情况下)
 
@@ -91,6 +92,8 @@ npm install --production
 
 排名不分先后
 
+- [wwww.douyin.com](https://www.douyin.com/) & [www.bilibili.com](https://www.bilibili.com/)
+
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 
 - [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
@@ -109,3 +112,11 @@ npm install --production
 - TRSS-Yunzai ☞ [**GitHub**](https://github.com/TimeRainStarSky/Yunzai) | [**Gitee**](https://gitee.com/TimeRainStarSky/Yunzai)
 - Yunzai-Bot 插件库 ☞ [**Github**](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) | [**Gitee**](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
 - ~~Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
+
+## 免责声明
+
+本项目提供的开源代码是出于学习进行开发。如果您认为该项目侵犯了您的知识产权或其他合法权益，请通过 **[QQ](https://qm.qq.com/q/k6Up32hdWE)** 向我们提供书面通知。我们将在收到有效通知后，尽快进行审查，并采取必要的措施。
+
+本软件出于学习进行开发，使用本项目的使用本软件的用户应确保遵守所有适用的开源许可证协议，并且在使用过程中尊重原作者的知识产权。
+
+我们保留随时修改本免责声明的权利，并且这些修改将立即生效。

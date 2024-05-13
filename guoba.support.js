@@ -139,7 +139,7 @@ export function supportGuoba() {
         {
           field: 'douyinpush',
           label: '抖音推送',
-          bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]设置推送列表，修改后重启生效',
+          bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]',
           component: 'Switch',
           required: false,
         },
@@ -253,6 +253,84 @@ export function supportGuoba() {
             max: 20,
             addonAfter: '条',
           },
+        },
+        {
+          field: 'bilibilipush',
+          label: '哔哩哔哩推送',
+          bottomHelpMessage: '开启后需使用[#设置B站推送+用户UID]',
+          component: 'Switch',
+          required: false,
+        },
+        {
+          field: 'bilibilipushlist',
+          label: '推送列表',
+          bottomHelpMessage: '用于推送B站UP新作品功能，配置后即可推送',
+          component: 'GSubForm',
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: 'host_mid',
+                label: '用户UID',
+                bottomHelpMessage: '比如如原神的：\n401742377',
+                component: 'Input',
+                required: true,
+              },
+              {
+                field: 'group_id',
+                helpMessage: '可多选',
+                label: '推送群',
+                componentProps: {
+                  placeholder: '点击选择要推送的群',
+                },
+                component: 'GSelectGroup',
+                required: true,
+              },
+              {
+                field: 'remark',
+                label: '备注',
+                helpMessage: '可不填，推送过程中会自动获取并写入',
+                bottomHelpMessage: '给这个推送id添加备注',
+                component: 'Input',
+                componentProps: {
+                  placeholder: '请在此填写备注',
+                },
+                required: false,
+              },
+            ],
+          },
+        },
+        {
+          field: 'bilibilipushcron',
+          label: 'Cron表达式',
+          helpMessage: '修改后重启生效',
+          bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
+          component: 'Input',
+          required: false,
+          componentProps: {
+            placeholder: '已内置默认每10分钟推送一次 */10 * * * *',
+          },
+        },
+        {
+          field: 'bilibilipushGroup',
+          label: '设置权限',
+          component: 'RadioGroup',
+          bottomHelpMessage: '抖音推送添加权限',
+          componentProps: {
+            options: [
+              { label: '所有群员都可以添加', value: 'all' },
+              { label: '群主和管理员才能添加', value: 'owner' },
+              { label: '只有主人才能添加', value: 'master' },
+            ],
+          },
+        },
+        {
+          field: 'bilibilipushlog',
+          label: '定时任务日志',
+          helpMessage: '抖音推送日志，修改后重启生效',
+          bottomHelpMessage: '打开或关闭定时任务日志',
+          component: 'Switch',
+          required: false,
         },
         {
           component: 'Divider',

@@ -88,8 +88,8 @@ export default class DouYin extends base {
           let author_data = []
           let authorres = []
           const author = data.VideoData.aweme_detail.author
-          let sc = await this.count(author.favoriting_count) // 收藏
-          let gz = await this.count(author.follower_count) // 关注
+          let sc = this.count(author.favoriting_count) // 收藏
+          let gz = this.count(author.follower_count) // 关注
           let id = author.nickname // id
           let jj = author.signature // 简介
           let age = author.user_age // 年龄
@@ -220,7 +220,7 @@ export default class DouYin extends base {
           const EmojiData = await new iKun('Emoji').GetData()
           const list = await Emoji(EmojiData)
           const commentsArray = await comments(data.CommentsData, list)
-          img = await image(this.e, `douyin/comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086/douyin/comments', {
+          img = await image(`douyin/comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086/douyin/comments', {
             saveId: 'comment',
             Type: this.is_mp4 ? '视频' : '图集',
             CommentsData: commentsArray,
@@ -309,7 +309,7 @@ export default class DouYin extends base {
         const author = data.music_info.original_musician_display_name || data.music_info.owner_nickname
         const music_title = data.music_info.title
         const play_url = data.music_info.play_url.uri
-        const user_count = await this.count(data.music_info.user_count)
+        const user_count = this.count(data.music_info.user_count)
         const sec_id = data.music_info.musician_user_infos[0].sec_uid
 
         /** user */
@@ -320,7 +320,7 @@ export default class DouYin extends base {
         let user_shortid
         userdata.user.unique_id == '' ? (user_shortid = userdata.user.short_id) : (user_shortid = userdata.user.unique_id)
 
-        img = await image(this.e, 'douyin/musicinfo', 'kkkkkk-10086/douyin/musicinfo', {
+        img = await image('douyin/musicinfo', 'kkkkkk-10086/douyin/musicinfo', {
           saveId: 'musicinfo',
           image_url: music_cover,
           desc: music_title,

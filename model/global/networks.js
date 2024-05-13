@@ -34,6 +34,7 @@ export default class networks {
     this.isGetResult = false
     this.timer = ''
     this.filepath = data.filepath
+    this.follow = data.follow
   }
 
   get config() {
@@ -43,6 +44,9 @@ export default class networks {
     }
     if (this.method == 'post') {
       data = { ...data, body: JSON.stringify(this.body) || '' }
+    }
+    if (this.follow == 0) {
+      data = { ...data, follow: this.follow }
     }
     return data
   }

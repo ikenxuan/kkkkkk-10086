@@ -1,6 +1,6 @@
 import { base, GetID, common, Config } from '#modules'
-import { DouYin, push, iKun } from '#douyin'
-import { BiLiBiLi, bilidata } from '#bilibili'
+import { DouYin, DouYinpush, iKun } from '#douyin'
+import { BiLiBiLi, bilidata, Bilibilipush } from '#bilibili'
 
 export class Tools extends plugin {
   constructor() {
@@ -24,25 +24,44 @@ export class Tools extends plugin {
           },
         ]
       : []
+    const task = [
+      Config.douyinpush
+        ? {
+            cron: Config.douyinpushcron,
+            name: '抖音更新推送',
+            fnc: () => this.pushdouy(),
+            log: Config.douyinpushlog,
+          }
+        : null,
+      Config.bilibilipush
+        ? {
+            cron: Config.bilibilipushcron,
+            name: '哔哩哔哩更新推送',
+            fnc: () => this.pushbili(),
+            log: Config.bilibilipushlog,
+          }
+        : null,
+    ].filter((task) => task !== null)
     super({
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
       priority: Config.defaulttool ? -Infinity : 800,
-      rule: [...rule, { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup }],
+      rule: [
+        ...rule,
+        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
+        { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
+      ],
     })
-    this.task = Config.douyinpush
-      ? {
-          cron: Config.douyinpushcron,
-          name: '抖音更新推送',
-          fnc: () => this.pushdouy(),
-          log: Config.douyinpushlog,
-        }
-      : {}
+    this.task = task
   }
 
   async pushdouy() {
-    await new push(this.e).action()
+    await new DouYinpush(this.e).action()
+  }
+
+  async pushbili() {
+    await new Bilibilipush(this.e).action()
   }
 
   async next(e) {
@@ -90,10 +109,16 @@ export class Tools extends plugin {
     }, 1000 * 120)
   }
 
+  async setpushbili(e) {
+    if (e.isPrivate) return true
+    const data = await new bilidata('用户名片信息').GetData(/^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1])
+    return await e.reply(await new Bilibilipush(e).setting(data))
+  }
+
   async setpushdouy(e) {
     if (e.isPrivate) return true
     const data = await new iKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
-    return await e.reply(await new push(e).setting(data))
+    return await e.reply(await new DouYinpush(e).setting(data))
   }
 }
 
