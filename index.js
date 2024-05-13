@@ -18,6 +18,27 @@ async function configfile() {
 }
 await configfile()
 
+async function updateConfig() {
+  try {
+    const configExample = JSON.parse(fs.readFileSync(process.cwd() + '/plugins/kkkkkk-10086/config/config.example.json', 'utf8'))
+    const config = JSON.parse(fs.readFileSync(process.cwd() + '/plugins/kkkkkk-10086/config/config.json', 'utf8'))
+
+    // 找出config_example中config没有的键
+    const newKeys = Object.keys(configExample).filter((key) => !(key in config))
+
+    // 将新的键添加到config中
+    newKeys.forEach((key) => {
+      config[key] = configExample[key]
+    })
+
+    fs.writeFileSync(process.cwd() + '/plugins/kkkkkk-10086/config/config.json', JSON.stringify(config, null, 2))
+  } catch (error) {
+    console.error('Error updating config:', error)
+  }
+}
+
+await updateConfig()
+
 const videodir = `${_path}/resources/kkkdownload/video`
 const imgdir = `${_path}/resources/kkkdownload/images`
 const dirs = [videodir, imgdir]
