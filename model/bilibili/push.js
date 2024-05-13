@@ -41,7 +41,6 @@ export default class push extends base {
                 logger.info(`dynamic_id: [${cachedata[i].dynamic_id}] ➩ [${data[i].dynamic_id}]`)
               }
             }
-            await this.getdata(data[i])
           } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
             await this.getdata(data[i])
             logger.info(`dynamic_id: [${cachedata[i].dynamic_id}] ➩ [${data[i].dynamic_id}]`)
@@ -71,7 +70,7 @@ export default class push extends base {
     const user_img = dynamicINFO.data.items[nonTopIndex].modules.module_author.face
     for (let i = 0; i < data.group_id.length; i++) {
       let key = `kkk:biliPush-${data.group_id[i]}-${data.dynamic_id}`
-      if (!(await redis.get(key))) {
+      if (await redis.get(key)) {
         console.log(`这个视频在${data.group_id[i]}推送过了！`)
       } else {
         switch (data.type) {
