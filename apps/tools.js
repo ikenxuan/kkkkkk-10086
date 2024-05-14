@@ -19,7 +19,7 @@ export class Tools extends plugin {
             fnc: 'next',
           },
           {
-            reg: '#?(语音|高清语音|背景音乐|BGM|bgm)',
+            reg: '#?BGM',
             fnc: 'uploadrecord',
           },
         ]
