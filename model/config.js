@@ -51,6 +51,7 @@ if (fs.existsSync(configPath)) {
 export const Config = new Proxy(config, {
   get(target, prop) {
     const config = getConfig()
+    if (prop === 'ALLcfg') return config
     if (prop in config) {
       return config[prop]
     } else {
