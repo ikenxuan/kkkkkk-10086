@@ -72,7 +72,6 @@ export default class DouYin extends base {
               await new networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             }
           }
-          await this.e.reply(imageres)
           let dsc = '解析完的图集图片'
           let res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)

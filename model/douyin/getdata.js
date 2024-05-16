@@ -128,10 +128,7 @@ export default class iKun extends base {
    */
   async GlobalGetData(options, is_mp4) {
     let result = await new this.networks(options).getData()
-    if (result === '') {
-      logger.error('获取数据失败，可能是抖音ck失效。。。')
-      return {}
-    }
+    result === '' ? logger.error('获取响应数据失败！抖音ck可能已经失效！\n类型：' + this.type + '\n请求URL：' + options.url) : null
     if (typeof is_mp4 === 'boolean') {
       result.is_mp4 = is_mp4
     }

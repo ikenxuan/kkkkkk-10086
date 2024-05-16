@@ -139,7 +139,7 @@ export default class bilidata extends base {
 
   async GlobalGetData(options) {
     let result = await new networks(options).getData()
-    return result ? result : logger.error('获取响应数据失败！类型：' + this.type + '\n请求URL：' + options.url)
+    return result ? result : logger.error('获取响应数据失败！！B站ck可能已经失效！类型：' + this.type + '\n请求URL：' + options.url)
   }
 }
 function mapping_table(type) {
