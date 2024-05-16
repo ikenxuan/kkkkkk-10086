@@ -73,6 +73,7 @@ export default class push extends base {
       if (await redis.get(key)) {
         console.log(`这个视频在${data.group_id[i]}推送过了！`)
       } else {
+        let send = true
         switch (data.type) {
           /** 图文动态 */
           case 'DYNAMIC_TYPE_DRAW':
@@ -174,11 +175,12 @@ export default class push extends base {
           case 'DYNAMIC_TYPE_LIVE_RCMD':
             break
           default:
+            send = false
             logger.warn(`「${data.type}」动态类型的暂未支持推送`)
             break
         }
 
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+        send ? await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img) : null
         await redis.set(key, 1)
       }
     }
