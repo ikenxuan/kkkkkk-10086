@@ -163,9 +163,8 @@ export default class BiLiBiLi extends base {
               shareurl: '动态分享链接',
               Botadapter: this.botadapter,
             })
-            imgArray.length > 1
-              ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray))
-              : await this.e.reply(imgArray[0])
+            if (imgArray.length === 1) this.e.reply(imgArray[0])
+            imgArray.length > 1 ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray)) : null
             Config.bilibilicommentsimg ? await this.e.reply(img) : null
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
@@ -179,8 +178,8 @@ export default class BiLiBiLi extends base {
               }
               return imgArray
             }
-            img = await image('bilibili/bilibilipush', 'kkkkkk-10086/bilibili', {
-              saveId: 'bilibilipush',
+            img = await image('bilibili/dynamic/DYNAMIC_TYPE_DRAW', 'kkkkkk-10086/bilibili', {
+              saveId: 'DYNAMIC_TYPE_DRAW',
               image_url: cover(),
               text: br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text),
               dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
@@ -195,6 +194,7 @@ export default class BiLiBiLi extends base {
               total_favorited: this.count(OBJECT.USERDATA.data.like_num),
               following_count: this.count(OBJECT.USERDATA.data.card.attention),
               Botadapter: this.botadapter,
+              dynamicTYPE: '图文动态',
             })
             Config.bilibilicommentsimg ? await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }])) : null
             break
@@ -218,6 +218,7 @@ export default class BiLiBiLi extends base {
                 total_favorited: this.count(OBJECT.USERDATA.data.like_num),
                 following_count: this.count(OBJECT.USERDATA.data.card.attention),
                 Botadapter: this.botadapter,
+                dynamicTYPE: '纯文动态',
               }),
             )
             this.e.reply(
@@ -233,8 +234,6 @@ export default class BiLiBiLi extends base {
               }),
             )
             break
-          /** 转发 */
-          case 'DYNAMIC_TYPE_FORWARD':
         }
     }
   }

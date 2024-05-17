@@ -200,9 +200,9 @@ export default class base {
       }
     } catch (error) {
       logger.error('视频上传错误,' + error)
-      await this.removeFileOrFolder(file.filepath)
+      this.removeFile(file.filepath)
     }
-    await this.removeFileOrFolder(file.filepath)
+    this.removeFile(file.filepath)
   }
 
   async DownLoadVideo(video_url, title) {
@@ -232,8 +232,6 @@ export default class base {
       headers: headers,
       filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
-      // const progressPercentage = (downloadedBytes / totalBytes) * 100
-      // console.log(`Download ${title}: ${progressPercentage.toFixed(2)}%`)
       const barLength = 45
       function generateProgressBar(progressPercentage) {
         // 计算进度条中应填充的 '#' 符号数量
@@ -253,33 +251,28 @@ export default class base {
   }
 
   /** 删文件 */
-  async removeFileOrFolder(path, force) {
+  removeFile(path, force) {
     if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
-      const stats = await new Promise((resolve, reject) => {
-        fs.stat(path, (err, stats) => {
-          if (err) reject(err)
-          resolve(stats)
-        })
-      })
+      try {
+        // 使用同步方法获取文件状态
+        const stats = fs.statSync(path)
 
-      if (stats.isFile()) {
-        // 指向文件
-        fs.unlink(path, (err) => {
-          if (err) {
-            console.error(path + ' 删除失败！', err)
-          } else {
-            console.log(path + ' 删除成功！')
-          }
-        })
-      }
-    } else if (force) {
-      fs.unlink(path, (err) => {
-        if (err) {
-          console.error(path + ' 删除失败！', err)
-        } else {
+        if (stats.isFile()) {
+          // 如果是文件，则直接同步删除
+          fs.unlinkSync(path)
           console.log(path + ' 删除成功！')
         }
-      })
+      } catch (err) {
+        console.error(path + ' 删除失败！', err)
+      }
+    } else if (force) {
+      try {
+        // 强制删除文件或目录
+        fs.unlinkSync(path)
+        console.log(path + ' 删除成功！')
+      } catch (err) {
+        console.error(path + ' 删除失败！', err)
+      }
     }
   }
 

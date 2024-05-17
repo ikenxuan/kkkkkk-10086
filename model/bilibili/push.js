@@ -1,4 +1,4 @@
-import { bilidata, BiLiBiLiAPI, bilicomments } from '#bilibili'
+import { bilidata, BiLiBiLiAPI } from '#bilibili'
 import { base, Config, image, networks } from '#modules'
 import fs from 'fs'
 
@@ -67,123 +67,144 @@ export default class push extends base {
     }
     let img
 
-    const user_img = dynamicINFO.data.items[nonTopIndex].modules.module_author.face
     for (let i = 0; i < data.group_id.length; i++) {
       let key = `kkk:biliPush-${data.group_id[i]}-${data.dynamic_id}`
-      if (await redis.get(key)) {
-        console.log(`这个视频在${data.group_id[i]}推送过了！`)
-      } else {
-        let send = true
-        switch (data.type) {
-          /** 图文动态 */
-          case 'DYNAMIC_TYPE_DRAW':
-            const cover = () => {
-              const imgArray = []
-              for (let i = 0; i < dycrad.item.pictures.length; i++) {
-                const obj = {
-                  image_src: dycrad.item.pictures[i].img_src,
-                }
-                imgArray.push(obj)
+      let send = true
+      switch (data.type) {
+        /** 图文动态 */
+        case 'DYNAMIC_TYPE_DRAW':
+          const cover = () => {
+            const imgArray = []
+            for (let i = 0; i < dycrad.item.pictures.length; i++) {
+              const obj = {
+                image_src: dycrad.item.pictures[i].img_src,
               }
-              return imgArray
+              imgArray.push(obj)
             }
-            img = await image('bilibili/dynamic/DYNAMIC_TYPE_DRAW', 'kkkkkk-10086/bilibili/dynamic', {
-              saveId: 'DYNAMIC_TYPE_DRAW',
-              image_url: cover(),
-              text: br(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text),
-              dianzan: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.like.count),
-              pinglun: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.comment.count),
-              share: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.forward.count),
-              create_time: this.convertTimestampToDateTime(dynamicINFO.data.items[nonTopIndex].modules.module_author.pub_ts),
-              avater_url: dynamicINFO.data.items[nonTopIndex].modules.module_author.face,
-              share_url: 'https://t.bilibili.com/' + dynamicINFO.data.items[nonTopIndex].id_str,
+            return imgArray
+          }
+          img = await image('bilibili/dynamic/DYNAMIC_TYPE_DRAW', 'kkkkkk-10086/bilibili/dynamic', {
+            saveId: 'DYNAMIC_TYPE_DRAW',
+            image_url: cover(),
+            text: br(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text),
+            dianzan: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.like.count),
+            pinglun: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.comment.count),
+            share: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.forward.count),
+            create_time: this.convertTimestampToDateTime(dynamicINFO.data.items[nonTopIndex].modules.module_author.pub_ts),
+            avater_url: dynamicINFO.data.items[nonTopIndex].modules.module_author.face,
+            share_url: 'https://t.bilibili.com/' + dynamicINFO.data.items[nonTopIndex].id_str,
+            username: checkvip(userINFO.data.card),
+            fans: this.count(userINFO.data.follower),
+            user_shortid: data.host_mid,
+            total_favorited: this.count(userINFO.data.like_num),
+            following_count: this.count(userINFO.data.card.attention),
+            Botadapter: this.botadapter,
+            dynamicTYPE: '图文动态推送',
+          })
+          break
+
+        /** 纯文动态 */
+        case 'DYNAMIC_TYPE_WORD':
+          let text = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text
+          for (const item of emojiDATA) {
+            if (text.includes(item.text)) {
+              if (text.includes('[') && text.includes(']')) {
+                text = text.replace(/\[[^\]]*\]/g, `<img src="${item.url}"/>`).replace(/\\/g, '')
+              }
+              text += `&#160`
+            }
+          }
+          img = await image('bilibili/dynamic/DYNAMIC_TYPE_WORD', 'kkkkkk-10086/bilibili/dynamic', {
+            saveId: 'DYNAMIC_TYPE_WORD',
+            text: br(text),
+            dianzan: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.like.count),
+            pinglun: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.comment.count),
+            share: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.forward.count),
+            create_time: this.convertTimestampToDateTime(dynamicINFO.data.items[nonTopIndex].modules.module_author.pub_ts),
+            avater_url: dynamicINFO.data.items[nonTopIndex].modules.module_author.face,
+            share_url: 'https://t.bilibili.com/' + dynamicINFO.data.items[nonTopIndex].id_str,
+            username: checkvip(userINFO.data.card),
+            fans: this.count(userINFO.data.follower),
+            user_shortid: data.host_mid,
+            total_favorited: this.count(userINFO.data.like_num),
+            following_count: this.count(userINFO.data.card.attention),
+            Botadapter: this.botadapter,
+            dynamicTYPE: '纯文动态推送',
+          })
+          break
+
+        /** 视频动态 */
+        case 'DYNAMIC_TYPE_AV':
+          if (dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
+            const aid = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.archive.aid
+            const bvid = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.archive.bvid
+            const INFODATA = await new bilidata('bilibilivideo').GetData({ id: bvid })
+            const nocd_data = await new networks({
+              url: BiLiBiLiAPI.VIDEO(aid, INFODATA.INFODATA.data.cid) + '&platform=html5',
+              headers: this.headers,
+            }).getData()
+
+            img = await image('bilibili/dynamic/DYNAMIC_TYPE_AV', 'kkkkkk-10086/bilibili/dynamic', {
+              saveId: 'DYNAMIC_TYPE_AV',
+              image_url: [{ image_src: INFODATA.INFODATA.data.pic }],
+              text: br(INFODATA.INFODATA.data.title),
+              desc: br(dycrad.desc),
+              dianzan: this.count(INFODATA.INFODATA.data.stat.like),
+              pinglun: this.count(INFODATA.INFODATA.data.stat.reply),
+              share: this.count(INFODATA.INFODATA.data.stat.share),
+              create_time: this.convertTimestampToDateTime(INFODATA.INFODATA.data.ctime),
+              avater_url: INFODATA.INFODATA.data.owner.face,
+              share_url: 'https://t.bilibili.com/' + bvid,
               username: checkvip(userINFO.data.card),
               fans: this.count(userINFO.data.follower),
               user_shortid: data.host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
               Botadapter: this.botadapter,
-              dynamicTYPE: '图文',
+              dynamicTYPE: '视频动态推送',
             })
-            break
-
-          /** 纯文动态 */
-          case 'DYNAMIC_TYPE_WORD':
-            let text = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text
-            for (const item of emojiDATA) {
-              if (text.includes(item.text)) {
-                if (text.includes('[') && text.includes(']')) {
-                  text = text.replace(/\[[^\]]*\]/g, `<img src="${item.url}"/>`).replace(/\\/g, '')
-                }
-                text += `&#160`
-              }
-            }
-            img = await image('bilibili/dynamic/DYNAMIC_TYPE_WORD', 'kkkkkk-10086/bilibili/dynamic', {
-              saveId: 'DYNAMIC_TYPE_WORD',
-              text: br(text),
-              dianzan: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.like.count),
-              pinglun: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.comment.count),
-              share: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.forward.count),
-              create_time: this.convertTimestampToDateTime(dynamicINFO.data.items[nonTopIndex].modules.module_author.pub_ts),
-              avater_url: dynamicINFO.data.items[nonTopIndex].modules.module_author.face,
-              share_url: 'https://t.bilibili.com/' + dynamicINFO.data.items[nonTopIndex].id_str,
-              username: checkvip(userINFO.data.card),
-              fans: this.count(userINFO.data.follower),
-              user_shortid: data.host_mid,
-              total_favorited: this.count(userINFO.data.like_num),
-              following_count: this.count(userINFO.data.card.attention),
-              Botadapter: this.botadapter,
-              dynamicTYPE: '纯文',
-            })
-            break
-
-          /** 视频动态 */
-          case 'DYNAMIC_TYPE_AV':
-            if (dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
-              const aid = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.archive.aid
-              const bvid = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.major.archive.bvid
-              const INFODATA = await new bilidata('bilibilivideo').GetData({ id: bvid })
-              const nocd_data = await new networks({
-                url: BiLiBiLiAPI.VIDEO(aid, INFODATA.INFODATA.data.cid) + '&platform=html5',
-                headers: this.headers,
-              }).getData()
-
-              img = await image('bilibili/dynamic/DYNAMIC_TYPE_AV', 'kkkkkk-10086/bilibili/dynamic', {
-                saveId: 'DYNAMIC_TYPE_AV',
-                image_url: [{ image_src: INFODATA.INFODATA.data.pic }],
-                text: br(INFODATA.INFODATA.data.title),
-                desc: br(dycrad.desc),
-                dianzan: this.count(INFODATA.INFODATA.data.stat.like),
-                pinglun: this.count(INFODATA.INFODATA.data.stat.reply),
-                share: this.count(INFODATA.INFODATA.data.stat.share),
-                create_time: this.convertTimestampToDateTime(INFODATA.INFODATA.data.ctime),
-                avater_url: INFODATA.INFODATA.data.owner.face,
-                share_url: 'https://t.bilibili.com/' + bvid,
-                username: checkvip(userINFO.data.card),
-                fans: this.count(userINFO.data.follower),
-                user_shortid: data.host_mid,
-                total_favorited: this.count(userINFO.data.like_num),
-                following_count: this.count(userINFO.data.card.attention),
-                Botadapter: this.botadapter,
-                dynamicTYPE: '视频',
-              })
+            try {
               await Bot.pickGroup(Number(data.group_id[i])).sendMsg(segment.video(nocd_data.data.durl[0].url))
-            }
-            break
+            } catch {}
+          }
+          break
 
-          /** 直播动态 */
-          case 'DYNAMIC_TYPE_LIVE_RCMD':
-            break
-          default:
-            send = false
-            logger.warn(`「${data.type}」动态类型的暂未支持推送`)
-            break
-        }
+        /** 直播动态 */
+        case 'DYNAMIC_TYPE_LIVE_RCMD':
+          img = await image('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD', 'kkkkkk-10086/bilibili/dynamic', {
+            saveId: 'DYNAMIC_TYPE_LIVE_RCMD',
+            image_url: [{ image_src: dycrad.live_play_info.cover }],
+            text: br(dycrad.live_play_info.title),
+            liveinf: br(`${dycrad.live_play_info.area_name} | 房间号: ${dycrad.live_play_info.room_id}`),
+            username: userINFO.data.card.name,
+            avater_url: userINFO.data.card.face,
+            fans: this.count(userINFO.data.follower),
+            create_time: this.convertTimestampToDateTime(dynamicINFO.data.items[0].modules.module_author.pub_ts),
+            now_time: this.getCurrentTime(),
+            share_url: 'https://live.bilibili.com/' + dycrad.live_play_info.room_id,
+            dynamicTYPE: '直播动态推送',
+            sys: {
+              scale: this.#scale(1),
+            },
+          })
+          break
 
-        send ? await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img) : null
-        await redis.set(key, 1)
+        default:
+          send = false
+          logger.warn(`「${data.type}」动态类型的暂未支持推送`)
+          break
       }
+
+      send ? await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img) : null
+      await redis.set(key, 1)
     }
+  }
+
+  #scale(pct = 1) {
+    let scale = 200
+    scale = Math.min(2, Math.max(0.5, scale / 100))
+    pct = pct * scale
+    return `style='transform:scale(${pct})'`
   }
 
   /**
@@ -239,6 +260,8 @@ export default class push extends base {
           case 'DYNAMIC_TYPE_ARTICLE':
           /** 音乐 */
           case 'DYNAMIC_TYPE_MUSIC':
+          /** 直播 */
+          case 'DYNAMIC_TYPE_LIVE_RCMD':
             dynamic_id = data.data.items[nonTopIndex].id_str
             create_time = data.data.items[nonTopIndex].modules.module_author.pub_ts
         }
@@ -306,6 +329,22 @@ export default class push extends base {
     const minutes = String(date.getMinutes()).padStart(2, '0')
 
     return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
+
+  getCurrentTime() {
+    let now = new Date()
+    let year = now.getFullYear()
+    let month = now.getMonth() + 1
+    let day = now.getDate()
+    let hour = now.getHours()
+    let minute = now.getMinutes()
+    let second = now.getSeconds()
+    month = month < 10 ? '0' + month : month
+    day = day < 10 ? '0' + day : day
+    hour = hour < 10 ? '0' + hour : hour
+    minute = minute < 10 ? '0' + minute : minute
+    second = second < 10 ? '0' + second : second
+    return year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second
   }
 
   async findMismatchedAwemeIds(data, cachedata) {
