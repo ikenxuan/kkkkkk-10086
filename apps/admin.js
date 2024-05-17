@@ -1,59 +1,65 @@
-import { Config } from '#modules'
-import { BiLogin, refresh_token } from '#bilibili'
+import { Config, image, base } from '#modules'
+import { BiLogin } from '#bilibili'
 
-let _path = process.cwd()
-
-async function updateConfig(key, value, e) {
-  Config[key] = value
-  e.reply('设置成功！')
+const APPType = {
+  缓存删除: 'rmmp4',
+  视频解析: 'videotool',
+  默认解析: 'defaulttool',
+  转发: 'sendforwardmsg',
 }
 
-function getValue(msg) {
-  if (msg.includes('开启')) return true
-  if (msg.includes('关闭')) return false
+const DouYinType = {
+  抖音评论: 'comments',
+  抖音评论图: 'commentsimg',
+  抖音推送: 'douyinpush',
+  抖音推送日志: 'douyinpushlog',
+  抖音推送表达式: 'douyinpushcron',
+  抖音解析提示: 'douyintip',
 }
 
-export class admin extends plugin {
+const BilibiliType = {
+  B站评论图: 'bilibilicommentsimg',
+  B站推送: 'bilibilipush',
+  B站推送日志: 'bilibilipushlog',
+  B站推送表达式: 'bilibilipushcron',
+  B站解析提示: 'bilibilitip',
+}
+const NumberCfgType = {
+  抖音评论数量: { key: 'numcomments', limit: '0-50' },
+  B站评论数量: { key: 'bilibilinumcomments', limit: '0-20' },
+  抖音推送设置权限: { key: 'douyinpushGroup', limit: '0-2' },
+  B站推送设置权限: { key: 'bilibilipushGroup', limit: '0-2' },
+}
+
+/** 分开开关和数字 */
+const SwitchCfgType = {
+  ...APPType,
+  ...DouYinType,
+  ...BilibiliType,
+}
+
+const SwitchCfgReg = new RegExp(`^#kkk设置\\s*(${Object.keys(SwitchCfgType).join('|')})?\\s*(.*)$`)
+const NumberCfgReg = new RegExp(`^#kkk设置\\s*(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
+export class Admin extends plugin {
   constructor() {
     super({
-      name: 'kkkkkk-10086-管理',
-      dsc: 'admin',
+      name: 'kkkkkk-10086-设置',
       event: 'message',
-      priority: 5000,
+      priority: 100,
       rule: [
         {
-          reg: /^#?(kkk)?s*设置$/,
-          fnc: 'set',
+          reg: SwitchCfgReg,
+          fnc: 'ConfigSwitch',
           permission: 'master',
         },
         {
-          reg: /^#?(kkk)?s*设置(视频解析|解析)s*(开启|关闭)$/,
-          fnc: 'tools',
-          permission: 'master',
-        },
-        {
-          reg: /^#?(kkk)?s*设置(默认视频解析|默认解析)s*(开启|关闭)$/,
-          fnc: 'defaulttool',
-          permission: 'master',
-        },
-        {
-          reg: /^#?(kkk)?s*设置(评论|评论解析)s*(开启|关闭)$/,
-          fnc: 'comments',
-          permission: 'master',
-        },
-        {
-          reg: /^#?(kkk)?s*设置缓存删除s*(开启|关闭)$/,
-          fnc: 'temp',
+          reg: NumberCfgReg,
+          fnc: 'ConfigNumber',
           permission: 'master',
         },
         {
           reg: /^#?(kkk)?s*设置抖音ck$/i,
           fnc: 'setdyck',
-          permission: 'master',
-        },
-        {
-          reg: /^#?(kkk)?s*设置评论图片s*(开启|关闭)$/,
-          fnc: 'commentsimg',
           permission: 'master',
         },
         {
@@ -68,54 +74,78 @@ export class admin extends plugin {
         },
       ],
     })
-    // this.task = {
-    //   cron: '0 1 * * *',
-    //   name: '刷新B站ck',
-    //   fnc: () => this.refresh_token(),
-    //   log: true,
-    // }
   }
 
-  async refresh_token() {
-    await refresh_token()
+  async ConfigSwitch(e) {
+    // 解析消息
+    let regRet = SwitchCfgReg.exec(e.msg)
+    let key = regRet[1]
+    let is = regRet[2] == '开启'
+    key !== undefined ? (Config[SwitchCfgType[key]] = is) : null
+    // 渲染图片
+    this.index_Settings(e)
+  }
+
+  // 修改数字设置
+  async ConfigNumber(e) {
+    let regRet = e.msg.match(NumberCfgReg)
+    let type = NumberCfgType[regRet[1]]
+    let number = checkNumberValue(regRet[2], type.limit)
+    if (type.key === 'douyinpushGroup' || type.key === 'bilibilipushGroup') {
+      const groupMapping = { 0: 'all', 1: 'admin', 2: 'owner', 3: 'master' }
+      if (groupMapping.hasOwnProperty(number)) {
+        Config[type.key] = groupMapping[number]
+      } else {
+        Config[type.key] = groupMapping['3']
+      }
+    } else {
+      Config[type.key] = number
+    }
+    this.index_Settings(e)
+  }
+
+  // 渲染发送图片
+  async index_Settings(e) {
+    let data = {}
+    let _cfg = Config.ALLcfg
+    for (let key in _cfg) {
+      data[key] = getStatus(_cfg[key])
+    }
+    const img = await image('admin/index', 'kkkkkk-10086/admin', {
+      saveId: 'admin',
+      ...data,
+      sys: {
+        scale: this.#scale(1.4),
+        copyright: `${new base().botname} & kkkkkk-10086`,
+      },
+    })
+    e.reply(img)
+  }
+
+  #scale(pct = 1) {
+    let scale = 200
+    scale = Math.min(2, Math.max(0.5, scale / 100))
+    pct = pct * scale
+    return `style='transform:scale(${pct})'`
   }
 
   async Blogin(e) {
     await new BiLogin(e).Login()
   }
 
-  async set(e) {
-    let text = []
-    for (let i = 0; i < this.rule.length; i++) {
-      let reg = this.rule[i].reg + '\n\n'
-      text.push(reg)
-    }
-    e.reply(text)
+  async setdyck() {
+    this.setContext('savedyck')
+    const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
+    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    return false
+  }
+  async savedyck() {
+    Config.ck = String(this.e.msg)
+    this.reply('设置成功！')
+    this.finish('savedyck')
   }
 
-  async defaulttool(e) {
-    const value = getValue(e.msg)
-    await updateConfig('defaulttool', value, e)
-    e.reply('重启以应用更新', true)
-  }
-
-  async tools(e) {
-    const value = getValue(e.msg)
-    await updateConfig('videotool', value, e)
-    e.reply('重启以应用更新', true)
-  }
-
-  async comments(e) {
-    const value = getValue(e.msg)
-    await updateConfig('comments', value, e)
-  }
-
-  async temp(e) {
-    const value = getValue(e.msg)
-    await updateConfig('rmmp4', value, e)
-  }
-
-  async setbilick(e) {
+  async setbilick() {
     this.setContext('savebilick')
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
@@ -123,25 +153,48 @@ export class admin extends plugin {
   }
 
   async savebilick() {
-    const value = this.e.msg
-    await updateConfig('bilibilick', value, this.e)
+    Config.bilibilick = String(this.e.msg)
+    this.reply('设置成功！')
     this.finish('savebilick')
   }
+}
 
-  async commentsimg(e) {
-    const value = getValue(e.msg)
-    await updateConfig('commentsimg', value, e)
+const getStatus = function (rote) {
+  switch (true) {
+    case Array.isArray(rote):
+      if (rote.length === 0) return `<div class="cfg-status status-off" >已配置 ${rote.length} 项</div>`
+      else return `<div class="cfg-status " >已配置 ${rote.length} 项</div>`
+    case rote === true:
+      return '<div class="cfg-status" >已开启</div>'
+    case rote === false:
+      return '<div class="cfg-status status-off">已关闭</div>'
+    default:
+      if (rote == null || rote === '') return '<div class="cfg-status status-off">未配置</div>'
+      else return `<div class="cfg-status">${String(rote).length > 10 ? String(rote).substring(0, 10) + '...' : String(rote)}</div>`
+  }
+}
+
+function checkNumberValue(value, limit) {
+  // 检查是否存在限制条件
+  if (!limit) {
+    return value
+  }
+  // 解析限制条件
+  const [symbol, limitValue] = limit.match(/^([<>])?(.+)$/).slice(1)
+  const parsedLimitValue = parseFloat(limitValue)
+
+  // 检查比较限制条件
+  if ((symbol === '<' && value > parsedLimitValue) || (symbol === '>' && value < parsedLimitValue)) {
+    return parsedLimitValue
   }
 
-  async setdyck(e) {
-    this.setContext('savedyck')
-    const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
-    return false
+  // 检查范围限制条件
+  if (!isNaN(value)) {
+    const [lowerLimit, upperLimit] = limit.split('-').map(parseFloat)
+    const clampedValue = Math.min(Math.max(value, lowerLimit || -Infinity), upperLimit || Infinity)
+    return clampedValue
   }
-  async savedyck() {
-    const value = this.e.msg
-    await updateConfig('ck', value, this.e)
-    this.finish('savedyck')
-  }
+
+  // 如果不符合以上任何条件，则返回原值
+  return parseFloat(value)
 }

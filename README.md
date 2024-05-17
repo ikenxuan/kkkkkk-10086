@@ -57,16 +57,7 @@ npm install --production
 
 ---
 
-<details><summary>管理命令（仍未完善）</summary>
-
-- #?kkk 设置
-- #kkk 设置抖音 ck
-- #kkk 设置视频解析(开启|关闭)
-- #kkk 设置默认视频解析(开启|关闭)
-- #kkk 设置缓存删除(开启|关闭)
-- #kkk 设置评论(开启|关闭)
-- #kkk 设置评论图片(开启|关闭)
-</details>
+更多信息可使用 `#kkk设置` 查看
 
 > [!TIP]  
 > 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin.git) 进行配置文件的修改。配置文件路径：
@@ -92,7 +83,7 @@ npm install --production
 
 排名不分先后
 
-- [wwww.douyin.com](https://www.douyin.com/) & [www.bilibili.com](https://www.bilibili.com/)
+- [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
 
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 
@@ -104,7 +95,9 @@ npm install --production
 
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
 
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect/)
+- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
+
+- [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
 
 ## 友情链接
 
@@ -118,5 +111,7 @@ npm install --production
 本项目提供的开源代码是出于学习进行开发。如果您认为该项目侵犯了您的知识产权或其他合法权益，请通过 **[QQ](https://qm.qq.com/q/k6Up32hdWE)** 向我们提供书面通知。我们将在收到有效通知后，尽快进行审查，并采取必要的措施。
 
 本软件出于学习进行开发，使用本项目的使用本软件的用户应确保遵守所有适用的开源许可证协议，并且在使用过程中尊重原作者的知识产权。
+
+此外，未经同意，禁止将本项目的开源代码用于任何商业目的。
 
 我们保留随时修改本免责声明的权利，并且这些修改将立即生效。
