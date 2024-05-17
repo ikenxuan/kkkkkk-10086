@@ -83,7 +83,7 @@ npm install --production
 
 排名不分先后
 
-- [wwww.douyin.com](https://www.douyin.com/) & [www.bilibili.com](https://www.bilibili.com/)
+- [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
 
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 
@@ -95,7 +95,9 @@ npm install --production
 
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
 
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect/)
+- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
+
+- [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
 
 ## 友情链接
 
