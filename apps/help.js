@@ -70,7 +70,7 @@ export class Help extends plugin {
 }
 
 const rodom = async function () {
-  let image = fs.readdirSync('./plugins/yenai-plugin/resources/help/imgs/')
+  let image = fs.readdirSync('./plugins/kkkkkk-10086/resources/help/imgs/')
   let list_img = []
   for (let val of image) {
     list_img.push(val)
