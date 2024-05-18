@@ -9,7 +9,7 @@ import cfg from '../../../../../lib/config/config.js'
 import Version from '../components/Version.js'
 import Render from '../components/Render.js'
 
-export { GetID, common, Config, base, uploadRecord, image, networks, cfg as botCfg, Render, Path, Version, Plugin_Name, Plugin_Path }
+export { GetID, common, Config, base, uploadRecord, image, networks, cfg as botCfg, Render, Path as _path, Version, Plugin_Name, Plugin_Path }
 
 const Path = process.cwd()
 const Plugin_Name = 'kkkkkk-10086'

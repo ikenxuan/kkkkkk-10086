@@ -1,4 +1,4 @@
-import { Config, Render } from '#modules'
+import { Config, Render, _path } from '#modules'
 import { BiLogin } from '#bilibili'
 
 const APPType = {
