@@ -39,8 +39,8 @@ const SwitchCfgType = {
   ...BilibiliType,
 }
 
-const SwitchCfgReg = new RegExp(`^#kkk设置\\s*(${Object.keys(SwitchCfgType).join('|')})?\\s*(.*)$`)
-const NumberCfgReg = new RegExp(`^#kkk设置\\s*(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
+const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
+const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
 export class Admin extends plugin {
   constructor() {
     super({
@@ -56,6 +56,11 @@ export class Admin extends plugin {
         {
           reg: NumberCfgReg,
           fnc: 'ConfigNumber',
+          permission: 'master',
+        },
+        {
+          reg: /^#kkk设置$/,
+          fnc: 'index_Settings',
           permission: 'master',
         },
         {
