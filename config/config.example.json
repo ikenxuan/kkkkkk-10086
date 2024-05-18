@@ -6,7 +6,6 @@
   "numcomments": 5,
   "ck": "",
   "commentsimg": true,
-  "newui": true,
   "douyinpush": false,
   "douyinpushlist": [],
   "douyinpushlog": false,
@@ -23,5 +22,6 @@
   "bilibilipushlist": [],
   "bilibilipushlog": true,
   "bilibilipushcron": "*/10 * * * *",
-  "bilibilipushGroup": "master"
+  "bilibilipushGroup": "master",
+  "renderScale": 100
 }

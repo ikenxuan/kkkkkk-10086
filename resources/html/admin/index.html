@@ -1,257 +1,249 @@
-<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="../../../../plugins/kkkkkk-10086/resources/html/admin/index.css" />
-    <title>kkkkkk-10086</title>
-    <style>
-        .container {
-          background: url('../../../../plugins/kkkkkk-10086/resources/pic/default.jpg') #000144 top !important;
-          background-size: cover !important;
-          width: 800px;
-        }
-      </style>
-</head>
+{{extend defaultLayout}} {{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}html/admin/index.css" />
+<title>kkkkkk-10086</title>
+<style>
+  .container {
+    background: url('{{_res_path}}html/admin/img/default.jpg') #000144 top !important;
+    background-size: cover !important;
+    width: 800px;
+  }
+</style>
+{{/block}} {{block 'main'}}
+<div class="info_box">
+  <div class="head-box type{{bgType}}">
+    <div class="label">kkk设置</div>
+    <div class="title">kkk管理面板</div>
+  </div>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">Cookies相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音ck
+        <span class="cfg-hint">#kkk设置抖音ck</span>
+        {{@data.ck}}
+      </div>
+      <div class="cfg-desc">抖音ck，用于请求官方API数据</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站ck
+        <span class="cfg-hint">#kkk设置B站ck</span>
+        {{@data.bilibilick}}
+      </div>
+      <div class="cfg-desc">B站ck，用于请求官方API数据</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站扫码登录
+        <span class="cfg-hint">#B站登录</span>
+      </div>
+      <div class="cfg-desc">使用哔哩哔哩APP扫码获取ck</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">应用设置</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        总开关
+        <span class="cfg-hint">#kkk设置视频解析 + 开启/关闭</span>
+        {{@data.videotool}}
+      </div>
+      <div class="cfg-desc">视频解析工具总开关，修改后重启生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        默认解析
+        <span class="cfg-hint">#kkk设置默认解析 + 开启/关闭</span>
+        {{@data.defaulttool}}
+      </div>
+      <div class="cfg-desc">识别最高优先级，修改后重启生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        发送合并转发消息
+        <span class="cfg-hint">#kkk设置转发 + 开启/关闭</span>
+        {{@data.sendforwardmsg}}
+      </div>
+      <div class="cfg-desc">发送合并转发消息，可能多用于抖音解析</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        缓存删除
+        <span class="cfg-hint">#kkk设置缓存删除 + 开启/关闭</span>
+        {{@data.rmmp4}}
+      </div>
+      <div class="cfg-desc">自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">抖音相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音解析提示
+        <span class="cfg-hint">#kkk设置抖音解析提示 + 开启/关闭</span>
+        {{@data.douyintip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到抖音链接，开始解析”</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音评论
+        <span class="cfg-hint">#kkk设置抖音评论 + 开启/关闭</span>
+        {{@data.comments}}
+      </div>
+      <div class="cfg-desc">开启抖音评论解析</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音评论数量
+        <span class="cfg-hint">#kkk设置抖音评论数量 + 1~50</span>
+        {{@data.numcomments}}
+      </div>
+      <div class="cfg-desc">设置接口返回的评论数量，范围1~50条</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音评论图
+        <span class="cfg-hint">#kkk设置抖音评论图 + 开启/关闭</span>
+        {{@data.commentsimg}}
+      </div>
+      <div class="cfg-desc">发送抖音作品评论图</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送
+        <span class="cfg-hint">#kkk设置抖音推送 + 开启/关闭</span>
+        {{@data.douyinpush}}
+      </div>
+      <div class="cfg-desc">开启后需重启；使用[#设置抖音推送+抖音号]配置推送列表</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送日志
+        <span class="cfg-hint">#kkk设置抖音推送日志 + 开启/关闭</span>
+        {{@data.douyinpushlog}}
+      </div>
+      <div class="cfg-desc">打开或关闭定时任务日志</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送设置权限
+        <span class="cfg-hint">#kkk设置抖音推送设置权限0~3</span>
+        {{@data.douyinpushGroup}}
+      </div>
+      <div class="cfg-desc">0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送表达式
+        <span class="cfg-hint">#kkk设置抖音推送表达式 + Cron表达式</span>
+        {{@data.douyinpushcron}}
+      </div>
+      <div class="cfg-desc">建议使用[锅巴后台面板]设置</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">bilibili相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站评论图
+        <span class="cfg-hint">#kkk设置B站评论图 + 开启/关闭</span>
+        {{@data.bilibilicommentsimg}}
+      </div>
+      <div class="cfg-desc">发送哔哩哔哩作品评论图</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站评论数量
+        <span class="cfg-hint">#kkk设置B站评论数量 + 1~20</span>
+        {{@data.bilibilinumcomments}}
+      </div>
+      <div class="cfg-desc">设置接口返回的评论数量，范围1~20条</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站解析提示
+        <span class="cfg-hint">#kkk设置B站解析提示 + 开启/关闭</span>
+        {{@data.bilibilitip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到B站链接，开始解析”</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送
+        <span class="cfg-hint">#kkk设置B站推送 + 开启/关闭</span>
+        {{@data.bilibilipush}}
+      </div>
+      <div class="cfg-desc">开启后需重启；使用[#设置B站推送+用户UID]配置推送列表</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送日志
+        <span class="cfg-hint">#kkk设置B站推送日志 + 开启/关闭</span>
+        {{@data.bilibilipushlog}}
+      </div>
+      <div class="cfg-desc">打开或关闭定时任务日志”</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送设置权限
+        <span class="cfg-hint">#kkk设置B站推送设置权限0~3</span>
+        {{@data.bilibilipushGroup}}
+      </div>
+      <div class="cfg-desc">0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送表达式
+        <span class="cfg-hint">#kkk设置B站推送表达式 + Cron表达式</span>
+        {{@data.bilibilipushcron}}
+      </div>
+      <div class="cfg-desc">建议使用[锅巴后台面板]设置</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">推送相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送
+        <span class="cfg-hint">#设置抖音推送 + 抖音号</span>
+        {{@data.douyinpushlist}}
+      </div>
+      <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送
+        <span class="cfg-hint">#设置B站推送 + 用户UID</span>
+        {{@data.bilibilipushlist}}
+      </div>
+      <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">其他设置</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        渲染精度
+        <span class="cfg-hint">#kkk设置渲染精度 + 100</span>
+        {{@data.renderScale}}
+      </div>
+      <div class="cfg-desc">可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度</div>
+    </li>
+  </ul>
+</div>
+{{/block}}
 
-
-<body class="elem-hydro default-mode" {{@sys.scale}}>
-    <div class="container" id="container">
-      <div class="info_box">
-        <div class="head-box type{{bgType}}">
-          <div class="label">kkk设置</div>
-          <div class="title">kkk管理面板</div>
-        </div>
-      </div>
-      <div class="cfg-box">
-        <div class="cfg-group">Cookies相关</div>
-        <ul class="cfg-ul">
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音ck
-              <span class="cfg-hint">#kkk设置抖音ck</span>
-              {{@ck}}
-            </div>
-            <div class="cfg-desc">抖音ck，用于请求官方API数据</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站ck
-              <span class="cfg-hint">#kkk设置B站ck</span>
-              {{@bilibilick}}
-            </div>
-            <div class="cfg-desc">B站ck，用于请求官方API数据</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站扫码登录
-              <span class="cfg-hint">#B站登录</span>
-            </div>
-            <div class="cfg-desc">使用哔哩哔哩APP扫码获取ck</div>
-          </li>
-        </ul>
-      </div>
-      <div class="cfg-box">
-        <div class="cfg-group">应用设置</div>
-        <ul class="cfg-ul">
-          <li class="cfg-li">
-            <div class="cfg-line">
-              总开关
-              <span class="cfg-hint">#kkk设置视频解析 + 开启/关闭</span>
-              {{@videotool}}
-            </div>
-            <div class="cfg-desc">视频解析工具总开关，修改后重启生效</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              默认解析
-              <span class="cfg-hint">#kkk设置默认解析 + 开启/关闭</span>
-              {{@defaulttool}}
-            </div>
-            <div class="cfg-desc">
-              识别最高优先级，修改后重启生效</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              发送合并转发消息
-              <span class="cfg-hint">#kkk设置转发 + 开启/关闭</span>
-              {{@sendforwardmsg}}
-            </div>
-            <div class="cfg-desc">
-              发送合并转发消息，可能多用于抖音解析
-            </div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              缓存删除
-              <span class="cfg-hint">#kkk设置缓存删除 + 开启/关闭</span>
-              {{@rmmp4}}
-            </div>
-            <div class="cfg-desc">
-              自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="cfg-box">
-        <div class="cfg-group">抖音相关</div>
-        <ul class="cfg-ul">
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音解析提示
-              <span class="cfg-hint">#kkk设置抖音解析提示 + 开启/关闭</span>
-              {{@douyintip}}
-            </div>
-            <div class="cfg-desc">发送提示信息：“检测到抖音链接，开始解析”</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音评论
-              <span class="cfg-hint">#kkk设置抖音评论 + 开启/关闭</span>
-              {{@comments}}
-            </div>
-            <div class="cfg-desc">开启抖音评论解析</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音评论数量
-              <span class="cfg-hint">#kkk设置抖音评论数量 + 1~50</span>
-              {{@numcomments}}
-            </div>
-            <div class="cfg-desc">设置接口返回的评论数量，范围1~50条</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音评论图
-              <span class="cfg-hint">#kkk设置抖音评论图 + 开启/关闭</span>
-              {{@commentsimg}}
-            </div>
-            <div class="cfg-desc">发送抖音作品评论图</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音推送
-              <span class="cfg-hint">#kkk设置抖音推送 + 开启/关闭</span>
-              {{@douyinpush}}
-            </div>
-            <div class="cfg-desc">
-              开启后需重启；使用[#设置抖音推送+抖音号]配置推送列表</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音推送日志
-              <span class="cfg-hint">#kkk设置抖音推送日志 + 开启/关闭</span>
-              {{@douyinpushlog}}
-            </div>
-            <div class="cfg-desc">
-              打开或关闭定时任务日志</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音推送设置权限
-              <span class="cfg-hint">#kkk设置抖音推送设置权限0~3</span>
-              {{@douyinpushGroup}}
-            </div>
-            <div class="cfg-desc">
-              0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音推送表达式
-              <span class="cfg-hint">#kkk设置抖音推送表达式 + Cron表达式</span>
-              {{@douyinpushcron}}
-            </div>
-            <div class="cfg-desc">
-              建议使用[锅巴后台面板]设置</div>
-          </li>
-        </ul>
-      </div>
-      <div class="cfg-box">
-        <div class="cfg-group">bilibili相关</div>
-        <ul class="cfg-ul">
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站评论图
-              <span class="cfg-hint">#kkk设置B站评论图 + 开启/关闭</span>
-              {{@bilibilicommentsimg}}
-            </div>
-            <div class="cfg-desc">发送哔哩哔哩作品评论图</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站评论数量
-              <span class="cfg-hint">#kkk设置B站评论数量 + 1~20</span>
-              {{@bilibilinumcomments}}
-            </div>
-            <div class="cfg-desc">设置接口返回的评论数量，范围1~20条</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站解析提示
-              <span class="cfg-hint">#kkk设置B站解析提示 + 开启/关闭</span>
-              {{@bilibilitip}}
-            </div>
-            <div class="cfg-desc">发送提示信息：“检测到B站链接，开始解析”</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站推送
-              <span class="cfg-hint">#kkk设置B站推送 + 开启/关闭</span>
-              {{@bilibilipush}}
-            </div>
-            <div class="cfg-desc">
-              开启后需重启；使用[#设置B站推送+用户UID]配置推送列表</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站推送日志
-              <span class="cfg-hint">#kkk设置B站推送日志 + 开启/关闭</span>
-              {{@bilibilipushlog}}
-            </div>
-            <div class="cfg-desc">打开或关闭定时任务日志”</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站推送设置权限
-              <span class="cfg-hint">#kkk设置B站推送设置权限0~3</span>
-              {{@bilibilipushGroup}}
-            </div>
-            <div class="cfg-desc">
-              0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站推送表达式
-              <span class="cfg-hint">#kkk设置B站推送表达式 + Cron表达式</span>
-              {{@bilibilipushcron}}
-            </div>
-            <div class="cfg-desc">
-              建议使用[锅巴后台面板]设置</div>
-          </li>
-        </ul>
-      </div>
-      <div class="cfg-box">
-        <div class="cfg-group">推送相关</div>
-        <ul class="cfg-ul">
-          <li class="cfg-li">
-            <div class="cfg-line">
-              抖音推送
-              <span class="cfg-hint">#设置抖音推送 + 抖音号</span>
-              {{@douyinpushlist}}
-            </div>
-            <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
-          </li>
-          <li class="cfg-li">
-            <div class="cfg-line">
-              B站推送
-              <span class="cfg-hint">#设置B站推送 + 用户UID</span>
-              {{@bilibilipushlist}}
-            </div>
-            <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
-          </li>
-        </ul>
-      </div>
-      <div class="copyright">{{@sys.copyright}}</div>
-    </div>
-  </body>
-</html>
 <!-- from yenai-plugin -->

@@ -1,4 +1,4 @@
-import { Config } from './model/config.js'
+import { Config } from '#modules'
 // 支持锅巴
 export function supportGuoba() {
   return {
@@ -105,21 +105,6 @@ export function supportGuoba() {
           label: '评论图',
           bottomHelpMessage: '发送抖音作品评论图',
           component: 'Switch',
-          required: false,
-        },
-        {
-          field: 'newui',
-          label: '图片UI版本',
-          helpMessage: '优化版更好看',
-          bottomHelpMessage: '第一版使用小图可容纳更多条评论，优化版使用大图适用于看评论区图片（代价是图片体积可能会非常大）',
-          component: 'Select',
-          componentProps: {
-            options: [
-              { label: '第一版', value: false },
-              { label: '优化版', value: true },
-            ],
-            placeholder: '请选择图片模板类型',
-          },
           required: false,
         },
         {
@@ -348,10 +333,22 @@ export function supportGuoba() {
           component: 'Switch',
           required: false,
         },
+        {
+          field: 'renderScale',
+          label: '渲染精度',
+          bottomHelpMessage: '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度',
+          component: 'InputNumber',
+          componentProps: {
+            placeholder: '范围：50 ~ 200',
+            min: 50,
+            max: 200,
+            addonAfter: '单位',
+          },
+        },
       ],
       // 获取配置数据方法（用于前端填充显示数据）
       getConfigData() {
-        return Config
+        return Config.ALLcfg
       },
       // 设置配置的方法（前端点确定后调用的方法）
       async setConfigData(data, { Result }) {

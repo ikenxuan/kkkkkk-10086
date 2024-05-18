@@ -1,5 +1,5 @@
 import { iKun } from '#douyin'
-import { base, image, GetID, common, Config } from '#modules'
+import { base, Render, GetID, common, Config } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
@@ -17,33 +17,38 @@ export default class push extends base {
     const cache = await redis.get('kkk:douyPush')
     let data
 
-    if (cache == '[]' || !cache) {
-      /** 如果redis里没有，就重新获取并写入 */
-      data = await this.getuserdata(true)
-      await redis.set('kkk:douyPush', JSON.stringify(data))
-    } else {
-      let cachedata = JSON.parse(cache)
-      /** 获取最新那一条 */
-      data = await this.getuserdata(false)
-      cachedata = await this.findMismatchedAwemeIds(data, cachedata)
+    try {
+      if (cache == '[]' || !cache) {
+        /** 如果redis里没有，就重新获取并写入 */
+        data = await this.getuserdata(true)
+        await redis.set('kkk:douyPush', JSON.stringify(data))
+      } else {
+        let cachedata = JSON.parse(cache)
+        /** 获取最新那一条 */
+        data = await this.getuserdata(false)
+        cachedata = await this.findMismatchedAwemeIds(data, cachedata)
 
-      if (data.length == 0) {
-        logger.warn('[kkkkkk-10086-推送]尚未配置抖音推送列表，任务结束，推送失败')
-        return true
-      }
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].create_time == cachedata[i]?.create_time) {
-          for (const key of data[i].group_id) {
-            if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
-              await this.getdata(data[i])
-              logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
-            }
-          }
-        } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
-          await this.getdata(data[i])
-          logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
+        if (data.length == 0) {
+          logger.warn('[kkkkkk-10086-推送]尚未配置抖音推送列表，任务结束，推送失败')
+          return true
         }
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].create_time == cachedata[i]?.create_time) {
+            for (const key of data[i].group_id) {
+              if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
+                await this.getdata(data[i])
+                logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
+              }
+            }
+          } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
+            await this.getdata(data[i])
+            logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
+          }
+        }
+        await redis.set('kkk:douyPush', JSON.stringify(data))
       }
+    } catch (error) {
+      logger.error(error)
       await redis.set('kkk:douyPush', JSON.stringify(data))
     }
   }
@@ -89,14 +94,11 @@ export default class push extends base {
 
     for (let i = 0; i < data.group_id.length; i++) {
       let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
-      /** 如果这个群推送过这个aweme_id，返回。没推送过的话，key不会从redis里面找到 */
-      if (await redis.get(key)) {
-        console.log('这个视频在这个群推送过了！')
-      } else {
-        const iddata = await GetID(share_url)
-        const videodata = await new iKun(iddata.type).GetData(iddata)
-        let img = await image('douyin/douyininfo', 'kkkkkk-10086/douyin/douyininfo', {
-          saveId: 'douyininfo',
+      const iddata = await GetID(share_url)
+      const videodata = await new iKun(iddata.type).GetData(iddata)
+      const img = await Render.render(
+        'html/douyin/douyininfo',
+        {
           image_url: cover,
           desc: desc,
           dianzan: digg_count,
@@ -113,11 +115,11 @@ export default class push extends base {
           user_shortid: user_shortid,
           total_favorited: total_favorited,
           following_count: following_count,
-          Botadapter: this.botadapter,
-        })
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
-        await redis.set(key, 1)
-      }
+        },
+        { e: this.e, scale: 1.4, retType: 'base64' },
+      )
+      await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+      await redis.set(key, 1)
     }
   }
 

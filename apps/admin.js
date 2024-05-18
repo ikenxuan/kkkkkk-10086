@@ -1,4 +1,4 @@
-import { Config, image, base } from '#modules'
+import { Config, Render } from '#modules'
 import { BiLogin } from '#bilibili'
 
 const APPType = {
@@ -29,6 +29,7 @@ const NumberCfgType = {
   B站评论数量: { key: 'bilibilinumcomments', limit: '0-20' },
   抖音推送设置权限: { key: 'douyinpushGroup', limit: '0-2' },
   B站推送设置权限: { key: 'bilibilipushGroup', limit: '0-2' },
+  渲染精度: { key: 'scale', limit: '50-200' },
 }
 
 /** 分开开关和数字 */
@@ -111,22 +112,7 @@ export class Admin extends plugin {
     for (let key in _cfg) {
       data[key] = getStatus(_cfg[key])
     }
-    const img = await image('admin/index', 'kkkkkk-10086/admin', {
-      saveId: 'admin',
-      ...data,
-      sys: {
-        scale: this.#scale(1.4),
-        copyright: `${new base().botname} & kkkkkk-10086`,
-      },
-    })
-    e.reply(img)
-  }
-
-  #scale(pct = 1) {
-    let scale = 200
-    scale = Math.min(2, Math.max(0.5, scale / 100))
-    pct = pct * scale
-    return `style='transform:scale(${pct})'`
+    return await Render.render('html/admin/index', { data }, { e, scale: 1.4 })
   }
 
   async Blogin(e) {
@@ -139,6 +125,7 @@ export class Admin extends plugin {
     await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }
+
   async savedyck() {
     Config.ck = String(this.e.msg)
     this.reply('设置成功！')

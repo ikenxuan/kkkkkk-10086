@@ -1,4 +1,4 @@
-import { base } from '#modules'
+import { base, Config } from '#modules'
 import { DouyinAPI, Sign } from '#douyin'
 
 export default class iKun extends base {
@@ -128,7 +128,10 @@ export default class iKun extends base {
    */
   async GlobalGetData(options, is_mp4) {
     let result = await new this.networks(options).getData()
-    result === '' ? logger.error('获取响应数据失败！抖音ck可能已经失效！\n类型：' + this.type + '\n请求URL：' + options.url) : null
+    if (result === '') {
+      logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
+      Config.ck = ''
+    } else null
     if (typeof is_mp4 === 'boolean') {
       result.is_mp4 = is_mp4
     }

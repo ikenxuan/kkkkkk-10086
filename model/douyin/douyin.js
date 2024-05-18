@@ -1,10 +1,10 @@
-import { common, base, Config, uploadRecord, image, networks } from '#modules'
+import { common, base, Config, uploadRecord, image, networks, Render } from '#modules'
 import { iKun, Emoji, comments } from '#douyin'
 import fs from 'fs'
 
-let mp4size = '',
-  img,
-  m_id
+let mp4size = ''
+let img
+let m_id
 
 export default class DouYin extends base {
   constructor(e = {}, iddata) {
@@ -219,21 +219,24 @@ export default class DouYin extends base {
           const EmojiData = await new iKun('Emoji').GetData()
           const list = await Emoji(EmojiData)
           const commentsArray = await comments(data.CommentsData, list)
-          img = await image(`douyin/comment_${Config.newui ? 'new' : 'old'}`, 'kkkkkk-10086/douyin/comments', {
-            saveId: 'comment',
-            Type: this.is_mp4 ? '视频' : '图集',
-            CommentsData: commentsArray,
-            CommentLength: String(commentsArray.jsonArray?.length ? commentsArray.jsonArray.length : 0),
-            VideoUrl: this.is_mp4
-              ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-              : data.VideoData.aweme_detail.share_url,
-            Title: g_title,
-            VideoSize: mp4size,
-            VideoFPS: FPS,
-            ImageLength: imagenum,
-            DestroyTime: Time(2),
-            Botadapter: this.botadapter,
-          })
+          img = await Render.render(
+            'html/douyin/comment',
+            {
+              Type: this.is_mp4 ? '视频' : '图集',
+              CommentsData: commentsArray,
+              CommentLength: String(commentsArray.jsonArray?.length ? commentsArray.jsonArray.length : 0),
+              VideoUrl: this.is_mp4
+                ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+                : data.VideoData.aweme_detail.share_url,
+              Title: g_title,
+              VideoSize: mp4size,
+              VideoFPS: FPS,
+              ImageLength: imagenum,
+              DestroyTime: Time(2),
+              botname: this.botname,
+            },
+            { e: this.e, scale: 1.4, retType: 'base64' },
+          )
           file = img
           await this.e.reply(
             this.mkMsg(img, [
@@ -302,54 +305,49 @@ export default class DouYin extends base {
         }
 
       case 'Music':
-        const avatat_img = data.music_info.avatar_large.url_list[0]
-        const music_cover = data.music_info.cover_hd.url_list[0]
-        const music_id = data.music_info.id
-        const author = data.music_info.original_musician_display_name || data.music_info.owner_nickname
-        const music_title = data.music_info.title
-        const play_url = data.music_info.play_url.uri
-        const user_count = this.count(data.music_info.user_count)
-        const sec_id = data.music_info.musician_user_infos[0].sec_uid
-
-        /** user */
+        const sec_id = data.music_info.sec_uid
         const userdata = await new iKun('UserInfoData').GetData({ user_id: sec_id })
-        const fans = userdata.user.mplatform_followers_count || userdata.user.follower_count
-        const following_count = userdata.user.following_count
-        const total_favorited = userdata.user.total_favorited
-        let user_shortid
-        userdata.user.unique_id == '' ? (user_shortid = userdata.user.short_id) : (user_shortid = userdata.user.unique_id)
-
-        img = await image('douyin/musicinfo', 'kkkkkk-10086/douyin/musicinfo', {
-          saveId: 'musicinfo',
-          image_url: music_cover,
-          desc: music_title,
-          music_id: music_id,
-          create_time: Time(0),
-          user_count: user_count,
-          avater_url: avatat_img,
-          fans: fans,
-          following_count: following_count,
-          total_favorited: total_favorited,
-          user_shortid: user_shortid,
-          share_url: play_url,
-          username: author,
-          Botadapter: this.botadapter,
-        })
+        img = await Render.render(
+          'html/douyin/musicinfo',
+          {
+            image_url: data.music_info.cover_hd.url_list[0],
+            desc: data.music_info.title,
+            music_id: data.music_info.id,
+            create_time: Time(0),
+            user_count: this.count(data.music_info.user_count),
+            avater_url: data.music_info.avatar_large.url_list[0],
+            fans: userdata.user.mplatform_followers_count || userdata.user.follower_count,
+            following_count: userdata.user.following_count,
+            total_favorited: userdata.user.total_favorited,
+            user_shortid: userdata.user.unique_id == '' ? userdata.user.short_id : userdata.user.unique_id,
+            share_url: data.music_info.play_url.uri,
+            username: data.music_info.original_musician_display_name || data.music_info.owner_nickname,
+          },
+          { e: this.e, scale: 1, retType: 'base64' },
+        )
 
         await this.e.reply(
-          this.mkMsg([img, `\n正在上传 ${music_title}\n`, `作曲: ${author}\n`, `music_id: ${music_id}`], [{ text: '音乐文件', link: play_url }]),
+          this.mkMsg(
+            [
+              img,
+              `\n正在上传 ${data.music_info.title}\n`,
+              `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
+              `music_id: ${data.music_info.id}`,
+            ],
+            [{ text: '音乐文件', link: data.music_info.play_url.uri }],
+          ),
         )
 
         if (this.botadapter === 'ICQQ') {
-          await this.e.reply(await uploadRecord(this.e, play_url, 0, false))
-        } else await this.e.reply(segment.record(play_url))
+          await this.e.reply(await uploadRecord(this.e, data.music_info.play_url.uri, 0, false))
+        } else await this.e.reply(segment.record(data.music_info.play_url.uri))
 
         return false
     }
   }
 
   async uploadrecord(music_id) {
-    const data = await new iKun('Music').GetData({ music_id: music_id })
+    const data = await new iKun('Music').GetData({ music_id })
     let title = data.music_info.title // BGM名字
     let music_url = data.music_info.play_url.uri // BGM link
     if (this.botname === 'miao-yunzai') {
@@ -379,6 +377,7 @@ export default class DouYin extends base {
       }
     }
   }
+
   /**
    * @param {*} file 上传图片到腾讯图床
    * @returns

@@ -1,6 +1,6 @@
-import { base, image, Config, common, networks } from '#modules'
+import { base, Render, image, Config, common, networks } from '#modules'
 import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
-import ffmpeg from '../ffmpeg.js'
+import ffmpeg from '../global/ffmpeg.js'
 import fs from 'fs'
 
 let img
@@ -57,18 +57,20 @@ export default class BiLiBiLi extends base {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         const commentsdata = await bilicomments(OBJECT)
-        img = await image('bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
-          saveId: 'bilicomment',
-          Type: '视频',
-          CommentsData: commentsdata,
-          CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
-          VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-          Clarity: OBJECT.DATA.data.accept_description[0],
-          VideoSize: videoSize,
-          ImageLength: 0,
-          shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-          Botadapter: this.botadapter,
-        })
+        img = await Render.render(
+          'html/bilibili/bilicomment',
+          {
+            Type: '视频',
+            CommentsData: commentsdata,
+            CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
+            VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+            Clarity: OBJECT.DATA.data.accept_description[0],
+            VideoSize: videoSize,
+            ImageLength: 0,
+            shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+          },
+          { e: this.e, scale: 1.4, retType: 'base64' },
+        )
         Config.commentsimg
           ? await this.e.reply(
               this.mkMsg(img, [
@@ -153,16 +155,18 @@ export default class BiLiBiLi extends base {
               imgArray.push(segment.image(img.src))
             }
             const commentsdata = await bilicomments(OBJECT)
-            img = await image('bilibili/bilicomment', 'kkkkkk-10086/bilibili/bilicomment', {
-              saveId: 'bilicomment',
-              Type: '动态',
-              CommentsData: commentsdata,
-              CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
-              VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
-              ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
-              shareurl: '动态分享链接',
-              Botadapter: this.botadapter,
-            })
+            img = await Render.render(
+              'html/bilibili/bilicomment',
+              {
+                Type: '动态',
+                CommentsData: commentsdata,
+                CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
+                VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+                ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
+                shareurl: '动态分享链接',
+              },
+              { e: this.e, scale: 1.4, retType: 'base64' },
+            )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
             imgArray.length > 1 ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray)) : null
             Config.bilibilicommentsimg ? await this.e.reply(img) : null
@@ -178,34 +182,11 @@ export default class BiLiBiLi extends base {
               }
               return imgArray
             }
-            img = await image('bilibili/dynamic/DYNAMIC_TYPE_DRAW', 'kkkkkk-10086/bilibili', {
-              saveId: 'DYNAMIC_TYPE_DRAW',
-              image_url: cover(),
-              text: br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text),
-              dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
-              pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
-              share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
-              create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
-              avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
-              share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
-              username: checkvip(OBJECT.USERDATA.data.card),
-              fans: this.count(OBJECT.USERDATA.data.follower),
-              user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
-              total_favorited: this.count(OBJECT.USERDATA.data.like_num),
-              following_count: this.count(OBJECT.USERDATA.data.card.attention),
-              Botadapter: this.botadapter,
-              dynamicTYPE: '图文动态',
-            })
-            Config.bilibilicommentsimg ? await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }])) : null
-            break
-
-          /** 纯文 */
-          case 'DYNAMIC_TYPE_WORD':
-            const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
-            this.e.reply(
-              await image('bilibili/biliinfo', 'kkkkkk-10086/bilibili', {
-                saveId: 'biliinfo',
-                text: text,
+            img = await Render.render(
+              'html/bilibili/dynamic/DYNAMIC_TYPE_DRAW',
+              {
+                image_url: cover(),
+                text: br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text),
                 dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
                 pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
                 share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
@@ -218,20 +199,52 @@ export default class BiLiBiLi extends base {
                 total_favorited: this.count(OBJECT.USERDATA.data.like_num),
                 following_count: this.count(OBJECT.USERDATA.data.card.attention),
                 Botadapter: this.botadapter,
-                dynamicTYPE: '纯文动态',
-              }),
+                dynamicTYPE: '图文动态',
+              },
+              { e: this.e, scale: 1.4, retType: 'base64' },
+            )
+            Config.bilibilicommentsimg ? await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }])) : null
+            break
+
+          /** 纯文 */
+          case 'DYNAMIC_TYPE_WORD':
+            const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
+            this.e.reply(
+              await Render.render(
+                'html/bilibili/dymanic/DYNAMIC_TYPE_WORD',
+                {
+                  text: text,
+                  dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+                  pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+                  share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+                  create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
+                  avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
+                  share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+                  username: checkvip(OBJECT.USERDATA.data.card),
+                  fans: this.count(OBJECT.USERDATA.data.follower),
+                  user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
+                  total_favorited: this.count(OBJECT.USERDATA.data.like_num),
+                  following_count: this.count(OBJECT.USERDATA.data.card.attention),
+                  Botadapter: this.botadapter,
+                  dynamicTYPE: '纯文动态',
+                },
+                { e: this.e, scale: 1.4, retType: 'base64' },
+              ),
             )
             this.e.reply(
-              await image('bilibili/bilicomment', 'kkkkkk-10086/douyin/musicinfo', {
-                saveId: 'bilicomment',
-                Type: '动态',
-                CommentsData: await bilicomments(OBJECT),
-                CommentLength: String((await bilicomments(OBJECT)?.length) ? await bilicomments(OBJECT).length : 0),
-                VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
-                ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
-                shareurl: '动态分享链接',
-                Botadapter: this.botadapter,
-              }),
+              await Render.render(
+                'html/bilibili/bilicomment',
+                {
+                  Type: '动态',
+                  CommentsData: await bilicomments(OBJECT),
+                  CommentLength: String((await bilicomments(OBJECT)?.length) ? await bilicomments(OBJECT).length : 0),
+                  VideoUrl: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
+                  ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
+                  shareurl: '动态分享链接',
+                  Botadapter: this.botadapter,
+                },
+                { e: this.e, scale: 1.4, retType: 'base64' },
+              ),
             )
             break
         }
@@ -273,8 +286,8 @@ export default class BiLiBiLi extends base {
                   }.mp4`,
                 filePath,
               )
-              await this.removeFileOrFolder(bmp4.filepath, true)
-              await this.removeFileOrFolder(bmp3.filepath, true)
+              this.removeFile(bmp4.filepath, true)
+              this.removeFile(bmp3.filepath, true)
 
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)

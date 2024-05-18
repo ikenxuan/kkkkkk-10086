@@ -16,8 +16,11 @@
     "sharp": "^0.33.3"
   },
   "imports": {
-    "#modules": "./model/modules.js",
-    "#douyin": "./model/douyin.js",
-    "#bilibili": "./model/bilibili.js"
+    "#modules": "./model/global/package/modules.js",
+    "#douyin": "./model/global/package/douyin.js",
+    "#bilibili": "./model/global/package/bilibili.js"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
   }
 }

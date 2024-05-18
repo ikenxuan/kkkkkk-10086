@@ -28,6 +28,7 @@ const defaultConfig = {
   bilibilipushlog: true,
   bilibilipushcron: '*/10 * * * *',
   bilibilipushGroup: 'master',
+  renderScale: 100,
 }
 let config = {}
 

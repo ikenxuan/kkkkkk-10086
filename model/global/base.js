@@ -86,6 +86,7 @@ export default class base {
       }
     }
   }
+
   /**
    *
    * @param {Array|String} msg 消息
@@ -229,7 +230,7 @@ export default class base {
   async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
     const { filepath, totalBytes } = await new this.networks({
       url: video_url,
-      headers: headers,
+      headers,
       filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
       const barLength = 45

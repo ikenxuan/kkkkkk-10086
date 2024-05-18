@@ -158,14 +158,14 @@ function sign(u, b, n) {
         k[d]
           ? ((W[a] = u(b, a)), (a += 2))
           : _[d]
-          ? ((W[a] = s(b, a)), (a += 4))
-          : M[d]
-          ? ((W[a] = p(b, a)), (a += 8))
-          : H[d]
-          ? ((W[a] = y(b, a)), (a += 2))
-          : J[d]
-          ? ((W[a] = v(b, a)), (a += 4))
-          : N[d] && ((W[a] = v(b, a)), (a += 4))
+            ? ((W[a] = s(b, a)), (a += 4))
+            : M[d]
+              ? ((W[a] = p(b, a)), (a += 8))
+              : H[d]
+                ? ((W[a] = y(b, a)), (a += 2))
+                : J[d]
+                  ? ((W[a] = v(b, a)), (a += 4))
+                  : N[d] && ((W[a] = v(b, a)), (a += 4))
       }
     }
     return K(b, E, O / 2, [], e, f)
@@ -188,8 +188,7 @@ function sign(u, b, n) {
           var A = 3 & (x = (13 * j) % 241)
           if (((x >>= 2), A < 1)) {
             A = 3 & x
-            if (((x >>= 2), A > 2))
-              (A = x) > 10 ? (S[++R] = void 0) : A > 1 ? ((C = S[R--]), (S[R] = S[R] >= C)) : A > -1 && (S[++R] = null)
+            if (((x >>= 2), A > 2)) (A = x) > 10 ? (S[++R] = void 0) : A > 1 ? ((C = S[R--]), (S[R] = S[R] >= C)) : A > -1 && (S[++R] = null)
             else if (A > 1) {
               if ((A = x) > 11) throw S[R--]
               if (A > 7) {
@@ -200,16 +199,16 @@ function sign(u, b, n) {
               ;(A = x) > 8
                 ? ((C = S[R--]), (S[R] = typeof C))
                 : A > 6
-                ? (S[R] = --S[R])
-                : A > 4
-                ? (S[(R -= 1)] = S[R][S[R + 1]])
-                : A > 2 &&
-                  ((q = S[R--]),
-                  (A = S[R]).x === G
-                    ? A.y >= 1
-                      ? (S[R] = K(b, A.c, A.l, [q], A.z, w, null, 1))
-                      : ((S[R] = K(b, A.c, A.l, [q], A.z, w, null, 0)), A.y++)
-                    : (S[R] = A(q)))
+                  ? (S[R] = --S[R])
+                  : A > 4
+                    ? (S[(R -= 1)] = S[R][S[R + 1]])
+                    : A > 2 &&
+                      ((q = S[R--]),
+                      (A = S[R]).x === G
+                        ? A.y >= 1
+                          ? (S[R] = K(b, A.c, A.l, [q], A.z, w, null, 1))
+                          : ((S[R] = K(b, A.c, A.l, [q], A.z, w, null, 0)), A.y++)
+                        : (S[R] = A(q)))
             } else {
               if ((A = x) > 14)
                 (z = s(b, O)),
@@ -264,10 +263,10 @@ function sign(u, b, n) {
               ;(A = x) < 2
                 ? (S[++R] = C)
                 : A < 4
-                ? ((C = S[R--]), (S[R] = S[R] <= C))
-                : A < 11
-                ? ((C = S[(R -= 2)][S[R + 1]] = S[R + 2]), R--)
-                : A < 13 && ((C = S[R]), (S[++R] = C))
+                  ? ((C = S[R--]), (S[R] = S[R] <= C))
+                  : A < 11
+                    ? ((C = S[(R -= 2)][S[R + 1]] = S[R + 2]), R--)
+                    : A < 13 && ((C = S[R]), (S[++R] = C))
             } else {
               if ((A = x) > 12) S[++R] = l
               else if (A > 5) (C = S[R--]), (S[R] = S[R] !== C)
@@ -286,9 +285,8 @@ function sign(u, b, n) {
               (A = x) > 7
                 ? ((C = S[R--]), (S[R] = S[R] | C))
                 : A > 5
-                ? ((z = y(b, O)), (O += 2), (S[++R] = c['$' + z]))
-                : A > 3 &&
-                  ((z = s(b, O)), t[o][0] && !t[o][2] ? (t[o][1] = [O + 4, z - 3]) : (t[o++] = [0, [O + 4, z - 3], 0]), (O += 2 * z - 2))
+                  ? ((z = y(b, O)), (O += 2), (S[++R] = c['$' + z]))
+                  : A > 3 && ((z = s(b, O)), t[o][0] && !t[o][2] ? (t[o][1] = [O + 4, z - 3]) : (t[o++] = [0, [O + 4, z - 3], 0]), (O += 2 * z - 2))
             else if (A > 1) {
               if ((A = x) < 2) {
                 for (z = v(b, O), C = '', P = i.q[z][0]; P < i.q[z][1]; P++) C += String.fromCharCode(r ^ i.p[P])
@@ -307,20 +305,20 @@ function sign(u, b, n) {
               ;(A = x) < 1
                 ? (S[++R] = g)
                 : A < 3
-                ? ((C = S[R--]), (S[R] = S[R] + C))
-                : A < 5
-                ? ((C = S[R--]), (S[R] = S[R] == C))
-                : A < 14 && ((C = S[R - 1]), (q = S[R]), (S[++R] = C), (S[++R] = q))
+                  ? ((C = S[R--]), (S[R] = S[R] + C))
+                  : A < 5
+                    ? ((C = S[R--]), (S[R] = S[R] == C))
+                    : A < 14 && ((C = S[R - 1]), (q = S[R]), (S[++R] = C), (S[++R] = q))
             } else {
               ;(A = x) < 2
                 ? ((C = S[R--]), (S[R] = S[R] > C))
                 : A < 9
-                ? ((z = v(b, O)), (O += 4), (q = R + 1), (S[(R -= z - 1)] = z ? S.slice(R, q) : []))
-                : A < 11
-                ? ((z = y(b, O)), (O += 2), (C = S[R--]), (c[z] = C))
-                : A < 13
-                ? ((C = S[R--]), (S[R] = S[R] >> C))
-                : A < 15 && ((S[++R] = s(b, O)), (O += 4))
+                  ? ((z = v(b, O)), (O += 4), (q = R + 1), (S[(R -= z - 1)] = z ? S.slice(R, q) : []))
+                  : A < 11
+                    ? ((z = y(b, O)), (O += 2), (C = S[R--]), (c[z] = C))
+                    : A < 13
+                      ? ((C = S[R--]), (S[R] = S[R] >> C))
+                      : A < 15 && ((S[++R] = s(b, O)), (O += 4))
             }
           } else {
             A = 3 & x
@@ -328,18 +326,18 @@ function sign(u, b, n) {
               (A = x) > 13
                 ? ((S[++R] = p(b, O)), (O += 8))
                 : A > 11
-                ? ((C = S[R--]), (S[R] = S[R] >>> C))
-                : A > 9
-                ? (S[++R] = !0)
-                : A > 7
-                ? ((z = y(b, O)), (O += 2), (S[R] = S[R][z]))
-                : A > 0 && ((C = S[R--]), (S[R] = S[R] < C))
+                  ? ((C = S[R--]), (S[R] = S[R] >>> C))
+                  : A > 9
+                    ? (S[++R] = !0)
+                    : A > 7
+                      ? ((z = y(b, O)), (O += 2), (S[R] = S[R][z]))
+                      : A > 0 && ((C = S[R--]), (S[R] = S[R] < C))
             else if (A > 1) {
               ;(A = x) > 10
                 ? ((z = s(b, O)), (t[++o] = [[O + 4, z - 3], 0, 0]), (O += 2 * z - 2))
                 : A > 8
-                ? ((C = S[R--]), (S[R] = S[R] ^ C))
-                : A > 6 && (C = S[R--])
+                  ? ((C = S[R--]), (S[R] = S[R] ^ C))
+                  : A > 6 && (C = S[R--])
             } else if (A > 0) {
               if ((A = x) < 3) {
                 var D = 0,
@@ -353,12 +351,7 @@ function sign(u, b, n) {
                   }
                   S[++R] = b
                 }
-              } else
-                A < 5
-                  ? ((z = y(b, O)), (O += 2), (C = c[z]), (S[++R] = C))
-                  : A < 7
-                  ? (S[R] = ++S[R])
-                  : A < 9 && ((C = S[R--]), (S[R] = S[R] in C))
+              } else A < 5 ? ((z = y(b, O)), (O += 2), (C = c[z]), (S[++R] = C)) : A < 7 ? (S[R] = ++S[R]) : A < 9 && ((C = S[R--]), (S[R] = S[R] in C))
             } else {
               if ((A = x) > 13) (C = S[R]), (S[R] = S[R - 1]), (S[R - 1] = C)
               else if (A > 4) (C = S[R--]), (S[R] = S[R] === C)
@@ -411,10 +404,10 @@ function sign(u, b, n) {
                       : ((S[R] = K(b, A.c, A.l, [q], A.z, w, null, 0)), A.y++)
                     : (S[R] = A(q)))
                 : A < 6
-                ? (S[(R -= 1)] = S[R][S[R + 1]])
-                : A < 8
-                ? (S[R] = --S[R])
-                : A < 10 && ((C = S[R--]), (S[R] = typeof C))
+                  ? (S[(R -= 1)] = S[R][S[R + 1]])
+                  : A < 8
+                    ? (S[R] = --S[R])
+                    : A < 10 && ((C = S[R--]), (S[R] = typeof C))
             } else if (A < 3) {
               if ((A = x) > 11) throw S[R--]
               if (A > 7) {
@@ -430,20 +423,20 @@ function sign(u, b, n) {
               (A = x) > 12
                 ? (S[++R] = l)
                 : A > 5
-                ? ((C = S[R--]), (S[R] = S[R] !== C))
-                : A > 3
-                ? ((C = S[R--]), (S[R] = S[R] / C))
-                : A > 1
-                ? (O += 2 * (z = W[O]) - 2)
-                : A > -1 && (S[R] = !S[R])
+                  ? ((C = S[R--]), (S[R] = S[R] !== C))
+                  : A > 3
+                    ? ((C = S[R--]), (S[R] = S[R] / C))
+                    : A > 1
+                      ? (O += 2 * (z = W[O]) - 2)
+                      : A > -1 && (S[R] = !S[R])
             else if (A > 1) {
               ;(A = x) < 2
                 ? (S[++R] = C)
                 : A < 4
-                ? ((C = S[R--]), (S[R] = S[R] <= C))
-                : A < 11
-                ? ((C = S[(R -= 2)][S[R + 1]] = S[R + 2]), R--)
-                : A < 13 && ((C = S[R]), (S[++R] = C))
+                  ? ((C = S[R--]), (S[R] = S[R] <= C))
+                  : A < 11
+                    ? ((C = S[(R -= 2)][S[R + 1]] = S[R + 2]), R--)
+                    : A < 13 && ((C = S[R]), (S[++R] = C))
             } else if (A > 0) {
               if ((A = x) < 8) (q = S[R--]), (C = delete S[R--][q])
               else if (A < 10) {
@@ -473,20 +466,20 @@ function sign(u, b, n) {
               (A = x) < 2
                 ? ((C = S[R--]), (S[R] = S[R] > C))
                 : A < 9
-                ? ((z = W[O]), (O += 4), (q = R + 1), (S[(R -= z - 1)] = z ? S.slice(R, q) : []))
-                : A < 11
-                ? ((z = W[O]), (O += 2), (C = S[R--]), (c[z] = C))
-                : A < 13
-                ? ((C = S[R--]), (S[R] = S[R] >> C))
-                : A < 15 && ((S[++R] = W[O]), (O += 4))
+                  ? ((z = W[O]), (O += 4), (q = R + 1), (S[(R -= z - 1)] = z ? S.slice(R, q) : []))
+                  : A < 11
+                    ? ((z = W[O]), (O += 2), (C = S[R--]), (c[z] = C))
+                    : A < 13
+                      ? ((C = S[R--]), (S[R] = S[R] >> C))
+                      : A < 15 && ((S[++R] = W[O]), (O += 4))
             else if (A < 2) {
               ;(A = x) < 1
                 ? (S[++R] = g)
                 : A < 3
-                ? ((C = S[R--]), (S[R] = S[R] + C))
-                : A < 5
-                ? ((C = S[R--]), (S[R] = S[R] == C))
-                : A < 14 && ((C = S[R - 1]), (q = S[R]), (S[++R] = C), (S[++R] = q))
+                  ? ((C = S[R--]), (S[R] = S[R] + C))
+                  : A < 5
+                    ? ((C = S[R--]), (S[R] = S[R] == C))
+                    : A < 14 && ((C = S[R - 1]), (q = S[R]), (S[++R] = C), (S[++R] = q))
             } else if (A < 3) {
               if ((A = x) < 2) {
                 for (z = W[O], C = '', P = i.q[z][0]; P < i.q[z][1]; P++) C += String.fromCharCode(r ^ i.p[P])
@@ -497,17 +490,16 @@ function sign(u, b, n) {
                     ? (O += 4)
                     : (O += 2 * (z = W[O]) - 2)
                   : A < 6
-                  ? ((C = S[R--]), (S[R] = S[R] % C))
-                  : A < 8
-                  ? ((C = S[R--]), (S[R] = S[R] instanceof C))
-                  : A < 15 && (S[++R] = !1)
+                    ? ((C = S[R--]), (S[R] = S[R] % C))
+                    : A < 8
+                      ? ((C = S[R--]), (S[R] = S[R] instanceof C))
+                      : A < 15 && (S[++R] = !1)
             } else {
               ;(A = x) > 7
                 ? ((C = S[R--]), (S[R] = S[R] | C))
                 : A > 5
-                ? ((z = W[O]), (O += 2), (S[++R] = c['$' + z]))
-                : A > 3 &&
-                  ((z = W[O]), t[o][0] && !t[o][2] ? (t[o][1] = [O + 4, z - 3]) : (t[o++] = [0, [O + 4, z - 3], 0]), (O += 2 * z - 2))
+                  ? ((z = W[O]), (O += 2), (S[++R] = c['$' + z]))
+                  : A > 3 && ((z = W[O]), t[o][0] && !t[o][2] ? (t[o][1] = [O + 4, z - 3]) : (t[o++] = [0, [O + 4, z - 3], 0]), (O += 2 * z - 2))
             }
           } else {
             A = 3 & x
@@ -515,18 +507,18 @@ function sign(u, b, n) {
               (A = x) > 13
                 ? ((S[++R] = W[O]), (O += 8))
                 : A > 11
-                ? ((C = S[R--]), (S[R] = S[R] >>> C))
-                : A > 9
-                ? (S[++R] = !0)
-                : A > 7
-                ? ((z = W[O]), (O += 2), (S[R] = S[R][z]))
-                : A > 0 && ((C = S[R--]), (S[R] = S[R] < C))
+                  ? ((C = S[R--]), (S[R] = S[R] >>> C))
+                  : A > 9
+                    ? (S[++R] = !0)
+                    : A > 7
+                      ? ((z = W[O]), (O += 2), (S[R] = S[R][z]))
+                      : A > 0 && ((C = S[R--]), (S[R] = S[R] < C))
             else if (A > 1) {
               ;(A = x) > 10
                 ? ((z = W[O]), (t[++o] = [[O + 4, z - 3], 0, 0]), (O += 2 * z - 2))
                 : A > 8
-                ? ((C = S[R--]), (S[R] = S[R] ^ C))
-                : A > 6 && (C = S[R--])
+                  ? ((C = S[R--]), (S[R] = S[R] ^ C))
+                  : A > 6 && (C = S[R--])
             } else if (A > 0) {
               if ((A = x) > 7) (C = S[R--]), (S[R] = S[R] in C)
               else if (A > 5) S[R] = ++S[R]
@@ -550,8 +542,8 @@ function sign(u, b, n) {
                 A < 4
                   ? ((C = S[R--]), (S[R] = S[R] - C))
                   : A < 6
-                  ? ((C = S[R--]), (S[R] = S[R] === C))
-                  : A < 15 && ((C = S[R]), (S[R] = S[R - 1]), (S[R - 1] = C))
+                    ? ((C = S[R--]), (S[R] = S[R] === C))
+                    : A < 15 && ((C = S[R]), (S[R] = S[R - 1]), (S[R - 1] = C))
             }
           }
         }
@@ -606,7 +598,7 @@ function sign(u, b, n) {
         'undefined' != typeof Headers ? Headers : void 0,
         'undefined' != typeof decodeURIComponent ? decodeURIComponent : void 0,
         'undefined' != typeof RegExp ? RegExp : void 0,
-      ]
+      ],
     )
   window.byted_acrawler.init({ aid: 99999999, dfp: 0 })
   return window.byted_acrawler.sign('', n)
