@@ -29,7 +29,7 @@ const NumberCfgType = {
   B站评论数量: { key: 'bilibilinumcomments', limit: '0-20' },
   抖音推送设置权限: { key: 'douyinpushGroup', limit: '0-2' },
   B站推送设置权限: { key: 'bilibilipushGroup', limit: '0-2' },
-  渲染精度: { key: 'scale', limit: '50-200' },
+  渲染精度: { key: 'renderScale', limit: '50-200' },
 }
 
 /** 分开开关和数字 */
