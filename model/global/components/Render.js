@@ -107,7 +107,7 @@ async function render(plugin, path, data = {}, cfg = {}) {
   let paths = lodash.filter(path.split('/'), (p) => !!p)
   path = paths.join('/')
   // 创建目录
-  await Bot.mkdir(`temp/html/${plugin}/${path}`)
+  mkdir(`temp/html/${plugin}/${path}`)
   // 自动计算pluResPath
   let pluResPath = `../../../${lodash.repeat('../', paths.length)}plugins/${plugin}/resources/`
   let miaoResPath = `../../../${lodash.repeat('../', paths.length)}plugins/miao-plugin/resources/`
@@ -138,16 +138,6 @@ async function render(plugin, path, data = {}, cfg = {}) {
   if (cfg.beforeRender) {
     data = cfg.beforeRender({ data }) || data
   }
-  const mkdir = (check) => {
-    let currDir = `${process.cwd()}/temp`
-    for (let p of check.split('/')) {
-      currDir = `${currDir}/${p}`
-      if (!fs.existsSync(currDir)) {
-        fs.mkdirSync(currDir)
-      }
-    }
-    return currDir
-  }
   // 保存模板数据
   if (process.argv.includes('dev')) {
     // debug下保存当前页面的渲染数据，方便模板编写与调试
@@ -172,4 +162,14 @@ async function render(plugin, path, data = {}, cfg = {}) {
   return cfg.retType === 'msgId' ? ret : true
 }
 
+const mkdir = (check) => {
+  let currDir = `${process.cwd()}/temp`
+  for (let p of check.split('/')) {
+    currDir = `${currDir}/${p}`
+    if (!fs.existsSync(currDir)) {
+      fs.mkdirSync(currDir)
+    }
+  }
+  return currDir
+}
 export default Render
