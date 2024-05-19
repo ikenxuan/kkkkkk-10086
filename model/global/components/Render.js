@@ -1,6 +1,6 @@
 import { Config, Version } from '#modules'
 import lodash from 'lodash'
-import fs from 'node:fs/promises'
+import fs from 'fs'
 import puppeteer from '../../../../../lib/puppeteer/puppeteer.js'
 
 function scale(pct = 1) {
@@ -138,13 +138,23 @@ async function render(plugin, path, data = {}, cfg = {}) {
   if (cfg.beforeRender) {
     data = cfg.beforeRender({ data }) || data
   }
+  const mkdir = (check) => {
+    let currDir = `${process.cwd()}/temp`
+    for (let p of check.split('/')) {
+      currDir = `${currDir}/${p}`
+      if (!fs.existsSync(currDir)) {
+        fs.mkdirSync(currDir)
+      }
+    }
+    return currDir
+  }
   // 保存模板数据
   if (process.argv.includes('dev')) {
     // debug下保存当前页面的渲染数据，方便模板编写与调试
     // 由于只用于调试，开发者只关注自己当时开发的文件即可，暂不考虑app及plugin的命名冲突
-    let saveDir = await Bot.mkdir(`temp/ViewData/${plugin}`)
+    let saveDir = mkdir(`temp/ViewData/${plugin}`)
     let file = `${saveDir}/${data._htmlPath.split('/').join('_')}.json`
-    await fs.writeFile(file, JSON.stringify(data))
+    fs.writeFileSync(file, JSON.stringify(data))
   }
   // 截图
   let base64 = await puppeteer.screenshot(`${plugin}/${path}`, data)
