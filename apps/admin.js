@@ -51,12 +51,20 @@ export class Admin extends plugin {
         {
           reg: SwitchCfgReg,
           fnc: 'ConfigSwitch',
-          permission: 'master',
         },
         {
           reg: NumberCfgReg,
           fnc: 'ConfigNumber',
-          permission: 'master',
+        },
+        {
+          reg: /^#kkk设置抖音推送$/,
+          fnc: 'setpush',
+          permission: Config.douyinpushGroup,
+        },
+        {
+          reg: /^#kkk设置B站推送$/,
+          fnc: 'setpush',
+          permission: Config.bilibilipushGroup,
         },
         {
           reg: /^#kkk设置$/,
@@ -80,6 +88,10 @@ export class Admin extends plugin {
         },
       ],
     })
+  }
+
+  async setpush(e) {
+    await this.ConfigSwitch(e)
   }
 
   async ConfigSwitch(e) {

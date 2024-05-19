@@ -235,7 +235,7 @@ export default class DouYin extends base {
               DestroyTime: Time(2),
               botname: this.botname,
             },
-            { e: this.e, scale: 1.4, retType: 'base64' },
+            { e: this.e, scale: 0.6, retType: 'base64' },
           )
           file = img
           await this.e.reply(

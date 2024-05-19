@@ -96,5 +96,13 @@ export default class API {
       116,
     )}`
   }
+
+  直播间ID(uid) {
+    return `https://live.douyin.com/webcast/distribution/check_user_live_status/?user_ids=${uid}&aid=6383&distribution_scenes=253&channel=test&msToken=${Sign.Mstoken(116)}`
+  }
+
+  直播间信息(room_id) {
+    return `https://live.douyin.com/webcast/room/info_by_scene/?aid=6383&app_name=douyin_web&live_id=1&device_platform=web&language=zh-CN&cookie_enabled=true&screen_width=2328&screen_height=1310&browser_language=zh-CN&browser_platform=Win32&browser_name=Edge&browser_version=124.0.0.0&room_id=${room_id}&scene=aweme_video_feed_pc&channel=channel_pc_web&region=cn&device_id=7355205920467306010&device_type=web_device&os_version=web&version_code=170400&webcast_sdk_version=2450&msToken=${Sign.Mstoken(116)}`
+  }
 }
 export const DouyinAPI = new API()

@@ -29,10 +29,7 @@ export default class push extends base {
         data = await this.getuserdata(false)
         cachedata = await this.findMismatchedAwemeIds(data, cachedata)
 
-        if (data.length == 0) {
-          logger.warn('[kkkkkk-10086-推送]尚未配置抖音推送列表，任务结束，推送失败')
-          return true
-        }
+        if (data.length == 0) return true
 
         if (this.force) {
           return await this.forcepush(data)
@@ -43,12 +40,12 @@ export default class push extends base {
             for (const key of data[i].group_id) {
               if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
                 await this.getdata(data[i])
-                logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
+                logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
               }
             }
           } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
             await this.getdata(data[i])
-            logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
+            logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
           }
         }
         await redis.set('kkk:douyPush', JSON.stringify(data))
@@ -63,67 +60,69 @@ export default class push extends base {
     const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
     const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
     let Array = [videolist, userinfo]
-    let nonTopIndex = 0
-    let nickname,
-      desc,
-      share_url,
-      create_time,
-      cover,
-      collect_count,
-      comment_count,
-      digg_count,
-      share_count,
-      follow_count,
-      user_shortid,
-      total_favorited,
-      following_count
-    /** 处理置顶 */
-    while (nonTopIndex < Array[0].aweme_list.length && Array[0].aweme_list[nonTopIndex].is_top === 1) {
-      nonTopIndex++ // 跳过所有置顶视频
-    }
+    let img
 
-    nickname = Array[0].aweme_list[nonTopIndex].author.nickname
-    desc = this.desc(Array[0].aweme_list[nonTopIndex].text_extra, Array[0].aweme_list[nonTopIndex].desc)
-    share_url = Array[0].aweme_list[nonTopIndex].share_url
-    create_time = await this.convertTimestampToDateTime(Array[0].aweme_list[nonTopIndex].create_time)
-    cover = Array[0].aweme_list[nonTopIndex].video?.animated_cover?.url_list[0] || Array[0].aweme_list[nonTopIndex].video?.cover?.url_list[0]
-    collect_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.collect_count)
-    comment_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.comment_count)
-    digg_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.digg_count)
-    share_count = await this.count(Array[0].aweme_list[nonTopIndex].statistics.share_count)
-    follow_count = await this.count(Array[1].user.follower_count)
-    const user_img = Array[1].user.avatar_larger.url_list[0]
+    let nonTopIndex = 0,
+      user_shortid
+
+    /** 跳过所有置顶视频 */
+    while (nonTopIndex < Array[0].aweme_list.length && Array[0].aweme_list[nonTopIndex].is_top === 1) {
+      nonTopIndex++
+    }
     /** 处理抖音号 */
     Array[1].user.unique_id == '' ? (user_shortid = Array[1].user.short_id) : (user_shortid = Array[1].user.unique_id)
-    total_favorited = await this.count(Array[1].user.total_favorited)
-    following_count = await this.count(Array[1].user.following_count)
 
     for (let i = 0; i < data.group_id.length; i++) {
-      let key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
-      const iddata = await GetID(share_url)
-      const videodata = await new iKun(iddata.type).GetData(iddata)
-      const img = await Render.render(
-        'html/douyin/douyininfo',
-        {
-          image_url: cover,
-          desc: desc,
-          dianzan: digg_count,
-          pinglun: comment_count,
-          share: share_count,
-          shouchang: collect_count,
-          create_time: create_time,
-          avater_url: user_img,
-          share_url: iddata.is_mp4
-            ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videodata.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-            : videodata.VideoData.aweme_detail.share_url,
-          username: nickname,
-          fans: follow_count,
-          user_shortid: user_shortid,
-          total_favorited: total_favorited,
-          following_count: following_count,
-        },
-        { e: this.e, scale: 1.4, retType: 'base64' },
-      )
+      let key
+      if (data.live) {
+        key = `kkk:douyPush-live${data.room_id}`
+        await redis.set(`kkk:douyPush-live${data.room_id}`, 1)
+        const roominfo = await new iKun('直播间信息').GetData(data.room_id)
+        img = await Render.render(
+          'html/douyin/douyinlive',
+          {
+            image_url: [{ image_src: roominfo.data.cover.url_list[0] }],
+            text: roominfo.data.title,
+            liveinf: `${roominfo.data.dynamic_label.splice_label.text} | 房间号: ${roominfo.data.owner.web_rid}`,
+            在线观众: this.count(roominfo.data.stats.user_count_str),
+            总观看次数: this.count(roominfo.data.stats.total_user_str),
+            username: Array[1].user.nickname,
+            avater_url: Array[1].user.avatar_larger.url_list[0],
+            fans: this.count(Array[1].user.follower_count),
+            create_time: this.convertTimestampToDateTime(new Date().getTime()),
+            now_time: this.convertTimestampToDateTime(new Date().getTime()),
+            share_url: 'https://live.douyin.com/' + roominfo.data.owner.web_rid,
+            dynamicTYPE: '直播推送',
+          },
+          { e: this.e, scale: 1.4, retType: 'base64' },
+        )
+      } else {
+        key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
+        const iddata = await GetID(Array[0].aweme_list[nonTopIndex].share_url)
+        const videodata = await new iKun(iddata.type).GetData(iddata)
+        img = await Render.render(
+          'html/douyin/douyininfo',
+          {
+            image_url: Array[0].aweme_list[nonTopIndex].video?.animated_cover?.url_list[0] || Array[0].aweme_list[nonTopIndex].video?.cover?.url_list[0],
+            desc: this.desc(Array[0].aweme_list[nonTopIndex].text_extra, Array[0].aweme_list[nonTopIndex].desc),
+            dianzan: this.count(Array[0].aweme_list[nonTopIndex].statistics.digg_count),
+            pinglun: this.count(Array[0].aweme_list[nonTopIndex].statistics.comment_count),
+            share: this.count(Array[0].aweme_list[nonTopIndex].statistics.share_count),
+            shouchang: this.count(Array[0].aweme_list[nonTopIndex].statistics.collect_count),
+            create_time: this.convertTimestampToDateTime(Array[0].aweme_list[nonTopIndex].create_time),
+            avater_url: Array[1].user.avatar_larger.url_list[0],
+            share_url: iddata.is_mp4
+              ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videodata.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+              : videodata.VideoData.aweme_detail.share_url,
+            username: Array[0].aweme_list[nonTopIndex].author.nickname,
+            fans: this.count(Array[1].user.follower_count),
+            user_shortid: Array[1].user.unique_id == '' ? Array[1].user.short_id : Array[1].user.unique_id,
+            total_favorited: this.count(Array[1].user.total_favorited),
+            following_count: this.count(Array[1].user.following_count),
+          },
+          { e: this.e, scale: 1.4, retType: 'base64' },
+        )
+      }
       await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
       await redis.set(key, 1)
     }
@@ -146,9 +145,9 @@ export default class push extends base {
         let awemeId,
           createTime,
           nonTopIndex = 0
-        /** 处理置顶 */
+        /** 跳过所有置顶视频 */
         while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
-          nonTopIndex++ // 跳过所有置顶视频
+          nonTopIndex++
         }
         if (nonTopIndex < data.aweme_list.length) {
           createTime = data.aweme_list[nonTopIndex].create_time
@@ -165,16 +164,44 @@ export default class push extends base {
         let awemeId,
           createTime,
           nonTopIndex = 0
-        /** 处理置顶 */
+        /** 跳过所有置顶视频 */
         while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
-          nonTopIndex++ // 跳过所有置顶视频
+          nonTopIndex++
         }
         if (nonTopIndex < data.aweme_list.length) {
           createTime = data.aweme_list[nonTopIndex].create_time
           awemeId = data.aweme_list[nonTopIndex].aweme_id
         }
+        const livedata = await new iKun('直播间ID').GetData(data.aweme_list[0].author.uid)
 
-        result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
+        // 首先检查是否开播
+        if (livedata.data[0]?.user_live[0]?.live_status == 1) {
+          if (this.force) {
+            result.push({
+              create_time: createTime + 1,
+              group_id: group_id,
+              sec_id: secUid,
+              room_id: livedata.data[0]?.user_live[0]?.room_id_str,
+              live: true,
+            })
+          } else if (!(await redis.get(`kkk:douyPush-live${livedata.data[0].user_live[0].room_id_str}`))) {
+            result.push({
+              create_time: createTime + 1,
+              group_id: group_id,
+              sec_id: secUid,
+              room_id: livedata.data[0]?.user_live[0]?.room_id_str,
+              live: true,
+            })
+          }
+        } else {
+          result.push({
+            create_time: createTime,
+            group_id: group_id,
+            sec_id: secUid,
+            aweme_id: awemeId,
+          })
+          await redis.del(`kkk:douyPush-live${livedata.data[0].user_live[0].room_id_str}`)
+        }
       }
     }
     if (write) {
@@ -240,7 +267,7 @@ export default class push extends base {
     }
   }
 
-  async convertTimestampToDateTime(timestamp) {
+  convertTimestampToDateTime(timestamp) {
     const date = new Date(timestamp * 1000)
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')

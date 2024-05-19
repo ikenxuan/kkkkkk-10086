@@ -51,8 +51,8 @@ export class Tools extends plugin {
         ...rule,
         { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
-        { reg: '#抖音强制推送', fnc: 'pushdouy' },
-        { reg: '#B站强制推送', fnc: 'pushbili' },
+        { reg: '#抖音强制推送', fnc: 'pushdouy', permission: 'master' },
+        { reg: '#B站强制推送', fnc: 'pushbili', permission: 'master' },
       ],
     })
     this.task = task
@@ -106,7 +106,7 @@ export class Tools extends plugin {
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
     Config.sendforwardmsg ? await e.reply(res ? await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec)) : null) : null
-    iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'ktmp_' + Date.now() : res.g_title) : null
+    iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title) : null
     user[this.e.user_id] = 'douy'
     setTimeout(() => {
       delete user[this.e.user_id]

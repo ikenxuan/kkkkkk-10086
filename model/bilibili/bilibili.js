@@ -69,7 +69,7 @@ export default class BiLiBiLi extends base {
             ImageLength: 0,
             shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
           },
-          { e: this.e, scale: 1.4, retType: 'base64' },
+          { e: this.e, scale: 0.6, retType: 'base64' },
         )
         Config.commentsimg
           ? await this.e.reply(
@@ -165,7 +165,7 @@ export default class BiLiBiLi extends base {
                 ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接',
               },
-              { e: this.e, scale: 1.4, retType: 'base64' },
+              { e: this.e, scale: 0.6, retType: 'base64' },
             )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
             imgArray.length > 1 ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray)) : null
@@ -278,7 +278,7 @@ export default class BiLiBiLi extends base {
               }.mp4`,
             /** 根据配置文件 `rmmp4` 重命名 */
             async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'ktmp_' + Date.now() : this.downloadfilename}.mp4`
+              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
               fs.renameSync(
                 this._path +
                   `/resources/kkkdownload/video/Bil_Result_${
@@ -307,7 +307,7 @@ export default class BiLiBiLi extends base {
         break
       case '!isLogin':
         /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
-        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.rmmp4 ? 'ktmp_' + Date.now() : this.downloadfilename)
+        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
         break
     }
   }

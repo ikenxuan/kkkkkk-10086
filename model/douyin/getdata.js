@@ -116,6 +116,22 @@ export default class iKun extends base {
         })
         return MusicData
 
+      case '直播间ID':
+        this.URL = DouyinAPI.直播间ID(data)
+        let LiveIDData = await this.GlobalGetData({
+          url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
+          headers: this.headers,
+        })
+        return LiveIDData
+
+      case '直播间信息':
+        this.URL = DouyinAPI.直播间信息(data)
+        let LiveInfoData = await this.GlobalGetData({
+          url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
+          headers: this.headers,
+        })
+        return LiveInfoData
+
       default:
         break
     }

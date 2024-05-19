@@ -12,7 +12,7 @@ export default class push extends base {
     this.force = force
   }
   async action() {
-    // await this.checkremark()
+    await this.checkremark()
     const cache = await redis.get('kkk:biliPush')
     let data
 
@@ -402,7 +402,7 @@ export default class push extends base {
     }
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
-        const resp = await new bilidata('UserInfoData').动态卡片信息(abclist[i].host_mid)
+        const resp = await new bilidata('用户名片信息').GetData(abclist[i].host_mid)
         const remark = resp.data.card.name
         const matchingItemIndex = config.bilibilipushlist.findIndex((item) => item.host_mid === abclist[i].host_mid)
         if (matchingItemIndex !== -1) {
