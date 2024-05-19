@@ -184,7 +184,7 @@ export default class push extends base {
               room_id: livedata.data[0]?.user_live[0]?.room_id_str,
               live: true,
             })
-          } else if (!(await redis.get(`kkk:douyPush-live${livedata.data[0].user_live[0].room_id_str}`))) {
+          } else if (!(await redis.get(`kkk:douyPush-live${livedata.data[0]?.user_live[0]?.room_id_str}`))) {
             result.push({
               create_time: createTime + 1,
               group_id: group_id,
@@ -200,7 +200,7 @@ export default class push extends base {
             sec_id: secUid,
             aweme_id: awemeId,
           })
-          await redis.del(`kkk:douyPush-live${livedata.data[0].user_live[0].room_id_str}`)
+          await redis.del(`kkk:douyPush-live${livedata.data[0]?.user_live[0]?.room_id_str}`)
         }
       }
     }
