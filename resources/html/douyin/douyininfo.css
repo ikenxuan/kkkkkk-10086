@@ -177,6 +177,7 @@
   -moz-box-direction: normal;
   -ms-flex-direction: column;
   flex-direction: column;
+  padding-left: 50px;
 }
 
 .rectangular_box {
@@ -238,7 +239,7 @@
   display: flex;
   font-size: 22px;
   color: #2f2f2fb8;
-  padding: 25px 0 0 150px;
+  padding: 25px 0 0 0;
   -webkit-box-orient: vertical;
   -webkit-box-direction: normal;
   -webkit-flex-direction: column;

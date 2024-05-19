@@ -1,6 +1,7 @@
 .container {
   width: 520px;
   padding: 10px 0 10px 0;
+  background-image: url(./img/bg-sr.webp);
   background-size: 100% 100%;
 }
 
@@ -9,26 +10,33 @@
   margin: 5px 15px 5px 10px;
   border-radius: 10px;
 }
+
 .log-cont .cont {
   margin: 0;
 }
+
 .log-cont .cont-title {
   font-size: 16px;
   padding: 10px 20px 6px;
 }
+
 .log-cont .cont-title.current-version {
   font-size: 20px;
 }
+
 .log-cont ul {
   font-size: 14px;
   padding-left: 20px;
 }
+
 .log-cont ul li {
   margin: 3px 0;
 }
+
 .log-cont ul.sub-log-ul li {
   margin: 1px 0;
 }
+
 .log-cont .cmd {
   color: #d3bc8e;
   display: inline-block;
@@ -37,14 +45,17 @@
   padding: 0 3px;
   margin: 1px 2px;
 }
+
 .log-cont .strong {
   color: #24d5cd;
 }
+
 .log-cont .new {
   display: inline-block;
   width: 18px;
   margin: 0 -3px 0 1px;
 }
+
 .log-cont .new:before {
   content: 'NEW';
   display: inline-block;
@@ -52,4 +63,6 @@
   transform-origin: 0 0;
   color: #d3bc8e;
   white-space: nowrap;
-} /*# sourceMappingURL=version-info.css.map */
+}
+
+/*# sourceMappingURL=version-info.css.map */

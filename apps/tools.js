@@ -51,16 +51,20 @@ export class Tools extends plugin {
         ...rule,
         { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
+        { reg: '#抖音强制推送', fnc: 'pushdouy' },
+        { reg: '#B站强制推送', fnc: 'pushbili' },
       ],
     })
     this.task = task
   }
 
   async pushdouy() {
-    await new DouYinpush(this.e).action()
+    if (String(this.e?.msg).match('强制')) await new DouYinpush(this.e, true).action()
+    else await new DouYinpush(this.e).action()
   }
 
   async pushbili() {
+    if (String(this.e?.msg).match('强制')) await new Bilibilipush(this.e, true).action()
     await new Bilibilipush(this.e).action()
   }
 

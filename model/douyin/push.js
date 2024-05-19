@@ -3,7 +3,7 @@ import { base, Render, GetID, common, Config } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
-  constructor(e = {}) {
+  constructor(e = {}, force) {
     super()
     if (this.botadapter === 'QQBot') {
       return true
@@ -11,6 +11,7 @@ export default class push extends base {
     this.e = e
     this.headers['Referer'] = 'https://www.douyin.com'
     this.headers['Cookie'] = Config.ck
+    this.force = force
   }
   async action() {
     await this.checkremark()
@@ -32,6 +33,11 @@ export default class push extends base {
           logger.warn('[kkkkkk-10086-推送]尚未配置抖音推送列表，任务结束，推送失败')
           return true
         }
+
+        if (this.force) {
+          return await this.forcepush(data)
+        }
+
         for (let i = 0; i < data.length; i++) {
           if (data[i].create_time == cachedata[i]?.create_time) {
             for (const key of data[i].group_id) {
@@ -40,6 +46,7 @@ export default class push extends base {
                 logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
               }
             }
+            await this.getdata(data[i])
           } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
             await this.getdata(data[i])
             logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i].aweme_id}]`)
@@ -317,5 +324,12 @@ export default class push extends base {
       })
     }
     return text
+  }
+
+  async forcepush(data) {
+    for (const item of data) {
+      item.group_id = [...[this.e.group_id]]
+      await this.getdata(item)
+    }
   }
 }

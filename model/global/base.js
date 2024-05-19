@@ -145,17 +145,17 @@ export default class base {
           switch (this.botadapter) {
             case 'ICQQ':
               if (this.e.isGroup) {
-                groupfile ? this.e.group.fs.upload(file.filepath) : this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               } else {
-                groupfile ? this.e.friend.fs.upload(file.filepath) : this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.friend.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               }
               break
             case 'LagrangeCore':
               /** 拉格朗视频默认传群文件 */
-              this.e.group.sendFile(file.filepath)
+              await this.e.group.sendFile(file.filepath)
               break
             case 'OneBotv11':
-              groupfile ? this.e.group.fs.upload(file.filepath) : this.e.reply(segment.video(file.filepath || video_url))
+              groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'QQBot':
               file.totalBytes >= 10
@@ -169,7 +169,7 @@ export default class base {
                       }
                     })
                   })()
-                : this.e.reply(segment.video(video_url || file.filepath))
+                : await this.e.reply(segment.video(video_url || file.filepath))
               break
           }
           break
@@ -180,21 +180,21 @@ export default class base {
               logger.warn('TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange')
               break
             case 'Lagrange.OneBot':
-              this.e.group.sendFile(file.filepath)
+              await this.e.group.sendFile(file.filepath)
               break
             case 'QQBot':
-              file.totalBytes >= 10 ? this.e.reply(segment.file(file.filepath)) : this.e.reply(segment.video(video_url || file.filepath))
+              file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
               break
             case 'ICQQ':
               if (this.e.isGroup) {
-                groupfile ? this.e.reply(segment.file(file.filepath)) : this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               } else {
-                groupfile ? this.e.reply(segment.file(file.filepath)) : this.e.reply(segment.video(file.filepath || video_url))
+                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               }
               break
             case 'OneBotv11':
             case 'KOOKBot':
-              groupfile ? this.e.reply(segment.file(file.filepath)) : this.e.reply(segment.video(file.filepath || video_url))
+              groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
           break
