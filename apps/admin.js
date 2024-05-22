@@ -30,6 +30,7 @@ const NumberCfgType = {
   抖音推送设置权限: { key: 'douyinpushGroup', limit: '0-2' },
   B站推送设置权限: { key: 'bilibilipushGroup', limit: '0-2' },
   渲染精度: { key: 'renderScale', limit: '50-200' },
+  优先级: { key: 'priority', limit: '0-114514' },
 }
 
 /** 分开开关和数字 */

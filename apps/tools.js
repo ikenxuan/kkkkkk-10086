@@ -46,7 +46,7 @@ export class Tools extends plugin {
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
-      priority: Config.defaulttool ? -Infinity : 800,
+      priority: Config.defaulttool ? -Infinity : Config.priority,
       rule: [
         ...rule,
         { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
@@ -65,7 +65,7 @@ export class Tools extends plugin {
 
   async pushbili() {
     if (String(this.e?.msg).match('强制')) await new Bilibilipush(this.e, true).action()
-    await new Bilibilipush(this.e).action()
+    else await new Bilibilipush(this.e).action()
   }
 
   async next(e) {

@@ -23,5 +23,6 @@
   "bilibilipushlog": true,
   "bilibilipushcron": "*/10 * * * *",
   "bilibilipushGroup": "master",
-  "renderScale": 100
+  "renderScale": 100,
+  "priority": 800
 }
