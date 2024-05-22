@@ -78,6 +78,19 @@ export function supportGuoba() {
           required: false,
         },
         {
+          field: 'priority',
+          label: '解析优先级',
+          bottomHelpMessage: '自定义优先级，「默认解析」关闭后才会生效。修改后重启生效',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：0 ~ 114514',
+            min: 0,
+            max: 114514,
+            addonAfter: '单位',
+          },
+        },
+        {
           field: 'sendforwardmsg',
           label: '发送合并转发消息',
           bottomHelpMessage: '字面意思',
