@@ -11,7 +11,6 @@ const APPType = {
 const DouYinType = {
   抖音评论: 'comments',
   抖音评论图: 'commentsimg',
-  抖音推送: 'douyinpush',
   抖音推送日志: 'douyinpushlog',
   抖音推送表达式: 'douyinpushcron',
   抖音解析提示: 'douyintip',
@@ -19,7 +18,6 @@ const DouYinType = {
 
 const BilibiliType = {
   B站评论图: 'bilibilicommentsimg',
-  B站推送: 'bilibilipush',
   B站推送日志: 'bilibilipushlog',
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',
@@ -58,16 +56,6 @@ export class Admin extends plugin {
           fnc: 'ConfigNumber',
         },
         {
-          reg: /^#kkk设置抖音推送$/,
-          fnc: 'setpush',
-          permission: Config.douyinpushGroup,
-        },
-        {
-          reg: /^#kkk设置B站推送$/,
-          fnc: 'setpush',
-          permission: Config.bilibilipushGroup,
-        },
-        {
           reg: /^#kkk设置$/,
           fnc: 'index_Settings',
           permission: 'master',
@@ -89,10 +77,6 @@ export class Admin extends plugin {
         },
       ],
     })
-  }
-
-  async setpush(e) {
-    await this.ConfigSwitch(e)
   }
 
   async ConfigSwitch(e) {

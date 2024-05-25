@@ -123,7 +123,12 @@ export default class push extends base {
           { e: this.e, scale: 1.4, retType: 'base64' },
         )
       }
-      await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+      try {
+        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+      } catch (error) {
+        logger.error(error)
+        await redis.set(key, 1)
+      }
       await redis.set(key, 1)
     }
   }
