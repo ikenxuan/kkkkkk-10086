@@ -52,6 +52,11 @@ export const helpList = [
         desc: '查看kkk设置',
       },
       {
+        icon: 54,
+        title: '#kkk删除缓存',
+        desc: '一键删除缓存视频',
+      },
+      {
         icon: 1,
         title: '#kkk(强制)更新',
         desc: '更新kkk',

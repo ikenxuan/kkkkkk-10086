@@ -1,12 +1,12 @@
 import { BiLiBiLiAPI, checkuser, wbi_sign } from '#bilibili'
-import { base, networks } from '#modules'
+import { base, networks, Config } from '#modules'
 
 export default class bilidata extends base {
   constructor(type) {
     super()
     this.type = type
     this.headers['Referer'] = 'https://api.bilibili.com/'
-    this.headers['Cookie'] = this.Config.bilibilick
+    this.headers['Cookie'] = Config.bilibilick
   }
 
   async GetData(data) {
@@ -38,7 +38,7 @@ export default class bilidata extends base {
         return await this.GlobalGetData({ url: BiLiBiLiAPI.申请二维码() })
 
       case '判断二维码状态':
-        result = await new this.networks({
+        result = await new networks({
           url: BiLiBiLiAPI.判断二维码状态(data),
           headers: this.headers,
         }).getHeadersAndData()

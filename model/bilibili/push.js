@@ -473,10 +473,10 @@ export default class push extends base {
     const abclist = []
 
     // 遍历配置文件中的用户列表，收集需要更新备注信息的用户
-    for (let i = 0; i < this.Config.bilibilipushlist.length; i++) {
-      const remark = this.Config.bilibilipushlist[i].remark
-      const group_id = this.Config.bilibilipushlist[i].group_id
-      const host_mid = this.Config.bilibilipushlist[i].host_mid
+    for (let i = 0; i < Config.bilibilipushlist.length; i++) {
+      const remark = Config.bilibilipushlist[i].remark
+      const group_id = Config.bilibilipushlist[i].group_id
+      const host_mid = Config.bilibilipushlist[i].host_mid
 
       if (remark == undefined || remark === '') {
         abclist.push({ host_mid, group_id })

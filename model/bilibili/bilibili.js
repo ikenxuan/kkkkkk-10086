@@ -15,7 +15,7 @@ export default class BiLiBiLi extends base {
     this.islogin = data.USER?.STATUS === 'isLogin' ? true : false
     this.downloadfilename = ''
     this.headers['Referer'] = 'https://api.bilibili.com/'
-    this.headers['Cookie'] = this.Config.bilibilick
+    this.headers['Cookie'] = Config.bilibilick
   }
 
   async RESOURCES(OBJECT, Episode = false) {
@@ -286,8 +286,8 @@ export default class BiLiBiLi extends base {
                   }.mp4`,
                 filePath,
               )
-              this.removeFile(bmp4.filepath, true)
-              this.removeFile(bmp3.filepath, true)
+              await this.removeFile(bmp4.filepath, true)
+              await this.removeFile(bmp3.filepath, true)
 
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
@@ -313,8 +313,8 @@ export default class BiLiBiLi extends base {
   }
 
   async getvideosize(videourl, audiourl) {
-    const videoheaders = await new this.networks({ url: videourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
-    const audioheaders = await new this.networks({ url: audiourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
+    const videoheaders = await new networks({ url: videourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
+    const audioheaders = await new networks({ url: audiourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
 
     const videoSize = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
     const audioSize = audioheaders['content-length'] ? parseInt(audioheaders['content-length'], 10) : 0

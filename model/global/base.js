@@ -10,14 +10,9 @@ export default class base {
       'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     }
-    this.numcomments = Config.numcomments
-    this.comments = Config.comments
-    this.URL = ''
     this.botCfg = botCfg
-    this.Config = Config
     this._path = process.cwd()
     this.ConfigPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
-    this.networks = networks
   }
 
   /** 检查是或否设置抖音ck */
@@ -30,7 +25,7 @@ export default class base {
     return this.botCfg.package.name === 'miao-yunzai' ? 'miao-yunzai' : 'trss-yunzai'
   }
 
-  /** 获取登录协议 */
+  /** 获取适配器名称 */
   get botadapter() {
     if (this.botCfg.package.name === 'miao-yunzai') {
       if (this.e.bot?.sendUni) {
@@ -201,50 +196,61 @@ export default class base {
       }
     } catch (error) {
       logger.error('视频上传错误,' + error)
-      this.removeFile(file.filepath)
+      await this.removeFile(file.filepath)
     }
-    this.removeFile(file.filepath)
+    await this.removeFile(file.filepath)
   }
 
+  /**
+   * 异步下载视频并根据大小决定上传方式。
+   * @param {string} video_url - 视频的URL地址。
+   * @param {string} title - 视频的标题。
+   * @returns {Promise<void>} 不返回任何内容。
+   */
   async DownLoadVideo(video_url, title) {
+    // 下载文件，视频URL，标题和自定义headers
     let res = await this.DownLoadFile(video_url, title, this.headers)
+    // 将下载的文件大小转换为MB并保留两位小数
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
+    // 如果视频大于75MB，则使用群文件上传
     if (res.totalBytes > 75) {
       this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
-      /** 使用群文件 */
+      /** 使用群文件上传视频 */
       await this.upload_file(res, video_url, true)
     } else {
-      /** 不使用群文件 */
+      /** 直接上传视频 */
       await this.upload_file(res, video_url)
     }
   }
 
   /**
+   * 异步下载文件的函数。
    *
-   * @param {String} video_url 下载地址
-   * @param {String} title 文件名
-   * @param {Object} headers 请求头
-   * @param {String} type 下载文件类型，默认.mp4
-   * @returns
+   * @param {String} video_url 下载地址。
+   * @param {String} title 文件名。
+   * @param {Object} headers 请求头，可选参数，默认为空对象。
+   * @param {String} type 下载文件的类型，默认为'.mp4'。
+   * @returns 返回一个包含文件路径和总字节数的对象。
    */
   async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
-    const { filepath, totalBytes } = await new this.networks({
+    // 使用networks类进行文件下载，并通过回调函数实时更新下载进度
+    const { filepath, totalBytes } = await new networks({
       url: video_url,
       headers,
       filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
     }).downloadStream((downloadedBytes, totalBytes) => {
+      // 定义进度条长度及生成进度条字符串的函数
       const barLength = 45
       function generateProgressBar(progressPercentage) {
-        // 计算进度条中应填充的 '#' 符号数量
+        // 根据进度计算填充的'#'字符数量，并生成进度条样式
         const filledLength = Math.floor((progressPercentage / 100) * barLength)
-        // 计算进度条样式
         let progress = ''
         progress += '#'.repeat(filledLength)
         progress += '-'.repeat(Math.max(0, barLength - filledLength - 1))
         const formattedProgress = progressPercentage.toFixed(2) + '%'
         console.log(`DownLoading ${title}${type} [${progress}] ${formattedProgress}\r`)
       }
-      // 计算进度百分比
+      // 计算并打印当前下载进度
       const progressPercentage = (downloadedBytes / totalBytes) * 100
       generateProgressBar(progressPercentage)
     })
@@ -252,24 +258,17 @@ export default class base {
   }
 
   /** 删文件 */
-  removeFile(path, force) {
-    if (Config.rmmp4 === true || Config.rmmp4 === undefined) {
+  async removeFile(path, force) {
+    if (Config.rmmp4) {
       try {
-        // 使用同步方法获取文件状态
-        const stats = fs.statSync(path)
-
-        if (stats.isFile()) {
-          // 如果是文件，则直接同步删除
-          fs.unlinkSync(path)
-          console.log(path + ' 删除成功！')
-        }
+        fs.promises.unlink(path)
+        console.log(path + ' 删除成功！')
       } catch (err) {
         console.error(path + ' 删除失败！', err)
       }
     } else if (force) {
       try {
-        // 强制删除文件或目录
-        fs.unlinkSync(path)
+        fs.promises.unlink(path)
         console.log(path + ' 删除成功！')
       } catch (err) {
         console.error(path + ' 删除失败！', err)

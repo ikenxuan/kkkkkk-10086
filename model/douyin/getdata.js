@@ -1,4 +1,4 @@
-import { base, Config } from '#modules'
+import { base, Config, networks } from '#modules'
 import { DouyinAPI, Sign } from '#douyin'
 
 export default class iKun extends base {
@@ -6,7 +6,7 @@ export default class iKun extends base {
     super()
     this.type = type
     this.headers['Referer'] = 'https://www.douyin.com/'
-    this.headers['Cookie'] = this.Config.ck
+    this.headers['Cookie'] = Config.ck
   }
 
   async GetData(data) {
@@ -25,7 +25,7 @@ export default class iKun extends base {
         )
 
         this.URL = DouyinAPI.评论(data.id)
-        let CommentsData = this.comments
+        let CommentsData = Config.comments
           ? await this.GlobalGetData({
               url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
               method: 'GET',
@@ -143,7 +143,7 @@ export default class iKun extends base {
    * @returns
    */
   async GlobalGetData(options, is_mp4) {
-    let result = await new this.networks(options).getData()
+    let result = await new networks(options).getData()
     if (result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
       Config.ck = ''

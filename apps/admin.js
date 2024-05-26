@@ -1,5 +1,7 @@
 import { Config, Render, _path } from '#modules'
 import { BiLogin } from '#bilibili'
+import fs from 'fs'
+import path from 'path'
 
 const APPType = {
   缓存删除: 'rmmp4',
@@ -75,8 +77,26 @@ export class Admin extends plugin {
           fnc: 'Blogin',
           permission: 'master',
         },
+        {
+          reg: /^#?kkk删除缓存$/,
+          fnc: 'deltemp',
+          permission: 'master',
+        },
       ],
     })
+    this.task = Config.rmmp4
+      ? {
+          cron: '0 0 4 * * *',
+          name: '[kkkkkk-10086] 视频缓存自动删除',
+          fnc: () => this.deltemp(),
+        }
+      : null
+  }
+
+  async deltemp() {
+    removeAllFiles(process.cwd() + '/resources/kkkdownload/video/')
+      .then(() => this.reply('/resources/kkkdownload/video/' + '所有文件已删除'))
+      .catch((err) => console.error('删除文件时出错:', err))
   }
 
   async ConfigSwitch(e) {
@@ -186,4 +206,19 @@ function checkNumberValue(value, limit) {
 
   // 如果不符合以上任何条件，则返回原值
   return parseFloat(value)
+}
+async function removeAllFiles(dir) {
+  const files = await fs.promises.readdir(dir)
+  for (const file of files) {
+    const filePath = path.join(dir, file)
+    const stats = await fs.promises.stat(filePath)
+    if (stats.isDirectory()) {
+      // 如果是目录，则递归调用removeAllFiles
+      await removeAllFiles(filePath)
+      await fs.promises.rmdir(filePath) // 删除空目录
+    } else if (stats.isFile()) {
+      // 如果是文件，则直接删除
+      await fs.promises.unlink(filePath)
+    }
+  }
 }
