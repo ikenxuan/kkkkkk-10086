@@ -255,11 +255,10 @@ export default class push extends base {
       }
 
       // 发送消息到群组
-      if (send) {
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
-      }
       try {
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+        if (send) {
+          await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
+        }
       } catch (error) {
         logger.error(error)
         await redis.set(key, 1)
