@@ -164,6 +164,7 @@ export default class push extends base {
         const group_id = Config.douyinpushlist[i].group_id
         const secUid = Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
+        const userinfo = await new iKun('UserInfoData').GetData({ user_id: secUid })
         common.sleep(200)
         let awemeId,
           createTime,
