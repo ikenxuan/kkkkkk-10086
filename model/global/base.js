@@ -74,7 +74,6 @@ export default class base {
         case 'LagrangeCore':
         case 'QQBot':
         case 'OneBotv11':
-        default:
           return forwardmsg
         case 'KOOKBot':
           return null

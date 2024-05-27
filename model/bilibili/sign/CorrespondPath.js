@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 const publicKey = await crypto.subtle.importKey(
   'jwk',
   {
@@ -9,7 +11,6 @@ const publicKey = await crypto.subtle.importKey(
   true,
   ['encrypt'],
 )
-import crypto from 'crypto'
 
 export async function getCorrespondPath(timestamp) {
   const data = new TextEncoder().encode(`refresh_${timestamp}`)

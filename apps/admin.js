@@ -104,7 +104,7 @@ export class Admin extends plugin {
     let regRet = SwitchCfgReg.exec(e.msg)
     let key = regRet[1]
     let is = regRet[2] == '开启'
-    key !== undefined ? (Config[SwitchCfgType[key]] = is) : null
+    key && (Config[SwitchCfgType[key]] = is)
     // 渲染图片
     this.index_Settings(e)
   }

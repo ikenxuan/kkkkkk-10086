@@ -7,7 +7,7 @@ export async function Emoji(data) {
 
     const Objject = {
       name: display_name,
-      url: url,
+      url,
     }
     ListArray.push(Objject)
   }

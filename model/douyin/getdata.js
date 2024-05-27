@@ -5,8 +5,8 @@ export default class iKun extends base {
   constructor(type) {
     super()
     this.type = type
-    this.headers['Referer'] = 'https://www.douyin.com/'
-    this.headers['Cookie'] = Config.ck
+    this.headers.Referer = 'https://www.douyin.com/'
+    this.headers.Cookie = Config.ck
   }
 
   async GetData(data) {
@@ -27,15 +27,11 @@ export default class iKun extends base {
         this.URL = DouyinAPI.评论(data.id)
         let CommentsData = Config.comments
           ? await this.GlobalGetData({
-              url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
-              method: 'GET',
-              headers: this.headers,
-            })
-          : {
-              code: 405,
-              msg: '你没开评论解析的开关',
-              data: null,
-            }
+            url: `${this.URL}&X-Bogus=${Sign.XB(this.URL)}`,
+            method: 'GET',
+            headers: this.headers,
+          })
+          : { code: 405, msg: '你没开评论解析的开关', data: null }
         return { VideoData, CommentsData }
 
       case 'CommentReplyData':
@@ -101,7 +97,7 @@ export default class iKun extends base {
       /** 无法实现 */
       case 'ShortUrl':
         let a = new URL(data.target)
-        this.URL = DouyinAPI.制作短链(protocol + encodeURIComponent('//' + a.host + a.pathname + a.search))
+        this.URL = DouyinAPI.制作短链(a.protocol + encodeURIComponent('//' + a.host + a.pathname + a.search))
         let ShortUrlData = await this.GlobalGetData({
           url: `${this.URL}&X-Bougs=${Sign.XB(this.URL)}`,
           headers: this.headers,
@@ -147,7 +143,7 @@ export default class iKun extends base {
     if (result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
       Config.ck = ''
-    } else null
+    }
     if (typeof is_mp4 === 'boolean') {
       result.is_mp4 = is_mp4
     }

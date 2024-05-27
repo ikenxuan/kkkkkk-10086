@@ -91,7 +91,7 @@ if (yunzaiName == 'miao-yunzai') {
   yunzaiName = 'TRSS-Yunzai'
   isTrss = true
 } else {
-  yunzaiName = _.capitalize(yunzaiName)
+  yunzaiName = lodash.capitalize(yunzaiName)
 }
 
 let Version = {

@@ -12,14 +12,14 @@ export default class BiLiBiLi extends base {
     this.STATUS = data.USER?.STATUS
     this.ISVIP = data.USER?.isvip
     this.TYPE = data.TYPE
-    this.islogin = data.USER?.STATUS === 'isLogin' ? true : false
+    this.islogin = data.USER?.STATUS === 'isLogin'
     this.downloadfilename = ''
-    this.headers['Referer'] = 'https://api.bilibili.com/'
-    this.headers['Cookie'] = Config.bilibilick
+    this.headers.Referer = 'https://api.bilibili.com/'
+    this.headers.Cookie = Config.bilibilick
   }
 
   async RESOURCES(OBJECT, Episode = false) {
-    Config.bilibilitip ? this.e.reply('检测到B站链接，开始解析') : null
+    Config.bilibilitip && this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo':
         const { desc, owner, pic, title, stat } = OBJECT.INFODATA.data
@@ -71,23 +71,21 @@ export default class BiLiBiLi extends base {
           },
           { e: this.e, scale: 0.6, retType: 'base64' },
         )
-        Config.commentsimg
-          ? await this.e.reply(
-              this.mkMsg(img, [
-                {
-                  text: "视频直链 ['流畅 360P']",
-                  link: nocd_data.data.durl[0].url,
-                },
-              ]),
-            )
-          : null
+        Config.commentsimg && await this.e.reply(
+          this.mkMsg(img, [
+            {
+              text: "视频直链 ['流畅 360P']",
+              link: nocd_data.data.durl[0].url,
+            },
+          ]),
+        )
         await this.getvideo(OBJECT)
         break
       case 'bangumivideo':
         if (!Episode) {
           let barray = []
           let msg = []
-          for (var i = 0; i < OBJECT.INFODATA.result.episodes.length; i++) {
+          for (let i = 0; i < OBJECT.INFODATA.result.episodes.length; i++) {
             const totalEpisodes = OBJECT.INFODATA.result.episodes.length
             const long_title = OBJECT.INFODATA.result.episodes[i].long_title
             const badge = OBJECT.INFODATA.result.episodes[i].badge
@@ -146,6 +144,7 @@ export default class BiLiBiLi extends base {
             audio_url: OBJECT.DATA.result.dash.audio[0].base_url,
           })
         }
+        break
       case 'bilibilidynamic':
         switch (OBJECT.dynamicINFO.data.item.type) {
           /** 图文、纯图 */
@@ -168,8 +167,8 @@ export default class BiLiBiLi extends base {
               { e: this.e, scale: 0.6, retType: 'base64' },
             )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
-            imgArray.length > 1 ? await this.e.reply(this.botadapter === 'QQBot' || 'KOOKBot' ? imgArray : await common.makeForwardMsg(this.e, imgArray)) : null
-            Config.bilibilicommentsimg ? await this.e.reply(img) : null
+            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray))
+            if (Config.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
             const cover = () => {
@@ -203,7 +202,7 @@ export default class BiLiBiLi extends base {
               },
               { e: this.e, scale: 1.4, retType: 'base64' },
             )
-            Config.bilibilicommentsimg ? await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }])) : null
+            if (Config.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
             break
 
           /** 纯文 */
@@ -213,7 +212,7 @@ export default class BiLiBiLi extends base {
               await Render.render(
                 'html/bilibili/dymanic/DYNAMIC_TYPE_WORD',
                 {
-                  text: text,
+                  text,
                   dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
                   pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
                   share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
@@ -292,7 +291,7 @@ export default class BiLiBiLi extends base {
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 75) {
-                this.botname === 'trss-yunzai' ? null : this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                if (this.botname !== 'trss-yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
               } else {
                 /** 因为本地合成，没有视频直链 */

@@ -8,6 +8,7 @@ export default class BiLogin extends base {
     this.e = e
     this.refresh_token = ''
   }
+
   async Login() {
     /** 申请二维码 */
     const qrcodeurl = await new bilidata('申请二维码').GetData()
@@ -35,6 +36,7 @@ export default class BiLogin extends base {
           break
         case 86038:
           i === 17 ? this.e.reply('二维码已失效', true) : (Execution86038 = i)
+          break
         case 86090:
           if (!executed86090) {
             this.e.reply('二维码已扫码，未确认', true)
@@ -42,7 +44,7 @@ export default class BiLogin extends base {
           } else {
             executed86090 = true
           }
-        case 86101:
+          break
       }
       if (completedCase0) break
       await common.sleep(5000)

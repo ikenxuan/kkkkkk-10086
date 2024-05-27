@@ -105,8 +105,8 @@ export class Tools extends plugin {
     const iddata = await GetID(url)
     const data = await new iKun(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
-    Config.sendforwardmsg ? await e.reply(res ? await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec)) : null) : null
-    iddata.is_mp4 ? await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title) : null
+    if (Config.sendforwardmsg && res) await e.reply(await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec)))
+    if (iddata.is_mp4) await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
     user[this.e.user_id] = 'douy'
     setTimeout(() => {
       delete user[this.e.user_id]

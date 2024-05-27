@@ -1,6 +1,5 @@
-import fetch from 'node-fetch'
+import fetch, { Response } from 'node-fetch'
 import https from 'https'
-import { Response } from 'node-fetch'
 import fs from 'fs'
 
 let controller = new AbortController()
@@ -28,7 +27,7 @@ export default class networks {
     this.url = data.url
     this.type = data.type || 'json'
     this.method = data.method || 'GET'
-    this.body = data.body || '' //用于POST请求
+    this.body = data.body || '' // 用于POST请求
     this.data = {}
     this.timeout = data.timeout || 15000
     this.isGetResult = false
@@ -53,9 +52,6 @@ export default class networks {
 
   async getfetch() {
     try {
-      if (this.method == 'post') {
-        data = { ...data, body: JSON.stringify(this.body) || '' }
-      }
       let result = await this.returnResult()
       if (result.status === 504) {
         return result

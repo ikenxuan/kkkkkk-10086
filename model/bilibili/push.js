@@ -18,6 +18,7 @@ export default class push extends base {
     this.e = e // 保存传入的事件对象
     this.force = force // 保存传入的强制执行标志
   }
+
   /**
    * 执行主要的操作流程，包括检查缓存并根据需要获取和更新用户数据。
    * 该函数首先检查Redis缓存中是否存在用户数据，如果不存在或已过时，则重新获取数据并更新缓存。
@@ -160,7 +161,7 @@ export default class push extends base {
               if (text.includes('[') && text.includes(']')) {
                 text = text.replace(/\[[^\]]*\]/g, `<img src="${item.url}"/>`).replace(/\\/g, '')
               }
-              text += `&#160`
+              text += '&#160'
             }
           }
           img = await Render.render(
