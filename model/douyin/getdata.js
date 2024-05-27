@@ -34,14 +34,6 @@ export default class iKun extends base {
           : { code: 405, msg: '你没开评论解析的开关', data: null }
         return { VideoData, CommentsData }
 
-      case 'CommentReplyData':
-        this.URL = DouyinAPI.二级评论(data.id, data.cid)
-        let CommentReplyData = await this.GlobalGetData({
-          url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
-          headers: this.headers,
-        })
-        return CommentReplyData
-
       case 'UserInfoData':
         this.URL = DouyinAPI.用户主页信息(data.user_id)
         let UserInfoData = await this.GlobalGetData({
