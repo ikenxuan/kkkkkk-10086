@@ -1,7 +1,7 @@
-import { base, networks } from '#modules'
+import { base, networks, Config } from '#modules'
 import { MsToken } from './MsToken.js'
 import * as xbogus from './X-Bogus.cjs'
-import * as ac_signature from './ac_signature.cjs'
+import { AB } from './a_bougs.cjs'
 
 export default class sign extends base {
   Mstoken(length) {
@@ -10,6 +10,10 @@ export default class sign extends base {
 
   XB(url) {
     return xbogus.sign(new URLSearchParams(new URL(url).search).toString(), this.headers['User-Agent'])
+  }
+
+  AB(url) {
+    return AB(new URLSearchParams(new URL(url).search).toString(), this.headers['User-Agent'])
   }
 
   async signature(url) {

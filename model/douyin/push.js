@@ -39,14 +39,15 @@ export default class push extends base {
         for (let i = 0; i < data.length; i++) {
           if (data[i].create_time == cachedata[i]?.create_time) {
             for (const key of data[i].group_id) {
-              if (!(await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`))) {
+              const cackey = await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`)
+              if (!cackey) {
                 await this.getdata(data[i])
-                logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
+                logger.info(`${data[i].remark} aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
               }
             }
           } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
             await this.getdata(data[i])
-            logger.info(`aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
+            logger.info(`${data[i].remark} aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
           }
         }
         await redis.set('kkk:douyPush', JSON.stringify(data))
@@ -58,12 +59,9 @@ export default class push extends base {
   }
 
   async getdata(data) {
-    const videolist = await new iKun('UserVideosList').GetData({ user_id: data.sec_id })
-    const userinfo = await new iKun('UserInfoData').GetData({ user_id: data.sec_id })
-    let Array = [videolist, userinfo]
-    let img
-
-    let nonTopIndex = 0,
+    let Array = [data.VideoLisst, data.UserInfo]
+    let img,
+      nonTopIndex = 0,
       user_shortid
 
     /** 跳过所有置顶视频 */
@@ -166,7 +164,7 @@ export default class push extends base {
         const group_id = Config.douyinpushlist[i].group_id
         const secUid = Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
-        await common.sleep(200)
+        common.sleep(200)
         let awemeId,
           createTime,
           nonTopIndex = 0
@@ -178,24 +176,23 @@ export default class push extends base {
           createTime = data.aweme_list[nonTopIndex].create_time
           awemeId = data.aweme_list[nonTopIndex].aweme_id
         }
-        const livedata = await new iKun('直播间ID').GetData(data.aweme_list[0].author.uid)
 
         // 首先检查是否开播
-        if (livedata.data[0]?.user_live[0]?.live_status == 1) {
+        if (userinfo.user.live_status == 1) {
           if (this.force) {
             result.push({
               create_time: createTime + 1,
               group_id,
               sec_id: secUid,
-              room_id: livedata.data[0]?.user_live[0]?.room_id_str,
+              room_id: userinfo.user.live_status,
               live: true,
             })
-          } else if (!(await redis.get(`kkk:douyPush-live${livedata.data[0]?.user_live[0]?.room_id_str}`))) {
+          } else if (!(await redis.get(`kkk:douyPush-live${userinfo.user.live_status}`))) {
             result.push({
               create_time: createTime + 1,
               group_id,
               sec_id: secUid,
-              room_id: livedata.data[0]?.user_live[0]?.room_id_str,
+              room_id: userinfo.user.live_status,
               live: true,
             })
           }
@@ -206,7 +203,7 @@ export default class push extends base {
             sec_id: secUid,
             aweme_id: awemeId,
           })
-          await redis.del(`kkk:douyPush-live${livedata.data[0]?.user_live[0]?.room_id_str}`)
+          await redis.del(`kkk:douyPush-live${userinfo.user.live_status}`)
         }
       }
     }
