@@ -26,13 +26,13 @@ export async function refresh_token() {
       const CorrespondPath = await getCorrespondPath(timestamp)
       const html = await new bilidata('refresh_csrf').GetData(CorrespondPath)
 
-      /** 提取 refresh_csrf*/
+      /** 提取 refresh_csrf */
       const { document } = new JSDOM(html).window
       const refresh_csrf = document.querySelector('div[id="1-name"]').textContent
 
       const refreshdata = await new bilidata('刷新Cookie').GetData({
-        csrf: csrf,
-        refresh_csrf: refresh_csrf,
+        csrf,
+        refresh_csrf,
         source: 'main_web',
         refresh_token: Config.bilibilirefresh_token,
       })

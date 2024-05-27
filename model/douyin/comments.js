@@ -44,21 +44,21 @@ export async function comments(data, emojidata) {
     const reply_comment_total = data.comments[i].reply_comment_total
     const commentObj = {
       id: i + 1,
-      cid: cid,
-      aweme_id: aweme_id,
-      nickname: nickname,
-      userimageurl: userimageurl,
-      text: text,
-      digg_count: digg_count,
+      cid,
+      aweme_id,
+      nickname,
+      userimageurl,
+      text,
+      digg_count,
       ip_label: ip,
       create_time: relativeTime,
       commentimage: imageurl,
-      label_type: label_type,
-      sticker: sticker,
-      status_label: status_label,
+      label_type,
+      sticker,
+      status_label,
       is_At_user_id: userintextlongid,
-      search_text: search_text,
-      reply_comment_total: reply_comment_total,
+      search_text,
+      reply_comment_total
     }
     jsonArray.push(commentObj)
   }
@@ -71,7 +71,7 @@ export async function comments(data, emojidata) {
     jsonArray.unshift(commentTypeOne)
   }
 
-  /** 二级评论 咕咕咕*/
+  /** 二级评论 咕咕咕 */
   const CommentReplyData = await new iKun('CommentReplyData').GetData({
     cid: jsonArray[0].cid,
     id: jsonArray[0].aweme_id,
@@ -101,10 +101,10 @@ export async function comments(data, emojidata) {
 
       const commentreplyObj = {
         id: i + 1,
-        nickname: nickname,
-        userimageurl: userimageurl,
-        text: text,
-        digg_count: digg_count,
+        nickname,
+        userimageurl,
+        text,
+        digg_count,
         ip_label: ip,
         create_time: relativeTime,
         commentimage: imageurl,
@@ -117,7 +117,7 @@ export async function comments(data, emojidata) {
   }
 
   let CommentData = {
-    jsonArray: jsonArray,
+    jsonArray,
     CommentReplyData: CommentReplyDataArray,
   }
 
@@ -138,7 +138,7 @@ export async function comments(data, emojidata) {
         } else {
           item1.text = `<img src="${item2.url}"/>`
         }
-        item1.text += `&#160`
+        item1.text += '&#160'
       }
     }
   }

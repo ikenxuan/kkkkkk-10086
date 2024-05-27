@@ -18,7 +18,7 @@ export default class DouYin extends base {
     switch (this.type) {
       case 'video':
       case 'note':
-        Config.douyintip ? this.e.reply('检测到抖音链接，开始解析') : null
+        if (Config.douyintip) this.e.reply('检测到抖音链接，开始解析')
         let g_video_url
         let g_title
         let full_data = []
@@ -76,7 +76,7 @@ export default class DouYin extends base {
           let res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
-          !Config.sendforwardmsg && this.e.bot?.sendUni ? await this.e.reply(res) : null
+          !Config.sendforwardmsg && this.e.bot?.sendUni && await this.e.reply(res)
         } else {
           image_res.push('图集信息解析失败')
         }
@@ -149,10 +149,10 @@ export default class DouYin extends base {
                   break
                 case 'ICQQ':
                   try {
-                    music_url && this.is_mp4 == false && music_url !== undefined ? await this.e.reply(await uploadRecord(this.e, music_url, 0, false)) : null
+                    music_url && this.is_mp4 == false && music_url && await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
                   } catch (error) {
                     logger.error('高清语音发送失败', error)
-                    music_url && this.is_mp4 == false && music_url !== undefined ? await this.e.reply(segment.record(music_url)) : null
+                    music_url && this.is_mp4 == false && music_url && await this.e.reply(segment.record(music_url))
                   }
                   break
               }
@@ -388,7 +388,7 @@ export default class DouYin extends base {
 
   /** 获取机器人上传的图片链接 */
   async getHistoryLog() {
-    return (await Bot.pickGroup(Number(e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url
+    return (await Bot.pickGroup(Number(this.e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url
   }
 }
 

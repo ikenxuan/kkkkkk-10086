@@ -5,8 +5,8 @@ export default class bilidata extends base {
   constructor(type) {
     super()
     this.type = type
-    this.headers['Referer'] = 'https://api.bilibili.com/'
-    this.headers['Cookie'] = Config.bilibilick
+    this.headers.Referer = 'https://api.bilibili.com/'
+    this.headers.Cookie = Config.bilibilick
   }
 
   async GetData(data) {
@@ -72,6 +72,7 @@ export default class bilidata extends base {
           body: data,
           headers: this.headers,
         })
+        return result
 
       case 'bangumivideo':
         let isep
@@ -91,7 +92,7 @@ export default class bilidata extends base {
         return result
 
       case '获取用户空间动态':
-        delete this.headers['Referer']
+        delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.获取用户空间动态(data),
           headers: this.headers,
@@ -99,14 +100,14 @@ export default class bilidata extends base {
         return result
 
       case 'bilibilidynamic':
-        delete this.headers['Referer']
+        delete this.headers.Referer
         const dynamicINFO = await this.GlobalGetData({
           url: BiLiBiLiAPI.动态详情(data.dynamic_id),
           headers: this.headers,
         })
         const dynamicINFO_CARD = await this.GlobalGetData({ url: BiLiBiLiAPI.动态卡片信息(dynamicINFO.data.item.id_str) })
         PARAM = await wbi_sign(BiLiBiLiAPI.COMMENTS(1, dynamicINFO_CARD.data.card.desc.rid))
-        this.headers['Referer'] = 'https://api.bilibili.com/'
+        this.headers.Referer = 'https://api.bilibili.com/'
         COMMENTSDATA = await this.GlobalGetData({
           url: BiLiBiLiAPI.COMMENTS(mapping_table(dynamicINFO.data.item.type), oid(dynamicINFO, dynamicINFO_CARD)) + PARAM,
           headers: this.headers,
@@ -123,7 +124,7 @@ export default class bilidata extends base {
         return result
 
       case '动态详情':
-        delete this.headers['Referer']
+        delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.动态详情(data.dynamic_id),
           headers: this.headers,
@@ -131,7 +132,7 @@ export default class bilidata extends base {
         return result
 
       case '动态卡片信息':
-        delete this.headers['Referer']
+        delete this.headers.Referer
         result = await this.GlobalGetData({ url: BiLiBiLiAPI.动态卡片信息(data.dynamic_id) })
         return result
     }

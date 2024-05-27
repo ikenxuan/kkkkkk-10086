@@ -28,6 +28,7 @@ export default class API {
   LOGIN_INFO() {
     return 'https://api.bilibili.com/x/web-interface/nav'
   }
+
   INFO(id_type, id) {
     return `https://api.bilibili.com/x/web-interface/view?${id_type == 'bvid' ? 'bvid=' + id : 'aid=' + id}`
   }

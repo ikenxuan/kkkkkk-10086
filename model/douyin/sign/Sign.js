@@ -1,6 +1,7 @@
 import { base, networks } from '#modules'
 import { MsToken } from './MsToken.js'
 import * as xbogus from './X-Bogus.cjs'
+import * as ac_signature from './ac_signature.cjs'
 
 export default class sign extends base {
   Mstoken(length) {

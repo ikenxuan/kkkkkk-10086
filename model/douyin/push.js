@@ -9,10 +9,11 @@ export default class push extends base {
       return true
     }
     this.e = e
-    this.headers['Referer'] = 'https://www.douyin.com'
-    this.headers['Cookie'] = Config.ck
+    this.headers.Referer = 'https://www.douyin.com'
+    this.headers.Cookie = Config.ck
     this.force = force
   }
+
   async action() {
     await this.checkremark()
     const cache = await redis.get('kkk:douyPush')
@@ -158,7 +159,7 @@ export default class push extends base {
           createTime = data.aweme_list[nonTopIndex].create_time
           awemeId = data.aweme_list[nonTopIndex].aweme_id
         }
-        result.push({ create_time: createTime, group_id: group_id, sec_id: secUid, aweme_id: awemeId })
+        result.push({ create_time: createTime, group_id, sec_id: secUid, aweme_id: awemeId })
       }
     } else {
       for (let i = 0; i < Config.douyinpushlist.length; i++) {
@@ -184,7 +185,7 @@ export default class push extends base {
           if (this.force) {
             result.push({
               create_time: createTime + 1,
-              group_id: group_id,
+              group_id,
               sec_id: secUid,
               room_id: livedata.data[0]?.user_live[0]?.room_id_str,
               live: true,
@@ -192,7 +193,7 @@ export default class push extends base {
           } else if (!(await redis.get(`kkk:douyPush-live${livedata.data[0]?.user_live[0]?.room_id_str}`))) {
             result.push({
               create_time: createTime + 1,
-              group_id: group_id,
+              group_id,
               sec_id: secUid,
               room_id: livedata.data[0]?.user_live[0]?.room_id_str,
               live: true,
@@ -201,7 +202,7 @@ export default class push extends base {
         } else {
           result.push({
             create_time: createTime,
-            group_id: group_id,
+            group_id,
             sec_id: secUid,
             aweme_id: awemeId,
           })
