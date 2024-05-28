@@ -4,11 +4,10 @@ import fs from 'fs'
 
 export default class push extends base {
   constructor(e = {}, force) {
-    super()
+    super(e)
     if (this.botadapter === 'QQBot') {
       return true
     }
-    this.e = e
     this.headers.Referer = 'https://www.douyin.com'
     this.headers.Cookie = Config.ck
     this.force = force

@@ -47,7 +47,7 @@ const Render = {
             },
             copyright: `${Version.yunzaiName}<span class="version">${Version.yunzai}</span>${pluginName}</span>`,
             pageGotoParams: {
-              waitUntil: 'networkidle2',
+              waitUntil: 'load',
             },
           }
         },
@@ -80,7 +80,7 @@ const Render = {
           },
           copyright: `${Version.yunzaiName}<span class="version">${Version.yunzai}</span>${pluginName}</span>`,
           pageGotoParams: {
-            waitUntil: 'networkidle2',
+            waitUntil: 'load',
           },
         }
       },

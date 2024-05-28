@@ -39,7 +39,7 @@ export default class base {
         case this.e.bot?.adapter === 'OneBotv11':
           return 'OneBotv11'
         default:
-          return '无法判断适配器'
+          return 'ICQQ'
       }
     } else if (this.botCfg.package.name === 'trss-yunzai') {
       switch (true) {
@@ -59,7 +59,7 @@ export default class base {
         case this.e.bot?.adapter?.name === 'KOOKBot':
           return 'KOOKBot'
         default:
-          return '无法判断适配器'
+          return 'ICQQ'
       }
     }
   }

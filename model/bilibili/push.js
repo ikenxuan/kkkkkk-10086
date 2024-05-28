@@ -10,12 +10,11 @@ export default class push extends base {
    * @returns 无返回值
    */
   constructor(e = {}, force) {
-    super() // 调用父类的构造函数
+    super(e) // 调用父类的构造函数
     // 判断当前bot适配器是否为'QQBot'，如果是，则直接返回true，否则继续执行
     if (this.botadapter === 'QQBot') {
       return true
     }
-    this.e = e // 保存传入的事件对象
     this.force = force // 保存传入的强制执行标志
   }
 
@@ -134,7 +133,7 @@ export default class push extends base {
             'html/bilibili/dynamic/DYNAMIC_TYPE_DRAW',
             {
               image_url: cover(),
-              text: br(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text),
+              text: replacetext(br(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text), dynamicINFO.data.items[nonTopIndex]),
               dianzan: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.like.count),
               pinglun: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.comment.count),
               share: this.count(dynamicINFO.data.items[nonTopIndex].modules.module_stat.forward.count),
@@ -155,7 +154,7 @@ export default class push extends base {
 
         /** 处理纯文动态 */
         case 'DYNAMIC_TYPE_WORD':
-          let text = dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text
+          let text = replacetext(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text)
           for (const item of emojiDATA) {
             if (text.includes(item.text)) {
               if (text.includes('[') && text.includes(']')) {
@@ -557,4 +556,16 @@ function extractEmojisData(data) {
   })
 
   return emojisData
+}
+
+function replacetext(text, obj) {
+  for (const tag of obj.modules.module_dynamic.desc.rich_text_nodes) {
+    if (tag.type === 'RICH_TEXT_NODE_TYPE_TOPIC') {
+      // 使用 RegExp 构造函数来正确转义 orig_text 中的特殊字符
+      const regex = new RegExp(tag.orig_text, 'g')
+      // 替换文本并更新 text 变量
+      text = text.replace(regex, `<span style="color: #0C6692;">${tag.orig_text}</span>`)
+    }
+  }
+  return text
 }

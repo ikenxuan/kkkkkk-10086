@@ -19,7 +19,7 @@ export async function bilicomments(OBJECT) {
       OBJECT.COMMENTSDATA.data.replies[i].content.pictures.length > 0
         ? OBJECT.COMMENTSDATA.data.replies[i].content.pictures[0].img_src
         : null
-
+    const members = OBJECT.COMMENTSDATA.data.replies[i].content.members
     let emojiurl = ''
     // 检查 contentObject 是否存在并且不为 null
     if (contentObject && typeof contentObject === 'object') {
@@ -47,6 +47,7 @@ export async function bilicomments(OBJECT) {
       location,
       like,
       icon_big_vip: vipstatus === 1 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
+      members,
     }
 
     jsonArray.push(obj)
@@ -62,6 +63,22 @@ export async function bilicomments(OBJECT) {
     }
   }
   jsonArray = space(jsonArray)
+
+  /** 匹配被艾特的用户 */
+  for (const comment of jsonArray) {
+    let originalText = comment.message
+    if (comment.members && comment.members.length > 0) {
+      for (const member of comment.members) {
+        // 构建正则表达式，匹配被艾特的用户
+        let regex = new RegExp(`@${member.uname}`, 'g')
+        originalText = originalText.replace(regex, `<span style="color: #0C6692;">@${member.uname}</span>`)
+      }
+    }
+
+    // 更新评论内容为处理后的文本
+    comment.message = originalText
+  }
+
   /** 检查评论是否带表情，是则添加img标签 */
   for (const item1 of jsonArray) {
     // 遍历emojidata中的每个元素
@@ -84,6 +101,7 @@ export async function bilicomments(OBJECT) {
   return res
 }
 
+/** 空格转 '&nbsp;' */
 function space(data) {
   for (let i = 0; i < data.length; i++) {
     if (data[i].message) {

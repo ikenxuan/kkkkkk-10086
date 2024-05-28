@@ -71,14 +71,15 @@ export default class BiLiBiLi extends base {
           },
           { e: this.e, scale: 0.6, retType: 'base64' },
         )
-        Config.commentsimg && await this.e.reply(
-          this.mkMsg(img, [
-            {
-              text: "视频直链 ['流畅 360P']",
-              link: nocd_data.data.durl[0].url,
-            },
-          ]),
-        )
+        Config.commentsimg &&
+          (await this.e.reply(
+            this.mkMsg(img, [
+              {
+                text: "视频直链 ['流畅 360P']",
+                link: nocd_data.data.durl[0].url,
+              },
+            ]),
+          ))
         await this.getvideo(OBJECT)
         break
       case 'bangumivideo':
@@ -167,7 +168,8 @@ export default class BiLiBiLi extends base {
               { e: this.e, scale: 0.6, retType: 'base64' },
             )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray))
+            if (imgArray.length > 1)
+              await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray))
             if (Config.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
