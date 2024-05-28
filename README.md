@@ -1,4 +1,4 @@
-# kkkkkk-10086
+![kkkkkk-10086](https://socialify.git.ci/ikenxuan/kkkkkk-10086/image?font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 
 [**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
 
@@ -36,7 +36,7 @@ npm install --production
 
 | 功能           | 支持情况         | 是否需要配置 ck | 平台 |
 | -------------- | ---------------- | --------------- | ---- |
-| 扫码登录取 ck  | 做不了，风控太严 |                | 抖音 |
+| 扫码登录取 ck  | 风控太严，做不了 |                | 抖音 |
 | 视频           | 支持             | 必须            | 抖音 |
 | 图集           | 支持             | 必须            | 抖音 |
 | 评论           | 支持             | 必须            | 抖音 |
@@ -58,10 +58,10 @@ npm install --production
 
 ---
 
-更多信息可使用 `#kkk设置` 查看
+更多信息可使用 `#kkk设置` `#kkk帮助` 查看
 
 > [!TIP]  
-> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin.git) 进行配置文件的修改。配置文件路径：
+> 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。配置文件路径：
 >
 > ```sh
 > # 初次使用自动创建
@@ -70,9 +70,9 @@ npm install --production
 
 > [!NOTE]
 >
-> ### **如何获取 ck？**
+> ### **如何手动获取ck？**
 >
-> 获取 ck 后使用命令`#kkk设置(抖音/B站)ck` => `发送获取到的ck`
+> 获取 ck 后使用命令 `#kkk设置(抖音/B站)ck` => `发送获取到的ck`
 >
 > - **浏览器** (抖音 / 哔哩哔哩同理)  
 >   找到携带 Cookie 的请求复制请求头中的 Cookie  
@@ -85,20 +85,14 @@ npm install --production
 排名不分先后
 
 - [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
-
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
-
 - [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
-
 - [X-Bogus](https://github.com/B1gM8c/X-Bogus)
-
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
-
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
-
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-
 - [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
+- [TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
 
 ## 友情链接
 

@@ -12,6 +12,7 @@ const APPType = {
 
 const DouYinType = {
   抖音评论: 'comments',
+  抖音推送: 'douyinpush',
   抖音评论图: 'commentsimg',
   抖音推送日志: 'douyinpushlog',
   抖音推送表达式: 'douyinpushcron',
@@ -20,6 +21,7 @@ const DouYinType = {
 
 const BilibiliType = {
   B站评论图: 'bilibilicommentsimg',
+  B站推送: 'bilibilipush',
   B站推送日志: 'bilibilipushlog',
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',

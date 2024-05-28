@@ -1,5 +1,5 @@
 import { iKun } from '#douyin'
-import { base, Render, GetID, common, Config } from '#modules'
+import { base, Render, GetID, Config } from '#modules'
 import fs from 'fs'
 
 export default class push extends base {
@@ -146,18 +146,27 @@ export default class push extends base {
         const group_id = Config.douyinpushlist[i].group_id
         const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
+        const userinfo = await new iKun('UserInfoData').GetData({ user_id: secUid })
         let awemeId,
-          createTime,
+          create_time,
           nonTopIndex = 0
         /** 跳过所有置顶视频 */
         while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
           nonTopIndex++
         }
         if (nonTopIndex < data.aweme_list.length) {
-          createTime = data.aweme_list[nonTopIndex].create_time
+          create_time = data.aweme_list[nonTopIndex].create_time
           awemeId = data.aweme_list[nonTopIndex].aweme_id
         }
-        result.push({ create_time: createTime, group_id, sec_id: secUid, aweme_id: awemeId })
+        result.push({
+          remark: Config.douyinpushlist[i].remark,
+          create_time,
+          group_id,
+          sec_id: secUid,
+          aweme_id: awemeId,
+          VideoLisst: data,
+          UserInfo: userinfo,
+        })
       }
     } else {
       for (let i = 0; i < Config.douyinpushlist.length; i++) {
@@ -165,16 +174,15 @@ export default class push extends base {
         const secUid = Config.douyinpushlist[i].sec_uid
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
         const userinfo = await new iKun('UserInfoData').GetData({ user_id: secUid })
-        common.sleep(200)
         let awemeId,
-          createTime,
+          create_time,
           nonTopIndex = 0
         /** 跳过所有置顶视频 */
         while (nonTopIndex < data.aweme_list.length && data.aweme_list[nonTopIndex].is_top === 1) {
           nonTopIndex++
         }
         if (nonTopIndex < data.aweme_list.length) {
-          createTime = data.aweme_list[nonTopIndex].create_time
+          create_time = data.aweme_list[nonTopIndex].create_time
           awemeId = data.aweme_list[nonTopIndex].aweme_id
         }
 
@@ -182,27 +190,36 @@ export default class push extends base {
         if (userinfo.user.live_status == 1) {
           if (this.force) {
             result.push({
-              create_time: createTime + 1,
+              remark: Config.douyinpushlist[i].remark,
+              create_time: create_time + 1,
               group_id,
               sec_id: secUid,
               room_id: userinfo.user.live_status,
               live: true,
+              VideoLisst: data,
+              UserInfo: userinfo,
             })
           } else if (!(await redis.get(`kkk:douyPush-live${userinfo.user.live_status}`))) {
             result.push({
-              create_time: createTime + 1,
+              remark: Config.douyinpushlist[i].remark,
+              create_time: create_time + 1,
               group_id,
               sec_id: secUid,
               room_id: userinfo.user.live_status,
               live: true,
+              VideoLisst: data,
+              UserInfo: userinfo,
             })
           }
         } else {
           result.push({
-            create_time: createTime,
+            remark: Config.douyinpushlist[i].remark,
+            create_time,
             group_id,
             sec_id: secUid,
             aweme_id: awemeId,
+            VideoLisst: data,
+            UserInfo: userinfo,
           })
           await redis.del(`kkk:douyPush-live${userinfo.user.live_status}`)
         }

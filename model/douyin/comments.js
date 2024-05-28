@@ -58,7 +58,7 @@ export async function comments(data, emojidata) {
       status_label,
       is_At_user_id: userintextlongid,
       search_text,
-      reply_comment_total
+      reply_comment_total,
     }
     jsonArray.push(commentObj)
   }
@@ -172,14 +172,6 @@ async function getRelativeTimeFromTimestamp(timestamp) {
 }
 
 async function handling_at(data) {
-  let mode
-  const currentHour = new Date().getHours()
-  if (currentHour >= 18 || currentHour < 6) {
-    mode = 'dark'
-  } else {
-    mode = 'light'
-  }
-
   for (const item of data) {
     if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
       for (const secUid of item.is_At_user_id) {
@@ -190,11 +182,7 @@ async function handling_at(data) {
           /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
           const regex = new RegExp(`@${UserInfoData.user.nickname.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&')}`, 'g')
           item.text = item.text.replace(regex, (match) => {
-            if (mode == 'dark') {
-              return `<span style="color: #face15;">${match}</span>`
-            } else {
-              return `<span style="color: rgb(3,72,141);">${match}</span>`
-            }
+            return `<span style="color: rgb(3,72,141);">${match}</span>`
           })
         }
       }
