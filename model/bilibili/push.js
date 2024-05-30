@@ -63,14 +63,16 @@ export default class push extends base {
         for (let i = 0; i < data.length; i++) {
           if (data[i].create_time == cachedata[i]?.create_time) {
             for (const key of data[i].group_id) {
-              if (!(await redis.get(`kkk:biliPush-${key}-${data[i].dynamic_id}`))) {
+              const cackey = await redis.get(`kkk:biliPush-${key}-${data[i].dynamic_id}`)
+              if (!cackey) {
+                data[i].group_id = [key]
                 await this.getdata(data[i])
-                logger.info(`dynamic_id: [${cachedata[i]?.dynamic_id}] ➩ [${data[i].dynamic_id}]`)
+                logger.info(`${data[i].remark} dynamic_id: [${cachedata[i]?.dynamic_id}] ➩ [${data[i].dynamic_id}]`)
               }
             }
           } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
             await this.getdata(data[i])
-            logger.info(`dynamic_id: [${cachedata[i]?.dynamic_id}] ➩ [${data[i].dynamic_id}]`)
+            logger.info(`${data[i].remark} dynamic_id: [${cachedata[i]?.dynamic_id}] ➩ [${data[i].dynamic_id}]`)
           }
         }
         // 更新缓存中的数据

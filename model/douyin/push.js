@@ -40,6 +40,7 @@ export default class push extends base {
             for (const key of data[i].group_id) {
               const cackey = await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`)
               if (!cackey) {
+                data[i].group_id = [key]
                 await this.getdata(data[i])
                 logger.info(`${data[i].remark} aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
               }
