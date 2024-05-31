@@ -286,6 +286,11 @@ export default class push extends base {
         const group_id = Config.bilibilipushlist[i].group_id
         const host_mid = host_mid_list[i].host_mid || host_mid_list[i]
         const data = await new bilidata('获取用户空间动态').GetData(host_mid)
+        if (data.data.items.length === 0) {
+          logger.warn(`UP: ${Config.bilibilipushlist[i].remark} 没有发布过动态，跳过该UP...`)
+          continue
+        }
+
         let nonTopIndex = 0,
           dynamic_id,
           create_time
@@ -306,6 +311,11 @@ export default class push extends base {
         const group_id = Config.bilibilipushlist[i].group_id
         const host_mid = Config.bilibilipushlist[i].host_mid
         const data = await new bilidata('获取用户空间动态').GetData(host_mid)
+        if (data.data.items.length === 0) {
+          logger.warn(`UP: ${Config.bilibilipushlist[i].remark} 没有发布过动态，跳过该UP...`)
+          continue
+        }
+
         let nonTopIndex = 0,
           dynamic_id,
           create_time
