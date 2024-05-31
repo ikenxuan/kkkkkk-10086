@@ -32,7 +32,8 @@ export default class push extends base {
         if (data.length == 0) return true
 
         if (this.force) {
-          return await this.forcepush(data)
+          await this.forcepush(data)
+          return await redis.set('kkk:douyPush', JSON.stringify(data))
         }
 
         for (let i = 0; i < data.length; i++) {
@@ -59,7 +60,7 @@ export default class push extends base {
   }
 
   async getdata(data) {
-    let Array = [data.VideoLisst, data.UserInfo]
+    let Array = [data.VideoList, data.UserInfo]
     let img,
       nonTopIndex = 0,
       user_shortid
@@ -135,16 +136,16 @@ export default class push extends base {
   /**
    *
    * @param {*} write 是否写入
-   * @param {*} sec_idlist 要获取aweme_id的用户uid列表
+   * @param {*} sec_uidlist 要获取aweme_id的用户uid列表
    * @returns
    */
-  async getuserdata(write, sec_idlist) {
+  async getuserdata(write, sec_uidlist) {
     let result = []
 
-    if (sec_idlist) {
-      for (let i = 0; i < sec_idlist.length; i++) {
+    if (sec_uidlist) {
+      for (let i = 0; i < sec_uidlist.length; i++) {
         const group_id = Config.douyinpushlist[i].group_id
-        const secUid = sec_idlist[i].sec_uid || sec_idlist[i]
+        const secUid = sec_uidlist[i].sec_uid || sec_uidlist[i]
         const data = await new iKun('UserVideosList').GetData({ user_id: secUid })
         const userinfo = await new iKun('UserInfoData').GetData({ user_id: secUid })
         let awemeId,
@@ -162,9 +163,9 @@ export default class push extends base {
           remark: Config.douyinpushlist[i].remark,
           create_time,
           group_id,
-          sec_id: secUid,
+          sec_uid: secUid,
           aweme_id: awemeId,
-          VideoLisst: data,
+          VideoList: data,
           UserInfo: userinfo,
         })
       }
@@ -193,21 +194,23 @@ export default class push extends base {
               remark: Config.douyinpushlist[i].remark,
               create_time: create_time + 1,
               group_id,
-              sec_id: secUid,
-              room_id: userinfo.user.live_status,
+              sec_uid: secUid,
+              room_id: userinfo.user.room_id_str,
+              aweme_id: '直播中~',
               live: true,
-              VideoLisst: data,
+              VideoList: data,
               UserInfo: userinfo,
             })
-          } else if (!(await redis.get(`kkk:douyPush-live${userinfo.user.live_status}`))) {
+          } else if (!(await redis.get(`kkk:douyPush-live${userinfo.user.room_id_str}`))) {
             result.push({
               remark: Config.douyinpushlist[i].remark,
               create_time: create_time + 1,
               group_id,
-              sec_id: secUid,
-              room_id: userinfo.user.live_status,
+              sec_uid: secUid,
+              room_id: userinfo.user.room_id_str,
+              aweme_id: '直播中~',
               live: true,
-              VideoLisst: data,
+              VideoList: data,
               UserInfo: userinfo,
             })
           }
@@ -216,12 +219,12 @@ export default class push extends base {
             remark: Config.douyinpushlist[i].remark,
             create_time,
             group_id,
-            sec_id: secUid,
+            sec_uid: secUid,
             aweme_id: awemeId,
-            VideoLisst: data,
+            VideoList: data,
             UserInfo: userinfo,
           })
-          await redis.del(`kkk:douyPush-live${userinfo.user.live_status}`)
+          await redis.del(`kkk:douyPush-live${userinfo.user.room_id_str}`)
         }
       }
     }
@@ -261,7 +264,7 @@ export default class push extends base {
         if (existingGroupIdIndex !== -1) {
           // 如果存在相同的 group_id，则删除它
           existingItem.group_id.splice(existingGroupIdIndex, 1)
-          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
+          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\sec_uid${UserInfoData.user.sec_uid}`)
           msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
 
           // 如果删除后 group_id 数组为空，则删除整个属性
@@ -273,7 +276,7 @@ export default class push extends base {
           // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
           existingItem.group_id.push(group_id)
           msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_id：${UserInfoData.user.sec_uid}`)
+          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\sec_uid${UserInfoData.user.sec_uid}`)
         }
       } else {
         // 如果不存在相同的 sec_uid，则新增一个属性
@@ -301,34 +304,34 @@ export default class push extends base {
 
   async findMismatchedAwemeIds(data, cachedata) {
     const mismatchedIds = []
-    const sec_idlist = []
+    const sec_uidlist = []
     let resources = []
     if (data.length > cachedata.length) {
       for (let i = 0; i < data.length; i++) {
-        if (data[i].sec_id !== cachedata[i]?.sec_id) {
+        if (data[i].sec_uid !== cachedata[i]?.sec_uid) {
           mismatchedIds.push(data[i].aweme_id)
-          sec_idlist.push(data[i].sec_id)
+          sec_uidlist.push(data[i].sec_uid)
         }
       }
-      if (sec_idlist.length > 0) {
+      if (sec_uidlist.length > 0) {
         let newdata = []
-        newdata = await this.getuserdata(false, sec_idlist)
+        newdata = await this.getuserdata(false, sec_uidlist)
         resources = cachedata.concat(newdata)
         await redis.set('kkk:douyPush', JSON.stringify(resources))
       }
     } else {
-      // 过滤掉cachedata中data.sec_id不存在的对象
+      // 过滤掉cachedata中data.sec_uid不存在的对象
       let filteredCacheData = cachedata.filter((item) => {
-        return data.some((dataItem) => dataItem.sec_id === item.sec_id)
+        return data.some((dataItem) => dataItem.sec_uid === item.sec_uid)
       })
       // 重新排序cachedata，使得其顺序与data的顺序相匹配
       let reorderedCacheData = data.map((dataItem) => {
-        return filteredCacheData.find((cacheItem) => cacheItem.sec_id === dataItem.sec_id)
+        return filteredCacheData.find((cacheItem) => cacheItem.sec_uid === dataItem.sec_uid)
       })
       cachedata = reorderedCacheData
     }
 
-    return sec_idlist.length > 0 ? resources : cachedata
+    return sec_uidlist.length > 0 ? resources : cachedata
   }
 
   async checkremark() {

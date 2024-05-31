@@ -59,7 +59,7 @@ export class Help extends plugin {
       {
         helpCfg: helpConfig,
         helpGroup,
-        bg: process.cwd() + '/plugins/kkkkkk-10086/resources/html/help/img/default.png',
+        bg: 'default.png',
         colCount: 3,
         element: 'default',
       },

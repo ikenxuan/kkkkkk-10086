@@ -56,7 +56,8 @@ export default class push extends base {
 
         // 如果设置了强制推送，则执行强制推送流程
         if (this.force) {
-          return await this.forcepush(data)
+          await this.forcepush(data)
+          return await redis.set('kkk:biliPush', JSON.stringify(data))
         }
 
         // 比较新旧数据的时间戳，决定是否需要更新或推送
@@ -303,7 +304,15 @@ export default class push extends base {
         // 提取非置顶动态的相关信息
         create_time = data.data.items[nonTopIndex].modules.module_author.pub_ts
         dynamic_id = data.data.items[nonTopIndex].id_str
-        result.push({ create_time, group_id, host_mid, dynamic_id, type: data.data.items[nonTopIndex].type })
+        result.push({
+          remark: Config.bilibilipushlist[i].remark,
+          create_time,
+          group_id,
+          host_mid,
+          dynamic_id,
+          type: data.data.items[nonTopIndex].type,
+          Dynamic_Data: data,
+        })
       }
     } else {
       // 如果没有提供host_mid_list，则直接使用Config中的列表获取数据
@@ -328,7 +337,15 @@ export default class push extends base {
         // 提取非置顶动态信息
         dynamic_id = data.data.items[nonTopIndex].id_str
         create_time = data.data.items[nonTopIndex].modules.module_author.pub_ts
-        result.push({ create_time, group_id, host_mid, dynamic_id, type: data.data.items[nonTopIndex].type })
+        result.push({
+          remark: Config.bilibilipushlist[i].remark,
+          create_time,
+          group_id,
+          host_mid,
+          dynamic_id,
+          type: data.data.items[nonTopIndex].type,
+          Dynamic_Data: data,
+        })
       }
     }
 
@@ -455,7 +472,7 @@ export default class push extends base {
         let newdata = []
         newdata = await this.getuserdata(false, host_midlist)
         resources = cachedata.concat(newdata)
-        await redis.set('kkk:douyPush', JSON.stringify(resources))
+        await redis.set('kkk:bilibiliPush', JSON.stringify(resources))
       }
     } else {
       // 过滤和重新排序cachedata，以匹配data顺序
