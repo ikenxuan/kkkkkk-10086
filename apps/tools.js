@@ -1,7 +1,6 @@
-import { base, GetID, common, Config } from '#modules'
+import { base, GetID, common, Config, pushlist } from '#modules'
 import { DouYin, DouYinpush, iKun } from '#douyin'
 import { BiLiBiLi, bilidata, Bilibilipush } from '#bilibili'
-import { pushlist } from '../model/douyin/pushlist.js'
 
 export class Tools extends plugin {
   constructor() {
@@ -82,7 +81,10 @@ export class Tools extends plugin {
         }
       }
     }
-    const img = await pushlist(e, obj, { douyin: await redis.get('kkk:douyPush'), bilibili: await redis.get('kkk:biliPush') })
+    const img = await pushlist(e, obj, {
+      douyin: Config.douyinpush ? await redis.get('kkk:douyPush') : '[]',
+      bilibili: Config.bilibilipush ? await redis.get('kkk:biliPush') : '[]',
+    })
     return e.reply(img)
   }
 

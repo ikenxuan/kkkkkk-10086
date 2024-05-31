@@ -1,4 +1,4 @@
-import { Render } from '#modules'
+import { Render, Config } from '#modules'
 
 /**
  *
@@ -9,10 +9,13 @@ import { Render } from '#modules'
  * @param redisdata.bilibili B站缓存数据
  */
 export async function pushlist(e, list, redisdata) {
+  if (redisdata.douyin.length === 0 && redisdata.bilibili.length === 0) {
+    throw new Error('请先执行「#kkk设置抖音推送开启」「#kkk设置B站推送开启」后设置推送用户等待自动推送一次后再使用此命令')
+  }
   let img
   const data = {
-    douyin: JSON.parse(redisdata.douyin) || [],
-    bilibili: JSON.parse(redisdata.bilibili) || [],
+    douyin: JSON.parse(redisdata?.douyin) || [],
+    bilibili: JSON.parse(redisdata?.bilibili) || [],
   }
 
   // 定义一个函数来筛选数组
