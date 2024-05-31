@@ -156,7 +156,7 @@ export default class push extends base {
 
         /** 处理纯文动态 */
         case 'DYNAMIC_TYPE_WORD':
-          let text = replacetext(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text)
+          let text = replacetext(dynamicINFO.data.items[nonTopIndex].modules.module_dynamic.desc.text, dynamicINFO.data.items[nonTopIndex])
           for (const item of emojiDATA) {
             if (text.includes(item.text)) {
               if (text.includes('[') && text.includes(']')) {
