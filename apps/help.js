@@ -1,4 +1,3 @@
-import fs from 'fs'
 import _ from 'lodash'
 import { Render, Version } from '#modules'
 import { helpCfg, helpList } from '../config/system/help_cfg.js'
@@ -60,21 +59,11 @@ export class Help extends plugin {
       {
         helpCfg: helpConfig,
         helpGroup,
-        bg: await rodom(),
+        bg: process.cwd() + '/plugins/kkkkkk-10086/resources/html/help/img/default.png',
         colCount: 3,
         element: 'default',
       },
       { e, scale: 1.8 },
     )
   }
-}
-
-const rodom = async function () {
-  let image = fs.readdirSync(process.cwd() + '/plugins/kkkkkk-10086/resources/html/help/img/')
-  let list_img = []
-  for (let val of image) {
-    list_img.push(val)
-  }
-  let imgs = list_img.length == 1 ? list_img[0] : list_img[_.random(0, list_img.length - 1)]
-  return imgs
 }

@@ -53,9 +53,30 @@ export class Tools extends plugin {
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
         { reg: '#抖音强制推送', fnc: 'pushdouy', permission: 'master' },
         { reg: '#B站强制推送', fnc: 'pushbili', permission: 'master' },
+        { reg: '#(抖音|B站)推送列表', fnc: 'pushlist' },
       ],
     })
     this.task = task
+  }
+
+  async pushlist(e) {
+    let iddouy,
+      list = []
+
+    if (String(e.msg).match('抖音')) iddouy = true
+    if (!e.isMaster) {
+      for (const item of iddouy ? Config.douyinpushlist : Config.bilibilipushlist) {
+        if (item.group_id.includes(e.group_id)) {
+          list.push(`UP: ${item.remark}\nUID: ${iddouy ? item.sec_uid : item.host_mid}`)
+        }
+      }
+      await e.reply(await common.makeForwardMsg(e, list, '当前群推送列表'))
+    } else {
+      for (const item of iddouy ? Config.douyinpushlist : Config.bilibilipushlist) {
+        list.push(`UP: ${item.remark}\n推送群: \n${JSON.stringify(item.group_id, null, 2)}\nUID: ${iddouy ? item.sec_uid : item.host_mid}`)
+      }
+      await e.reply(await common.makeForwardMsg(e, list, '机器人推送列表'))
+    }
   }
 
   async pushdouy() {
