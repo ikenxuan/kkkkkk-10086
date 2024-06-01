@@ -1,7 +1,6 @@
 import { base, GetID, common, Config, pushlist } from '#modules'
 import { DouYin, DouYinpush, iKun } from '#douyin'
 import { BiLiBiLi, bilidata, Bilibilipush } from '#bilibili'
-
 export class Tools extends plugin {
   constructor() {
     const rule = Config.videotool

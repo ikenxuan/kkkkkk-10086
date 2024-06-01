@@ -1,3 +1,5 @@
+# 该分支处于开发状态中，部分功能可能不可用！
+
 ![kkkkkk-10086](https://socialify.git.ci/ikenxuan/kkkkkk-10086/image?font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 
 [**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
@@ -81,10 +83,13 @@ npm install --production
 >   使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [抖音](https://www.douyin.com/)/[哔哩哔哩](https://www.bilibili.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
 
 > [!CAUTION]
+>
 > ### 关于抖音ck
+>
 > 本项目的抖音API接口全部取自其 [web端站点](https://www.douyin.com) ，风控非常严格，导致ck可能频繁失效，当抖音业务出现问题时建议优先更换ck重试
-> 
+>
 > **更多的解决方法：**
+>
 > - 抖音推送博主数量不宜过多（< 15个）
 > - 抖音推送定时任务间隔（> 10分钟一次）
 > - 同一ck不要频繁异地调用
@@ -94,9 +99,11 @@ npm install --production
 本项目的开发参考了以下开源项目部分代码，排名不分先后
 
 **业务站点**
+
 - [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
 
 **部分代码借鉴**
+
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 - [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
@@ -104,10 +111,10 @@ npm install --production
 - [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
 
 **接口文档与加密参数算法**
+
 - [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
 - [X-Bogus](https://github.com/B1gM8c/X-Bogus)
-
 
 ## 友情链接
 

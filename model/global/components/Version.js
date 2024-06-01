@@ -1,5 +1,6 @@
 import fs from 'fs'
 import lodash from 'lodash'
+import { join } from 'path'
 
 let packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'))
 
@@ -75,10 +76,12 @@ const readLogFile = function (root, versionCount = 4) {
   }
   return { changelogs, currentVersion }
 }
-
-const { changelogs, currentVersion } = readLogFile(`${process.cwd()}/plugins/kkkkkk-10086/`)
+const pluginName = 'kkkkkk-10086'
+const { changelogs, currentVersion } = readLogFile(`${process.cwd()}/plugins/${pluginName}/`)
 
 const yunzaiVersion = packageJson.version
+const pluginPath = join(process.cwd(), 'plugins', pluginName)
+
 let yunzaiName = packageJson.name
 let isMiao
 let isTrss
@@ -98,6 +101,7 @@ let Version = {
   isMiao,
   isTrss,
   yunzaiName,
+  pluginPath,
   get version() {
     return currentVersion
   },
