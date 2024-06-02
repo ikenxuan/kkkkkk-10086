@@ -20,8 +20,8 @@ export default class push extends base {
 
     try {
       /** 获取最新那一条 */
-      data = await this.getuserdata(false)
-      cachedata = await this.findMismatchedAwemeIds(data, cachedata)
+      data = await this.getuserdata()
+      data = this.findMismatchedAwemeIds(data)
 
       if (data.length == 0) return true
 
@@ -143,6 +143,7 @@ export default class push extends base {
           for (const aweme of videolist.aweme_list) {
             let is_top = aweme.is_top === 1,
               shouldPush = false,
+              shouldBreak = false,
               exitTry = false
             try {
               if (exitTry) {
@@ -158,6 +159,10 @@ export default class push extends base {
                 }
                 // 遍历数据库中的每个群对象
                 for (const group of idlist) {
+                  if (Object.keys(group.data).length === 0) {
+                    shouldBreak = true
+                    break
+                  }
                   // 遍历当前群的推送用户对象
                   for (const userInfo of group.data) {
                     if (userInfo.sec_uid === item.sec_uid) {
@@ -198,30 +203,31 @@ export default class push extends base {
             }
           }
           willbepushlist
-          console.log(willbepushlist)
         } else {
           throw new Error(`「${item.remark}」的主页视频列表数量为零！`)
         }
-
-        // for (const group_id of item.group_id) {
-        //   if (!data[group_id]) {
-        //     data[group_id] = []
-        //   }
-        //   data[group_id].push({ remark: item.remark, sec_uid: item.sec_uid })
-        // }
       }
     } catch (error) {
       console.log(error)
     }
 
     const DBdata = await this.transformedData(willbepushlist)
+
+    // 这里不应该这么快写入数据库
     for (const item of DBdata) {
-      await DB.CreateSheet('douyin', item.group_id, item.data)
+      const data = await DB.FindGroup('douyin', item.group_id)
+      if (data?.group_id == item.group_id) {
+        await DB.UpdateGroupData('douyin', data.group_id, item.data)
+      } else await DB.CreateSheet('douyin', item.group_id, item.data)
     }
-    // ...
-    return willbepushlist
+    return { willbepushlist, DBdata }
   }
 
+  /**
+   *
+   * @param {object} data 数据对象
+   * @returns 将数据转换成写入数据库中的结构
+   */
   async transformedData(data) {
     const secUidMap = {}
 
@@ -230,6 +236,7 @@ export default class push extends base {
       if (!secUidMap[item.sec_uid]) {
         secUidMap[item.sec_uid] = {
           remark: item.remark,
+          create_time: item.create_time,
           sec_uid: item.sec_uid,
           aweme_idlist: [key],
         }
@@ -272,47 +279,75 @@ export default class push extends base {
     }
     return finalOutput
   }
-  convertTimestampToDateTime(timestamp) {
-    const date = new Date(timestamp * 1000)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
 
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  }
+  /**
+   *
+   * @param {object} DBdata
+   * @returns 将DBdata转换为willbepushlist格式的数据结构
+   */
+  transformDBDataToWillbepushlistFormat(DBdata) {
+    const willbepushlist = {}
 
-  async findMismatchedAwemeIds(data, cachedata) {
-    const mismatchedIds = []
-    const sec_uidlist = []
-    let resources = []
-    if (data.length > cachedata.length) {
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].sec_uid !== cachedata[i]?.sec_uid) {
-          mismatchedIds.push(data[i].aweme_id)
-          sec_uidlist.push(data[i].sec_uid)
+    // 遍历DBdata，构建willbepushlist格式的对象
+    for (const group of DBdata) {
+      for (const item of group.data) {
+        for (const aweme_id of item.aweme_idlist) {
+          willbepushlist[aweme_id] = {
+            remark: item.remark,
+            create_time: item.create_time,
+            sec_uid: item.sec_uid,
+            group_id: item.group_id,
+          }
         }
       }
-      if (sec_uidlist.length > 0) {
-        let newdata = []
-        newdata = await this.getuserdata(false, sec_uidlist)
-        resources = cachedata.concat(newdata)
-        await redis.set('kkk:douyPush', JSON.stringify(resources))
-      }
-    } else {
-      // 过滤掉cachedata中data.sec_uid不存在的对象
-      let filteredCacheData = cachedata.filter((item) => {
-        return data.some((dataItem) => dataItem.sec_uid === item.sec_uid)
-      })
-      // 重新排序cachedata，使得其顺序与data的顺序相匹配
-      let reorderedCacheData = data.map((dataItem) => {
-        return filteredCacheData.find((cacheItem) => cacheItem.sec_uid === dataItem.sec_uid)
-      })
-      cachedata = reorderedCacheData
     }
 
-    return sec_uidlist.length > 0 ? resources : cachedata
+    return willbepushlist
+  }
+
+  /**
+   *
+   * @param {obj} inputData 要处理的数据
+   * @returns 获取推送列表，已经过新旧作品判定
+   */
+  findMismatchedAwemeIds(inputData) {
+    const willbepushlist = inputData.willbepushlist
+    const DBdata = inputData.DBdata
+
+    // 至少应该在这一步执行完后才写入
+
+    // 构建包含所有DBdata中aweme_id的集合
+    const awemeIdSetFromDB = new Set()
+    DBdata.forEach((group) => {
+      group.data.forEach((item) => {
+        item.aweme_idlist.forEach((aweme_id) => {
+          awemeIdSetFromDB.add(aweme_id)
+        })
+      })
+    })
+
+    // 准备结果对象
+    const result = {}
+
+    // 遍历willbepushlist中的每个aweme_id和对象
+    for (const aweme_id in willbepushlist) {
+      const willbeItem = willbepushlist[aweme_id]
+
+      // 如果aweme_id在awemeIdSetFromDB中，则跳过这个aweme_id
+      if (awemeIdSetFromDB.has(aweme_id)) {
+        continue
+      }
+
+      // 如果在DBdata中没有找到对应的条目，或者willbepushlist中的时间戳大于DB中的时间戳，则保留willbepushlist中的条目
+      // 这里假设DBdata已经转换为与willbepushlist具有相同结构的格式
+      // 如果DBdata结构不同，需要进行相应的转换和比较逻辑
+      const DBItem = this.transformedData(DBdata)[aweme_id]
+      if (!DBItem || willbeItem.create_time > DBItem.create_time) {
+        result[aweme_id] = willbeItem
+      }
+    }
+
+    return result
   }
 
   async checkremark() {
@@ -341,6 +376,21 @@ export default class push extends base {
     }
   }
 
+  /**
+   *
+   * @param {string} timestamp 时间戳
+   * @returns 获取 年-月-日 时:分
+   */
+  convertTimestampToDateTime(timestamp) {
+    const date = new Date(timestamp * 1000)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
   desc(video_obj, text) {
     if (Array.isArray(video_obj) && video_obj.length > 0) {
       const regex = new RegExp(video_obj.map((obj) => `#${obj.hashtag_name}`).join('|'), 'g')

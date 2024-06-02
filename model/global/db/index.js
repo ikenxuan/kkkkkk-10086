@@ -1,5 +1,53 @@
 import { sequelize, DataTypes } from './base.js'
 
+const douyin = sequelize.define(
+  'douyin',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      comment: '主键ID',
+    },
+    group_id: {
+      type: DataTypes.STRING,
+      comment: '群组标识符',
+    },
+    data: {
+      type: DataTypes.STRING, // 存储为字符串，JSON 格式
+      defaultValue: '{}',
+      comment: '已推送的抖音视频 ID 列表',
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
+
+const bilibili = sequelize.define(
+  'bilibili',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      comment: '主键ID',
+    },
+    group_id: {
+      type: DataTypes.STRING,
+      comment: '群组标识符',
+    },
+    data: {
+      type: DataTypes.STRING, // 存储为字符串，JSON 格式
+      defaultValue: '{}',
+      comment: '已推送的抖音视频 ID 列表',
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
+
 /**
  *
  * @param {string} ModelName 表单名称
@@ -45,6 +93,18 @@ async function FindAll(ModelName) {
 /**
  *
  * @param {string} ModelName 表单名称
+ * @param {*} Group_ID 群号
+ * @returns 查找该表单中指定群号的数据
+ */
+async function FindGroup(ModelName, Group_ID) {
+  const AllData = await FindAll(ModelName)
+  const specificGroupData = AllData.find((group) => group.group_id === String(Group_ID))
+  return specificGroupData
+}
+
+/**
+ *
+ * @param {string} ModelName 表单名称
  * @param {number} Group_ID 推送群唯一标识符
  * @param {object} NewData 数据对象
  * @returns
@@ -64,7 +124,6 @@ async function UpdateGroupData(ModelName, Group_ID, NewData = {}) {
     },
   )
 
-  console.log(`更新了 ${affectedRows} 条记录`)
   return affectedRowsData
 }
 
@@ -72,65 +131,10 @@ const DB = {
   CreateSheet,
   UpdateGroupData,
   FindAll,
+  FindGroup,
 }
 
 export default DB
-
-const douyinbasemodel = [
-  {
-    remark: '',
-    sec_uid: '',
-    aweme_idlist: [],
-  },
-]
-
-const douyin = sequelize.define(
-  'douyin',
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      comment: '主键ID',
-    },
-    group_id: {
-      type: DataTypes.STRING,
-      comment: '群组标识符',
-    },
-    data: {
-      type: DataTypes.STRING, // 存储为字符串，JSON 格式
-      defaultValue: JSON.stringify(douyinbasemodel),
-      comment: '已推送的抖音视频 ID 列表',
-    },
-  },
-  {
-    timestamps: true,
-  },
-)
-
-const bilibili = sequelize.define(
-  'bilibili',
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      comment: '主键ID',
-    },
-    group_id: {
-      type: DataTypes.STRING,
-      comment: '群组标识符',
-    },
-    data: {
-      type: DataTypes.STRING, // 存储为字符串，JSON 格式
-      defaultValue: '{}',
-      comment: '已推送的抖音视频 ID 列表',
-    },
-  },
-  {
-    timestamps: true,
-  },
-)
 
 /** 每次调用都将强制同步已定义的模型 */
 await sequelize.sync({ alter: true })
