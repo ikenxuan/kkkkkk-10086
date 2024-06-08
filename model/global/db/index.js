@@ -16,6 +16,11 @@ const douyin = sequelize.define(
     data: {
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
+      comment: '缓存数据',
+    },
+    aweme_idlist: {
+      type: DataTypes.STRING,
+      defaultValue: '[]',
       comment: '已推送的抖音视频 ID 列表',
     },
   },
@@ -82,24 +87,31 @@ async function FindAll(ModelName) {
     raw: true,
   })
 
-  const formattedGroups = groups.map((group) => ({
-    group_id: group.group_id,
-    data: JSON.parse(group.data),
-  }))
+  // 使用reduce方法将数组转换为对象
+  const result = groups.reduce((accumulator, group) => {
+    // 将group_id作为键名，data作为键值
+    accumulator[group.group_id] = JSON.parse(group.data)
+    return accumulator
+  }, {})
 
-  return formattedGroups
+  return result
 }
 
 /**
- *
+ * 查找指定群号的数据
  * @param {string} ModelName 表单名称
- * @param {*} Group_ID 群号
- * @returns 查找该表单中指定群号的数据
+ * @param {string} Group_ID 群号
+ * @returns {Promise} 包含指定群号数据的Promise对象
  */
 async function FindGroup(ModelName, Group_ID) {
   const AllData = await FindAll(ModelName)
-  const specificGroupData = AllData.find((group) => group.group_id === String(Group_ID))
-  return specificGroupData
+  // 检查传入的 Group_ID 是否存在于 AllData 中
+  if (AllData.hasOwnProperty(Group_ID)) {
+    // 直接返回找到的群号对应的对象
+    return AllData[Group_ID]
+  } else {
+    return null
+  }
 }
 
 /**

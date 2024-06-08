@@ -53,76 +53,91 @@ export default class push extends base {
   }
 
   async getdata(data) {
-    let Array = [data.VideoList, data.UserInfo]
-    let img,
-      nonTopIndex = 0,
-      user_shortid
+    for (const awemeId in data) {
+      const Detail_Data = data[awemeId].Detail_Data
+      const iddata = await GetID(Detail_Data.share_url)
+      let img = await Render.render(
+        'html/douyin/douyininfo',
+        {
+          image_url: Detail_Data.video.animated_cover.url_list[0] || Detail_Data.video.cover.url_list[0],
+          desc: this.desc(Detail_Data, Detail_Data.desc),
+          dianzan: this.count(Detail_Data.statistics.digg_count),
+          pinglun: this.count(Detail_Data.statistics.comment_count),
+          share: this.count(Detail_Data.statistics.share_count),
+          shouchang: this.count(Detail_Data.statistics.collect_count),
+          create_time: this.convertTimestampToDateTime(data[awemeId].create_time),
+          avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.author.avatar_uri,
+          share_url: iddata.is_mp4
+            ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
+            : Detail_Data.share_url,
+          username: Detail_Data.author.nickname,
+          fans: this.count(Detail_Data.author.follower_count),
+          user_shortid: Detail_Data.author.sec_uid.substring(0, 15) + '...',
+          total_favorited: this.count(Detail_Data.author.total_favorited),
+          following_count: this.count(Detail_Data.author.follower_count),
+        },
+        { e: this.e, scale: 1.4, retType: 'base64' },
+      )
 
-    /** 跳过所有置顶视频 */
-    while (nonTopIndex < Array[0].aweme_list.length && Array[0].aweme_list[nonTopIndex].is_top === 1) {
-      nonTopIndex++
-    }
-    /** 处理抖音号 */
-    Array[1].user.unique_id == '' ? (user_shortid = Array[1].user.short_id) : (user_shortid = Array[1].user.unique_id)
+      // 遍历 group_id 数组，并发送消息
+      for (const groupId of data[awemeId].group_id) {
+        let status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
+        // 调用 FindGroup 获取数据库中的数据
+        const DBdata = await DB.FindGroup('douyin', groupId)
 
-    for (let i = 0; i < data.group_id.length; i++) {
-      let key
-      if (data.live) {
-        key = `kkk:douyPush-live${data.room_id}`
-        await redis.set(`kkk:douyPush-live${data.room_id}`, 1)
-        const roominfo = await new iKun('直播间信息').GetData(data.room_id)
-        img = await Render.render(
-          'html/douyin/douyinlive',
-          {
-            image_url: [{ image_src: roominfo.data.cover.url_list[0] }],
-            text: roominfo.data.title,
-            liveinf: `${roominfo.data.dynamic_label.splice_label.text} | 房间号: ${roominfo.data.owner.web_rid}`,
-            在线观众: this.count(roominfo.data.stats.user_count_str),
-            总观看次数: this.count(roominfo.data.stats.total_user_str),
-            username: Array[1].user.nickname,
-            avater_url: Array[1].user.avatar_larger.url_list[0],
-            fans: this.count(Array[1].user.follower_count),
-            create_time: this.convertTimestampToDateTime(new Date().getTime()),
-            now_time: this.convertTimestampToDateTime(new Date().getTime()),
-            share_url: 'https://live.douyin.com/' + roominfo.data.owner.web_rid,
-            dynamicTYPE: '直播推送',
-          },
-          { e: this.e, scale: 1.4, retType: 'base64' },
-        )
-      } else {
-        key = `kkk:douyPush-${data.group_id[i]}-${data.aweme_id}`
-        const iddata = await GetID(Array[0].aweme_list[nonTopIndex].share_url)
-        const videodata = await new iKun(iddata.type).GetData(iddata)
-        img = await Render.render(
-          'html/douyin/douyininfo',
-          {
-            image_url: Array[0].aweme_list[nonTopIndex].video?.animated_cover?.url_list[0] || Array[0].aweme_list[nonTopIndex].video?.cover?.url_list[0],
-            desc: this.desc(Array[0].aweme_list[nonTopIndex].text_extra, Array[0].aweme_list[nonTopIndex].desc),
-            dianzan: this.count(Array[0].aweme_list[nonTopIndex].statistics.digg_count),
-            pinglun: this.count(Array[0].aweme_list[nonTopIndex].statistics.comment_count),
-            share: this.count(Array[0].aweme_list[nonTopIndex].statistics.share_count),
-            shouchang: this.count(Array[0].aweme_list[nonTopIndex].statistics.collect_count),
-            create_time: this.convertTimestampToDateTime(Array[0].aweme_list[nonTopIndex].create_time),
-            avater_url: Array[1].user.avatar_larger.url_list[0],
-            share_url: iddata.is_mp4
-              ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videodata.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-              : videodata.VideoData.aweme_detail.share_url,
-            username: Array[0].aweme_list[nonTopIndex].author.nickname,
-            fans: this.count(Array[1].user.follower_count),
-            user_shortid: Array[1].user.unique_id == '' ? Array[1].user.short_id : Array[1].user.unique_id,
-            total_favorited: this.count(Array[1].user.total_favorited),
-            following_count: this.count(Array[1].user.following_count),
-          },
-          { e: this.e, scale: 1.4, retType: 'base64' },
-        )
+        /**
+         * 检查 DBdata 中是否存在与给定 sec_uid 匹配的项
+         * @param {Object} DBdata - 包含数据的对象
+         * @param {string} secUidToCheck - 要检查的 sec_uid
+         * @returns {string} 匹配的 sec_uid
+         */
+        const findMatchingSecUid = (DBdata, secUidToCheck) => {
+          for (const sec_uid in DBdata) {
+            if (DBdata.hasOwnProperty(sec_uid) && DBdata[sec_uid].sec_uid === secUidToCheck) {
+              return secUidToCheck
+            }
+          }
+          return false // 未找到匹配的 sec_uid，返回 false
+        }
+        let newEntry
+        if (DBdata) {
+          // 如果 DBdata 存在，遍历 DBdata 来查找对应的 sec_uid
+          let found = false
+          for (const secUid in DBdata) {
+            if (data[awemeId].sec_uid === findMatchingSecUid(DBdata, data[awemeId].sec_uid)) {
+              // 如果找到了对应的 sec_uid，将 awemeId 添加到 aweme_idlist 数组中
+              if (!DBdata[findMatchingSecUid(DBdata, data[awemeId].sec_uid)].aweme_idlist.includes(awemeId)) {
+                DBdata[findMatchingSecUid(DBdata, data[awemeId].sec_uid)].aweme_idlist.push(awemeId)
+                await DB.UpdateGroupData('douyin', groupId, DBdata)
+                found = true
+                break // 退出 sec_uid 循环
+              }
+            }
+          }
+          if (!found) {
+            // 如果没有找到对应的 sec_uid，创建一个新的条目
+            newEntry = {
+              remark: data[awemeId].remark,
+              create_time: data[awemeId].create_time,
+              sec_uid: data[awemeId].sec_uid,
+              aweme_idlist: [awemeId],
+            }
+            DBdata[data[awemeId].sec_uid] = newEntry
+            // 更新数据库
+            await DB.UpdateGroupData('douyin', groupId, DBdata)
+          }
+        } else {
+          // 如果 DBdata 为空，创建新的 sheet 并添加数据
+          await DB.CreateSheet('douyin', groupId, {
+            [data[awemeId].sec_uid]: {
+              remark: data[awemeId].remark,
+              create_time: data[awemeId].create_time,
+              sec_uid: data[awemeId].sec_uid,
+              aweme_idlist: [awemeId],
+            },
+          })
+        }
       }
-      try {
-        await Bot.pickGroup(Number(data.group_id[i])).sendMsg(img)
-      } catch (error) {
-        logger.error(error)
-        await redis.set(key, 1)
-      }
-      await redis.set(key, 1)
     }
   }
 
@@ -130,9 +145,9 @@ export default class push extends base {
    *
    * @param {*} write 是否写入
    * @param {*} sec_uidlist 要获取aweme_id的用户uid列表
-   * @returns
+   * @returns 获取用户一天内的所有视频对象
    */
-  async getuserdata(write, sec_uidlist) {
+  async getuserdata() {
     let willbepushlist = {}
 
     try {
@@ -141,10 +156,10 @@ export default class push extends base {
         if (videolist.aweme_list.length > 0) {
           // 遍历接口返回的视频列表
           for (const aweme of videolist.aweme_list) {
-            let is_top = aweme.is_top === 1,
-              shouldPush = false,
-              shouldBreak = false,
-              exitTry = false
+            let is_top = aweme.is_top === 1, // 是否为置顶
+              shouldPush = false, // 是否列入推送数组
+              shouldBreak = false, // 是否跳出循环
+              exitTry = false // 是否退出 try 块
             try {
               if (exitTry) {
                 // 如果需要退出 try 块，跳过此次循环的剩余部分
@@ -152,24 +167,24 @@ export default class push extends base {
               }
               if (is_top) {
                 const idlist = await DB.FindAll('douyin')
-                if (idlist.length === 0) {
+                if (Object.keys(idlist).length === 0) {
                   shouldPush = true
                   exitTry = true
                   continue
                 }
                 // 遍历数据库中的每个群对象
-                for (const group of idlist) {
-                  if (Object.keys(group.data).length === 0) {
+                for (const groupId in idlist) {
+                  if (Object.keys(idlist[groupId]).length === 0) {
                     shouldBreak = true
                     break
                   }
                   // 遍历当前群的推送用户对象
-                  for (const userInfo of group.data) {
-                    if (userInfo.sec_uid === item.sec_uid) {
-                      // 找到对应用户，如果 aweme_id 不在在 aweme_idlist 中
-                      if (!userInfo.aweme_idlist?.includes(aweme.aweme_id)) {
+                  for (const sec_uid in idlist[groupId]) {
+                    if (idlist[groupId][sec_uid].sec_uid === item.sec_uid) {
+                      // 找到对应用户，如果 aweme_id 不在在 aweme_idlist 中，也就是没推送过
+                      if (!idlist[groupId][sec_uid].aweme_idlist?.includes(aweme.aweme_id)) {
                         shouldPush = true
-                        break // 跳出内部循环
+                        break // 跳出内部循环，判定为该视频要进行推送
                       }
                     }
                   }
@@ -196,13 +211,12 @@ export default class push extends base {
                   sec_uid: item.sec_uid,
                   create_time: aweme.create_time,
                   group_id: [], // 初始化 group_id 为数组
-                  Detail_Data: aweme, // 存储 aweme 对象
+                  Detail_Data: aweme, // 存储 detail 对象
                 }
               }
-              willbepushlist[aweme.aweme_id].group_id = [...item.group_id]
+              willbepushlist[aweme.aweme_id].group_id = [...item.group_id] // item.group_id 为配置文件的 group_id
             }
           }
-          willbepushlist
         } else {
           throw new Error(`「${item.remark}」的主页视频列表数量为零！`)
         }
@@ -211,15 +225,9 @@ export default class push extends base {
       console.log(error)
     }
 
-    const DBdata = await this.transformedData(willbepushlist)
-
-    // 这里不应该这么快写入数据库
-    for (const item of DBdata) {
-      const data = await DB.FindGroup('douyin', item.group_id)
-      if (data?.group_id == item.group_id) {
-        await DB.UpdateGroupData('douyin', data.group_id, item.data)
-      } else await DB.CreateSheet('douyin', item.group_id, item.data)
-    }
+    const DBdata = await DB.FindAll('douyin')
+    // 这里是强制数组的第一个对象中的内容 DBdata[0]?.data 因为调用这个函数的上层有遍历群组逻辑
+    // DBdata[0]?.data 则是当前群组的推送用户数据
     return { willbepushlist, DBdata }
   }
 
@@ -228,7 +236,7 @@ export default class push extends base {
    * @param {object} data 数据对象
    * @returns 将数据转换成写入数据库中的结构
    */
-  async transformedData(data) {
+  transformedData(data) {
     const secUidMap = {}
 
     for (const key in data) {
@@ -245,39 +253,7 @@ export default class push extends base {
       }
     }
 
-    const finalOutput = []
-
-    // 根据每个sec_uid的group_id，构建最终的输出格式
-    for (const secUid in secUidMap) {
-      const userObj = secUidMap[secUid]
-      userObj.group_id = new Set() // 使用Set来自动去重group_id
-
-      // 遍历原始数据，找到此sec_uid对应的所有group_id
-      for (const key in data) {
-        const item = data[key]
-        if (item.sec_uid === secUid) {
-          item.group_id.forEach((groupId) => userObj.group_id.add(groupId)) // 添加group_id到Set中
-        }
-      }
-
-      // 将Set转换为数组
-      userObj.group_id = Array.from(userObj.group_id)
-
-      // 为每个group_id创建一个对象，并将其添加到finalOutput中
-      userObj.group_id.forEach((groupId) => {
-        const groupObj = finalOutput.find((obj) => obj.group_id === groupId)
-        if (!groupObj) {
-          finalOutput.push({
-            group_id: groupId,
-            data: [userObj],
-          })
-        } else {
-          // 如果已经存在该group_id的对象，则直接添加用户信息
-          groupObj.data.push(userObj)
-        }
-      })
-    }
-    return finalOutput
+    return secUidMap
   }
 
   /**
@@ -306,48 +282,40 @@ export default class push extends base {
   }
 
   /**
-   *
+   * 进行新旧作品判定，通过 inputData.DBdata
    * @param {obj} inputData 要处理的数据
-   * @returns 获取推送列表，已经过新旧作品判定
+   * @returns 获取推送对象列表，已经过新旧作品判定
    */
   findMismatchedAwemeIds(inputData) {
-    const willbepushlist = inputData.willbepushlist
-    const DBdata = inputData.DBdata
-
-    // 至少应该在这一步执行完后才写入
-
-    // 构建包含所有DBdata中aweme_id的集合
-    const awemeIdSetFromDB = new Set()
-    DBdata.forEach((group) => {
-      group.data.forEach((item) => {
-        item.aweme_idlist.forEach((aweme_id) => {
-          awemeIdSetFromDB.add(aweme_id)
-        })
+    if (!inputData.DBdata) return inputData.willbepushlist
+    const willbepushByGroupId = {}
+    for (const videoId in inputData.willbepushlist) {
+      inputData.willbepushlist[videoId].group_id.forEach((groupId) => {
+        if (!willbepushByGroupId[groupId]) {
+          willbepushByGroupId[groupId] = []
+        }
+        willbepushByGroupId[groupId].push(videoId)
       })
-    })
+    }
 
-    // 准备结果对象
-    const result = {}
-
-    // 遍历willbepushlist中的每个aweme_id和对象
-    for (const aweme_id in willbepushlist) {
-      const willbeItem = willbepushlist[aweme_id]
-
-      // 如果aweme_id在awemeIdSetFromDB中，则跳过这个aweme_id
-      if (awemeIdSetFromDB.has(aweme_id)) {
-        continue
-      }
-
-      // 如果在DBdata中没有找到对应的条目，或者willbepushlist中的时间戳大于DB中的时间戳，则保留willbepushlist中的条目
-      // 这里假设DBdata已经转换为与willbepushlist具有相同结构的格式
-      // 如果DBdata结构不同，需要进行相应的转换和比较逻辑
-      const DBItem = this.transformedData(DBdata)[aweme_id]
-      if (!DBItem || willbeItem.create_time > DBItem.create_time) {
-        result[aweme_id] = willbeItem
+    // 遍历 DBdata，找出存在于 willbepushByGroupId 中的 group_id
+    for (const groupId in inputData.DBdata) {
+      if (willbepushByGroupId[groupId]) {
+        // 遍历每个 group_id 下的 sec_uid
+        for (const secUid in inputData.DBdata[groupId]) {
+          // 检查 aweme_idlist 中的每个 aweme_id
+          inputData.DBdata[groupId][secUid].aweme_idlist.forEach((awemeId) => {
+            // 如果 aweme_id 存在于 willbepushByGroupId[groupId] 中
+            if (willbepushByGroupId[groupId].includes(awemeId)) {
+              // 移除 willbepushlist 中对应的视频对象
+              delete inputData.willbepushlist[awemeId]
+            }
+          })
+        }
       }
     }
 
-    return result
+    return inputData.willbepushlist
   }
 
   async checkremark() {
@@ -408,10 +376,10 @@ export default class push extends base {
   }
 
   async forcepush(data) {
-    for (const item of data) {
-      item.group_id = [...[this.e.group_id]]
-      await this.getdata(item)
+    for (const detail in data) {
+      data[detail].group_id = [...[this.e.group_id]]
     }
+    await this.getdata(data)
   }
 
   async setting(data) {

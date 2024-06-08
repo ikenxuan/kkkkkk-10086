@@ -18,7 +18,7 @@ export class Tools extends plugin {
             fnc: 'next',
           },
           {
-            reg: '^#?BGM$',
+            reg: '^#?BGM',
             fnc: 'uploadrecord',
           },
         ]
@@ -48,7 +48,7 @@ export class Tools extends plugin {
       priority: Config.defaulttool ? -Infinity : Config.priority,
       rule: [
         ...rule,
-        { reg: '^#设置抖音推送$', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
+        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
