@@ -19,40 +19,23 @@ export default class push extends base {
       data
 
     try {
-      /** 获取最新那一条 */
       data = await this.getuserdata()
       data = this.findMismatchedAwemeIds(data)
 
       if (data.length == 0) return true
 
-      if (this.force) {
-        await this.forcepush(data)
-        return await redis.set('kkk:douyPush', JSON.stringify(data))
-      }
-
-      for (let i = 0; i < data.length; i++) {
-        if (data[i].create_time == cachedata[i]?.create_time) {
-          for (const key of data[i].group_id) {
-            const cackey = await redis.get(`kkk:douyPush-${key}-${data[i].aweme_id}`)
-            if (!cackey) {
-              data[i].group_id = [key]
-              await this.getdata(data[i])
-              logger.info(`${data[i].remark} aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
-            }
-          }
-        } else if (data[i].create_time > cachedata[i]?.create_time || (data[i].create_time && !cachedata[i]?.create_time)) {
-          await this.getdata(data[i])
-          logger.info(`${data[i].remark} aweme_id: [${cachedata[i]?.aweme_id}] ➩ [${data[i]?.aweme_id}]`)
-        }
-      }
-      await redis.set('kkk:douyPush', JSON.stringify(data))
+      if (this.force) return await this.forcepush(data)
+      else return await this.getdata(data)
     } catch (error) {
       logger.error(error)
-      await redis.set('kkk:douyPush', JSON.stringify(data))
     }
   }
 
   async getdata(data) {
+    if (Object.keys(data).length === 0) {
+      logger.warn('暂无博主有新发布作品')
+      return true
+    }
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
       const iddata = await GetID(Detail_Data.share_url)
@@ -80,63 +63,68 @@ export default class push extends base {
       )
 
       // 遍历 group_id 数组，并发送消息
-      for (const groupId of data[awemeId].group_id) {
-        let status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
-        // 调用 FindGroup 获取数据库中的数据
-        const DBdata = await DB.FindGroup('douyin', groupId)
+      try {
+        for (const groupId of data[awemeId].group_id) {
+          let status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
+          if (status) {
+            const DBdata = await DB.FindGroup('douyin', groupId)
 
-        /**
-         * 检查 DBdata 中是否存在与给定 sec_uid 匹配的项
-         * @param {Object} DBdata - 包含数据的对象
-         * @param {string} secUidToCheck - 要检查的 sec_uid
-         * @returns {string} 匹配的 sec_uid
-         */
-        const findMatchingSecUid = (DBdata, secUidToCheck) => {
-          for (const sec_uid in DBdata) {
-            if (DBdata.hasOwnProperty(sec_uid) && DBdata[sec_uid].sec_uid === secUidToCheck) {
-              return secUidToCheck
-            }
-          }
-          return false // 未找到匹配的 sec_uid，返回 false
-        }
-        let newEntry
-        if (DBdata) {
-          // 如果 DBdata 存在，遍历 DBdata 来查找对应的 sec_uid
-          let found = false
-          for (const secUid in DBdata) {
-            if (data[awemeId].sec_uid === findMatchingSecUid(DBdata, data[awemeId].sec_uid)) {
-              // 如果找到了对应的 sec_uid，将 awemeId 添加到 aweme_idlist 数组中
-              if (!DBdata[findMatchingSecUid(DBdata, data[awemeId].sec_uid)].aweme_idlist.includes(awemeId)) {
-                DBdata[findMatchingSecUid(DBdata, data[awemeId].sec_uid)].aweme_idlist.push(awemeId)
-                await DB.UpdateGroupData('douyin', groupId, DBdata)
-                found = true
-                break // 退出 sec_uid 循环
+            /**
+             * 检查 DBdata 中是否存在与给定 sec_uid 匹配的项
+             * @param {Object} DBdata - 包含数据的对象
+             * @param {string} secUidToCheck - 要检查的 sec_uid
+             * @returns {string} 匹配的 sec_uid
+             */
+            const findMatchingSecUid = (DBdata, secUidToCheck) => {
+              for (const sec_uid in DBdata) {
+                if (DBdata.hasOwnProperty(sec_uid) && DBdata[sec_uid].sec_uid === secUidToCheck) {
+                  return secUidToCheck
+                }
               }
+              return false // 未找到匹配的 sec_uid，返回 false
+            }
+            let newEntry
+            if (DBdata) {
+              // 如果 DBdata 存在，遍历 DBdata 来查找对应的 sec_uid
+              let found = false
+
+              if (data[awemeId].sec_uid === findMatchingSecUid(DBdata, data[awemeId].sec_uid)) {
+                // 如果找到了对应的 sec_uid，将 awemeId 添加到 aweme_idlist 数组中
+                const isSecUidFound = findMatchingSecUid(DBdata, data[awemeId].sec_uid)
+                if (isSecUidFound && this.force ? true : !DBdata[data[awemeId].sec_uid].aweme_idlist.includes(awemeId)) {
+                  DBdata[isSecUidFound].aweme_idlist.push(awemeId)
+                  await DB.UpdateGroupData('douyin', groupId, DBdata)
+                  found = true
+                }
+              }
+
+              if (!found) {
+                // 如果没有找到对应的 sec_uid，创建一个新的条目
+                newEntry = {
+                  remark: data[awemeId].remark,
+                  create_time: data[awemeId].create_time,
+                  sec_uid: data[awemeId].sec_uid,
+                  aweme_idlist: [awemeId],
+                }
+                DBdata[data[awemeId].sec_uid] = newEntry
+                // 更新数据库
+                await DB.UpdateGroupData('douyin', groupId, DBdata)
+              }
+            } else {
+              // 如果 DBdata 为空，创建新的条目
+              await DB.CreateSheet('douyin', groupId, {
+                [data[awemeId].sec_uid]: {
+                  remark: data[awemeId].remark,
+                  create_time: data[awemeId].create_time,
+                  sec_uid: data[awemeId].sec_uid,
+                  aweme_idlist: [awemeId],
+                },
+              })
             }
           }
-          if (!found) {
-            // 如果没有找到对应的 sec_uid，创建一个新的条目
-            newEntry = {
-              remark: data[awemeId].remark,
-              create_time: data[awemeId].create_time,
-              sec_uid: data[awemeId].sec_uid,
-              aweme_idlist: [awemeId],
-            }
-            DBdata[data[awemeId].sec_uid] = newEntry
-            // 更新数据库
-            await DB.UpdateGroupData('douyin', groupId, DBdata)
-          }
-        } else {
-          // 如果 DBdata 为空，创建新的 sheet 并添加数据
-          await DB.CreateSheet('douyin', groupId, {
-            [data[awemeId].sec_uid]: {
-              remark: data[awemeId].remark,
-              create_time: data[awemeId].create_time,
-              sec_uid: data[awemeId].sec_uid,
-              aweme_idlist: [awemeId],
-            },
-          })
         }
+      } catch (error) {
+        logger.error(error)
       }
     }
   }
@@ -153,6 +141,13 @@ export default class push extends base {
     try {
       for (const item of Config.douyinpushlist) {
         const videolist = await new iKun('UserVideosList').GetData({ user_id: item.sec_uid })
+        const ALL_DBdata = await DB.FindAll('douyin')
+        // 检查配置文件中的群组列表与数据库中的群组列表是否一致
+        const dbGroupIds = new Set(Object.keys(ALL_DBdata).map(Number)) // 将数据库中的群组ID转换为数字并去重
+        const configGroupIds = Array.from(new Set(item.group_id)) // 配置文件中的群组ID集合
+
+        // 找出新添加的群组ID
+        const newGroupIds = configGroupIds.filter((groupId) => !dbGroupIds.has(groupId))
         if (videolist.aweme_list.length > 0) {
           // 遍历接口返回的视频列表
           for (const aweme of videolist.aweme_list) {
@@ -166,23 +161,22 @@ export default class push extends base {
                 continue
               }
               if (is_top) {
-                const idlist = await DB.FindAll('douyin')
-                if (Object.keys(idlist).length === 0) {
+                if (Object.keys(ALL_DBdata).length === 0) {
                   shouldPush = true
                   exitTry = true
                   continue
                 }
                 // 遍历数据库中的每个群对象
-                for (const groupId in idlist) {
-                  if (Object.keys(idlist[groupId]).length === 0) {
+                for (const groupId in ALL_DBdata) {
+                  if (Object.keys(ALL_DBdata[groupId]).length === 0) {
                     shouldBreak = true
                     break
                   }
                   // 遍历当前群的推送用户对象
-                  for (const sec_uid in idlist[groupId]) {
-                    if (idlist[groupId][sec_uid].sec_uid === item.sec_uid) {
+                  for (const sec_uid in ALL_DBdata[groupId]) {
+                    if (ALL_DBdata[groupId][sec_uid].sec_uid === item.sec_uid) {
                       // 找到对应用户，如果 aweme_id 不在在 aweme_idlist 中，也就是没推送过
-                      if (!idlist[groupId][sec_uid].aweme_idlist?.includes(aweme.aweme_id)) {
+                      if (!ALL_DBdata[groupId][sec_uid].aweme_idlist?.includes(aweme.aweme_id)) {
                         shouldPush = true
                         break // 跳出内部循环，判定为该视频要进行推送
                       }
@@ -203,7 +197,7 @@ export default class push extends base {
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
 
             // 如果 置顶视频的 aweme_id 不在数据库中，或者视频是新发布的（1天内），则 push 到 willbepushlist
-            if (shouldPush || timeDifference < 86400) {
+            if ((newGroupIds.length > 0 && timeDifference < 86400) || shouldPush || timeDifference < 86400) {
               // 确保 willbepushlist[aweme.aweme_id] 是一个对象
               if (!willbepushlist[aweme.aweme_id]) {
                 willbepushlist[aweme.aweme_id] = {
@@ -214,7 +208,7 @@ export default class push extends base {
                   Detail_Data: aweme, // 存储 detail 对象
                 }
               }
-              willbepushlist[aweme.aweme_id].group_id = [...item.group_id] // item.group_id 为配置文件的 group_id
+              willbepushlist[aweme.aweme_id].group_id = newGroupIds.length > 0 ? [...newGroupIds] : [...item.group_id] // item.group_id 为配置文件的 group_id
             }
           }
         } else {
