@@ -45,7 +45,12 @@ const bilibili = sequelize.define(
     data: {
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
-      comment: '已推送的抖音视频 ID 列表',
+      comment: '缓存数据',
+    },
+    dynamic_idlist: {
+      type: DataTypes.STRING,
+      defaultValue: '[]',
+      comment: '已推送的B站动态 ID 列表',
     },
   },
   {

@@ -16,35 +16,44 @@ export async function pushlist(e, list) {
     bilibili: [],
   }
 
-  // 遍历douyin对象
-  for (const groupId in data.douyin) {
-    const groupData = data.douyin[groupId]
-    for (const secUid in groupData) {
-      const item = groupData[secUid]
-      const groupName = (() => {
-        try {
-          // 尝试获取群组名称
-          return String(Bot.pickGroup(groupId).info.group_name)
-        } catch {
-          return String(groupId)
-        }
-      })()
-      // 寻找是否有相同的remark和sec_uid，如果有，则更新group_id数组
-      let foundItem = transformedData.douyin.find((x) => x.remark === item.remark && x.sec_uid === item.sec_uid)
-      if (foundItem) {
-        foundItem.group_id.push(groupName)
-      } else {
-        // 如果没有找到，创建新的对象并添加到数组中
-        transformedData.douyin.push({
+  const platforms = ['douyin', 'bilibili']
+  const uniqueIdKeyMap = {
+    douyin: 'sec_uid',
+    bilibili: 'host_mid',
+  }
+
+  platforms.forEach((platform) => {
+    for (const groupId in data[platform]) {
+      const groupData = data[platform][groupId]
+      for (const uniqueIdKey in groupData) {
+        const item = groupData[uniqueIdKey]
+        const uniqueId = item[uniqueIdKeyMap[platform]] // 使用映射的键名访问sec_uid或host_mid
+        const groupName = (() => {
+          try {
+            return String(Bot.pickGroup(groupId).info.group_name)
+          } catch {
+            return groupId
+          }
+        })()
+
+        let foundItem = transformedData[platform].find((x) => x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId)
+
+        const newItem = {
+          avatar_img: item.avatar_img,
           remark: item.remark,
           create_time: convertTimestampToDateTime(item.create_time),
-          sec_uid: item.sec_uid,
+          [uniqueIdKeyMap[platform]]: uniqueId, // 使用映射的键名设置sec_uid或host_mid
           group_id: [groupName],
-          avatar_img: item.avatar_img,
-        })
+        }
+
+        if (foundItem) {
+          foundItem.group_id.push(groupName)
+        } else {
+          transformedData[platform].push(newItem)
+        }
       }
     }
-  }
+  })
 
   img = await Render.render(
     'html/pushlist/pushlist',

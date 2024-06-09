@@ -20,7 +20,7 @@ export default class push extends base {
       let data = await this.getuserdata()
       data = this.findMismatchedAwemeIds(data)
 
-      if (data.length == 0) return true
+      if (Object.keys(data).length === 0) return true
 
       if (this.force) return await this.forcepush(data)
       else return await this.getdata(data)

@@ -103,7 +103,7 @@
 .title {
   font-size: 24px;
   color: #333;
-  border-bottom: 2px solid #ccc;
+  border-bottom: 2px solid #2c2c2c;
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
@@ -117,7 +117,7 @@
   display: flex;
   align-items: center;
   margin-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #2c2c2c;
   padding-bottom: 10px;
 }
 
