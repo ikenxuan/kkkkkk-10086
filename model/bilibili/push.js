@@ -197,7 +197,7 @@ export default class push extends base {
         /** 未处理的动态类型 */
         default:
           send = false
-          logger.warn(`「${data[dynamicId].type}」动态类型的暂未支持推送`)
+          logger.warn(`「${data[dynamicId].dynamic_type}」动态类型的暂未支持推送`)
       }
 
       // 遍历 group_id 数组，并发送消息
@@ -247,7 +247,7 @@ export default class push extends base {
                   create_time: data[dynamicId].create_time,
                   host_mid: data[dynamicId].host_mid,
                   dynamic_idlist: [dynamicId],
-                  avatar_img: data[dynamicId].Detail_Data.modules.module_author.face,
+                  avatar_img: data[dynamicId].Dynamic_Data.modules.module_author.face,
                   dynamic_type: data[dynamicId].dynamic_type,
                 }
                 DBdata[data[dynamicId].host_mid] = newEntry
