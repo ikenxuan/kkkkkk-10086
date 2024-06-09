@@ -15,11 +15,9 @@ export default class push extends base {
 
   async action() {
     await this.checkremark()
-    let cachedata = await DB.FindAll('douyin'),
-      data
 
     try {
-      data = await this.getuserdata()
+      let data = await this.getuserdata()
       data = this.findMismatchedAwemeIds(data)
 
       if (data.length == 0) return true
@@ -32,10 +30,7 @@ export default class push extends base {
   }
 
   async getdata(data) {
-    if (Object.keys(data).length === 0) {
-      logger.warn('暂无博主有新发布作品')
-      return true
-    }
+    if (Object.keys(data).length === 0) return true
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
       const iddata = await GetID(Detail_Data.share_url)
@@ -105,6 +100,7 @@ export default class push extends base {
                   create_time: data[awemeId].create_time,
                   sec_uid: data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.author.avatar_uri,
                 }
                 DBdata[data[awemeId].sec_uid] = newEntry
                 // 更新数据库
@@ -118,6 +114,7 @@ export default class push extends base {
                   create_time: data[awemeId].create_time,
                   sec_uid: data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.author.avatar_uri,
                 },
               })
             }
@@ -151,6 +148,10 @@ export default class push extends base {
         if (videolist.aweme_list.length > 0) {
           // 遍历接口返回的视频列表
           for (const aweme of videolist.aweme_list) {
+            const now = new Date().getTime()
+            const createTime = parseInt(aweme.create_time, 10) * 1000
+            const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
+
             let is_top = aweme.is_top === 1, // 是否为置顶
               shouldPush = false, // 是否列入推送数组
               shouldBreak = false, // 是否跳出循环
@@ -176,7 +177,7 @@ export default class push extends base {
                   for (const sec_uid in ALL_DBdata[groupId]) {
                     if (ALL_DBdata[groupId][sec_uid].sec_uid === item.sec_uid) {
                       // 找到对应用户，如果 aweme_id 不在在 aweme_idlist 中，也就是没推送过
-                      if (!ALL_DBdata[groupId][sec_uid].aweme_idlist?.includes(aweme.aweme_id)) {
+                      if (!ALL_DBdata[groupId][sec_uid].aweme_idlist?.includes(aweme.aweme_id) && timeDifference < 86400) {
                         shouldPush = true
                         break // 跳出内部循环，判定为该视频要进行推送
                       }
@@ -192,10 +193,6 @@ export default class push extends base {
               break
             }
 
-            const now = new Date().getTime()
-            const createTime = parseInt(aweme.create_time, 10) * 1000
-            const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
-
             // 如果 置顶视频的 aweme_id 不在数据库中，或者视频是新发布的（1天内），则 push 到 willbepushlist
             if ((newGroupIds.length > 0 && timeDifference < 86400) || shouldPush || timeDifference < 86400) {
               // 确保 willbepushlist[aweme.aweme_id] 是一个对象
@@ -206,6 +203,7 @@ export default class push extends base {
                   create_time: aweme.create_time,
                   group_id: [], // 初始化 group_id 为数组
                   Detail_Data: aweme, // 存储 detail 对象
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + aweme.author.avatar_uri,
                 }
               }
               willbepushlist[aweme.aweme_id].group_id = newGroupIds.length > 0 ? [...newGroupIds] : [...item.group_id] // item.group_id 为配置文件的 group_id
@@ -223,56 +221,6 @@ export default class push extends base {
     // 这里是强制数组的第一个对象中的内容 DBdata[0]?.data 因为调用这个函数的上层有遍历群组逻辑
     // DBdata[0]?.data 则是当前群组的推送用户数据
     return { willbepushlist, DBdata }
-  }
-
-  /**
-   *
-   * @param {object} data 数据对象
-   * @returns 将数据转换成写入数据库中的结构
-   */
-  transformedData(data) {
-    const secUidMap = {}
-
-    for (const key in data) {
-      const item = data[key]
-      if (!secUidMap[item.sec_uid]) {
-        secUidMap[item.sec_uid] = {
-          remark: item.remark,
-          create_time: item.create_time,
-          sec_uid: item.sec_uid,
-          aweme_idlist: [key],
-        }
-      } else {
-        secUidMap[item.sec_uid].aweme_idlist.push(key)
-      }
-    }
-
-    return secUidMap
-  }
-
-  /**
-   *
-   * @param {object} DBdata
-   * @returns 将DBdata转换为willbepushlist格式的数据结构
-   */
-  transformDBDataToWillbepushlistFormat(DBdata) {
-    const willbepushlist = {}
-
-    // 遍历DBdata，构建willbepushlist格式的对象
-    for (const group of DBdata) {
-      for (const item of group.data) {
-        for (const aweme_id of item.aweme_idlist) {
-          willbepushlist[aweme_id] = {
-            remark: item.remark,
-            create_time: item.create_time,
-            sec_uid: item.sec_uid,
-            group_id: item.group_id,
-          }
-        }
-      }
-    }
-
-    return willbepushlist
   }
 
   /**

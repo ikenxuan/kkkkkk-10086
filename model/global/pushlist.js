@@ -1,52 +1,46 @@
-import { Render, Config } from '#modules'
+import { Render, DB } from '#modules'
 
 /**
  *
  * @param {Object} e 消息对象
  * @param {Array} list 推送数组
- * @param {Array} redisdata redis缓存
- * @param redisdata.douyin 抖音缓存数据
- * @param redisdata.bilibili B站缓存数据
  */
-export async function pushlist(e, list, redisdata) {
-  if (redisdata.douyin.length === 0 && redisdata.bilibili.length === 0) {
-    throw new Error('请先执行「#kkk设置抖音推送开启」「#kkk设置B站推送开启」后设置推送用户等待自动推送一次后再使用此命令')
-  }
-  let img
-  const data = {
-    douyin: JSON.parse(redisdata?.douyin) || [],
-    bilibili: JSON.parse(redisdata?.bilibili) || [],
-  }
-
-  // 定义一个函数来筛选数组
-  const filterArray = (arr, groupId) => {
-    return arr.filter((item) => {
-      // 检查群号是否存在于当前项的group_id数组中
-      return item.group_id && item.group_id.includes(groupId)
-    })
+export async function pushlist(e, list) {
+  let img,
+    data = {
+      douyin: await DB.FindAll('douyin'),
+      bilibili: await DB.FindAll('bilibili'),
+    }
+  const transformedData = {
+    douyin: [],
+    bilibili: [],
   }
 
-  // 遍历data对象的所有属性
-  for (let key in data) {
-    if (data.hasOwnProperty(key)) {
-      // 确保属性值是数组
-      if (Array.isArray(data[key])) {
-        if (!e.isMaster) {
-          data[key] = filterArray(data[key], e.group_id)
+  // 遍历douyin对象
+  for (const groupId in data.douyin) {
+    const groupData = data.douyin[groupId]
+    for (const secUid in groupData) {
+      const item = groupData[secUid]
+      const groupName = (() => {
+        try {
+          // 尝试获取群组名称
+          return String(Bot.pickGroup(groupId).info.group_name)
+        } catch {
+          return String(groupId)
         }
-        // 遍历数组中的每个对象
-        data[key].forEach((item) => {
-          // 格式化
-          if (item.create_time) {
-            item.create_time = convertTimestampToDateTime(item.create_time)
-          }
-          item.group_id = item.group_id.map((groupId) => {
-            try {
-              return String(Bot.pickGroup(Number(groupId)).info.group_name)
-            } catch {
-              return groupId
-            }
-          })
+      })()
+      // 寻找是否有相同的remark和sec_uid，如果有，则更新group_id数组
+      let foundItem = transformedData.douyin.find((x) => x.remark === item.remark && x.sec_uid === item.sec_uid)
+      if (foundItem) {
+        foundItem.group_id.push(groupName)
+      } else {
+        // 如果没有找到，创建新的对象并添加到数组中
+        transformedData.douyin.push({
+          remark: item.remark,
+          create_time: convertTimestampToDateTime(item.create_time),
+          sec_uid: item.sec_uid,
+          group_id: [groupName],
+          avatar_img: item.avatar_img,
         })
       }
     }
@@ -58,9 +52,9 @@ export async function pushlist(e, list, redisdata) {
       isMaster: e.isMaster,
       group_id: e.isMaster
         ? `<h1>Bot: <code>${Bot.nickname}</code>推送列表</h1>`
-        : `<h1>群: <code>${Bot.pickGroup(Number(e.group_id)).info.group_name}</code>推送列表</h1>`,
+        : `<h1>群: <code>${Bot.pickGroup(Number(e.group_id)).info.group_name} </code>推送列表</h1>`,
       length: list,
-      data: data,
+      data: transformedData,
     },
     { e, scale: 1.8, retType: 'base64' },
   )

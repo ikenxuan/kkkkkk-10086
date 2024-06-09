@@ -80,10 +80,7 @@ export class Tools extends plugin {
         }
       }
     }
-    const img = await pushlist(e, obj, {
-      douyin: Config.douyinpush ? await redis.get('kkk:douyPush') : '[]',
-      bilibili: Config.bilibilipush ? await redis.get('kkk:biliPush') : '[]',
-    })
+    const img = await pushlist(e, obj)
     return e.reply(img)
   }
 
