@@ -88,7 +88,7 @@ export default class push extends base {
                 const isSecUidFound = findMatchingSecUid(DBdata, data[awemeId].sec_uid)
                 if (isSecUidFound && this.force ? true : !DBdata[data[awemeId].sec_uid].aweme_idlist.includes(awemeId)) {
                   DBdata[isSecUidFound].aweme_idlist.push(awemeId)
-                  DBdata[isSecUidFound].create_time = Number(data[dynamicId].create_time)
+                  DBdata[isSecUidFound].create_time = Number(data[awemeId].create_time)
                   await DB.UpdateGroupData('douyin', groupId, DBdata)
                   found = true
                 }
