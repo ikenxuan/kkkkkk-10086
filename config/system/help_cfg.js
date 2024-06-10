@@ -40,6 +40,11 @@ export const helpList = [
         title: '#设置b站推送+UID',
         desc: '订阅喜欢的b站阿婆主，推送最新作品以及动态',
       },
+      {
+        icon: 41,
+        title: '#kkk推送列表',
+        desc: '查看当前群哪个UP被推送了',
+      },
     ],
   },
   {

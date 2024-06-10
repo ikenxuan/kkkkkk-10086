@@ -36,29 +36,29 @@ npm install --production
 
 | 功能           | 支持情况         | 是否需要配置 ck | 平台 |
 | -------------- | ---------------- | --------------- | ---- |
-| 扫码登录取 ck  | 风控太严，做不了 |                | 抖音 |
+| 扫码登录取 ck  | 风控太严，做不了 |                 | 抖音 |
 | 视频           | 支持             | 必须            | 抖音 |
 | 图集           | 支持             | 必须            | 抖音 |
 | 评论           | 支持             | 必须            | 抖音 |
 | 用户主视频列表 | 初步支持         | 必须            | 抖音 |
-| 视频更新推送   | 视频/图集/直播             | 必须            | 抖音 |
+| 视频更新推送   | 视频/图集/~~直播~~   | 必须            | 抖音 |
 | ...            | ...              | ...             | ...  |
 
-| 功能          | 支持情况            | 是否需要配置 ck                     | 是否需要大会员 | 平台 |
-| ------------- | ------------------- | ----------------------------------- | -------------- | ---- |
-| 扫码登录取 ck | 支持                |                                     |                | B 站 |
-| 视频          | 支持                | 默认画质 `360p` 设置后 `720p/1080p` | 有则最高 `4K`  | B 站 |
-| 评论          | 支持                | 否                                  | 否             | B 站 |
-| 番剧          | 支持                | 可能                                | 看剧集是否需要 | B 站 |
-| 动态          | 图文/纯文/纯图      | 必须                                | 否             | B 站 |
-| 动态推送      | 图文/纯文/视频/直播 | 必须                                | 否             | B 站 |
-| ...           | ...                 | ...                                 | ...            | ...  |
+| 功能          | 支持情况            | 是否需要配置 ck                                             | 平台 |
+| ------------- | ------------------- | ----------------------------------------------------------- | ---- |
+| 扫码登录取 ck | 支持                |                                                             | B 站 |
+| 视频          | 支持                | 默认画质 `360p` 设置后 `720p/1080p`，有大会员最高 `4K` | B 站
+| 评论          | 支持                | 否                                                          | B 站 |
+| 番剧          | 支持                | 可能，看剧集是否需要大会员                              |B 站
+| 动态          | 图文/纯文/纯图      | 必须                                                        | B 站 |
+| 动态推送      | 图文/纯文/视频/直播 | 必须                                                        | B 站 |
+| ...           | ...                 | ...                                                         | ...  |
 
 想到什么写什么(有时间精力的情况下)
 
 ---
 
-更多信息可使用 `#kkk设置` `#kkk帮助` 查看
+更多信息可使用 `#kkk设置` `#kkk帮助` `#kkk版本`查看
 
 > [!TIP]  
 > 本插件配置文件使用`JSON`格式，非常见的`YAML`格式，建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。配置文件路径：
@@ -80,19 +80,50 @@ npm install --production
 > - **手机**  
 >   使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [抖音](https://www.douyin.com/)/[哔哩哔哩](https://www.bilibili.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
 
-## 参考
+> [!CAUTION]
+>
+> ### 关于抖音ck
+>
+> 本项目的抖音API接口全部取自其 [web端站点](https://www.douyin.com) ，风控非常严格，导致ck可能频繁失效，当抖音业务出现问题时建议优先更换ck重试
+>
+> **更多的解决方法：**
+>
+> - 抖音推送定时任务间隔不宜过短
+> - 同一ck不要频繁异地调用
 
-排名不分先后
+## 常见问题
+> 报错：**<span style="color:#D7474B">TypeError: response.body.on is not a function</span>**
+> 
+> ```sh
+> # 到插件目录下重新安装依赖
+> cd plugins/kkkkkk-10086/ && pnpm i
+>
+> # 或者确保 node.js 版本 >= v21
+> ```
+
+## 鸣谢
+
+
+**业务站点**
 
 - [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
+
+本项目的开发参考了以下开源项目部分代码，排名不分先后
+
+**部分代码借鉴**
+
 - [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
 - [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
-- [X-Bogus](https://github.com/B1gM8c/X-Bogus)
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
+- ...
+
+**接口文档与加密参数算法**
+
+- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
+- [X-Bogus](https://github.com/B1gM8c/X-Bogus)
 
 ## 友情链接
 

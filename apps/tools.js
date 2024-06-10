@@ -1,7 +1,6 @@
-import { base, GetID, common, Config } from '#modules'
+import { base, GetID, common, Config, pushlist } from '#modules'
 import { DouYin, DouYinpush, iKun } from '#douyin'
 import { BiLiBiLi, bilidata, Bilibilipush } from '#bilibili'
-
 export class Tools extends plugin {
   constructor() {
     const rule = Config.videotool
@@ -15,11 +14,11 @@ export class Tools extends plugin {
             fnc: 'bilib',
           },
           {
-            reg: '第(\\d{1,3})集',
+            reg: '^第(\\d{1,3})集$',
             fnc: 'next',
           },
           {
-            reg: '#?BGM',
+            reg: '^#?BGM',
             fnc: 'uploadrecord',
           },
         ]
@@ -51,11 +50,38 @@ export class Tools extends plugin {
         ...rule,
         { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
-        { reg: '#抖音强制推送', fnc: 'pushdouy', permission: 'master' },
-        { reg: '#B站强制推送', fnc: 'pushbili', permission: 'master' },
+        { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
+        { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
+        { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
       ],
     })
     this.task = task
+  }
+
+  async pushlist(e) {
+    let obj = {
+      douyin: [],
+      bilibili: [],
+    }
+    const platforms = {
+      douyin: Config.douyinpushlist,
+      bilibili: Config.bilibilipushlist,
+    }
+    for (const platform in platforms) {
+      if (platforms.hasOwnProperty(platform)) {
+        const list = platforms[platform]
+        for (const item of list) {
+          // 根据平台不同，选择不同的属性 key
+          const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
+          obj[platform].push({
+            remark: item.remark,
+            [key]: item[key],
+          })
+        }
+      }
+    }
+    const img = await pushlist(e, obj)
+    return e.reply(img)
   }
 
   async pushdouy() {
