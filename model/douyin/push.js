@@ -88,6 +88,7 @@ export default class push extends base {
                 const isSecUidFound = findMatchingSecUid(DBdata, data[awemeId].sec_uid)
                 if (isSecUidFound && this.force ? true : !DBdata[data[awemeId].sec_uid].aweme_idlist.includes(awemeId)) {
                   DBdata[isSecUidFound].aweme_idlist.push(awemeId)
+                  DBdata[isSecUidFound].create_time = Number(data[dynamicId].create_time)
                   await DB.UpdateGroupData('douyin', groupId, DBdata)
                   found = true
                 }
@@ -97,7 +98,7 @@ export default class push extends base {
                 // 如果没有找到对应的 sec_uid，创建一个新的条目
                 newEntry = {
                   remark: data[awemeId].remark,
-                  create_time: data[awemeId].create_time,
+                  create_time: Number(data[awemeId].create_time),
                   sec_uid: data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
                   avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.author.avatar_uri,

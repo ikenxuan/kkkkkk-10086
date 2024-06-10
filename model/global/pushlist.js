@@ -30,9 +30,9 @@ export async function pushlist(e, list) {
         const uniqueId = item[uniqueIdKeyMap[platform]] // 使用映射的键名访问sec_uid或host_mid
         const groupName = (() => {
           try {
-            return String(Bot.pickGroup(groupId).info.group_name)
+            return String(Bot.pickGroup(Number(groupId)).info.group_name)
           } catch {
-            return groupId
+            return String(groupId)
           }
         })()
 

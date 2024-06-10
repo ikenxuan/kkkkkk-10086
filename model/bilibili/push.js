@@ -204,11 +204,9 @@ export default class push extends base {
       try {
         let status
         for (const groupId of data[dynamicId].group_id) {
-          if (send) {
-            status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
-          } else break
+          if (send) status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
 
-          if (status) {
+          if (status || !send) {
             const DBdata = await DB.FindGroup('bilibili', groupId)
 
             /**
@@ -235,6 +233,7 @@ export default class push extends base {
                 const isSecUidFound = findMatchingSecUid(DBdata, data[dynamicId].host_mid)
                 if (isSecUidFound && this.force ? true : !DBdata[data[dynamicId].host_mid].dynamic_idlist.includes(dynamicId)) {
                   DBdata[isSecUidFound].dynamic_idlist.push(dynamicId)
+                  DBdata[isSecUidFound].create_time = Number(data[dynamicId].create_time)
                   await DB.UpdateGroupData('bilibili', groupId, DBdata)
                   found = true
                 }
