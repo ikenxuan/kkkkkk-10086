@@ -47,6 +47,7 @@ export default class push extends base {
    * - data 动态信息对象，必须包含 dynamic_id, host_mid, group_id, type 等属性。
    */
   async getdata(data) {
+    let nocd_data
     for (const dynamicId in data) {
       const dynamicCARDINFO = await new bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
       const userINFO = await new bilidata('用户名片信息').GetData(data[dynamicId].host_mid)
@@ -138,7 +139,7 @@ export default class push extends base {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
             const INFODATA = await new bilidata('bilibilivideo').GetData({ id: bvid })
-            const nocd_data = await new networks({
+            nocd_data = await new networks({
               url: BiLiBiLiAPI.VIDEO(aid, INFODATA.INFODATA.data.cid) + '&platform=html5',
               headers: this.headers,
             }).getData()
@@ -165,12 +166,6 @@ export default class push extends base {
               },
               { e: this.e, scale: 1.4, retType: 'base64' },
             )
-            try {
-              await Bot.pickGroup(Number(data.group_id[i])).sendMsg(segment.video(nocd_data.data.durl[0].url))
-            } catch (error) {
-              logger.error(error)
-              await redis.set(key, 1)
-            }
           }
           break
 
@@ -205,6 +200,12 @@ export default class push extends base {
         let status
         for (const groupId of data[dynamicId].group_id) {
           if (send) status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
+          if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV')
+            try {
+              await Bot.pickGroup(Number(groupId)).sendMsg(segment.video(nocd_data.data.durl[0].url))
+            } catch (error) {
+              logger.error(error)
+            }
 
           if (status || !send) {
             const DBdata = await DB.FindGroup('bilibili', groupId)
