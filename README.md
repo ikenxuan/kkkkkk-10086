@@ -1,5 +1,3 @@
-# 该分支处于开发状态中，部分功能可能不可用！
-
 ![kkkkkk-10086](https://socialify.git.ci/ikenxuan/kkkkkk-10086/image?font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 
 [**Miao-Yunzai**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**TRSS-Yunzai**](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件
@@ -43,15 +41,15 @@ npm install --production
 | 图集           | 支持             | 必须            | 抖音 |
 | 评论           | 支持             | 必须            | 抖音 |
 | 用户主视频列表 | 初步支持         | 必须            | 抖音 |
-| 视频更新推送   | 视频/图集/直播   | 必须            | 抖音 |
+| 视频更新推送   | 视频/图集/~~直播~~   | 必须            | 抖音 |
 | ...            | ...              | ...             | ...  |
 
 | 功能          | 支持情况            | 是否需要配置 ck                                             | 平台 |
 | ------------- | ------------------- | ----------------------------------------------------------- | ---- |
 | 扫码登录取 ck | 支持                |                                                             | B 站 |
-| 视频          | 支持                | 默认画质 `360p` 设置后 `720p/1080p`，有大会员最高 `4K` B 站 |
+| 视频          | 支持                | 默认画质 `360p` 设置后 `720p/1080p`，有大会员最高 `4K` | B 站
 | 评论          | 支持                | 否                                                          | B 站 |
-| 番剧          | 支持                | 可能，看剧集是否需要大会员 B 站                             |
+| 番剧          | 支持                | 可能，看剧集是否需要大会员                              |B 站
 | 动态          | 图文/纯文/纯图      | 必须                                                        | B 站 |
 | 动态推送      | 图文/纯文/视频/直播 | 必须                                                        | B 站 |
 | ...           | ...                 | ...                                                         | ...  |
@@ -90,17 +88,27 @@ npm install --production
 >
 > **更多的解决方法：**
 >
-> - 抖音推送博主数量不宜过多（< 15个）
-> - 抖音推送定时任务间隔（> 10分钟一次）
+> - 抖音推送定时任务间隔不宜过短
 > - 同一ck不要频繁异地调用
+
+## 常见问题
+> 报错：**<span style="color:#D7474B">TypeError: response.body.on is not a function</span>**
+> 
+> ```sh
+> # 到插件目录下重新安装依赖
+> cd plugins/kkkkkk-10086/ && pnpm i
+>
+> # 或者确保 node.js 版本 >= v21
+> ```
 
 ## 鸣谢
 
-本项目的开发参考了以下开源项目部分代码，排名不分先后
 
 **业务站点**
 
 - [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
+
+本项目的开发参考了以下开源项目部分代码，排名不分先后
 
 **部分代码借鉴**
 
@@ -109,6 +117,7 @@ npm install --production
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
 - [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
+- ...
 
 **接口文档与加密参数算法**
 
