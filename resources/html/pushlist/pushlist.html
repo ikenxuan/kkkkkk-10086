@@ -11,12 +11,17 @@
   {{each data.douyin val }}
   <ul class="user-list">
     <li>
-      <img src="{{val.UserInfo.user.avatar_larger.url_list[0]}}" alt="用户头像" />
+      <img src="{{val.avatar_img}}" alt="用户头像" />
       <div class="user-info">
         <span style="font-weight: bold">{{val.remark}}</span>
-        <span class="user-id">用户ID: {{val.sec_uid}}</span>
-        <span class="dynamic-id">最新作品编号: {{val.aweme_id}}</span>
-        <span class="timestamp">最新作品发布时间: {{val.create_time}}</span>
+        <span class="user-id">
+          <span style="color: #1e1f20">用户ID:</span>
+          {{val.sec_uid}}
+        </span>
+        <span class="timestamp">
+          <span style="color: #1e1f20">最新作品发布时间:</span>
+          {{val.create_time}}
+        </span>
         {{if isMaster}}
         <span style="font-size: 16px">推送群:</span>
         <ul class="markdown-style">
@@ -41,12 +46,17 @@
   {{each data.bilibili val }}
   <ul class="user-list">
     <li>
-      <img src="{{val.Dynamic_Data.data.items[0].modules.module_author.face}}" alt="用户头像" />
+      <img src="{{val.avatar_img}}" alt="用户头像" />
       <div class="user-info">
         <span style="font-weight: bold">{{val.remark}}</span>
-        <span class="user-id">UID: {{val.host_mid}}</span>
-        <span class="dynamic-id">最新动态ID: {{val.dynamic_id}}</span>
-        <span class="timestamp">最新动态发布时间: {{val.create_time}}</span>
+        <span class="user-id">
+          <span style="color: #1e1f20">UID:</span>
+          {{val.host_mid}}
+        </span>
+        <span class="timestamp">
+          <span style="color: #1e1f20">最新动态发布时间:</span>
+          {{val.create_time}}
+        </span>
         {{if isMaster}}
         <span style="font-size: 16px">推送群:</span>
         <ul class="markdown-style">

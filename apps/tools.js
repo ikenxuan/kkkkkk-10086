@@ -1,7 +1,6 @@
 import { base, GetID, common, Config, pushlist } from '#modules'
 import { DouYin, DouYinpush, iKun } from '#douyin'
 import { BiLiBiLi, bilidata, Bilibilipush } from '#bilibili'
-
 export class Tools extends plugin {
   constructor() {
     const rule = Config.videotool
@@ -19,7 +18,7 @@ export class Tools extends plugin {
             fnc: 'next',
           },
           {
-            reg: '^#?BGM$',
+            reg: '^#?BGM',
             fnc: 'uploadrecord',
           },
         ]
@@ -49,7 +48,7 @@ export class Tools extends plugin {
       priority: Config.defaulttool ? -Infinity : Config.priority,
       rule: [
         ...rule,
-        { reg: '^#设置抖音推送$', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
+        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
@@ -81,10 +80,7 @@ export class Tools extends plugin {
         }
       }
     }
-    const img = await pushlist(e, obj, {
-      douyin: Config.douyinpush ? await redis.get('kkk:douyPush') : '[]',
-      bilibili: Config.bilibilipush ? await redis.get('kkk:biliPush') : '[]',
-    })
+    const img = await pushlist(e, obj)
     return e.reply(img)
   }
 
