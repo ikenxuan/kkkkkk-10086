@@ -93,6 +93,14 @@
   <ul class="cfg-ul">
     <li class="cfg-li">
       <div class="cfg-line">
+        抖音解析开关
+        <span class="cfg-hint">#kkk设置抖音解析 + 开启/关闭</span>
+        {{@data.douyintool}}
+      </div>
+      <div class="cfg-desc">单独开关，受「总开关」影响</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
         抖音解析提示
         <span class="cfg-hint">#kkk设置抖音解析提示 + 开启/关闭</span>
         {{@data.douyintip}}
@@ -155,11 +163,35 @@
       </div>
       <div class="cfg-desc">建议使用[锅巴后台面板]设置</div>
     </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        图集BGM是否使用高清语音发送
+        <span class="cfg-hint">#kkk设置抖音高清语音 + 开启/关闭</span>
+        {{@data.sendHDrecord}}
+      </div>
+      <div class="cfg-desc">高清语音「ios/PC」系统均无法播放，自行衡量开关</div>
+    </li>
   </ul>
 </div>
 <div class="cfg-box">
   <div class="cfg-group">bilibili相关</div>
   <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站解析开关
+        <span class="cfg-hint">#kkk设置B站解析 + 开启/关闭</span>
+        {{@data.bilibilitool}}
+      </div>
+      <div class="cfg-desc">单独开关，受「总开关」影响</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站解析提示
+        <span class="cfg-hint">#kkk设置B站解析提示 + 开启/关闭</span>
+        {{@data.bilibilitip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到B站链接，开始解析”</div>
+    </li>
     <li class="cfg-li">
       <div class="cfg-line">
         B站评论图
@@ -175,14 +207,6 @@
         {{@data.bilibilinumcomments}}
       </div>
       <div class="cfg-desc">设置接口返回的评论数量，范围1~20条</div>
-    </li>
-    <li class="cfg-li">
-      <div class="cfg-line">
-        B站解析提示
-        <span class="cfg-hint">#kkk设置B站解析提示 + 开启/关闭</span>
-        {{@data.bilibilitip}}
-      </div>
-      <div class="cfg-desc">发送提示信息：“检测到B站链接，开始解析”</div>
     </li>
     <li class="cfg-li">
       <div class="cfg-line">

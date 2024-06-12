@@ -24,5 +24,8 @@
   "bilibilipushcron": "*/10 * * * *",
   "bilibilipushGroup": "master",
   "renderScale": 100,
-  "priority": 800
+  "priority": 800,
+  "douyintool": true,
+  "bilibilitool": true,
+  "sendHDrecord": true
 }

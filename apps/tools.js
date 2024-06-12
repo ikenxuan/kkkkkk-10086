@@ -5,14 +5,18 @@ export class Tools extends plugin {
   constructor() {
     const rule = Config.videotool
       ? [
-          {
-            reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
-            fnc: 'douy',
-          },
-          {
-            reg: '(bilibili.com|b23.tv|t.bilibili.com)',
-            fnc: 'bilib',
-          },
+          Config.douyintool
+            ? {
+                reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
+                fnc: 'douy',
+              }
+            : null,
+          Config.bilibilitool
+            ? {
+                reg: '(bilibili.com|b23.tv|t.bilibili.com)',
+                fnc: 'bilib',
+              }
+            : null,
           {
             reg: '^第(\\d{1,3})集$',
             fnc: 'next',
@@ -21,7 +25,7 @@ export class Tools extends plugin {
             reg: '^#?BGM',
             fnc: 'uploadrecord',
           },
-        ]
+        ].filter((rule) => rule !== null)
       : []
     const task = [
       Config.douyinpush

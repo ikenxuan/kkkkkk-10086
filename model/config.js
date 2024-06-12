@@ -30,6 +30,9 @@ const defaultConfig = {
   bilibilipushGroup: 'master',
   renderScale: 100,
   priority: 800,
+  douyintool: true,
+  bilibilitool: true,
+  sendHDrecord: true,
 }
 let config = {}
 

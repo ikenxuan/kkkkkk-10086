@@ -76,7 +76,7 @@ export default class DouYin extends base {
           let res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
-          !Config.sendforwardmsg && this.e.bot?.sendUni && await this.e.reply(res)
+          !Config.sendforwardmsg && this.e.bot?.sendUni && (await this.e.reply(res))
         } else {
           image_res.push('图集信息解析失败')
         }
@@ -129,11 +129,12 @@ export default class DouYin extends base {
           music_res.push(music_data)
           switch (this.botname) {
             case 'miao-yunzai':
-              if (music_url && this.is_mp4 == false && music_url !== undefined && this.botCfg.bot.skip_login == false) {
+              if (music_url && this.is_mp4 == false && this.botadapter === 'ICQQ') {
                 try {
-                  await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+                  if (Config.sendHDrecord) await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+                  else await this.e.reply(segment.record(music_url))
                 } catch {}
-              } else if (this.botCfg.bot.skip_login && this.is_mp4 == false) {
+              } else if (this.botadapter !== 'ICQQ' && this.is_mp4 == false) {
                 await this.e.reply(segment.record(music_url))
               }
               break
@@ -149,10 +150,13 @@ export default class DouYin extends base {
                   break
                 case 'ICQQ':
                   try {
-                    music_url && this.is_mp4 == false && music_url && await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+                    if (music_url && this.is_mp4 == false) {
+                      if (Config.sendHDrecord) await this.e.reply(await uploadRecord(this.e, music_url, 0, false))
+                      else this.e.reply(segment.record(music_url))
+                    }
                   } catch (error) {
                     logger.error('高清语音发送失败', error)
-                    music_url && this.is_mp4 == false && music_url && await this.e.reply(segment.record(music_url))
+                    music_url && this.is_mp4 == false && music_url && (await this.e.reply(segment.record(music_url)))
                   }
                   break
               }

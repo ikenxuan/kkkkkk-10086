@@ -107,8 +107,15 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'douyintool',
+          label: '抖音解析开关',
+          bottomHelpMessage: '单独开关，受「总开关」影响',
+          component: 'Switch',
+          required: false,
+        },
+        {
           field: 'douyintip',
-          label: '提示',
+          label: '抖音解析提示',
           bottomHelpMessage: '发送提示信息：“检测到抖音链接，开始解析”',
           component: 'Switch',
           required: false,
@@ -197,7 +204,7 @@ export function supportGuoba() {
         },
         {
           field: 'douyinpushGroup',
-          label: '设置权限',
+          label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: '抖音推送添加权限',
           componentProps: {
@@ -217,6 +224,13 @@ export function supportGuoba() {
           required: false,
         },
         {
+          field: 'sendHDrecord',
+          label: 'BGM使用高清语音',
+          bottomHelpMessage: '高清语音「ios/PC」系统均无法播放，自行衡量开关',
+          component: 'Switch',
+          required: false,
+        },
+        {
           component: 'Divider',
           label: '哔哩哔哩视频解析配置',
           componentProps: {
@@ -225,8 +239,15 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'bilibilitool',
+          label: 'B站解析开关',
+          bottomHelpMessage: '单独开关，受「总开关」影响',
+          component: 'Switch',
+          required: false,
+        },
+        {
           field: 'bilibilitip',
-          label: '提示',
+          label: 'B站解析提示',
           bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
           component: 'Switch',
           required: false,
@@ -311,7 +332,7 @@ export function supportGuoba() {
         },
         {
           field: 'bilibilipushGroup',
-          label: '设置权限',
+          label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: '抖音推送添加权限',
           componentProps: {

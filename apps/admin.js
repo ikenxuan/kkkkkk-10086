@@ -17,6 +17,8 @@ const DouYinType = {
   抖音推送日志: 'douyinpushlog',
   抖音推送表达式: 'douyinpushcron',
   抖音解析提示: 'douyintip',
+  抖音解析: 'douyintool',
+  抖音高清语音: 'sendHDrecord',
 }
 
 const BilibiliType = {
@@ -25,6 +27,7 @@ const BilibiliType = {
   B站推送日志: 'bilibilipushlog',
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',
+  B站解析: 'bilibilitool',
 }
 const NumberCfgType = {
   抖音评论数量: { key: 'numcomments', limit: '0-50' },

@@ -43,7 +43,7 @@ export const helpList = [
       {
         icon: 41,
         title: '#kkk推送列表',
-        desc: '查看当前群哪个UP被推送了',
+        desc: '查看当前群哪个UP/博主被推送了，推送过才会出现在列表中',
       },
     ],
   },
