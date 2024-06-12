@@ -117,6 +117,7 @@ npm install --production
 - [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
 - [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
 - [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
+- [Shiranai-Plugin](https://github.com/XasYer/Shiranai-Plugin)
 - ...
 
 **接口文档与加密参数算法**

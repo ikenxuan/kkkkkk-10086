@@ -76,7 +76,11 @@ export default class DouYin extends base {
           let res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
-          !Config.sendforwardmsg && this.e.bot?.sendUni && (await this.e.reply(res))
+          if (imageres.length === 1) {
+            await this.e.reply(segment.image(image_url))
+          } else {
+            !Config.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
+          }
         } else {
           image_res.push('图集信息解析失败')
         }
