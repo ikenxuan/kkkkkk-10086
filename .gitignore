@@ -1,7 +1,3 @@
-/config/*
-!/config/config.example.json
-!/config/system
-/node_modules
-/yarn.lock
-/package-lock.json
-/data/*
+node_modules/*
+.vitepress/dist/*
+.vitepress/cache/*

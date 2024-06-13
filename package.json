@@ -1,26 +1,10 @@
 {
-  "name": "kkkkkk-10086",
-  "version": "0.1.7",
-  "description": "自用Yunzai插件包",
-  "main": "index.js",
-  "type": "module",
-  "repository": "https://gitee.com/ikenxuan/kkkkkk-10086.git",
-  "author": "ikenxuan",
-  "license": "MIT",
-  "dependencies": {
-    "child_process": "^1.0.2",
-    "jsdom": "^24.0.0",
-    "md5": "^2.3.0",
-    "node-fetch": "^3.3.2",
-    "qrcode": "^1.5.3",
-    "sharp": "^0.33.3"
-  },
-  "imports": {
-    "#modules": "./model/global/package/modules.js",
-    "#douyin": "./model/global/package/douyin.js",
-    "#bilibili": "./model/global/package/bilibili.js"
-  },
   "devDependencies": {
-    "prettier": "^3.2.5"
+    "vitepress": "^1.2.3"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
   }
 }
