@@ -296,6 +296,7 @@ export default class DouYin extends base {
         } else {
           dec = '抖音视频作品数据'
         }
+        if (!sendvideofile) await this.e.reply('视频太大了，还是去抖音看吧~', true)
         return {
           sendvideofile,
           res: this.botadapter !== 'QQBot' ? res : [],

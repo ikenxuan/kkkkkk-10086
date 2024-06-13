@@ -137,7 +137,6 @@ export class Tools extends plugin {
     const res = await new DouYin(e, iddata).RESOURCES(data)
     if (Config.sendforwardmsg && res) await e.reply(await new base(e).resultMsg(await common.makeForwardMsg(e, res.res, res.dec)))
     if (res.sendvideofile && iddata.is_mp4) await new base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
-    else await e.reply('视频太大了，还是去抖音看吧~', true)
   }
 
   async setpushbili(e) {
