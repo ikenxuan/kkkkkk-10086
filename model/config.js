@@ -33,6 +33,8 @@ const defaultConfig = {
   douyintool: true,
   bilibilitool: true,
   sendHDrecord: true,
+  usefilelimit: false,
+  filelimit: 20,
 }
 let config = {}
 

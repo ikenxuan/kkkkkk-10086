@@ -27,5 +27,7 @@
   "priority": 800,
   "douyintool": true,
   "bilibilitool": true,
-  "sendHDrecord": true
+  "sendHDrecord": true,
+  "usefilelimit": false,
+  "filelimit": 20
 }

@@ -86,6 +86,22 @@
       </div>
       <div class="cfg-desc">自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量</div>
     </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        使用视频文件上传限制
+        <span class="cfg-hint">#kkk设置上传限制 + 开启/关闭</span>
+        {{@data.usefilelimit}}
+      </div>
+      <div class="cfg-desc">开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        视频文件大小限制
+        <span class="cfg-hint">#kkk设置限制 + 5~114514</span>
+        {{@data.filelimit}}
+      </div>
+      <div class="cfg-desc">解析的视频文件大于该数值则不会上传 单位: MB（B站番剧无影响）</div>
+    </li>
   </ul>
 </div>
 <div class="cfg-box">

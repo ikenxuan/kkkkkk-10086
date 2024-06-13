@@ -39,7 +39,7 @@ export function supportGuoba() {
           helpMessage: '必填项',
           bottomHelpMessage: '登录https://www.douyin.com/获取请求头中的Cookie或使用 [#kkk设置抖音ck] 查看教程',
           component: 'InputPassword',
-          required: true,
+          required: false,
           componentProps: {
             placeholder: '很重要！不设置将无法使用抖音解析',
           },
@@ -91,11 +91,24 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'sendforwardmsg',
-          label: '发送合并转发消息',
-          bottomHelpMessage: '字面意思',
+          field: 'usefilelimit',
+          label: '使用视频文件上传限制',
+          bottomHelpMessage: '开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）',
           component: 'Switch',
           required: false,
+        },
+        {
+          field: 'filelimit',
+          label: '视频文件大小限制',
+          bottomHelpMessage: '解析的视频文件大于该数值则不会上传 单位: MB（B站番剧无影响）',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5,
+            max: 114514,
+            addonAfter: 'MB',
+          },
         },
         /** 抖音视频解析配置 */
         {

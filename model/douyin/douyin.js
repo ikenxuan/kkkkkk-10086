@@ -186,6 +186,7 @@ export default class DouYin extends base {
         /** 视频 */
         let FPS
         let video_res = []
+        let sendvideofile = true
         if (this.is_mp4) {
           let video_data = []
           let videores = []
@@ -207,6 +208,9 @@ export default class DouYin extends base {
           let title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
+          if (Config.usefilelimit && Number(mp4size) > Number(Config.filelimit)) {
+            sendvideofile = false
+          }
           videores.push(`标题：\n${title}`)
           videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
           videores.push(
@@ -293,6 +297,7 @@ export default class DouYin extends base {
           dec = '抖音视频作品数据'
         }
         return {
+          sendvideofile,
           res: this.botadapter !== 'QQBot' ? res : [],
           g_video_url,
           g_title,

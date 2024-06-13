@@ -80,7 +80,9 @@ export default class BiLiBiLi extends base {
               },
             ]),
           ))
-        await this.getvideo(OBJECT)
+        if (!Config.usefilelimit || (!Config.usefilelimit && !(Number(videoSize) > Number(Config.filelimit)))) {
+          await this.getvideo(OBJECT)
+        } else await this.e.reply('视频太大了，还是去B站看吧~', true)
         break
       case 'bangumivideo':
         if (!Episode) {
