@@ -4,6 +4,7 @@
 
 反馈群：[795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
 
+[>>[点击立即阅读插件文档](https://ikenxuan.github.io/kkkkkk-10086/)]
 ## 安装
 
 ```sh
