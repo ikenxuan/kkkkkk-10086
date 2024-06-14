@@ -4,6 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   lang: 'zh-CN',
   title: "kkkkkk-10086",
+  description: 'Yunzai-Bot 的视频解析插件',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     editLink: {
