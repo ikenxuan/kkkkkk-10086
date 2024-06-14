@@ -1,5 +1,5 @@
 /* .vitepress\theme\index.ts */
-import Layout from './Layout.vue'
+import Layout from './components/Layout.vue'
 import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom';
 import { onMounted, watch, nextTick } from 'vue';
