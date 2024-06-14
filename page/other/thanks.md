@@ -2,7 +2,7 @@
 ---
 **业务站点**
 
-- [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
+- [www.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
 
 本项目的开发参考了以下开源项目部分代码，排名不分先后
 
