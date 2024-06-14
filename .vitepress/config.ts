@@ -12,7 +12,7 @@ export default defineConfig({
     },
     nav: [
       { text: '主页', link: '/' },
-      { text: '简介', link: '/page/start' },
+      { text: '快速开始', link: '/page/start' },
       { text: '功能', link: '/page/intro/douyin' }
     ],
     search: {
@@ -20,9 +20,9 @@ export default defineConfig({
     },
     sidebar: [
       {
-        text: '简介',
+        text: '快速开始',
         items: [
-          { text: '快速开始', link: '/page/start' },
+          { text: '简介', link: '/page/start' },
           { text: '安装插件', link: '/page/install' },
           { text: '配置文件', link: '/page/start.config' },
         ]

@@ -1,7 +1,13 @@
-# 快速开始
+# 简介
 ::: tip 编辑提示
 如果文档中发现错误，或提交文档修改，或丰富本站文档，可点击下方的编辑按钮
 :::
+## 这是什么
+这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://www.bilibili.com) WEB API编写的视频解析插件<br>
+通过接口获取数据并渲染图片返回
+### 特点
+- 使用官方接口，不会出现类似 `服务商突然跑路` `被服务商拉黑` 的问题<br>
+- 支持譬如 *评论* *番剧* 等等的解析功能
 
 ## 鸣谢
 **业务站点**
@@ -51,3 +57,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 :::
+本站总访问量 <span id="busuanzi_value_site_pv" /> 次

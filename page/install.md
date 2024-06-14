@@ -2,8 +2,8 @@
 
 阅读本文档立刻开始使用
 ## 安装插件
-::: tip
-本插件主在 `icqq` 适配器的基础上进行开发，其他适配器/协议端适配情况未知
+::: tip 建议
+本插件主在 `icqq` 适配器的基础上进行开发，其他适配器/协议端可否使用需自行测试
 :::
 
 机器人目录下打开终端执行
@@ -16,8 +16,8 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 # （国内推荐）使用 Gitee
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
-```sh [ghproxy]
-# （国内推荐）使用 ghproxy
+```sh [Ghproxy]
+# （国内推荐）使用 Ghproxy 代理 Github
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 :::
