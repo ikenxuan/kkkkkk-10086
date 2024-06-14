@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: "kkkkkk-10086"
-  tagline: 视频解析插件
+  tagline: Yunzai-Bot 的视频解析插件
   actions:
     - theme: brand
       text: 快速开始

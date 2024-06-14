@@ -4,7 +4,6 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   lang: 'zh-CN',
   title: "kkkkkk-10086",
-  description: "A VitePress Site",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     editLink: {
@@ -24,6 +23,7 @@ export default defineConfig({
         text: '简介',
         items: [
           { text: '快速开始', link: '/page/start' },
+          { text: '安装插件', link: '/page/install' },
           { text: '配置文件', link: '/page/start.config' },
         ]
       },
@@ -40,7 +40,6 @@ export default defineConfig({
       {
         text: '其他',
         items: [
-          { text: '鸣谢', link: '/page/other/thanks' },
           { text: '友情链接', link: '/page/other/Friendlylink' },
           { text: '免责声明', link: '/page/other/disclaimer' },
         ]
@@ -59,7 +58,7 @@ export default defineConfig({
     outlineTitle: "本页目录",
     footer: {
       message: "Released under the MIT License",
-      copyright: "Copyright © 2024-present ikenxuan",
+      copyright: "Copyright © 2023-2024 ikenxuan",
     },
     docFooter: {
       prev: '上一页',
