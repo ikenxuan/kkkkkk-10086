@@ -1,10 +1,26 @@
 import { defineConfig } from 'vitepress'
+import timeline from 'vitepress-markdown-timeline'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   lang: 'zh-CN',
   title: "kkkkkk-10086",
   description: 'Yunzai-Bot 的视频解析插件',
+  markdown: {
+    //行号显示
+    lineNumbers: true, 
+    image: {
+      // 开启图片懒加载
+      lazyLoading: true
+    },
+    config: (md) => {
+      //时间线
+      md.use(timeline);
+    },
+  },
+  cleanUrls: true,
+  base: '/kkkkkk-10086/',
+  lastUpdated: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     editLink: {
@@ -66,20 +82,16 @@ export default defineConfig({
     outlineTitle: "本页目录",
     footer: {
       message: "Released under the MIT License",
-      copyright: "Copyright © 2023-2024 ikenxuan",
+      copyright: "Copyright © 2023-2024 <a href='https://github.com/ikenxuan'>ikenxuan</a>",
     },
     docFooter: {
       prev: '上一页',
       next: '下一页'
     },
+    //侧边栏文字更改(移动端)
+    sidebarMenuLabel:'目录',
+
+    //返回顶部文字修改(移动端)
+    returnToTopLabel:'返回顶部',
   },
-  markdown: {
-    image: {
-      // 开启图片懒加载
-      lazyLoading: true
-    },
-  },
-  cleanUrls: true,
-  base: '/kkkkkk-10086/',
-  lastUpdated: true,
 })
