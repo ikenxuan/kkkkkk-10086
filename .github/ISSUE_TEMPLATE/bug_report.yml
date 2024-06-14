@@ -1,0 +1,46 @@
+name: "Bug report"
+description: Bug report
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 感谢您花时间填写此错误报告，请**务必确认您的issue不是重复的且不是因为您的操作或版本问题**
+
+  - type: checkboxes
+    attributes:
+      label: Please make sure of the following things
+      description: 您必须勾选以下所有内容，否则您的issue可能会被直接关闭。或者您可以去[讨论区](https://github.com/ikenxuan/kkkkkk-10086/discussions)
+      options:
+        - label: 我已经阅读了[文档](https://ikenxuan.github.io/kkkkkk-10086/)。
+        - label: 我确定没有重复的issue或讨论。
+        - label: 我确定是`kkkkkk-10086`的问题，而不是其他原因（例如网络，`依赖`或`操作`）。
+        - label: 我确定这个问题在最新版本中没有被修复。
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      description: 您使用的是哪个版本/commit id的源码？请不要使用`latest`或`master`作为答案。
+      placeholder: v0.xx.xx 或者 commit id
+    validations:
+      required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 问题描述
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: 配置
+      description: 请提供您的`kkkkkk-10086`应用的配置文件(隐藏隐私字段)
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 请复制粘贴错误日志，或者截图
+    validations:
+      required: true
