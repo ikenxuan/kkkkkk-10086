@@ -24,7 +24,7 @@
 获取到 Cookie 后 使用 `#kkk设置抖音ck` 后发送 Cookie 即可配置成功<br>
 或者使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置<br>
 手动配置则需要打开配置文件找到该键值，将值替换成你获取到的 Cookie
-```json
+```json{3}
 "defaulttool": true,
 "numcomments": 5,
 "ck": "", // [!code focus]
@@ -34,13 +34,13 @@
 ```
 :::
 
-> [!CAUTION]
->
-> ### 关于抖音Cookie
->
-> 本项目的抖音API接口全部取自其 [web端站点](https://www.douyin.com) ，风控非常严格，`Cookie` 可能频繁失效，当抖音业务出现问题时建议优先更换 `Cookie` 重试
->
-> **更多的解决方法：**
->
-> - 抖音推送定时任务间隔不宜过短
-> - 同一 `Cookie` 不要频繁异地调用
+::: warning 注意！！
+### 关于抖音Cookie
+
+本项目的抖音API接口全部取自其 [web端站点](https://www.douyin.com) ，风控非常严格，`Cookie` 可能频繁失效，当抖音业务出现问题建议优先更换 `Cookie` 重试
+
+**更多的解决方法：**
+
+- 抖音推送定时任务间隔不宜过短
+- 同一 `Cookie` 不要频繁异地调用
+:::

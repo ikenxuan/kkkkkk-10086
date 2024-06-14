@@ -3,9 +3,10 @@ import Layout from './components/Layout.vue'
 import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom';
 import { onMounted, watch, nextTick } from 'vue';
-import { useRoute } from 'vitepress';
+import { useData, useRoute } from 'vitepress';
 import { inBrowser } from 'vitepress'
 import busuanzi from 'busuanzi.pure.js'
+import giscusTalk from 'vitepress-plugin-comment-with-giscus';
 import './style/index.css'
 
 export default {
@@ -31,6 +32,25 @@ export default {
     watch(
       () => route.path,
       () => nextTick(() => initZoom())
+    );
+    const { frontmatter } = useData();
+    // giscus配置
+    giscusTalk({
+      repo: 'ikenxuan/kkkkkk-10086', //仓库
+      repoId: 'R_kgDOJf_8Pw', //仓库ID
+      category: 'Announcements', // 讨论分类
+      categoryId: 'DIC_kwDOJf_8P84CWVhT', //讨论分类ID
+      mapping: 'pathname',
+      inputPosition: 'bottom',
+      lang: 'zh-CN',
+      }, 
+      {
+        frontmatter, route
+      },
+      //默认值为true，表示已启用，此参数可以忽略；
+      //如果为false，则表示未启用
+      //您可以使用“comment:true”序言在页面上单独启用它
+      true
     );
   },
 }

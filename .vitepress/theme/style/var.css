@@ -18,6 +18,8 @@
 /* 提示框背景颜色 */
 :root {
     --vp-custom-block-tip-bg: var(--vp-c-green-soft);
+    --vp-home-hero-name-color: transparent;
+    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #c8fe34, #41ffec);
 }
 
 /* 提示框 */
