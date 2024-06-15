@@ -5,5 +5,5 @@
 
 使用链接直达: [爱发电](https://afdian.net/a/ikenxuan)
 ::: details 扫码发电
-![afdian](./afdian.jpg)
+![afdian](./imgs/afdian.jpg)
 :::

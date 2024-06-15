@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /page/start
+      link: /page/start/start
     - theme: alt
       text: 查看教程
       link: /page/intro/douyin

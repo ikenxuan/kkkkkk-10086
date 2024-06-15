@@ -1,5 +1,6 @@
 /* .vitepress\theme\index.ts */
 import DefaultTheme from 'vitepress/theme'
+import { DefaultTheme as DefaultThemeFonts } from 'vitepress/theme-without-fonts'
 import mediumZoom from 'medium-zoom';
 import { onMounted, watch, nextTick } from 'vue';
 import { useData, useRoute } from 'vitepress';

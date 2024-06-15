@@ -16,7 +16,7 @@
 ### 浏览器
 
 找到携带 Cookie 的请求复制请求头中的 Cookie
-![img](./pic1.png)
+![img](./imgs/pic1.png)
 ### 移动端
 
 使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [bilibili](https://www.bilibili.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
