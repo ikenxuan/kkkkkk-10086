@@ -1,17 +1,22 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
 layout: home
-
 hero:
-  name: "kkkkkk-10086"
+  name: 'kkkkkk-10086'
   tagline: Yunzai-Bot 的视频解析插件
+  image:
+    src: /docs/public/logo.png
+    alt: VitePress
   actions:
     - theme: brand
-      text: 快速开始
-      link: /page/start/start
+      text: 简介
+      link: /docs/start/start
     - theme: alt
-      text: 查看教程
-      link: /page/intro/douyin
+      text: 快速开始
+      link: /docs/start/install
+    - theme: sponsor
+      text: 查看功能
+      link: /docs/intro/douyin
 
 features:
   - title: 开箱即用
@@ -27,4 +32,3 @@ features:
     icon: 📨
     details: 抖音/B站动态推送
 ---
-
