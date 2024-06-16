@@ -27,6 +27,15 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
+```sh [Miao-Yunzai v4]
+# ！未完全适配 可能出现bug
+git clone --branch v4 --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+:::
+
+::: warning 注意
+114514
 :::
 
 ## 安装依赖

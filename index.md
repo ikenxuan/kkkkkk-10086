@@ -12,7 +12,7 @@ hero:
       text: 简介
       link: /src/start/start
     - theme: alt
-      text: 快速开始
+      text: 安装
       link: /src/start/install
     - theme: sponsor
       text: 查看功能
