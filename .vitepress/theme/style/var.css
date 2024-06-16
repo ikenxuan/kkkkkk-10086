@@ -1,14 +1,14 @@
 /* var.css */
 :root {
-    --vp-c-brand-1: #18794e;
-    --vp-c-brand-2: #299764;
-    --vp-c-brand-3: #30a46c;
+    --vp-c-brand-1: #371879;
+    --vp-c-brand-2: #382997;
+    --vp-c-brand-3: #3630a4;
 }
 
 .dark {
-    --vp-c-brand-1: #3dd68c;
-    --vp-c-brand-2: #30a46c;
-    --vp-c-brand-3: #298459;
+    --vp-c-brand-1: #C8ABFA;
+    --vp-c-brand-2: #3c30a4;
+    --vp-c-brand-3: #352984;
 }
 
 .vp-doc a {
@@ -19,7 +19,7 @@
 :root {
     --vp-custom-block-tip-bg: var(--vp-c-green-soft);
     --vp-home-hero-name-color: transparent;
-    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #c8fe34, #41ffec);
+    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #6B7BF8, #F68BC6);
 }
 
 /* 提示框 */
