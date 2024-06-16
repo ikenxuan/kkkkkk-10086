@@ -5,18 +5,18 @@ hero:
   name: 'kkkkkk-10086'
   tagline: Yunzai-Bot 的视频解析插件
   image:
-    src: /docs/public/logo.png
-    alt: VitePress
+    src: /logo.png
+    alt: LOGO
   actions:
     - theme: brand
       text: 简介
-      link: /docs/start/start
+      link: /src/start/start
     - theme: alt
       text: 快速开始
-      link: /docs/start/install
+      link: /src/start/install
     - theme: sponsor
       text: 查看功能
-      link: /docs/intro/douyin
+      link: /src/intro/douyin
 
 features:
   - title: 开箱即用
