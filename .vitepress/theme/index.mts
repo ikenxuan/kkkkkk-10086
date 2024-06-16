@@ -7,7 +7,6 @@ import { inBrowser } from 'vitepress'
 import busuanzi from 'busuanzi.pure.js'
 import giscusTalk from 'vitepress-plugin-comment-with-giscus'
 import Video from './components/Video.vue'
-import Layout from './components/Layout.vue'
 import 'vitepress-markdown-timeline/dist/theme/index.css'
 import './style/index.css'
 
@@ -16,7 +15,6 @@ export default {
   enhanceApp({ app, router }) {
     // 注册全局组件
     app.component('Video', Video)
-    app.component('Layout', Layout)
     if (inBrowser) {
       router.onAfterRouteChanged = () => {
         busuanzi.fetch()
