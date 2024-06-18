@@ -58,17 +58,17 @@ git clone --branch v4 --depth=1 https://mirror.ghproxy.com/https://github.com/ik
 
 ```sh [GitHub]
 # （国外推荐）使用 GitHub
-git clone --branch Karin --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch Karin --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Gitee]
 # （国内推荐）使用 Gitee
-git clone --branch Karin --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch Karin --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Ghproxy]
 # （国内推荐）使用 Ghproxy 代理 Github
-git clone --branch Karin --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch Karin --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 :::
