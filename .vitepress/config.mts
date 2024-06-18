@@ -120,7 +120,7 @@ export default defineConfig({
     lastUpdatedText: '最后更新',
     outlineTitle: '本页目录',
     footer: {
-      message: 'Released under the MIT License',
+      message: 'Released under the GPL-3.0 License',
       copyright: "Copyright © 2023-2024 <a href='https://github.com/ikenxuan'>ikenxuan</a>",
     },
     docFooter: {
