@@ -34,9 +34,6 @@ git clone --branch v4 --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./p
 
 :::
 
-::: warning 注意
-114514
-:::
 
 ## 安装依赖
 
