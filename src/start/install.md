@@ -27,13 +27,51 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
-```sh [Miao-Yunzai v4]
-# ！未完全适配 可能出现bug
+:::
+
+::: details 如果你想在 `Miao-Yunzai v4` 安装
+::: danger 警告
+未完全适配 可能出现 bug
+::: code-group
+
+```sh [GitHub]
+# （国外推荐）使用 GitHub
 git clone --branch v4 --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+```sh [Gitee]
+# （国内推荐）使用 Gitee
+git clone --branch v4 --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+```sh [Ghproxy]
+# （国内推荐）使用 Ghproxy 代理 Github
+git clone --branch v4 --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 :::
 
+::: details 如果你想在 `Karin` 安装
+::: danger 警告
+未完全适配 可能出现 bug
+::: code-group
+
+```sh [GitHub]
+# （国外推荐）使用 GitHub
+git clone --branch Karin --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+```sh [Gitee]
+# （国内推荐）使用 Gitee
+git clone --branch Karin --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+```sh [Ghproxy]
+# （国内推荐）使用 Ghproxy 代理 Github
+git clone --branch Karin --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+:::
 
 ## 安装依赖
 
