@@ -53,7 +53,7 @@ git clone --branch v4 --depth=1 https://mirror.ghproxy.com/https://github.com/ik
 
 ::: details 如果你想在 `Karin` 安装
 
-Karin 文档: https://karinjs.github.io/Karin/
+Karin 框架 文档: https://karinjs.github.io/Karin
 
 ::: danger 警告
 未完全适配 可能出现 bug
