@@ -5,8 +5,18 @@
 反馈群：[795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
 
 # [[点击立即阅读插件文档](https://ikenxuan.github.io/kkkkkk-10086/)]
-## 鸣谢
 
+## 安装
+
+```sh
+git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+```sh
+pnpm install -P
+```
+
+## 鸣谢
 
 **业务站点**
 
@@ -16,19 +26,19 @@
 
 **部分代码借鉴**
 
-- [xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
-- [chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
-- [rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
-- [reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
-- [yenai-plugin](https://github.com/yeyang52/yenai-plugin)
-- [Shiranai-Plugin](https://github.com/XasYer/Shiranai-Plugin)
+- [xfdown/xiaofei-plugin](https://gitee.com/xfdown/xiaofei-plugin)
+- [ikechan8370/chatgpt-plugin](https://github.com/ikechan8370/chatgpt-plugin)
+- [kyrzy0416/rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin)
+- [think-first-sxs/reset-qianyu-plugin](https://gitee.com/think-first-sxs/reset-qianyu-plugin)
+- [yeyang52/yenai-plugin](https://github.com/yeyang52/yenai-plugin)
+- [XasYer/Shiranai-Plugin](https://github.com/XasYer/Shiranai-Plugin)
 - ...
 
 **接口文档与加密参数算法**
 
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
-- [X-Bogus](https://github.com/B1gM8c/X-Bogus)
+- [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
+- [NearHuiwen/TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
+- [B1gM8c/X-Bogus](https://github.com/B1gM8c/X-Bogus)
 
 ## 友情链接
 

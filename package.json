@@ -16,9 +16,12 @@
     "sharp": "^0.33.3"
   },
   "imports": {
-    "#modules": "./model/global/package/modules.js",
-    "#douyin": "./model/global/package/douyin.js",
-    "#bilibili": "./model/global/package/bilibili.js"
+    "#Karin": "./lib/imports/index.js",
+    "#template": "./lib/imports/template.js",
+    "#lib": "./lib/public/index.js",
+    "#components": "./module/components/index.js",
+    "#douyin": "./module/business/douyin/index.js",
+    "#bilibili": "./module/business/bilibili/index.js"
   },
   "devDependencies": {
     "prettier": "^3.2.5"

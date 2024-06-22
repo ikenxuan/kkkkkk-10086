@@ -1,4 +1,4 @@
-import { Config, Render, _path } from '#modules'
+import { Config, Render, Version } from '#components'
 import { BiLogin } from '#bilibili'
 import fs from 'fs'
 import path from 'path'
@@ -163,7 +163,7 @@ export class Admin extends plugin {
 
   async setbilick() {
     this.setContext('savebilick')
-    const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
+    const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }

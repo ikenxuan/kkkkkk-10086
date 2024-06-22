@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { Render, Version } from '#modules'
+import { Render, Version } from '#components'
 import { helpCfg, helpList } from '../config/system/help_cfg.js'
 
 export class Help extends plugin {
