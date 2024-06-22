@@ -1,4 +1,5 @@
 import { Config, Render, Version } from '#components'
+import { plugin } from '#lib'
 import { BiLogin } from '#bilibili'
 import fs from 'fs'
 import path from 'path'
@@ -92,11 +93,13 @@ export class Admin extends plugin {
       ],
     })
     this.task = Config.rmmp4
-      ? {
-          cron: '0 0 4 * * *',
-          name: '[kkkkkk-10086] 视频缓存自动删除',
-          fnc: () => this.deltemp(),
-        }
+      ? [
+          {
+            cron: '0 0 4 * * *',
+            name: '[kkkkkk-10086] 视频缓存自动删除',
+            fnc: () => this.deltemp(),
+          },
+        ]
       : null
   }
 

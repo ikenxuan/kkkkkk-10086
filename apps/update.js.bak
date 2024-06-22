@@ -1,5 +1,6 @@
 import { update } from '../../other/update.js'
 import { execSync } from 'child_process'
+import { plugin } from '#lib'
 
 const Plugin_Name = 'kkkkkk-10086'
 export class example extends plugin {
