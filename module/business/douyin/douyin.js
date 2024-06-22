@@ -38,7 +38,7 @@ export default class DouYin extends Base {
             commentsres.push(`${text}\n♥${digg_count}`)
           }
           let dsc = '评论数据'
-          let res = await makeForwardMsg(commentsres)
+          let res = await makeForwardMsg(this.e, commentsres, dsc)
           comments_data.push(res)
           comments_res.push(comments_data)
         } else comments_res.push('评论数据获取失败或这条视频没有评论')
@@ -74,7 +74,7 @@ export default class DouYin extends Base {
             }
           }
           let dsc = '解析完的图集图片'
-          let res = await makeForwardMsg(imageres)
+          let res = await makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
           if (imageres.length === 1) {
@@ -102,7 +102,7 @@ export default class DouYin extends Base {
           authorres.push(`创作者：${id}拥有${gz}个粉丝，${sc}个收藏和${sczs}个收藏总数`)
           authorres.push(`${id}今年${age}岁，Ta的简介是：\n${jj}`)
           let dsc = '创作者信息'
-          let res = await makeForwardMsg(authorres)
+          let res = await makeForwardMsg(this.e, authorres, dsc)
           author_data.push(res)
           author_res.push(author_data)
         }
@@ -129,7 +129,7 @@ export default class DouYin extends Base {
           musicres.push(`BGM下载直链：${music_url}`)
           musicres.push(segment.image(music_img))
           let dsc = 'BGM相关信息'
-          let res = await makeForwardMsg(musicres)
+          let res = await makeForwardMsg(this.e, musicres, dsc)
           music_data.push(res)
           music_res.push(music_data)
           switch (this.botname) {
@@ -179,7 +179,7 @@ export default class DouYin extends Base {
           ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
           ocrres.push(text)
           let dsc = 'ocr视频信息识别'
-          let res = await makeForwardMsg(ocrres)
+          let res = await makeForwardMsg(this.e, ocrres, dsc)
           ocr_data.push(res)
           ocr_res.push(ocr_data)
         }
@@ -222,7 +222,7 @@ export default class DouYin extends Base {
           g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           logger.info('视频地址', g_video_url)
           let dsc = this.botname == 'miao-yunzai' ? '视频基本信息' : null
-          let res = await makeForwardMsg(videores)
+          let res = await makeForwardMsg(this.e, videores, dsc)
           video_data.push(res)
           video_res.push(video_data)
         }

@@ -7,12 +7,12 @@
   margin: 0 auto;
   font-family: 'HarmonyOS_Sans', Arial, sans-serif;
   background-color: #f4f4f4;
-  width: 831px;
+  width: 1440px;
   height: auto;
 }
 
 .spacer1 {
-  height: 60px;
+  height: 71px;
 }
 
 .spacer2 {
@@ -97,9 +97,9 @@
   align-items: center;
   overflow: hidden;
   -webkit-box-shadow: 0px 10px 20px 0px #4343434f;
-  box-shadow: 0px 10px 20px 0px #4343434f;
+  box-shadow: 0px 10px 25px 0px #4343434f;
   border-radius: 25px;
-  width: 85%;
+  width: 40%;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
   -moz-box-flex: 1;
@@ -140,7 +140,7 @@
 }
 
 .shipinbiaoti {
-  margin: -79px 0 15px 0;
+  /* margin: -79px 0 15px 0; */
   color: #ffffff;
   letter-spacing: 31.5px;
   white-space: nowrap;
@@ -191,7 +191,6 @@
   -webkit-justify-content: space-between;
   -moz-box-pack: justify;
   -ms-flex-pack: justify;
-  justify-content: space-between;
   padding: 30px 0 15px 0;
   background-color: #ececec3d;
   -webkit-backdrop-filter: blur(3px);

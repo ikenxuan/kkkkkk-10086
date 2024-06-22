@@ -43,16 +43,14 @@
 }
 
 body {
-  font-size: 18px;
   color: #1e1f20;
   font-family: "HarmonyOS_Sans", "FZB", Number, "汉仪文黑-65W", YS, PingFangSC-Medium, "PingFang SC", sans-serif;
-  transform: scale(1.4);
   transform-origin: 0 0;
-  width: 600px;
+  width: 1440px;
 }
 
 .container {
-  width: 600px;
+  width: 1440px;
   padding: 20px 15px 10px 15px;
   background-size: contain;
 }

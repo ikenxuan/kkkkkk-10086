@@ -6,10 +6,14 @@
 }
 
 .container {
+  background: url('../../../../../plugins/kkkkkk-10086/resources/pic/default.jpg') #000144 left top no-repeat;
+  background-size: 520px auto;
+  padding: 20px 15px 10px 15px;
+  background-size: contain;
   font-size: 18px;
   color: #1e1f20;
   font-family: 'HarmonyOS_Sans', 'FZB', Number, '汉仪文黑-65W', YS, PingFangSC-Medium, 'PingFang SC', sans-serif;
-  width: 600px;
+  width: 1440px;
 }
 
 .head-box {
@@ -66,14 +70,6 @@
   color: #d3bc8e;
   display: inline-block;
   padding: 0 3px;
-}
-
-.container {
-  background: url('../../../../../plugins/kkkkkk-10086/resources/pic/default.jpg') #000144 left top no-repeat;
-  background-size: 520px auto;
-  width: 600px;
-  padding: 20px 15px 10px 15px;
-  background-size: contain;
 }
 
 .head-box {
