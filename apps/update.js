@@ -1,4 +1,4 @@
-import { Update,Restart, plugin } from '#lib'
+import { Update, Restart, plugin, makeForwardMsg } from '#lib'
 import { Version } from '#components'
 
 export class MusicUpdate extends plugin {
@@ -47,22 +47,28 @@ export class MusicUpdate extends plugin {
         return this.reply(`更新失败：${error.message}`, { at: true })
       }
     } else {
-      thie.e.msg = `#${Version.pluginName}${this.e.msg.includes("强制") ? "强制" : ""}更新`
+      this.e.msg = `#${Version.pluginName}${this.e.msg.includes('强制') ? '强制' : ''}更新`
       const up = new Update(e)
       up.e = e
       return up.update()
     }
   }
 
-  async update_log(e = this.e) {
+  async update_log() {
     if (Version.BotName === 'Karin') {
       let count
       if (!count) {
         count = 10
       }
       try {
-        const data = await Update.getCommit({ path: Version.pluginPath, count })
-        return this.e.reply(`\n${Version.BotName} 更新日志(${count || '10'}条)\n\n` + data.trimEnd(), { at: true })
+        const data = (await Update.getCommit({ path: Version.pluginPath, count })).replace(/\n\s*\n/g, '\n')
+        let commitlist
+        commitlist = data
+          .split('\n')
+          .filter(Boolean)
+          .map((item) => item.trimEnd())
+        this.e.reply(await makeForwardMsg(this.e, commitlist))
+        return true
       } catch {
         return this.e.reply(`\n获取更新日志失败：\n${this.e.msg}`, { at: true })
       }
