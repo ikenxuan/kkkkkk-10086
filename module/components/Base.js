@@ -1,4 +1,5 @@
 import { Config, Networks, Version } from '#components'
+import { segment } from '#lib'
 import fs from 'fs'
 import path from 'path'
 
@@ -26,7 +27,7 @@ export default class Base {
 
   /** 获取适配器名称 */
   get botadapter() {
-    if (this.botname === 'Miao-Yunzai') {
+    if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
       if (this.e.bot?.sendUni) {
         return 'ICQQ'
       }
@@ -64,7 +65,7 @@ export default class Base {
   }
 
   resultMsg(forwardmsg) {
-    if (this.botname === 'Miao-Yunzai') {
+    if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
       if (this.botadapter === 'OneBotv11') return null
       return forwardmsg
     } else if (this.botname === 'TRSS-Yunzai') {
@@ -77,7 +78,7 @@ export default class Base {
         case 'KOOKBot':
           return null
       }
-    }
+    } else { return forwardmsg }
   }
 
   /**
@@ -106,6 +107,7 @@ export default class Base {
   mkbutton(btn) {
     switch (this.botname) {
       case 'Miao-Yunzai':
+      case 'Miao-Yunzai V4':
         /** 判断是否ICQQ */
         switch (this.botadapter) {
           case 'QQBot':
@@ -135,6 +137,7 @@ export default class Base {
     try {
       switch (this.botname) {
         case 'Miao-Yunzai':
+        case 'Miao-Yunzai V4':
           switch (this.botadapter) {
             case 'ICQQ':
               if (this.e.isGroup) {
@@ -153,15 +156,15 @@ export default class Base {
             case 'QQBot':
               file.totalBytes >= 10
                 ? (() => {
-                    return new Promise((resolve, reject) => {
-                      try {
-                        /** 尝试硬发 */
-                        this.e.reply(segment.video(video_url || file.filepath))
-                      } catch {
-                        reject(new Error('视频太大了，发不出来'))
-                      }
-                    })
-                  })()
+                  return new Promise((resolve, reject) => {
+                    try {
+                      /** 尝试硬发 */
+                      this.e.reply(segment.video(video_url || file.filepath))
+                    } catch {
+                      reject(new Error('视频太大了，发不出来'))
+                    }
+                  })
+                })()
                 : await this.e.reply(segment.video(video_url || file.filepath))
               break
           }
@@ -190,6 +193,9 @@ export default class Base {
               groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
+          break
+        case 'Karin':
+          await this.e.reply(segment.video(video_url || file.filepath))
           break
       }
     } catch (error) {
