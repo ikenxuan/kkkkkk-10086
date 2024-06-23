@@ -1,4 +1,4 @@
-import { Update, plugin } from '#lib'
+import { Update,Restart, plugin } from '#lib'
 import { Version } from '#components'
 
 export class MusicUpdate extends plugin {
@@ -9,12 +9,12 @@ export class MusicUpdate extends plugin {
       priority: 1000,
       rule: [
         {
-          reg: '^#?kkk(强制)?更新$',
+          reg: '^#?(kkk|kkkkkk-10086)(强制)?更新$',
           fnc: 'update',
           permission: 'master',
         },
         {
-          reg: '^#?kkk更新日志$',
+          reg: '^#?(kkk|kkkkkk-10086)更新日志$',
           fnc: 'update_log',
           permission: 'master',
         },
@@ -22,7 +22,7 @@ export class MusicUpdate extends plugin {
     })
   }
 
-  async update(e = this.e) {
+  async update() {
     if (Version.BotName === 'Karin') {
       let [name, cmd] = [Version.pluginName, 'git pull']
       if (this.e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
@@ -30,30 +30,27 @@ export class MusicUpdate extends plugin {
         const { data } = await Update.update(Version.pluginPath, cmd)
         await this.reply(`\n${name}${data}`, { at: true })
         if (!data.includes('更新成功')) return true
-        execSync('pnpm restat Karin', {
-          cwd: `${process.cwd()}/`,
-        })
-        return this.reply(`${Version.pluginName}更新成功，请重启应用更新！`)
+        if (Restart) {
+          await this.reply(`\n更新完成，开始重启 本次运行时间：${common.uptime()}`, { at: true })
+          try {
+            const restart = new Restart()
+            restart.e = this.e
+            await restart.CmdRestart()
+            return true
+          } catch (error) {
+            return this.reply(`\n重启失败\n${error.message}`, { at: true })
+          }
+        } else {
+          return this.reply(`${Version.pluginName}更新成功，请重启应用更新！`)
+        }
       } catch (error) {
         return this.reply(`更新失败：${error.message}`, { at: true })
       }
     } else {
-      let Update_Plugin = new Update()
-      Update_Plugin.e = this.e
-      Update_Plugin.reply = this.e.reply
-
-      if (Update_Plugin.getPlugin(Version.pluginName)) {
-        if (this.e.msg.includes('强制')) {
-          execSync('git reset --hard', {
-            cwd: `${Version.pluginPath}/`,
-          })
-        }
-        await Update_Plugin.runUpdate(Version.pluginName)
-        if (Update_Plugin.isUp) {
-          setTimeout(() => Update_Plugin.restart(), 2000)
-        }
-      }
-      return true
+      thie.e.msg = `#${Version.pluginName}${this.e.msg.includes("强制") ? "强制" : ""}更新`
+      const up = new Update(e)
+      up.e = e
+      return up.update()
     }
   }
 
@@ -67,7 +64,7 @@ export class MusicUpdate extends plugin {
         const data = await Update.getCommit({ path: Version.pluginPath, count })
         return this.e.reply(`\n${Version.BotName} 更新日志(${count || '10'}条)\n\n` + data.trimEnd(), { at: true })
       } catch {
-        return this.e.reply(`\n获取更新日志失败：\n${this.e.message}`, { at: true })
+        return this.e.reply(`\n获取更新日志失败：\n${this.e.msg}`, { at: true })
       }
     } else {
       let Update_Plugin = new Update(this.e)
