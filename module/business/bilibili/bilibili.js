@@ -70,7 +70,7 @@ export default class BiLiBiLi extends Base {
             ImageLength: 0,
             shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
           },
-          { e: this.e, scale: 1.4, retType: 'base64' },
+          { e: this.e, scale: 1, retType: 'base64' },
         )
         Config.commentsimg &&
           (await this.e.reply(
@@ -169,7 +169,7 @@ export default class BiLiBiLi extends Base {
                 ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接',
               },
-              { e: this.e, scale: 1.4, retType: 'base64' },
+              { e: this.e, scale: 1, retType: 'base64' },
             )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
             if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
@@ -205,7 +205,7 @@ export default class BiLiBiLi extends Base {
                 Botadapter: this.botadapter,
                 dynamicTYPE: '图文动态',
               },
-              { e: this.e, scale: 1.4, retType: 'base64' },
+              { e: this.e, scale: 1, retType: 'base64' },
             )
             if (Config.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
             break
@@ -232,7 +232,7 @@ export default class BiLiBiLi extends Base {
                   Botadapter: this.botadapter,
                   dynamicTYPE: '纯文动态',
                 },
-                { e: this.e, scale: 1.4, retType: 'base64' },
+                { e: this.e, scale: 1, retType: 'base64' },
               ),
             )
             this.e.reply(
@@ -247,7 +247,7 @@ export default class BiLiBiLi extends Base {
                   shareurl: '动态分享链接',
                   Botadapter: this.botadapter,
                 },
-                { e: this.e, scale: 1.4, retType: 'base64' },
+                { e: this.e, scale: 1, retType: 'base64' },
               ),
             )
             break

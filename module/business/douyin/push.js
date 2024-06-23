@@ -55,7 +55,7 @@ export default class push extends Base {
           total_favorited: this.count(Detail_Data.author.total_favorited),
           following_count: this.count(Detail_Data.author.following_count),
         },
-        { e: this.e, scale: 1.4, retType: 'base64' },
+        { e: this.e, scale: 1, retType: 'base64' },
       )
 
       // 遍历 group_id 数组，并发送消息

@@ -30,7 +30,7 @@ export class Help extends plugin {
         changelogs: Version.changelogs,
         elem: 'cryo',
       },
-      { e, scale: 1.4, retType: 'base64' },
+      { e, scale: 1, retType: 'base64' },
     )
     e.reply(img)
   }
@@ -65,7 +65,7 @@ export class Help extends plugin {
         colCount: 3,
         element: 'default',
       },
-      { e, scale: 1.4 },
+      { e, scale: 1 },
     )
     e.reply(img)
   }
