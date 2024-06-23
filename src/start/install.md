@@ -29,14 +29,15 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 
 :::
 
-::: details 如果你想在 `Miao-Yunzai v4` 安装
-::: danger 警告
-未完全适配 可能出现 bug
+::: details 如果你想在 [`Miao-Yunzai v4`](https://github.com/yoimiya-kokomi/Miao-Yunzai/tree/dev) 安装
+
+<p style="color: red; font-weight: bolder;">请留意分支为 d，该分支未来将会废弃，合并到 master</p>
+
 ::: code-group
 
 ```sh [GitHub]
 # （国外推荐）使用 GitHub
-git clone --branch v4 --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch d --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ```sh [Gitee]
@@ -51,17 +52,18 @@ git clone --branch v4 --depth=1 https://mirror.ghproxy.com/https://github.com/ik
 
 :::
 
-::: details 如果你想在 `Karin` 安装
+::: details 如果你想在 [`Karin`](https://github.com/KarinJS/Karin) 安装
 
-Karin 框架 文档: https://karinjs.github.io/Karin
+Karin 框架 文档: https://karinjs.github.io/Karin<br>
 
-::: danger 警告
-未完全适配 可能出现 bug
+<p style="color: red; font-weight: bolder;">请留意分支为 d，该分支未来将会废弃，合并到 master</p>
+Karin 务必使用以下的命令安装，否则插件可能不会被识别
+
 ::: code-group
 
 ```sh [GitHub]
 # （国外推荐）使用 GitHub
-git clone --branch Karin --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
+git clone --branch d --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Gitee]
