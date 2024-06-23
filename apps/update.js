@@ -25,22 +25,25 @@ export class MusicUpdate extends plugin {
   async update(e = this.e) {
     if (Version.BotName === 'Karin') {
       let [name, cmd] = [Version.pluginName, 'git pull']
-      if (e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
+      if (this.e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
       try {
         const { data } = await Update.update(Version.pluginPath, cmd)
         await this.reply(`\n${name}${data}`, { at: true })
         if (!data.includes('更新成功')) return true
+        execSync('pnpm restat Karin', {
+          cwd: `${process.cwd()}/`,
+        })
         return this.reply(`${Version.pluginName}更新成功，请重启应用更新！`)
       } catch (error) {
         return this.reply(`更新失败：${error.message}`, { at: true })
       }
     } else {
       let Update_Plugin = new Update()
-      Update_Plugin.e = e
-      Update_Plugin.reply = e.reply
+      Update_Plugin.e = this.e
+      Update_Plugin.reply = this.e.reply
 
       if (Update_Plugin.getPlugin(Version.pluginName)) {
-        if (e.msg.includes('强制')) {
+        if (this.e.msg.includes('强制')) {
           execSync('git reset --hard', {
             cwd: `${Version.pluginPath}/`,
           })
@@ -55,13 +58,26 @@ export class MusicUpdate extends plugin {
   }
 
   async update_log(e = this.e) {
-    let Update_Plugin = new Update(e)
-    Update_Plugin.e = e
-    Update_Plugin.reply = this.reply
+    if (Version.BotName === 'Karin') {
+      let count
+      if (!count) {
+        count = 10
+      }
+      try {
+        const data = await Update.getCommit({ path: Version.pluginPath, count })
+        return this.e.reply(`\n${Version.BotName} 更新日志(${count || '10'}条)\n\n` + data.trimEnd(), { at: true })
+      } catch {
+        return this.e.reply(`\n获取更新日志失败：\n${this.e.message}`, { at: true })
+      }
+    } else {
+      let Update_Plugin = new Update(this.e)
+      Update_Plugin.e = this.e
+      Update_Plugin.reply = this.reply
 
-    if (Update_Plugin.getPlugin(Version.pluginName)) {
-      this.e.reply(await Update_Plugin.getLog(Version.pluginName))
+      if (Update_Plugin.getPlugin(Version.pluginName)) {
+        this.e.reply(await Update_Plugin.getLog(Version.pluginName))
+      }
+      return true
     }
-    return true
   }
 }
