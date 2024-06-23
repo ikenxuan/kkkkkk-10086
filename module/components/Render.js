@@ -18,11 +18,12 @@ const Render = {
    */
   async render(path, params, cfg = {}) {
     path = path.replace(/.html$/, '')
+    const savePath = '/' + path.replace('html/', '') + '/'
     const data = {
-      _res_path: join(Version.pluginPath, '/resources') + '/',
-      _layout_path: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/',
-      defaultLayout: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html',
-      elemLayout: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html',
+      _res_path: (join(Version.pluginPath, '/resources') + '/').replace(/\\/g, '/'),
+      _layout_path: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/').replace(/\\/g, '/'),
+      defaultLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html').replace(/\\/g, '/'),
+      elemLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html').replace(/\\/g, '/'),
       sys: {
         scale: scale(cfg.scale || 1),
       },
@@ -36,7 +37,7 @@ const Render = {
       imgType: 'jpeg',
       ...params,
     }
-    return await puppeteer.screenshot(Version.pluginName + '/' + path, data)
+    return await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
   },
 }
 

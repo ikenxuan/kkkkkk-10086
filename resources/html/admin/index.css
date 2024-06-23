@@ -10,7 +10,7 @@
   background-size: 520px auto;
   padding: 20px 15px 10px 15px;
   background-size: contain;
-  font-size: 18px;
+  font-size: 31px;
   color: #1e1f20;
   font-family: 'HarmonyOS_Sans', 'FZB', Number, '汉仪文黑-65W', YS, PingFangSC-Medium, 'PingFang SC', sans-serif;
   width: 1440px;
@@ -26,10 +26,9 @@
 
 .head-box .title {
   font-family: Number, '印品南征北战NZBZ体', NZBZ, '汉仪文黑-65W', YS, PingFangSC-Medium, 'PingFang SC', sans-serif;
-  font-size: 36px;
-  text-shadow:
-    0 0 1px #000,
-    1px 1px 3px rgba(0, 0, 0, 0.9);
+  font-size: 80px;
+  text-shadow: 0 0 3px #000,
+    1px 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 .head-box .title .label {
@@ -45,9 +44,8 @@
 }
 
 .head-box .label {
-  font-size: 16px;
-  text-shadow:
-    0 0 1px #000,
+  font-size: 50px;
+  text-shadow: 0 0 3px #000,
     1px 1px 3px rgba(0, 0, 0, 0.9);
 }
 
@@ -57,12 +55,12 @@
 }
 
 .copyright {
-  font-size: 14px;
+  font-size: 30px;
   text-align: center;
   color: #fff;
   position: relative;
   padding-left: 10px;
-  text-shadow: 1px 1px 1px #000;
+  text-shadow: 2px 2px 4px #000;
   margin: 10px 0;
 }
 
@@ -73,20 +71,20 @@
 }
 
 .head-box {
-  margin: 0 0 80px 0;
+  margin: 0 0 90px 0;
 }
 
 .cfg-box {
   border-radius: 15px;
   margin-top: 20px;
   margin-bottom: 20px;
-  padding: 5px 15px;
+  padding: 15px 20px;
   overflow: hidden;
   position: relative;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.3);
-  border-radius: 26px;
+  border-radius: 25px;
   box-shadow:
     0 8px 32px 0 rgba(51, 51, 52, 0.5),
     inset 3px 3px 10px 0px rgba(255, 255, 255, 0.8);
@@ -94,32 +92,32 @@
 
 .cfg-group {
   color: #f9b3c6;
-  font-size: 22px;
+  font-size: 47px;
   font-weight: bold;
-  padding: 10px 20px;
-  text-shadow: 1px 1px 1px #000;
+  padding: 11px 32px;
+  text-shadow: 2px 2px 2px #000;
 }
 
 .cfg-li {
   min-height: 36px;
   position: relative;
   list-style: none;
-  margin-bottom: 10px;
-  background: rgba(203, 196, 190, 0);
+  margin-bottom: 15px;
+  background: rgb(203 196 190 / 0%);
 }
 
 .cfg-line {
   color: #303030;
-  line-height: 36px;
-  padding-left: 20px;
+  line-height: 54px;
+  padding-left: 25px;
   font-weight: bold;
-  border-radius: 5px 20px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  background-image: linear-gradient(90deg, #fceae7 40%, #fbf3f1 65%, #ffd5e0);
+  border-radius: 5px 30px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 50%);
+  background-image: linear-gradient(90deg, #fceae7a1 40%, #fbf3f1b5 65%, #d5dfff9e);
 }
 
 .cfg-hint {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: normal;
   margin-top: 3px;
   margin-bottom: -3px;
@@ -130,10 +128,10 @@
   top: 0;
   right: 0;
   height: 36px;
-  width: 160px;
+  width: 300px;
   text-align: center;
-  line-height: 36px;
-  font-size: 20px;
+  /* line-height: 36px; */
+  font-size: 30px;
   color: #2d5285;
   font-weight: bold;
   border-radius: 0 16px 16px 0;
@@ -144,9 +142,9 @@
 }
 
 .cfg-desc {
-  font-size: 16px;
+  font-size: 23px;
   color: #454444;
-  margin: 5px 0 5px 20px;
+  margin: 10px 0 14px 23px;
 }
 
 .badge {
