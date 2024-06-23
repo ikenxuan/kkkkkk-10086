@@ -13,7 +13,9 @@
     "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.3",
-    "sharp": "^0.33.3"
+    "sharp": "^0.33.3",
+    "sequelize": "^6.37.1",
+    "sqlite3": "5.1.6"
   },
   "imports": {
     "#Karin": "./lib/imports/index.js",
