@@ -197,10 +197,10 @@ export default class push extends Base {
       try {
         let status
         for (const groupId of data[dynamicId].group_id) {
-          if (send) status = await sendMsg(Bot?.list[0]?.bot?.account?.uin, groupId, img)
+          if (send) status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV')
             try {
-              await sendMsg(Bot?.list[0]?.bot?.account?.uin, groupId, segment.video(nocd_data.data.durl[0].url))
+              await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
             } catch (error) {
               logger.error(error)
             }

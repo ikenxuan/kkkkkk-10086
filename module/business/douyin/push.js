@@ -61,7 +61,7 @@ export default class push extends Base {
       // 遍历 group_id 数组，并发送消息
       try {
         for (const groupId of data[awemeId].group_id) {
-          let status = await sendMsg(Bot?.list[0]?.bot?.account?.uin, groupId, img)
+          let status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
           if (status) {
             const DBdata = await DB.FindGroup('douyin', groupId)
 
