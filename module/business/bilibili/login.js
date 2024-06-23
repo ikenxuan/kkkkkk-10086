@@ -1,5 +1,6 @@
 import { Config, Base, Sleep } from '#components'
 import { bilidata } from '#bilibili'
+import { segment } from '#lib'
 import QRCode from 'qrcode'
 
 export default class BiLogin extends Base {
@@ -15,7 +16,7 @@ export default class BiLogin extends Base {
     const qrimg = await QRCode.toDataURL(qrcodeurl.data.url)
     this.qrcode_key = qrcodeurl.data.qrcode_key
     await this.e.reply(
-      '免责声明:\n您将通过扫码完成获取哔哩哔哩refresh_token以及ck。\n本Bot将不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~',
+      '免责声明:\n您将通过扫码完成获取哔哩哔哩refresh_token以及ck用于B站API接口请求数据。\n本Bot不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~',
       { recallMsg: 180 },
     )
     await this.e.reply([segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')), segment.at(this.e.user_id), '请扫码以完成获取'], { recallMsg: 180 })

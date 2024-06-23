@@ -8,8 +8,9 @@ import Image from './Image.js'
 import Networks from './Networks.js'
 import Pushlist from './Pushlist.js'
 import DB from '../db/index.js'
+import Init from '../init.js'
 
-export { Version, Render, Config, GetID, Base, UploadRecord, Image, Networks, Pushlist, DB, Sleep }
+export { Version, Render, Config, GetID, Base, UploadRecord, Image, Networks, Pushlist, DB, Sleep, Init }
 
 /**
  * 休眠函数

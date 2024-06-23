@@ -1,4 +1,4 @@
-import puppeteer from '../../../../lib/puppeteer/puppeteer.js'
+import { puppeteer } from '#lib'
 import { Version } from '#components'
 /**
  * 浏览器截图

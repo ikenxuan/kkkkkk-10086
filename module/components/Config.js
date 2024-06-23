@@ -1,6 +1,7 @@
 import fs from 'fs'
+import { Version } from '#components'
 
-const configPath = process.cwd() + '/plugins/kkkkkk-10086/config/config.json'
+const configPath = process.cwd() + `/plugins/${Version.pluginName}/config/config.json`
 
 const defaultConfig = {
   rmmp4: true,

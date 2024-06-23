@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { Render, Version } from '#components'
+import { plugin } from '#lib'
 import { helpCfg, helpList } from '../config/system/help_cfg.js'
 
 export class Help extends plugin {
@@ -22,15 +23,16 @@ export class Help extends plugin {
   }
 
   async version(e) {
-    return await Render.render(
+    const img = await Render.render(
       'html/help/version-info',
       {
         currentVersion: Version.version,
         changelogs: Version.changelogs,
         elem: 'cryo',
       },
-      { e, scale: 1.8 },
+      { e, scale: 1, retType: 'base64' },
     )
+    e.reply(img)
   }
 
   async help(e) {
@@ -54,7 +56,7 @@ export class Help extends plugin {
       helpGroup.push(group)
     })
 
-    return await Render.render(
+    const img = await Render.render(
       'html/help/index',
       {
         helpCfg: helpConfig,
@@ -63,7 +65,8 @@ export class Help extends plugin {
         colCount: 3,
         element: 'default',
       },
-      { e, scale: 1.8 },
+      { e, scale: 1 },
     )
+    e.reply(img)
   }
 }

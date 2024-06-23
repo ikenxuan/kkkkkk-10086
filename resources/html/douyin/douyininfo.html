@@ -1,6 +1,6 @@
 {{extend defaultLayout}} {{block 'css'}}
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" type="text/css" href="{{_res_path}}html/douyin/douyininfo.css" />
+<link rel="stylesheet" type="text/css" href="{{_res_path}}html/douyin/base.css" />
 {{/block}} {{block 'main'}}
 
 <div class="spacer1"></div>
@@ -23,11 +23,9 @@
     {{@desc}}
   </div>
   <div class="spacer4"></div>
-  <div class="info_text" style="font-size: 30px; color: #808080">{{dianzan}}点赞 · {{pinglun}}评论 · {{shouchang}}收藏 · {{share}}分享</div>
+  <div class="info_text" style="font-size: 45px; color: #808080">{{dianzan}}点赞 · {{pinglun}}评论 · {{shouchang}}收藏 · {{share}}分享</div>
   <div class="spacer5"></div>
-  <div class="background-square">
-    <div class="info_text" style="font-size: 25px; padding: 0 12px; white-space: nowrap; color: #bcbcbc">发布于{{create_time}}</div>
-  </div>
+  <div class="info_text" style="font-size: 35px; white-space: nowrap; color: #e0e0e0">发布于{{create_time}}</div>
 </div>
 <div class="spacer6"></div>
 <div class="other_text">抖音作品推送</div>
@@ -38,7 +36,7 @@
         <div><img src="{{avater_url}}" alt="头像" class="avatar" /></div>
         <div class="name_and_followers">
           <div class="qrcode_text"></div>
-          <span style="font-weight: bolder; color: #606060; font-size: 50px">{{username}}</span>
+          <span style="font-weight: bolder; color: #606060; font-size: 80px">{{username}}</span>
         </div>
       </div>
       <div class="userinfo_text">
@@ -49,27 +47,11 @@
       </div>
     </div>
     <div class="qrcode_box">
-      <div class="qrcode_text" style="font-size: 23px">作品直链：永久有效</div>
+      <div class="qrcode_text" style="font-size: 45px">作品直链：永久有效</div>
       <div id="qrcode"></div>
     </div>
   </div>
 </div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var infoTexts = document.querySelectorAll('.info_text')
-    infoTexts.forEach(function (infoText) {
-      // 计算文本宽度
-      var range = document.createRange()
-      range.selectNode(infoText)
-      var textWidth = range.getBoundingClientRect().width + 12
-      // 找到 .info_text 元素的父级元素 .background-square，并设置宽度
-      var backgroundSquare = infoText.parentNode
-      backgroundSquare.style.width = textWidth + 'px'
-      backgroundSquare.style.display = 'inline-block' // 确保 .background-square 作为行内块级元素显示
-    })
-  })
-</script>
 <script>
   qrcode = new QRCode(document.getElementById('qrcode'), {
     width: 500,

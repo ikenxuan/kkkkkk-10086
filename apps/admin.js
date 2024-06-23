@@ -1,4 +1,5 @@
 import { Config, Render, Version } from '#components'
+import { plugin } from '#lib'
 import { BiLogin } from '#bilibili'
 import fs from 'fs'
 import path from 'path'
@@ -92,11 +93,13 @@ export class Admin extends plugin {
       ],
     })
     this.task = Config.rmmp4
-      ? {
-          cron: '0 0 4 * * *',
-          name: '[kkkkkk-10086] 视频缓存自动删除',
-          fnc: () => this.deltemp(),
-        }
+      ? [
+          {
+            cron: '0 0 4 * * *',
+            name: '[kkkkkk-10086] 视频缓存自动删除',
+            fnc: () => this.deltemp(),
+          },
+        ]
       : null
   }
 
@@ -141,7 +144,8 @@ export class Admin extends plugin {
     for (let key in _cfg) {
       data[key] = getStatus(_cfg[key])
     }
-    return await Render.render('html/admin/index', { data }, { e, scale: 1.4 })
+    const img = await Render.render('html/admin/index', { data }, { e, scale: 1, retType: 'base64' })
+    e.reply(img)
   }
 
   async Blogin(e) {
