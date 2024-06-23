@@ -1,4 +1,5 @@
 import { Render, DB } from '#components'
+import { Bot } from '#lib'
 
 /**
  *

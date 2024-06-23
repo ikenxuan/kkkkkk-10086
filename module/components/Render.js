@@ -19,10 +19,10 @@ const Render = {
   async render(path, params, cfg = {}) {
     path = path.replace(/.html$/, '')
     const data = {
-      _res_path: join(Version.pluginPath, 'resources') + '/',
-      _layout_path: join(Version.pluginPath, 'resources', 'html', 'COMMON', 'layout') + '/',
-      defaultLayout: join(Version.pluginPath, 'resources', 'html', 'COMMON', 'layout') + '/default.html',
-      elemLayout: join(Version.pluginPath, 'resources', 'html', 'COMMON', 'layout') + '/elem.html',
+      _res_path: join(Version.pluginPath, '/resources') + '/',
+      _layout_path: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/',
+      defaultLayout: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html',
+      elemLayout: join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html',
       sys: {
         scale: scale(cfg.scale || 1),
       },

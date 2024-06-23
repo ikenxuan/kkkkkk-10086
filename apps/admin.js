@@ -144,7 +144,8 @@ export class Admin extends plugin {
     for (let key in _cfg) {
       data[key] = getStatus(_cfg[key])
     }
-    return await Render.render('html/admin/index', { data }, { e, scale: 1.4 })
+    const img = await Render.render('html/admin/index', { data }, { e, scale: 1.4, retType: 'base64' })
+    e.reply(img)
   }
 
   async Blogin(e) {

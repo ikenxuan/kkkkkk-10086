@@ -16,7 +16,7 @@
 }
 
 .spacer2 {
-  height: 40px;
+  height: 82px;
 }
 
 .spacer3 {
@@ -24,7 +24,7 @@
 }
 
 .spacer4 {
-  height: 20px;
+  height: 60px;
 }
 
 .spacer5 {
@@ -36,13 +36,13 @@
 }
 
 .container {
-  width: 850px;
+  width: 100% !important;
   margin: 0 auto;
 }
 
 .bitop {
   color: #3e3e3eb8;
-  font-size: 30px;
+  font-size: 20px;
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -53,11 +53,11 @@
   -moz-box-align: center;
   -ms-flex-align: center;
   align-items: center;
-  padding: 0 0 0 10px;
+  padding: 0 0 0 50px;
 }
 
 .bitop img {
-  width: 200px;
+  width: 375px;
   height: auto;
 }
 
@@ -89,32 +89,15 @@
   width: 100% !important;
   display: flex !important;
   flex-direction: column;
-  padding: 0 30px !important;
+  padding: 0 85px !important;
 }
 
 .info_text {
-  font-size: 45px;
+  font-size: 50px;
   align-items: center;
   letter-spacing: 1.5px;
   position: relative;
   word-wrap: break-word;
-}
-
-.create_time {
-  font-size: 45px;
-  align-items: center;
-  letter-spacing: 1.5px;
-  position: relative;
-  word-wrap: break-word;
-}
-
-.background-square {
-  display: flex;
-  border: 2px solid #c0c0c0;
-  background-color: #f4f4f4;
-  /* width: 100%; */
-  /* height: 3em; */
-  align-items: center;
 }
 
 .under {
@@ -135,7 +118,7 @@
   -moz-box-pack: justify;
   -ms-flex-pack: justify;
   justify-content: space-between;
-  /* padding: 3em 0 2em 0; */
+  padding: 30px 0 15px 0;
   background-color: #ececec3d;
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
@@ -149,6 +132,7 @@
 .user {
   display: flex;
   flex-direction: column;
+  padding-left: 65px;
 }
 
 .userinfo {
@@ -158,7 +142,7 @@
 
 .userinfo_text {
   display: flex;
-  font-size: 20px;
+  font-size: 35px;
   color: #2f2f2fb8;
   padding: 25px 0 0 20px;
   flex-direction: column;
@@ -185,24 +169,24 @@
   margin: 0px 20px 0 0;
   border-radius: 50%;
   height: auto;
-  width: 80px;
+  width: 200px;
   box-shadow: 0px 10px 20px 0px #4343434f;
 }
 
 .username {
   font-weight: bolder;
-  font-size: 40px;
+  font-size: 80px;
 }
 
 .qrcode_box {
   display: flex !important;
-  margin: 40px 20px 0em 0 !important;
+  margin: 0 75px -50px 0 !important;
   align-items: center !important;
   flex-direction: column-reverse;
 }
 
 .qrcode_text {
-  font-size: 25px;
+  font-size: 45px;
   color: #2f2f2fb8;
   margin-left: 10px;
   text-align: right;
@@ -216,14 +200,14 @@
 }
 
 #qrcode img {
-  width: 170px;
+  width: 350px;
   height: auto;
 }
 
 .other_text {
   color: #808080;
-  font-size: 35px;
+  font-size: 70px;
   text-align: right;
-  margin: 0 17px -23px 0;
+  margin: 0 45px -45px 0;
   z-index: -1;
 }

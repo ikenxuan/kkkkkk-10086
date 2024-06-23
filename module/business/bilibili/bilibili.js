@@ -1,6 +1,6 @@
 import { Base, Render, Image, Config, Networks } from '#components'
 import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
-import { makeForwardMsg } from '#lib'
+import { makeForwardMsg, segment } from '#lib'
 import FFmpeg from '../../components/FFmpeg.js'
 import fs from 'fs'
 
@@ -70,7 +70,7 @@ export default class BiLiBiLi extends Base {
             ImageLength: 0,
             shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
           },
-          { e: this.e, scale: 0.6, retType: 'base64' },
+          { e: this.e, scale: 1.4, retType: 'base64' },
         )
         Config.commentsimg &&
           (await this.e.reply(
@@ -154,7 +154,8 @@ export default class BiLiBiLi extends Base {
           /** 图文、纯图 */
           case 'DYNAMIC_TYPE_DRAW':
             const imgArray = []
-            for (const img of OBJECT.dynamicINFO.data.item.modules.module_dynamic.major.draw.items) {
+            for (const img of OBJECT.dynamicINFO.data.item.modules.module_dynamic.major &&
+              OBJECT.dynamicINFO.data.item.modules.module_dynamic?.major?.draw?.items) {
               imgArray.push(segment.image(img.src))
             }
             const commentsdata = await bilicomments(OBJECT)
@@ -168,7 +169,7 @@ export default class BiLiBiLi extends Base {
                 ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接',
               },
-              { e: this.e, scale: 0.6, retType: 'base64' },
+              { e: this.e, scale: 1.4, retType: 'base64' },
             )
             if (imgArray.length === 1) this.e.reply(imgArray[0])
             if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
@@ -214,7 +215,7 @@ export default class BiLiBiLi extends Base {
             const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
             this.e.reply(
               await Render.render(
-                'html/bilibili/dymanic/DYNAMIC_TYPE_WORD',
+                'html/bilibili/dynamic/DYNAMIC_TYPE_WORD',
                 {
                   text,
                   dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),

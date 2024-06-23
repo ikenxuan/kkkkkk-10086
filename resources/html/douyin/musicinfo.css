@@ -8,15 +8,15 @@
 }
 
 .spacer2 {
-  height: 70px;
+  height: 109px;
 }
 
 .spacer3 {
-  height: 50px;
+  height: 90px;
 }
 
 .spacer4 {
-  height: 20px;
+  height: 35px;
 }
 
 .spacer5 {
@@ -24,20 +24,20 @@
 }
 
 .spacer6 {
-  height: 80px;
+  height: 100px;
 }
 
 .container {
   /* position: relative; */
   font-family: 'HarmonyOS_Sans', Arial, sans-serif;
   background-color: #f4f4f4;
-  width: 831px;
+  width: 1440px;
   height: auto;
 }
 
 .bitop {
   color: #3e3e3eb8;
-  font-size: 30px;
+  font-size: 65px;
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -52,7 +52,7 @@
 }
 
 .bitop img {
-  width: 220px;
+  width: 375px;
   height: auto;
   margin-right: -15px;
 }
@@ -99,7 +99,7 @@
   -webkit-box-shadow: 0px 10px 20px 0px #4343434f;
   box-shadow: 0px 10px 20px 0px #4343434f;
   border-radius: 25px;
-  width: 85%;
+  width: 80%;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
   -moz-box-flex: 1;
@@ -128,39 +128,22 @@
   -moz-box-direction: normal !important;
   -ms-flex-direction: column !important;
   flex-direction: column !important;
-  padding: 0 0 0 60px !important;
+  padding: 0 0 0 135px !important;
   word-wrap: normal !important;
 }
 
 .info_text {
-  font-size: 40px;
+  font-size: 70px;
   letter-spacing: 1.5px;
   position: relative;
   word-wrap: break-word;
 }
 
 .shipinbiaoti {
-  margin: -79px 0 15px 0;
+  margin: -143px 0 15px 13px;
   color: #ffffff;
-  letter-spacing: 28.5px;
+  letter-spacing: 45.5px;
   white-space: nowrap;
-}
-
-.background-square {
-  display: -webkit-box;
-  display: -webkit-flex;
-  display: -moz-box;
-  display: -ms-flexbox;
-  display: flex;
-  border: 1px solid #c0c0c0;
-  background-color: #f4f4f4;
-  width: 100%;
-  height: 35px;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
-  -moz-box-align: center;
-  -ms-flex-align: center;
-  align-items: center;
 }
 
 .under {
@@ -215,7 +198,7 @@
   -moz-box-direction: normal;
   -ms-flex-direction: column;
   flex-direction: column;
-  padding-left: 50px;
+  padding-left: 65px;
 }
 
 .userinfo {
@@ -237,7 +220,7 @@
   display: -moz-box;
   display: -ms-flexbox;
   display: flex;
-  font-size: 22px;
+  font-size: 35px;
   color: #2f2f2fb8;
   padding: 25px 0 0 0;
   -webkit-box-orient: vertical;
@@ -284,7 +267,7 @@
   margin: 0px 30px 0 0;
   border-radius: 50%;
   height: auto;
-  width: 120px;
+  width: 200px;
   -webkit-box-shadow: 0px 10px 20px 0px #4343434f;
   box-shadow: 0px 10px 20px 0px #4343434f;
 }
@@ -301,7 +284,7 @@
   display: -moz-box !important;
   display: -ms-flexbox !important;
   display: flex !important;
-  margin: 0 35px -50px 0 !important;
+  margin: 0 75px -50px 0 !important;
   -webkit-box-align: center !important;
   -webkit-align-items: center !important;
   -moz-box-align: center !important;
@@ -317,28 +300,28 @@
 }
 
 .qrcode_text {
-  font-size: 25px;
+  font-size: 20px;
   color: #2f2f2fb8;
-  margin-left: 10px;
+  /* margin-left: 100px; */
   text-align: right;
-  margin-right: 10px;
+  /* margin-right: 72px; */
 }
 
 #qrcode {
   border: 2px solid #808080;
-  padding: 8px;
+  padding: 10px;
   border-radius: 3%;
 }
 
 #qrcode img {
-  width: 200px;
-  height: 200px;
+  width: 350px;
+  height: 350px;
 }
 
 .other_text {
   color: #808080;
-  font-size: 45px;
+  font-size: 70px;
   text-align: right;
-  margin: 0 30px -30px 0;
+  margin: 0 100px -45px 0;
   z-index: -1;
 }

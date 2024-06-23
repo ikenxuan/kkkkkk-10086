@@ -3,13 +3,13 @@
 <link rel="stylesheet" type="text/css" href="{{_res_path}}html/bilibili/dynamic/DYNAMIC_TYPE_WORD.css" />
 {{/block}} {{block 'main'}}
 
-<div style="height: 20px"></div>
+<div class="spacer2"></div>
 <div class="bitop">
   <img src="{{_res_path}}html/bilibili/img/bilibili.png" alt="bilibili" />
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <span style="font-size: 30px">|</span>
+  <span style="font-size: 50px">|</span>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <span style="font-size: 30px">你感兴趣的视频都在哔哩哔哩</span>
+  <span style="font-size: 50px">你感兴趣的视频都在哔哩哔哩</span>
 </div>
 <div class="spacer2"></div>
 {{each image_url val}}
@@ -23,17 +23,15 @@
 <div class="info">
   <div class="info_text">{{@text}}</div>
   <div class="spacer4"></div>
-  <div class="info_text" style="font-size: 30px; color: #808080; letter-spacing: normal">{{dianzan}}点赞 · {{pinglun}}评论 · {{share}}分享</div>
+  <div class="info_text" style="font-size: 45px; color: #808080; letter-spacing: normal">{{dianzan}}点赞 · {{pinglun}}评论 · {{share}}分享</div>
   <div class="spacer5"></div>
-  <div class="background-square">
-    <div class="info_text" style="font-size: 25px; padding: 0 0.5em; white-space: nowrap; color: #bcbcbc">发布于{{create_time}}</div>
-  </div>
+  <div class="info_text" style="font-size: 35px; white-space: nowrap; color: #e0e0e0">发布于{{create_time}}</div>
 </div>
 <div class="spacer6"></div>
 <div class="other_text">哔哩哔哩{{dynamicTYPE}}</div>
 <div class="under">
   <div class="rectangular_box">
-    <div class="user" style="align-items: center; padding: 0 0 0 30px">
+    <div class="user" style="align-items: center; padding: 0 0 0 50px">
       <div class="userinfo">
         <div><img src="{{avater_url}}" alt="头像" class="avatar" /></div>
         <div class="name_and_followers">
@@ -54,21 +52,6 @@
   </div>
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var infoTexts = document.querySelectorAll('.info_text')
-    infoTexts.forEach(function (infoText) {
-      // 计算文本宽度
-      var range = document.createRange()
-      range.selectNode(infoText)
-      var textWidth = range.getBoundingClientRect().width + 12
-      // 找到 .info_text 元素的父级元素 .background-square，并设置宽度
-      var backgroundSquare = infoText.parentNode
-      backgroundSquare.style.width = textWidth + 'px'
-      backgroundSquare.style.display = 'inline-block' // 确保 .background-square 作为行内块级元素显示
-    })
-  })
-</script>
 <script>
   qrcode = new QRCode(document.getElementById('qrcode'), {
     width: 500,

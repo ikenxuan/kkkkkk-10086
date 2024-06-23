@@ -1,5 +1,6 @@
 import { bilidata, BiLiBiLiAPI } from '#bilibili'
 import { Base, Config, Render, Networks, DB } from '#components'
+import { Bot, sendMsg, segment } from '#lib'
 import fs from 'fs'
 
 export default class push extends Base {
@@ -93,7 +94,6 @@ export default class push extends Base {
               user_shortid: data[dynamicId].host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
-              Botadapter: this.botadapter,
               dynamicTYPE: '图文动态推送',
             },
             { e: this.e, scale: 1.4, retType: 'base64' },
@@ -126,7 +126,6 @@ export default class push extends Base {
               user_shortid: data[dynamicId].host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
-              Botadapter: this.botadapter,
               dynamicTYPE: '纯文动态推送',
             },
             { e: this.e, scale: 1.4, retType: 'base64' },
@@ -161,7 +160,6 @@ export default class push extends Base {
                 user_shortid: data[dynamicId].host_mid,
                 total_favorited: this.count(userINFO.data.like_num),
                 following_count: this.count(userINFO.data.card.attention),
-                Botadapter: this.botadapter,
                 dynamicTYPE: '视频动态推送',
               },
               { e: this.e, scale: 1.4, retType: 'base64' },
@@ -199,10 +197,10 @@ export default class push extends Base {
       try {
         let status
         for (const groupId of data[dynamicId].group_id) {
-          if (send) status = await Bot.pickGroup(Number(groupId)).sendMsg(img)
+          if (send) status = await sendMsg(Bot?.list[0]?.bot?.account?.uin, groupId, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV')
             try {
-              await Bot.pickGroup(Number(groupId)).sendMsg(segment.video(nocd_data.data.durl[0].url))
+              await sendMsg(Bot?.list[0]?.bot?.account?.uin, groupId, segment.video(nocd_data.data.durl[0].url))
             } catch (error) {
               logger.error(error)
             }
