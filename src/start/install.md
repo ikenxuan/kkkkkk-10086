@@ -29,6 +29,8 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 
 :::
 
+<h2>以下内容仍在开发中</h2>
+
 ::: details 如果你想在 [`Miao-Yunzai v4`](https://github.com/yoimiya-kokomi/Miao-Yunzai/tree/dev) 安装
 
 <p style="color: red; font-weight: bolder;">请留意分支为 d，该分支未来将会废弃，合并到 master</p>
@@ -42,12 +44,12 @@ git clone --branch d --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./pl
 
 ```sh [Gitee]
 # （国内推荐）使用 Gitee
-git clone --branch v4 --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch d --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ```sh [Ghproxy]
 # （国内推荐）使用 Ghproxy 代理 Github
-git clone --branch v4 --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --branch d --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 :::
@@ -68,12 +70,12 @@ git clone --branch d --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./pl
 
 ```sh [Gitee]
 # （国内推荐）使用 Gitee
-git clone --branch Karin --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
+git clone --branch d --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Ghproxy]
 # （国内推荐）使用 Ghproxy 代理 Github
-git clone --branch Karin --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
+git clone --branch d --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 :::
