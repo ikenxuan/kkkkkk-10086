@@ -60,10 +60,12 @@ export class Admin extends plugin {
         {
           reg: SwitchCfgReg,
           fnc: 'ConfigSwitch',
+          permission: 'master',
         },
         {
           reg: NumberCfgReg,
           fnc: 'ConfigNumber',
+          permission: 'master',
         },
         {
           reg: /^#kkk设置$/,
