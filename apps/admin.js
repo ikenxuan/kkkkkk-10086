@@ -96,22 +96,22 @@ export class Admin extends plugin {
     })
     this.task = Config.rmmp4
       ? [
-          {
-            cron: '0 0 4 * * *',
-            name: '[kkkkkk-10086] 视频缓存自动删除',
-            fnc: () => this.deltemp(),
-          },
-        ]
+        {
+          cron: '0 0 4 * * *',
+          name: '[kkkkkk-10086] 视频缓存自动删除',
+          fnc: () => this.deltemp(),
+        },
+      ]
       : null
   }
 
-  async deltemp() {
+  async deltemp () {
     removeAllFiles(process.cwd() + '/resources/kkkdownload/video/')
       .then(() => this.reply('/resources/kkkdownload/video/' + '所有文件已删除'))
       .catch((err) => console.error('删除文件时出错:', err))
   }
 
-  async ConfigSwitch(e) {
+  async ConfigSwitch (e) {
     // 解析消息
     let regRet = SwitchCfgReg.exec(e.msg)
     let key = regRet[1]
@@ -122,7 +122,7 @@ export class Admin extends plugin {
   }
 
   // 修改数字设置
-  async ConfigNumber(e) {
+  async ConfigNumber (e) {
     let regRet = e.msg.match(NumberCfgReg)
     let type = NumberCfgType[regRet[1]]
     let number = checkNumberValue(regRet[2], type.limit)
@@ -140,7 +140,7 @@ export class Admin extends plugin {
   }
 
   // 渲染发送图片
-  async index_Settings(e) {
+  async index_Settings (e) {
     let data = {}
     let _cfg = Config.ALLcfg
     for (let key in _cfg) {
@@ -150,31 +150,31 @@ export class Admin extends plugin {
     e.reply(img)
   }
 
-  async Blogin(e) {
+  async Blogin (e) {
     await new BiLogin(e).Login()
   }
 
-  async setdyck() {
+  async setdyck () {
     this.setContext('savedyck')
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }
 
-  async savedyck() {
+  async savedyck () {
     Config.ck = String(this.e.msg)
     this.reply('设置成功！')
     this.finish('savedyck')
   }
 
-  async setbilick() {
+  async setbilick () {
     this.setContext('savebilick')
     const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
     return false
   }
 
-  async savebilick() {
+  async savebilick () {
     Config.bilibilick = String(this.e.msg)
     this.reply('设置成功！')
     this.finish('savebilick')
@@ -196,7 +196,7 @@ const getStatus = function (rote) {
   }
 }
 
-function checkNumberValue(value, limit) {
+function checkNumberValue (value, limit) {
   // 检查是否存在限制条件
   if (!limit) {
     return value
@@ -220,7 +220,7 @@ function checkNumberValue(value, limit) {
   // 如果不符合以上任何条件，则返回原值
   return parseFloat(value)
 }
-async function removeAllFiles(dir) {
+async function removeAllFiles (dir) {
   const files = await fs.promises.readdir(dir)
   for (const file of files) {
     const filePath = path.join(dir, file)

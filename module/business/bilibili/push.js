@@ -57,6 +57,7 @@ export default class push extends Base {
       const dycrad = JSON.parse(dynamicCARDINFO.data.card.card)
       let img,
         send = true
+      logger.debug(`UP: ${data[dynamicId].remark}\n动态id：${dynamicId}\nhttps://t.bilibili.com/${dynamicId}`)
       switch (data[dynamicId].dynamic_type) {
         /** 处理图文动态 */
         case 'DYNAMIC_TYPE_DRAW':

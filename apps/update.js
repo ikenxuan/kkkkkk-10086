@@ -24,7 +24,7 @@ export class MusicUpdate extends plugin {
     })
   }
 
-  async update(e = this.e) {
+  async update (e = this.e) {
     if (uping) {
       e.reply(`正在更新${Version.pluginName}，请稍后...`)
       return false
@@ -68,7 +68,7 @@ export class MusicUpdate extends plugin {
         }
     }
   }
-  async update_log(e = this.e) {
+  async update_log (e = this.e) {
     switch (Version.BotName) {
       case 'Karin':
         try {

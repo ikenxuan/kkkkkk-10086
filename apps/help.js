@@ -22,7 +22,7 @@ export class Help extends plugin {
     })
   }
 
-  async version(e) {
+  async version (e) {
     const img = await Render.render(
       'html/help/version-info',
       {
@@ -35,7 +35,7 @@ export class Help extends plugin {
     e.reply(img)
   }
 
-  async help(e) {
+  async help (e) {
     let helpConfig = _.defaults(helpCfg)
     let helpGroup = []
     _.forEach(helpList, (group) => {
