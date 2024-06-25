@@ -10,20 +10,20 @@ export default async function Pushlist(e, list) {
   let img,
     data = {
       douyin: await DB.FindAll('douyin'),
-      bilibili: await DB.FindAll('bilibili'),
+      bilibili: await DB.FindAll('bilibili')
     }
   const transformedData = {
     douyin: [],
-    bilibili: [],
+    bilibili: []
   }
 
   const platforms = ['douyin', 'bilibili']
   const uniqueIdKeyMap = {
     douyin: 'sec_uid',
-    bilibili: 'host_mid',
+    bilibili: 'host_mid'
   }
 
-  platforms.forEach((platform) => {
+  platforms.forEach(platform => {
     for (const groupId in data[platform]) {
       const groupData = data[platform][groupId]
       for (const uniqueIdKey in groupData) {
@@ -37,14 +37,17 @@ export default async function Pushlist(e, list) {
           }
         })()
 
-        let foundItem = transformedData[platform].find((x) => x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId)
+        let foundItem = transformedData[platform].find(
+          x =>
+            x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId
+        )
 
         const newItem = {
           avatar_img: item.avatar_img,
           remark: item.remark,
           create_time: convertTimestampToDateTime(item.create_time),
           [uniqueIdKeyMap[platform]]: uniqueId, // 使用映射的键名设置sec_uid或host_mid
-          group_id: [groupName],
+          group_id: [groupName]
         }
 
         if (foundItem) {
@@ -62,11 +65,11 @@ export default async function Pushlist(e, list) {
       isMaster: e.isMaster,
       group_id: e.isMaster
         ? `<h1>Bot: <code>${Bot.nickname}</code>推送列表</h1>`
-        : `<h1>群: <code>${Bot.pickGroup(Number(e.group_id)).info.group_name} </code>推送列表</h1>`,
+        : `<h1>群: <code>${Bot?.pickGroup(Number(e.group_id))?.info?.group_name} </code>推送列表</h1>`,
       length: list,
-      data: transformedData,
+      data: transformedData
     },
-    { e, scale: 1.8, retType: 'base64' },
+    { e, scale: 1.8, retType: 'base64' }
   )
   return img
 }

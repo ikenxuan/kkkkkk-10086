@@ -7,9 +7,10 @@ export default class Base {
   constructor(e = {}) {
     this.e = e
     this.headers = {
-      Accept: '*/*',
+      'Accept': '*/*',
       'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
     }
     this._path = process.cwd()
     this.ConfigPath = Version.pluginPath + '/config/config.json'
@@ -143,9 +144,17 @@ export default class Base {
           switch (this.botadapter) {
             case 'ICQQ':
               if (this.e.isGroup) {
-                groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile
+                  ? await this.e.group.fs.upload(file.filepath)
+                  : await this.e.reply(
+                      segment.video(file.filepath || video_url)
+                    )
               } else {
-                groupfile ? await this.e.friend.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile
+                  ? await this.e.friend.fs.upload(file.filepath)
+                  : await this.e.reply(
+                      segment.video(file.filepath || video_url)
+                    )
               }
               break
             case 'LagrangeCore':
@@ -153,7 +162,9 @@ export default class Base {
               await this.e.group.sendFile(file.filepath)
               break
             case 'OneBotv11':
-              groupfile ? await this.e.group.fs.upload(file.filepath) : await this.e.reply(segment.video(file.filepath || video_url))
+              groupfile
+                ? await this.e.group.fs.upload(file.filepath)
+                : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'QQBot':
               file.totalBytes >= 10
@@ -175,24 +186,38 @@ export default class Base {
         case 'TRSS-Yunzai':
           switch (this.botadapter) {
             case 'LagrangeCore':
-              logger.warn('TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange')
+              logger.warn(
+                'TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange'
+              )
               break
             case 'Lagrange.OneBot':
               await this.e.group.sendFile(file.filepath)
               break
             case 'QQBot':
-              file.totalBytes >= 10 ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(video_url || file.filepath))
+              file.totalBytes >= 10
+                ? await this.e.reply(segment.file(file.filepath))
+                : await this.e.reply(segment.video(video_url || file.filepath))
               break
             case 'ICQQ':
               if (this.e.isGroup) {
-                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile
+                  ? await this.e.reply(segment.file(file.filepath))
+                  : await this.e.reply(
+                      segment.video(file.filepath || video_url)
+                    )
               } else {
-                groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
+                groupfile
+                  ? await this.e.reply(segment.file(file.filepath))
+                  : await this.e.reply(
+                      segment.video(file.filepath || video_url)
+                    )
               }
               break
             case 'OneBotv11':
             case 'KOOKBot':
-              groupfile ? await this.e.reply(segment.file(file.filepath)) : await this.e.reply(segment.video(file.filepath || video_url))
+              groupfile
+                ? await this.e.reply(segment.file(file.filepath))
+                : await this.e.reply(segment.video(file.filepath || video_url))
               break
           }
           break
@@ -243,7 +268,7 @@ export default class Base {
     const { filepath, totalBytes } = await new Networks({
       url: video_url,
       headers,
-      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`,
+      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`
     }).downloadStream((downloadedBytes, totalBytes) => {
       // 定义进度条长度及生成进度条字符串的函数
       const barLength = 45
@@ -254,7 +279,9 @@ export default class Base {
         progress += '#'.repeat(filledLength)
         progress += '-'.repeat(Math.max(0, barLength - filledLength - 1))
         const formattedProgress = progressPercentage.toFixed(2) + '%'
-        console.log(`DownLoading ${title}${type} [${progress}] ${formattedProgress}\r`)
+        console.log(
+          `DownLoading ${title}${type} [${progress}] ${formattedProgress}\r`
+        )
       }
       // 计算并打印当前下载进度
       const progressPercentage = (downloadedBytes / totalBytes) * 100
