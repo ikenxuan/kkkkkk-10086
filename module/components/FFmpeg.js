@@ -1,7 +1,8 @@
 import { exec } from 'child_process'
+import { logger } from '#lib'
 
 class FFmpeg {
-  checkEnv() {
+  checkEnv () {
     return new Promise((resolve, reject) => {
       exec('ffmpeg -version', (err) => {
         if (err) {
@@ -13,7 +14,7 @@ class FFmpeg {
     })
   }
 
-  VideoComposite(path = '', path2 = '', resultPath = '', suc, faith = () => {}) {
+  VideoComposite (path = '', path2 = '', resultPath = '', suc, faith = () => { }) {
     exec(`ffmpeg -y -i ${path} -i ${path2} -c copy ${resultPath}`, async function (err) {
       if (err) {
         logger.error('视频合成失败\n', err)

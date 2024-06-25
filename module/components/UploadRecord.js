@@ -6,21 +6,22 @@ import util from 'util'
 import stream from 'stream'
 import crypto from 'crypto'
 import { exec } from 'child_process'
+import { logger } from '#lib'
 
 let core
 try {
-  ;({ core } = await import('icqq'))
+  ; ({ core } = await import('icqq'))
 } catch {
   try {
-    ;({ core } = await import(`file://${process.cwd()}/plugins/ICQQ-Plugin/node_modules/icqq/lib/index.js`))
+    ; ({ core } = await import(`file://${process.cwd()}/plugins/ICQQ-Plugin/node_modules/icqq/lib/index.js`))
   } catch {
-    ;({ core } = {})
+    ; ({ core } = {})
   }
 }
 
 let errors = {}
 
-async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brief = '') {
+async function UploadRecord (e, record_url, seconds = 0, transcoding = true, brief = '') {
   const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
   const result = await getPttBuffer(record_url, bot.config?.ffmpeg_path, transcoding)
   if (!result.buffer) {
@@ -107,7 +108,7 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
 
 export default UploadRecord
 
-async function getPttBuffer(file, ffmpeg = 'ffmpeg', transcoding = true) {
+async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
   let buffer
   let time
   if (file instanceof Buffer || file.startsWith('base64://')) {
@@ -154,7 +155,7 @@ async function getPttBuffer(file, ffmpeg = 'ffmpeg', transcoding = true) {
         buffer = await audioTrans(tmpfile, ffmpeg)
       }
       fs.unlink(tmpfile, NOOP)
-    } catch (err) {}
+    } catch (err) { }
   } else {
     // 本地文件
     file = String(file).replace(/^file:\/{2}/, '')
@@ -171,7 +172,7 @@ async function getPttBuffer(file, ffmpeg = 'ffmpeg', transcoding = true) {
   return { buffer, time }
 }
 
-async function getAudioTime(file, ffmpeg = 'ffmpeg') {
+async function getAudioTime (file, ffmpeg = 'ffmpeg') {
   return new Promise((resolve, reject) => {
     let file_info = fs.statSync(file)
     let cmd = `${ffmpeg} -i "${file}"`
@@ -212,7 +213,7 @@ async function getAudioTime(file, ffmpeg = 'ffmpeg') {
   })
 }
 
-async function audioTrans(file, ffmpeg = 'ffmpeg') {
+async function audioTrans (file, ffmpeg = 'ffmpeg') {
   let result = await new Promise((resolve, reject) => {
     const tmpfile = TMP_DIR + '/' + (0, uuid)() + '.pcm'
     exec(`${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`, async (error, stdout, stderr) => {
@@ -232,7 +233,7 @@ async function audioTrans(file, ffmpeg = 'ffmpeg') {
   return await audioTrans1(file, ffmpeg)
 }
 
-async function audioTrans1(file, ffmpeg = 'ffmpeg') {
+async function audioTrans1 (file, ffmpeg = 'ffmpeg') {
   return new Promise((resolve, reject) => {
     const tmpfile = TMP_DIR + '/' + (0, uuid)()
     exec(`${ffmpeg} -y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`, async (error, stdout, stderr) => {
@@ -249,20 +250,20 @@ async function audioTrans1(file, ffmpeg = 'ffmpeg') {
   })
 }
 
-async function read7Bytes(file) {
+async function read7Bytes (file) {
   const fd = await fs.promises.open(file, 'r')
   const buf = (await fd.read(Buffer.alloc(7), 0, 7, 0)).buffer
   fd.close()
   return buf
 }
 
-function uuid() {
+function uuid () {
   let hex = crypto.randomBytes(16).toString('hex')
   return hex.substr(0, 8) + '-' + hex.substr(8, 4) + '-' + hex.substr(12, 4) + '-' + hex.substr(16, 4) + '-' + hex.substr(20)
 }
 
 /** 计算流的md5 */
-function md5Stream(readable) {
+function md5Stream (readable) {
   return new Promise((resolve, reject) => {
     readable.on('error', reject)
     readable.pipe(crypto.createHash('md5').on('error', reject).on('data', resolve))
@@ -270,7 +271,7 @@ function md5Stream(readable) {
 }
 
 /** 计算文件的md5和sha */
-function fileHash(filepath) {
+function fileHash (filepath) {
   const readable = fs.createReadStream(filepath)
   const sha = new Promise((resolve, reject) => {
     readable.on('error', reject)
@@ -280,7 +281,7 @@ function fileHash(filepath) {
 }
 
 /** 群号转uin */
-function code2uin(code) {
+function code2uin (code) {
   let left = Math.floor(code / 1000000)
   if (left >= 0 && left <= 10) left += 202
   else if (left >= 11 && left <= 19) left += 469
@@ -295,7 +296,7 @@ function code2uin(code) {
 }
 
 /** uin转群号 */
-function uin2code(uin) {
+function uin2code (uin) {
   let left = Math.floor(uin / 1000000)
   if (left >= 202 && left <= 212) left -= 202
   else if (left >= 480 && left <= 488) left -= 469
@@ -308,14 +309,14 @@ function uin2code(uin) {
   return left * 1000000 + (uin % 1000000)
 }
 
-function int32ip2str(ip) {
+function int32ip2str (ip) {
   if (typeof ip === 'string') return ip
   ip = ip & 0xffffffff
   return [ip & 0xff, (ip & 0xff00) >> 8, (ip & 0xff0000) >> 16, ((ip & 0xff000000) >> 24) & 0xff].join('.')
 }
 
 /** 解析彩色群名片 */
-function parseFunString(buf) {
+function parseFunString (buf) {
   if (buf[0] === 0xa) {
     let res = ''
     try {
@@ -324,7 +325,7 @@ function parseFunString(buf) {
       for (let v of arr) {
         if (v[2]) res += String(v[2])
       }
-    } catch {}
+    } catch { }
     return res
   } else {
     return String(buf)
@@ -332,7 +333,7 @@ function parseFunString(buf) {
 }
 
 /** xml转义 */
-function escapeXml(str) {
+function escapeXml (str) {
   return str.replace(/[&"><]/g, function (s) {
     if (s === '&') return '&amp;'
     if (s === '<') return '&lt;'
@@ -349,7 +350,7 @@ class DownloadTransform extends stream.Transform {
     this._size = 0
   }
 
-  _transform(data, encoding, callback) {
+  _transform (data, encoding, callback) {
     this._size += data.length
     let error = null
     if (this._size <= MAX_UPLOAD_SIZE) this.push(data)
@@ -364,7 +365,7 @@ const TMP_DIR = os.tmpdir()
 const MAX_UPLOAD_SIZE = 31457280
 
 /** no operation */
-const NOOP = () => {}
+const NOOP = () => { }
 
 /** promisified pipeline */
 const pipeline = (0, util.promisify)(stream.pipeline)
@@ -373,42 +374,42 @@ const md5 = (data) => (0, crypto.createHash)('md5').update(data).digest()
 
 errors.LoginErrorCode = errors.drop = errors.ErrorCode
 let ErrorCode
-;(function (ErrorCode) {
-  /** 客户端离线 */
-  ErrorCode[(ErrorCode.ClientNotOnline = -1)] = 'ClientNotOnline'
-  /** 发包超时未收到服务器回应 */
-  ErrorCode[(ErrorCode.PacketTimeout = -2)] = 'PacketTimeout'
-  /** 用户不存在 */
-  ErrorCode[(ErrorCode.UserNotExists = -10)] = 'UserNotExists'
-  /** 群不存在(未加入) */
-  ErrorCode[(ErrorCode.GroupNotJoined = -20)] = 'GroupNotJoined'
-  /** 群员不存在 */
-  ErrorCode[(ErrorCode.MemberNotExists = -30)] = 'MemberNotExists'
-  /** 发消息时传入的参数不正确 */
-  ErrorCode[(ErrorCode.MessageBuilderError = -60)] = 'MessageBuilderError'
-  /** 群消息被风控发送失败 */
-  ErrorCode[(ErrorCode.RiskMessageError = -70)] = 'RiskMessageError'
-  /** 群消息有敏感词发送失败 */
-  ErrorCode[(ErrorCode.SensitiveWordsError = -80)] = 'SensitiveWordsError'
-  /** 上传图片/文件/视频等数据超时 */
-  ErrorCode[(ErrorCode.HighwayTimeout = -110)] = 'HighwayTimeout'
-  /** 上传图片/文件/视频等数据遇到网络错误 */
-  ErrorCode[(ErrorCode.HighwayNetworkError = -120)] = 'HighwayNetworkError'
-  /** 没有上传通道 */
-  ErrorCode[(ErrorCode.NoUploadChannel = -130)] = 'NoUploadChannel'
-  /** 不支持的file类型(没有流) */
-  ErrorCode[(ErrorCode.HighwayFileTypeError = -140)] = 'HighwayFileTypeError'
-  /** 文件安全校验未通过不存在 */
-  ErrorCode[(ErrorCode.UnsafeFile = -150)] = 'UnsafeFile'
-  /** 离线(私聊)文件不存在 */
-  ErrorCode[(ErrorCode.OfflineFileNotExists = -160)] = 'OfflineFileNotExists'
-  /** 群文件不存在(无法转发) */
-  ErrorCode[(ErrorCode.GroupFileNotExists = -170)] = 'GroupFileNotExists'
-  /** 获取视频中的图片失败 */
-  ErrorCode[(ErrorCode.FFmpegVideoThumbError = -210)] = 'FFmpegVideoThumbError'
-  /** 音频转换失败 */
-  ErrorCode[(ErrorCode.FFmpegPttTransError = -220)] = 'FFmpegPttTransError'
-})((ErrorCode = errors.ErrorCode || (errors.ErrorCode = {})))
+  ; (function (ErrorCode) {
+    /** 客户端离线 */
+    ErrorCode[(ErrorCode.ClientNotOnline = -1)] = 'ClientNotOnline'
+    /** 发包超时未收到服务器回应 */
+    ErrorCode[(ErrorCode.PacketTimeout = -2)] = 'PacketTimeout'
+    /** 用户不存在 */
+    ErrorCode[(ErrorCode.UserNotExists = -10)] = 'UserNotExists'
+    /** 群不存在(未加入) */
+    ErrorCode[(ErrorCode.GroupNotJoined = -20)] = 'GroupNotJoined'
+    /** 群员不存在 */
+    ErrorCode[(ErrorCode.MemberNotExists = -30)] = 'MemberNotExists'
+    /** 发消息时传入的参数不正确 */
+    ErrorCode[(ErrorCode.MessageBuilderError = -60)] = 'MessageBuilderError'
+    /** 群消息被风控发送失败 */
+    ErrorCode[(ErrorCode.RiskMessageError = -70)] = 'RiskMessageError'
+    /** 群消息有敏感词发送失败 */
+    ErrorCode[(ErrorCode.SensitiveWordsError = -80)] = 'SensitiveWordsError'
+    /** 上传图片/文件/视频等数据超时 */
+    ErrorCode[(ErrorCode.HighwayTimeout = -110)] = 'HighwayTimeout'
+    /** 上传图片/文件/视频等数据遇到网络错误 */
+    ErrorCode[(ErrorCode.HighwayNetworkError = -120)] = 'HighwayNetworkError'
+    /** 没有上传通道 */
+    ErrorCode[(ErrorCode.NoUploadChannel = -130)] = 'NoUploadChannel'
+    /** 不支持的file类型(没有流) */
+    ErrorCode[(ErrorCode.HighwayFileTypeError = -140)] = 'HighwayFileTypeError'
+    /** 文件安全校验未通过不存在 */
+    ErrorCode[(ErrorCode.UnsafeFile = -150)] = 'UnsafeFile'
+    /** 离线(私聊)文件不存在 */
+    ErrorCode[(ErrorCode.OfflineFileNotExists = -160)] = 'OfflineFileNotExists'
+    /** 群文件不存在(无法转发) */
+    ErrorCode[(ErrorCode.GroupFileNotExists = -170)] = 'GroupFileNotExists'
+    /** 获取视频中的图片失败 */
+    ErrorCode[(ErrorCode.FFmpegVideoThumbError = -210)] = 'FFmpegVideoThumbError'
+    /** 音频转换失败 */
+    ErrorCode[(ErrorCode.FFmpegPttTransError = -220)] = 'FFmpegPttTransError'
+  })((ErrorCode = errors.ErrorCode || (errors.ErrorCode = {})))
 const ErrorMessage = {
   [ErrorCode.UserNotExists]: '查无此人',
   [ErrorCode.GroupNotJoined]: '未加入的群',
@@ -420,22 +421,22 @@ const ErrorMessage = {
   120: '在该群被禁言',
   121: 'AT全体剩余次数不足',
 }
-function drop(code, message) {
+function drop (code, message) {
   if (!message || !message.length) message = ErrorMessage[code]
   throw new core.ApiRejection(code, message)
 }
 errors.drop = drop
 /** 登录时可能出现的错误，不在列的都属于未知错误，暂时无法解决 */
 let LoginErrorCode
-;(function (LoginErrorCode) {
-  /** 密码错误 */
-  LoginErrorCode[(LoginErrorCode.WrongPassword = 1)] = 'WrongPassword'
-  /** 账号被冻结 */
-  LoginErrorCode[(LoginErrorCode.AccountFrozen = 40)] = 'AccountFrozen'
-  /** 发短信太频繁 */
-  LoginErrorCode[(LoginErrorCode.TooManySms = 162)] = 'TooManySms'
-  /** 短信验证码错误 */
-  LoginErrorCode[(LoginErrorCode.WrongSmsCode = 163)] = 'WrongSmsCode'
-  /** 滑块ticket错误 */
-  LoginErrorCode[(LoginErrorCode.WrongTicket = 237)] = 'WrongTicket'
-})((LoginErrorCode = errors.LoginErrorCode || (errors.LoginErrorCode = {})))
+  ; (function (LoginErrorCode) {
+    /** 密码错误 */
+    LoginErrorCode[(LoginErrorCode.WrongPassword = 1)] = 'WrongPassword'
+    /** 账号被冻结 */
+    LoginErrorCode[(LoginErrorCode.AccountFrozen = 40)] = 'AccountFrozen'
+    /** 发短信太频繁 */
+    LoginErrorCode[(LoginErrorCode.TooManySms = 162)] = 'TooManySms'
+    /** 短信验证码错误 */
+    LoginErrorCode[(LoginErrorCode.WrongSmsCode = 163)] = 'WrongSmsCode'
+    /** 滑块ticket错误 */
+    LoginErrorCode[(LoginErrorCode.WrongTicket = 237)] = 'WrongTicket'
+  })((LoginErrorCode = errors.LoginErrorCode || (errors.LoginErrorCode = {})))

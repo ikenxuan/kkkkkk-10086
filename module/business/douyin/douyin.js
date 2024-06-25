@@ -1,6 +1,6 @@
 import { Base, Config, UploadRecord, Networks, Render } from '#components'
 import { iKun, Emoji, comments } from '#douyin'
-import { makeForwardMsg, segment } from '#lib'
+import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
 
 let mp4size = ''
@@ -16,7 +16,7 @@ export default class DouYin extends Base {
     this.botname === 'Karin' ? (Config.sendforwardmsg = false) : null
   }
 
-  async RESOURCES(data) {
+  async RESOURCES (data) {
     switch (this.type) {
       case 'video':
       case 'note':
@@ -59,7 +59,7 @@ export default class DouYin extends Base {
             if (this.botadapter === 'QQBot') {
               let sharp
               try {
-                ;({ default: sharp } = await import('sharp'))
+                ; ({ default: sharp } = await import('sharp'))
                 imgresp = new Uint8Array(await new Networks({ url: image_url, type: 'arrayBuffer' }).getData())
                 imgresp = await sharp(imgresp).toFormat('jpeg').toBuffer()
               } catch {
@@ -139,7 +139,7 @@ export default class DouYin extends Base {
                 try {
                   if (Config.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                   else await this.e.reply(segment.record(music_url))
-                } catch {}
+                } catch { }
               } else if (this.botadapter !== 'ICQQ' && this.is_mp4 == false) {
                 await this.e.reply(segment.record(music_url))
               }
@@ -262,10 +262,10 @@ export default class DouYin extends Base {
               },
               this.is_mp4
                 ? {
-                    text: '背景音乐',
-                    input: 'BGM' + m_id,
-                    send: true,
-                  }
+                  text: '背景音乐',
+                  input: 'BGM' + m_id,
+                  send: true,
+                }
                 : {},
             ]),
           )
@@ -362,7 +362,7 @@ export default class DouYin extends Base {
     }
   }
 
-  async uploadRecord(music_id) {
+  async uploadRecord (music_id) {
     const data = await new iKun('Music').GetData({ music_id })
     let title = data.music_info.title // BGM名字
     let music_url = data.music_info.play_url.uri // BGM link
@@ -398,12 +398,12 @@ export default class DouYin extends Base {
    * @param {*} file 上传图片到腾讯图床
    * @returns
    */
-  async upload_image(file) {
+  async upload_image (file) {
     return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0]
   }
 
   /** 获取机器人上传的图片链接 */
-  async getHistoryLog() {
+  async getHistoryLog () {
     return (await Bot.pickGroup(Number(this.e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url
   }
 }
@@ -413,7 +413,7 @@ export default class DouYin extends Base {
  * @param {integer} delay
  * @returns
  */
-function Time(delay) {
+function Time (delay) {
   const currentDate = new Date()
   currentDate.setHours(currentDate.getHours() + delay)
 

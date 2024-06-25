@@ -1,5 +1,6 @@
 import { Base, Config, Networks } from '#components'
 import { DouyinAPI, Sign } from '#douyin'
+import { logger } from '#lib'
 
 export default class iKun extends Base {
   constructor(type) {
@@ -9,7 +10,7 @@ export default class iKun extends Base {
     this.headers.Cookie = Config.ck
   }
 
-  async GetData(data) {
+  async GetData (data) {
     if (!this.allow) throw new Error('请使用 [#kkk设置抖音ck] 以设置抖音ck')
     switch (this.type) {
       case 'video':
@@ -27,10 +28,10 @@ export default class iKun extends Base {
         this.URL = DouyinAPI.评论(data.id)
         let CommentsData = Config.comments
           ? await this.GlobalGetData({
-              url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
-              method: 'GET',
-              headers: this.headers,
-            })
+            url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
+            method: 'GET',
+            headers: this.headers,
+          })
           : { code: 405, msg: '你没开评论解析的开关', data: null }
         return { VideoData, CommentsData }
 
@@ -120,7 +121,7 @@ export default class iKun extends Base {
    * @param {*} is_mp4 boolean
    * @returns
    */
-  async GlobalGetData(options, is_mp4) {
+  async GlobalGetData (options, is_mp4) {
     let result = await new Networks(options).getData()
     if (result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)

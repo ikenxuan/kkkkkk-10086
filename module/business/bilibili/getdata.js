@@ -1,5 +1,6 @@
 import { BiLiBiLiAPI, checkuser, wbi_sign } from '#bilibili'
 import { Base, Networks, Config } from '#components'
+import { logger } from '#lib'
 
 export default class bilidata extends Base {
   constructor(type) {
@@ -9,7 +10,7 @@ export default class bilidata extends Base {
     this.headers.Cookie = Config.bilibilick
   }
 
-  async GetData(data) {
+  async GetData (data) {
     let result, COMMENTSDATA, EMOJIDATA, INFODATA, PARAM
     switch (this.type) {
       case 'bilibilivideo':
@@ -138,7 +139,7 @@ export default class bilidata extends Base {
     }
   }
 
-  async GlobalGetData(options) {
+  async GlobalGetData (options) {
     let result = await new Networks(options).getData()
     if (result && result.code !== 0) {
       const errorMessage = errorMap[result.code] || '未知错误'
@@ -149,7 +150,7 @@ export default class bilidata extends Base {
     }
   }
 }
-function mapping_table(type) {
+function mapping_table (type) {
   const Array = {
     1: ['DYNAMIC_TYPE_AV', 'DYNAMIC_TYPE_PGC', 'DYNAMIC_TYPE_UGC_SEASON'],
     11: ['DYNAMIC_TYPE_DRAW'],
@@ -165,7 +166,7 @@ function mapping_table(type) {
   return 1
 }
 
-function oid(dynamicINFO, dynamicINFO_CARD) {
+function oid (dynamicINFO, dynamicINFO_CARD) {
   if (dynamicINFO.data.item.type == 'DYNAMIC_TYPE_WORD') {
     return dynamicINFO.data.item.id_str
   } else return dynamicINFO_CARD.data.card.desc.rid

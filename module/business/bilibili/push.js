@@ -1,6 +1,6 @@
 import { bilidata, BiLiBiLiAPI } from '#bilibili'
 import { Base, Config, Render, Networks, DB } from '#components'
-import { Bot, sendMsg, segment } from '#lib'
+import { Bot, sendMsg, segment, logger } from '#lib'
 import fs from 'fs'
 
 export default class push extends Base {
@@ -26,7 +26,7 @@ export default class push extends Base {
    *
    * @returns {Promise<boolean>} 操作完成的状态，成功为true，失败为false。
    */
-  async action() {
+  async action () {
     await this.checkremark()
 
     try {
@@ -47,7 +47,7 @@ export default class push extends Base {
    * @param {Object} data - 包含动态相关信息的对象。
    * - data 动态信息对象，必须包含 dynamic_id, host_mid, group_id, type 等属性。
    */
-  async getdata(data) {
+  async getdata (data) {
     let nocd_data
     for (const dynamicId in data) {
       const dynamicCARDINFO = await new bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
@@ -200,7 +200,7 @@ export default class push extends Base {
           if (send) status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV')
             try {
-              await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
+              send && await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
             } catch (error) {
               logger.error(error)
             }
@@ -280,7 +280,7 @@ export default class push extends Base {
    * @param {Array} host_mid_list 包含要获取数据的用户uid列表的对象数组
    * @returns {Array} 返回一个包含用户动态信息的数组
    */
-  async getuserdata() {
+  async getuserdata () {
     let willbepushlist = {}
 
     try {
@@ -377,7 +377,7 @@ export default class push extends Base {
    * @param {Object} data 包含 card 对象。
    * @returns {Promise<string>} 操作成功或失败的消息字符串。
    */
-  async setting(data) {
+  async setting (data) {
     let msg
     const host_mid = data.data.card.mid
     const config = JSON.parse(fs.readFileSync(this.ConfigPath)) // 读取配置文件
@@ -421,7 +421,7 @@ export default class push extends Base {
    * @param {number} timestamp - 表示秒数的时间戳
    * @returns {string} 格式为YYYY-MM-DD HH:MM的日期时间字符串
    */
-  convertTimestampToDateTime(timestamp) {
+  convertTimestampToDateTime (timestamp) {
     // 创建一个Date对象，时间戳乘以1000是为了转换为毫秒
     const date = new Date(timestamp * 1000)
     const year = date.getFullYear() // 获取年份
@@ -439,7 +439,7 @@ export default class push extends Base {
    * 参数：无
    * 返回值：格式化后的时间字符串，例如"2023-03-15 12:30:45"
    */
-  getCurrentTime() {
+  getCurrentTime () {
     // 创建一个Date对象以获取当前时间
     let now = new Date()
     // 获取年、月、日、时、分、秒
@@ -459,7 +459,7 @@ export default class push extends Base {
     return year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second
   }
 
-  findMismatchedDynamicIds(inputData) {
+  findMismatchedDynamicIds (inputData) {
     if (!inputData.DBdata) return inputData.willbepushlist
     const willbepushByGroupId = {}
     for (const dynamicId in inputData.willbepushlist) {
@@ -497,7 +497,7 @@ export default class push extends Base {
    *
    * @returns {void} 无返回值。
    */
-  async checkremark() {
+  async checkremark () {
     // 读取配置文件内容
     let config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
@@ -530,7 +530,7 @@ export default class push extends Base {
     }
   }
 
-  async forcepush(data) {
+  async forcepush (data) {
     for (const detail in data) {
       data[detail].group_id = [...[this.e.group_id]]
     }
@@ -543,7 +543,7 @@ export default class push extends Base {
  * @param {string} data 需要进行换行符替换的字符串。
  * @returns {string} 替换后的字符串，其中的换行符\n被<br>替换。
  */
-function br(data) {
+function br (data) {
   // 使用正则表达式将所有换行符替换为<br>
   return (data = data.replace(/\n/g, '<br>'))
 }
@@ -553,7 +553,7 @@ function br(data) {
  * @param {Object} member - 成员对象，需要包含vip属性，该属性应包含vipStatus和nickname_color（可选）。
  * @returns {String} 返回成员名称的HTML标签字符串，VIP成员将显示为特定颜色，非VIP成员显示为默认颜色。
  */
-function checkvip(member) {
+function checkvip (member) {
   // 根据VIP状态选择不同的颜色显示成员名称
   return member.vip.vipStatus === 1
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
@@ -565,7 +565,7 @@ function checkvip(member) {
  * @param {Array} data - 表情数据的数组，每个元素包含一个表情包的信息。
  * @returns {Array} 返回一个对象数组，每个对象包含text(表情名称)和url(表情图片地址)属性。
  */
-function extractEmojisData(data) {
+function extractEmojisData (data) {
   const emojisData = []
 
   // 遍历data数组中的每个表情包
@@ -576,14 +576,14 @@ function extractEmojisData(data) {
         // 尝试将表情的URL转换为URL对象，如果成功则将其添加到emojisData数组中
         new URL(emote.url)
         emojisData.push({ text: emote.text, url: emote.url })
-      } catch {} // 如果URL无效，则忽略该表情
+      } catch { } // 如果URL无效，则忽略该表情
     })
   })
 
   return emojisData
 }
 
-function replacetext(text, obj) {
+function replacetext (text, obj) {
   for (const tag of obj.modules.module_dynamic.desc.rich_text_nodes) {
     if (tag.type === 'RICH_TEXT_NODE_TYPE_TOPIC') {
       // 使用 RegExp 构造函数来正确转义 orig_text 中的特殊字符

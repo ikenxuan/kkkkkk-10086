@@ -1,6 +1,6 @@
 import { Base, Render, GetID, Config, DB } from '#components'
 import { iKun } from '#douyin'
-import { Bot, sendMsg } from '#lib'
+import { Bot, sendMsg, logger } from '#lib'
 import fs from 'fs'
 
 export default class push extends Base {
@@ -14,7 +14,7 @@ export default class push extends Base {
     this.force = force
   }
 
-  async action() {
+  async action () {
     await this.checkremark()
 
     try {
@@ -30,7 +30,7 @@ export default class push extends Base {
     }
   }
 
-  async getdata(data) {
+  async getdata (data) {
     if (Object.keys(data).length === 0) return true
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
@@ -140,7 +140,7 @@ export default class push extends Base {
    * @param {*} sec_uidlist 要获取aweme_id的用户uid列表
    * @returns 获取用户一天内的所有视频对象
    */
-  async getuserdata() {
+  async getuserdata () {
     let willbepushlist = {}
 
     try {
@@ -238,7 +238,7 @@ export default class push extends Base {
    * @param {obj} inputData 要处理的数据
    * @returns 获取推送对象列表，已经过新旧作品判定
    */
-  findMismatchedAwemeIds(inputData) {
+  findMismatchedAwemeIds (inputData) {
     if (!inputData.DBdata) return inputData.willbepushlist
     const willbepushByGroupId = {}
     for (const videoId in inputData.willbepushlist) {
@@ -270,7 +270,7 @@ export default class push extends Base {
     return inputData.willbepushlist
   }
 
-  async checkremark() {
+  async checkremark () {
     let config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
     for (let i = 0; i < Config.douyinpushlist.length; i++) {
@@ -301,7 +301,7 @@ export default class push extends Base {
    * @param {string} timestamp 时间戳
    * @returns 获取 年-月-日 时:分
    */
-  convertTimestampToDateTime(timestamp) {
+  convertTimestampToDateTime (timestamp) {
     const date = new Date(timestamp * 1000)
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -311,7 +311,7 @@ export default class push extends Base {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`
   }
-  desc(video_obj, text) {
+  desc (video_obj, text) {
     if (Array.isArray(video_obj) && video_obj.length > 0) {
       const regex = new RegExp(video_obj.map((obj) => `#${obj.hashtag_name}`).join('|'), 'g')
       // 使用正则表达式替换匹配到的话题标签
@@ -327,14 +327,14 @@ export default class push extends Base {
     return text
   }
 
-  async forcepush(data) {
+  async forcepush (data) {
     for (const detail in data) {
       data[detail].group_id = [...[this.e.group_id]]
     }
     await this.getdata(data)
   }
 
-  async setting(data) {
+  async setting (data) {
     try {
       let index = 0
       while (data.data[index].card_unique_name !== 'user') {

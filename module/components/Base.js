@@ -1,5 +1,5 @@
 import { Config, Networks, Version } from '#components'
-import { segment } from '#lib'
+import { segment, logger } from '#lib'
 import fs from 'fs'
 import path from 'path'
 
@@ -17,17 +17,17 @@ export default class Base {
   }
 
   /** 检查是或否设置抖音ck */
-  get allow() {
+  get allow () {
     return Config.ck !== ''
   }
 
   /** 获取鸡鸡人名字 */
-  get botname() {
+  get botname () {
     return Version.BotName
   }
 
   /** 获取适配器名称 */
-  get botadapter() {
+  get botadapter () {
     if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
       if (this.e.bot?.sendUni) {
         return 'ICQQ'
@@ -65,7 +65,7 @@ export default class Base {
     }
   }
 
-  resultMsg(forwardmsg) {
+  resultMsg (forwardmsg) {
     if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
       if (this.botadapter === 'OneBotv11') return null
       return forwardmsg
@@ -90,7 +90,7 @@ export default class Base {
    * @param {Array} btns 按钮数组
    * @returns
    */
-  mkMsg(msg, btns = []) {
+  mkMsg (msg, btns = []) {
     if (!Array.isArray(msg)) {
       msg = [msg]
     }
@@ -107,7 +107,7 @@ export default class Base {
    * @param {Array} btn 按钮数组
    * @returns
    */
-  mkbutton(btn) {
+  mkbutton (btn) {
     switch (this.botname) {
       case 'Miao-Yunzai':
       case 'Miao-Yunzai V4':
@@ -136,7 +136,7 @@ export default class Base {
    * @param {string} video_url 要上传的视频直链
    * @param {boolean} groupfile 是否使用群文件，默认false
    */
-  async upload_file(file, video_url, groupfile = false) {
+  async upload_file (file, video_url, groupfile = false) {
     try {
       switch (this.botname) {
         case 'Miao-Yunzai':
@@ -147,14 +147,14 @@ export default class Base {
                 groupfile
                   ? await this.e.group.fs.upload(file.filepath)
                   : await this.e.reply(
-                      segment.video(file.filepath || video_url)
-                    )
+                    segment.video(file.filepath || video_url)
+                  )
               } else {
                 groupfile
                   ? await this.e.friend.fs.upload(file.filepath)
                   : await this.e.reply(
-                      segment.video(file.filepath || video_url)
-                    )
+                    segment.video(file.filepath || video_url)
+                  )
               }
               break
             case 'LagrangeCore':
@@ -169,15 +169,15 @@ export default class Base {
             case 'QQBot':
               file.totalBytes >= 10
                 ? (() => {
-                    return new Promise((resolve, reject) => {
-                      try {
-                        /** 尝试硬发 */
-                        this.e.reply(segment.video(video_url || file.filepath))
-                      } catch {
-                        reject(new Error('视频太大了，发不出来'))
-                      }
-                    })
-                  })()
+                  return new Promise((resolve, reject) => {
+                    try {
+                      /** 尝试硬发 */
+                      this.e.reply(segment.video(video_url || file.filepath))
+                    } catch {
+                      reject(new Error('视频太大了，发不出来'))
+                    }
+                  })
+                })()
                 : await this.e.reply(segment.video(video_url || file.filepath))
               break
           }
@@ -203,14 +203,14 @@ export default class Base {
                 groupfile
                   ? await this.e.reply(segment.file(file.filepath))
                   : await this.e.reply(
-                      segment.video(file.filepath || video_url)
-                    )
+                    segment.video(file.filepath || video_url)
+                  )
               } else {
                 groupfile
                   ? await this.e.reply(segment.file(file.filepath))
                   : await this.e.reply(
-                      segment.video(file.filepath || video_url)
-                    )
+                    segment.video(file.filepath || video_url)
+                  )
               }
               break
             case 'OneBotv11':
@@ -238,7 +238,7 @@ export default class Base {
    * @param {string} title - 视频的标题。
    * @returns {Promise<void>} 不返回任何内容。
    */
-  async DownLoadVideo(video_url, title) {
+  async DownLoadVideo (video_url, title) {
     // 下载文件，视频URL，标题和自定义headers
     let res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数
@@ -263,7 +263,7 @@ export default class Base {
    * @param {String} type 下载文件的类型，默认为'.mp4'。
    * @returns 返回一个包含文件路径和总字节数的对象。
    */
-  async DownLoadFile(video_url, title, headers = {}, type = '.mp4') {
+  async DownLoadFile (video_url, title, headers = {}, type = '.mp4') {
     // 使用networks类进行文件下载，并通过回调函数实时更新下载进度
     const { filepath, totalBytes } = await new Networks({
       url: video_url,
@@ -272,7 +272,7 @@ export default class Base {
     }).downloadStream((downloadedBytes, totalBytes) => {
       // 定义进度条长度及生成进度条字符串的函数
       const barLength = 45
-      function generateProgressBar(progressPercentage) {
+      function generateProgressBar (progressPercentage) {
         // 根据进度计算填充的'#'字符数量，并生成进度条样式
         const filledLength = Math.floor((progressPercentage / 100) * barLength)
         let progress = ''
@@ -291,7 +291,7 @@ export default class Base {
   }
 
   /** 删文件 */
-  async removeFile(path, force) {
+  async removeFile (path, force) {
     if (Config.rmmp4) {
       try {
         fs.promises.unlink(path)
@@ -310,7 +310,7 @@ export default class Base {
   }
 
   /** 过万整除 */
-  count(count) {
+  count (count) {
     if (count > 10000) {
       return (count / 10000).toFixed(1) + '万'
     } else {
@@ -319,7 +319,7 @@ export default class Base {
   }
 
   /** 文件夹名字 */
-  async mkdirs(dirname) {
+  async mkdirs (dirname) {
     if (fs.existsSync(dirname)) {
       return true
     } else {

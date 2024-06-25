@@ -1,6 +1,6 @@
 import { Base, Render, Image, Config, Networks } from '#components'
 import { BiLiBiLiAPI, bilidata, bilicomments, checkuser } from '#bilibili'
-import { makeForwardMsg, segment } from '#lib'
+import { makeForwardMsg, segment, logger } from '#lib'
 import FFmpeg from '../../components/FFmpeg.js'
 import fs from 'fs'
 
@@ -19,7 +19,7 @@ export default class BiLiBiLi extends Base {
     this.headers.Cookie = Config.bilibilick
   }
 
-  async RESOURCES(OBJECT, Episode = false) {
+  async RESOURCES (OBJECT, Episode = false) {
     Config.bilibilitip && this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo':
@@ -255,7 +255,7 @@ export default class BiLiBiLi extends Base {
     }
   }
 
-  async getvideo(OBJECT) {
+  async getvideo (OBJECT) {
     /** 获取视频 => FFMPEG合成 */
     await FFmpeg.checkEnv()
     switch (this.STATUS) {
@@ -277,17 +277,15 @@ export default class BiLiBiLi extends Base {
             bmp4.filepath,
             bmp3.filepath,
             this._path +
-              `/resources/kkkdownload/video/Bil_Result_${
-                this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid
-              }.mp4`,
+            `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid
+            }.mp4`,
             /** 根据配置文件 `rmmp4` 重命名 */
             async () => {
               const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
               fs.renameSync(
                 this._path +
-                  `/resources/kkkdownload/video/Bil_Result_${
-                    this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid
-                  }.mp4`,
+                `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid
+                }.mp4`,
                 filePath,
               )
               await this.removeFile(bmp4.filepath, true)
@@ -316,7 +314,7 @@ export default class BiLiBiLi extends Base {
     }
   }
 
-  async getvideosize(videourl, audiourl) {
+  async getvideosize (videourl, audiourl) {
     const videoheaders = await new Networks({ url: videourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
     const audioheaders = await new Networks({ url: audiourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
 
@@ -330,12 +328,12 @@ export default class BiLiBiLi extends Base {
     return totalSizeInMB.toFixed(2)
   }
 }
-function checkvip(member) {
+function checkvip (member) {
   return member.vip.vipStatus === 1
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
     : `<span style="color: #606060">${member.name}</span>`
 }
 
-function br(data) {
+function br (data) {
   return (data = data.replace(/\n/g, '<br>'))
 }

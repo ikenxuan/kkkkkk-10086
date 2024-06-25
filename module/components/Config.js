@@ -1,5 +1,6 @@
 import fs from 'fs'
 import { Version } from '#components'
+import { logger } from '#lib'
 
 const configPath = process.cwd() + `/plugins/${Version.pluginName}/config/config.json`
 
@@ -39,7 +40,7 @@ const defaultConfig = {
 }
 let config = {}
 
-function getConfig() {
+function getConfig () {
   const content = fs.readFileSync(configPath)
   return JSON.parse(content)
 }
@@ -57,7 +58,7 @@ if (fs.existsSync(configPath)) {
   }
 }
 export const Config = new Proxy(config, {
-  get(_target, prop) {
+  get (_target, prop) {
     const config = getConfig()
     if (prop === 'ALLcfg') return config
     if (prop in config) {
@@ -67,7 +68,7 @@ export const Config = new Proxy(config, {
     }
   },
 
-  set(target, property, value) {
+  set (target, property, value) {
     if (typeof value === 'number') {
       value = Number(value)
     }
