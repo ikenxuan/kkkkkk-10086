@@ -9,8 +9,8 @@
 
 <div>
 
-![GitHub License](https://img.shields.io/github/license/ikenxuan/kkkkkk-10086)
-![GitHub Release](https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086)
+[![GitHub License](https://img.shields.io/github/license/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/releases)
 
 <div>
 

@@ -1,8 +1,8 @@
 # 0.2.0
-  - 新增与调整
-    - 适配 `Miao-Yunzai V4` 与 `Karin`
-  - 修复于优化
-    - 优化目录结构 via **@XasYer**
+- 新增与调整
+  - 适配 `Miao-Yunzai V4` 与 `Karin`
+- 修复于优化
+  - 优化目录结构 via **@XasYer** **@OduckO**
 
 # 0.1.0 ~ 0.1.8
 
