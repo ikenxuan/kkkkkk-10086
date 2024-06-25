@@ -24,9 +24,9 @@ export class MusicUpdate extends plugin {
     })
   }
 
-  async update() {
+  async update(e = this.e) {
     if (uping) {
-      this.e.reply(`正在更新${Version.pluginName}，请稍后...`)
+      e.reply(`正在更新${Version.pluginName}，请稍后...`)
       return false
     }
     uping = true
@@ -36,7 +36,7 @@ export class MusicUpdate extends plugin {
     switch (Version.BotName) {
       case 'Karin':
         let [name, cmd] = [Version.pluginName, 'git pull']
-        if (this.e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
+        if (e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
         try {
           const { data } = await Update.update(Version.pluginPath, cmd)
           let msg = `更新${name}...${_.isObject(data) ? `${data.message}\n${data.stderr}` : data}`
@@ -44,23 +44,23 @@ export class MusicUpdate extends plugin {
           if (!data.includes('更新成功')) return true
           try {
             await this.reply(`\n更新完成，开始重启 本次运行时间：${common.uptime()}`, { at: true })
-            const restart = new Restart(this.e)
-            restart.e = this.e
+            const restart = new Restart(e)
+            restart.e = e
             await restart.CmdRestart()
             return true
           } catch (error) {
-            return this.e.reply(`${Version.pluginName}重启失败，请手动重启以应用更新！`)
+            return e.reply(`${Version.pluginName}重启失败，请手动重启以应用更新！`)
           }
         } catch (error) {
-          return this.e.reply(`更新失败：${error.message}`, { at: true })
+          return e.reply(`更新失败：${error.message}`, { at: true })
         } finally {
           uping = false
         }
       default:
         try {
-          this.e.msg = `#kkk${this.e.msg.includes('强制') ? '强制' : ''}更新`
-          const up = new Update(this.e)
-          up.e = this.e
+          e.msg = `#kkk${e.msg.includes('强制') ? '强制' : ''}更新`
+          const up = new Update(e)
+          up.e = e
           return up.update()
         } catch (error) {
         } finally {
@@ -68,7 +68,7 @@ export class MusicUpdate extends plugin {
         }
     }
   }
-  async update_log() {
+  async update_log(e = this.e) {
     switch (Version.BotName) {
       case 'Karin':
         try {
@@ -78,18 +78,18 @@ export class MusicUpdate extends plugin {
             .split('\n')
             .filter(Boolean)
             .map((item) => item.trimEnd())
-          this.e.reply(await makeForwardMsg(this.e, commitlist))
+          e.reply(await makeForwardMsg(e, commitlist))
           return true
         } catch {
-          return this.e.reply(`\n获取更新日志失败：\n${this.e.msg}`, { at: true })
+          return e.reply(`\n获取更新日志失败：\n${e.msg}`, { at: true })
         }
       default:
-        let Update_Plugin = new Update(this.e)
-        Update_Plugin.e = this.e
+        let Update_Plugin = new Update(e)
+        Update_Plugin.e = e
         Update_Plugin.reply = this.reply
 
         if (Update_Plugin.getPlugin(Version.pluginName)) {
-          this.e.reply(await Update_Plugin.getLog(Version.pluginName))
+          e.reply(await Update_Plugin.getLog(Version.pluginName))
         }
         return true
     }
