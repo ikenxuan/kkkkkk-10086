@@ -9,3 +9,7 @@
 # 初次使用自动创建
 机器人目录/plugins/kkkkkk-10086/config/config.json
 ```
+
+# TODO
+
+后续版本将使用 `YAML` 格式配置文件，方便配置文件的修改。

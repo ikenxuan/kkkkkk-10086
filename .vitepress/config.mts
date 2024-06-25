@@ -63,7 +63,6 @@ export default defineConfig({
           {
             text: '其他',
             items: [
-              { text: '友情链接', link: '/src/other/Friendlylink' },
               { text: '免责声明', link: '/src/other/disclaimer' },
               { text: '投喂', link: '/src/other/afdian' },
             ],
@@ -96,7 +95,6 @@ export default defineConfig({
       {
         text: '其他',
         items: [
-          { text: '友情链接', link: '/src/other/Friendlylink' },
           { text: '免责声明', link: '/src/other/disclaimer' },
           { text: '投喂', link: '/src/other/afdian' },
         ],
@@ -117,7 +115,7 @@ export default defineConfig({
         link: 'http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649',
       },
     ],
-    lastUpdatedText: '最后更新',
+    lastUpdatedText: '最后编辑于',
     outlineTitle: '本页目录',
     footer: {
       message: 'Released under the GPL-3.0 License',

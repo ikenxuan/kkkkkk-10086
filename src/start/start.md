@@ -6,8 +6,10 @@
 
 ## 这是什么
 
-这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://www.bilibili.com) WEB API 编写的 `Yunzai-Bot` 视频解析插件<br>
+_**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://www.bilibili.com) WEB API 编写的自用辅助插件，提供对 Bot 的视频解析功能，**_<br>
 通过接口获取数据并渲染图片返回
+
+![GitHub Release](https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086)
 
 ### 特点
 
@@ -37,7 +39,15 @@
 - [NearHuiwen/TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
 - [B1gM8c/X-Bogus](https://github.com/B1gM8c/X-Bogus)
 
-:::
+**友情链接**
+
+- Miao-Yunzai [**GitHub**](https://github.com/yoimiya-kokomi/Miao-Yunzai) | [**Gitee**](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
+- TRSS-Yunzai [**GitHub**](https://github.com/TimeRainStarSky/Yunzai) | [**Gitee**](https://gitee.com/TimeRainStarSky/Yunzai)
+- Yunzai-Bot 插件库 [**Github**](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) | [**Gitee**](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
+- ~~Lain-plugin [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
+- icqq 协议 [**GitHub**](https://github.com/icqqjs/icqq)
+- Karin 框架 [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
+  :::
 
 ::: details 开源协议 GPL-3.0
 
@@ -727,4 +737,6 @@ Public License instead of this License.  But first, please read
 - [QQ 群聊: 795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
   <br>
   <br>
-  本站总访问量 <span id="busuanzi_value_site_pv" /> 次
+  本站页面访问量 <span id="busuanzi_value_site_pv" /> 次
+
+![Star History Chart](https://api.star-history.com/svg?repos=ikenxuan/kkkkkk-10086&type=Date)
