@@ -58,7 +58,7 @@ export class MusicUpdate extends plugin {
         }
       default:
         try {
-          e.msg = `#kkk${e.msg.includes('强制') ? '强制' : ''}更新`
+          e.msg = `#${e.msg.includes('强制') ? '强制' : ''}更新kkkkkk-10086`
           const up = new Update(e)
           up.e = e
           return up.update()
