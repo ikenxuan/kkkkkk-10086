@@ -24,8 +24,5 @@
     "#components": "./module/components/index.js",
     "#douyin": "./module/business/douyin/index.js",
     "#bilibili": "./module/business/bilibili/index.js"
-  },
-  "devDependencies": {
-    "prettier": "^3.2.5"
   }
 }

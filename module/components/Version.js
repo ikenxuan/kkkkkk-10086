@@ -13,17 +13,19 @@ const getLine = function (line) {
   line = line.replace(/(^\s*\*|\r)/g, '')
   line = line.replace(/\s*`([^`]+`)/g, '<span class="cmd">$1')
   line = line.replace(/`\s*/g, '</span>')
-  line = line.replace(/\s*\*\*([^*]+\*\*)/g, '<span class="strong">$1')
+  line = line.replace(/\s*\*\*([^\*]+\*\*)/g, '<span class="strong">$1')
   line = line.replace(/\*\*\s*/g, '</span>')
   line = line.replace(/ⁿᵉʷ/g, '<span class="new"></span>')
   return line
 }
 
 const readLogFile = function (root, versionCount = 4) {
-  const logPath = `${root}/CHANGELOG.md`
+  let logPath = `${root}/CHANGELOG.md`
+  let packagePath = `${root}/package.json`
   let logs = {}
-  const changelogs = []
+  let changelogs = []
   let currentVersion
+  let ver = JSON.parse(fs.readFileSync(packagePath))
 
   try {
     if (fs.existsSync(logPath)) {
@@ -36,11 +38,11 @@ const readLogFile = function (root, versionCount = 4) {
         if (versionCount <= -1) {
           return false
         }
-        const versionRet = /^#\s*([0-9a-zA-Z\\.~\s]+?)\s*$/.exec(line)
+        let versionRet = /^#\s*([0-9a-zA-Z\\.~\s]+?)\s*$/.exec(line)
         if (versionRet && versionRet[1]) {
-          const v = versionRet[1].trim()
+          let v = versionRet[1].trim()
           if (!currentVersion) {
-            currentVersion = v
+            currentVersion = v || ver.version
           } else {
             changelogs.push(temp)
             if (/0\s*$/.test(v) && versionCount > 0) {
@@ -69,13 +71,16 @@ const readLogFile = function (root, versionCount = 4) {
           }
         }
       })
+
+      if (Object.keys(temp).length > 0) {
+        changelogs.push(temp)
+      }
     }
   } catch (e) {
     // do nth
   }
   return { changelogs, currentVersion }
 }
-
 const pluginPath = join(__dirname, '..', '..').replace(/\\/g, '/')
 
 const pluginName = basename(pluginPath)
@@ -101,23 +106,25 @@ const BotVersion = packageJson.version
 
 const { changelogs, currentVersion } = readLogFile(pluginPath)
 
+const clientPath = process.cwd()
+
 export default {
   /**
    * @type {string} 插件版本号
    */
-  get version() {
+  get version () {
     return currentVersion
   },
 
   /**
    * @type {string} 插件更新日志
    */
-  get changelogs() {
+  get changelogs () {
     return changelogs
   },
 
   /**
-   * @type {string} 插件路径
+   * @type {string} 匹配更新日志函数
    */
   readLogFile,
 
@@ -140,4 +147,9 @@ export default {
    * @type {string} Bot版本
    */
   BotVersion,
+
+  /**
+   * @type {string} 机器人程序/客户端路径
+   */
+  clientPath
 }

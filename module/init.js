@@ -4,7 +4,7 @@ import { Version } from '#components'
 import { logger } from '#lib'
 
 class Init {
-  async checkCfg() {
+  async checkCfg () {
     const configPath = process.cwd() + `/plugins/${Version.pluginName}/config/config.json`
     const configExampleFile = process.cwd() + `/plugins/${Version.pluginName}/config/config.example.json`
     fs.access(configPath, fs.constants.F_OK, (err) => {
@@ -16,7 +16,7 @@ class Init {
       }
     })
 
-    async function updateConfig() {
+    async function updateConfig () {
       try {
         const configExample = JSON.parse(fs.readFileSync(process.cwd() + `/plugins/${Version.pluginName}/config/config.example.json`, 'utf8'))
         const config = JSON.parse(fs.readFileSync(process.cwd() + `/plugins/${Version.pluginName}/config/config.json`, 'utf8'))
@@ -46,11 +46,11 @@ class Init {
       }
     }
 
-    const readmePath = `${Version.pluginPath}/resources/kkkdownload/README.md`
+    const readmePath = `${Version.clientPath}/resources/kkkdownload/README.md`
     if (!fs.existsSync(readmePath)) {
       fs.writeFileSync(readmePath, '# 这是一个缓存文件夹\n\n## 开源项目[kkkkkk-10086](https://github.com/ikenxuan/kkkkkk-10086)', { flag: 'w' })
     }
-    function mkdirs(dirname) {
+    function mkdirs (dirname) {
       if (fs.existsSync(dirname)) {
         return true
       } else {
@@ -61,7 +61,7 @@ class Init {
       }
     }
   }
-  async load() {
+  async load () {
     await this.checkCfg()
 
     const files = fs.readdirSync(`${Version.pluginPath}/apps`).filter((file) => file.endsWith('.js'))
