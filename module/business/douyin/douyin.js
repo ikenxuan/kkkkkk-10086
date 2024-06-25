@@ -13,6 +13,7 @@ export default class DouYin extends Base {
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
+    this.botname === 'Karin' ? (Config.sendforwardmsg = false) : null
   }
 
   async RESOURCES(data) {
