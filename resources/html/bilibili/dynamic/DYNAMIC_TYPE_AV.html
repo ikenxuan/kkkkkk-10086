@@ -21,7 +21,7 @@
 <div style="height: 20px"></div>
 {{/each}}
 <div class="info">
-  <div class="info_text">{{@text}}</div>
+  <div class="video_info_text">{{@text}}</div>
   <div class="spacer4"></div>
   <div class="info_text" style="color: #ababab; font-size: 60px">{{@desc}}</div>
   <div style="height: 20px"></div>
@@ -59,7 +59,7 @@
     height: 500,
     colorDark: '#808080',
     colorLight: '#F2F2F2',
-  })
-  qrcode.makeCode('{{share_url}}')
+  });
+  qrcode.makeCode('{{share_url}}');
 </script>
 {{/block}}

@@ -100,6 +100,15 @@
   word-wrap: break-word;
 }
 
+.video_info_text {
+  font-size: 80px;
+  font-weight: bold;
+  align-items: center;
+  letter-spacing: 1.5px;
+  position: relative;
+  word-wrap: break-word;
+}
+
 .under {
   display: flex;
   height: 100%;
