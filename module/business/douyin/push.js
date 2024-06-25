@@ -45,15 +45,15 @@ export default class push extends Base {
           share: this.count(Detail_Data.statistics.share_count),
           shouchang: this.count(Detail_Data.statistics.collect_count),
           create_time: this.convertTimestampToDateTime(data[awemeId].create_time),
-          avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.author.avatar_uri,
+          avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.user.avatar_larger.uri,
           share_url: iddata.is_mp4
             ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
             : Detail_Data.share_url,
           username: Detail_Data.author.nickname,
-          fans: this.count(Detail_Data.author.follower_count),
-          user_shortid: Detail_Data.author.sec_uid.substring(0, 15) + '...',
-          total_favorited: this.count(Detail_Data.author.total_favorited),
-          following_count: this.count(Detail_Data.author.following_count),
+          抖音号: Detail_Data.user_info.user.unique_id === '' ? Detail_Data.user_info.user.unique_id : Detail_Data.user_info.user.unique_id,
+          粉丝: this.count(Detail_Data.user_info.user.follower_count),
+          获赞: this.count(Detail_Data.user_info.user.total_favorited),
+          关注: this.count(Detail_Data.user_info.user.following_count),
         },
         { e: this.e, scale: 1, retType: 'base64' },
       )
@@ -100,9 +100,12 @@ export default class push extends Base {
                 newEntry = {
                   remark: data[awemeId].remark,
                   create_time: Number(data[awemeId].create_time),
-                  sec_uid: data[awemeId].sec_uid,
+                  sec_uid:
+                    data[awemeId].Detail_Data.user_info.user.unique_id === ''
+                      ? data[awemeId].Detail_Data.user_info.user.unique_id
+                      : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.author.avatar_uri,
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri,
                 }
                 DBdata[data[awemeId].sec_uid] = newEntry
                 // 更新数据库
@@ -114,9 +117,12 @@ export default class push extends Base {
                 [data[awemeId].sec_uid]: {
                   remark: data[awemeId].remark,
                   create_time: data[awemeId].create_time,
-                  sec_uid: data[awemeId].sec_uid,
+                  sec_uid:
+                    data[awemeId].Detail_Data.user_info.user.unique_id === ''
+                      ? data[awemeId].Detail_Data.user_info.user.unique_id
+                      : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.author.avatar_uri,
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri,
                 },
               })
             }
@@ -139,7 +145,8 @@ export default class push extends Base {
 
     try {
       for (const item of Config.douyinpushlist) {
-        const videolist = await new iKun('UserVideosList').GetData({ user_id: item.sec_uid })
+        let videolist = await new iKun('UserVideosList').GetData({ user_id: item.sec_uid })
+        const userinfo = await new iKun('UserInfoData').GetData({ user_id: item.sec_uid })
         const ALL_DBdata = await DB.FindAll('douyin')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
         const dbGroupIds = new Set(Object.keys(ALL_DBdata).map(Number)) // 将数据库中的群组ID转换为数字并去重
@@ -150,6 +157,7 @@ export default class push extends Base {
         if (videolist.aweme_list.length > 0) {
           // 遍历接口返回的视频列表
           for (const aweme of videolist.aweme_list) {
+            aweme.user_info = userinfo
             const now = new Date().getTime()
             const createTime = parseInt(aweme.create_time, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
@@ -201,11 +209,11 @@ export default class push extends Base {
               if (!willbepushlist[aweme.aweme_id]) {
                 willbepushlist[aweme.aweme_id] = {
                   remark: item.remark,
-                  sec_uid: item.sec_uid,
+                  sec_uid: userinfo.user.unique_id === '' ? userinfo.user.unique_id : userinfo.user.unique_id || aweme.sec_uid,
                   create_time: aweme.create_time,
                   group_id: [], // 初始化 group_id 为数组
                   Detail_Data: aweme, // 存储 detail 对象
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + aweme.author.avatar_uri,
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + userinfo.user.avatar_larger.uri,
                 }
               }
               willbepushlist[aweme.aweme_id].group_id = newGroupIds.length > 0 ? [...newGroupIds] : [...item.group_id] // item.group_id 为配置文件的 group_id
