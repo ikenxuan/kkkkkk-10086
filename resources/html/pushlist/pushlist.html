@@ -13,7 +13,7 @@
     <li>
       <img src="{{val.avatar_img}}" alt="用户头像" />
       <div class="user-info">
-        <span style="font-weight: bold">{{val.remark}}</span>
+        <span class="nickname">{{val.remark}}</span>
         <span class="user-id">
           <span style="color: #1e1f20">用户ID:</span>
           {{val.sec_uid}}
@@ -23,11 +23,11 @@
           {{val.create_time}}
         </span>
         {{if isMaster}}
-        <span style="font-size: 16px">推送群:</span>
+        <span class="group_list" style="color: #1e1f20">推送群:</span>
         <ul class="markdown-style">
           {{each val.group_id gid}}
           <bi>
-            <span><code>{{gid}}</code></span>
+            <span style="font-size: 25px"><code>{{gid}}</code></span>
           </bi>
           {{/each}}
         </ul>
@@ -48,7 +48,7 @@
     <li>
       <img src="{{val.avatar_img}}" alt="用户头像" />
       <div class="user-info">
-        <span style="font-weight: bold">{{val.remark}}</span>
+        <span class="nickname">{{val.remark}}</span>
         <span class="user-id">
           <span style="color: #1e1f20">UID:</span>
           {{val.host_mid}}
@@ -58,11 +58,11 @@
           {{val.create_time}}
         </span>
         {{if isMaster}}
-        <span style="font-size: 16px">推送群:</span>
+        <span class="group_list" style="color: #1e1f20">推送群:</span>
         <ul class="markdown-style">
           {{each val.group_id gid}}
           <bi>
-            <span><code>{{gid}}</code></span>
+            <span style="font-size: 25px"><code>{{gid}}</code></span>
           </bi>
           {{/each}}
         </ul>

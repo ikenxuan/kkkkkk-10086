@@ -78,7 +78,9 @@ export default class Base {
         case 'KOOKBot':
           return null
       }
-    } else { return forwardmsg }
+    } else {
+      return forwardmsg
+    }
   }
 
   /**
@@ -156,15 +158,15 @@ export default class Base {
             case 'QQBot':
               file.totalBytes >= 10
                 ? (() => {
-                  return new Promise((resolve, reject) => {
-                    try {
-                      /** 尝试硬发 */
-                      this.e.reply(segment.video(video_url || file.filepath))
-                    } catch {
-                      reject(new Error('视频太大了，发不出来'))
-                    }
-                  })
-                })()
+                    return new Promise((resolve, reject) => {
+                      try {
+                        /** 尝试硬发 */
+                        this.e.reply(segment.video(video_url || file.filepath))
+                      } catch {
+                        reject(new Error('视频太大了，发不出来'))
+                      }
+                    })
+                  })()
                 : await this.e.reply(segment.video(video_url || file.filepath))
               break
           }
@@ -285,7 +287,7 @@ export default class Base {
     if (count > 10000) {
       return (count / 10000).toFixed(1) + '万'
     } else {
-      return count.toString()
+      return count?.toString() || '无法获取'
     }
   }
 

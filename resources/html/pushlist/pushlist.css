@@ -101,10 +101,10 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 100px;
   color: #333;
   border-bottom: 2px solid #2c2c2c;
-  padding-bottom: 10px;
+  padding-bottom: 20px;
   margin-bottom: 20px;
 }
 
@@ -122,9 +122,8 @@
 }
 
 .user-list img {
-  width: 50px;
-  height: 50px;
-  border-radius: 25px;
+  width: 215px;
+  border-radius: 999px;
   margin-right: 15px;
 }
 
@@ -136,12 +135,19 @@
 
 .user-id,
 .dynamic-id,
-.timestamp {
-  font-size: 14px;
+.timestamp,
+.group_list {
+  font-size: 35px;
   color: #666;
   word-break: break-all;
   overflow-wrap: break-word;
 }
+
+.nickname {
+  font-size: 75px;
+  font-weight: bold;
+}
+
 
 ul.markdown-style {
   list-style: none;
@@ -155,8 +161,9 @@ ul.markdown-style bi {
 ul.markdown-style bi::before {
   content: "•";
   color: #333;
-  font-size: 20px;
+  font-size: 35px;
   vertical-align: middle;
+  /* margin-top: 50px; */
 }
 
 ul.markdown-style bi.star::before {
@@ -171,6 +178,6 @@ code {
   font-family: monospace;
   color: #eee;
   background-color: #0000005c;
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 5px 12px;
+  border-radius: 8px;
 }
