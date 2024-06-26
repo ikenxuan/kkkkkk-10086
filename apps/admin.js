@@ -117,7 +117,8 @@ export class Admin extends plugin {
     let is = regRet[2] == '开启'
     key && (Config[SwitchCfgType[key]] = is)
     // 渲染图片
-    this.index_Settings(e)
+    await this.index_Settings(e)
+    return false
   }
 
   // 修改数字设置
@@ -136,7 +137,8 @@ export class Admin extends plugin {
     } else {
       Config[type.key] = number
     }
-    this.index_Settings(e)
+    await this.index_Settings(e)
+    return false
   }
 
   // 渲染发送图片
@@ -147,11 +149,13 @@ export class Admin extends plugin {
       data[key] = getStatus(_cfg[key])
     }
     const img = await Render.render('html/admin/index', { data })
-    e.reply(img)
+    await e.reply(img)
+    return false
   }
 
   async Blogin (e) {
     await new BiLogin(e).Login()
+    return false
   }
 
   async setdyck () {
@@ -166,6 +170,7 @@ export class Admin extends plugin {
     Config.ck = String(this.e.msg)
     this.reply('设置成功！')
     this.finish('savedyck')
+    return false
   }
 
   async setbilick () {
@@ -179,6 +184,7 @@ export class Admin extends plugin {
     Config.bilibilick = String(this.e.msg)
     this.reply('设置成功！')
     this.finish('savebilick')
+    return false
   }
 }
 

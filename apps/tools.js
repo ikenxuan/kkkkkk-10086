@@ -86,17 +86,20 @@ export class Tools extends plugin {
       }
     }
     const img = await Pushlist(e, obj)
-    return e.reply(img)
+    await e.reply(img)
+    return false
   }
 
   async pushdouy () {
     if (String(this.e?.msg).match('强制')) await new DouYinpush(this.e, true).action()
     else await new DouYinpush(this.e).action()
+    return false
   }
 
   async pushbili () {
     if (String(this.e?.msg).match('强制')) await new Bilibilipush(this.e, true).action()
     else await new Bilibilipush(this.e).action()
+    return false
   }
 
   async next (e) {
@@ -106,6 +109,7 @@ export class Tools extends plugin {
       BILIBILIOBJECT.Episode = regex[1]
       await new BiLiBiLi(e, BILIBILIOBJECT).RESOURCES(BILIBILIOBJECT, true)
     }
+    return false
   }
 
   async bilib (e) {
@@ -124,11 +128,13 @@ export class Tools extends plugin {
     setTimeout(() => {
       delete user[this.e.user_id]
     }, 1000 * 60)
+    return false
   }
 
   async uploadrecord (e) {
     const music_id = String(e.msg).match(/BGM(\d+)/)
     await new DouYin(e).uploadrecord(music_id[1])
+    return false
   }
 
   async douy (e) {
@@ -138,18 +144,21 @@ export class Tools extends plugin {
     const res = await new DouYin(e, iddata).RESOURCES(data)
     if (Config.sendforwardmsg && res) await e.reply(await new Base(e).resultMsg(await makeForwardMsg(e, res.res)))
     if (res.sendvideofile && iddata.is_mp4) await new Base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
+    return false
   }
 
   async setpushbili (e) {
-    if (e.isPrivate) return true
+    if (e.isPrivate) return false
     const data = await new Bilidata('用户名片信息').GetData(/^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1])
-    return await e.reply(await new Bilibilipush(e).setting(data))
+    await e.reply(await new Bilibilipush(e).setting(data))
+    return false
   }
 
   async setpushdouy (e) {
-    if (e.isPrivate) return true
+    if (e.isPrivate) return false
     const data = await new IKun('Search').GetData({ query: e.msg.match(/^#设置抖音推送(\w+)$/)[1] })
-    return await e.reply(await new DouYinpush(e).setting(data))
+    await e.reply(await new DouYinpush(e).setting(data))
+    return false
   }
 }
 

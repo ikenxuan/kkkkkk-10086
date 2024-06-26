@@ -69,6 +69,7 @@ export class MusicUpdate extends plugin {
           uping = false
         }
     }
+    return false
   }
 
   async update_log (e = this.e) {
@@ -84,7 +85,8 @@ export class MusicUpdate extends plugin {
           e.reply(await makeForwardMsg(e, commitlist))
           return true
         } catch {
-          return e.reply(`\n获取更新日志失败：\n${e.msg}`, { at: true })
+          await e.reply(`\n获取更新日志失败：\n${e.msg}`, { at: true })
+          return false
         }
       default: {
         let Update_Plugin = new Update(e)
@@ -92,9 +94,9 @@ export class MusicUpdate extends plugin {
         Update_Plugin.reply = this.reply
 
         if (Update_Plugin.getPlugin(Version.pluginName)) {
-          e.reply(await Update_Plugin.getLog(Version.pluginName))
+          await e.reply(await Update_Plugin.getLog(Version.pluginName))
         }
-        return true
+        return false
       }
     }
   }

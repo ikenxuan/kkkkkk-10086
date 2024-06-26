@@ -28,7 +28,8 @@ export class Help extends plugin {
       changelogs: Version.changelogs,
       elem: 'cryo'
     })
-    e.reply(img)
+    await e.reply(img)
+    return false
   }
 
   async help (e) {
@@ -58,6 +59,7 @@ export class Help extends plugin {
       colCount: 3,
       element: 'default'
     })
-    e.reply(img)
+    await e.reply(img)
+    return false
   }
 }
