@@ -1,3 +1,4 @@
+/* eslint-disable @stylistic/indent */
 /* eslint-disable no-sparse-arrays */
 /* eslint-disable no-eval */
 /* eslint-disable no-unsafe-finally */
@@ -6,16 +7,15 @@
 /* eslint-disable no-func-assign */
 /* eslint-disable no-global-assign */
 /* eslint-disable no-undef */
-/* eslint-disable indent */
+
 /* eslint-disable no-sequences */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-void */
 /* eslint-disable no-var */
-/* eslint-disable no-redeclare */
 
 function sign (u, b, n) {
   window = global
-  let c = new URL(u)
+  const c = new URL(u)
   document = {
     referrer: u
   }
@@ -49,9 +49,9 @@ function sign (u, b, n) {
         return (d = a()
           ? Reflect.construct
           : function (b, e, f) {
-            let a = [null]
+            const a = [null]
             a.push.apply(a, e)
-            let d = new (Function.bind.apply(b, a))()
+            const d = new (Function.bind.apply(b, a))()
             return f && c(d, f.prototype), d
           }).apply(null, arguments)
       }
@@ -84,8 +84,8 @@ function sign (u, b, n) {
         t = [],
         o = 0,
         l = function (b, e) {
-          let f = b[e++]
-          let a = b[e]
+          const f = b[e++]
+          const a = b[e]
           let d = parseInt('' + f + a, 16)
           if (d >> 7 == 0) return [1, d]
           if (d >> 6 == 2) {
@@ -120,9 +120,9 @@ function sign (u, b, n) {
         h =
           Object.keys ||
           function (b) {
-            let e = {}
+            const e = {}
             let f = 0
-            for (let a in b) e[f++] = a
+            for (const a in b) e[f++] = a
             return (e.length = f), e
           },
         m = (b.length, 0),
@@ -140,35 +140,35 @@ function sign (u, b, n) {
         ; (m += 8), (r = 0)
       for (let w = 0; w < 4; w++) {
         let S = m + 2 * w
-        let R = '' + b[S++] + b[S]
-        let x = parseInt(R, 16)
+        const R = '' + b[S++] + b[S]
+        const x = parseInt(R, 16)
         r += (3 & x) << (2 * w)
       }
       ; (m += 16), (m += 8)
-      let z = parseInt('' + b[m] + b[m + 1] + b[m + 2] + b[m + 3] + b[m + 4] + b[m + 5] + b[m + 6] + b[m + 7], 16)
-      let O = z
-      let E = (m += 8)
-      let j = v(b, (m += z))
+      const z = parseInt('' + b[m] + b[m + 1] + b[m + 2] + b[m + 3] + b[m + 4] + b[m + 5] + b[m + 6] + b[m + 7], 16)
+      const O = z
+      const E = (m += 8)
+      const j = v(b, (m += z))
       j[1]
         ; (m += 4), (i = { p: [], q: [] })
       for (let A = 0; A < j; A++) {
         for (var D = l(b, m), T = (m += 2 * D[0]), $ = i.p.length, P = 0; P < D[1]; P++) {
-          let U = l(b, T)
+          const U = l(b, T)
           i.p.push(U[1]), (T += 2 * U[0])
         }
         ; (m = T), i.q.push([$, i.p.length])
       }
-      let _ = { 5: 1, 6: 1, 70: 1, 22: 1, 23: 1, 37: 1, 73: 1 }
-      let k = { 72: 1 }
-      let M = { 74: 1 }
-      let H = { 11: 1, 12: 1, 24: 1, 26: 1, 27: 1, 31: 1 }
-      let J = { 10: 1 }
-      let N = { 2: 1, 29: 1, 30: 1, 20: 1 }
-      let B = []
-      let W = []
+      const _ = { 5: 1, 6: 1, 70: 1, 22: 1, 23: 1, 37: 1, 73: 1 }
+      const k = { 72: 1 }
+      const M = { 74: 1 }
+      const H = { 11: 1, 12: 1, 24: 1, 26: 1, 27: 1, 31: 1 }
+      const J = { 10: 1 }
+      const N = { 2: 1, 29: 1, 30: 1, 20: 1 }
+      const B = []
+      const W = []
       function F (b, e, f) {
         for (let a = e; a < e + f;) {
-          let d = y(b, a)
+          const d = y(b, a)
             ; (B[a] = d), (a += 2)
           k[d]
             ? ((W[a] = u(b, a)), (a += 2))
@@ -189,13 +189,13 @@ function sign (u, b, n) {
         let C
         let q
         let w
-        let S = []
+        const S = []
         let R = 0
         m && (C = m)
         let x
         let z
         let O = e
-        let E = O + 2 * f
+        const E = O + 2 * f
         if (!I) {
           for (; O < E;) {
             var j = parseInt('' + b[O] + b[O + 1], 16)
@@ -228,7 +228,7 @@ function sign (u, b, n) {
                 if ((A = x) > 14) {
                   (z = s(b, O)),
                     ((U = function e () {
-                      let f = arguments
+                      const f = arguments
                       return e.y > 0 ? K(b, e.c, e.l, f, e.z, this, null, 0) : (e.y++, K(b, e.c, e.l, f, e.z, this, null, 0))
                     }).c = O + 4),
                     (U.l = z - 2),
@@ -359,9 +359,9 @@ function sign (u, b, n) {
                   var T = S[R].length
                   var $ = S[R]
                   S[++R] = function () {
-                    let b = D < T
+                    const b = D < T
                     if (b) {
-                      let e = $[D++]
+                      const e = $[D++]
                       S[++R] = e
                     }
                     S[++R] = b
@@ -391,7 +391,7 @@ function sign (u, b, n) {
                 if ((A = x) > 14) {
                   (z = W[O]),
                     ((U = function e () {
-                      let f = arguments
+                      const f = arguments
                       return e.y > 0 ? K(b, e.c, e.l, f, e.z, this, null, 0) : (e.y++, K(b, e.c, e.l, f, e.z, this, null, 0))
                     }).c = O + 4),
                     (U.l = z - 2),
@@ -544,9 +544,9 @@ function sign (u, b, n) {
                 else if (A > 1) {
                   ; (D = 0), (T = S[R].length), ($ = S[R])
                   S[++R] = function () {
-                    let b = D < T
+                    const b = D < T
                     if (b) {
-                      let e = $[D++]
+                      const e = $[D++]
                       S[++R] = e
                     }
                     S[++R] = b
@@ -572,7 +572,7 @@ function sign (u, b, n) {
       function K (b, e, f, a, d, c, n, i) {
         let r, t
         c == null && (c = this), d && !d.d && ((d.d = 0), (d.$0 = d), (d[1] = {}))
-        let o = {}
+        const o = {}
         let l = (o.d = d ? d.d + 1 : 0)
         for (o['$' + l] = o, t = 0; t < l; t++) o[(r = '$' + t)] = d[r]
         for (t = 0, l = o.length = a.length; t < l; t++) o[t] = a[t]

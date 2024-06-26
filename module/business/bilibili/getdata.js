@@ -140,7 +140,7 @@ export default class bilidata extends Base {
   }
 
   async GlobalGetData (options) {
-    let result = await new Networks(options).getData()
+    const result = await new Networks(options).getData()
     if (result && result.code !== 0) {
       const errorMessage = errorMap[result.code] || '未知错误'
       logger.error(`获取响应数据失败！\n请求接口类型：${this.type}\n请求URL：${options.url}\n错误代码：${result.code}，\n含义：${errorMessage}`)

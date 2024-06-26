@@ -1,5 +1,6 @@
+/* eslint-disable @stylistic/indent */
 /* eslint-disable no-undef */
-/* eslint-disable indent */
+
 /* eslint-disable no-sequences */
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-void */
@@ -7,7 +8,7 @@
 /* eslint-disable no-redeclare */
 // All the content in this article is only for learning and communication use, not for any other purpose, strictly prohibited for commercial use and illegal use, otherwise all the consequences are irrelevant to the author!
 function rc4_encrypt (plaintext, key) {
-  let s = []
+  const s = []
   for (var i = 0; i < 256; i++) {
     s[i] = i
   }
@@ -21,14 +22,14 @@ function rc4_encrypt (plaintext, key) {
 
   var i = 0
   var j = 0
-  let cipher = []
+  const cipher = []
   for (let k = 0; k < plaintext.length; k++) {
     i = (i + 1) % 256
     j = (j + s[i]) % 256
     var temp = s[i]
     s[i] = s[j]
     s[j] = temp
-    let t = (s[i] + s[j]) % 256
+    const t = (s[i] + s[j]) % 256
     cipher.push(String.fromCharCode(s[t] ^ plaintext.charCodeAt(k)))
   }
   return cipher.join('')
@@ -55,7 +56,7 @@ function he (e, r, t, n) {
 }
 
 function reset () {
-  ; (this.reg[0] = 1937774191),
+  (this.reg[0] = 1937774191),
     (this.reg[1] = 1226093241),
     (this.reg[2] = 388252375),
     (this.reg[3] = 3666478592),
@@ -133,7 +134,7 @@ function _compress (t) {
       c++
     ) {
       let o = le(i[0], 12) + i[4] + le(de(c), c)
-      let s = ((o = le((o = (4294967295 & o) >>> 0), 7)) ^ le(i[0], 12)) >>> 0
+      const s = ((o = le((o = (4294967295 & o) >>> 0), 7)) ^ le(i[0], 12)) >>> 0
       let u = pe(c, i[0], i[1], i[2])
       u = (4294967295 & (u = u + i[3] + s + f[c + 68])) >>> 0
       let b = he(c, i[4], i[5], i[6])
@@ -152,11 +153,11 @@ function _compress (t) {
 }
 
 function _fill () {
-  let a = 8 * this.size
+  const a = 8 * this.size
   let f = this.chunk.push(128) % 64
   for (64 - f < 8 && (f -= 64); f < 56; f++) this.chunk.push(0)
   for (var i = 0; i < 4; i++) {
-    let c = Math.floor(a / 4294967296)
+    const c = Math.floor(a / 4294967296)
     this.chunk.push((c >>> (8 * (3 - i))) & 255)
   }
   for (i = 0; i < 4; i++) this.chunk.push((a >>> (8 * (3 - i))) & 255)
@@ -175,14 +176,14 @@ SM3.prototype._compress = _compress
 SM3.prototype._fill = _fill
 
 function result_encrypt (long_str, num = null) {
-  let s_obj = {
+  const s_obj = {
     s0: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     s1: 'Dkdpgh4ZKsQB80/Mfvw36XI1R25+WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=',
     s2: 'Dkdpgh4ZKsQB80/Mfvw36XI1R25-WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe=',
     s3: 'ckdp1h4ZKsUB80/Mfvw36XIgR25+WQAlEi7NLboqYTOPuzmFjJnryx9HVGDaStCe',
     s4: 'Dkdpgh2ZmsQB80/MfvV36XI1R45-WUAlEixNLwoqYTOPuzKFjJnry79HbGcaStCe'
   }
-  let constant = {
+  const constant = {
     0: 16515072,
     1: 258048,
     2: 4032,
@@ -197,7 +198,7 @@ function result_encrypt (long_str, num = null) {
       lound += 1
       long_int = get_long_int(lound, long_str)
     }
-    let key = i % 4
+    const key = i % 4
     switch (key) {
       case 0:
         temp_int = (long_int & constant['0']) >> 18
@@ -238,8 +239,8 @@ function gener_random (random, option) {
 
 /// ///////////////////////////////////////////
 function generate_rc4_bb_str (url_search_params, user_agent, window_env_str, suffix = 'cus', Arguments = [0, 1, 14]) {
-  let sm3 = new SM3()
-  let start_time = Date.now()
+  const sm3 = new SM3()
+  const start_time = Date.now()
   /**
    * 进行3次加密处理
    * 1: url_search_params两次sm3之的结果
@@ -247,15 +248,15 @@ function generate_rc4_bb_str (url_search_params, user_agent, window_env_str, suf
    * 3: 对ua处理之后的结果
    */
   // url_search_params两次sm3之的结果
-  let url_search_params_list = sm3.sum(sm3.sum(url_search_params + suffix))
+  const url_search_params_list = sm3.sum(sm3.sum(url_search_params + suffix))
   // 对后缀两次sm3之的结果
-  let cus = sm3.sum(sm3.sum(suffix))
+  const cus = sm3.sum(sm3.sum(suffix))
   // 对ua处理之后的结果
-  let ua = sm3.sum(result_encrypt(rc4_encrypt(user_agent, String.fromCharCode.apply(null, [0.00390625, 1, 14])), 's3'))
+  const ua = sm3.sum(result_encrypt(rc4_encrypt(user_agent, String.fromCharCode.apply(null, [0.00390625, 1, 14])), 's3'))
   //
-  let end_time = Date.now()
+  const end_time = Date.now()
   // b
-  let b = {
+  const b = {
     8: 3, // 固定
     10: end_time, // 3次加密结束时间
     15: {
@@ -368,7 +369,7 @@ function generate_rc4_bb_str (url_search_params, user_agent, window_env_str, suf
    * 54, 52, 124, 49, 53, 50, 53, 124, 55, 52, 55, 124, 50, 52, 124, 50, 52, 124, 87, 105, 110,
    * 51, 50]
    */
-  let window_env_list = []
+  const window_env_list = []
   for (let index = 0; index < window_env_str.length; index++) {
     window_env_list.push(window_env_str.charCodeAt(index))
   }
@@ -487,7 +488,7 @@ function AB (url_search_params, user_agent) {
    * url_search_params："device_platform=webapp&aid=6383&channel=channel_pc_web&update_version_code=170400&pc_client_type=1&version_code=170400&version_name=17.4.0&cookie_enabled=true&screen_width=1536&screen_height=864&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=123.0.0.0&browser_online=true&engine_name=Blink&engine_version=123.0.0.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=50&webid=7362810250930783783&msToken=VkDUvz1y24CppXSl80iFPr6ez-3FiizcwD7fI1OqBt6IICq9RWG7nCvxKb8IVi55mFd-wnqoNkXGnxHrikQb4PuKob5Q-YhDp5Um215JzlBszkUyiEvR"
    * user_agent："Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
    */
-  let result_str =
+  const result_str =
     generate_random_str() + generate_rc4_bb_str(url_search_params, user_agent, '1536|747|1536|834|0|30|0|0|1536|834|1536|864|1525|747|24|24|Win32')
   return result_encrypt(result_str, 's4') + '='
 }

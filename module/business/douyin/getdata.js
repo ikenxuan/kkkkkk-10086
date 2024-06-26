@@ -16,7 +16,7 @@ export default class iKun extends Base {
       case 'video':
       case 'note': {
         this.URL = DouyinAPI.视频或图集(data.id)
-        let VideoData = await this.GlobalGetData(
+        const VideoData = await this.GlobalGetData(
           {
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
             method: 'GET',
@@ -26,7 +26,7 @@ export default class iKun extends Base {
         )
 
         this.URL = DouyinAPI.评论(data.id)
-        let CommentsData = Config.comments
+        const CommentsData = Config.comments
           ? await this.GlobalGetData({
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
             method: 'GET',
@@ -37,7 +37,7 @@ export default class iKun extends Base {
       }
       case 'UserInfoData': {
         this.URL = DouyinAPI.用户主页信息(data.user_id)
-        let UserInfoData = await this.GlobalGetData({
+        const UserInfoData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
             ...this.headers,
@@ -48,7 +48,7 @@ export default class iKun extends Base {
       }
       case 'Emoji': {
         this.URL = DouyinAPI.表情()
-        let EmojiData = await this.GlobalGetData({
+        const EmojiData = await this.GlobalGetData({
           url: this.URL,
           headers: this.headers
         })
@@ -56,7 +56,7 @@ export default class iKun extends Base {
       }
       case 'UserVideosList': {
         this.URL = DouyinAPI.用户主页视频(data.user_id)
-        let UserVideoListData = await this.GlobalGetData({
+        const UserVideoListData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
             ...this.headers,
@@ -67,7 +67,7 @@ export default class iKun extends Base {
       }
       case 'SuggestWords': {
         this.URL = DouyinAPI.热点词(data.query)
-        let SuggestWordsData = await this.GlobalGetData({
+        const SuggestWordsData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
             ...this.headers,
@@ -78,7 +78,7 @@ export default class iKun extends Base {
       }
       case 'Search': {
         this.URL = DouyinAPI.搜索(data.query)
-        let SearchData = await this.GlobalGetData({
+        const SearchData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
             ...this.headers,
@@ -89,7 +89,7 @@ export default class iKun extends Base {
       }
       case 'Music': {
         this.URL = DouyinAPI.音乐(data.music_id)
-        let MusicData = await this.GlobalGetData({
+        const MusicData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: this.headers
         })
@@ -97,7 +97,7 @@ export default class iKun extends Base {
       }
       case '直播间ID': {
         this.URL = DouyinAPI.直播间ID(data)
-        let LiveIDData = await this.GlobalGetData({
+        const LiveIDData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: this.headers
         })
@@ -105,7 +105,7 @@ export default class iKun extends Base {
       }
       case '直播间信息': {
         this.URL = DouyinAPI.直播间信息(data)
-        let LiveInfoData = await this.GlobalGetData({
+        const LiveInfoData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: this.headers
         })
@@ -122,7 +122,7 @@ export default class iKun extends Base {
    * @returns
    */
   async GlobalGetData (options, is_mp4) {
-    let result = await new Networks(options).getData()
+    const result = await new Networks(options).getData()
     if (result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
     }

@@ -1,5 +1,5 @@
 import { Config, Networks, Version } from '#components'
-import { segment, logger } from '#lib'
+import { segment, logger, Bot } from '#lib'
 import fs from 'fs'
 import path from 'path'
 
@@ -242,7 +242,7 @@ export default class Base {
    */
   async DownLoadVideo (video_url, title) {
     // 下载文件，视频URL，标题和自定义headers
-    let res = await this.DownLoadFile(video_url, title, this.headers)
+    const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
     // 如果视频大于75MB，则使用群文件上传

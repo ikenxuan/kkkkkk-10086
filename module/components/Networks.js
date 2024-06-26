@@ -1,7 +1,7 @@
 import fetch, { Response } from 'node-fetch'
 import fs from 'fs'
 
-let controller = new AbortController()
+const controller = new AbortController()
 // let signal = controller.signal
 export default class Networks {
   /**
@@ -51,7 +51,7 @@ export default class Networks {
 
   async getfetch () {
     try {
-      let result = await this.returnResult()
+      const result = await this.returnResult()
       if (result.status === 504) {
         return result
       }
@@ -70,7 +70,7 @@ export default class Networks {
   /** 首个302跳转 */
   async getLongLink () {
     try {
-      let result = await this.returnResult()
+      const result = await this.returnResult()
       return result.url
     } catch (error) {
       console.log(error)
@@ -82,7 +82,7 @@ export default class Networks {
   async getData (new_fetch = '') {
     try {
       if (!new_fetch) {
-        let result = await this.returnResult()
+        const result = await this.returnResult()
         if (result.status === 504) {
           return result
         }

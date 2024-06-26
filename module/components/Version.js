@@ -20,12 +20,12 @@ const getLine = function (line) {
 }
 
 const readLogFile = function (root, versionCount = 4) {
-  let logPath = `${root}/CHANGELOG.md`
-  let packagePath = `${root}/package.json`
+  const logPath = `${root}/CHANGELOG.md`
+  const packagePath = `${root}/package.json`
   let logs = {}
-  let changelogs = []
+  const changelogs = []
   let currentVersion
-  let ver = JSON.parse(fs.readFileSync(packagePath))
+  const ver = JSON.parse(fs.readFileSync(packagePath))
 
   try {
     if (fs.existsSync(logPath)) {
@@ -38,9 +38,9 @@ const readLogFile = function (root, versionCount = 4) {
         if (versionCount <= -1) {
           return false
         }
-        let versionRet = /^#\s*([0-9a-zA-Z\\.~\s]+?)\s*$/.exec(line)
+        const versionRet = /^#\s*([0-9a-zA-Z\\.~\s]+?)\s*$/.exec(line)
         if (versionRet && versionRet[1]) {
-          let v = versionRet[1].trim()
+          const v = versionRet[1].trim()
           if (!currentVersion) {
             currentVersion = v || ver.version
           } else {

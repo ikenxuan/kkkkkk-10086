@@ -35,7 +35,7 @@ export default class push extends Base {
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
       const iddata = await GetID(Detail_Data.share_url)
-      let img = await Render.render(
+      const img = await Render.render(
         'html/douyin/douyininfo',
         {
           image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover.url_list[0] || Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
@@ -60,7 +60,7 @@ export default class push extends Base {
       // 遍历 group_id 数组，并发送消息
       try {
         for (const groupId of data[awemeId].group_id) {
-          let status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
+          const status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
           if (status) {
             const DBdata = await DB.FindGroup('douyin', groupId)
 
@@ -141,11 +141,11 @@ export default class push extends Base {
    * @returns 获取用户一天内的所有视频对象
    */
   async getuserdata () {
-    let willbepushlist = {}
+    const willbepushlist = {}
 
     try {
       for (const item of Config.douyinpushlist) {
-        let videolist = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
+        const videolist = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
         const userinfo = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
         const ALL_DBdata = await DB.FindAll('douyin')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
@@ -162,7 +162,7 @@ export default class push extends Base {
             const createTime = parseInt(aweme.create_time, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
 
-            let is_top = aweme.is_top === 1 // 是否为置顶
+            const is_top = aweme.is_top === 1 // 是否为置顶
             let shouldPush = false // 是否列入推送数组
             // let shouldBreak = false // 是否跳出循环
             let exitTry = false // 是否退出 try 块
@@ -271,7 +271,7 @@ export default class push extends Base {
   }
 
   async checkremark () {
-    let config = JSON.parse(fs.readFileSync(this.ConfigPath))
+    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
     for (let i = 0; i < Config.douyinpushlist.length; i++) {
       const remark = Config.douyinpushlist[i].remark

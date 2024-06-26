@@ -85,7 +85,7 @@ export default class BiLiBiLi extends Base {
       }
       case 'bangumivideo': {
         if (!Episode) {
-          let barray = []
+          const barray = []
           let msg = []
           for (let i = 0; i < OBJECT.INFODATA.result.episodes.length; i++) {
             const totalEpisodes = OBJECT.INFODATA.result.episodes.length
@@ -140,6 +140,7 @@ export default class BiLiBiLi extends Base {
             headers: this.headers
           })
           if (OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].badge === '会员' && !this.ISVIP) return logger.warn('该CK不是大会员，无法获取视频流')
+          const BILIBILIOBJECT = global.BILIBILIOBJECT
           BILIBILIOBJECT.DATA = bangumiDATA
           await this.getvideo({
             ...OBJECT,

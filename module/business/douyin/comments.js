@@ -6,7 +6,7 @@ import { iKun as IKun } from '#douyin'
  * @returns obj
  */
 export async function comments (data, emojidata) {
-  let jsonArray = []
+  const jsonArray = []
   if (data.comments === null) return []
 
   for (let i = 0; i < data.comments.length; i++) {
@@ -19,7 +19,7 @@ export async function comments (data, emojidata) {
     const time = data.comments[i].create_time
     const label_type = data.comments[i].label_type ? data.comments[i].label_type : -1
     const sticker = data.comments[i].sticker ? data.comments[i].sticker.animate_url.url_list[0] : null
-    let digg_count = data.comments[i].digg_count
+    const digg_count = data.comments[i].digg_count
     const imageurl =
       data.comments[i].image_list &&
         data.comments[i].image_list[0] &&
@@ -81,7 +81,7 @@ export async function comments (data, emojidata) {
   jsonArray.text = await handling_at(jsonArray)
   jsonArray.text = await search_text(jsonArray)
 
-  let CommentReplyDataArray = []
+  const CommentReplyDataArray = []
   try {
     for (let i = 0; i < CommentReplyData.comments.length; i++) {
       const nickname = CommentReplyData.comments[i].user.nickname
@@ -89,7 +89,7 @@ export async function comments (data, emojidata) {
       const text = CommentReplyData.comments[i].text
       const ip = CommentReplyData.comments[i].ip_label
       const time = CommentReplyData.comments[i].create_time
-      let digg_count = CommentReplyData.comments[i].digg_count
+      const digg_count = CommentReplyData.comments[i].digg_count
       const imageurl =
         CommentReplyData.comments[i].image_list &&
           CommentReplyData.comments[i].image_list[0] &&
@@ -116,7 +116,7 @@ export async function comments (data, emojidata) {
     CommentReplyDataArray.push({ commentreplyObj: null })
   }
 
-  let CommentData = {
+  const CommentData = {
     jsonArray,
     CommentReplyData: CommentReplyDataArray
   }

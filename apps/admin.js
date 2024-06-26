@@ -1,5 +1,5 @@
 import { Config, Render, Version } from '#components'
-import { plugin } from '#lib'
+import { plugin, segment } from '#lib'
 import { BiLogin } from '#bilibili'
 import fs from 'fs'
 import path from 'path'
@@ -51,7 +51,7 @@ const SwitchCfgType = {
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
 export class Admin extends plugin {
-  constructor () {
+  constructor() {
     super({
       name: 'kkkkkk-10086-设置',
       event: 'message',
@@ -112,9 +112,9 @@ export class Admin extends plugin {
 
   async ConfigSwitch (e) {
     // 解析消息
-    let regRet = SwitchCfgReg.exec(e.msg)
-    let key = regRet[1]
-    let is = regRet[2] == '开启'
+    const regRet = SwitchCfgReg.exec(e.msg)
+    const key = regRet[1]
+    const is = regRet[2] == '开启'
     key && (Config[SwitchCfgType[key]] = is)
     // 渲染图片
     await this.index_Settings(e)
@@ -123,9 +123,9 @@ export class Admin extends plugin {
 
   // 修改数字设置
   async ConfigNumber (e) {
-    let regRet = e.msg.match(NumberCfgReg)
-    let type = NumberCfgType[regRet[1]]
-    let number = checkNumberValue(regRet[2], type.limit)
+    const regRet = e.msg.match(NumberCfgReg)
+    const type = NumberCfgType[regRet[1]]
+    const number = checkNumberValue(regRet[2], type.limit)
     if (type.key === 'douyinpushGroup' || type.key === 'bilibilipushGroup') {
       const groupMapping = { 0: 'all', 1: 'admin', 2: 'owner', 3: 'master' }
       // eslint-disable-next-line no-prototype-builtins
@@ -143,9 +143,9 @@ export class Admin extends plugin {
 
   // 渲染发送图片
   async index_Settings (e) {
-    let data = {}
-    let _cfg = Config.ALLcfg
-    for (let key in _cfg) {
+    const data = {}
+    const _cfg = Config.ALLcfg
+    for (const key in _cfg) {
       data[key] = getStatus(_cfg[key])
     }
     const img = await Render.render('html/admin/index', { data })

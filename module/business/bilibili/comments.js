@@ -1,5 +1,5 @@
 export default async function bilicomments (OBJECT) {
-  let EMOJIDATA = extractEmojisData(OBJECT.EMOJIDATA.data.packages) // 处理表情
+  const EMOJIDATA = extractEmojisData(OBJECT.EMOJIDATA.data.packages) // 处理表情
   let jsonArray = []
   for (let i = 0; i < OBJECT.COMMENTSDATA.data.replies.length; i++) {
     const ctime = getRelativeTimeFromTimestamp(OBJECT.COMMENTSDATA.data.replies[i].ctime)
@@ -32,7 +32,7 @@ export default async function bilicomments (OBJECT) {
     //   }
     // }
 
-    let obj = {
+    const obj = {
       id: i + 1,
       ctime,
       message,
@@ -69,7 +69,7 @@ export default async function bilicomments (OBJECT) {
     if (comment.members && comment.members.length > 0) {
       for (const member of comment.members) {
         // 构建正则表达式，匹配被艾特的用户
-        let regex = new RegExp(`@${member.uname}`, 'g')
+        const regex = new RegExp(`@${member.uname}`, 'g')
         originalText = originalText.replace(regex, `<span style="color: #0C6692;">@${member.uname}</span>`)
       }
     }

@@ -7,8 +7,7 @@ import { Bot } from '#lib'
  * @param {array} list 推送数组
  */
 export default async function Pushlist (e, list) {
-  let img
-  let data = {
+  const data = {
     douyin: await DB.FindAll('douyin'),
     bilibili: await DB.FindAll('bilibili')
   }
@@ -37,7 +36,7 @@ export default async function Pushlist (e, list) {
           }
         })()
 
-        let foundItem = transformedData[platform].find(
+        const foundItem = transformedData[platform].find(
           x =>
             x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId
         )
@@ -59,7 +58,7 @@ export default async function Pushlist (e, list) {
     }
   })
 
-  img = await Render.render(
+  const img = await Render.render(
     'html/pushlist/pushlist',
     {
       isMaster: e.isMaster,

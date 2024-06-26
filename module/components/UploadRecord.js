@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable indent */
 /* eslint-disable n/handle-callback-err */
 import querystring from 'querystring'
 import fetch from 'node-fetch'
@@ -9,7 +8,7 @@ import util from 'util'
 import stream from 'stream'
 import crypto from 'crypto'
 import { exec } from 'child_process'
-import { logger } from '#lib'
+import { logger, Bot } from '#lib'
 
 let core
 try {
@@ -22,7 +21,7 @@ try {
   }
 }
 
-let errors = {}
+const errors = {}
 
 async function UploadRecord (e, record_url, seconds = 0, transcoding = true, brief = '') {
   const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
@@ -30,7 +29,7 @@ async function UploadRecord (e, record_url, seconds = 0, transcoding = true, bri
   if (!result.buffer) {
     return false
   }
-  let buf = result.buffer
+  const buf = result.buffer
   if (seconds == 0 && result.time) seconds = result.time.seconds
   const hash = (0, md5)(buf)
   const codec = String(buf.slice(0, 7)).includes('SILK') ? (transcoding ? 1 : 0) : 0
@@ -121,14 +120,14 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
     if (head.includes('SILK') || head.includes('AMR') || !transcoding) {
       const tmpfile = TMP_DIR + '/' + (0, uuid)()
       await fs.promises.writeFile(tmpfile, buf)
-      let result = await getAudioTime(tmpfile, ffmpeg)
+      const result = await getAudioTime(tmpfile, ffmpeg)
       if (result.code == 1) time = result.data
       buf = await fs.promises.readFile(tmpfile)
       fs.unlink(tmpfile, NOOP)
       buffer = result.buffer || buf
     } else {
       const tmpfile = TMP_DIR + '/' + (0, uuid)()
-      let result = await getAudioTime(tmpfile, ffmpeg)
+      const result = await getAudioTime(tmpfile, ffmpeg)
       if (result.code == 1) time = result.data
       await fs.promises.writeFile(tmpfile, buf)
       buffer = await audioTrans(tmpfile, ffmpeg)
@@ -141,7 +140,7 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
       const headers = {
         'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)'
       }
-      let response = await fetch(file, {
+      const response = await fetch(file, {
         method: 'GET', // post请求
         headers
       })
@@ -150,7 +149,7 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
       await fs.promises.writeFile(tmpfile, buf)
       // await (0, pipeline)(readable.pipe(new DownloadTransform), fs.createWriteStream(tmpfile));
       const head = await read7Bytes(tmpfile)
-      let result = await getAudioTime(tmpfile, ffmpeg)
+      const result = await getAudioTime(tmpfile, ffmpeg)
       if (result.code == 1) time = result.data
       if (head.includes('SILK') || head.includes('AMR') || !transcoding) {
         buffer = result.buffer || buf
@@ -164,7 +163,7 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
     file = String(file).replace(/^file:\/{2}/, '')
     IS_WIN && file.startsWith('/') && (file = file.slice(1))
     const head = await read7Bytes(file)
-    let result = await getAudioTime(file, ffmpeg)
+    const result = await getAudioTime(file, ffmpeg)
     if (result.code == 1) time = result.data
     if (head.includes('SILK') || head.includes('AMR') || !transcoding) {
       buffer = result.buffer || (await fs.promises.readFile(file))
@@ -177,7 +176,7 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
 
 async function getAudioTime (file, ffmpeg = 'ffmpeg') {
   return new Promise((resolve, reject) => {
-    let file_info = fs.statSync(file)
+    const file_info = fs.statSync(file)
     let cmd = `${ffmpeg} -i "${file}"`
     let is_aac = false
     if (file_info.size >= 10485760) {
@@ -191,12 +190,12 @@ async function getAudioTime (file, ffmpeg = 'ffmpeg') {
           buffer = fs.readFileSync(`${file}.mp3`)
           fs.unlinkSync(`${file}.mp3`)
         }
-        let time = stderr.split('Duration:')[1]?.split(',')[0].trim()
-        let arr = time?.split(':')
+        const time = stderr.split('Duration:')[1]?.split(',')[0].trim()
+        const arr = time?.split(':')
         arr.reverse()
         let n = 1
         let s = 0
-        for (let val of arr) {
+        for (const val of arr) {
           if (parseInt(val) > 0) s += parseInt(val) * n
           n *= 60
         }
@@ -217,12 +216,12 @@ async function getAudioTime (file, ffmpeg = 'ffmpeg') {
 }
 
 async function audioTrans (file, ffmpeg = 'ffmpeg') {
-  let result = await new Promise((resolve, reject) => {
+  const result = await new Promise((resolve, reject) => {
     const tmpfile = TMP_DIR + '/' + (0, uuid)() + '.pcm'
     exec(`${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`, async (error, stdout, stderr) => {
       try {
         const silk_worker = await import('./silk_worker/index.cjs')
-        let ret = await silk_worker.encode(tmpfile, 24000)
+        const ret = await silk_worker.encode(tmpfile, 24000)
         resolve(Buffer.from(ret.data))
       } catch (err) {
         logger.error('音频转码到pcm失败，请确认你的ffmpeg可以处理此转换')
@@ -261,7 +260,7 @@ async function read7Bytes (file) {
 }
 
 function uuid () {
-  let hex = crypto.randomBytes(16).toString('hex')
+  const hex = crypto.randomBytes(16).toString('hex')
   return hex.substr(0, 8) + '-' + hex.substr(8, 4) + '-' + hex.substr(12, 4) + '-' + hex.substr(16, 4) + '-' + hex.substr(20)
 }
 
@@ -325,7 +324,7 @@ function parseFunString (buf) {
     try {
       let arr = core.pb.decode(buf)[1]
       if (!Array.isArray(arr)) arr = [arr]
-      for (let v of arr) {
+      for (const v of arr) {
         if (v[2]) res += String(v[2])
       }
     } catch { }
@@ -377,42 +376,42 @@ const md5 = (data) => (0, crypto.createHash)('md5').update(data).digest()
 
 errors.LoginErrorCode = errors.drop = errors.ErrorCode
 let ErrorCode
-  ; (function (ErrorCode) {
-    /** 客户端离线 */
-    ErrorCode[(ErrorCode.ClientNotOnline = -1)] = 'ClientNotOnline'
-    /** 发包超时未收到服务器回应 */
-    ErrorCode[(ErrorCode.PacketTimeout = -2)] = 'PacketTimeout'
-    /** 用户不存在 */
-    ErrorCode[(ErrorCode.UserNotExists = -10)] = 'UserNotExists'
-    /** 群不存在(未加入) */
-    ErrorCode[(ErrorCode.GroupNotJoined = -20)] = 'GroupNotJoined'
-    /** 群员不存在 */
-    ErrorCode[(ErrorCode.MemberNotExists = -30)] = 'MemberNotExists'
-    /** 发消息时传入的参数不正确 */
-    ErrorCode[(ErrorCode.MessageBuilderError = -60)] = 'MessageBuilderError'
-    /** 群消息被风控发送失败 */
-    ErrorCode[(ErrorCode.RiskMessageError = -70)] = 'RiskMessageError'
-    /** 群消息有敏感词发送失败 */
-    ErrorCode[(ErrorCode.SensitiveWordsError = -80)] = 'SensitiveWordsError'
-    /** 上传图片/文件/视频等数据超时 */
-    ErrorCode[(ErrorCode.HighwayTimeout = -110)] = 'HighwayTimeout'
-    /** 上传图片/文件/视频等数据遇到网络错误 */
-    ErrorCode[(ErrorCode.HighwayNetworkError = -120)] = 'HighwayNetworkError'
-    /** 没有上传通道 */
-    ErrorCode[(ErrorCode.NoUploadChannel = -130)] = 'NoUploadChannel'
-    /** 不支持的file类型(没有流) */
-    ErrorCode[(ErrorCode.HighwayFileTypeError = -140)] = 'HighwayFileTypeError'
-    /** 文件安全校验未通过不存在 */
-    ErrorCode[(ErrorCode.UnsafeFile = -150)] = 'UnsafeFile'
-    /** 离线(私聊)文件不存在 */
-    ErrorCode[(ErrorCode.OfflineFileNotExists = -160)] = 'OfflineFileNotExists'
-    /** 群文件不存在(无法转发) */
-    ErrorCode[(ErrorCode.GroupFileNotExists = -170)] = 'GroupFileNotExists'
-    /** 获取视频中的图片失败 */
-    ErrorCode[(ErrorCode.FFmpegVideoThumbError = -210)] = 'FFmpegVideoThumbError'
-    /** 音频转换失败 */
-    ErrorCode[(ErrorCode.FFmpegPttTransError = -220)] = 'FFmpegPttTransError'
-  })((ErrorCode = errors.ErrorCode || (errors.ErrorCode = {})))
+(function (ErrorCode) {
+  /** 客户端离线 */
+  ErrorCode[(ErrorCode.ClientNotOnline = -1)] = 'ClientNotOnline'
+  /** 发包超时未收到服务器回应 */
+  ErrorCode[(ErrorCode.PacketTimeout = -2)] = 'PacketTimeout'
+  /** 用户不存在 */
+  ErrorCode[(ErrorCode.UserNotExists = -10)] = 'UserNotExists'
+  /** 群不存在(未加入) */
+  ErrorCode[(ErrorCode.GroupNotJoined = -20)] = 'GroupNotJoined'
+  /** 群员不存在 */
+  ErrorCode[(ErrorCode.MemberNotExists = -30)] = 'MemberNotExists'
+  /** 发消息时传入的参数不正确 */
+  ErrorCode[(ErrorCode.MessageBuilderError = -60)] = 'MessageBuilderError'
+  /** 群消息被风控发送失败 */
+  ErrorCode[(ErrorCode.RiskMessageError = -70)] = 'RiskMessageError'
+  /** 群消息有敏感词发送失败 */
+  ErrorCode[(ErrorCode.SensitiveWordsError = -80)] = 'SensitiveWordsError'
+  /** 上传图片/文件/视频等数据超时 */
+  ErrorCode[(ErrorCode.HighwayTimeout = -110)] = 'HighwayTimeout'
+  /** 上传图片/文件/视频等数据遇到网络错误 */
+  ErrorCode[(ErrorCode.HighwayNetworkError = -120)] = 'HighwayNetworkError'
+  /** 没有上传通道 */
+  ErrorCode[(ErrorCode.NoUploadChannel = -130)] = 'NoUploadChannel'
+  /** 不支持的file类型(没有流) */
+  ErrorCode[(ErrorCode.HighwayFileTypeError = -140)] = 'HighwayFileTypeError'
+  /** 文件安全校验未通过不存在 */
+  ErrorCode[(ErrorCode.UnsafeFile = -150)] = 'UnsafeFile'
+  /** 离线(私聊)文件不存在 */
+  ErrorCode[(ErrorCode.OfflineFileNotExists = -160)] = 'OfflineFileNotExists'
+  /** 群文件不存在(无法转发) */
+  ErrorCode[(ErrorCode.GroupFileNotExists = -170)] = 'GroupFileNotExists'
+  /** 获取视频中的图片失败 */
+  ErrorCode[(ErrorCode.FFmpegVideoThumbError = -210)] = 'FFmpegVideoThumbError'
+  /** 音频转换失败 */
+  ErrorCode[(ErrorCode.FFmpegPttTransError = -220)] = 'FFmpegPttTransError'
+})((ErrorCode = errors.ErrorCode || (errors.ErrorCode = {})))
 const ErrorMessage = {
   [ErrorCode.UserNotExists]: '查无此人',
   [ErrorCode.GroupNotJoined]: '未加入的群',
@@ -431,15 +430,15 @@ function drop (code, message) {
 errors.drop = drop
 /** 登录时可能出现的错误，不在列的都属于未知错误，暂时无法解决 */
 let LoginErrorCode
-  ; (function (LoginErrorCode) {
-    /** 密码错误 */
-    LoginErrorCode[(LoginErrorCode.WrongPassword = 1)] = 'WrongPassword'
-    /** 账号被冻结 */
-    LoginErrorCode[(LoginErrorCode.AccountFrozen = 40)] = 'AccountFrozen'
-    /** 发短信太频繁 */
-    LoginErrorCode[(LoginErrorCode.TooManySms = 162)] = 'TooManySms'
-    /** 短信验证码错误 */
-    LoginErrorCode[(LoginErrorCode.WrongSmsCode = 163)] = 'WrongSmsCode'
-    /** 滑块ticket错误 */
-    LoginErrorCode[(LoginErrorCode.WrongTicket = 237)] = 'WrongTicket'
-  })((LoginErrorCode = errors.LoginErrorCode || (errors.LoginErrorCode = {})))
+(function (LoginErrorCode) {
+  /** 密码错误 */
+  LoginErrorCode[(LoginErrorCode.WrongPassword = 1)] = 'WrongPassword'
+  /** 账号被冻结 */
+  LoginErrorCode[(LoginErrorCode.AccountFrozen = 40)] = 'AccountFrozen'
+  /** 发短信太频繁 */
+  LoginErrorCode[(LoginErrorCode.TooManySms = 162)] = 'TooManySms'
+  /** 短信验证码错误 */
+  LoginErrorCode[(LoginErrorCode.WrongSmsCode = 163)] = 'WrongSmsCode'
+  /** 滑块ticket错误 */
+  LoginErrorCode[(LoginErrorCode.WrongTicket = 237)] = 'WrongTicket'
+})((LoginErrorCode = errors.LoginErrorCode || (errors.LoginErrorCode = {})))

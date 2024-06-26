@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import { Base, Config, UploadRecord, Networks, Render } from '#components'
 import { iKun as IKun, Emoji, comments } from '#douyin'
 import { makeForwardMsg, segment, logger } from '#lib'
@@ -26,38 +25,38 @@ export default class DouYin extends Base {
         if (Config.douyintip) this.e.reply('检测到抖音链接，开始解析')
         let g_video_url
         let g_title
-        let full_data = []
+        const full_data = []
 
         /** 评论 */
-        let comments_res = []
+        const comments_res = []
         if (data.CommentsData !== null && data.CommentsData.comments && Config.comments) {
-          let comments_data = []
-          let commentsres = []
+          const comments_data = []
+          const commentsres = []
           for (let i = 0; i < data.CommentsData.comments.length; i++) {
-            let text = data.CommentsData.comments[i].text
+            const text = data.CommentsData.comments[i].text
             let digg_count = data.CommentsData.comments[i].digg_count
             if (digg_count > 10000) {
               digg_count = (digg_count / 10000).toFixed(1) + 'w'
             }
             commentsres.push(`${text}\n♥${digg_count}`)
           }
-          let dsc = '评论数据'
-          let res = await makeForwardMsg(this.e, commentsres, dsc)
+          const dsc = '评论数据'
+          const res = await makeForwardMsg(this.e, commentsres, dsc)
           comments_data.push(res)
           comments_res.push(comments_data)
         } else comments_res.push('评论数据获取失败或这条视频没有评论')
 
         /** 图集 */
         let imagenum = 0
-        let image_res = []
+        const image_res = []
         if (this.is_mp4 === false) {
-          let image_data = []
-          let imageres = []
+          const image_data = []
+          const imageres = []
           let image_url
           for (let i = 0; i < data.VideoData.aweme_detail.images.length; i++) {
             image_url = data.VideoData.aweme_detail.images[i].url_list[2] || data.VideoData.aweme_detail.images[i].url_list[1] // 图片地址
             // eslint-disable-next-line no-useless-escape
-            let title = data.VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
+            const title = data.VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
             g_title = title
             let imgresp
             if (this.botadapter === 'QQBot') {
@@ -74,12 +73,12 @@ export default class DouYin extends Base {
             imagenum++
             if (Config.rmmp4 === false) {
               await this.mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
-              let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
+              const path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
               await new Networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             }
           }
-          let dsc = '解析完的图集图片'
-          let res = await makeForwardMsg(this.e, imageres, dsc)
+          const dsc = '解析完的图集图片'
+          const res = await makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
           if (imageres.length === 1) {
@@ -92,39 +91,39 @@ export default class DouYin extends Base {
         }
 
         /** 作者 */
-        let author_res = []
+        const author_res = []
         if (data.VideoData.aweme_detail.author) {
-          let author_data = []
-          let authorres = []
+          const author_data = []
+          const authorres = []
           const author = data.VideoData.aweme_detail.author
-          let sc = this.count(author.favoriting_count) // 收藏
-          let gz = this.count(author.follower_count) // 关注
-          let id = author.nickname // id
-          let jj = author.signature // 简介
-          let age = author.user_age // 年龄
-          let sczs = author.total_favorited
+          const sc = this.count(author.favoriting_count) // 收藏
+          const gz = this.count(author.follower_count) // 关注
+          const id = author.nickname // id
+          const jj = author.signature // 简介
+          const age = author.user_age // 年龄
+          const sczs = author.total_favorited
           authorres.push(`创作者名称：${id}`)
           authorres.push(`创作者：${id}拥有${gz}个粉丝，${sc}个收藏和${sczs}个收藏总数`)
           authorres.push(`${id}今年${age}岁，Ta的简介是：\n${jj}`)
-          let dsc = '创作者信息'
-          let res = await makeForwardMsg(this.e, authorres, dsc)
+          const dsc = '创作者信息'
+          const res = await makeForwardMsg(this.e, authorres, dsc)
           author_data.push(res)
           author_res.push(author_data)
         }
 
         /** 背景音乐 */
-        let music_res = []
+        const music_res = []
         if (data.VideoData.aweme_detail.music) {
-          let music_data = []
-          let musicres = []
+          const music_data = []
+          const musicres = []
           const music = data.VideoData.aweme_detail.music
           m_id = music.mid
-          let music_name = music.author // BGM名字
-          let music_img = music.cover_hd.url_list[0] // BGM作者头像
-          let music_url = music.play_url.uri // BGM link
+          const music_name = music.author // BGM名字
+          const music_img = music.cover_hd.url_list[0] // BGM作者头像
+          const music_url = music.play_url.uri // BGM link
           if (this.is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
             try {
-              let path = process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
+              const path = process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
               await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             } catch (error) {
               console.log(error)
@@ -133,8 +132,8 @@ export default class DouYin extends Base {
           musicres.push(`BGM名字：${music_name}`)
           musicres.push(`BGM下载直链：${music_url}`)
           musicres.push(segment.image(music_img))
-          let dsc = 'BGM相关信息'
-          let res = await makeForwardMsg(this.e, musicres, dsc)
+          const dsc = 'BGM相关信息'
+          const res = await makeForwardMsg(this.e, musicres, dsc)
           music_data.push(res)
           music_res.push(music_data)
           switch (this.botname) {
@@ -176,26 +175,26 @@ export default class DouYin extends Base {
         }
 
         /** 其他 */
-        let ocr_res = []
+        const ocr_res = []
         if (data.VideoData.aweme_detail.seo_info.ocr_content) {
-          let ocr_data = []
-          let ocrres = []
-          let text = data.VideoData.aweme_detail.seo_info.ocr_content
+          const ocr_data = []
+          const ocrres = []
+          const text = data.VideoData.aweme_detail.seo_info.ocr_content
           ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
           ocrres.push(text)
-          let dsc = 'ocr视频信息识别'
-          let res = await makeForwardMsg(this.e, ocrres, dsc)
+          const dsc = 'ocr视频信息识别'
+          const res = await makeForwardMsg(this.e, ocrres, dsc)
           ocr_data.push(res)
           ocr_res.push(ocr_data)
         }
 
         /** 视频 */
         let FPS
-        let video_res = []
+        const video_res = []
         let sendvideofile = true
         if (this.is_mp4) {
-          let video_data = []
-          let videores = []
+          const video_data = []
+          const videores = []
           // 视频地址特殊判断：play_addr_h264、play_addr、
           const video = data.VideoData.aweme_detail.video
           FPS = video.bit_rate[0].FPS // FPS
@@ -210,9 +209,9 @@ export default class DouYin extends Base {
               headers: this.headers
             }).getLongLink()
           }
-          let cover = video.origin_cover.url_list[0] // video cover image
+          const cover = video.origin_cover.url_list[0] // video cover image
           // eslint-disable-next-line no-useless-escape
-          let title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
+          const title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
           if (Config.usefilelimit && Number(mp4size) > Number(Config.filelimit)) {
@@ -227,8 +226,8 @@ export default class DouYin extends Base {
           videores.push(segment.image(cover))
           g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           logger.info('视频地址', g_video_url)
-          let dsc = this.botname == 'miao-yunzai' ? '视频基本信息' : null
-          let res = await makeForwardMsg(this.e, videores, dsc)
+          const dsc = this.botname == 'miao-yunzai' ? '视频基本信息' : null
+          const res = await makeForwardMsg(this.e, videores, dsc)
           video_data.push(res)
           video_res.push(video_data)
         }
@@ -266,10 +265,10 @@ export default class DouYin extends Base {
               },
               this.is_mp4
                 ? {
-                  text: '背景音乐',
-                  input: 'BGM' + m_id,
-                  send: true
-                }
+                    text: '背景音乐',
+                    input: 'BGM' + m_id,
+                    send: true
+                  }
                 : {}
             ])
           )
@@ -312,10 +311,10 @@ export default class DouYin extends Base {
         }
       }
       case 'UserVideosList': {
-        let veoarray = []
+        const veoarray = []
         for (let i = 0; i < data.aweme_list.length; i++) {
-          let title = data.aweme_list[i].desc
-          let cover = data.aweme_list[i].share_url
+          const title = data.aweme_list[i].desc
+          const cover = data.aweme_list[i].share_url
           veoarray.push(`作品标题: ${title}\n${cover}`)
         }
 
@@ -367,8 +366,8 @@ export default class DouYin extends Base {
 
   async uploadRecord (music_id) {
     const data = await new IKun('Music').GetData({ music_id })
-    let title = data.music_info.title // BGM名字
-    let music_url = data.music_info.play_url.uri // BGM link
+    const title = data.music_info.title // BGM名字
+    const music_url = data.music_info.play_url.uri // BGM link
     if (this.botname === 'miao-yunzai') {
       if (this.botadapter === 'ICQQ') {
         await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
@@ -395,19 +394,6 @@ export default class DouYin extends Base {
           break
       }
     }
-  }
-
-  /**
-   * @param {*} file 上传图片到腾讯图床
-   * @returns
-   */
-  async upload_image (file) {
-    return (await Bot.pickFriend(Bot.uin)._preprocess(segment.image(file))).imgs[0]
-  }
-
-  /** 获取机器人上传的图片链接 */
-  async getHistoryLog () {
-    return (await Bot.pickGroup(Number(this.e.group_id)).getChatHistory(Bot.uin.seq, 1))[0].message[0].url
   }
 }
 

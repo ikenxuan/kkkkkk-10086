@@ -7,7 +7,7 @@ import { logger } from '#lib'
  * @returns
  */
 export default async function GetID (url) {
-  let longLink = await new Networks({ url }).getLongLink()
+  const longLink = await new Networks({ url }).getLongLink()
   let result
 
   switch (true) {

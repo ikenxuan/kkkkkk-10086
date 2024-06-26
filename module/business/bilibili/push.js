@@ -281,7 +281,7 @@ export default class push extends Base {
    * @returns {Array} 返回一个包含用户动态信息的数组
    */
   async getuserdata () {
-    let willbepushlist = {}
+    const willbepushlist = {}
 
     try {
       for (const item of Config.bilibilipushlist) {
@@ -300,7 +300,7 @@ export default class push extends Base {
             const createTime = parseInt(dynamic.modules.module_author.pub_ts, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
 
-            let is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
+            const is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
             let shouldPush = false // 是否列入推送数组
             // let shouldBreak = false // 是否跳出循环
             let exitTry = false // 是否退出 try 块
@@ -441,9 +441,9 @@ export default class push extends Base {
    */
   getCurrentTime () {
     // 创建一个Date对象以获取当前时间
-    let now = new Date()
+    const now = new Date()
     // 获取年、月、日、时、分、秒
-    let year = now.getFullYear()
+    const year = now.getFullYear()
     let month = now.getMonth() + 1
     let day = now.getDate()
     let hour = now.getHours()
@@ -499,7 +499,7 @@ export default class push extends Base {
    */
   async checkremark () {
     // 读取配置文件内容
-    let config = JSON.parse(fs.readFileSync(this.ConfigPath))
+    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
     const abclist = []
 
     // 遍历配置文件中的用户列表，收集需要更新备注信息的用户

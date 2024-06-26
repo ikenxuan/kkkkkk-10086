@@ -1,5 +1,5 @@
 export async function Emoji (data) {
-  let ListArray = []
+  const ListArray = []
 
   for (let i = 0; i < data.emoji_list.length; i++) {
     const display_name = data.emoji_list[i].display_name
