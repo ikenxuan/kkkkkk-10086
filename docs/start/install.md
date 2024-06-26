@@ -1,12 +1,11 @@
-# 快速开始
 
-阅读本文档立刻开始使用
-
-## 安装插件
-
+# 安装插件
 ::: tip 注意
 支持 `Miao-Yunzai V3/V4` `TRSS-Yunzai V3` `Karin`<br>
 :::
+## 获取源码
+
+### 使用 Git 克隆（推荐）
 
 机器人目录下打开终端执行
 ::: code-group
@@ -49,8 +48,18 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-
 # （国内推荐）使用 Ghproxy 代理 Github
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
-
 :::
+
+### 使用 Release 发行版（不推荐）
+**_不推荐该方式，后续无法通过 Git 进行更新_**<br><br>
+- 打开 Release 页面: https://github.com/ikenxuan/kkkkkk-10086/releases
+- 找到最新的版本，下载后缀名为 `.zip` 的压缩包
+- 在 `机器人根目录/plugins/` 中解压该压缩包
+- 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码)则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
+
+
+
+
 
 ## 安装依赖
 

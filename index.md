@@ -10,13 +10,13 @@ hero:
   actions:
     - theme: brand
       text: 简介
-      link: /src/start/start
+      link: /docs/start/start
     - theme: alt
       text: 安装
-      link: /src/start/install
+      link: /docs/start/install
     - theme: sponsor
       text: 查看功能
-      link: /src/intro/douyin
+      link: /docs/intro/douyin
 
 features:
   - title: 开箱即用

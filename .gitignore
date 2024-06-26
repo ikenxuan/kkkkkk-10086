@@ -1,5 +1,6 @@
 node_modules/*
 config/*
 data/*
+pnpm-lock.yaml
 .vitepress/dist/*
 .vitepress/cache/*
