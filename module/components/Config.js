@@ -36,7 +36,7 @@ const defaultConfig = {
   bilibilitool: true,
   sendHDrecord: true,
   usefilelimit: false,
-  filelimit: 20,
+  filelimit: 20
 }
 let config = {}
 
@@ -83,5 +83,5 @@ export const Config = new Proxy(config, {
       return false
     }
     return true
-  },
+  }
 })

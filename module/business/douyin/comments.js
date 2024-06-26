@@ -1,11 +1,11 @@
-import { iKun } from '#douyin'
+import { iKun as IKun } from '#douyin'
 /**
  *
  * @param {*} data 完整的评论数据
  * @param {*} emojidata 处理过后的emoji列表
  * @returns obj
  */
-export async function comments(data, emojidata) {
+export async function comments (data, emojidata) {
   let jsonArray = []
   if (data.comments === null) return []
 
@@ -22,9 +22,9 @@ export async function comments(data, emojidata) {
     let digg_count = data.comments[i].digg_count
     const imageurl =
       data.comments[i].image_list &&
-      data.comments[i].image_list[0] &&
-      data.comments[i].image_list[0].origin_url &&
-      data.comments[i].image_list[0].origin_url.url_list
+        data.comments[i].image_list[0] &&
+        data.comments[i].image_list[0].origin_url &&
+        data.comments[i].image_list[0].origin_url.url_list
         ? data.comments[i].image_list[0].origin_url.url_list[0]
         : null
     const status_label = data.comments[i].label_list ? data.comments[i].label_list[0].text : null
@@ -35,10 +35,10 @@ export async function comments(data, emojidata) {
     const search_text =
       data.comments[i].text_extra && data.comments[i].text_extra[0] && data.comments[i].text_extra[0].search_text
         ? data.comments[i].text_extra[0].search_text &&
-          data.comments[i].text_extra.map((extra) => ({
-            search_text: extra.search_text,
-            search_query_id: extra.search_query_id,
-          }))
+        data.comments[i].text_extra.map((extra) => ({
+          search_text: extra.search_text,
+          search_query_id: extra.search_query_id
+        }))
         : null
     const relativeTime = await getRelativeTimeFromTimestamp(time)
     const reply_comment_total = data.comments[i].reply_comment_total
@@ -58,7 +58,7 @@ export async function comments(data, emojidata) {
       status_label,
       is_At_user_id: userintextlongid,
       search_text,
-      reply_comment_total,
+      reply_comment_total
     }
     jsonArray.push(commentObj)
   }
@@ -72,9 +72,9 @@ export async function comments(data, emojidata) {
   }
 
   /** 二级评论 咕咕咕 */
-  const CommentReplyData = await new iKun('CommentReplyData').GetData({
+  const CommentReplyData = await new IKun('CommentReplyData').GetData({
     cid: jsonArray[0].cid,
-    id: jsonArray[0].aweme_id,
+    id: jsonArray[0].aweme_id
   })
 
   jsonArray.text = await br(jsonArray)
@@ -92,9 +92,9 @@ export async function comments(data, emojidata) {
       let digg_count = CommentReplyData.comments[i].digg_count
       const imageurl =
         CommentReplyData.comments[i].image_list &&
-        CommentReplyData.comments[i].image_list[0] &&
-        CommentReplyData.comments[i].image_list[0].origin_url &&
-        CommentReplyData.comments[i].image_list[0].origin_url.url_list
+          CommentReplyData.comments[i].image_list[0] &&
+          CommentReplyData.comments[i].image_list[0].origin_url &&
+          CommentReplyData.comments[i].image_list[0].origin_url.url_list
           ? CommentReplyData.comments[i].image_list[0].origin_url.url_list[0]
           : null
       const relativeTime = await getRelativeTimeFromTimestamp(time)
@@ -107,7 +107,7 @@ export async function comments(data, emojidata) {
         digg_count,
         ip_label: ip,
         create_time: relativeTime,
-        commentimage: imageurl,
+        commentimage: imageurl
       }
 
       CommentReplyDataArray.push(commentreplyObj)
@@ -118,7 +118,7 @@ export async function comments(data, emojidata) {
 
   let CommentData = {
     jsonArray,
-    CommentReplyData: CommentReplyDataArray,
+    CommentReplyData: CommentReplyDataArray
   }
 
   for (let i = 0; i < jsonArray.length; i++) {
@@ -145,7 +145,7 @@ export async function comments(data, emojidata) {
   return CommentData
 }
 
-async function getRelativeTimeFromTimestamp(timestamp) {
+async function getRelativeTimeFromTimestamp (timestamp) {
   const now = Math.floor(Date.now() / 1000) // 当前时间的时间戳
   const differenceInSeconds = now - timestamp
 
@@ -171,15 +171,16 @@ async function getRelativeTimeFromTimestamp(timestamp) {
   }
 }
 
-async function handling_at(data) {
+async function handling_at (data) {
   for (const item of data) {
     if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
       for (const secUid of item.is_At_user_id) {
-        const UserInfoData = await new iKun('UserInfoData').GetData({
-          user_id: secUid,
+        const UserInfoData = await new IKun('UserInfoData').GetData({
+          user_id: secUid
         })
         if (UserInfoData.user.sec_uid === secUid) {
           /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
+          // eslint-disable-next-line no-useless-escape
           const regex = new RegExp(`@${UserInfoData.user.nickname.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&')}`, 'g')
           item.text = item.text.replace(regex, (match) => {
             return `<span style="color: rgb(3,72,141);">${match}</span>`
@@ -190,12 +191,12 @@ async function handling_at(data) {
   }
 }
 
-async function search_text(data) {
+async function search_text (data) {
   for (const item of data) {
     if (item.search_text !== null && Array.isArray(item.search_text)) {
       for (const search_text of item.search_text) {
-        const SuggestWordsData = await new iKun('SuggestWords').GetData({
-          query: search_text.search_text,
+        const SuggestWordsData = await new IKun('SuggestWords').GetData({
+          query: search_text.search_text
         })
         if (
           SuggestWordsData.data &&
@@ -221,7 +222,7 @@ async function search_text(data) {
   }
 }
 
-async function br(data) {
+async function br (data) {
   for (let i = 0; i < data.length; i++) {
     let text = data[i].text
 

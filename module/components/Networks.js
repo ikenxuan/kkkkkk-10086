@@ -2,7 +2,7 @@ import fetch, { Response } from 'node-fetch'
 import fs from 'fs'
 
 let controller = new AbortController()
-let signal = controller.signal
+// let signal = controller.signal
 export default class Networks {
   /**
    * 构造一个网络请求对象。
@@ -15,7 +15,7 @@ export default class Networks {
    * @param {AbortSignal} [data.issignal] 用于中止请求的信号对象
    * @param {number} [data.timeout = 15000] 请求超时时间，单位毫秒
    */
-  constructor(data) {
+  constructor (data) {
     this.Headers = new Headers()
     if (data.headers && Object.keys(data.headers).length > 0) {
       for (const [key, value] of Object.entries(data.headers)) {
@@ -35,10 +35,10 @@ export default class Networks {
     this.follow = data.follow
   }
 
-  get config() {
+  get config () {
     let data = {
       headers: this.Headers,
-      method: this.method,
+      method: this.method
     }
     if (this.method == 'post') {
       data = { ...data, body: JSON.stringify(this.body) || '' }
@@ -49,7 +49,7 @@ export default class Networks {
     return data
   }
 
-  async getfetch() {
+  async getfetch () {
     try {
       let result = await this.returnResult()
       if (result.status === 504) {
@@ -63,12 +63,12 @@ export default class Networks {
     }
   }
 
-  async returnResult() {
+  async returnResult () {
     return await fetch(this.url, this.config)
   }
 
   /** 首个302跳转 */
-  async getLongLink() {
+  async getLongLink () {
     try {
       let result = await this.returnResult()
       return result.url
@@ -79,7 +79,7 @@ export default class Networks {
   }
 
   /** 获取数据并处理数据的格式化，默认json */
-  async getData(new_fetch = '') {
+  async getData (new_fetch = '') {
     try {
       if (!new_fetch) {
         let result = await this.returnResult()
@@ -113,7 +113,7 @@ export default class Networks {
   }
 
   /** 获取响应头 */
-  async getHeaders() {
+  async getHeaders () {
     try {
       this.fetch = await this.returnResult()
 
@@ -140,7 +140,7 @@ export default class Networks {
   }
 
   /** 一次性获取响应头和响应体 */
-  async getHeadersAndData() {
+  async getHeadersAndData () {
     try {
       // 发起网络请求获取响应对象
       this.fetch = await this.returnResult()
@@ -188,7 +188,7 @@ export default class Networks {
   }
 
   /** 流 */
-  async downloadStream(progressCallback) {
+  async downloadStream (progressCallback) {
     try {
       const response = await fetch(this.url, this.config)
 
@@ -233,7 +233,7 @@ export default class Networks {
     }
   }
 
-  async Tojson() {
+  async Tojson () {
     if (this.fetch.headers.get('content-type').includes('json')) {
       this.fetch = await this.fetch.json()
     } else {
@@ -242,19 +242,19 @@ export default class Networks {
     }
   }
 
-  async ToText() {
+  async ToText () {
     this.fetch = await this.fetch.text()
   }
 
-  async ToArrayBuffer() {
+  async ToArrayBuffer () {
     this.fetch = await this.fetch.arrayBuffer()
   }
 
-  async ToBlob() {
+  async ToBlob () {
     this.fetch = await this.fetch.blob()
   }
 
-  timeoutPromise(timeout) {
+  timeoutPromise (timeout) {
     return new Promise((resolve, reject) => {
       this.timer = setTimeout(() => {
         console.log('执行力')

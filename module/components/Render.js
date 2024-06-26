@@ -25,20 +25,20 @@ const Render = {
       defaultLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html').replace(/\\/g, '/'),
       elemLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html').replace(/\\/g, '/'),
       sys: {
-        scale: scale(1),
+        scale: scale(1)
       },
       copyright: `${Version.BotName}<span class="version">${Version.BotVersion}</span> & ${Version.pluginName}<span class="version">${Version.version}`,
       pageGotoParams: {
-        waitUntil: 'load',
+        waitUntil: 'load'
       },
       tplFile: `${Version.pluginPath}/resources/${path}.html`,
       pluResPath: `${Version.pluginPath}/resources/`,
       saveId: path.split('/').pop(),
       imgType: 'jpeg',
-      ...params,
+      ...params
     }
     return await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
-  },
+  }
 }
 
 export default Render

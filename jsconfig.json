@@ -28,7 +28,6 @@
     "**/temp/*",
     "**/data/*"
   ],
-  "extends": "../../jsconfig.json",
   "include": [
     "./**/*"
   ]

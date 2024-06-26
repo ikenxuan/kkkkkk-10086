@@ -1,10 +1,10 @@
 import { Base, Render, GetID, Config, DB } from '#components'
-import { iKun } from '#douyin'
+import { iKun as IKun } from '#douyin'
 import { Bot, sendMsg, logger } from '#lib'
 import fs from 'fs'
 
 export default class push extends Base {
-  constructor(e = {}, force) {
+  constructor (e = {}, force) {
     super(e)
     if (this.botadapter === 'QQBot') {
       return true
@@ -53,8 +53,8 @@ export default class push extends Base {
           抖音号: Detail_Data.user_info.user.unique_id === '' ? Detail_Data.user_info.user.unique_id : Detail_Data.user_info.user.unique_id,
           粉丝: this.count(Detail_Data.user_info.user.follower_count),
           获赞: this.count(Detail_Data.user_info.user.total_favorited),
-          关注: this.count(Detail_Data.user_info.user.following_count),
-        },
+          关注: this.count(Detail_Data.user_info.user.following_count)
+        }
       )
 
       // 遍历 group_id 数组，并发送消息
@@ -72,6 +72,7 @@ export default class push extends Base {
              */
             const findMatchingSecUid = (DBdata, secUidToCheck) => {
               for (const sec_uid in DBdata) {
+                // eslint-disable-next-line no-prototype-builtins
                 if (DBdata.hasOwnProperty(sec_uid) && DBdata[sec_uid].sec_uid === secUidToCheck) {
                   return secUidToCheck
                 }
@@ -104,7 +105,7 @@ export default class push extends Base {
                       ? data[awemeId].Detail_Data.user_info.user.unique_id
                       : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri,
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
                 }
                 DBdata[data[awemeId].sec_uid] = newEntry
                 // 更新数据库
@@ -121,8 +122,8 @@ export default class push extends Base {
                       ? data[awemeId].Detail_Data.user_info.user.unique_id
                       : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri,
-                },
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
+                }
               })
             }
           }
@@ -144,8 +145,8 @@ export default class push extends Base {
 
     try {
       for (const item of Config.douyinpushlist) {
-        let videolist = await new iKun('UserVideosList').GetData({ user_id: item.sec_uid })
-        const userinfo = await new iKun('UserInfoData').GetData({ user_id: item.sec_uid })
+        let videolist = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
+        const userinfo = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
         const ALL_DBdata = await DB.FindAll('douyin')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
         const dbGroupIds = new Set(Object.keys(ALL_DBdata).map(Number)) // 将数据库中的群组ID转换为数字并去重
@@ -161,10 +162,10 @@ export default class push extends Base {
             const createTime = parseInt(aweme.create_time, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
 
-            let is_top = aweme.is_top === 1, // 是否为置顶
-              shouldPush = false, // 是否列入推送数组
-              shouldBreak = false, // 是否跳出循环
-              exitTry = false // 是否退出 try 块
+            let is_top = aweme.is_top === 1 // 是否为置顶
+            let shouldPush = false // 是否列入推送数组
+            // let shouldBreak = false // 是否跳出循环
+            let exitTry = false // 是否退出 try 块
             try {
               if (exitTry) {
                 // 如果需要退出 try 块，跳过此次循环的剩余部分
@@ -179,7 +180,7 @@ export default class push extends Base {
                 // 遍历数据库中的每个群对象
                 for (const groupId in ALL_DBdata) {
                   if (Object.keys(ALL_DBdata[groupId]).length === 0) {
-                    shouldBreak = true
+                    // shouldBreak = true
                     break
                   }
                   // 遍历当前群的推送用户对象
@@ -212,7 +213,7 @@ export default class push extends Base {
                   create_time: aweme.create_time,
                   group_id: [], // 初始化 group_id 为数组
                   Detail_Data: aweme, // 存储 detail 对象
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + userinfo.user.avatar_larger.uri,
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + userinfo.user.avatar_larger.uri
                 }
               }
               willbepushlist[aweme.aweme_id].group_id = newGroupIds.length > 0 ? [...newGroupIds] : [...item.group_id] // item.group_id 为配置文件的 group_id
@@ -283,7 +284,7 @@ export default class push extends Base {
     }
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
-        const resp = await new iKun('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
+        const resp = await new IKun('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
         const remark = resp.user.nickname
         const matchingItemIndex = config.douyinpushlist.findIndex((item) => item.sec_uid === abclist[i].sec_uid)
         if (matchingItemIndex !== -1) {
@@ -310,6 +311,7 @@ export default class push extends Base {
 
     return `${year}-${month}-${day} ${hours}:${minutes}`
   }
+
   desc (video_obj, text) {
     if (Array.isArray(video_obj) && video_obj.length > 0) {
       const regex = new RegExp(video_obj.map((obj) => `#${obj.hashtag_name}`).join('|'), 'g')
@@ -341,7 +343,7 @@ export default class push extends Base {
       }
       let msg
       const sec_uid = data.data[index].user_list[0].user_info.sec_uid
-      const UserInfoData = await new iKun('UserInfoData').GetData({ user_id: sec_uid })
+      const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: sec_uid })
 
       const config = JSON.parse(fs.readFileSync(this.ConfigPath, 'utf8'))
       const group_id = this.e.group_id
@@ -363,7 +365,7 @@ export default class push extends Base {
         if (existingGroupIdIndex !== -1) {
           // 如果存在相同的 group_id，则删除它
           existingItem.group_id.splice(existingGroupIdIndex, 1)
-          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\sec_uid${UserInfoData.user.sec_uid}`)
+          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.user.sec_uid}`)
           msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
 
           // 如果删除后 group_id 数组为空，则删除整个属性
@@ -375,7 +377,7 @@ export default class push extends Base {
           // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
           existingItem.group_id.push(group_id)
           msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\sec_uid${UserInfoData.user.sec_uid}`)
+          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.user.sec_uid}`)
         }
       } else {
         // 如果不存在相同的 sec_uid，则新增一个属性

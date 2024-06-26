@@ -6,12 +6,12 @@ import { Bot } from '#lib'
  * @param {object} e 消息对象
  * @param {array} list 推送数组
  */
-export default async function Pushlist(e, list) {
-  let img,
-    data = {
-      douyin: await DB.FindAll('douyin'),
-      bilibili: await DB.FindAll('bilibili')
-    }
+export default async function Pushlist (e, list) {
+  let img
+  let data = {
+    douyin: await DB.FindAll('douyin'),
+    bilibili: await DB.FindAll('bilibili')
+  }
   const transformedData = {
     douyin: [],
     bilibili: []
@@ -74,7 +74,7 @@ export default async function Pushlist(e, list) {
   return img
 }
 
-function convertTimestampToDateTime(timestamp) {
+function convertTimestampToDateTime (timestamp) {
   const date = new Date(timestamp * 1000)
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')

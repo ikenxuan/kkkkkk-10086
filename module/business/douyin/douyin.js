@@ -1,5 +1,6 @@
+/* eslint-disable indent */
 import { Base, Config, UploadRecord, Networks, Render } from '#components'
-import { iKun, Emoji, comments } from '#douyin'
+import { iKun as IKun, Emoji, comments } from '#douyin'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
 
@@ -8,18 +9,20 @@ let img
 let m_id
 
 export default class DouYin extends Base {
-  constructor(e = {}, iddata) {
+  constructor (e = {}, iddata) {
     super()
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
-    this.botname === 'Karin' ? (Config.sendforwardmsg = false) : null
+    if (this.botname === 'Karin') {
+      Config.sendforwardmsg = false
+    }
   }
 
   async RESOURCES (data) {
     switch (this.type) {
       case 'video':
-      case 'note':
+      case 'note': {
         if (Config.douyintip) this.e.reply('检测到抖音链接，开始解析')
         let g_video_url
         let g_title
@@ -53,6 +56,7 @@ export default class DouYin extends Base {
           let image_url
           for (let i = 0; i < data.VideoData.aweme_detail.images.length; i++) {
             image_url = data.VideoData.aweme_detail.images[i].url_list[2] || data.VideoData.aweme_detail.images[i].url_list[1] // 图片地址
+            // eslint-disable-next-line no-useless-escape
             let title = data.VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
             g_title = title
             let imgresp
@@ -198,15 +202,16 @@ export default class DouYin extends Base {
           if (data.VideoData.aweme_detail.video.play_addr_h264) {
             g_video_url = await new Networks({
               url: video.play_addr_h264.url_list[2],
-              headers: this.headers,
+              headers: this.headers
             }).getLongLink()
           } else if (data.VideoData.aweme_detail.video.play_addr) {
             g_video_url = await new Networks({
               url: video.play_addr.url_list[0],
-              headers: this.headers,
+              headers: this.headers
             }).getLongLink()
           }
           let cover = video.origin_cover.url_list[0] // video cover image
+          // eslint-disable-next-line no-useless-escape
           let title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
@@ -216,7 +221,7 @@ export default class DouYin extends Base {
           videores.push(`标题：\n${title}`)
           videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
           videores.push(
-            `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`,
+            `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           )
           videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
           videores.push(segment.image(cover))
@@ -230,7 +235,7 @@ export default class DouYin extends Base {
 
         let file = null
         if (Config.commentsimg && Config.comments) {
-          const EmojiData = await new iKun('Emoji').GetData()
+          const EmojiData = await new IKun('Emoji').GetData()
           const list = await Emoji(EmojiData)
           const commentsArray = await comments(data.CommentsData, list)
           img = await Render.render(
@@ -247,8 +252,8 @@ export default class DouYin extends Base {
               VideoFPS: FPS,
               ImageLength: imagenum,
               DestroyTime: Time(2),
-              botname: this.botname,
-            },
+              botname: this.botname
+            }
           )
           file = img
           await this.e.reply(
@@ -257,16 +262,16 @@ export default class DouYin extends Base {
                 text: this.is_mp4 ? '视频直链' : '图集分享链接',
                 link: this.is_mp4
                   ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                  : data.VideoData.aweme_detail.share_url,
+                  : data.VideoData.aweme_detail.share_url
               },
               this.is_mp4
                 ? {
                   text: '背景音乐',
                   input: 'BGM' + m_id,
-                  send: true,
+                  send: true
                 }
-                : {},
-            ]),
+                : {}
+            ])
           )
         }
 
@@ -303,10 +308,10 @@ export default class DouYin extends Base {
           res: this.botadapter !== 'QQBot' ? res : [],
           g_video_url,
           g_title,
-          dec: this.botname === 'miao-yunzai' ? dec : null,
+          dec: this.botname === 'miao-yunzai' ? dec : null
         }
-
-      case 'UserVideosList':
+      }
+      case 'UserVideosList': {
         let veoarray = []
         for (let i = 0; i < data.aweme_list.length; i++) {
           let title = data.aweme_list[i].desc
@@ -316,12 +321,12 @@ export default class DouYin extends Base {
 
         return {
           res: veoarray,
-          dec: '抖音用户主页视频数据',
+          dec: '抖音用户主页视频数据'
         }
-
-      case 'Music':
+      }
+      case 'Music': {
         const sec_id = data.music_info.sec_uid
-        const userdata = await new iKun('UserInfoData').GetData({ user_id: sec_id })
+        const userdata = await new IKun('UserInfoData').GetData({ user_id: sec_id })
         img = await Render.render(
           'html/douyin/musicinfo',
           {
@@ -336,8 +341,8 @@ export default class DouYin extends Base {
             total_favorited: userdata.user.total_favorited,
             user_shortid: userdata.user.unique_id == '' ? userdata.user.short_id : userdata.user.unique_id,
             share_url: data.music_info.play_url.uri,
-            username: data.music_info.original_musician_display_name || data.music_info.owner_nickname,
-          },
+            username: data.music_info.original_musician_display_name || data.music_info.owner_nickname
+          }
         )
         await this.e.reply(
           this.mkMsg(
@@ -345,10 +350,10 @@ export default class DouYin extends Base {
               img,
               `\n正在上传 ${data.music_info.title}\n`,
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
-              `music_id: ${data.music_info.id}`,
+              `music_id: ${data.music_info.id}`
             ],
-            [{ text: '音乐文件', link: data.music_info.play_url.uri }],
-          ),
+            [{ text: '音乐文件', link: data.music_info.play_url.uri }]
+          )
         )
 
         if (this.botadapter === 'ICQQ') {
@@ -356,11 +361,12 @@ export default class DouYin extends Base {
         } else await this.e.reply(segment.record(data.music_info.play_url.uri))
 
         return false
+      }
     }
   }
 
   async uploadRecord (music_id) {
-    const data = await new iKun('Music').GetData({ music_id })
+    const data = await new IKun('Music').GetData({ music_id })
     let title = data.music_info.title // BGM名字
     let music_url = data.music_info.play_url.uri // BGM link
     if (this.botname === 'miao-yunzai') {

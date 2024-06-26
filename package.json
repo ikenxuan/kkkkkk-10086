@@ -13,8 +13,8 @@
     "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.3",
-    "sharp": "^0.33.3",
     "sequelize": "^6.37.1",
+    "sharp": "^0.33.3",
     "sqlite3": "5.1.6"
   },
   "imports": {
@@ -24,5 +24,8 @@
     "#components": "./module/components/index.js",
     "#douyin": "./module/business/douyin/index.js",
     "#bilibili": "./module/business/bilibili/index.js"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
   }
 }

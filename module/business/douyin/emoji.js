@@ -1,4 +1,4 @@
-export async function Emoji(data) {
+export async function Emoji (data) {
   let ListArray = []
 
   for (let i = 0; i < data.emoji_list.length; i++) {
@@ -7,7 +7,7 @@ export async function Emoji(data) {
 
     const Objject = {
       name: display_name,
-      url,
+      url
     }
     ListArray.push(Objject)
   }

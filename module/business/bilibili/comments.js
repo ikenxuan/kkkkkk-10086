@@ -1,4 +1,4 @@
-export default async function bilicomments(OBJECT) {
+export default async function bilicomments (OBJECT) {
   let EMOJIDATA = extractEmojisData(OBJECT.EMOJIDATA.data.packages) // 处理表情
   let jsonArray = []
   for (let i = 0; i < OBJECT.COMMENTSDATA.data.replies.length; i++) {
@@ -10,28 +10,27 @@ export default async function bilicomments(OBJECT) {
     const level = OBJECT.COMMENTSDATA.data.replies[i].member.level_info.current_level
     const vipstatus = OBJECT.COMMENTSDATA.data.replies[i].member.vip.status
     const like = OBJECT.COMMENTSDATA.data.replies[i].like
-    const contentObject = OBJECT.COMMENTSDATA.data.replies[i].content
+    // const contentObject = OBJECT.COMMENTSDATA.data.replies[i].content
     const replylength = OBJECT.COMMENTSDATA.data.replies[i].rcount
     const location = OBJECT.COMMENTSDATA.data.replies[i].reply_control.location
     const img_src =
       OBJECT.COMMENTSDATA.data.replies[i].content &&
-      OBJECT.COMMENTSDATA.data.replies[i].content.pictures &&
-      OBJECT.COMMENTSDATA.data.replies[i].content.pictures.length > 0
+        OBJECT.COMMENTSDATA.data.replies[i].content.pictures &&
+        OBJECT.COMMENTSDATA.data.replies[i].content.pictures.length > 0
         ? OBJECT.COMMENTSDATA.data.replies[i].content.pictures[0].img_src
         : null
     const members = OBJECT.COMMENTSDATA.data.replies[i].content.members
-    let emojiurl = ''
-    // 检查 contentObject 是否存在并且不为 null
-    if (contentObject && typeof contentObject === 'object') {
-      // 检查 emote 属性是否存在并且是一个对象
-      if (contentObject.emote && typeof contentObject.emote === 'object') {
-        const emoteKeys = Object.keys(contentObject.emote)
-        const firstKey = emoteKeys[0] // 获取第一个键名
-        emojiurl = firstKey ? contentObject.emote[firstKey].url : null
-      } else {
-      }
-    } else {
-    }
+    // let emojiurl = ''
+    // // 检查 contentObject 是否存在并且不为 null
+    // if (contentObject && typeof contentObject === 'object') {
+    //   // 检查 emote 属性是否存在并且是一个对象
+    //   if (contentObject.emote && typeof contentObject.emote === 'object') {
+    //     // const emoteKeys = Object.keys(contentObject.emote)
+    //     // const firstKey = emoteKeys[0] // 获取第一个键名
+    //     // emojiurl = firstKey ? contentObject.emote[firstKey].url : null
+    //     // console.log()
+    //   }
+    // }
 
     let obj = {
       id: i + 1,
@@ -47,7 +46,7 @@ export default async function bilicomments(OBJECT) {
       location,
       like,
       icon_big_vip: vipstatus === 1 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
-      members,
+      members
     }
 
     jsonArray.push(obj)
@@ -102,7 +101,7 @@ export default async function bilicomments(OBJECT) {
 }
 
 /** 空格转 '&nbsp;' */
-function space(data) {
+function space (data) {
   for (let i = 0; i < data.length; i++) {
     if (data[i].message) {
       data[i].message = data[i].message.replace(/\s/g, '&nbsp;')
@@ -112,7 +111,7 @@ function space(data) {
 }
 
 /** 换行符转<br> */
-function br(data) {
+function br (data) {
   for (let i = 0; i < data.length; i++) {
     let message = data[i].message
 
@@ -123,7 +122,7 @@ function br(data) {
 }
 
 /** 检查等级 */
-function checklevel(obj) {
+function checklevel (obj) {
   for (let i = 0; i < obj.length; i++) {
     switch (obj[i].level) {
       case 6:
@@ -165,14 +164,14 @@ function checklevel(obj) {
 }
 
 /** 检查是否大会员 */
-function checkvip(member) {
+function checkvip (member) {
   return member.vip.vipStatus === 1
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.uname}</span>`
     : `<span style="color: #888">${member.uname}</span>`
 }
 
 /** 处理表情，返回[{text: 表情名字, url: 表情地址}] */
-function extractEmojisData(data) {
+function extractEmojisData (data) {
   const emojisData = []
 
   // 遍历每个包
@@ -180,9 +179,9 @@ function extractEmojisData(data) {
     // 遍历每个表情
     packages.emote.forEach((emote) => {
       try {
-        new URL(emote.url)
+        // new URL(emote.url)
         emojisData.push({ text: emote.text, url: emote.url })
-      } catch {}
+      } catch { }
     })
   })
 
@@ -190,7 +189,7 @@ function extractEmojisData(data) {
 }
 
 /** 返回创建时间 */
-function getRelativeTimeFromTimestamp(timestamp) {
+function getRelativeTimeFromTimestamp (timestamp) {
   const now = Math.floor(Date.now() / 1000) // 当前时间的时间戳
   const differenceInSeconds = now - timestamp
 

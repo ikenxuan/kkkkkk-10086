@@ -4,7 +4,7 @@ import { Version } from '#components'
 import { logger } from '#lib'
 
 class Init {
-  async checkCfg() {
+  async checkCfg () {
     const configPath = process.cwd() + `/plugins/${Version.pluginName}/config/config.json`
     const configExampleFile = process.cwd() + `/plugins/${Version.pluginName}/config/config.example.json`
     if (!fs.existsSync(configPath)) {
@@ -40,7 +40,7 @@ class Init {
     if (!fs.existsSync(readmePath)) {
       fs.writeFileSync(readmePath, '# 这是一个缓存文件夹\n\n## 开源项目[kkkkkk-10086](https://github.com/ikenxuan/kkkkkk-10086)', { flag: 'w' })
     }
-    async function mkdirs(dirname) {
+    async function mkdirs (dirname) {
       if (fs.existsSync(dirname)) {
         return true
       } else {
@@ -51,7 +51,8 @@ class Init {
       }
     }
   }
-  async load() {
+
+  async load () {
     await this.checkCfg()
 
     const files = fs.readdirSync(`${Version.pluginPath}/apps`).filter(file => file.endsWith('.js'))

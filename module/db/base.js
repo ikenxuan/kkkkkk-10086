@@ -21,7 +21,7 @@ const dataPath = join(Version.pluginPath, 'data', 'db', 'sqlite', 'data.db')
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: dataPath,
-  logging: false,
+  logging: false
 })
 
 /** 测试数据库连接是否成功 */

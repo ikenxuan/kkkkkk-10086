@@ -13,7 +13,7 @@ const getLine = function (line) {
   line = line.replace(/(^\s*\*|\r)/g, '')
   line = line.replace(/\s*`([^`]+`)/g, '<span class="cmd">$1')
   line = line.replace(/`\s*/g, '</span>')
-  line = line.replace(/\s*\*\*([^\*]+\*\*)/g, '<span class="strong">$1')
+  line = line.replace(/\s*\*\*([^\\*]+\*\*)/g, '<span class="strong">$1')
   line = line.replace(/\*\*\s*/g, '</span>')
   line = line.replace(/ⁿᵉʷ/g, '<span class="new"></span>')
   return line
@@ -54,7 +54,7 @@ const readLogFile = function (root, versionCount = 4) {
 
           temp = {
             version: v,
-            logs: [],
+            logs: []
           }
         } else {
           if (!line.trim()) {
@@ -63,7 +63,7 @@ const readLogFile = function (root, versionCount = 4) {
           if (/^\*/.test(line)) {
             lastLine = {
               title: getLine(line),
-              logs: [],
+              logs: []
             }
             temp.logs.push(lastLine)
           } else if (/^\s{2,}\*/.test(line)) {

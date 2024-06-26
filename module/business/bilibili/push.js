@@ -1,4 +1,4 @@
-import { bilidata, BiLiBiLiAPI } from '#bilibili'
+import { bilidata as Bilidata, BiLiBiLiAPI } from '#bilibili'
 import { Base, Config, Render, Networks, DB } from '#components'
 import { Bot, sendMsg, segment, logger } from '#lib'
 import fs from 'fs'
@@ -10,7 +10,7 @@ export default class push extends Base {
    * @param {boolean} force 强制执行标志，用于控制实例行为，默认值未定义
    * @returns 无返回值
    */
-  constructor(e = {}, force) {
+  constructor (e = {}, force) {
     super(e) // 调用父类的构造函数
     // 判断当前bot适配器是否为'QQBot'，如果是，则直接返回true，否则继续执行
     if (this.botadapter === 'QQBot') {
@@ -50,17 +50,17 @@ export default class push extends Base {
   async getdata (data) {
     let nocd_data
     for (const dynamicId in data) {
-      const dynamicCARDINFO = await new bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
-      const userINFO = await new bilidata('用户名片信息').GetData(data[dynamicId].host_mid)
-      let emojiDATA = await new bilidata('EMOJI').GetData()
+      const dynamicCARDINFO = await new Bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
+      const userINFO = await new Bilidata('用户名片信息').GetData(data[dynamicId].host_mid)
+      let emojiDATA = await new Bilidata('EMOJI').GetData()
       emojiDATA = extractEmojisData(emojiDATA.data.packages)
       const dycrad = JSON.parse(dynamicCARDINFO.data.card.card)
-      let img,
-        send = true
+      let img
+      let send = true
       logger.debug(`UP: ${data[dynamicId].remark}\n动态id：${dynamicId}\nhttps://t.bilibili.com/${dynamicId}`)
       switch (data[dynamicId].dynamic_type) {
         /** 处理图文动态 */
-        case 'DYNAMIC_TYPE_DRAW':
+        case 'DYNAMIC_TYPE_DRAW': {
           /**
            * 生成图片数组
            * 该函数没有参数。
@@ -72,13 +72,14 @@ export default class push extends Base {
             // 遍历dycrad.item.pictures数组，将每个图片的img_src存入对象，并将该对象加入imgArray
             for (let i = 0; i < dycrad.item.pictures.length; i++) {
               const obj = {
-                image_src: dycrad.item.pictures[i].img_src,
+                image_src: dycrad.item.pictures[i].img_src
               }
               imgArray.push(obj)
             }
             // 返回包含所有图片对象的数组
             return imgArray
           }
+
           img = await Render.render(
             'html/bilibili/dynamic/DYNAMIC_TYPE_DRAW',
             {
@@ -95,13 +96,13 @@ export default class push extends Base {
               user_shortid: data[dynamicId].host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
-              dynamicTYPE: '图文动态推送',
-            },
+              dynamicTYPE: '图文动态推送'
+            }
           )
           break
-
+        }
         /** 处理纯文动态 */
-        case 'DYNAMIC_TYPE_WORD':
+        case 'DYNAMIC_TYPE_WORD': {
           let text = replacetext(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text, data[dynamicId].Dynamic_Data)
           for (const item of emojiDATA) {
             if (text.includes(item.text)) {
@@ -126,20 +127,20 @@ export default class push extends Base {
               user_shortid: data[dynamicId].host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
-              dynamicTYPE: '纯文动态推送',
-            },
+              dynamicTYPE: '纯文动态推送'
+            }
           )
           break
-
+        }
         /** 处理视频动态 */
         case 'DYNAMIC_TYPE_AV':
           if (data[dynamicId].Dynamic_Data.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
-            const INFODATA = await new bilidata('bilibilivideo').GetData({ id: bvid })
+            const INFODATA = await new Bilidata('bilibilivideo').GetData({ id: bvid })
             nocd_data = await new Networks({
               url: BiLiBiLiAPI.VIDEO(aid, INFODATA.INFODATA.data.cid) + '&platform=html5',
-              headers: this.headers,
+              headers: this.headers
             }).getData()
 
             img = await Render.render(
@@ -159,8 +160,8 @@ export default class push extends Base {
                 user_shortid: data[dynamicId].host_mid,
                 total_favorited: this.count(userINFO.data.like_num),
                 following_count: this.count(userINFO.data.card.attention),
-                dynamicTYPE: '视频动态推送',
-              },
+                dynamicTYPE: '视频动态推送'
+              }
             )
           }
           break
@@ -179,8 +180,8 @@ export default class push extends Base {
               create_time: this.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
               now_time: this.getCurrentTime(),
               share_url: 'https://live.bilibili.com/' + dycrad.live_play_info.room_id,
-              dynamicTYPE: '直播动态推送',
-            },
+              dynamicTYPE: '直播动态推送'
+            }
           )
           break
 
@@ -195,12 +196,13 @@ export default class push extends Base {
         let status
         for (const groupId of data[dynamicId].group_id) {
           if (send) status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
-          if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV')
+          if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
               send && await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
             } catch (error) {
               logger.error(error)
             }
+          }
 
           if (status || !send) {
             const DBdata = await DB.FindGroup('bilibili', groupId)
@@ -213,6 +215,7 @@ export default class push extends Base {
              */
             const findMatchingSecUid = (DBdata, host_midToCheck) => {
               for (const host_mid in DBdata) {
+                // eslint-disable-next-line no-prototype-builtins
                 if (DBdata.hasOwnProperty(host_mid) && DBdata[host_mid].host_mid === host_midToCheck) {
                   return host_midToCheck
                 }
@@ -243,7 +246,7 @@ export default class push extends Base {
                   host_mid: data[dynamicId].host_mid,
                   dynamic_idlist: [dynamicId],
                   avatar_img: data[dynamicId].Dynamic_Data.modules.module_author.face,
-                  dynamic_type: data[dynamicId].dynamic_type,
+                  dynamic_type: data[dynamicId].dynamic_type
                 }
                 DBdata[data[dynamicId].host_mid] = newEntry
                 // 更新数据库
@@ -258,8 +261,8 @@ export default class push extends Base {
                   host_mid: data[dynamicId].host_mid,
                   dynamic_idlist: [dynamicId],
                   avatar_img: data[dynamicId].Dynamic_Data.modules.module_author.face,
-                  dynamic_type: data[dynamicId].dynamic_type,
-                },
+                  dynamic_type: data[dynamicId].dynamic_type
+                }
               })
             }
           }
@@ -282,7 +285,7 @@ export default class push extends Base {
 
     try {
       for (const item of Config.bilibilipushlist) {
-        const dynamic_list = await new bilidata('获取用户空间动态').GetData(item.host_mid)
+        const dynamic_list = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
         const ALL_DBdata = await DB.FindAll('bilibili')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
         const dbGroupIds = new Set(Object.keys(ALL_DBdata).map(Number)) // 将数据库中的群组ID转换为数字并去重
@@ -297,10 +300,10 @@ export default class push extends Base {
             const createTime = parseInt(dynamic.modules.module_author.pub_ts, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
 
-            let is_top = dynamic.modules.module_tag?.text === '置顶', // 是否为置顶
-              shouldPush = false, // 是否列入推送数组
-              shouldBreak = false, // 是否跳出循环
-              exitTry = false // 是否退出 try 块
+            let is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
+            let shouldPush = false // 是否列入推送数组
+            // let shouldBreak = false // 是否跳出循环
+            let exitTry = false // 是否退出 try 块
             try {
               if (exitTry) {
                 // 如果需要退出 try 块，跳过此次循环的剩余部分
@@ -315,7 +318,7 @@ export default class push extends Base {
                 // 遍历数据库中的每个群对象
                 for (const groupId in ALL_DBdata) {
                   if (Object.keys(ALL_DBdata[groupId]).length === 0) {
-                    shouldBreak = true
+                    // shouldBreak = true
                     break
                   }
                   // 遍历当前群的推送用户对象
@@ -349,7 +352,7 @@ export default class push extends Base {
                   group_id: [], // 初始化 group_id 为数组
                   Dynamic_Data: dynamic, // 存储 dynamic 对象
                   avatar_img: dynamic.modules.module_author.face,
-                  dynamic_type: dynamic.type,
+                  dynamic_type: dynamic.type
                 }
               }
               willbepushlist[dynamic.id_str].group_id = newGroupIds.length > 0 ? [...newGroupIds] : [...item.group_id] // item.group_id 为配置文件的 group_id
@@ -514,7 +517,7 @@ export default class push extends Base {
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
         // 从外部数据源获取用户备注信息
-        const resp = await new bilidata('用户名片信息').GetData(abclist[i].host_mid)
+        const resp = await new Bilidata('用户名片信息').GetData(abclist[i].host_mid)
         const remark = resp.data.card.name
         // 在配置文件中找到对应的用户，并更新其备注信息
         const matchingItemIndex = config.bilibilipushlist.findIndex((item) => item.host_mid === abclist[i].host_mid)
@@ -571,7 +574,7 @@ function extractEmojisData (data) {
     packages.emote.forEach((emote) => {
       try {
         // 尝试将表情的URL转换为URL对象，如果成功则将其添加到emojisData数组中
-        new URL(emote.url)
+        // new URL(emote.url)
         emojisData.push({ text: emote.text, url: emote.url })
       } catch { } // 如果URL无效，则忽略该表情
     })

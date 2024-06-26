@@ -7,26 +7,26 @@ sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
-      comment: '主键ID',
+      comment: '主键ID'
     },
     group_id: {
       type: DataTypes.STRING,
-      comment: '群组标识符',
+      comment: '群组标识符'
     },
     data: {
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
-      comment: '缓存数据',
+      comment: '缓存数据'
     },
     aweme_idlist: {
       type: DataTypes.STRING,
       defaultValue: '[]',
-      comment: '已推送的抖音视频 ID 列表',
-    },
+      comment: '已推送的抖音视频 ID 列表'
+    }
   },
   {
-    timestamps: true,
-  },
+    timestamps: true
+  }
 )
 
 sequelize.define(
@@ -36,26 +36,26 @@ sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
-      comment: '主键ID',
+      comment: '主键ID'
     },
     group_id: {
       type: DataTypes.STRING,
-      comment: '群组标识符',
+      comment: '群组标识符'
     },
     data: {
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
-      comment: '缓存数据',
+      comment: '缓存数据'
     },
     dynamic_idlist: {
       type: DataTypes.STRING,
       defaultValue: '[]',
-      comment: '已推送的B站动态 ID 列表',
-    },
+      comment: '已推送的B站动态 ID 列表'
+    }
   },
   {
-    timestamps: true,
-  },
+    timestamps: true
+  }
 )
 
 /**
@@ -65,17 +65,17 @@ sequelize.define(
  * @param {string} data 数据对象
  * @returns {Promise<remake>}
  */
-async function CreateSheet(ModelName, group_id, data = {}) {
+async function CreateSheet (ModelName, group_id, data = {}) {
   const Model = sequelize.models[ModelName]
   return (
     await Model.create(
       {
         group_id: String(group_id),
-        data: JSON.stringify(data),
+        data: JSON.stringify(data)
       },
       {
-        raw: true,
-      },
+        raw: true
+      }
     )
   ).dataValues
 }
@@ -85,10 +85,10 @@ async function CreateSheet(ModelName, group_id, data = {}) {
  * @param {string} ModelName 表单名称
  * @returns  获取对应表单的所有群组原始数据
  */
-async function FindAll(ModelName) {
+async function FindAll (ModelName) {
   const Model = sequelize.models[ModelName]
   const groups = await Model.findAll({
-    raw: true,
+    raw: true
   })
 
   // 使用reduce方法将数组转换为对象
@@ -107,9 +107,10 @@ async function FindAll(ModelName) {
  * @param {string} Group_ID 群号
  * @returns {Promise} 包含指定群号数据的Promise对象
  */
-async function FindGroup(ModelName, Group_ID) {
+async function FindGroup (ModelName, Group_ID) {
   const AllData = await FindAll(ModelName)
   // 检查传入的 Group_ID 是否存在于 AllData 中
+  // eslint-disable-next-line no-prototype-builtins
   if (AllData.hasOwnProperty(Group_ID)) {
     // 直接返回找到的群号对应的对象
     return AllData[Group_ID]
@@ -125,19 +126,20 @@ async function FindGroup(ModelName, Group_ID) {
  * @param {object} NewData 数据对象
  * @returns
  */
-async function UpdateGroupData(ModelName, Group_ID, NewData = {}) {
+async function UpdateGroupData (ModelName, Group_ID, NewData = {}) {
   const Model = sequelize.models[ModelName]
 
+  // eslint-disable-next-line no-unused-vars
   const [affectedRows, affectedRowsData] = await Model.update(
     {
-      data: JSON.stringify(NewData),
+      data: JSON.stringify(NewData)
     },
     {
       where: {
-        group_id: Group_ID,
+        group_id: Group_ID
       },
-      individualHooks: true,
-    },
+      individualHooks: true
+    }
   )
 
   return affectedRowsData
@@ -151,7 +153,7 @@ const DB = {
   /** 获取对应表单的所有群组原始数据 */
   FindAll,
   /** 查找指定群号的数据 */
-  FindGroup,
+  FindGroup
 }
 
 export default DB

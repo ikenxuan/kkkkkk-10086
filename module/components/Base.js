@@ -4,10 +4,10 @@ import fs from 'fs'
 import path from 'path'
 
 export default class Base {
-  constructor(e = {}) {
+  constructor (e = {}) {
     this.e = e
     this.headers = {
-      'Accept': '*/*',
+      Accept: '*/*',
       'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
@@ -167,18 +167,20 @@ export default class Base {
                 : await this.e.reply(segment.video(file.filepath || video_url))
               break
             case 'QQBot':
-              file.totalBytes >= 10
-                ? (() => {
-                  return new Promise((resolve, reject) => {
-                    try {
-                      /** 尝试硬发 */
-                      this.e.reply(segment.video(video_url || file.filepath))
-                    } catch {
-                      reject(new Error('视频太大了，发不出来'))
-                    }
-                  })
-                })()
-                : await this.e.reply(segment.video(video_url || file.filepath))
+              if (file.totalBytes < 10) {
+                await this.e.reply(segment.video(video_url || file.filepath))
+                break
+              }
+              (() => {
+                return new Promise((resolve, reject) => {
+                  try {
+                    /** 尝试硬发 */
+                    this.e.reply(segment.video(video_url || file.filepath))
+                  } catch {
+                    reject(new Error('视频太大了，发不出来'))
+                  }
+                })
+              })()
               break
           }
           break

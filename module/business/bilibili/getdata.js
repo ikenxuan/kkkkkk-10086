@@ -3,7 +3,7 @@ import { Base, Networks, Config } from '#components'
 import { logger } from '#lib'
 
 export default class bilidata extends Base {
-  constructor(type) {
+  constructor (type) {
     super()
     this.type = type
     this.headers.Referer = 'https://api.bilibili.com/'
@@ -13,25 +13,25 @@ export default class bilidata extends Base {
   async GetData (data) {
     let result, COMMENTSDATA, EMOJIDATA, INFODATA, PARAM
     switch (this.type) {
-      case 'bilibilivideo':
+      case 'bilibilivideo': {
         INFODATA = await this.GlobalGetData({ url: BiLiBiLiAPI.INFO('bvid', data.id) })
         const BASEURL = BiLiBiLiAPI.VIDEO(INFODATA.data.aid, INFODATA.data.cid)
         const SIGN = await checkuser(BASEURL)
         const DATA = await this.GlobalGetData({
           url: BiLiBiLiAPI.VIDEO(INFODATA.data.aid, INFODATA.data.cid) + SIGN.QUERY,
-          headers: this.headers,
+          headers: this.headers
         })
 
         PARAM = await wbi_sign(BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
         COMMENTSDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid) + PARAM, headers: this.headers })
         EMOJIDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.EMOJI() })
         return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
-
-      case 'COMMENTS':
+      }
+      case 'COMMENTS': {
         const aPARAM = await wbi_sign(BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid))
         const aCOMMENTSDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.COMMENTS(1, INFODATA.data.aid) + aPARAM, headers: this.headers })
         return aCOMMENTSDATA
-
+      }
       case 'EMOJI':
         return await this.GlobalGetData({ url: BiLiBiLiAPI.EMOJI() })
 
@@ -41,7 +41,7 @@ export default class bilidata extends Base {
       case '判断二维码状态':
         result = await new Networks({
           url: BiLiBiLiAPI.判断二维码状态(data),
-          headers: this.headers,
+          headers: this.headers
         }).getHeadersAndData()
         return result
 
@@ -53,7 +53,7 @@ export default class bilidata extends Base {
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.refresh_csrf(data),
           headers: this.headers,
-          type: 'text',
+          type: 'text'
         })
         return result
 
@@ -62,7 +62,7 @@ export default class bilidata extends Base {
           url: BiLiBiLiAPI.刷新Cookie(),
           method: 'POST',
           body: data,
-          headers: this.headers,
+          headers: this.headers
         })
         return result
 
@@ -71,11 +71,11 @@ export default class bilidata extends Base {
           url: BiLiBiLiAPI.确认更新(),
           method: 'POST',
           body: data,
-          headers: this.headers,
+          headers: this.headers
         })
         return result
 
-      case 'bangumivideo':
+      case 'bangumivideo': {
         let isep
         if (data.id.startsWith('ss')) {
           data.id = data.id.replace('ss', '')
@@ -87,40 +87,40 @@ export default class bilidata extends Base {
         const QUERY = await checkuser(BiLiBiLiAPI.bangumivideo(data.id, isep))
         const INFO = await this.GlobalGetData({
           url: BiLiBiLiAPI.bangumivideo(data.id, isep),
-          headers: this.headers,
+          headers: this.headers
         })
         result = { INFODATA: INFO, USER: QUERY, TYPE: 'bangumivideo' }
         return result
-
+      }
       case '获取用户空间动态':
         delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.获取用户空间动态(data),
-          headers: this.headers,
+          headers: this.headers
         })
         return result
 
-      case 'bilibilidynamic':
+      case 'bilibilidynamic': {
         delete this.headers.Referer
         const dynamicINFO = await this.GlobalGetData({
           url: BiLiBiLiAPI.动态详情(data.dynamic_id),
-          headers: this.headers,
+          headers: this.headers
         })
         const dynamicINFO_CARD = await this.GlobalGetData({ url: BiLiBiLiAPI.动态卡片信息(dynamicINFO.data.item.id_str) })
         PARAM = await wbi_sign(BiLiBiLiAPI.COMMENTS(1, dynamicINFO_CARD.data.card.desc.rid))
         this.headers.Referer = 'https://api.bilibili.com/'
         COMMENTSDATA = await this.GlobalGetData({
           url: BiLiBiLiAPI.COMMENTS(mapping_table(dynamicINFO.data.item.type), oid(dynamicINFO, dynamicINFO_CARD)) + PARAM,
-          headers: this.headers,
+          headers: this.headers
         })
         EMOJIDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.EMOJI() })
         const USERDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.用户名片信息(dynamicINFO.data.item.modules.module_author.mid) })
         return { dynamicINFO, dynamicINFO_CARD, COMMENTSDATA, EMOJIDATA, USERDATA, TYPE: 'bilibilidynamic' }
-
+      }
       case '用户名片信息':
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.用户名片信息(data),
-          headers: this.headers,
+          headers: this.headers
         })
         return result
 
@@ -128,7 +128,7 @@ export default class bilidata extends Base {
         delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.动态详情(data.dynamic_id),
-          headers: this.headers,
+          headers: this.headers
         })
         return result
 
@@ -156,7 +156,7 @@ function mapping_table (type) {
     11: ['DYNAMIC_TYPE_DRAW'],
     12: ['DYNAMIC_TYPE_ARTICLE'],
     17: ['DYNAMIC_TYPE_LIVE_RCMD', 'DYNAMIC_TYPE_FORWARD', 'DYNAMIC_TYPE_WORD', 'DYNAMIC_TYPE_COMMON_SQUARE'],
-    19: ['DYNAMIC_TYPE_MEDIALIST'],
+    19: ['DYNAMIC_TYPE_MEDIALIST']
   }
   for (const key in Array) {
     if (Array[key].includes(type)) {
@@ -221,5 +221,5 @@ const errorMap = {
   '-689': '版权限制',
   '-701': '扣节操失败',
   '-799': '请求过于频繁，请稍后再试',
-  '-8888': '对不起，服务器开小差了~ (ಥ﹏ಥ)',
+  '-8888': '对不起，服务器开小差了~ (ಥ﹏ಥ)'
 }

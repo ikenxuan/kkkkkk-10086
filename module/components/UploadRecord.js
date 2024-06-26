@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable indent */
+/* eslint-disable n/handle-callback-err */
 import querystring from 'querystring'
 import fetch from 'node-fetch'
 import fs from 'fs'
@@ -49,16 +52,16 @@ async function UploadRecord (e, record_url, seconds = 0, transcoding = true, bri
       12: 1,
       13: 1,
       14: codec,
-      15: 1,
-    },
+      15: 1
+    }
   })
   const payload = await bot.sendUni('PttStore.GroupPttUp', body)
   const rsp = core.pb.decode(payload)[5]
   rsp[2] && (0, errors.drop)(rsp[2], rsp[3])
-  const ip = rsp[5]?.[0] || rsp[5],
-    port = rsp[6]?.[0] || rsp[6]
-  const ukey = rsp[7].toHex(),
-    filekey = rsp[11].toHex()
+  const ip = rsp[5]?.[0] || rsp[5]
+  const port = rsp[6]?.[0] || rsp[6]
+  const ukey = rsp[7].toHex()
+  const filekey = rsp[11].toHex()
   const params = {
     ver: 4679,
     ukey,
@@ -66,17 +69,17 @@ async function UploadRecord (e, record_url, seconds = 0, transcoding = true, bri
     filesize: buf.length,
     bmd5: hash.toString('hex'),
     mType: 'pttDu',
-    voice_encodec: codec,
+    voice_encodec: codec
   }
   const url = `http://${(0, int32ip2str)(ip)}:${port}/?` + querystring.stringify(params)
   const headers = {
     'User-Agent': `QQ/${bot.apk.version} CFNetwork/1126`,
-    'Net-Type': 'Wifi',
+    'Net-Type': 'Wifi'
   }
   await fetch(url, {
     method: 'POST', // post请求
     headers,
-    body: buf,
+    body: buf
   })
   // await axios.post(url, buf, { headers });
 
@@ -97,12 +100,12 @@ async function UploadRecord (e, record_url, seconds = 0, transcoding = true, bri
       5: 0, // 是否显示评级
       6: 'sss', // 评级
       7: 0, // 未知参数
-      8: brief,
-    },
+      8: brief
+    }
   })
   return {
     type: 'record',
-    file: 'protobuf://' + Buffer.from(b).toString('base64'),
+    file: 'protobuf://' + Buffer.from(b).toString('base64')
   }
 }
 
@@ -136,11 +139,11 @@ async function getPttBuffer (file, ffmpeg = 'ffmpeg', transcoding = true) {
     // const readable = (await axios.get(file, { responseType: "stream" })).data;
     try {
       const headers = {
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)',
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)'
       }
       let response = await fetch(file, {
         method: 'GET', // post请求
-        headers,
+        headers
       })
       const buf = Buffer.from(await response.arrayBuffer())
       const tmpfile = TMP_DIR + '/' + (0, uuid)()
@@ -203,8 +206,8 @@ async function getAudioTime (file, ffmpeg = 'ffmpeg') {
           data: {
             time,
             seconds: s,
-            exec_text: stderr,
-          },
+            exec_text: stderr
+          }
         })
       } catch (err) {
         resolve({ code: -1 })
@@ -345,7 +348,7 @@ function escapeXml (str) {
 
 /** 用于下载限量 */
 class DownloadTransform extends stream.Transform {
-  constructor() {
+  constructor () {
     super(...arguments)
     this._size = 0
   }
@@ -419,7 +422,7 @@ const ErrorMessage = {
   10: '消息过长',
   34: '消息过长',
   120: '在该群被禁言',
-  121: 'AT全体剩余次数不足',
+  121: 'AT全体剩余次数不足'
 }
 function drop (code, message) {
   if (!message || !message.length) message = ErrorMessage[code]
