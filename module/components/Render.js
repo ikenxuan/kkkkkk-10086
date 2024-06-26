@@ -2,7 +2,7 @@ import { join } from 'path'
 import { Version, Config } from '#components'
 import { puppeteer } from '#lib'
 
-function scale(pct = 1) {
+function scale (pct = 1) {
   const scale = Math.min(2, Math.max(0.5, Number(Config.renderScale) / 100))
   pct = pct * scale
   return `style=transform:scale(${pct})`
@@ -16,7 +16,7 @@ const Render = {
    * @param {*} cfg 渲染参数
    * @returns
    */
-  async render(path, params, cfg = {}) {
+  async render (path, params) {
     path = path.replace(/.html$/, '')
     const savePath = '/' + path.replace('html/', '') + '/'
     const data = {
@@ -25,7 +25,7 @@ const Render = {
       defaultLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html').replace(/\\/g, '/'),
       elemLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html').replace(/\\/g, '/'),
       sys: {
-        scale: scale(cfg.scale || 1),
+        scale: scale(1),
       },
       copyright: `${Version.BotName}<span class="version">${Version.BotVersion}</span> & ${Version.pluginName}<span class="version">${Version.version}`,
       pageGotoParams: {

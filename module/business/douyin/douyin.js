@@ -249,7 +249,6 @@ export default class DouYin extends Base {
               DestroyTime: Time(2),
               botname: this.botname,
             },
-            { e: this.e, scale: 1, retType: 'base64' },
           )
           file = img
           await this.e.reply(
@@ -339,9 +338,7 @@ export default class DouYin extends Base {
             share_url: data.music_info.play_url.uri,
             username: data.music_info.original_musician_display_name || data.music_info.owner_nickname,
           },
-          { e: this.e, scale: 1.4, retType: 'base64' },
         )
-
         await this.e.reply(
           this.mkMsg(
             [

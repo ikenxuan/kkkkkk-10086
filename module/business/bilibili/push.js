@@ -97,7 +97,6 @@ export default class push extends Base {
               following_count: this.count(userINFO.data.card.attention),
               dynamicTYPE: '图文动态推送',
             },
-            { e: this.e, scale: 1.4, retType: 'base64' },
           )
           break
 
@@ -129,7 +128,6 @@ export default class push extends Base {
               following_count: this.count(userINFO.data.card.attention),
               dynamicTYPE: '纯文动态推送',
             },
-            { e: this.e, scale: 1.4, retType: 'base64' },
           )
           break
 
@@ -163,7 +161,6 @@ export default class push extends Base {
                 following_count: this.count(userINFO.data.card.attention),
                 dynamicTYPE: '视频动态推送',
               },
-              { e: this.e, scale: 1.4, retType: 'base64' },
             )
           }
           break
@@ -184,7 +181,6 @@ export default class push extends Base {
               share_url: 'https://live.bilibili.com/' + dycrad.live_play_info.room_id,
               dynamicTYPE: '直播动态推送',
             },
-            { e: this.e, scale: 1.4, retType: 'base64' },
           )
           break
 
