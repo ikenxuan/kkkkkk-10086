@@ -19,8 +19,8 @@ douyinpush: false
 # 抖音推送日志，打开或关闭定时任务日志
 douyinpushlog: true
 
-# 抖音推送设置权限，0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人
-douyinpushGroup: 3
+# 抖音推送设置权限，(all)所有人；(admin)群主和管理员；(owner)群主；(master)主人
+douyinpushGroup: master
 
 # 抖音推送表达式
 douyinpushcron: '*/10 * * * *'

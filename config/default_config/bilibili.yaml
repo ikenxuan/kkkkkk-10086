@@ -16,8 +16,8 @@ bilibilipush: false
 # B站推送日志，打开或关闭定时任务日志
 bilibilipushlog: true
 
-# B站推送设置权限，0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人
-bilibilipushGroup: 3
+# B站推送设置权限，(all)所有人；(admin)群主和管理员；(owner)群主；(master)主人
+bilibilipushGroup: master
 
 # B站推送表达式
 bilibilipushcron: '*/10 * * * *'

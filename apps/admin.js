@@ -156,7 +156,7 @@ export class Admin extends plugin {
     const data = {}
     let _cfg = Config.All()
     _cfg = (function () {
-      const { douyin, bilibili } = _cfg.ck
+      const { douyin, bilibili } = _cfg.cookies
       _cfg.cookies.b = bilibili
       _cfg.cookies.d = douyin
       delete _cfg.cookies.bilibili

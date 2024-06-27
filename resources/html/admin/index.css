@@ -128,7 +128,7 @@
   top: 0;
   right: 0;
   height: 36px;
-  width: 350px;
+  width: 250px;
   text-align: center;
   /* line-height: 80px; */
   font-size: 40px;
@@ -142,7 +142,7 @@
 }
 
 .cfg-desc {
-  font-size: 30px;
+  font-size: 29px;
   color: #454444;
   margin: 10px 0 14px 23px;
 }
