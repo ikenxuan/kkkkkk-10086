@@ -1,6 +1,7 @@
 .vitepress/*
 node_modules/*
+config/config/*
 data/*
 yarn.lock/*
 package-lock.json
-
+!.gitignore
