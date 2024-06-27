@@ -7,15 +7,15 @@ import { makeForwardMsg, plugin } from '#lib'
 const task = []
 const rule = []
 
-if (Config.videotool) {
-  if (Config.douyintool) {
+if (Config.app.videotool) {
+  if (Config.douyin.douyintool) {
     rule.push({
       reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
       fnc: 'douy'
     })
   }
 
-  if (Config.bilibilitool) {
+  if (Config.bilibili.bilibilitool) {
     rule.push({
       reg: '(bilibili.com|b23.tv|t.bilibili.com)',
       fnc: 'bilib'
@@ -25,7 +25,7 @@ if (Config.videotool) {
 
 export class Tools extends plugin {
   constructor () {
-    if (Config.bilibilipush) {
+    if (Config.bilibili.bilibilipush) {
       task.push({
         cron: Config.bilibilipushcron,
         name: '哔哩哔哩更新推送',
@@ -34,7 +34,7 @@ export class Tools extends plugin {
       })
     }
 
-    if (Config.douyinpush) {
+    if (Config.douyin.douyinpush) {
       task.push({
         cron: Config.douyinpushcron,
         name: '抖音更新推送',
@@ -68,8 +68,8 @@ export class Tools extends plugin {
       bilibili: []
     }
     const platforms = {
-      douyin: Config.douyinpushlist,
-      bilibili: Config.bilibilipushlist
+      douyin: Config.pushlist.douyin ? Config.pushlist.douyin : [],
+      bilibili: Config.pushlist.bilibili ? Config.pushlist.bilibili : []
     }
     for (const platform in platforms) {
       // eslint-disable-next-line no-prototype-builtins
