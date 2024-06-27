@@ -1,6 +1,7 @@
 import { bilidata as Bilidata, BiLiBiLiAPI } from '#bilibili'
-import { Base, Config, Render, Networks, DB } from '#components'
+import { Base, Config, Render, Networks, DB, Version } from '#components'
 import { Bot, sendMsg, segment, logger } from '#lib'
+import YAML from 'yaml'
 import fs from 'fs'
 
 export default class push extends Base {
@@ -284,7 +285,7 @@ export default class push extends Base {
     const willbepushlist = {}
 
     try {
-      for (const item of Config.bilibilipushlist) {
+      for (const item of Config.pushlist.bilibili) {
         const dynamic_list = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
         const ALL_DBdata = await DB.FindAll('bilibili')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
@@ -380,16 +381,16 @@ export default class push extends Base {
   async setting (data) {
     let msg
     const host_mid = data.data.card.mid
-    const config = JSON.parse(fs.readFileSync(this.ConfigPath)) // 读取配置文件
+    const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8')) // 读取配置文件
     const group_id = this.e.group_id
 
     // 初始化或确保 bilibilipushlist 数组存在
-    if (!config.bilibilipushlist) {
-      config.bilibilipushlist = []
+    if (!config.bilibili) {
+      config.bilibili = []
     }
 
     // 检查是否存在相同的 host_mid
-    const existingItem = config.bilibilipushlist.find((item) => item.host_mid === host_mid)
+    const existingItem = config.bilibili.find((item) => item.host_mid === host_mid)
 
     if (existingItem) {
       // 处理已存在的 host_mid
@@ -407,12 +408,12 @@ export default class push extends Base {
       }
     } else {
       // 不存在相同的 host_mid，新增一个配置项
-      config.bilibilipushlist.push({ host_mid, group_id: [group_id], remark: data.data.card.name })
+      config.bilibili.push({ host_mid, group_id: [group_id], remark: data.data.card.name })
       msg = `群：${group_id}\n添加成功！${data.data.card.name}\nUID：${host_mid}`
     }
 
     // 更新配置文件
-    fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+    Config.modify('pushlist', 'douyin', config.bilibili)
     return msg
   }
 
@@ -499,14 +500,14 @@ export default class push extends Base {
    */
   async checkremark () {
     // 读取配置文件内容
-    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
+    const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
     const abclist = []
 
     // 遍历配置文件中的用户列表，收集需要更新备注信息的用户
-    for (let i = 0; i < Config.bilibilipushlist.length; i++) {
-      const remark = Config.bilibilipushlist[i].remark
-      const group_id = Config.bilibilipushlist[i].group_id
-      const host_mid = Config.bilibilipushlist[i].host_mid
+    for (let i = 0; i < Config.pushlist.bilibili.length; i++) {
+      const remark = Config.pushlist.bilibili[i].remark
+      const group_id = Config.pushlist.bilibili[i].group_id
+      const host_mid = Config.pushlist.bilibili[i].host_mid
 
       if (remark == undefined || remark === '') {
         abclist.push({ host_mid, group_id })
@@ -520,13 +521,13 @@ export default class push extends Base {
         const resp = await new Bilidata('用户名片信息').GetData(abclist[i].host_mid)
         const remark = resp.data.card.name
         // 在配置文件中找到对应的用户，并更新其备注信息
-        const matchingItemIndex = config.bilibilipushlist.findIndex((item) => item.host_mid === abclist[i].host_mid)
+        const matchingItemIndex = config.bilibili.findIndex((item) => item.host_mid === abclist[i].host_mid)
         if (matchingItemIndex !== -1) {
-          config.bilibilipushlist[matchingItemIndex].remark = remark
+          config.bilibili[matchingItemIndex].remark = remark
         }
       }
       // 将更新后的配置文件内容写回文件
-      fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+      Config.modify('pushlist', 'douyin', config.bilibili)
     }
   }
 

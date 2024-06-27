@@ -7,7 +7,7 @@ export default class iKun extends Base {
     super()
     this.type = type
     this.headers.Referer = 'https://www.douyin.com/'
-    this.headers.Cookie = Config.ck
+    this.headers.Cookie = Config.ck.douyin
   }
 
   async GetData (data) {
@@ -26,13 +26,17 @@ export default class iKun extends Base {
         )
 
         this.URL = DouyinAPI.评论(data.id)
-        const CommentsData = Config.comments
+        const CommentsData = Config.douyin.comments
           ? await this.GlobalGetData({
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
             method: 'GET',
             headers: this.headers
           })
           : { code: 405, msg: '你没开评论解析的开关', data: null }
+
+        if (!VideoData.aweme_detail) {
+          logger.error('获取作品响应数据失败！可能该分享链接有误\n请检查该分享链接是否正确（复制分享链接打开抖音。。。）')
+        }
         return { VideoData, CommentsData }
       }
       case 'UserInfoData': {
@@ -121,14 +125,12 @@ export default class iKun extends Base {
    * @param {*} is_mp4 boolean
    * @returns
    */
-  async GlobalGetData (options, is_mp4) {
+  async GlobalGetData (options, is_mp4 = true) {
     const result = await new Networks(options).getData()
     if (result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
     }
-    if (typeof is_mp4 === 'boolean') {
-      result.is_mp4 = is_mp4
-    }
+    result.is_mp4 = is_mp4
     return result
   }
 }

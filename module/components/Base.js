@@ -13,12 +13,11 @@ export default class Base {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
     }
     this._path = process.cwd()
-    this.ConfigPath = Version.pluginPath + '/config/config.json'
   }
 
   /** 检查是或否设置抖音ck */
   get allow () {
-    return Config.ck !== ''
+    return Config.ck.douyin !== ''
   }
 
   /** 获取鸡鸡人名字 */
@@ -294,7 +293,7 @@ export default class Base {
 
   /** 删文件 */
   async removeFile (path, force) {
-    if (Config.rmmp4) {
+    if (Config.app.rmmp4) {
       try {
         fs.promises.unlink(path)
         console.log(path + ' 删除成功！')

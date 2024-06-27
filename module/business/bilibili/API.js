@@ -39,7 +39,7 @@ export default class API {
 
   /** type参数详见https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/readme.md#评论区类型代码 */
   COMMENTS (type, oid) {
-    return `https://api.bilibili.com/x/v2/reply?sort=1&ps=${Config.bilibilinumcomments}&type=${type}&oid=${oid}`
+    return `https://api.bilibili.com/x/v2/reply?sort=1&ps=${Config.bilibili.bilibilinumcomments}&type=${type}&oid=${oid}`
   }
 
   EMOJI () {

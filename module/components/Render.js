@@ -3,7 +3,7 @@ import { Version, Config } from '#components'
 import { puppeteer } from '#lib'
 
 function scale (pct = 1) {
-  const scale = Math.min(2, Math.max(0.5, Number(Config.renderScale) / 100))
+  const scale = Math.min(2, Math.max(0.5, Number(Config.app.renderScale) / 100))
   pct = pct * scale
   return `style=transform:scale(${pct})`
 }

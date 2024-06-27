@@ -16,11 +16,11 @@ export default class BiLiBiLi extends Base {
     this.islogin = data.USER?.STATUS === 'isLogin'
     this.downloadfilename = ''
     this.headers.Referer = 'https://api.bilibili.com/'
-    this.headers.Cookie = Config.bilibilick
+    this.headers.Cookie = Config.ck.bilibili
   }
 
   async RESOURCES (OBJECT, Episode = false) {
-    Config.bilibilitip && this.e.reply('检测到B站链接，开始解析')
+    Config.bilibili.bilibilitip && this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo': {
         const { owner, pic, title, stat } = OBJECT.INFODATA.data
@@ -69,7 +69,7 @@ export default class BiLiBiLi extends Base {
           ImageLength: 0,
           shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid
         })
-        Config.commentsimg &&
+        Config.bilibili.commentsimg &&
           (await this.e.reply(
             this.mkMsg(img, [
               {
@@ -78,7 +78,7 @@ export default class BiLiBiLi extends Base {
               }
             ])
           ))
-        if (Config.usefilelimit && Number(videoSize) > Number(Config.filelimit)) {
+        if (Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) {
           await this.e.reply('视频太大了，还是去B站看吧~', true)
         } else await this.getvideo(OBJECT)
         break
@@ -169,7 +169,7 @@ export default class BiLiBiLi extends Base {
             })
             if (imgArray.length === 1) this.e.reply(imgArray[0])
             if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
-            if (Config.bilibilicommentsimg) await this.e.reply(img)
+            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
             const cover = () => {
@@ -199,7 +199,7 @@ export default class BiLiBiLi extends Base {
               Botadapter: this.botadapter,
               dynamicTYPE: '图文动态'
             })
-            if (Config.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
+            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
             break
           }
           /** 纯文 */
@@ -265,7 +265,7 @@ export default class BiLiBiLi extends Base {
             this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,
             /** 根据配置文件 `rmmp4` 重命名 */
             async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${Config.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
+              const filePath = this._path + `/resources/kkkdownload/video/${Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
               fs.renameSync(
                 this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,
                 filePath
@@ -292,7 +292,7 @@ export default class BiLiBiLi extends Base {
       }
       case '!isLogin':
         /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
-        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
+        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
         break
     }
   }

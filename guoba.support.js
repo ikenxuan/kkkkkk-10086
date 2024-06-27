@@ -34,7 +34,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'ck',
+          field: 'cookies.douyin',
           label: '抖音ck',
           helpMessage: '必填项',
           bottomHelpMessage: '登录https://www.douyin.com/获取请求头中的Cookie或使用 [#kkk设置抖音ck] 查看教程',
@@ -45,7 +45,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilick',
+          field: 'cookies.bilibili',
           label: 'B站ck',
           helpMessage: '不设置 `ck` 画质为 `360p`，设置后最高可解析 `4K HDR` 需要视频支持与 `大会员`',
           bottomHelpMessage: '登录https://www.bilibili.com/获取请求头中的Cookie填入',
@@ -64,21 +64,21 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'videotool',
+          field: 'app.videotool',
           label: '总开关',
           bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
           component: 'Switch',
           required: false
         },
         {
-          field: 'defaulttool',
+          field: 'app.defaulttool',
           label: '默认解析',
           bottomHelpMessage: '识别最高优先级，修改后重启生效',
           component: 'Switch',
           required: false
         },
         {
-          field: 'priority',
+          field: 'app.priority',
           label: '解析优先级',
           bottomHelpMessage: '自定义优先级，「默认解析」关闭后才会生效。修改后重启生效',
           component: 'InputNumber',
@@ -91,14 +91,14 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'usefilelimit',
+          field: 'app.usefilelimit',
           label: '使用视频文件上传限制',
           bottomHelpMessage: '开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）',
           component: 'Switch',
           required: false
         },
         {
-          field: 'filelimit',
+          field: 'app.filelimit',
           label: '视频文件大小限制',
           bottomHelpMessage: '解析的视频文件大于该数值则不会上传 单位: MB（B站番剧无影响）',
           component: 'InputNumber',
@@ -120,28 +120,28 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'douyintool',
+          field: 'douyin.douyintool',
           label: '抖音解析开关',
           bottomHelpMessage: '单独开关，受「总开关」影响',
           component: 'Switch',
           required: false
         },
         {
-          field: 'douyintip',
+          field: 'douyin.douyintip',
           label: '抖音解析提示',
           bottomHelpMessage: '发送提示信息：“检测到抖音链接，开始解析”',
           component: 'Switch',
           required: false
         },
         {
-          field: 'commentsimg',
+          field: 'douyin.commentsimg',
           label: '评论图',
           bottomHelpMessage: '发送抖音作品评论图',
           component: 'Switch',
           required: false
         },
         {
-          field: 'numcomments',
+          field: 'douyin.numcomments',
           label: '评论解析数量',
           helpMessage: '必填项',
           bottomHelpMessage: '请在此输入数字',
@@ -155,14 +155,14 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'douyinpush',
+          field: 'douyin.douyinpush',
           label: '抖音推送',
           bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]',
           component: 'Switch',
           required: false
         },
         {
-          field: 'douyinpushlist',
+          field: 'pushlist.douyin',
           label: '推送列表',
           bottomHelpMessage: '用于推送抖音用户新作品功能，配置后即可推送',
           component: 'GSubForm',
@@ -205,7 +205,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'douyinpushcron',
+          field: 'douyin.douyinpushcron',
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
@@ -216,7 +216,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'douyinpushGroup',
+          field: 'douyin.douyinpushGroup',
           label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: '抖音推送添加权限',
@@ -229,7 +229,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'douyinpushlog',
+          field: 'douyin.douyinpushlog',
           label: '定时任务日志',
           helpMessage: '抖音推送日志，修改后重启生效',
           bottomHelpMessage: '打开或关闭定时任务日志',
@@ -237,7 +237,7 @@ export function supportGuoba () {
           required: false
         },
         {
-          field: 'sendHDrecord',
+          field: 'douyin.sendHDrecord',
           label: 'BGM使用高清语音',
           bottomHelpMessage: '高清语音「ios/PC」系统均无法播放，自行衡量开关',
           component: 'Switch',
@@ -252,28 +252,28 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilitool',
+          field: 'bilibili.bilibilitool',
           label: 'B站解析开关',
           bottomHelpMessage: '单独开关，受「总开关」影响',
           component: 'Switch',
           required: false
         },
         {
-          field: 'bilibilitip',
+          field: 'bilibili.bilibilitip',
           label: 'B站解析提示',
           bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
           component: 'Switch',
           required: false
         },
         {
-          field: 'bilibilicommentsimg',
+          field: 'bilibili.bilibilicommentsimg',
           label: '评论图',
           bottomHelpMessage: '发送哔哩哔哩作品评论图',
           component: 'Switch',
           required: false
         },
         {
-          field: 'bilibilinumcomments',
+          field: 'bilibili.bilibilinumcomments',
           label: '评论解析数量',
           helpMessage: '必填项',
           bottomHelpMessage: '请在此输入数字',
@@ -287,14 +287,14 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilipush',
+          field: 'bilibili.bilibilipush',
           label: '哔哩哔哩推送',
           bottomHelpMessage: '开启后需使用[#设置B站推送+用户UID]',
           component: 'Switch',
           required: false
         },
         {
-          field: 'bilibilipushlist',
+          field: 'pushlist.bilibili',
           label: '推送列表',
           bottomHelpMessage: '用于推送B站UP新作品功能，配置后即可推送',
           component: 'GSubForm',
@@ -333,7 +333,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilipushcron',
+          field: 'bilibili.bilibilipushcron',
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
@@ -344,7 +344,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilipushGroup',
+          field: 'bilibili.bilibilipushGroup',
           label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: '抖音推送添加权限',
@@ -357,7 +357,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'bilibilipushlog',
+          field: 'bilibili.bilibilipushlog',
           label: '定时任务日志',
           helpMessage: '抖音推送日志，修改后重启生效',
           bottomHelpMessage: '打开或关闭定时任务日志',
@@ -373,7 +373,7 @@ export function supportGuoba () {
           }
         },
         {
-          field: 'rmmp4',
+          field: 'app.rmmp4',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
           bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
@@ -381,7 +381,7 @@ export function supportGuoba () {
           required: false
         },
         {
-          field: 'renderScale',
+          field: 'app.renderScale',
           label: '渲染精度',
           bottomHelpMessage: '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度',
           component: 'InputNumber',
@@ -395,16 +395,19 @@ export function supportGuoba () {
       ],
       // 获取配置数据方法（用于前端填充显示数据）
       getConfigData () {
-        return Config.ALLcfg
+        return {
+          cookies: Config.ck,
+          app: Config.app,
+          douyin: Config.douyin,
+          bilibili: Config.bilibili,
+          pushlist: Config.pushlist
+        }
       },
+
       // 设置配置的方法（前端点确定后调用的方法）
       async setConfigData (data, { Result }) {
-        for (let [keyPath, value] of Object.entries(data)) {
-          if (Config[keyPath] != value) {
-            Config[keyPath] = value
-          }
-        }
-        return Result.ok({}, '保存成功~')
+        for (const key in data) Config.modify(...key.split('.'), data[key])
+        return Result.ok({}, '保存成功辣ε(*´･ω･)з')
       }
     }
   }

@@ -1,6 +1,7 @@
-import { Base, Render, GetID, Config, DB } from '#components'
+import { Base, Render, GetID, Config, DB, Version } from '#components'
 import { iKun as IKun } from '#douyin'
 import { Bot, sendMsg, logger } from '#lib'
+import YAML from 'yaml'
 import fs from 'fs'
 
 export default class push extends Base {
@@ -10,7 +11,7 @@ export default class push extends Base {
       return true
     }
     this.headers.Referer = 'https://www.douyin.com'
-    this.headers.Cookie = Config.ck
+    this.headers.Cookie = Config.ck.douyin
     this.force = force
   }
 
@@ -100,10 +101,7 @@ export default class push extends Base {
                 newEntry = {
                   remark: data[awemeId].remark,
                   create_time: Number(data[awemeId].create_time),
-                  sec_uid:
-                    data[awemeId].Detail_Data.user_info.user.unique_id === ''
-                      ? data[awemeId].Detail_Data.user_info.user.unique_id
-                      : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
+                  sec_uid: data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
                   avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
                 }
@@ -117,10 +115,7 @@ export default class push extends Base {
                 [data[awemeId].sec_uid]: {
                   remark: data[awemeId].remark,
                   create_time: data[awemeId].create_time,
-                  sec_uid:
-                    data[awemeId].Detail_Data.user_info.user.unique_id === ''
-                      ? data[awemeId].Detail_Data.user_info.user.unique_id
-                      : data[awemeId].Detail_Data.user_info.user.unique_id || data[awemeId].sec_uid,
+                  sec_uid: data[awemeId].sec_uid,
                   aweme_idlist: [awemeId],
                   avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
                 }
@@ -144,7 +139,7 @@ export default class push extends Base {
     const willbepushlist = {}
 
     try {
-      for (const item of Config.douyinpushlist) {
+      for (const item of Config.pushlist.douyin) {
         const videolist = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
         const userinfo = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
         const ALL_DBdata = await DB.FindAll('douyin')
@@ -209,7 +204,7 @@ export default class push extends Base {
               if (!willbepushlist[aweme.aweme_id]) {
                 willbepushlist[aweme.aweme_id] = {
                   remark: item.remark,
-                  sec_uid: userinfo.user.unique_id === '' ? userinfo.user.unique_id : userinfo.user.unique_id || aweme.sec_uid,
+                  sec_uid: userinfo.user.sec_uid,
                   create_time: aweme.create_time,
                   group_id: [], // 初始化 group_id 为数组
                   Detail_Data: aweme, // 存储 detail 对象
@@ -271,14 +266,18 @@ export default class push extends Base {
   }
 
   async checkremark () {
-    const config = JSON.parse(fs.readFileSync(this.ConfigPath))
+    const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
     const abclist = []
-    for (let i = 0; i < Config.douyinpushlist.length; i++) {
-      const remark = Config.douyinpushlist[i].remark
-      const group_id = Config.douyinpushlist[i].group_id
-      const sec_uid = Config.douyinpushlist[i].sec_uid
+    for (let i = 0; i < Config.pushlist.douyin.length; i++) {
+      const remark = Config.pushlist.douyin[i].remark
+      const group_id = Config.pushlist.douyin[i].group_id
+      const sec_uid = Config.pushlist.douyin[i].sec_uid
+      const short_id = Config.pushlist.douyin[i].short_id
 
-      if (remark == undefined || remark === '') {
+      if (!remark) {
+        abclist.push({ sec_uid, group_id })
+      }
+      if (!short_id) {
         abclist.push({ sec_uid, group_id })
       }
     }
@@ -286,13 +285,14 @@ export default class push extends Base {
       for (let i = 0; i < abclist.length; i++) {
         const resp = await new IKun('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
         const remark = resp.user.nickname
-        const matchingItemIndex = config.douyinpushlist.findIndex((item) => item.sec_uid === abclist[i].sec_uid)
+        const matchingItemIndex = config.douyin.findIndex((item) => item.sec_uid === abclist[i].sec_uid)
         if (matchingItemIndex !== -1) {
-          // 更新匹配的对象的 remark
-          config.douyinpushlist[matchingItemIndex].remark = remark
+          // 更新匹配的对象的 remark 和抖音号
+          config.douyin[matchingItemIndex].remark = remark
+          config.douyin[matchingItemIndex].short_id = resp.user.unique_id === '' ? resp.user.unique_id : resp.user.unique_id
         }
       }
-      fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+      Config.modify('pushlist', 'douyin', config.douyin)
     }
   }
 
@@ -345,19 +345,19 @@ export default class push extends Base {
       const sec_uid = data.data[index].user_list[0].user_info.sec_uid
       const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: sec_uid })
 
-      const config = JSON.parse(fs.readFileSync(this.ConfigPath, 'utf8'))
+      const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
       const group_id = this.e.group_id
       /** 处理抖音号 */
       let user_shortid
       UserInfoData.user.unique_id == '' ? (user_shortid = UserInfoData.user.short_id) : (user_shortid = UserInfoData.user.unique_id)
 
       // 初始化 group_id 对应的数组
-      if (!config.douyinpushlist) {
-        config.douyinpushlist = []
+      if (!config.douyin) {
+        config.douyin = []
       }
 
       // 查找是否存在相同的 sec_uid
-      const existingItem = config.douyinpushlist.find((item) => item.sec_uid === sec_uid)
+      const existingItem = config.douyin.find((item) => item.sec_uid === sec_uid)
 
       if (existingItem) {
         // 如果已经存在相同的 sec_uid，则检查是否存在相同的 group_id
@@ -370,8 +370,8 @@ export default class push extends Base {
 
           // 如果删除后 group_id 数组为空，则删除整个属性
           if (existingItem.group_id.length === 0) {
-            const index = config.douyinpushlist.indexOf(existingItem)
-            config.douyinpushlist.splice(index, 1)
+            const index = config.douyin.indexOf(existingItem)
+            config.douyin.splice(index, 1)
           }
         } else {
           // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
@@ -381,11 +381,11 @@ export default class push extends Base {
         }
       } else {
         // 如果不存在相同的 sec_uid，则新增一个属性
-        config.douyinpushlist.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname })
+        config.douyin.push({ sec_uid, group_id: [group_id], remark: UserInfoData.user.nickname, short_id: user_shortid })
         msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
       }
 
-      fs.writeFileSync(this.ConfigPath, JSON.stringify(config, null, 2))
+      Config.modify('pushlist', 'douyin', config.douyin)
       return msg
     } catch {
       return '无法获取用户信息，请确认抖音号是否正确'

@@ -63,7 +63,7 @@ export class Tools extends plugin {
   }
 
   async pushlist (e) {
-    let obj = {
+    const obj = {
       douyin: [],
       bilibili: []
     }
@@ -106,6 +106,7 @@ export class Tools extends plugin {
     if (user[this.e.user_id] === 'bilib') {
       const regex = String(e.msg).match(/第(\d+)集/)
       e.reply(`收到请求，第${regex[1]}集正在下载中`)
+      const BILIBILIOBJECT = global.BILIBILIOBJECT
       BILIBILIOBJECT.Episode = regex[1]
       await new BiLiBiLi(e, BILIBILIOBJECT).RESOURCES(BILIBILIOBJECT, true)
     }
@@ -162,4 +163,4 @@ export class Tools extends plugin {
   }
 }
 
-let user = {}
+const user = {}

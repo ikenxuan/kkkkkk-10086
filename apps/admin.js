@@ -32,13 +32,13 @@ const BilibiliType = {
   B站解析: 'bilibilitool'
 }
 const NumberCfgType = {
-  抖音评论数量: { key: 'numcomments', limit: '0-50' },
-  B站评论数量: { key: 'bilibilinumcomments', limit: '0-20' },
-  抖音推送设置权限: { key: 'douyinpushGroup', limit: '0-2' },
-  B站推送设置权限: { key: 'bilibilipushGroup', limit: '0-2' },
-  渲染精度: { key: 'renderScale', limit: '50-200' },
-  优先级: { key: 'priority', limit: '0-114514' },
-  限制: { key: 'filelimit', limit: '5-114514' }
+  抖音评论数量: { type: 'douyin', key: 'numcomments', limit: '0-50' },
+  B站评论数量: { type: 'bilibili', key: 'bilibilinumcomments', limit: '0-20' },
+  抖音推送设置权限: { type: 'douyin', key: 'douyinpushGroup', limit: '0-2' },
+  B站推送设置权限: { type: 'bilibili', key: 'bilibilipushGroup', limit: '0-2' },
+  渲染精度: { type: 'app', key: 'renderScale', limit: '50-200' },
+  优先级: { type: 'app', key: 'priority', limit: '0-114514' },
+  限制: { type: 'app', key: 'filelimit', limit: '5-114514' }
 }
 
 /** 分开开关和数字 */
@@ -48,10 +48,16 @@ const SwitchCfgType = {
   ...BilibiliType
 }
 
+const FileWitch = {
+  app: APPType,
+  douyin: DouYinType,
+  bilibili: BilibiliType
+}
+
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
 export class Admin extends plugin {
-  constructor() {
+  constructor () {
     super({
       name: 'kkkkkk-10086-设置',
       event: 'message',
@@ -95,7 +101,7 @@ export class Admin extends plugin {
       ]
     })
     this.task = []
-    if (Config.rmmp4) {
+    if (Config.app.rmmp4) {
       this.task.push({
         cron: '0 0 4 * * *',
         name: '[kkkkkk-10086] 视频缓存自动删除',
@@ -110,12 +116,16 @@ export class Admin extends plugin {
       .catch((err) => console.error('删除文件时出错:', err))
   }
 
+  /** 修改开关设置 */
   async ConfigSwitch (e) {
     // 解析消息
     const regRet = SwitchCfgReg.exec(e.msg)
     const key = regRet[1]
+    const file = Object.entries(FileWitch)
+      .find(([, values]) => Object.keys(values).includes(key))[0]
     const is = regRet[2] == '开启'
-    key && (Config[SwitchCfgType[key]] = is)
+    const _key = SwitchCfgType[key]
+    Config.modify(file, _key?.key ?? _key, is)
     // 渲染图片
     await this.index_Settings(e)
     return false
@@ -130,12 +140,12 @@ export class Admin extends plugin {
       const groupMapping = { 0: 'all', 1: 'admin', 2: 'owner', 3: 'master' }
       // eslint-disable-next-line no-prototype-builtins
       if (groupMapping.hasOwnProperty(number)) {
-        Config[type.key] = groupMapping[number]
+        Config.modify(type.type, type.key, groupMapping[number])
       } else {
-        Config[type.key] = groupMapping['3']
+        Config.modify(type.type, type.key, groupMapping['3'])
       }
     } else {
-      Config[type.key] = number
+      Config.modify(type.type, type.key, number)
     }
     await this.index_Settings(e)
     return false
@@ -144,10 +154,21 @@ export class Admin extends plugin {
   // 渲染发送图片
   async index_Settings (e) {
     const data = {}
-    const _cfg = Config.ALLcfg
-    for (const key in _cfg) {
-      data[key] = getStatus(_cfg[key])
+    let _cfg = Config.All()
+    _cfg = (function () {
+      const { douyin, bilibili } = _cfg.ck
+      _cfg.cookies.b = bilibili
+      _cfg.cookies.d = douyin
+      delete _cfg.cookies.bilibili
+      delete _cfg.cookies.douyin
+      return _cfg
+    })()
+    for (const item in _cfg) {
+      for (const key in _cfg[item]) {
+        data[key] = getStatus(_cfg[item][key])
+      }
     }
+
     const img = await Render.render('html/admin/index', { data })
     await e.reply(img)
     return false
@@ -167,7 +188,7 @@ export class Admin extends plugin {
   }
 
   async savedyck () {
-    Config.ck = String(this.e.msg)
+    Config.modify('cookies', 'douyin', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savedyck')
     return false
@@ -181,7 +202,7 @@ export class Admin extends plugin {
   }
 
   async savebilick () {
-    Config.bilibilick = String(this.e.msg)
+    Config.modify('cookies', 'bilibili', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savebilick')
     return false

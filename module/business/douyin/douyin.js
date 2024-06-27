@@ -13,8 +13,8 @@ export default class DouYin extends Base {
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
-    if (this.botname === 'Karin') {
-      Config.sendforwardmsg = false
+    if (!Config.douyin.sendforwardmsg && this.botname === 'Karin') {
+      Config.modify('douyin', 'sendforwardmsg', false)
     }
   }
 
@@ -22,14 +22,14 @@ export default class DouYin extends Base {
     switch (this.type) {
       case 'video':
       case 'note': {
-        if (Config.douyintip) this.e.reply('检测到抖音链接，开始解析')
+        if (Config.douyin.douyintip) this.e.reply('检测到抖音链接，开始解析')
         let g_video_url
         let g_title
         const full_data = []
 
         /** 评论 */
         const comments_res = []
-        if (data.CommentsData !== null && data.CommentsData.comments && Config.comments) {
+        if (data.CommentsData !== null && data.CommentsData.comments && Config.douyin.comments) {
           const comments_data = []
           const commentsres = []
           for (let i = 0; i < data.CommentsData.comments.length; i++) {
@@ -71,7 +71,7 @@ export default class DouYin extends Base {
             }
             imageres.push(segment.image(this.botadapter === 'QQBot' ? imgresp : image_url))
             imagenum++
-            if (Config.rmmp4 === false) {
+            if (Config.douyin.rmmp4 === false) {
               await this.mkdirs(process.cwd() + `/resources/kkkdownload/images/${g_title}`)
               const path = process.cwd() + `/resources/kkkdownload/images/${g_title}/${i + 1}.png`
               await new Networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
@@ -84,7 +84,7 @@ export default class DouYin extends Base {
           if (imageres.length === 1) {
             await this.e.reply(segment.image(image_url))
           } else {
-            !Config.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
+            !Config.douyin.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
           }
         } else {
           image_res.push('图集信息解析失败')
@@ -121,7 +121,7 @@ export default class DouYin extends Base {
           const music_name = music.author // BGM名字
           const music_img = music.cover_hd.url_list[0] // BGM作者头像
           const music_url = music.play_url.uri // BGM link
-          if (this.is_mp4 === false && Config.rmmp4 === false && music_url !== undefined) {
+          if (this.is_mp4 === false && Config.douyin.rmmp4 === false && music_url !== undefined) {
             try {
               const path = process.cwd() + `/resources/kkkdownload/images/${g_title}/BGM.mp3`
               await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
@@ -140,7 +140,7 @@ export default class DouYin extends Base {
             case 'miao-yunzai':
               if (music_url && this.is_mp4 == false && this.botadapter === 'ICQQ') {
                 try {
-                  if (Config.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                  if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                   else await this.e.reply(segment.record(music_url))
                 } catch { }
               } else if (this.botadapter !== 'ICQQ' && this.is_mp4 == false) {
@@ -160,7 +160,7 @@ export default class DouYin extends Base {
                 case 'ICQQ':
                   try {
                     if (music_url && this.is_mp4 == false) {
-                      if (Config.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                      if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                       else this.e.reply(segment.record(music_url))
                     }
                   } catch (error) {
@@ -214,7 +214,7 @@ export default class DouYin extends Base {
           const title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
-          if (Config.usefilelimit && Number(mp4size) > Number(Config.filelimit)) {
+          if (Config.douyin.usefilelimit && Number(mp4size) > Number(Config.douyin.filelimit)) {
             sendvideofile = false
           }
           videores.push(`标题：\n${title}`)
@@ -233,7 +233,7 @@ export default class DouYin extends Base {
         }
 
         let file = null
-        if (Config.commentsimg && Config.comments) {
+        if (Config.douyin.commentsimg && Config.douyin.comments) {
           const EmojiData = await new IKun('Emoji').GetData()
           const list = await Emoji(EmojiData)
           const commentsArray = await comments(data.CommentsData, list)
@@ -279,7 +279,7 @@ export default class DouYin extends Base {
         if (this.is_mp4) {
           res = full_data
             .concat(tip)
-            .concat(Config.commentsimg ? file : null)
+            .concat(Config.douyin.commentsimg ? file : null)
             .concat(video_res)
             .concat(comments_res)
             .concat(music_res)
@@ -287,7 +287,7 @@ export default class DouYin extends Base {
             .concat(ocr_res)
         } else {
           res = full_data
-            .concat(Config.commentsimg ? file : null)
+            .concat(Config.douyin.commentsimg ? file : null)
             .concat(video_res)
             .concat(image_res)
             .concat(comments_res)

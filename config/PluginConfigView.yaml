@@ -1,0 +1,183 @@
+-
+  # 配置文件描述
+  name: Cookies相关
+  # 配置文件名
+  file: cookies.yaml
+  # 视图信息
+  view:
+    -
+      # 配置项
+      key: 抖音ck
+      # 配置描述
+      comment: 抖音ck，用于请求官方API数据
+      # 配置路径
+      path: 'douyin'
+      # 配置类型
+      type: 'text'
+    -
+      key: B站ck
+      comment: B站ck，用于请求官方API数据
+      path: 'bilibili'
+      type: 'text'
+
+-
+  # 配置文件描述
+  name: 应用设置
+  # 配置文件名
+  file: app.yaml
+  # 视图信息
+  view:
+    -
+      # 配置项
+      key: 总开关
+      # 配置描述
+      comment: 视频解析工具总开关，修改后重启生效
+      # 配置路径
+      path: 'videotool'
+      # 配置类型
+      type: 'boolean'
+    -
+      key: 默认解析
+      comment: 识别最高优先级，修改后重启生效
+      path: 'defaulttool'
+      type: 'boolean'
+    -
+      key: 发送合并转发消息
+      comment: 可能多用于抖音解析
+      path: 'sendforwardmsg'
+      type: 'boolean'
+    -
+      key: 视频文件上传限制
+      comment: 开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）
+      path: 'usefilelimit'
+      type: 'boolean'
+    -
+      key: 缓存删除
+      comment: 非必要不修改！
+      path: 'rmmp4'
+      type: 'boolean'
+    -
+      key: 自定义优先级
+      comment: 「默认解析」关闭后才会生效。修改后重启生效
+      path: 'priority'
+      type: 'number'
+    -
+      key: 视频文件大小限制
+      comment: '视频文件大于该数值则不会上传 单位: MB，「视频文件上传限制」开启后才会生效（B站番剧无影响）'
+      path: 'filelimit'
+      type: 'number'
+    -
+      key: 渲染精度
+      comment: 可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度
+      path: 'renderScale'
+      type: 'number'
+
+-
+  # 配置文件描述
+  name: 抖音相关
+  # 配置文件名
+  file: douyin.yaml
+  # 视图信息
+  view:
+    -
+      # 配置项
+      key: 抖音解析开关
+      # 配置描述
+      comment: 单独开关，受「总开关」影响
+      # 配置路径
+      path: 'douyintool'
+      # 配置类型
+      type: 'boolean'
+    -
+      key: 抖音解析提示
+      comment: 发送提示信息：“检测到抖音链接，开始解析”
+      path: 'douyintip'
+      type: 'boolean'
+    -
+      key: 抖音评论解析
+      path: 'comments'
+      type: 'boolean'
+    -
+      key: 抖音评论数量
+      comment: 范围1~50条
+      path: 'numcomments'
+      type: 'number'
+    -
+      key: 发送抖音作品评论图
+      path: 'commentsimg'
+      type: 'boolean'
+    -
+      key: 抖音推送
+      comment: 开启后需重启；使用[#设置抖音推送+抖音号]配置推送列表
+      path: 'douyinpush'
+      type: 'boolean'
+    -
+      key: 抖音推送日志
+      comment: 打开或关闭定时任务日志
+      path: 'douyinpushlog'
+      type: 'boolean'
+    -
+      key: 抖音推送设置权限
+      comment: '0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人'
+      path: 'douyinpushGroup'
+      type: 'number'
+    -
+      key: 抖音推送表达式
+      path: 'douyinpushcron'
+      type: 'boolean'
+    -
+      key: 图集BGM是否使用高清语音发送
+      comment: 高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
+      path: 'true'
+      type: 'boolean'
+
+-
+  # 配置文件描述
+  name: bilibili相关
+  # 配置文件名
+  file: bilibili.yaml
+  # 视图信息
+  view:
+    -
+      # 配置项
+      key: B站解析开关
+      # 配置描述
+      comment: 单独开关，受「总开关」影响
+      # 配置路径
+      path: 'bilibilitool'
+      # 配置类型
+      type: 'boolean'
+    -
+      key: B站解析提示
+      comment: 发送提示信息：“检测到B站链接，开始解析”
+      path: 'bilibilitip'
+      type: 'boolean'
+    -
+      key: B站评论图
+      comment: 发送哔哩哔哩作品评论图
+      path: 'bilibilicommentsimg'
+      type: 'boolean'
+    -
+      key: B站评论数量
+      comment: 范围1~20条
+      path: 'bilibilinumcomments'
+      type: 'number'
+    -
+      key: B站推送
+      comment: 开启后需重启；使用[#设置B站推送+UID]配置推送列表
+      path: 'bilibilipush'
+      type: 'boolean'
+    -
+      key: B站推送日志
+      comment: 打开或关闭定时任务日志
+      path: 'bilibilipushlog'
+      type: 'boolean'
+    -
+      key: B站推送设置权限
+      comment: '0: (all)所有人；1: (admin)群主和管理员；2: (owner)群主；3: (master)主人'
+      path: 'bilibilipushGroup'
+      type: 'number'
+    -
+      key: B站推送表达式
+      path: 'bilibilipushcron'
+      type: 'boolean'

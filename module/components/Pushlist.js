@@ -37,8 +37,7 @@ export default async function Pushlist (e, list) {
         })()
 
         const foundItem = transformedData[platform].find(
-          x =>
-            x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId
+          x => x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId
         )
 
         const newItem = {
