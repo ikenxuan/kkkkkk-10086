@@ -1,3 +1,10 @@
+# 0.2.2
+
+* What's Changed
+  * 使用 `YAML` 格式的配置文件，适配 `Karin Manage`
+  * big fix: ...
+  * ...
+  
 # 0.2.1
 
 * What's Changed
