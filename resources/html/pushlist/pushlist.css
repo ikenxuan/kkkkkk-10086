@@ -69,7 +69,8 @@
 }
 
 .container {
-  width: 1440px;
+  max-width: 1440px;
+  width: 100vw;
   height: auto;
   margin: 0;
   background-color: #ffffff;
@@ -104,13 +105,14 @@
   font-size: 100px;
   color: #333;
   border-bottom: 2px solid #2c2c2c;
-  padding-bottom: 20px;
+  /* padding-bottom: 20px; */
   margin-bottom: 20px;
+  padding: 0 0 30px 30px;
 }
 
 .user-list {
   list-style: none;
-  padding: 0;
+  padding: 35px 0 0 55px;
 }
 
 .user-list li {
@@ -122,9 +124,9 @@
 }
 
 .user-list img {
-  width: 160px;
+  width: 150px;
   border-radius: 999px;
-  margin-right: 15px;
+  margin-right: 53px;
 }
 
 .user-info {
@@ -144,7 +146,7 @@
 }
 
 .nickname {
-  font-size: 55px;
+  font-size: 45px;
   font-weight: bold;
 }
 
