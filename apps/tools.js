@@ -27,19 +27,19 @@ export class Tools extends plugin {
   constructor () {
     if (Config.bilibili.bilibilipush) {
       task.push({
-        cron: Config.bilibilipushcron,
+        cron: Config.bilibili.bilibilipushcron,
         name: '哔哩哔哩更新推送',
         fnc: () => this.pushbili(),
-        log: Config.bilibilipushlog
+        log: Config.bilibili.bilibilipushlog
       })
     }
 
     if (Config.douyin.douyinpush) {
       task.push({
-        cron: Config.douyinpushcron,
+        cron: Config.douyin.douyinpushcron,
         name: '抖音更新推送',
         fnc: () => this.pushdouy(),
-        log: Config.douyinpushlog
+        log: Config.douyin.douyinpushlog
       })
     }
 
@@ -47,11 +47,11 @@ export class Tools extends plugin {
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
-      priority: Config.defaulttool ? -Infinity : Config.priority,
+      priority: Config.app.defaulttool ? -Infinity : Config.app.priority,
       rule: [
         ...rule,
-        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyinpushGroup },
-        { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyinpushGroup },
+        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyin.douyinpushGroup },
+        { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
@@ -144,8 +144,8 @@ export class Tools extends plugin {
     const iddata = await GetID(url)
     const data = await new IKun(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
-    if (Config.sendforwardmsg && res) await e.reply(await new Base(e).resultMsg(await makeForwardMsg(e, res.res)))
-    if (res.sendvideofile && iddata.is_mp4) await new Base(e).DownLoadVideo(res.g_video_url, Config.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
+    if (Config.app.sendforwardmsg && res) await e.reply(await new Base(e).resultMsg(await makeForwardMsg(e, res.res)))
+    if (res.sendvideofile && iddata.is_mp4) await new Base(e).DownLoadVideo(res.g_video_url, Config.app.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
     return false
   }
 
