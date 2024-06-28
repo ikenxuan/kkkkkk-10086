@@ -413,7 +413,7 @@ export default class push extends Base {
     }
 
     // 更新配置文件
-    Config.modify('pushlist', 'douyin', config.bilibili)
+    Config.modify('pushlist', 'bilibili', config.bilibili)
     return msg
   }
 
