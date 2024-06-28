@@ -13,8 +13,8 @@ export default class DouYin extends Base {
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
-    if (!Config.app.sendforwardmsg && this.botname === 'Karin') {
-      Config.modify('douyin', 'sendforwardmsg', false)
+    if (Config.app.sendforwardmsg && this.botname === 'Karin') {
+      Config.modify('app', 'sendforwardmsg', false)
     }
   }
 
