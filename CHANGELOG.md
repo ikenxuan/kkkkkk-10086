@@ -1,3 +1,9 @@
+# 0.2.2.1
+
+* What's Changed
+  * big fix: `#kkk设置`
+  * ...
+  
 # 0.2.2
 
 * What's Changed
