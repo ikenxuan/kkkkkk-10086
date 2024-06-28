@@ -31,15 +31,14 @@
 
 获取到 Cookie 后 使用 `#kkk设置B站ck` 后发送 Cookie 即可配置成功<br>
 或者使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置<br>
-手动配置则需要打开配置文件找到该键值，将值替换成你获取到的 Cookie
+手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
 
-```json{3}
-"douyinpushcron": "*/10 * * * *",
-"douyinpushGroup": "master",
-"bilibilick": "", // [!code focus]
-"bilibilirefresh_token": "",
-"sendforwardmsg": true,
-"bilibilicommentsimg": true,
+```yaml{5}
+# 抖音ck
+douyin:
+
+# B站ck，注意有个空格！
+bilibili: 此处填上你的B站ck // [!code focus]
 ```
 
 :::

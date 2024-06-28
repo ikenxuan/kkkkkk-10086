@@ -31,15 +31,14 @@
 
 获取到 Cookie 后 使用 `#kkk设置抖音ck` 后发送 Cookie 即可配置成功<br>
 或者使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置<br>
-手动配置则需要打开配置文件找到该键值，将值替换成你获取到的 Cookie
+手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
 
-```json{3}
-"defaulttool": true,
-"numcomments": 5,
-"ck": "", // [!code focus]
-"commentsimg": true,
-"douyinpush": false,
-"douyinpushlist": [],
+```yaml{2}
+# 抖音ck，注意有个空格！
+douyin: 此处填上你的抖音ck // [!code focus]
+
+# B站ck
+bilibili: 
 ```
 
 :::
