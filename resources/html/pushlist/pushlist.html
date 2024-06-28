@@ -15,15 +15,15 @@
       <div class="user-info">
         <span class="nickname">{{val.remark}}</span>
         <span class="user-id">
-          <span style="color: #1e1f20">用户ID:</span>
+          <span style="color: #FFD700">用户ID:</span>
           {{val.sec_uid}}
         </span>
         <span class="timestamp">
-          <span style="color: #1e1f20">最新作品发布时间:</span>
+          <span style="color: #FFD700">最新作品发布时间:</span>
           {{val.create_time}}
         </span>
         {{if isMaster}}
-        <span class="group_list" style="color: #1e1f20">推送群:</span>
+        <span class="group_list" style="color: #FFD700">推送群:</span>
         <ul class="markdown-style">
           {{each val.group_id gid}}
           <bi>
@@ -50,15 +50,15 @@
       <div class="user-info">
         <span class="nickname">{{val.remark}}</span>
         <span class="user-id">
-          <span style="color: #1e1f20">UID:</span>
+          <span style="color: #FFD700">UID:</span>
           {{val.host_mid}}
         </span>
         <span class="timestamp">
-          <span style="color: #1e1f20">最新动态发布时间:</span>
+          <span style="color: #FFD700">最新动态发布时间:</span>
           {{val.create_time}}
         </span>
         {{if isMaster}}
-        <span class="group_list" style="color: #1e1f20">推送群:</span>
+        <span class="group_list" style="color: #FFD700">推送群:</span>
         <ul class="markdown-style">
           {{each val.group_id gid}}
           <bi>

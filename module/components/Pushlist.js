@@ -40,7 +40,7 @@ export default async function Pushlist (e, list) {
     {
       isMaster: e.isMaster,
       group_id: e.isMaster
-        ? `<h1>Bot: <code>${Bot.nickname}</code>推送列表</h1>`
+        ? `<h1>Bot: <code>${Bot?.nickname || e?.bot?.account?.name}</code>推送列表</h1>`
         : `<h1>群: <code>${Bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
       length: list,
       data: transformedData
