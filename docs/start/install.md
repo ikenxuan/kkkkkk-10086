@@ -1,7 +1,7 @@
 
 # 安装插件
 ::: tip 注意
-支持 `Miao-Yunzai V3/V4` `TRSS-Yunzai V3` `Karin`<br>
+支持 `Miao-Yunzai V3` `TRSS-Yunzai V3` `Yunzai V4` `Karin`<br>
 :::
 ## 获取源码
 

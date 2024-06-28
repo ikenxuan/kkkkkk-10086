@@ -4,7 +4,7 @@
 
 ```sh
 # 方法1：到插件目录下重新安装依赖（推荐）
-cd plugins/kkkkkk-10086/ && pnpm install
+cd plugins/kkkkkk-10086/ && pnpm install -P
 
 # 方法2：node.js 版本 >= v21
 nvm use 21.0.0

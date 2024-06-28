@@ -3,7 +3,7 @@
 layout: home
 hero:
   name: 'kkkkkk-10086'
-  tagline: Yunzai-Bot 的视频解析插件
+  tagline: Yunzai / Karin 的视频解析插件
   image:
     src: /logo.png
     alt: LOGO

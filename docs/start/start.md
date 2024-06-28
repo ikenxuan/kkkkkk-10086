@@ -47,6 +47,7 @@ _**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://ww
 - ~~Lain-plugin [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
 - icqq 协议 [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
+- Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) 
   :::
 
 ::: details 开源协议 GPL-3.0
