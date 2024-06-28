@@ -118,7 +118,7 @@ class Config {
 
   All () {
     return {
-      cookies: this.ck,
+      cookies: this.cookies,
       app: this.app,
       douyin: this.douyin,
       bilibili: this.bilibili,
