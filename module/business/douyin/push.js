@@ -5,13 +5,13 @@ import YAML from 'yaml'
 import fs from 'fs'
 
 export default class push extends Base {
-  constructor (e = {}, force) {
+  constructor(e = {}, force) {
     super(e)
     if (this.botadapter === 'QQBot') {
       return true
     }
     this.headers.Referer = 'https://www.douyin.com'
-    this.headers.Cookie = Config.ck.douyin
+    this.headers.Cookie = Config.cookies.douyin
     this.force = force
   }
 

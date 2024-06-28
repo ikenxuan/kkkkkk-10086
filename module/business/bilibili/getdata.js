@@ -7,7 +7,7 @@ export default class bilidata extends Base {
     super()
     this.type = type
     this.headers.Referer = 'https://api.bilibili.com/'
-    this.headers.Cookie = Config.ck.bilibili
+    this.headers.Cookie = Config.cookies.bilibili
   }
 
   async GetData (data) {

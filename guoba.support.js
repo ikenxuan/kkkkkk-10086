@@ -396,7 +396,7 @@ export function supportGuoba () {
       // 获取配置数据方法（用于前端填充显示数据）
       getConfigData () {
         return {
-          cookies: Config.ck,
+          cookies: Config.cookies,
           app: Config.app,
           douyin: Config.douyin,
           bilibili: Config.bilibili,

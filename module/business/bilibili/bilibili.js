@@ -16,7 +16,7 @@ export default class BiLiBiLi extends Base {
     this.islogin = data.USER?.STATUS === 'isLogin'
     this.downloadfilename = ''
     this.headers.Referer = 'https://api.bilibili.com/'
-    this.headers.Cookie = Config.ck.bilibili
+    this.headers.Cookie = Config.cookies.bilibili
   }
 
   async RESOURCES (OBJECT, Episode = false) {

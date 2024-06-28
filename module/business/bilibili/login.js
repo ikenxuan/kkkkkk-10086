@@ -4,7 +4,7 @@ import { segment } from '#lib'
 import QRCode from 'qrcode'
 
 export default class BiLogin extends Base {
-  constructor (e = {}) {
+  constructor(e = {}) {
     super()
     this.e = e
   }
@@ -29,7 +29,7 @@ export default class BiLogin extends Base {
       switch (qrcodestatusdata.data.data.code) {
         case 0:
           console.log(qrcodestatusdata.data.data.refresh_token)
-          Config.ck.bilibili = qrcodestatusdata.headers['set-cookie']
+          Config.cookies.bilibili = qrcodestatusdata.headers['set-cookie']
           // Config.bilibilirefresh_token = qrcodestatusdata.data.data.refresh_token
           this.e.reply('登录成功！相关信息已保存至config.json', true)
           completedCase0 = true

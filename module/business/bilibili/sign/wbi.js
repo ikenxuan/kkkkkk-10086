@@ -40,7 +40,7 @@ async function getWbiKeys () {
   const res = await fetch('https://api.bilibili.com/x/web-interface/nav', {
     headers: {
       // SESSDATA 字段
-      Cookie: Config.ck.bilibili
+      Cookie: Config.cookies.bilibili
     }
   })
   const {

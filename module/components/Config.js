@@ -97,7 +97,7 @@ class Config {
   }
 
   /** ck相关配置 */
-  get ck () {
+  get cookies () {
     return this.getDefOrConfig('cookies')
   }
 

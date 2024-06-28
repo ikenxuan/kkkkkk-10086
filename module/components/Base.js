@@ -17,7 +17,7 @@ export default class Base {
 
   /** 检查是或否设置抖音ck */
   get allow () {
-    return Config.ck.douyin !== ''
+    return Config.cookies.douyin !== ''
   }
 
   /** 获取鸡鸡人名字 */

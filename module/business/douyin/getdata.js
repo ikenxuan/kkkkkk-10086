@@ -7,7 +7,7 @@ export default class iKun extends Base {
     super()
     this.type = type
     this.headers.Referer = 'https://www.douyin.com/'
-    this.headers.Cookie = Config.ck.douyin
+    this.headers.Cookie = Config.cookies.douyin
   }
 
   async GetData (data) {

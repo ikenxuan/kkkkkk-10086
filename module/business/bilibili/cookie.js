@@ -2,8 +2,8 @@ import { Config, Networks } from '#components'
 import { BiLiBiLiAPI, wbi_sign } from '#bilibili'
 
 export async function checkuser (BASEURL) {
-  if (Config.ck.bilibili == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
-  const logininfo = await new Networks({ url: BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.ck.bilibili } }).getData()
+  if (Config.cookies.bilibili == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
+  const logininfo = await new Networks({ url: BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.cookies.bilibili } }).getData()
   const sign = await wbi_sign(BASEURL)
 
   const qn = [6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]
