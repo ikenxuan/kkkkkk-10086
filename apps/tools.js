@@ -79,6 +79,7 @@ export class Tools extends plugin {
           // 根据平台不同，选择不同的属性 key
           const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
           obj[platform].push({
+            group_id: item.group_id,
             remark: item.remark,
             [key]: item[key]
           })

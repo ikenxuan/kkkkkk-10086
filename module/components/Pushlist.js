@@ -1,4 +1,6 @@
-import { Render, DB } from '#components'
+import { Render } from '#components'
+import { iKun as IKun } from '#douyin'
+import { bilidata as Bilidata } from '#bilibili'
 import { Bot } from '#lib'
 
 /**
@@ -7,55 +9,31 @@ import { Bot } from '#lib'
  * @param {array} list 推送数组
  */
 export default async function Pushlist (e, list) {
-  const data = {
-    douyin: await DB.FindAll('douyin'),
-    bilibili: await DB.FindAll('bilibili')
-  }
   const transformedData = {
     douyin: [],
     bilibili: []
   }
-
-  const platforms = ['douyin', 'bilibili']
-  const uniqueIdKeyMap = {
-    douyin: 'sec_uid',
-    bilibili: 'host_mid'
+  for (const item of list['douyin']) {
+    const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
+    const DynamicList = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
+    transformedData.douyin.push({
+      sec_uid: UserInfoData.user.unique_id === '' ? UserInfoData.user.unique_id : UserInfoData.user.unique_id,
+      remark: UserInfoData.user.nickname,
+      avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + UserInfoData.user.avatar_larger.uri,
+      create_time: convertTimestampToDateTime(DynamicList.aweme_list[0].create_time),
+      group_id: await groupName(e, item.group_id)
+    })
   }
-
-  platforms.forEach(platform => {
-    for (const groupId in data[platform]) {
-      const groupData = data[platform][groupId]
-      for (const uniqueIdKey in groupData) {
-        const item = groupData[uniqueIdKey]
-        const uniqueId = item[uniqueIdKeyMap[platform]] // 使用映射的键名访问sec_uid或host_mid
-        const groupName = (() => {
-          try {
-            return String(Bot.pickGroup(Number(groupId)).info.group_name)
-          } catch {
-            return String(groupId)
-          }
-        })()
-
-        const foundItem = transformedData[platform].find(
-          x => x.remark === item.remark && x[uniqueIdKeyMap[platform]] === uniqueId
-        )
-
-        const newItem = {
-          avatar_img: item.avatar_img,
-          remark: item.remark,
-          create_time: convertTimestampToDateTime(item.create_time),
-          [uniqueIdKeyMap[platform]]: uniqueId, // 使用映射的键名设置sec_uid或host_mid
-          group_id: [groupName]
-        }
-
-        if (foundItem) {
-          foundItem.group_id.push(groupName)
-        } else {
-          transformedData[platform].push(newItem)
-        }
-      }
-    }
-  })
+  for (const item of list['bilibili']) {
+    const DynamicList = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
+    transformedData.bilibili.push({
+      host_mid: DynamicList.data.items[0].modules.module_author.mid,
+      remark: DynamicList.data.items[0].modules.module_author.name,
+      avatar_img: DynamicList.data.items[0].modules.module_author.face,
+      create_time: convertTimestampToDateTime(DynamicList.data.items[0].modules.module_author.pub_ts),
+      group_id: await groupName(e, item.group_id)
+    })
+  }
 
   const img = await Render.render(
     'html/pushlist/pushlist',
@@ -63,7 +41,7 @@ export default async function Pushlist (e, list) {
       isMaster: e.isMaster,
       group_id: e.isMaster
         ? `<h1>Bot: <code>${Bot.nickname}</code>推送列表</h1>`
-        : `<h1>群: <code>${Bot?.pickGroup(Number(e.group_id))?.info?.group_name} </code>推送列表</h1>`,
+        : `<h1>群: <code>${Bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
       length: list,
       data: transformedData
     },
@@ -81,4 +59,20 @@ function convertTimestampToDateTime (timestamp) {
   const minutes = String(date.getMinutes()).padStart(2, '0')
 
   return `${year}-${month}-${day} ${hours}:${minutes}`
+}
+
+const groupName = async (e, group_list) => {
+  const group_name_list = []
+  try {
+    for (const gid of group_list) {
+      try {
+        group_name_list.push(String(Bot?.pickGroup(Number(gid)).info.group_name))
+      } catch {
+        group_name_list.push((await e.bot?.GetGroupInfo(gid))?.group_name)
+      }
+    }
+  } catch {
+    return group_list
+  }
+  return group_name_list
 }
