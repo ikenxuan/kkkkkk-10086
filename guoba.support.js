@@ -347,7 +347,7 @@ export function supportGuoba () {
           field: 'bilibili.bilibilipushGroup',
           label: '设置推送权限',
           component: 'RadioGroup',
-          bottomHelpMessage: '抖音推送添加权限',
+          bottomHelpMessage: 'B站推送添加权限',
           componentProps: {
             options: [
               { label: '所有群员都可以添加', value: 'all' },
@@ -360,6 +360,14 @@ export function supportGuoba () {
           field: 'bilibili.bilibilipushlog',
           label: '定时任务日志',
           helpMessage: '抖音推送日志，修改后重启生效',
+          bottomHelpMessage: '打开或关闭定时任务日志',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'bilibili.senddynamicvideo',
+          label: '发送动态的视频',
+          helpMessage: '该UP的最新动态可能是视频，可选是否与推送图片一同发送',
           bottomHelpMessage: '打开或关闭定时任务日志',
           component: 'Switch',
           required: false

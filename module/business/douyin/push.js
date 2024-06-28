@@ -5,7 +5,7 @@ import YAML from 'yaml'
 import fs from 'fs'
 
 export default class push extends Base {
-  constructor(e = {}, force) {
+  constructor (e = {}, force) {
     super(e)
     if (this.botadapter === 'QQBot') {
       return true

@@ -21,3 +21,6 @@ bilibilipushGroup: master
 
 # B站推送表达式
 bilibilipushcron: '*/10 * * * *'
+
+# 是否发送视频动态的视频
+senddynamicvideo: false

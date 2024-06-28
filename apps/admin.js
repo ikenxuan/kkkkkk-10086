@@ -29,8 +29,11 @@ const BilibiliType = {
   B站推送日志: 'bilibilipushlog',
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',
-  B站解析: 'bilibilitool'
+  B站解析: 'bilibilitool',
+  B站动态视频发送: 'senddynamicvideo'
 }
+
+/** 数字相关设置 */
 const NumberCfgType = {
   抖音评论数量: { type: 'douyin', key: 'numcomments', limit: '0-50' },
   B站评论数量: { type: 'bilibili', key: 'bilibilinumcomments', limit: '0-20' },
@@ -41,7 +44,7 @@ const NumberCfgType = {
   限制: { type: 'app', key: 'filelimit', limit: '5-114514' }
 }
 
-/** 分开开关和数字 */
+/** 开关相关设置 */
 const SwitchCfgType = {
   ...APPType,
   ...DouYinType,
@@ -105,7 +108,8 @@ export class Admin extends plugin {
       this.task.push({
         cron: '0 0 4 * * *',
         name: '[kkkkkk-10086] 视频缓存自动删除',
-        fnc: () => this.deltemp()
+        fnc: () => this.deltemp(),
+        log: true
       })
     }
   }

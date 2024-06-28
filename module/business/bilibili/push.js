@@ -199,7 +199,7 @@ export default class push extends Base {
           if (send) status = await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
-              send && await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
+              send && Config.bilibili.senddynamicvideo && await sendMsg(Bot?.list?.[0]?.bot?.account?.uin ?? null, groupId, segment.video(nocd_data.data.durl[0].url))
             } catch (error) {
               logger.error(error)
             }
