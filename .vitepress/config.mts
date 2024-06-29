@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import timeline from 'vitepress-markdown-timeline'
+import taskLists from "markdown-it-task-lists"
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -17,6 +18,7 @@ export default defineConfig({
     config: (md) => {
       //时间线
       md.use(timeline)
+      md.use(taskLists)
     },
   },
   cleanUrls: true,
@@ -63,6 +65,7 @@ export default defineConfig({
           {
             text: '其他',
             items: [
+              { text: '版本时间线', link: '/docs/other/timeline' },
               { text: '免责声明', link: '/docs/other/disclaimer' },
               { text: '投喂', link: '/docs/other/afdian' },
             ],
@@ -95,6 +98,7 @@ export default defineConfig({
       {
         text: '其他',
         items: [
+          { text: '版本时间线', link: '/docs/other/timeline' },
           { text: '免责声明', link: '/docs/other/disclaimer' },
           { text: '投喂', link: '/docs/other/afdian' },
         ],
@@ -118,7 +122,7 @@ export default defineConfig({
     lastUpdatedText: '最后编辑于',
     outlineTitle: '本页目录',
     footer: {
-      message: 'Released under the GPL-3.0 License',
+      message: "Released under the <a href='https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE'>GPL-3.0 License</a>",
       copyright: "Copyright © 2023-2024 <a href='https://github.com/ikenxuan'>ikenxuan</a>",
     },
     docFooter: {

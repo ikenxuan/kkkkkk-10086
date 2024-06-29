@@ -23,4 +23,4 @@
 
 ## TODO
 
-已完成！~~往后可能会根据配置文件内容进行内容渲染，而不是通过数据库缓存~~
+- [x] 往后可能会根据配置文件内容进行内容渲染，而不是通过数据库缓存<br>由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**95dcffa**](https://github.com/ikenxuan/kkkkkk-10086/commit/95dcffab00f8afc1484a1e350911636b2d92006d) 完成

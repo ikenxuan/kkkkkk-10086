@@ -55,7 +55,7 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 - 打开 Release 页面: https://github.com/ikenxuan/kkkkkk-10086/releases
 - 找到最新的版本，下载后缀名为 `.zip` 的压缩包
 - 在 `机器人根目录/plugins/` 中解压该压缩包
-- 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码)则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
+- 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码) 则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
 
 
 

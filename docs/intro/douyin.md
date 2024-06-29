@@ -29,8 +29,8 @@
 
 ### 配置 Cookie
 
-获取到 Cookie 后 使用 `#kkk设置抖音ck` 后发送 Cookie 即可配置成功<br>
-或者使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置<br>
+获取到 Cookie 后 使用 `#kkk设置抖音ck` 后发送 Cookie 即可配置成功<br><br>
+或者使用 [**后台面板**](../start/start.config.md) 进行配置<br><br>
 手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
 
 ```yaml{2}
