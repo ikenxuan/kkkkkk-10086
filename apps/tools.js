@@ -62,7 +62,7 @@ export class Tools extends plugin {
     this.task = task
   }
 
-  async pushlist(e) {
+  async pushlist (e) {
     const obj = {
       douyin: [],
       bilibili: []
@@ -72,12 +72,13 @@ export class Tools extends plugin {
       bilibili: Config.pushlist.bilibili ? Config.pushlist.bilibili : []
     }
     for (const platform in platforms) {
+      // eslint-disable-next-line no-prototype-builtins
       if (platforms.hasOwnProperty(platform)) {
         const list = platforms[platform]
         for (const item of list) {
           // 根据平台不同，选择不同的属性 key
           const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
-          //检查 item[key] 是否不为 null 且 item.group_id 是否不是空数组
+          // 检查 item[key] 是否不为 null 且 item.group_id 是否不是空数组
           if (item[key] && item.group_id.length > 0) {
             obj[platform].push({
               group_id: item.group_id,

@@ -16,21 +16,31 @@ export default async function Pushlist (e, list) {
   for (const item of list['douyin']) {
     const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
     const DynamicList = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
+    // 过滤置顶
+    let NoTopIndex = 0
+    while (DynamicList.aweme_list[NoTopIndex].is_top === 1) {
+      NoTopIndex++
+    }
     transformedData.douyin.push({
       sec_uid: UserInfoData.user.unique_id === '' ? UserInfoData.user.unique_id : UserInfoData.user.unique_id,
       remark: UserInfoData.user.nickname,
       avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + UserInfoData.user.avatar_larger.uri,
-      create_time: convertTimestampToDateTime(DynamicList.aweme_list[0].create_time),
+      create_time: convertTimestampToDateTime(DynamicList.aweme_list[NoTopIndex].create_time),
       group_id: await groupName(e, item.group_id)
     })
   }
   for (const item of list['bilibili']) {
     const DynamicList = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
+    // 过滤置顶
+    let NoTopIndex = 0
+    while (DynamicList.data.items[NoTopIndex].modules.module_tag?.text === '置顶') {
+      NoTopIndex++
+    }
     transformedData.bilibili.push({
-      host_mid: DynamicList.data.items[0].modules.module_author.mid,
-      remark: DynamicList.data.items[0].modules.module_author.name,
-      avatar_img: DynamicList.data.items[0].modules.module_author.face,
-      create_time: convertTimestampToDateTime(DynamicList.data.items[0].modules.module_author.pub_ts),
+      host_mid: DynamicList.data.items[NoTopIndex].modules.module_author.mid,
+      remark: DynamicList.data.items[NoTopIndex].modules.module_author.name,
+      avatar_img: DynamicList.data.items[NoTopIndex].modules.module_author.face,
+      create_time: convertTimestampToDateTime(DynamicList.data.items[NoTopIndex].modules.module_author.pub_ts),
       group_id: await groupName(e, item.group_id)
     })
   }
@@ -45,7 +55,6 @@ export default async function Pushlist (e, list) {
       length: list,
       data: transformedData
     },
-    { e, scale: 1.8, retType: 'base64' }
   )
   return img
 }
