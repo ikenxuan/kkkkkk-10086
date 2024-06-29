@@ -32,7 +32,7 @@ export default class Networks {
     this.isGetResult = false
     this.timer = ''
     this.filepath = data.filepath
-    this.follow = data.follow
+    this.redirect = 'follow' // 默认跟随重定向
   }
 
   get config () {
@@ -67,11 +67,24 @@ export default class Networks {
     return await fetch(this.url, this.config)
   }
 
-  /** 首个302跳转 */
+  /** 最终地址（跟随重定向） */
   async getLongLink () {
     try {
       const result = await this.returnResult()
       return result.url
+    } catch (error) {
+      console.log(error)
+      return ''
+    }
+  }
+
+  /** 获取首个302 */
+  async getLocation () {
+    try {
+      return await fetch(this.url, {
+        method: 'GET',
+        redirect: 'manual', // 不跟随重定向
+      })
     } catch (error) {
       console.log(error)
       return ''

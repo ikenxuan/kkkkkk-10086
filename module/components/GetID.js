@@ -11,12 +11,25 @@ export default async function GetID (url) {
   let result
 
   switch (true) {
+    case longLink === 'https://www.douyin.com/': {
+      // const newres = await new Networks({ url }).getLocation()
+      // const match = newres.headers.get('location').match(/share\/slides\/(\d+)/)
+      // result = {
+      //   type: 'video',
+      //   id: match[1],
+      //   is_mp4: true,
+      //   Platform: '抖音'
+      // }
+      logger.warn('多张动图的作品暂时无法解析')
+      return {}
+    }
+
     case longLink.includes('webcast.amemv.com'):
       result = {
         type: 'Live',
         baseurl: url
       }
-      logger.warn('暂未支持解析')
+      logger.warn('直播间相关暂未支持解析')
       return {}
 
     case /video\/(\d+)/.test(longLink): {
