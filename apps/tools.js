@@ -159,7 +159,7 @@ export class Tools extends plugin {
 
   async setpushdouy (e) {
     if (e.isPrivate) return false
-    const data = await new IKun('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '')})
+    const data = await new IKun('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
     await e.reply(await new DouYinpush(e).setting(data))
     return false
   }
