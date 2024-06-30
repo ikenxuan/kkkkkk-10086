@@ -16,7 +16,7 @@
 问: 推送的逻辑是什么？<br>
 答: 只会推送博主/UP在 `当天内` 发布的所有内容（包括一发布就置顶的）<br>
 公式（单位：timestamp）: 
-$$(\text{now time} - \text{1 day}) < \textcolor{yellow}{\text{该时间段内的作品/动态都将被推送}} < \text{now time}$$
+$$(\text{now time} - \text{1 day}) < \textcolor{red}{\text{该时间段内的作品/动态都将被推送}} < \text{now time}$$
 
 ## 样式
 
