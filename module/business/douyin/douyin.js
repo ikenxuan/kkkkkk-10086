@@ -310,6 +310,21 @@ export default class DouYin extends Base {
           dec: this.botname === 'miao-yunzai' ? dec : null
         }
       }
+
+      case 'LiveImage': {
+        const images = []
+        for (const item of data.LiveImageData.aweme_details[0].images) {
+          images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`)
+          await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now())
+        }
+        await this.e.reply(makeForwardMsg(this.e, images))
+        return {
+          res: images,
+          dec: '抖音动图',
+          sendvideofile: false
+        }
+      }
+
       case 'UserVideosList': {
         const veoarray = []
         for (let i = 0; i < data.aweme_list.length; i++) {

@@ -32,12 +32,28 @@ export default class iKun extends Base {
             method: 'GET',
             headers: this.headers
           })
-          : { code: 405, msg: '你没开评论解析的开关', data: null }
+          : { data: null }
 
         if (!VideoData.aweme_detail) {
           logger.error('获取作品响应数据失败！可能该分享链接有误\n请检查该分享链接是否正确（复制分享链接打开抖音。。。）')
         }
         return { VideoData, CommentsData }
+      }
+
+      case 'LiveImage': {
+        this.URL = DouyinAPI.动图(data.id)
+        const LiveImageData = await this.GlobalGetData(
+          {
+            url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
+            method: 'GET',
+            headers: {
+              ...this.headers,
+              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1 Edg/126.0.0.0'
+            }
+          },
+          data.is_mp4
+        )
+        return { LiveImageData }
       }
       case 'UserInfoData': {
         this.URL = DouyinAPI.用户主页信息(data.user_id)
