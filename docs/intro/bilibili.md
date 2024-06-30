@@ -37,7 +37,7 @@
 # 抖音ck
 douyin:
 
-# B站ck，注意有个空格！
+# B站ck，注意冒号后有个空格！ // [!code focus]
 bilibili: 此处填上你的B站ck // [!code focus]
 ```
 

@@ -34,7 +34,7 @@
 手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
 
 ```yaml{2}
-# 抖音ck，注意有个空格！
+# 抖音ck，注意冒号后有个空格！ // [!code focus]
 douyin: 此处填上你的抖音ck // [!code focus]
 
 # B站ck
