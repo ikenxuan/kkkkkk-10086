@@ -138,12 +138,12 @@ export default class DouYin extends Base {
           music_res.push(music_data)
           switch (this.botname) {
             case 'miao-yunzai':
-              if (music_url && this.is_mp4 == false && this.botadapter === 'ICQQ') {
+              if (music_url && this.is_mp4 === false && this.botadapter === 'ICQQ') {
                 try {
                   if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                   else await this.e.reply(segment.record(music_url))
                 } catch { }
-              } else if (this.botadapter !== 'ICQQ' && this.is_mp4 == false) {
+              } else if (this.botadapter !== 'ICQQ' && this.is_mp4 === false) {
                 await this.e.reply(segment.record(music_url))
               }
               break
@@ -153,19 +153,19 @@ export default class DouYin extends Base {
                 case 'OneBotv11':
                 case 'LagrangeCore':
                 case 'KOOKBot':
-                  if (music_url && this.is_mp4 == false && music_url !== undefined) {
+                  if (music_url && this.is_mp4 === false && music_url !== undefined) {
                     await this.e.reply(segment.record(music_url))
                   }
                   break
                 case 'ICQQ':
                   try {
-                    if (music_url && this.is_mp4 == false) {
+                    if (music_url && this.is_mp4 === false) {
                       if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                       else this.e.reply(segment.record(music_url))
                     }
                   } catch (error) {
                     logger.error('高清语音发送失败', error)
-                    music_url && this.is_mp4 == false && music_url && (await this.e.reply(segment.record(music_url)))
+                    music_url && this.is_mp4 === false && music_url && (await this.e.reply(segment.record(music_url)))
                   }
                   break
               }
@@ -201,12 +201,12 @@ export default class DouYin extends Base {
           if (data.VideoData.aweme_detail.video.play_addr_h264) {
             g_video_url = await new Networks({
               url: video.play_addr_h264.url_list[2],
-              headers: this.headers
+              headers: this.headers,
             }).getLongLink()
           } else if (data.VideoData.aweme_detail.video.play_addr) {
             g_video_url = await new Networks({
               url: video.play_addr.url_list[0],
-              headers: this.headers
+              headers: this.headers,
             }).getLongLink()
           }
           const cover = video.origin_cover.url_list[0] // video cover image
@@ -226,7 +226,7 @@ export default class DouYin extends Base {
           videores.push(segment.image(cover))
           g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           logger.info('视频地址', g_video_url)
-          const dsc = this.botname == 'miao-yunzai' ? '视频基本信息' : null
+          const dsc = this.botname === 'miao-yunzai' ? '视频基本信息' : null
           const res = await makeForwardMsg(this.e, videores, dsc)
           video_data.push(res)
           video_res.push(video_data)
@@ -251,7 +251,7 @@ export default class DouYin extends Base {
               VideoFPS: FPS,
               ImageLength: imagenum,
               DestroyTime: Time(2),
-              botname: this.botname
+              botname: this.botname,
             }
           )
           file = img
@@ -261,15 +261,15 @@ export default class DouYin extends Base {
                 text: this.is_mp4 ? '视频直链' : '图集分享链接',
                 link: this.is_mp4
                   ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                  : data.VideoData.aweme_detail.share_url
+                  : data.VideoData.aweme_detail.share_url,
               },
               this.is_mp4
                 ? {
                     text: '背景音乐',
                     input: 'BGM' + m_id,
-                    send: true
+                    send: true,
                   }
-                : {}
+                : {},
             ])
           )
         }
@@ -344,9 +344,9 @@ export default class DouYin extends Base {
             fans: userdata.user.mplatform_followers_count || userdata.user.follower_count,
             following_count: userdata.user.following_count,
             total_favorited: userdata.user.total_favorited,
-            user_shortid: userdata.user.unique_id == '' ? userdata.user.short_id : userdata.user.unique_id,
+            user_shortid: userdata.user.unique_id === '' ? userdata.user.short_id : userdata.user.unique_id,
             share_url: data.music_info.play_url.uri,
-            username: data.music_info.original_musician_display_name || data.music_info.owner_nickname
+            username: data.music_info.original_musician_display_name || data.music_info.owner_nickname,
           }
         )
         await this.e.reply(
@@ -355,7 +355,7 @@ export default class DouYin extends Base {
               img,
               `\n正在上传 ${data.music_info.title}\n`,
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
-              `music_id: ${data.music_info.id}`
+              `music_id: ${data.music_info.id}`,
             ],
             [{ text: '音乐文件', link: data.music_info.play_url.uri }]
           )
