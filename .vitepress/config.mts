@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitepress'
 import timeline from 'vitepress-markdown-timeline'
 import taskLists from "markdown-it-task-lists"
-import mathjax3 from 'markdown-it-mathjax3';
+import mathjax3 from 'markdown-it-mathjax3'
+import  footnote_plugin  from 'markdown-it-footnote'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -10,17 +11,21 @@ export default defineConfig({
   titleTemplate: 'Yunzai-Bot 的视频解析插件',
   description: 'Yunzai-Bot 的视频解析插件',
   markdown: {
-    //行号显示
+    // 行号显示
     lineNumbers: true,
     image: {
       // 开启图片懒加载
       lazyLoading: true,
     },
     config: (md) => {
-      //时间线
+      // 时间线
       md.use(timeline)
+      // 任务列表
       md.use(taskLists)
+      // 公式
       md.use(mathjax3)
+      // 脚注
+      md.use(footnote_plugin)
     },
   },
   vue: {
