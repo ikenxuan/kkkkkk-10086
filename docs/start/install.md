@@ -58,7 +58,7 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 - 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码) 则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
 
 
-
+你可以在此处查看发布过的所有版本: [**版本历史**](../other/timeline.md)
 
 
 ## 安装依赖

@@ -65,9 +65,10 @@ export default defineConfig({
           {
             text: '其他',
             items: [
-              { text: '版本时间线', link: '/docs/other/timeline' },
-              { text: '免责声明', link: '/docs/other/disclaimer' },
               { text: '投喂', link: '/docs/other/afdian' },
+              { text: '免责声明', link: '/docs/other/disclaimer' },
+              { text: '版本历史', link: '/docs/other/timeline' },
+
             ],
           },
         ],
@@ -98,9 +99,9 @@ export default defineConfig({
       {
         text: '其他',
         items: [
-          { text: '版本时间线', link: '/docs/other/timeline' },
-          { text: '免责声明', link: '/docs/other/disclaimer' },
           { text: '投喂', link: '/docs/other/afdian' },
+          { text: '免责声明', link: '/docs/other/disclaimer' },
+          { text: '版本历史', link: '/docs/other/timeline' },
         ],
       },
     ],
@@ -120,7 +121,7 @@ export default defineConfig({
       },
     ],
     lastUpdatedText: '最后编辑于',
-    outlineTitle: '本页目录',
+    outlineTitle: '本页大纲',
     footer: {
       message: "Released under the <a href='https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE'>GPL-3.0 License</a>",
       copyright: "Copyright © 2023-2024 <a href='https://github.com/ikenxuan'>ikenxuan</a>",
