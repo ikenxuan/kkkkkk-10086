@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 import timeline from 'vitepress-markdown-timeline'
 import taskLists from "markdown-it-task-lists"
 import mathjax3 from 'markdown-it-mathjax3'
-import  footnote_plugin  from 'markdown-it-footnote'
+import footnote_plugin from 'markdown-it-footnote'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -46,8 +46,11 @@ export default defineConfig({
     ['link', { rel: 'icon', href: '/kkkkkk-10086/logo.png' }], //部署到vitepress仓库
   ],
   themeConfig: {
+    logo: {
+      src: '/logo.png',
+    },
     // https://vitepress.dev/reference/default-theme-config
-    //手机端深浅模式文字修改
+    // 手机端深浅模式文字修改
     darkModeSwitchLabel: '深浅模式',
     editLink: {
       pattern: 'https://github.com/ikenxuan/kkkkkk-10086/edit/docs/:path',
