@@ -301,14 +301,12 @@ export default class DouYin extends Base {
         } else {
           dec = '抖音视频作品数据'
         }
-        if (!sendvideofile) await this.e.reply('视频太大了，还是去抖音看吧~', true)
-        return {
-          sendvideofile,
-          res: this.botadapter !== 'QQBot' ? res : [],
-          g_video_url,
-          g_title,
-          dec: this.botname === 'miao-yunzai' ? dec : null
-        }
+        !sendvideofile && await this.e.reply('视频太大了，还是去抖音看吧~', true)
+        /** 发送套娃转发消息 */
+        Config.app.sendforwardmsg && await this.e.reply(await makeForwardMsg(this.e, res, dec))
+        /** 发送视频 */
+        sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, Config.app.rmmp4 ? 'tmp_' + Date.now() : g_title)
+        return true
       }
 
       case 'LiveImage': {
@@ -318,11 +316,7 @@ export default class DouYin extends Base {
           await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now())
         }
         await this.e.reply(makeForwardMsg(this.e, images))
-        return {
-          res: images,
-          dec: '抖音动图',
-          sendvideofile: false
-        }
+        return true
       }
 
       case 'UserVideosList': {
@@ -332,11 +326,8 @@ export default class DouYin extends Base {
           const cover = data.aweme_list[i].share_url
           veoarray.push(`作品标题: ${title}\n${cover}`)
         }
-
-        return {
-          res: veoarray,
-          dec: '抖音用户主页视频数据'
-        }
+        await this.e.reply(await makeForwardMsg(this.e, veoarray, '用户主页视频列表'))
+        return true
       }
       case 'Music': {
         const sec_id = data.music_info.sec_uid
@@ -374,7 +365,7 @@ export default class DouYin extends Base {
           await this.e.reply(await UploadRecord(this.e, data.music_info.play_url.uri, 0, false))
         } else await this.e.reply(segment.record(data.music_info.play_url.uri))
 
-        return false
+        return true
       }
     }
   }

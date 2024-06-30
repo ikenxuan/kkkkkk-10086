@@ -1,8 +1,8 @@
 /* eslint-disable no-useless-escape */
-import { Base, GetID, Config, Pushlist } from '#components'
+import { GetID, Config, Pushlist } from '#components'
 import { BiLiBiLi, bilidata as Bilidata, Bilibilipush } from '#bilibili'
 import { DouYin, DouYinpush, iKun as IKun } from '#douyin'
-import { makeForwardMsg, plugin } from '#lib'
+import { plugin } from '#lib'
 
 const task = []
 const rule = []
@@ -147,9 +147,7 @@ export class Tools extends plugin {
     const iddata = await GetID(url)
     const data = await new IKun(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
-    if (Config.app.sendforwardmsg && res) await e.reply(await new Base(e).resultMsg(await makeForwardMsg(e, res.res)))
-    if (res.sendvideofile && iddata.is_mp4) await new Base(e).DownLoadVideo(res.g_video_url, Config.app.rmmp4 ? 'tmp_' + Date.now() : res.g_title)
-    return false
+    if (res) return false
   }
 
   async setpushbili (e) {
