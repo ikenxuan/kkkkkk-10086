@@ -214,7 +214,7 @@ export default class DouYin extends Base {
           const title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
-          if (Config.douyin.usefilelimit && Number(mp4size) > Number(Config.douyin.filelimit)) {
+          if (Config.app.usefilelimit && Number(mp4size) > Number(Config.app.filelimit)) {
             sendvideofile = false
           }
           videores.push(`标题：\n${title}`)
