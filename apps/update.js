@@ -40,7 +40,7 @@ export class MusicUpdate extends plugin {
         if (e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
         try {
           const { data } = await Update.update(Version.pluginPath, cmd)
-          let msg = `更新${name}...${_.isObject(data) ? `${data.message}\n${data.stderr}` : data}`
+          const msg = `更新${name}...${_.isObject(data) ? `${data.message}\n${data.stderr}` : data}`
           await this.replyForward(common.makeForward(msg))
           if (!data.includes('更新成功')) return true
           try {
@@ -69,7 +69,7 @@ export class MusicUpdate extends plugin {
           uping = false
         }
     }
-    return false
+    return true
   }
 
   async update_log (e = this.e) {
@@ -77,8 +77,7 @@ export class MusicUpdate extends plugin {
       case 'Karin':
         try {
           const data = (await Update.getCommit({ path: Version.pluginPath, count: 10 })).replace(/\n\s*\n/g, '\n')
-          let commitlist
-          commitlist = data
+          const commitlist = data
             .split('\n')
             .filter(Boolean)
             .map((item) => item.trimEnd())
@@ -86,17 +85,17 @@ export class MusicUpdate extends plugin {
           return true
         } catch {
           await e.reply(`\n获取更新日志失败：\n${e.msg}`, { at: true })
-          return false
+          return true
         }
       default: {
-        let Update_Plugin = new Update(e)
+        const Update_Plugin = new Update(e)
         Update_Plugin.e = e
         Update_Plugin.reply = this.reply
 
         if (Update_Plugin.getPlugin(Version.pluginName)) {
           await e.reply(await Update_Plugin.getLog(Version.pluginName))
         }
-        return false
+        return true
       }
     }
   }

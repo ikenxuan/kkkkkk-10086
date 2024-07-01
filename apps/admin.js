@@ -132,7 +132,7 @@ export class Admin extends plugin {
     Config.modify(file, _key?.key ?? _key, is)
     // 渲染图片
     await this.index_Settings(e)
-    return false
+    return true
   }
 
   // 修改数字设置
@@ -152,7 +152,7 @@ export class Admin extends plugin {
       Config.modify(type.type, type.key, number)
     }
     await this.index_Settings(e)
-    return false
+    return true
   }
 
   // 渲染发送图片
@@ -175,12 +175,12 @@ export class Admin extends plugin {
 
     const img = await Render.render('html/admin/index', { data })
     await e.reply(img)
-    return false
+    return true
   }
 
   async Blogin (e) {
     await new BiLogin(e).Login()
-    return false
+    return true
   }
 
   async setdyck () {
@@ -188,28 +188,28 @@ export class Admin extends plugin {
     const _path = ''
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
-    return false
+    return true
   }
 
   async savedyck () {
     Config.modify('cookies', 'douyin', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savedyck')
-    return false
+    return true
   }
 
   async setbilick () {
     this.setContext('savebilick')
     const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
     await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
-    return false
+    return true
   }
 
   async savebilick () {
     Config.modify('cookies', 'bilibili', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savebilick')
-    return false
+    return true
   }
 }
 

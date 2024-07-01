@@ -28,7 +28,7 @@ export class Help extends plugin {
       elem: 'cryo'
     })
     await e.reply(img)
-    return false
+    return true
   }
 
   async help (e) {
@@ -75,7 +75,7 @@ export class Help extends plugin {
       element: 'default'
     })
     await e.reply(img)
-    return false
+    return true
   }
 }
 

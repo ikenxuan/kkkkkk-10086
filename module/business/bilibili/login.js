@@ -4,7 +4,7 @@ import { segment } from '#lib'
 import QRCode from 'qrcode'
 
 export default class BiLogin extends Base {
-  constructor(e = {}) {
+  constructor (e = {}) {
     super()
     this.e = e
   }

@@ -91,19 +91,19 @@ export class Tools extends plugin {
     }
     const img = await Pushlist(e, obj)
     await e.reply(img)
-    return false
+    return true
   }
 
   async pushdouy () {
     if (String(this.e?.msg).match('强制')) await new DouYinpush(this.e, true).action()
     else await new DouYinpush(this.e).action()
-    return false
+    return true
   }
 
   async pushbili () {
     if (String(this.e?.msg).match('强制')) await new Bilibilipush(this.e, true).action()
     else await new Bilibilipush(this.e).action()
-    return false
+    return true
   }
 
   async next (e) {
@@ -114,7 +114,7 @@ export class Tools extends plugin {
       BILIBILIOBJECT.Episode = regex[1]
       await new BiLiBiLi(e, BILIBILIOBJECT).RESOURCES(BILIBILIOBJECT, true)
     }
-    return false
+    return true
   }
 
   async bilib (e) {
@@ -133,13 +133,13 @@ export class Tools extends plugin {
     setTimeout(() => {
       delete user[this.e.user_id]
     }, 1000 * 60)
-    return false
+    return true
   }
 
   async uploadrecord (e) {
     const music_id = String(e.msg).match(/BGM(\d+)/)
     await new DouYin(e).uploadrecord(music_id[1])
-    return false
+    return true
   }
 
   async douy (e) {
@@ -147,21 +147,21 @@ export class Tools extends plugin {
     const iddata = await GetID(url)
     const data = await new IKun(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
-    if (res) return false
+    if (res) return true
   }
 
   async setpushbili (e) {
-    if (e.isPrivate) return false
+    if (e.isPrivate) return true
     const data = await new Bilidata('用户名片信息').GetData(/^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1])
     await e.reply(await new Bilibilipush(e).setting(data))
-    return false
+    return true
   }
 
   async setpushdouy (e) {
-    if (e.isPrivate) return false
+    if (e.isPrivate) return true
     const data = await new IKun('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
     await e.reply(await new DouYinpush(e).setting(data))
-    return false
+    return true
   }
 }
 
