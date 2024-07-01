@@ -11,6 +11,10 @@ nvm use 21.0.0
 :::
 
 
+::: details 报错：**<span style="color:#D7474B">FetchError: request to https://...</span>**
+这是你的网络问题，自行排查是不是开了代理
+:::
+
 
 ::: details 报错：**<span style="color:#D7474B">视频合成失败 Error: Command failed: ffmpeg -y -i ......</span>**
 可能是你没有配置 [**FFmpeg**](https://ffmpeg.org/) 的环境变量<br>
@@ -25,3 +29,6 @@ sudo apt install ffmpeg
 * **Windows 系统解决方法**<br>
 参考 CSDN 文章 [ffmpeg安装教程（windows版）](https://blog.csdn.net/m0_47449768/article/details/130102406)
 :::
+
+
+
