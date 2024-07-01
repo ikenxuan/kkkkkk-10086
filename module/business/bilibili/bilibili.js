@@ -1,7 +1,6 @@
-import { Base, Render, Config, Networks } from '#components'
+import { Base, Render, Config, Networks, FFmpeg } from '#components'
 import { BiLiBiLiAPI, bilidata as Bilidata, bilicomments, checkuser } from '#bilibili'
 import { makeForwardMsg, segment, logger } from '#lib'
-import FFmpeg from '../../components/FFmpeg.js'
 import fs from 'fs'
 
 let img
@@ -69,7 +68,7 @@ export default class BiLiBiLi extends Base {
           ImageLength: 0,
           shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid
         })
-        Config.bilibili.commentsimg &&
+        Config.bilibili.bilibilicommentsimg &&
           (await this.e.reply(
             this.mkMsg(img, [
               {
@@ -259,7 +258,7 @@ export default class BiLiBiLi extends Base {
           '.mp3'
         )
         if (bmp4.filepath && bmp3.filepath) {
-          FFmpeg.VideoComposite(
+          FFmpeg.VideoComposite(1,
             bmp4.filepath,
             bmp3.filepath,
             this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,

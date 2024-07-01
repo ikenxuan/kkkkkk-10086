@@ -1,5 +1,5 @@
 import { Config, Networks, Version } from '#components'
-import { segment, logger, Bot } from '#lib'
+import { segment, logger, Bot, common } from '#lib'
 import fs from 'fs'
 import path from 'path'
 
@@ -223,7 +223,7 @@ export default class Base {
           }
           break
         case 'Karin':
-          await this.e.reply(segment.video(video_url || file.filepath))
+          await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
           break
       }
     } catch (error) {

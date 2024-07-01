@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render } from '#components'
+import { Base, Config, UploadRecord, Networks, Render, FFmpeg } from '#components'
 import { iKun as IKun, Emoji, comments } from '#douyin'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
@@ -311,9 +311,52 @@ export default class DouYin extends Base {
 
       case 'LiveImage': {
         const images = []
+        const bgmurl = data.LiveImageData.aweme_details[0].music.play_url.uri
         for (const item of data.LiveImageData.aweme_details[0].images) {
           images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`)
-          await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now())
+          const liveimg = await this.DownLoadFile(
+            `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
+            'Douyin_tmp_' + Date.now(),
+            this.headers,
+            '.mp4'
+          )
+          const liveimgbgm = await this.DownLoadFile(
+            bgmurl,
+            'Douyin_tmp_' + Date.now(),
+            this.headers,
+            '.mp3'
+          )
+          if (liveimg.filepath && liveimgbgm.filepath) {
+            const resolvefilepath = this._path + `/resources/kkkdownload/video/Douyin_Result_${Date.now()}.mp4`
+            FFmpeg.VideoComposite(2,
+              liveimg.filepath,
+              liveimgbgm.filepath,
+              resolvefilepath,
+              /** 根据配置文件 `rmmp4` 重命名 */
+              async () => {
+                const filePath = this._path + `/resources/kkkdownload/video/tmp_${Date.now()}.mp4`
+                fs.renameSync(
+                  resolvefilepath,
+                  filePath
+                )
+                await this.removeFile(liveimg.filepath, true)
+                await this.removeFile(liveimgbgm.filepath, true)
+
+                const stats = fs.statSync(filePath)
+                const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
+                if (fileSizeInMB > 75) {
+                  if (this.botname !== 'trss-yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                  await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
+                } else {
+                  /** 因为本地合成，没有视频直链 */
+                  await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null)
+                }
+              },
+              async () => {
+                throw new Error('FFMPEG 合成失败')
+              }
+            )
+          }
         }
         await this.e.reply(makeForwardMsg(this.e, images))
         return true
