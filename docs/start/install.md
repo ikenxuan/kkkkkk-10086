@@ -62,26 +62,14 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 
 
 ## 安装依赖
-
-移动到插件目录
+二选一
+```sh
+# 1.根目录下执行
+pnpm install --filter=kkkkkk-10086
+```
 
 ```sh
-cd plugins/kkkkkk-10086/
-```
-
-自选一个包管理器安装依赖
-::: code-group
-
-```sh [npm]
-npm install --production
-```
-
-```sh [pnpm]
+# 2.插件目录下执行
+cd plugins/kkkkkk-10086
 pnpm install -P
 ```
-
-```sh [yarn]
-yarn --production
-```
-
-:::
