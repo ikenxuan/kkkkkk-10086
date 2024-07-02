@@ -58,8 +58,9 @@ export default defineConfig({
     },
     nav: [
       { text: '主页', link: '/' },
+      { text: '常见问题', link: '/docs/intro/QA' },
       {
-        text: '🍉指南',
+        text: '🍉大纲',
         items: [
           {
             text: '快速开始',
