@@ -266,6 +266,7 @@ export default class Base {
    */
   async DownLoadFile (video_url, title, headers = {}, type = '.mp4') {
     // 使用networks类进行文件下载，并通过回调函数实时更新下载进度
+    await this.mkdirs(`${this._path}/resources/kkkdownload/video/`)
     const { filepath, totalBytes } = await new Networks({
       url: video_url,
       headers,
