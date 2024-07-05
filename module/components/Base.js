@@ -239,13 +239,13 @@ export default class Base {
    * @param {string} title - 视频的标题。
    * @returns {Promise<void>} 不返回任何内容。
    */
-  async DownLoadVideo (video_url, title) {
+  async DownLoadVideo(video_url, title) {
     // 下载文件，视频URL，标题和自定义headers
     const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
-    // 如果视频大于75MB，则使用群文件上传
-    if (res.totalBytes > 75) {
+    // 如果视频大于75MB且botadapter不是'OneBotv11'，或者视频大于99MB且botadapter是'OneBotv11'，则使用群文件上传
+    if ((res.totalBytes > 75 && this.botadapter !== 'OneBotv11') || (res.totalBytes > 99 && this.botadapter == 'OneBotv11')) {
       this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
       /** 使用群文件上传视频 */
       await this.upload_file(res, video_url, true)
