@@ -6,7 +6,7 @@
   "type": "module",
   "repository": "https://gitee.com/ikenxuan/kkkkkk-10086.git",
   "author": "ikenxuan",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "dependencies": {
     "child_process": "^1.0.2",
     "jsdom": "^24.0.0",
