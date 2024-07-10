@@ -84,7 +84,7 @@ export default class DouYin extends Base {
           if (imageres.length === 1) {
             await this.e.reply(segment.image(image_url))
           } else {
-            !Config.douyin.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
+            !Config.app.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
           }
         } else {
           image_res.push('图集信息解析失败')
@@ -265,10 +265,10 @@ export default class DouYin extends Base {
               },
               this.is_mp4
                 ? {
-                    text: '背景音乐',
-                    input: 'BGM' + m_id,
-                    send: true,
-                  }
+                  text: '背景音乐',
+                  input: 'BGM' + m_id,
+                  send: true,
+                }
                 : {},
             ])
           )
