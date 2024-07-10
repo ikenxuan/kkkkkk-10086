@@ -175,18 +175,18 @@ export default class DouYin extends Base {
         }
 
         /** 其他 */
-        const ocr_res = []
-        if (data.VideoData.aweme_detail.seo_info.ocr_content) {
-          const ocr_data = []
-          const ocrres = []
-          const text = data.VideoData.aweme_detail.seo_info.ocr_content
-          ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
-          ocrres.push(text)
-          const dsc = 'ocr视频信息识别'
-          const res = await makeForwardMsg(this.e, ocrres, dsc)
-          ocr_data.push(res)
-          ocr_res.push(ocr_data)
-        }
+        // const ocr_res = []
+        // if (data.VideoData.aweme_detail.seo_info.ocr_content) {
+        //   const ocr_data = []
+        //   const ocrres = []
+        //   const text = data.VideoData.aweme_detail.seo_info.ocr_content
+        //   ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
+        //   ocrres.push(text)
+        //   const dsc = 'ocr视频信息识别'
+        //   const res = await makeForwardMsg(this.e, ocrres, dsc)
+        //   ocr_data.push(res)
+        //   ocr_res.push(ocr_data)
+        // }
 
         /** 视频 */
         let FPS
@@ -284,7 +284,7 @@ export default class DouYin extends Base {
             .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
-            .concat(ocr_res)
+          // .concat(ocr_res)
         } else {
           res = full_data
             .concat(Config.douyin.commentsimg ? file : null)
@@ -293,7 +293,7 @@ export default class DouYin extends Base {
             .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
-            .concat(ocr_res)
+          // .concat(ocr_res)
         }
         let dec
         if (this.is_mp4 !== true) {
