@@ -3,7 +3,7 @@
 layout: home
 hero:
   name: 'kkkkkk-10086'
-  tagline: Yunzai / Karin 的视频解析插件
+  tagline: <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 的视频解析插件
   image:
     src: /logo.png
     alt: LOGO

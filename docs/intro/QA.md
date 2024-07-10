@@ -11,7 +11,7 @@ nvm use 21.0.0
 :::
 
 
-::: details 报错：**<span style="color:#D7474B">FetchError: request to https://...</span>**
+::: details 报错：**<span style="color:#D7474B">FetchError: request to https://......</span>**
 这是你的网络问题，自行排查是不是开了代理
 :::
 

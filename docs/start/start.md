@@ -5,7 +5,9 @@
 :::
 
 ## 这是什么
-
+::: warning 警告
+没精力维护yunzai了，往后可能更活跃支持于Karin，开发环境都将在Karin中，yunzai是否可用自行测试（按道理应该也能用）
+:::
 _**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://www.bilibili.com) WEB API 编写的自用辅助插件，提供对 Bot 的视频解析功能，**_<br>
 通过接口获取数据并渲染图片返回
 <p>
@@ -54,7 +56,7 @@ _**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://ww
 - ~~Lain-plugin [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
 - icqq 协议 [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
-- Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) 
+- Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)
   :::
 
 开源协议: [**GPL-3.0**](https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE)

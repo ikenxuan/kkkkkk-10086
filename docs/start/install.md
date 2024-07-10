@@ -1,7 +1,7 @@
 
 # 安装插件
 ::: tip 注意
-支持 `Miao-Yunzai V3` `TRSS-Yunzai V3` `Yunzai V4` `Karin`<br>
+支持 [`Miao-Yunzai V3`](https://github.com/yoimiya-kokomi/Miao-Yunzai) [`TRSS-Yunzai V3`](https://github.com/TimeRainStarSky/Yunzai) [`Yunzai V4`](https://github.com/yunzai-org/yunzaijs) [`Karin`](https://github.com/Karinjs/Karin)<br>
 :::
 ## 获取源码
 
