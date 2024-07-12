@@ -2,7 +2,7 @@ import fs from 'fs'
 import { Version } from '#components'
 import { logger } from '#lib'
 
-export const Init = async () => {
+export default async () => {
   const files = fs.readdirSync(`${Version.pluginPath}/apps`).filter(file => file.endsWith('.js'))
   let ret = []
   files.forEach(file => {

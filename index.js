@@ -1,7 +1,7 @@
 import { Version, Init } from '#components'
 import { logger } from '#lib'
 
-export const apps = await Init()
+export const apps = await Init().catch(error => logger.error(error))
 
 if (Version.BotName === 'Karin') {
   logger.info(`${logger.violet(`[插件:${Version.version}]`)} ${logger.green(Version.pluginName)} 初始化完成~`)
