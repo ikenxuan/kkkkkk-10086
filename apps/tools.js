@@ -55,7 +55,7 @@ export class Tools extends plugin {
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
-        { reg: '^第(\\d{1,3})集$', fnc: 'next' },
+        { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
         { reg: '^#?BGM', fnc: 'uploadrecord' }
       ]
     })

@@ -19,7 +19,7 @@ export default class BiLiBiLi extends Base {
   }
 
   async RESOURCES (OBJECT, Episode = false) {
-    Config.bilibili.bilibilitip && this.e.reply('检测到B站链接，开始解析')
+    !Episode && Config.bilibili.bilibilitip && this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo': {
         const { owner, pic, title, stat } = OBJECT.INFODATA.data
