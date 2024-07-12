@@ -31,4 +31,11 @@ sudo apt install ffmpeg
 :::
 
 
+::: details 安装依赖报错：**<span style="color:#D7474B">node-pre-gyp ERR! build error......<br>node-pre-gyp ERR! not ok......</span>**
+执行以下命令后再重新安装一次依赖
+```sh
+npm install -g node-gyp
+```
+:::
+
 
