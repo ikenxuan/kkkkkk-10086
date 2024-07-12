@@ -18,8 +18,6 @@
     "sqlite3": "5.1.6"
   },
   "imports": {
-    "#Karin": "./lib/imports/index.js",
-    "#template": "./lib/imports/template.js",
     "#lib": "./lib/public/index.js",
     "#components": "./module/components/index.js",
     "#douyin": "./module/business/douyin/index.js",

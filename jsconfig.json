@@ -2,12 +2,6 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "#Karin": [
-        "./lib/imports/index.js"
-      ],
-      "#template": [
-        "./lib/imports/template.js"
-      ],
       "#lib": [
         "./lib/public/index.js"
       ],
