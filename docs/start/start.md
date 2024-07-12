@@ -18,6 +18,8 @@ _**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://ww
 <br>
 <img src="https://img.shields.io/github/license/ikenxuan/kkkkkk-10086" alt="GitHub forks" style="display: inline-block;" />&nbsp;
 <img src="https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086" alt="GitHub Release" style="display: inline-block;" />&nbsp;
+<img src="https://img.shields.io/github/repo-size/ikenxuan/kkkkkk-10086" alt="GitHub repo size"  style="display: inline-block;">&nbsp;
+
 </p>
 
 ### 特点
