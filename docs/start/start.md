@@ -8,7 +8,7 @@
 ::: warning 警告
 没精力维护yunzai了，往后可能更活跃支持于Karin，开发环境都将在Karin中，yunzai是否可用自行测试（按道理应该也能用）
 :::
-_**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://www.bilibili.com) WEB API 编写的自用辅助插件，提供对 Bot 的视频解析功能，**_<br>
+_**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.bilibili.com) 和 [快手](https://www.kuaishou.com) 的 WEB API 编写的自用辅助插件，提供对 Bot 的视频解析功能，**_<br>
 通过接口获取数据并渲染图片返回
 <p>
 <img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white" alt="Nodejs" style="display: inline-block;" />&nbsp;
@@ -30,7 +30,7 @@ _**这是一个基于 [抖音](https://www.douyin.com) 和 [bilibili](https://ww
 ::: details 鸣谢
 **业务站点**
 
-- [www.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
+- [www.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com) & [www.kuaishou.com](https://www.kuaishou.com)
 
 本项目的开发参考了以下开源项目部分代码，排名不分先后
 

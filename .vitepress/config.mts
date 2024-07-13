@@ -75,14 +75,15 @@ export default defineConfig({
             items: [
               { text: '抖音相关', link: '/docs/intro/douyin' },
               { text: 'B站相关', link: '/docs/intro/bilibili' },
+              { text: '快手相关', link: '/docs/intro/kuaishou' },
               { text: '动态推送', link: '/docs/intro/push' },
               { text: '其他功能', link: '/docs/intro/other' },
-              { text: '常见问题', link: '/docs/intro/QA' },
             ],
           },
           {
             text: '其他',
             items: [
+              { text: '常见问题', link: '/docs/intro/QA' },
               { text: '投喂', link: '/docs/other/afdian' },
               { text: '免责声明', link: '/docs/other/disclaimer' },
               { text: '版本历史', link: '/docs/other/timeline' },
@@ -109,14 +110,15 @@ export default defineConfig({
         items: [
           { text: '抖音相关', link: '/docs/intro/douyin' },
           { text: 'B站相关', link: '/docs/intro/bilibili' },
+          { text: '快手相关', link: '/docs/intro/kuaishou' },
           { text: '动态推送', link: '/docs/intro/push' },
           { text: '其他功能', link: '/docs/intro/other' },
-          { text: '常见问题', link: '/docs/intro/QA' },
         ],
       },
       {
         text: '其他',
         items: [
+          { text: '常见问题', link: '/docs/intro/QA' },
           { text: '投喂', link: '/docs/other/afdian' },
           { text: '免责声明', link: '/docs/other/disclaimer' },
           { text: '版本历史', link: '/docs/other/timeline' },
