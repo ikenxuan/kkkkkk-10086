@@ -1,7 +1,7 @@
 import { Config, Networks } from '#components'
 import { BiLiBiLiAPI, wbi_sign } from '#bilibili'
 
-export async function checkuser (BASEURL) {
+export default async function checkuser (BASEURL) {
   if (Config.cookies.bilibili == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
   const logininfo = await new Networks({ url: BiLiBiLiAPI.LOGIN_INFO(), headers: { Cookie: Config.cookies.bilibili } }).getData()
   const sign = await wbi_sign(BASEURL)

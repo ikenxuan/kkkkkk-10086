@@ -2,7 +2,7 @@ import { BiLiBiLiAPI, checkuser, wbi_sign } from '#bilibili'
 import { Base, Networks, Config } from '#components'
 import { logger } from '#lib'
 
-export default class bilidata extends Base {
+export default class Bilidata extends Base {
   constructor (type) {
     super()
     this.type = type

@@ -14,6 +14,9 @@
       "#bilibili": [
         "./module/business/bilibili/index.js"
       ],
+      "#kuaishou": [
+        "./module/business/kuaishou/index.js"
+      ],
     }
   },
   "exclude": [

@@ -12,7 +12,7 @@ const publicKey = await crypto.subtle.importKey(
   ['encrypt']
 )
 
-export async function getCorrespondPath (timestamp) {
+export default async function getCorrespondPath (timestamp) {
   const data = new TextEncoder().encode(`refresh_${timestamp}`)
   const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, data))
   return encrypted.reduce((str, c) => str + c.toString(16).padStart(2, '0'), '')

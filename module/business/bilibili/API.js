@@ -1,6 +1,6 @@
 import { Config } from '#components'
 
-export default class API {
+class BiLiBiLiAPI {
   申请二维码 () {
     return 'https://passport.bilibili.com/x/passport-login/web/qrcode/generate'
   }
@@ -70,4 +70,4 @@ export default class API {
     return `https://api.bilibili.com/x/web-interface/card?mid=${mid}&photo=true`
   }
 }
-export const BiLiBiLiAPI = new API()
+export default new BiLiBiLiAPI()

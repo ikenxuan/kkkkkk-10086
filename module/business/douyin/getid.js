@@ -2,11 +2,11 @@ import { Networks } from '#components'
 import { logger } from '#lib'
 
 /**
- * return aweme_id
+ * 返回作品id对象
  * @param {string} url 分享连接
- * @returns
+ * @returns 
  */
-export default async function GetID (url) {
+export default async function GetDouyinID (url) {
   const longLink = await new Networks({ url }).getLongLink()
   let result
 
@@ -18,7 +18,7 @@ export default async function GetID (url) {
         type: 'LiveImage',
         id: match[1],
         is_mp4: true,
-        Platform: '抖音'
+        P: '抖音'
       }
       break
     }
@@ -26,7 +26,8 @@ export default async function GetID (url) {
     case longLink.includes('webcast.amemv.com'):
       result = {
         type: 'Live',
-        baseurl: url
+        baseurl: url,
+        P: '抖音'
       }
       logger.warn('直播间相关暂未支持解析')
       return {}
@@ -37,7 +38,7 @@ export default async function GetID (url) {
         type: 'video',
         id: videoMatch[1],
         is_mp4: true,
-        Platform: '抖音'
+        P: '抖音'
       }
       break
     }
@@ -47,7 +48,7 @@ export default async function GetID (url) {
         type: 'note',
         id: noteMatch[1],
         is_mp4: false,
-        Platform: '抖音'
+        P: '抖音'
       }
       break
     }
@@ -56,7 +57,7 @@ export default async function GetID (url) {
       result = {
         type: 'UserVideosList',
         user_id: userMatch[1],
-        Platform: '抖音'
+        P: '抖音'
       }
       break
     }
@@ -65,36 +66,7 @@ export default async function GetID (url) {
       result = {
         type: 'Music',
         music_id: musicMatch[1],
-        Platform: '抖音'
-      }
-      break
-    }
-    case /video\/([A-Za-z0-9]+)/.test(longLink): {
-      const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)/)
-      result = {
-        type: 'bilibilivideo',
-        id: bvideoMatch[1],
-        Platform: '哔哩哔哩'
-      }
-      break
-    }
-    case /play\/(\S+?)\??/.test(longLink): {
-      const playMatch = longLink.match(/play\/(\w+)/)
-      result = {
-        type: 'bangumivideo',
-        id: playMatch[1],
-        Platform: '哔哩哔哩'
-      }
-      break
-    }
-    case /^https:\/\/t\.bilibili\.com\/(\d+)/.test(longLink) || /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.test(longLink): {
-      const tMatch = longLink.match(/^https:\/\/t\.bilibili\.com\/(\d+)/)
-      const opusMatch = longLink.match(/^https:\/\/www\.bilibili\.com\/opus\/(\d+)/)
-      const dynamic_id = tMatch || opusMatch
-      result = {
-        type: 'bilibilidynamic',
-        dynamic_id: dynamic_id[1],
-        Platform: '哔哩哔哩'
+        P: '抖音'
       }
       break
     }

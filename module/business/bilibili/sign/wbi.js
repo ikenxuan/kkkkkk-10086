@@ -55,7 +55,7 @@ async function getWbiKeys () {
   }
 }
 
-export async function wbi_sign (BASEURL) {
+export default async function wbi_sign (BASEURL) {
   const web_keys = await getWbiKeys()
   const url = new URL(BASEURL)
   const params = {}

@@ -40,7 +40,7 @@ export default class Networks {
       headers: this.Headers,
       method: this.method
     }
-    if (this.method == 'post') {
+    if (this.method == 'POST') {
       data = { ...data, body: JSON.stringify(this.body) || '' }
     }
     if (this.follow == 0) {
@@ -81,10 +81,12 @@ export default class Networks {
   /** 获取首个302 */
   async getLocation () {
     try {
-      return await fetch(this.url, {
+      const response = await fetch(this.url, {
         method: 'GET',
         redirect: 'manual', // 不跟随重定向
       })
+      // 取location返回
+      return response.headers.get('location')
     } catch (error) {
       console.log(error)
       return ''

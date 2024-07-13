@@ -1,7 +1,8 @@
 /* eslint-disable no-useless-escape */
 import { GetID, Config, Pushlist } from '#components'
-import { BiLiBiLi, bilidata as Bilidata, Bilibilipush } from '#bilibili'
-import { DouYin, DouYinpush, iKun as IKun } from '#douyin'
+import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '#bilibili'
+import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '#douyin'
+import { KuaiShou, GetKuaishouID, KuaishouData } from '#kuaishou'
 import { plugin } from '#lib'
 
 const task = []
@@ -56,10 +57,21 @@ export class Tools extends plugin {
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
-        { reg: '^#?BGM', fnc: 'uploadrecord' }
+        { reg: '^#?BGM', fnc: 'uploadrecord' },
+        {
+          reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
+          fnc: 'kuaiscz'
+        },
       ]
     })
     this.task = task
+  }
+
+  async kuaiscz (e) {
+    const Iddata = await GetKuaishouID(String(e.msg).match((/(http|https):\/\/.*\.(kuaishou)\.com\/[^ ]+/g)))
+    const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
+    await new KuaiShou(e, Iddata).Action(WorkData)
+    return true
   }
 
   async pushlist (e) {
@@ -126,7 +138,7 @@ export class Tools extends plugin {
     } else if (url.includes('www.bilibili.com')) {
       url = urlRex.exec(url)[0]
     }
-    const bvid = await GetID(url)
+    const bvid = await GetBilibiliID(url)
     const data = await new Bilidata(bvid.type).GetData(bvid)
     await new BiLiBiLi(e, data).RESOURCES(data)
     user[this.e.user_id] = 'bilib'
@@ -144,8 +156,8 @@ export class Tools extends plugin {
 
   async douy (e) {
     const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
-    const iddata = await GetID(url)
-    const data = await new IKun(iddata.type).GetData(iddata)
+    const iddata = await GetDouyinID(url)
+    const data = await new DouyinData(iddata.type).GetData(iddata)
     const res = await new DouYin(e, iddata).RESOURCES(data)
     if (res) return true
   }
@@ -159,7 +171,7 @@ export class Tools extends plugin {
 
   async setpushdouy (e) {
     if (e.isPrivate) return true
-    const data = await new IKun('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
+    const data = await new DouyinData('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
     await e.reply(await new DouYinpush(e).setting(data))
     return true
   }

@@ -9,7 +9,7 @@ const headers = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
 }
 
-export default class Paramsign {
+class Paramsign {
   Mstoken (length) {
     return MsToken(length)
   }
@@ -36,4 +36,4 @@ export default class Paramsign {
   }
 }
 
-export const Sign = new Paramsign()
+export default new Paramsign()

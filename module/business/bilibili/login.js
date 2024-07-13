@@ -1,5 +1,5 @@
 import { Config, Base, Sleep } from '#components'
-import { bilidata as Bilidata } from '#bilibili'
+import { Bilidata } from '#bilibili'
 import { segment } from '#lib'
 import QRCode from 'qrcode'
 

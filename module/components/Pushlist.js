@@ -1,6 +1,6 @@
 import { Render } from '#components'
-import { iKun as IKun } from '#douyin'
-import { bilidata as Bilidata } from '#bilibili'
+import { DouyinData } from '#douyin'
+import { Bilidata } from '#bilibili'
 import { Bot } from '#lib'
 
 /**
@@ -14,8 +14,8 @@ export default async function Pushlist (e, list) {
     bilibili: []
   }
   for (const item of list['douyin']) {
-    const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
-    const DynamicList = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
+    const UserInfoData = await new DouyinData('UserInfoData').GetData({ user_id: item.sec_uid })
+    const DynamicList = await new DouyinData('UserVideosList').GetData({ user_id: item.sec_uid })
     // 过滤置顶
     let NoTopIndex = 0
     while (DynamicList.aweme_list[NoTopIndex].is_top === 1) {

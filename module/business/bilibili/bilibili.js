@@ -1,5 +1,5 @@
 import { Base, Render, Config, Networks, FFmpeg } from '#components'
-import { BiLiBiLiAPI, bilidata as Bilidata, bilicomments, checkuser } from '#bilibili'
+import { BiLiBiLiAPI, Bilidata, bilicomments, checkuser } from '#bilibili'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
 

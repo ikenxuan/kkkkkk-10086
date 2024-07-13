@@ -3,7 +3,7 @@ import { Config } from '#components'
 import VerifyFpManager from './sign/VerifyFpManager.js'
 
 const fp = VerifyFpManager.gen_verify_fp()
-export default class API {
+class DouyinAPI {
   视频或图集 (awemeid) {
     return `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${awemeid}&update_version_code=170400&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=2328&screen_height=1310&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=125.0.0.0&browser_online=true&engine_name=Blink&engine_version=125.0.0.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=150&webid=7351848354471872041&msToken=${Sign.Mstoken(
       116
@@ -38,7 +38,7 @@ export default class API {
   热点词 (query) {
     return `https://www.douyin.com/aweme/v1/web/api/suggest_words/?device_platform=webapp&aid=6383&channel=channel_pc_web&query=${encodeURIComponent(
       query)}&business_id=30088&from_group_id=7129543174929812767&pc_client_type=1&version_code=170400&version_name=17.4.0&cookie_enabled=true&screen_width=1552&screen_height=970&browser_language=zh - CN&browser_platform=Win32&browser_name=Chrome&browser_version=125.0.0.0&browser_online=true&engine_name=Blink&engine_version=125.0.0.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=50&webid=7327957959955580467&msToken=${Sign.Mstoken(
-      116)}&verifyFp=${fp}&fp=${fp}`
+        116)}&verifyFp=${fp}&fp=${fp}`
   }
 
   搜索 (query) {
@@ -56,4 +56,4 @@ export default class API {
       116)}&verifyFp=${fp}&fp=${fp}`
   }
 }
-export const DouyinAPI = new API()
+export default new DouyinAPI()

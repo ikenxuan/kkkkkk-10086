@@ -1,9 +1,10 @@
-import { DouyinAPI } from './API.js'
+import DouyinAPI from './API.js'
 import DouYin from './douyin.js'
-import push from './push.js'
-import iKun from './getdata.js'
-import { Emoji } from './emoji.js'
-import { comments } from './comments.js'
-import { Sign } from './sign/Sign.js'
+import DouYinpush from './push.js'
+import DouyinData from './getdata.js'
+import GetDouyinID from './getid.js'
+import Emoji from './emoji.js'
+import comments from './comments.js'
+import Sign from './sign/Sign.js'
 
-export { DouyinAPI, DouYin, push as DouYinpush, iKun, Emoji, comments, Sign }
+export { DouyinAPI, DouYin, DouYinpush, DouyinData, GetDouyinID, Emoji, comments, Sign }

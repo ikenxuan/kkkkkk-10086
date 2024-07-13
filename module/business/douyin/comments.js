@@ -1,11 +1,11 @@
-import { iKun as IKun } from '#douyin'
+import { DouyinData } from '#douyin'
 /**
  *
  * @param {*} data 完整的评论数据
  * @param {*} emojidata 处理过后的emoji列表
  * @returns obj
  */
-export async function comments (data, emojidata) {
+export default async function comments (data, emojidata) {
   const jsonArray = []
   if (data.comments === null) return []
 
@@ -72,7 +72,7 @@ export async function comments (data, emojidata) {
   }
 
   /** 二级评论 咕咕咕 */
-  const CommentReplyData = await new IKun('CommentReplyData').GetData({
+  const CommentReplyData = await new DouyinData('CommentReplyData').GetData({
     cid: jsonArray[0].cid,
     id: jsonArray[0].aweme_id
   })
@@ -175,7 +175,7 @@ async function handling_at (data) {
   for (const item of data) {
     if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
       for (const secUid of item.is_At_user_id) {
-        const UserInfoData = await new IKun('UserInfoData').GetData({
+        const UserInfoData = await new DouyinData('UserInfoData').GetData({
           user_id: secUid
         })
         if (UserInfoData.user.sec_uid === secUid) {
@@ -195,7 +195,7 @@ async function search_text (data) {
   for (const item of data) {
     if (item.search_text !== null && Array.isArray(item.search_text)) {
       for (const search_text of item.search_text) {
-        const SuggestWordsData = await new IKun('SuggestWords').GetData({
+        const SuggestWordsData = await new DouyinData('SuggestWords').GetData({
           query: search_text.search_text
         })
         if (

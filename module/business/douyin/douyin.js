@@ -1,5 +1,5 @@
 import { Base, Config, UploadRecord, Networks, Render, FFmpeg } from '#components'
-import { iKun as IKun, Emoji, comments } from '#douyin'
+import { DouyinData, Emoji, comments } from '#douyin'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
 
@@ -234,7 +234,7 @@ export default class DouYin extends Base {
 
         let file = null
         if (Config.douyin.commentsimg && Config.douyin.comments) {
-          const EmojiData = await new IKun('Emoji').GetData()
+          const EmojiData = await new DouyinData('Emoji').GetData()
           const list = await Emoji(EmojiData)
           const commentsArray = await comments(data.CommentsData, list)
           img = await Render.render(
@@ -374,7 +374,7 @@ export default class DouYin extends Base {
       }
       case 'Music': {
         const sec_id = data.music_info.sec_uid
-        const userdata = await new IKun('UserInfoData').GetData({ user_id: sec_id })
+        const userdata = await new DouyinData('UserInfoData').GetData({ user_id: sec_id })
         img = await Render.render(
           'html/douyin/musicinfo',
           {

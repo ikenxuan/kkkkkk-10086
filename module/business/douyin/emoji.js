@@ -1,4 +1,4 @@
-export async function Emoji (data) {
+export default async function Emoji (data) {
   const ListArray = []
 
   for (let i = 0; i < data.emoji_list.length; i++) {

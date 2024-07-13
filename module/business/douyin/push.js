@@ -1,10 +1,10 @@
 import { Base, Render, GetID, Config, DB, Version } from '#components'
-import { iKun as IKun } from '#douyin'
+import { DouyinData } from '#douyin'
 import { Bot, sendMsg, logger } from '#lib'
 import YAML from 'yaml'
 import fs from 'fs'
 
-export default class push extends Base {
+export default class DouYinpush extends Base {
   constructor (e = {}, force) {
     super(e)
     if (this.botadapter === 'QQBot') {
@@ -140,8 +140,8 @@ export default class push extends Base {
 
     try {
       for (const item of Config.pushlist.douyin) {
-        const videolist = await new IKun('UserVideosList').GetData({ user_id: item.sec_uid })
-        const userinfo = await new IKun('UserInfoData').GetData({ user_id: item.sec_uid })
+        const videolist = await new DouyinData('UserVideosList').GetData({ user_id: item.sec_uid })
+        const userinfo = await new DouyinData('UserInfoData').GetData({ user_id: item.sec_uid })
         const ALL_DBdata = await DB.FindAll('douyin')
         // 检查配置文件中的群组列表与数据库中的群组列表是否一致
         const dbGroupIds = new Set(Object.keys(ALL_DBdata).map(Number)) // 将数据库中的群组ID转换为数字并去重
@@ -283,7 +283,7 @@ export default class push extends Base {
     }
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
-        const resp = await new IKun('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
+        const resp = await new DouyinData('UserInfoData').GetData({ user_id: abclist[i].sec_uid })
         const remark = resp.user.nickname
         const matchingItemIndex = config.douyin.findIndex((item) => item.sec_uid === abclist[i].sec_uid)
         if (matchingItemIndex !== -1) {
@@ -343,7 +343,7 @@ export default class push extends Base {
       }
       let msg
       const sec_uid = data.data[index].user_list[0].user_info.sec_uid
-      const UserInfoData = await new IKun('UserInfoData').GetData({ user_id: sec_uid })
+      const UserInfoData = await new DouyinData('UserInfoData').GetData({ user_id: sec_uid })
 
       const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
       const group_id = this.e.group_id

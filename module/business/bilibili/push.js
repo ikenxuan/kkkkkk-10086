@@ -1,10 +1,10 @@
-import { bilidata as Bilidata, BiLiBiLiAPI } from '#bilibili'
+import { Bilidata, BiLiBiLiAPI } from '#bilibili'
 import { Base, Config, Render, Networks, DB, Version } from '#components'
 import { Bot, sendMsg, segment, logger } from '#lib'
 import YAML from 'yaml'
 import fs from 'fs'
 
-export default class push extends Base {
+export default class Bilibilipush extends Base {
   /**
    * 构造函数
    * @param {Object} e 事件对象，提供给实例使用的事件相关信息，默认为空对象{}

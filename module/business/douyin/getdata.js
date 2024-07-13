@@ -2,7 +2,7 @@ import { Base, Config, Networks } from '#components'
 import { DouyinAPI, Sign } from '#douyin'
 import { logger } from '#lib'
 
-export default class iKun extends Base {
+export default class DouyinData extends Base {
   constructor (type) {
     super()
     this.type = type
