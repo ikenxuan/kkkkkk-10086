@@ -43,7 +43,7 @@
 
 **业务站点**
 
-- [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com)
+- [wwww.douyin.com](https://www.douyin.com) & [www.bilibili.com](https://www.bilibili.com) & [www.kuaishou.com](https://www.kuaishou.com)
 
 本项目的开发参考了以下开源项目部分代码，排名不分先后
 
@@ -71,3 +71,4 @@
 - ~~Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
 - icqq 协议 ☞ [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 ☞ [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
+- Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)
