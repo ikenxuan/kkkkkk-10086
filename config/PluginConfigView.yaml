@@ -218,3 +218,24 @@
       comment: 该UP的最新动态可能是视频，可选是否与推送图片一同发送
       path: 'senddynamicvideo'
       type: 'boolean'
+-
+  # 配置文件描述
+  name: 快手相关
+  # 配置文件名
+  file: kuaishou.yaml
+  # 视图信息
+  view:
+    -
+      # 配置项
+      key: 快手解析开关
+      # 配置描述
+      comment: 单独开关，受「总开关」影响
+      # 配置路径
+      path: 'kuaishoutool'
+      # 配置类型
+      type: 'boolean'
+    -
+      key: 快手解析提示
+      comment: 发送提示信息：“检测到快手链接，开始解析”
+      path: 'kuaishoutip'
+      type: 'boolean'

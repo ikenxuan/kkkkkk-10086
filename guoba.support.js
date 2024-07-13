@@ -374,6 +374,28 @@ export function supportGuoba () {
         },
         {
           component: 'Divider',
+          label: '快手配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
+          field: 'kuaishou.kuaishoutool',
+          label: '快手解析',
+          helpMessage: '快手解析开关，单独开关，受「总开关」影响',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'kuaishou.kuaishoutip',
+          label: '快手解析提示',
+          helpMessage: '快手解析提示，发送提示信息：“检测到快手链接，开始解析”',
+          component: 'Switch',
+          required: false
+        },
+        {
+          component: 'Divider',
           label: '其他配置',
           componentProps: {
             orientation: 'left',

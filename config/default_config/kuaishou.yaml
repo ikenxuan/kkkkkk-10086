@@ -1,0 +1,5 @@
+# 快手解析开关，单独开关，受「总开关」影响
+kuaishoutool: true
+
+# 快手解析提示，发送提示信息：“检测到快手链接，开始解析”
+kuaishoutip: true

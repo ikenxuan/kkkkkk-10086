@@ -33,6 +33,11 @@ const BilibiliType = {
   B站动态视频发送: 'senddynamicvideo'
 }
 
+const KuaiShouType = {
+  快手解析: 'tool',
+  快手解析提示: 'tip'
+}
+
 /** 数字相关设置 */
 const NumberCfgType = {
   抖音评论数量: { type: 'douyin', key: 'numcomments', limit: '0-50' },
@@ -48,7 +53,8 @@ const NumberCfgType = {
 const SwitchCfgType = {
   ...APPType,
   ...DouYinType,
-  ...BilibiliType
+  ...BilibiliType,
+  ...KuaiShouType
 }
 
 const FileWitch = {

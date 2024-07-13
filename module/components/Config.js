@@ -116,13 +116,18 @@ class Config {
     return this.getDefOrConfig('pushlist')
   }
 
+  get kuaishou () {
+    return this.getDefOrConfig('kuaishou')
+  }
+
   All () {
     return {
       cookies: this.cookies,
       app: this.app,
       douyin: this.douyin,
       bilibili: this.bilibili,
-      pushlist: this.pushlist
+      pushlist: this.pushlist,
+      kuaishou: this.kuaishou
     }
   }
 

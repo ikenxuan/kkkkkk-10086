@@ -22,6 +22,13 @@ if (Config.app.videotool) {
       fnc: 'bilib'
     })
   }
+
+  if (Config.kuaishou.kuaishoutool) {
+    rule.push({
+      reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
+      fnc: 'kuais'
+    })
+  }
 }
 
 export class Tools extends plugin {
@@ -58,16 +65,12 @@ export class Tools extends plugin {
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
         { reg: '^#?BGM', fnc: 'uploadrecord' },
-        {
-          reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
-          fnc: 'kuaiscz'
-        },
       ]
     })
     this.task = task
   }
 
-  async kuaiscz (e) {
+  async kuais (e) {
     const Iddata = await GetKuaishouID(String(e.msg).match((/(http|https):\/\/.*\.(kuaishou)\.com\/[^ ]+/g)))
     const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
     await new KuaiShou(e, Iddata).Action(WorkData)
