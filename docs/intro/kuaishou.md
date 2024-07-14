@@ -13,6 +13,6 @@
 
 # TODO
 - [ ] 图集
-- [x] 评论
+- [x] 评论 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**b37949**](https://github.com/ikenxuan/kkkkkk-10086/commit/b379497062b4a3be29017635824c8381dbb9f9be) 完成
 - [ ] ~~用户主视频列表~~
 - [ ] ~~视频更新推送~~
