@@ -1,4 +1,12 @@
+# 0.2.3.1
+
+* What's Changed
+  * feat: 新增快手评论图
+  * feat: 新增 `#kkk设置快手评论数量 + 1 ~ 30`
+  * ...
+
 # 0.2.3
+
 * What's Changed
   * feat: 简略支持下快手
   * ...

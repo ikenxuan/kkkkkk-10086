@@ -239,3 +239,8 @@
       comment: 发送提示信息：“检测到快手链接，开始解析”
       path: 'kuaishoutip'
       type: 'boolean'
+    -
+      key: 快手评论数量
+      comment: 范围1~30条
+      path: 'kuaishounumcomments'
+      type: 'number'

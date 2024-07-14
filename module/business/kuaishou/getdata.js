@@ -32,7 +32,41 @@ export default class KuaishouData extends Base {
             body: this.obj.body
           },
         )
-        return VideoData
+
+        this.obj = KuaishouAPI.作品评论信息(data.photoId)
+        const CommentData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          },
+        )
+
+        this.obj = KuaishouAPI.表情()
+        const EmojiData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          },
+        )
+
+        return { VideoData, CommentData, EmojiData }
+      }
+
+      case '作品评论信息': {
+        this.obj = KuaishouAPI.作品评论信息(data.photoId)
+        const CommentData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          },
+        )
+        return CommentData
       }
     }
   }

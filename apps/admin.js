@@ -34,8 +34,8 @@ const BilibiliType = {
 }
 
 const KuaiShouType = {
-  快手解析: 'tool',
-  快手解析提示: 'tip'
+  快手解析: 'kuaishoutool',
+  快手解析提示: 'kuaishoutip',
 }
 
 /** 数字相关设置 */
@@ -46,7 +46,8 @@ const NumberCfgType = {
   B站推送设置权限: { type: 'bilibili', key: 'bilibilipushGroup', limit: '0-2' },
   渲染精度: { type: 'app', key: 'renderScale', limit: '50-200' },
   优先级: { type: 'app', key: 'priority', limit: '0-114514' },
-  限制: { type: 'app', key: 'filelimit', limit: '5-114514' }
+  限制: { type: 'app', key: 'filelimit', limit: '5-114514' },
+  快手评论数量: { type: 'kuaishou', key: 'kuaishounumcomments', limit: '0-30' }
 }
 
 /** 开关相关设置 */

@@ -395,6 +395,20 @@ export function supportGuoba () {
           required: false
         },
         {
+          field: 'kuaishou.kuaishounumcomments',
+          label: '快手评论数量',
+          helpMessage: '必填项',
+          bottomHelpMessage: '请在此输入数字',
+          component: 'InputNumber',
+          required: true,
+          componentProps: {
+            placeholder: '范围：0 ~ 30',
+            min: 0,
+            max: 30,
+            addonAfter: '条'
+          }
+        },
+        {
           component: 'Divider',
           label: '其他配置',
           componentProps: {

@@ -3,3 +3,6 @@ kuaishoutool: true
 
 # 快手解析提示，发送提示信息：“检测到快手链接，开始解析”
 kuaishoutip: true
+
+# 快手评论数量，范围1~30条
+kuaishounumcomments: 5
