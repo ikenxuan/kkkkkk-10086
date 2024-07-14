@@ -2,6 +2,25 @@
 
 Reaease 地址: https://github.com/ikenxuan/kkkkkk-10086/releases
 
+::: timeline v0.2.3.1
+### What's Changed
+* feat: 新增快手评论图
+* feat: 新增 `#kkk设置快手评论数量 + 1 ~ 30`
+
+**Full Changelog**: [`v0.2.3...v0.2.3.1`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.3...v0.2.3.1)
+:::
+
+
+::: timeline v0.2.3
+### What's Changed
+* feat: 简略支持下快手
+
+新增内容请前往文档查阅 [快手相关](https://ikenxuan.github.io/kkkkkk-10086/docs/intro/kuaishou)
+
+**Full Changelog**: [`v0.2.2.1...v0.2.3`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.2.1...v0.2.3)
+:::
+
+
 ::: timeline v0.2.2.1
 
 ### Bug Fixes
@@ -28,7 +47,6 @@ Reaease 地址: https://github.com/ikenxuan/kkkkkk-10086/releases
 ### Bug Fixes
 * **!!serious**: configure file modification permissions [`b693e1b`](https://github.com/ikenxuan/kkkkkk-10086/commit/b693e1b38ebc0cb0621b5d9365c906e908db3886)
 * init file [`a959644`](https://github.com/ikenxuan/kkkkkk-10086/commit/a959644e4b4d9fe294a843785e99bcd9e4941c25)
-* ...
 
 **Full Changelog**: [`v0.2.0...v0.2.1`](https://github.com/ikenxuan/kkkkkk-10086/compare/0.2.0...v0.2.1)
 :::
