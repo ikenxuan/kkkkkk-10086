@@ -21,7 +21,7 @@ const puppeteer = await (async () => {
     case 'Miao-Yunzai V4':
       return (await import('yunzai/utils')).puppeteer
     default:
-      return (await import('../../../../lib/puppeteer/puppeteer.js')).default
+      return (await import('../../../../../lib/puppeteer/puppeteer.js')).default
   }
 })()
 

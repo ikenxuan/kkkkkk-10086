@@ -7,7 +7,7 @@ const common = await (async () => {
     case 'Miao-Yunzai V4':
       return await import('yunzai/core')
     default:
-      return (await import('../../../../lib/common/common.js')).default
+      return (await import('../../../../../lib/common/common.js')).default
   }
 })()
 

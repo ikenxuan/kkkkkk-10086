@@ -11,7 +11,7 @@ const Restart = await (async () => {
       const { Restart } = await import(restartUrl)
       return Restart
     } else {
-      logger.error('未安装karin-plugin-basic(https://github.com/KarinJS/karin-plugin-basic/)，无法提供重启支持，请安装后重试！')
+      logger.error('未安装karin-plugin-basic (https://github.com/KarinJS/karin-plugin-basic)，无法提供重启支持，请安装后重试！')
       return false
     }
   }
@@ -24,7 +24,7 @@ const Restart = await (async () => {
   } else if (fs.existsSync(v3RestartPath)) {
     restartUrl = pathToFileURL(v3RestartPath).href
   } else {
-    logger.error('未安装system-plugin(https://github.com/yoimiya-kokomi/Miao-Yunzai/tree/system)，无法提供本体重启支持，请安装后重试！')
+    logger.error('未安装system-plugin (https://github.com/yunzai-org/system)，无法提供本体重启支持，请安装后重试！')
     return false
   }
   const { Restart } = await import(restartUrl)
