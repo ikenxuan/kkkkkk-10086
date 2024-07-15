@@ -5,3 +5,5 @@ data/*
 yarn.lock/*
 package-lock.json
 !.gitignore
+eslint.config.js
+jsconfig.json
