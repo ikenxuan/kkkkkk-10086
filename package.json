@@ -17,7 +17,7 @@
     "sqlite3": "5.1.6"
   },
   "imports": {
-    "#lib": "./lib/public/index.js",
+    "#lib": "./module/lib/public/index.js",
     "#components": "./module/components/index.js",
     "#douyin": "./module/business/douyin/index.js",
     "#bilibili": "./module/business/bilibili/index.js",

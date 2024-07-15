@@ -239,7 +239,7 @@ export default class Base {
    * @param {string} title - 视频的标题。
    * @returns {Promise<void>} 不返回任何内容。
    */
-  async DownLoadVideo(video_url, title) {
+  async DownLoadVideo (video_url, title) {
     // 下载文件，视频URL，标题和自定义headers
     const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数

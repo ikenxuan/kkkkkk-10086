@@ -1,5 +1,5 @@
-import { Base, Render, GetID, Config, DB, Version } from '#components'
-import { DouyinData } from '#douyin'
+import { Base, Render, Config, DB, Version } from '#components'
+import { DouyinData, GetDouyinID } from '#douyin'
 import { Bot, sendMsg, logger } from '#lib'
 import YAML from 'yaml'
 import fs from 'fs'
@@ -35,7 +35,7 @@ export default class DouYinpush extends Base {
     if (Object.keys(data).length === 0) return true
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
-      const iddata = await GetID(Detail_Data.share_url)
+      const iddata = await GetDouyinID(Detail_Data.share_url)
       const img = await Render.render(
         'html/douyin/douyininfo',
         {

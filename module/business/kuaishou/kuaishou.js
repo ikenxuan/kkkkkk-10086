@@ -1,6 +1,5 @@
 import { Base, Config, Render } from '#components'
 import { comments } from '#kuaishou'
-import { segment } from '#lib'
 
 export default class KuaiShou extends Base {
   constructor (e = {}, Iddata) {

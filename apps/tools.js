@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-import { GetID, Config, Pushlist } from '#components'
+import { Config, Pushlist } from '#components'
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '#bilibili'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '#douyin'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '#kuaishou'
