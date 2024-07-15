@@ -10,7 +10,7 @@ const makeForwardMsg = await (async () => {
     case 'Miao-Yunzai V4':
       return (await import('yunzai/core')).makeForwardMsg
     default:
-      return (await import('../../../../lib/common/common.js')).default.makeForwardMsg
+      return (await import('../../../../../lib/common/common.js')).default.makeForwardMsg
   }
 })()
 
