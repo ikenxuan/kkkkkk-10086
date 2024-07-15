@@ -30,7 +30,7 @@ class BiLiBiLiAPI {
   }
 
   INFO (id_type, id) {
-    return `https://api.bilibili.com/x/web-interface/view?${id_type == 'bvid' ? 'bvid=' + id : 'aid=' + id}`
+    return `https://api.bilibili.com/x/web-interface/view?${id_type === 'bvid' ? 'bvid=' + id : 'aid=' + id}`
   }
 
   VIDEO (avid, cid) {
