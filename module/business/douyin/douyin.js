@@ -84,7 +84,7 @@ export default class DouYin extends Base {
           if (imageres.length === 1) {
             await this.e.reply(segment.image(image_url))
           } else {
-            !Config.app.sendforwardmsg && res.data.length > 1 && (await this.e.reply(res))
+            !Config.app.sendforwardmsg && (this.botname === 'Karin' ? res.length : res.data.length) > 1 && this.botname === 'Karin' ? await this.e.sendForwardMessage(this.e.contact, res) : await this.e.reply(res)
           }
         } else {
           image_res.push('图集信息解析失败')
@@ -136,14 +136,15 @@ export default class DouYin extends Base {
           const res = await makeForwardMsg(this.e, musicres, dsc)
           music_data.push(res)
           music_res.push(music_data)
+          const haspath = music_url && this.is_mp4 === false && music_url !== undefined
           switch (this.botname) {
             case 'miao-yunzai':
-              if (music_url && this.is_mp4 === false && this.botadapter === 'ICQQ') {
+              if (haspath && this.botadapter === 'ICQQ') {
                 try {
                   if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                   else await this.e.reply(segment.record(music_url))
                 } catch { }
-              } else if (this.botadapter !== 'ICQQ' && this.is_mp4 === false) {
+              } else if (haspath && this.botadapter !== 'ICQQ') {
                 await this.e.reply(segment.record(music_url))
               }
               break
@@ -153,40 +154,28 @@ export default class DouYin extends Base {
                 case 'OneBotv11':
                 case 'LagrangeCore':
                 case 'KOOKBot':
-                  if (music_url && this.is_mp4 === false && music_url !== undefined) {
+                  if (haspath) {
                     await this.e.reply(segment.record(music_url))
                   }
                   break
                 case 'ICQQ':
                   try {
-                    if (music_url && this.is_mp4 === false) {
+                    if (haspath) {
                       if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                       else this.e.reply(segment.record(music_url))
                     }
                   } catch (error) {
                     logger.error('高清语音发送失败', error)
-                    music_url && this.is_mp4 === false && music_url && (await this.e.reply(segment.record(music_url)))
+                    haspath && await this.e.reply(segment.record(music_url))
                   }
                   break
               }
               break
+            case 'Karin':
+              haspath && await this.e.reply(segment.record(music_url))
+              break
           }
-          global.DOUYINMUSICDATA = music
         }
-
-        /** 其他 */
-        // const ocr_res = []
-        // if (data.VideoData.aweme_detail.seo_info.ocr_content) {
-        //   const ocr_data = []
-        //   const ocrres = []
-        //   const text = data.VideoData.aweme_detail.seo_info.ocr_content
-        //   ocrres.push('说明：\norc可以识别视频中可能出现的文字信息')
-        //   ocrres.push(text)
-        //   const dsc = 'ocr视频信息识别'
-        //   const res = await makeForwardMsg(this.e, ocrres, dsc)
-        //   ocr_data.push(res)
-        //   ocr_res.push(ocr_data)
-        // }
 
         /** 视频 */
         let FPS
@@ -284,7 +273,6 @@ export default class DouYin extends Base {
             .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
-          // .concat(ocr_res)
         } else {
           res = full_data
             .concat(Config.douyin.commentsimg ? file : null)
@@ -293,7 +281,6 @@ export default class DouYin extends Base {
             .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
-          // .concat(ocr_res)
         }
         let dec
         if (this.is_mp4 !== true) {
