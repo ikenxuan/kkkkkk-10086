@@ -46,7 +46,7 @@ export default async function bilicomments (OBJECT) {
       location,
       like,
       icon_big_vip: vipstatus === 1 ? 'https://i0.hdslb.com/bfs/seed/jinkela/short/user-avatar/big-vip.svg' : null,
-      members
+      members,
     }
 
     jsonArray.push(obj)
