@@ -11,8 +11,8 @@ export default class KuaishouData extends Base {
     this.headers.Host = 'www.kuaishou.com'
     this.headers.Origin = this.headers.Referer
     this.headers['X-Requested-With'] = 'mixiaba.com.Browser'
-    /** 游客 */
-    this.headers.Cookie = 'did=web_50424132d556424eb8fa8d27a612fda9; didv=1720860549000'
+    /** 默认游客ck */
+    this.headers.Cookie = Config.cookies.kuaishou || 'did=web_50424132d556424eb8fa8d27a612fda9; didv=1720860549000; kpf=PC_WEB; clientid=3; kpn=KUAISHOU_VISION'
   }
 
   /**
