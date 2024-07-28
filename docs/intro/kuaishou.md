@@ -4,7 +4,7 @@
 
 | 功能              | 支持情况           | 是否需要配置 ck | 其他 |
 | ----------------- | ------------------ | --------------- | - |
-| 视频              | 支持               | 目前用的游客ck，看看会不会失效先            | |
+| 视频              | 支持               | 目前用的游客ck，可能随时失效            | 如何配置快手ck？和抖音B站步骤一样 |
 | 评论              | 支持               | 同上            | |
 | ...               | ...                | ...             | |
 
@@ -12,6 +12,7 @@
 [^1]: 快手的分享链接: [`https://v.kuaishou.com/JTDKHe 祝各位都能成为自己想成为的那个人。 "边路之怪听安    "听安cos天暗星   该作品在快手被播放过1,988.7万次，点击链接，打开【快手】直接观看！`](https://v.kuaishou.com/JTDKHe)
 
 # TODO
+- [x] 自定义 ck 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**2a8afd**](https://github.com/ikenxuan/kkkkkk-10086/commit/2a8afd9ca06ac29c3d1e4726aa7a59a1e70e37cf) 完成
 - [ ] 图集
 - [x] 评论 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**b37949**](https://github.com/ikenxuan/kkkkkk-10086/commit/b379497062b4a3be29017635824c8381dbb9f9be) 完成
 - [ ] ~~用户主视频列表~~
