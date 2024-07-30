@@ -24,6 +24,7 @@
     "#kuaishou": "./module/business/kuaishou/index.js"
   },
   "devDependencies": {
-    "eslint": "^9.4.0"
+    "eslint": "latest",
+    "neostandard": "latest"
   }
 }

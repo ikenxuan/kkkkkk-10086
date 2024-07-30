@@ -9,6 +9,10 @@ sequelize.define(
       autoIncrement: true,
       comment: '主键ID'
     },
+    bot_id: {
+      type: DataTypes.STRING, // 存储为字符串，JSON 格式
+      comment: '机器人标识符'
+    },
     group_id: {
       type: DataTypes.STRING,
       comment: '群组标识符'
@@ -38,6 +42,10 @@ sequelize.define(
       autoIncrement: true,
       comment: '主键ID'
     },
+    bot_id: {
+      type: DataTypes.STRING, // 存储为字符串，JSON 格式
+      comment: '机器人标识符'
+    },
     group_id: {
       type: DataTypes.STRING,
       comment: '群组标识符'
@@ -61,16 +69,22 @@ sequelize.define(
 /**
  * 创建一个新的群组记录，具有默认值的新条目
  * @param {string} ModelName 表单名称
+ * @param {string} bot_id 机器人标识符
  * @param {string} group_id 推送群唯一标识符
  * @param {string} data 数据对象
  * @returns {Promise<remake>}
  */
-async function CreateSheet (ModelName, group_id, data = {}) {
+async function CreateSheet (ModelName, bot_id, group_id, data = {}) {
   const Model = sequelize.models[ModelName]
+  const nestedData = {
+    "bot_id": {
+      [bot_id]:[group_id]
+    }
+  }
   return (
     await Model.create(
       {
-        group_id: String(group_id),
+        bot_id: JSON.stringify(nestedData),
         data: JSON.stringify(data)
       },
       {
@@ -83,18 +97,21 @@ async function CreateSheet (ModelName, group_id, data = {}) {
 /**
  * 获取对应表单的所有群组原始数据
  * @param {string} ModelName 表单名称
- * @returns  获取对应表单的所有群组原始数据
+ * @returns 获取对应表单的所有群组原始数据
  */
-async function FindAll (ModelName) {
+async function FindAll(ModelName) {
   const Model = sequelize.models[ModelName]
   const groups = await Model.findAll({
     raw: true
   })
 
-  // 使用reduce方法将数组转换为对象
+  // 使用reduce方法将数组转换为嵌套对象
   const result = groups.reduce((accumulator, group) => {
-    // 将group_id作为键名，data作为键值
-    accumulator[group.group_id] = JSON.parse(group.data)
+    const nestedData = JSON.parse(group.bot_id)
+    const bot_id = Object.keys(nestedData.bot_id)[0]
+    const group_ids = nestedData.bot_id[bot_id]
+    accumulator[bot_id] = accumulator[bot_id] || []
+    accumulator[bot_id].push(...group_ids)
     return accumulator
   }, {})
 
@@ -104,39 +121,52 @@ async function FindAll (ModelName) {
 /**
  * 查找指定群号的数据
  * @param {string} ModelName 表单名称
- * @param {string} Group_ID 群号
+ * @param {string} bot_id 机器人标识符
+ * @param {string} group_id 群号
  * @returns {Promise} 包含指定群号数据的Promise对象
  */
-async function FindGroup (ModelName, Group_ID) {
-  const AllData = await FindAll(ModelName)
-  // 检查传入的 Group_ID 是否存在于 AllData 中
-  // eslint-disable-next-line no-prototype-builtins
-  if (AllData.hasOwnProperty(Group_ID)) {
-    // 直接返回找到的群号对应的对象
-    return AllData[Group_ID]
-  } else {
-    return null
-  }
+async function FindGroup(ModelName, bot_id, group_id) {
+  const Model = sequelize.models[ModelName]
+  const result = await Model.findOne({
+    where: {
+      bot_id: JSON.stringify({ "bot_id": { [bot_id]: [group_id] } })
+    },
+    raw: true
+  })
+
+  return result ? JSON.parse(result.data) : null
 }
 
 /**
  * 更新指定群组的数据
  * @param {string} ModelName 表单名称
- * @param {number} Group_ID 推送群唯一标识符
+ * @param {string} bot_id 机器人标识符
+ * @param {string} group_id 推送群唯一标识符
  * @param {object} NewData 数据对象
  * @returns
  */
-async function UpdateGroupData (ModelName, Group_ID, NewData = {}) {
+async function UpdateGroupData(ModelName, bot_id, group_id, NewData = {}) {
   const Model = sequelize.models[ModelName]
+  const existingData = await FindGroup(ModelName, bot_id, group_id) || {}
+  existingData[bot_id] = existingData[bot_id] || []
+  if (!existingData[bot_id].includes(group_id)) {
+    existingData[bot_id].push(group_id)
+  }
 
-  // eslint-disable-next-line no-unused-vars
+  const nestedData = {
+    "bot_id": {
+      [bot_id]: existingData[bot_id]
+    }
+  }
+
   const [affectedRows, affectedRowsData] = await Model.update(
     {
+      bot_id: JSON.stringify(nestedData),
       data: JSON.stringify(NewData)
     },
     {
       where: {
-        group_id: Group_ID
+        bot_id: JSON.stringify({ "bot_id": { [bot_id]: [group_id] } })
       },
       individualHooks: true
     }

@@ -33,7 +33,7 @@ export default async function Pushlist (e, list) {
     const DynamicList = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
     // 过滤置顶
     let NoTopIndex = 0
-    while (DynamicList.data.items[NoTopIndex].modules.module_tag?.text === '置顶') {
+    while (DynamicList.data.items[NoTopIndex]?.modules?.module_tag?.text === '置顶') {
       NoTopIndex++
     }
     transformedData.bilibili.push({

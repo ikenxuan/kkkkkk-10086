@@ -21,11 +21,11 @@ const sendMsg = await (async () => {
       }
     case 'Miao-Yunzai V4':
       return (uin, group_id, elements) => {
-        return Bot.pickGroup(Number(group_id)).sendMsg(elements)
+        return Bot[uin].pickGroup(Number(group_id)).sendMsg(elements)
       }
     default:
       return (uin, group_id, elements) => {
-        return Bot.pickGroup(Number(group_id)).sendMsg(elements)
+        return Bot[uin].pickGroup(Number(group_id)).sendMsg(elements)
       }
   }
 })()
