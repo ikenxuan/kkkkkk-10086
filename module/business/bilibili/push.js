@@ -28,7 +28,7 @@ export default class Bilibilipush extends Base {
    * @returns {Promise<boolean>} 操作完成的状态，成功为true，失败为false。
    */
   async action () {
-    await this.checkremark()
+    if (await this.checkremark()) return true
 
     try {
       let data = await this.getuserdata()
@@ -283,7 +283,7 @@ export default class Bilibilipush extends Base {
    *
    * @param {boolean} write 指示是否将结果写入redis
    * @param {Array} host_mid_list 包含要获取数据的用户uid列表的对象数组
-   * @returns {Array} 返回一个包含用户动态信息的数组
+   * @returns {Promise<[]>} 返回一个包含用户动态信息的数组
    */
   async getuserdata () {
     const willbepushlist = {}
@@ -529,13 +529,12 @@ export default class Bilibilipush extends Base {
    * 检查并更新配置文件中指定用户的备注信息。
    * 该函数会遍历配置文件中的用户列表，对于没有备注或备注为空的用户，会从外部数据源获取其备注信息，并更新到配置文件中。
    *
-   * @returns {void} 无返回值。
    */
   async checkremark () {
     // 读取配置文件内容
     const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
     const abclist = []
-    if (Config.pushlist.douyin.length < 0) return false
+    if (Config.pushlist.bilibili === null) return true
     // 遍历配置文件中的用户列表，收集需要更新备注信息的用户
     for (let i = 0; i < Config.pushlist.bilibili.length; i++) {
       const remark = Config.pushlist.bilibili[i].remark

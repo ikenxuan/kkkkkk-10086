@@ -16,7 +16,7 @@ export default class DouYinpush extends Base {
   }
 
   async action () {
-    await this.checkremark()
+    if (await this.checkremark()) return true
 
     try {
       let data = await this.getuserdata()
@@ -167,7 +167,7 @@ export default class DouYinpush extends Base {
 
               const is_top = aweme.is_top === 1 // 是否为置顶
               let shouldPush = false // 是否列入推送数组
-            // let shouldBreak = false // 是否跳出循环
+              // let shouldBreak = false // 是否跳出循环
               let exitTry = false // 是否退出 try 块
               try {
                 if (exitTry) {
@@ -277,12 +277,12 @@ export default class DouYinpush extends Base {
 
     return inputData.willbepushlist
   }
-            
+
 
   async checkremark () {
     const config = YAML.parse(fs.readFileSync(Version.pluginPath + '/config/config/pushlist.yaml', 'utf8'))
     const abclist = []
-    if (Config.pushlist.douyin.length < 0) return false
+    if (Config.pushlist.douyin === null) return true
     for (let i = 0; i < Config.pushlist.douyin.length; i++) {
       const remark = Config.pushlist.douyin[i].remark
       const bot_id = Config.pushlist.douyin[i].bot_id
