@@ -22,6 +22,8 @@ export class Help extends plugin {
   }
 
   async version (e) {
+    await e.reply('该功能正在开发中...')
+    return true
     const img = await Render.render('html/help/version-info', {
       currentVersion: Version.version,
       changelogs: Version.changelogs,
