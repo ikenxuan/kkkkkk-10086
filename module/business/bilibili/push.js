@@ -196,7 +196,7 @@ export default class Bilibilipush extends Base {
       try {
         for (const groupId of data[dynamicId].group_id) {
           const [group_id, uin] = groupId.split(':')
-          let status = await sendMsg(uin, group_id, img)
+          let status
           if (send) status = await sendMsg(uin, group_id, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
