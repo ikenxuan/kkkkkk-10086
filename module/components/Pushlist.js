@@ -33,7 +33,7 @@ export default async function Pushlist (e, list) {
     const DynamicList = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
     // 过滤置顶
     let NoTopIndex = 0
-    while (DynamicList.data.items[NoTopIndex].modules.module_tag?.text === '置顶') {
+    while (DynamicList.data.items[NoTopIndex]?.modules?.module_tag?.text === '置顶') {
       NoTopIndex++
     }
     transformedData.bilibili.push({
@@ -50,8 +50,8 @@ export default async function Pushlist (e, list) {
     {
       isMaster: e.isMaster,
       group_id: e.isMaster
-        ? `<h1>Bot: <code>${Bot?.nickname || e?.bot?.account?.name}</code>推送列表</h1>`
-        : `<h1>群: <code>${Bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
+        ? `<h1>Bot: <code>${e.bot?.nickname || e?.bot?.account?.name}</code>推送列表</h1>`
+        : `<h1>群: <code>${e.bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
       length: list,
       data: transformedData
     },
@@ -75,9 +75,9 @@ const groupName = async (e, group_list) => {
   try {
     for (const gid of group_list) {
       try {
-        group_name_list.push(String(Bot?.pickGroup(Number(gid)).info.group_name))
+        group_name_list.push(String(e.bot?.pickGroup(Number(gid)).info.group_name))
       } catch {
-        group_name_list.push((await e.bot?.GetGroupInfo(gid))?.group_name)
+        group_name_list.push((await e.bot?.GetGroupInfo(gid.split(':')[0]))?.group_name)
       }
     }
   } catch {

@@ -102,7 +102,15 @@ const BotName = (() => {
   }
 })()
 
-const BotVersion = packageJson.version
+// const BotVersion = packageJson.version
+const BotVersion = async () => {
+  if (BotName === 'Karin') {
+    const { Cfg } = await import('node-karin')
+    return Cfg.package.version
+  } else {
+    return packageJson.version
+  }
+}
 
 const { changelogs, currentVersion } = readLogFile(pluginPath)
 

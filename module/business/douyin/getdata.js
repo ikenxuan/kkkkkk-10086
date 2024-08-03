@@ -146,7 +146,9 @@ export default class DouyinData extends Base {
     if (!result || result === '') {
       logger.error('获取响应数据失败！抖音ck可能已经失效！\n请求类型：' + this.type + '\n请求URL：' + options.url)
     }
-    result.is_mp4 = is_mp4
+    if (this.type === 'video' || this.type === 'note') {
+      result.is_mp4 = is_mp4
+    }
     return result
   }
 }
