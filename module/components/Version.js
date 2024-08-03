@@ -120,7 +120,7 @@ export default {
    * @type {string} 插件版本号
    */
   get version () {
-    return currentVersion
+    return JSON.parse(fs.readFileSync(`${pluginPath}/package.json`, 'utf8')).version
   },
 
   /**
