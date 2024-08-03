@@ -44,7 +44,6 @@ jobs:
       - name: Compress files
         if: steps.release-please.outputs.release_created == 'true'
         run: |
-          npm pack
           zip -r kkkkkk-10086-v${{ env.VERSION }}.zip apps config module resources guoba.support.js index.js README.md package.json LICENSE
 
       # 步骤：上传 ZIP 发布资产
