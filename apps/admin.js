@@ -99,6 +99,11 @@ export class Admin extends plugin {
           permission: 'master'
         },
         {
+          reg: /^#?(kkk)?s*设置快手ck$/i,
+          fnc: 'setksck',
+          permission: 'master'
+        },
+        {
           reg: /^#?(kkk)?\s*B站\s*(扫码)?\s*登录$/i,
           fnc: 'Blogin',
           permission: 'master'
@@ -167,11 +172,13 @@ export class Admin extends plugin {
     const data = {}
     let _cfg = Config.All()
     _cfg = (function () {
-      const { douyin, bilibili } = _cfg.cookies
+      const { douyin, bilibili, kuaishou } = _cfg.cookies
       _cfg.cookies.b = bilibili
       _cfg.cookies.d = douyin
+      _cfg.cookies.k = kuaishou
       delete _cfg.cookies.bilibili
       delete _cfg.cookies.douyin
+      delete _cfg.cookies.kuaishou
       return _cfg
     })()
     for (const item in _cfg) {
@@ -216,6 +223,20 @@ export class Admin extends plugin {
     Config.modify('cookies', 'bilibili', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savebilick')
+    return true
+  }
+
+  async setksck () {
+    this.setContext('saveksck')
+    const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
+    await this.reply(['请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    return true
+  }
+
+  async saveksck () {
+    Config.modify('cookies', 'kuaishou', String(this.e.msg))
+    this.reply('设置成功！')
+    this.finish('saveksck')
     return true
   }
 }
