@@ -6,3 +6,4 @@ yarn.lock/*
 package-lock.json
 !.gitignore
 jsconfig.json
+resources/html/help/changelogs.html

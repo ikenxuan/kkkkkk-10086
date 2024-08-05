@@ -26,11 +26,10 @@ export class Help extends plugin {
   async version (e) {
     const changelogs = fs.readFileSync(Version.pluginPath + '/CHANGELOG.md', 'utf8')
     const html = markdown(changelogs, {
-      gitcss: 'GitHubDark'
+      gitcss: 'github-markdown-dark.css'
     })
-    const img = await Render.render('html/help/version-info', {
-      data: html
-    })
+    fs.writeFileSync(Version.pluginPath + '/resources/html/help/changelogs.html', html)
+    const img = await Render.render('html/help/changelogs')
     await e.reply(img)
     return true
   }
