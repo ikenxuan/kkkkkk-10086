@@ -1,8 +1,30 @@
 import { defineConfig } from 'vitepress'
+// 时间线
 import timeline from 'vitepress-markdown-timeline'
+// 任务列表
 import taskLists from "markdown-it-task-lists"
+// mathjax3公式支持
 import mathjax3 from 'markdown-it-mathjax3'
+// 页脚
 import footnote_plugin from 'markdown-it-footnote'
+// 双向链接
+import { BiDirectionalLinks } from '@nolebase/markdown-it-bi-directional-links'
+// 行内链接预览
+import { InlineLinkPreviewElementTransform } from '@nolebase/vitepress-plugin-inline-link-preview/markdown-it'
+// 基于git的页面历史
+import {
+  GitChangelog,
+  GitChangelogMarkdownSection,
+} from '@nolebase/vitepress-plugin-git-changelog/vite'
+// 页面属性
+import {
+  PageProperties,
+  PagePropertiesMarkdownSection
+} from '@nolebase/vitepress-plugin-page-properties/vite'
+// 缩略图模糊哈希生成
+import { ThumbnailHashImages } from '@nolebase/vitepress-plugin-thumbnail-hash/vite'
+// 代码块内的代码类型提示
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -28,6 +50,38 @@ export default defineConfig({
       md.use(footnote_plugin)
     },
   },
+  vite: {
+    plugins: [
+      ThumbnailHashImages(),
+      GitChangelog({
+        maxGitLogCount: 2000,
+        // 要获取git日志的仓库
+        repoURL: () => 'https://github.com/ikenxuan/kkkkkk-10086',
+      }),
+      GitChangelogMarkdownSection({
+        exclude: (id) => id.endsWith('index.md'),
+        sections: {
+          // 禁用页面历史
+          disableChangelog: false,
+          // 禁用贡献者
+          disableContributors: true,
+        },
+      }),
+      // 页面属性
+      PageProperties(),
+      PagePropertiesMarkdownSection({
+        excludes: [
+          'index.md',
+        ],
+      }),
+    ],
+    ssr: {
+      noExternal: [
+        '@nolebase/*',
+      ],
+    },
+  },
+
   vue: {
     template: {
       compilerOptions: {
@@ -159,91 +213,91 @@ export default defineConfig({
 })
 
 const customElements = [
-	'mjx-container',
+  'mjx-container',
   'mjx-assistive-mml',
-	'math',
-	'maction',
-	'maligngroup',
-	'malignmark',
-	'menclose',
-	'merror',
-	'mfenced',
-	'mfrac',
-	'mi',
-	'mlongdiv',
-	'mmultiscripts',
-	'mn',
-	'mo',
-	'mover',
-	'mpadded',
-	'mphantom',
-	'mroot',
-	'mrow',
-	'ms',
-	'mscarries',
-	'mscarry',
-	'mscarries',
-	'msgroup',
-	'mstack',
-	'mlongdiv',
-	'msline',
-	'mstack',
-	'mspace',
-	'msqrt',
-	'msrow',
-	'mstack',
-	'mstack',
-	'mstyle',
-	'msub',
-	'msup',
-	'msubsup',
-	'mtable',
-	'mtd',
-	'mtext',
-	'mtr',
-	'munder',
-	'munderover',
-	'semantics',
-	'math',
-	'mi',
-	'mn',
-	'mo',
-	'ms',
-	'mspace',
-	'mtext',
-	'menclose',
-	'merror',
-	'mfenced',
-	'mfrac',
-	'mpadded',
-	'mphantom',
-	'mroot',
-	'mrow',
-	'msqrt',
-	'mstyle',
-	'mmultiscripts',
-	'mover',
-	'mprescripts',
-	'msub',
-	'msubsup',
-	'msup',
-	'munder',
-	'munderover',
-	'none',
-	'maligngroup',
-	'malignmark',
-	'mtable',
-	'mtd',
-	'mtr',
-	'mlongdiv',
-	'mscarries',
-	'mscarry',
-	'msgroup',
-	'msline',
-	'msrow',
-	'mstack',
-	'maction',
-	'semantics',
-	'annotation',
-	'annotation-xml',
+  'math',
+  'maction',
+  'maligngroup',
+  'malignmark',
+  'menclose',
+  'merror',
+  'mfenced',
+  'mfrac',
+  'mi',
+  'mlongdiv',
+  'mmultiscripts',
+  'mn',
+  'mo',
+  'mover',
+  'mpadded',
+  'mphantom',
+  'mroot',
+  'mrow',
+  'ms',
+  'mscarries',
+  'mscarry',
+  'mscarries',
+  'msgroup',
+  'mstack',
+  'mlongdiv',
+  'msline',
+  'mstack',
+  'mspace',
+  'msqrt',
+  'msrow',
+  'mstack',
+  'mstack',
+  'mstyle',
+  'msub',
+  'msup',
+  'msubsup',
+  'mtable',
+  'mtd',
+  'mtext',
+  'mtr',
+  'munder',
+  'munderover',
+  'semantics',
+  'math',
+  'mi',
+  'mn',
+  'mo',
+  'ms',
+  'mspace',
+  'mtext',
+  'menclose',
+  'merror',
+  'mfenced',
+  'mfrac',
+  'mpadded',
+  'mphantom',
+  'mroot',
+  'mrow',
+  'msqrt',
+  'mstyle',
+  'mmultiscripts',
+  'mover',
+  'mprescripts',
+  'msub',
+  'msubsup',
+  'msup',
+  'munder',
+  'munderover',
+  'none',
+  'maligngroup',
+  'malignmark',
+  'mtable',
+  'mtd',
+  'mtr',
+  'mlongdiv',
+  'mscarries',
+  'mscarry',
+  'msgroup',
+  'msline',
+  'msrow',
+  'mstack',
+  'maction',
+  'semantics',
+  'annotation',
+  'annotation-xml',
 ]
