@@ -1,5 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import fs from 'fs'
+import { logger } from '#lib'
 
 const controller = new AbortController()
 // let signal = controller.signal
@@ -101,6 +102,11 @@ export default class Networks {
         if (result.status === 504) {
           return result
         }
+        if (result.status === 429) {
+          logger.warn('HTTP 响应状态码: 429')
+          throw new Error('ratelimit triggered, 触发 https://www.douyin.com/ 的速率限制！！！')
+        }
+
         this.fetch = result
         this.isGetResult = true
       } else {
