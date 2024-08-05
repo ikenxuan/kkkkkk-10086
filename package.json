@@ -7,15 +7,15 @@
   "author": "ikenxuan",
   "license": "GPL-3.0",
   "dependencies": {
-    "@karinjs/md-html": "^1.0.2",
+    "@karinjs/md-html": "^1.1.0",
     "child_process": "^1.0.2",
-    "jsdom": "^24.0.0",
+    "jsdom": "^24.1.1",
     "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.3",
-    "sequelize": "^6.37.1",
-    "sharp": "^0.33.3",
-    "sqlite3": "5.1.6"
+    "sequelize": "^6.37.3",
+    "sharp": "^0.33.4",
+    "sqlite3": "5.1.7"
   },
   "imports": {
     "#lib": "./module/lib/public/index.js",
