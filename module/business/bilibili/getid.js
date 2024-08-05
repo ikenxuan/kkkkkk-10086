@@ -40,6 +40,15 @@ export default async function GetBilibiliID (url) {
       }
       break
     }
+    case /live\.bilibili\.com/.test(longLink): {
+      const match = longLink.match(/https?:\/\/live\.bilibili\.com\/(\d+)/)
+      result = {
+        type: '直播live',
+        room_id: match[1],
+        P: '哔哩哔哩'
+      }
+      break
+    }
     default:
       logger.warn('无法获取作品ID')
       break

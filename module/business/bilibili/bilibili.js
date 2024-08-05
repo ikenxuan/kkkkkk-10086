@@ -9,10 +9,10 @@ export default class BiLiBiLi extends Base {
   constructor (e = {}, data) {
     super()
     this.e = e
-    this.STATUS = data.USER?.STATUS
-    this.ISVIP = data.USER?.isvip
-    this.TYPE = data.TYPE
-    this.islogin = data.USER?.STATUS === 'isLogin'
+    this.STATUS = data?.USER?.STATUS
+    this.ISVIP = data?.USER?.isvip
+    this.TYPE = data?.TYPE
+    this.islogin = data?.USER?.STATUS === 'isLogin'
     this.downloadfilename = ''
     this.headers.Referer = 'https://api.bilibili.com/'
     this.headers.Cookie = Config.cookies.bilibili
@@ -236,6 +236,28 @@ export default class BiLiBiLi extends Base {
             break
           }
         }
+      }
+      case '直播live': {
+        if (OBJECT.room_init_info.data.live_status === 0) {
+          this.e.reply(`${OBJECT.USERDATA.data.card.name} 未开播，正在休息中~`)
+          return true
+        }
+        const img = await Render.render(
+          'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
+          {
+            image_url: [{ image_src: OBJECT.live_info.data.user_cover }],
+            text: br(OBJECT.live_info.data.title),
+            liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
+            username: OBJECT.USERDATA.data.card.name,
+            avater_url: OBJECT.USERDATA.data.card.face,
+            fans: this.count(OBJECT.USERDATA.data.card.fans),
+            create_time: OBJECT.live_info.data.live_time === -62170012800 ? '获取失败' : OBJECT.live_info.data.live_time,
+            now_time: 114514,
+            share_url: 'https://live.bilibili.com/' + OBJECT.live_info.data.room_id,
+            dynamicTYPE: '直播'
+          }
+        )
+        this.e.reply(img)
       }
     }
   }

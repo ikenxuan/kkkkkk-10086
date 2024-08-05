@@ -69,5 +69,13 @@ class BiLiBiLiAPI {
   用户名片信息 (mid) {
     return `https://api.bilibili.com/x/web-interface/card?mid=${mid}&photo=true`
   }
+
+  获取直播间信息 (room_id) {
+    return `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${room_id}`
+  }
+
+  获取房间页初始化信息 (room_id) {
+    return `https://api.live.bilibili.com/room/v1/Room/room_init?id=${room_id}`
+  }
 }
 export default new BiLiBiLiAPI()

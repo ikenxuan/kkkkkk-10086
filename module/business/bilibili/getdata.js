@@ -38,26 +38,29 @@ export default class Bilidata extends Base {
       case '申请二维码':
         return await this.GlobalGetData({ url: BiLiBiLiAPI.申请二维码() })
 
-      case '判断二维码状态':
+      case '判断二维码状态': {
         result = await new Networks({
           url: BiLiBiLiAPI.判断二维码状态(data),
           headers: this.headers
         }).getHeadersAndData()
         return result
+      }
 
-      case '检查是否需要刷新':
+      case '检查是否需要刷新': {
         result = await this.GlobalGetData({ url: BiLiBiLiAPI.检查是否需要刷新(data), headers: this.headers })
         return result
+      }
 
-      case 'refresh_csrf':
+      case 'refresh_csrf': {
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.refresh_csrf(data),
           headers: this.headers,
           type: 'text'
         })
         return result
+      }
 
-      case '刷新Cookie':
+      case '刷新Cookie': {
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.刷新Cookie(),
           method: 'POST',
@@ -65,8 +68,9 @@ export default class Bilidata extends Base {
           headers: this.headers
         })
         return result
+      }
 
-      case '确认更新':
+      case '确认更新': {
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.确认更新(),
           method: 'POST',
@@ -74,6 +78,7 @@ export default class Bilidata extends Base {
           headers: this.headers
         })
         return result
+      }
 
       case 'bangumivideo': {
         let isep
@@ -92,13 +97,14 @@ export default class Bilidata extends Base {
         result = { INFODATA: INFO, USER: QUERY, TYPE: 'bangumivideo' }
         return result
       }
-      case '获取用户空间动态':
+      case '获取用户空间动态': {
         delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.获取用户空间动态(data),
           headers: this.headers
         })
         return result
+      }
 
       case 'bilibilidynamic': {
         delete this.headers.Referer
@@ -117,25 +123,36 @@ export default class Bilidata extends Base {
         const USERDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.用户名片信息(dynamicINFO.data.item.modules.module_author.mid) })
         return { dynamicINFO, dynamicINFO_CARD, COMMENTSDATA, EMOJIDATA, USERDATA, TYPE: 'bilibilidynamic' }
       }
-      case '用户名片信息':
+
+      case '用户名片信息': {
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.用户名片信息(data),
           headers: this.headers
         })
         return result
+      }
 
-      case '动态详情':
+      case '动态详情': {
         delete this.headers.Referer
         result = await this.GlobalGetData({
           url: BiLiBiLiAPI.动态详情(data.dynamic_id),
           headers: this.headers
         })
         return result
+      }
 
-      case '动态卡片信息':
+      case '动态卡片信息': {
         delete this.headers.Referer
         result = await this.GlobalGetData({ url: BiLiBiLiAPI.动态卡片信息(data.dynamic_id) })
         return result
+      }
+
+      case '直播live': {
+        const live_info = await this.GlobalGetData({ url: BiLiBiLiAPI.获取直播间信息(data.room_id) })
+        const room_init_info = await this.GlobalGetData({ url: BiLiBiLiAPI.获取房间页初始化信息(data.room_id) })
+        const USERDATA = await this.GlobalGetData({ url: BiLiBiLiAPI.用户名片信息(room_init_info.data.uid) })
+        return { TYPE: this.type, live_info, room_init_info, USERDATA }
+      }
     }
   }
 

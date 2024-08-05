@@ -55,7 +55,7 @@
 }
 
 .bitop svg {
-  width: 140px;
+  width: 250px;
   height: auto;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .info_title {
-  font-size: 32px;
+  font-size: 65px;
   align-items: center;
   letter-spacing: 1.5px;
   position: relative;
@@ -98,7 +98,7 @@
 }
 
 .info_text {
-  font-size: 21px;
+  font-size: 45px;
   align-items: center;
   letter-spacing: 1.5px;
   position: relative;
@@ -126,9 +126,9 @@
 .other_text {
   width: inherit;
   color: #808080;
-  font-size: 28px;
+  font-size: 70px;
   text-align: right;
-  margin: 0 20px -19px 0;
+  margin: 0 20px -45px 0;
   z-index: -1;
 }
 
@@ -158,7 +158,7 @@
 .user {
   display: flex;
   flex-direction: column;
-  margin: 0 0 0 15px;
+  margin: 0 0 0 45px;
 }
 
 .userinfo {
@@ -187,7 +187,7 @@
 }
 
 .livestat {
-  width: 65px;
+  width: 130px;
   height: auto;
 }
 
@@ -195,7 +195,7 @@
   margin: 0 15px 0 0;
   border-radius: 50%;
   height: auto;
-  width: 60px;
+  width: 130px;
 }
 
 .avatarinfo {
@@ -204,7 +204,7 @@
 }
 
 .username {
-  font-size: 17px;
+  font-size: 40px;
 }
 
 .qrcode_box {
@@ -213,7 +213,7 @@
   display: -moz-box !important;
   display: -ms-flexbox !important;
   display: flex !important;
-  margin: 0 20px 0px 0 !important;
+  margin: 30px 20px 0 0 !important;
   -webkit-box-align: center !important;
   -webkit-align-items: center !important;
   -moz-box-align: center !important;
@@ -229,7 +229,7 @@
 }
 
 .qrcode_text {
-  font-size: 20px;
+  font-size: 50px;
   color: #2f2f2fb8;
   margin-left: 10px;
   text-align: right;
@@ -238,13 +238,13 @@
 
 #qrcode {
   border: 2px solid #808080;
-  padding: 8px;
+  padding: 10px;
   border-radius: 3%;
 }
 
 #qrcode img {
-  width: 150px;
-  height: 150px;
+  width: 350px;
+  /* height: 150px; */
 }
 
 .ftext {
