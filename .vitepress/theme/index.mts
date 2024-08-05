@@ -2,6 +2,10 @@ import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom'
 import { type Plugin, onMounted, watch, nextTick, h } from 'vue'
 import { useData, useRoute } from 'vitepress'
+// 卜算子浏览量统计
+import { inBrowser } from 'vitepress'
+import busuanzi from 'busuanzi.pure.js'
+// 时间线
 import 'vitepress-markdown-timeline/dist/theme/index.css'
 import './style/index.css'
 // 代码块添加折叠
@@ -47,7 +51,12 @@ import '@shikijs/vitepress-twoslash/style.css'
 
 export default {
   extends: DefaultTheme,
-  enhanceApp ({ app }) {
+  enhanceApp ({ app, router }) {
+    if (inBrowser) {
+      router.onAfterRouteChanged = () => {
+        busuanzi.fetch()
+      }
+    }
     app.component('NCard', Ncard)
     app.use(TwoslashFloatingVue as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
