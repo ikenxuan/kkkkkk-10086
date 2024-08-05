@@ -1,6 +1,8 @@
 import _ from 'lodash'
 import { Render, Version } from '#components'
 import { plugin } from '#lib'
+import fs from 'node:fs'
+import { markdown } from '@karinjs/md-html'
 
 export class Help extends plugin {
   constructor () {
@@ -22,12 +24,12 @@ export class Help extends plugin {
   }
 
   async version (e) {
-    await e.reply('该功能正在开发中...')
-    return true
+    const changelogs = fs.readFileSync(Version.pluginPath + '/CHANGELOG.md', 'utf8')
+    const html = markdown(changelogs, {
+      gitcss: 'GitHubDark'
+    })
     const img = await Render.render('html/help/version-info', {
-      currentVersion: Version.version,
-      changelogs: Version.changelogs,
-      elem: 'cryo'
+      data: html
     })
     await e.reply(img)
     return true
