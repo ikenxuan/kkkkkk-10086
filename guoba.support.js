@@ -56,6 +56,16 @@ export function supportGuoba () {
           }
         },
         {
+          field: 'cookies.kuaishou',
+          label: '快手ck',
+          bottomHelpMessage: '登录https://www.kuaishou.com/new-reco获取请求头中的Cookie',
+          component: 'InputPassword',
+          required: false,
+          componentProps: {
+            placeholder: '建议设置，默认用的游客ck，可能随时失效'
+          }
+        },
+        {
           component: 'Divider',
           label: '全局配置，修改后没效果就重启',
           componentProps: {
@@ -170,35 +180,50 @@ export function supportGuoba () {
             multiple: true,
             schemas: [
               {
+                component: 'Divider',
+                label: '用户uid  和 抖音号 二选一填上即可，推送过程中会自动获取并写入齐。',
+                componentProps: {
+                  orientation: 'left',
+                  plain: true
+                }
+              },
+              {
                 field: 'sec_uid',
                 label: '用户uid',
                 helpMessage: '如原神的：\nMS4wLjABAAAAw6_Jq4rDqlUKujFUvw0mjwTE8Y4uYuqJoKIQWO43oBYTd5_FlhU3qZ-PbOS7MP35',
-                bottomHelpMessage: '此uid需要访问抖音网页版个人主页，地址栏user/后面的便是uid',
                 component: 'Input',
                 componentProps: {
-                  placeholder: '注意！不是抖音号'
+                  placeholder: '此uid需要访问抖音网页版个人主页，地址栏user/后面的便是uid'
                 },
-                required: true
+                required: false
+              },
+              {
+                field: 'short_id',
+                label: '抖音号',
+                helpMessage: '如原神的：\nyuanshen_mihoyo',
+                component: 'Input',
+                componentProps: {
+                  placeholder: '抖音号在博主的个人主页可以找到'
+                },
+                required: false
               },
               {
                 field: 'group_id',
                 helpMessage: '可多选',
-                label: '推送群',
+                label: '推送群和推送账号',
+                bottomHelpMessage: '以冒号作分割，前为群号，后为机器人账号。例如：123456789:987654321',
                 componentProps: {
-                  placeholder: '点击选择要推送的群'
+                  allowAdd: true,
+                  allowDel: true
                 },
-                component: 'GSelectGroup',
+                component: 'GTags',
                 required: true
               },
               {
                 field: 'remark',
                 label: '备注',
-                helpMessage: '可不填，推送过程中会自动获取并写入',
-                bottomHelpMessage: '给这个推送id添加备注',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
                 component: 'Input',
-                componentProps: {
-                  placeholder: '请在此填写备注'
-                },
                 required: false
               }
             ]
@@ -311,22 +336,20 @@ export function supportGuoba () {
               {
                 field: 'group_id',
                 helpMessage: '可多选',
-                label: '推送群',
+                label: '推送群和推送账号',
+                bottomHelpMessage: '以冒号作分割，前为群号，后为机器人账号。例如：123456789:987654321',
                 componentProps: {
-                  placeholder: '点击选择要推送的群'
+                  allowAdd: true,
+                  allowDel: true
                 },
-                component: 'GSelectGroup',
+                component: 'GTags',
                 required: true
               },
               {
                 field: 'remark',
                 label: '备注',
-                helpMessage: '可不填，推送过程中会自动获取并写入',
-                bottomHelpMessage: '给这个推送id添加备注',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
                 component: 'Input',
-                componentProps: {
-                  placeholder: '请在此填写备注'
-                },
                 required: false
               }
             ]
