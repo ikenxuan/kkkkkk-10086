@@ -1,7 +1,6 @@
 import { Render } from '#components'
 import { DouyinData } from '#douyin'
 import { Bilidata } from '#bilibili'
-import { Bot } from '#lib'
 
 /**
  *
@@ -30,7 +29,7 @@ export default async function Pushlist (e, list) {
     })
   }
   for (const item of list['bilibili']) {
-    const DynamicList = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
+    const DynamicList = await new Bilidata('获取用户空间动态').GetData({ host_mid: item.host_mid })
     // 过滤置顶
     let NoTopIndex = 0
     while (DynamicList.data.items[NoTopIndex]?.modules?.module_tag?.text === '置顶') {

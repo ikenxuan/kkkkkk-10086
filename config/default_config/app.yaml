@@ -21,3 +21,9 @@ rmmp4: true
 
 # 渲染精度，可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度
 renderScale: 100
+
+# 放出API服务（本地部署一个抖音、B站的api服务）
+APIServer: false
+
+# API服务端口
+APIServerPort: 4567

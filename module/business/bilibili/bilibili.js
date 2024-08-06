@@ -1,5 +1,6 @@
 import { Base, Render, Config, Networks, FFmpeg } from '#components'
-import { BiLiBiLiAPI, Bilidata, bilicomments, checkuser } from '#bilibili'
+import { Bilidata, bilicomments, checkuser } from '#bilibili'
+import { BiLiBiLiAPI } from '@ikenxuan/amagi'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
 
@@ -29,7 +30,7 @@ export default class BiLiBiLi extends Base {
         this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
         const nocd_data = await new Networks({
-          url: BiLiBiLiAPI.VIDEO(OBJECT.INFODATA.data.aid, OBJECT.INFODATA.data.cid) + '&platform=html5',
+          url: BiLiBiLiAPI.视频流信息({ avid: OBJECT.INFODATA.data.aid, cid: OBJECT.INFODATA.data.cid }) + '&platform=html5',
           headers: this.headers
         }).getData()
 
@@ -129,10 +130,10 @@ export default class BiLiBiLi extends Base {
         } else {
           // eslint-disable-next-line no-useless-escape
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
-          const bangumidataBASEURL = BiLiBiLiAPI.bangumidata(
-            OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].cid,
-            OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].ep_id
-          )
+          const bangumidataBASEURL = BiLiBiLiAPI.番剧视频流信息({
+            cid: OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].cid,
+            ep_id: OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].ep_id
+          })
           const QUERY = await checkuser(bangumidataBASEURL)
           const bangumiDATA = await new Bilidata().GlobalGetData({
             url: bangumidataBASEURL + QUERY.QUERY,
@@ -258,6 +259,7 @@ export default class BiLiBiLi extends Base {
           }
         )
         this.e.reply(img)
+        break
       }
     }
   }

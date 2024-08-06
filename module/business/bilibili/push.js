@@ -1,4 +1,5 @@
-import { Bilidata, BiLiBiLiAPI } from '#bilibili'
+import { Bilidata } from '#bilibili'
+import { BiLiBiLiAPI } from '@ikenxuan/amagi'
 import { Base, Config, Render, Networks, DB, Version } from '#components'
 import { sendMsg, segment, logger } from '#lib'
 import YAML from 'yaml'
@@ -52,7 +53,7 @@ export default class Bilibilipush extends Base {
     let nocd_data
     for (const dynamicId in data) {
       const dynamicCARDINFO = await new Bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
-      const userINFO = await new Bilidata('用户名片信息').GetData(data[dynamicId].host_mid)
+      const userINFO = await new Bilidata('用户名片信息').GetData({ host_mid: data[dynamicId].host_mid })
       let emojiDATA = await new Bilidata('EMOJI').GetData()
       emojiDATA = extractEmojisData(emojiDATA.data.packages)
       const dycrad = JSON.parse(dynamicCARDINFO.data.card.card)
@@ -138,9 +139,9 @@ export default class Bilibilipush extends Base {
           if (data[dynamicId].Dynamic_Data.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
-            const INFODATA = await new Bilidata('bilibilivideo').GetData({ id: bvid })
+            const INFODATA = await new Bilidata('bilibilivideo').GetData({ id_type: 'bvid', id: bvid })
             nocd_data = await new Networks({
-              url: BiLiBiLiAPI.VIDEO(aid, INFODATA.INFODATA.data.cid) + '&platform=html5',
+              url: BiLiBiLiAPI.视频流信息({ avid: aid, cid: INFODATA.INFODATA.data.cid }) + '&platform=html5',
               headers: this.headers
             }).getData()
 
@@ -287,7 +288,7 @@ export default class Bilibilipush extends Base {
 
     try {
       for (const item of Config.pushlist.bilibili) {
-        const dynamic_list = await new Bilidata('获取用户空间动态').GetData(item.host_mid)
+        const dynamic_list = await new Bilidata('获取用户空间动态').GetData({ host: item.host_mid })
         const ALL_DBdata = await DB.FindAll('bilibili')
 
         // 将数据库中的 group_id 转换为 Set，便于后续检查是否存在
@@ -512,7 +513,7 @@ export default class Bilibilipush extends Base {
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
         // 从外部数据源获取用户备注信息
-        const resp = await new Bilidata('用户名片信息').GetData(abclist[i].host_mid)
+        const resp = await new Bilidata('用户名片信息').GetData({ host_mid: abclist[i].host_mid })
         const remark = resp.data.card.name
         // 在配置文件中找到对应的用户，并更新其备注信息
         const matchingItemIndex = config.bilibili.findIndex((item) => item.host_mid === abclist[i].host_mid)

@@ -25,7 +25,7 @@ export default class BiLogin extends Base {
     let executed86090 = false
     let completedCase0 = false
     for (let i = 0; i < 33; i++) {
-      const qrcodestatusdata = await new Bilidata('判断二维码状态').GetData(this.qrcode_key)
+      const qrcodestatusdata = await new Bilidata('判断二维码状态').GetData({ qrcode_key: this.qrcode_key })
       switch (qrcodestatusdata.data.data.code) {
         case 0:
           // console.log(qrcodestatusdata.data.data.refresh_token)

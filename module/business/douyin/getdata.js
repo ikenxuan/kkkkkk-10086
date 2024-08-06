@@ -1,6 +1,6 @@
 import { Base, Config, Networks } from '#components'
-import { DouyinAPI, Sign } from '#douyin'
 import { logger } from '#lib'
+import { DouyinAPI, Sign } from '@ikenxuan/amagi'
 
 export default class DouyinData extends Base {
   constructor (type) {
@@ -15,7 +15,7 @@ export default class DouyinData extends Base {
     switch (this.type) {
       case 'video':
       case 'note': {
-        this.URL = DouyinAPI.视频或图集(data.id)
+        this.URL = DouyinAPI.视频或图集({ aweme_id: data.id })
         const VideoData = await this.GlobalGetData(
           {
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
@@ -25,7 +25,7 @@ export default class DouyinData extends Base {
           data.is_mp4
         )
 
-        this.URL = DouyinAPI.评论(data.id)
+        this.URL = DouyinAPI.评论({ aweme_id: data.id, number: Config.douyin.numcomments })
         const CommentsData = Config.douyin.comments
           ? await this.GlobalGetData({
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
@@ -41,7 +41,7 @@ export default class DouyinData extends Base {
       }
 
       case 'LiveImage': {
-        this.URL = DouyinAPI.动图(data.id)
+        this.URL = DouyinAPI.动图({ aweme_id: data.id })
         const LiveImageData = await this.GlobalGetData(
           {
             url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
@@ -56,7 +56,7 @@ export default class DouyinData extends Base {
         return { LiveImageData }
       }
       case 'UserInfoData': {
-        this.URL = DouyinAPI.用户主页信息(data.user_id)
+        this.URL = DouyinAPI.用户主页信息({ sec_uid: data.user_id })
         const UserInfoData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
@@ -75,7 +75,7 @@ export default class DouyinData extends Base {
         return EmojiData
       }
       case 'UserVideosList': {
-        this.URL = DouyinAPI.用户主页视频(data.user_id)
+        this.URL = DouyinAPI.用户主页视频({ sec_uid: data.user_id })
         const UserVideoListData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
@@ -86,7 +86,7 @@ export default class DouyinData extends Base {
         return UserVideoListData
       }
       case 'SuggestWords': {
-        this.URL = DouyinAPI.热点词(data.query)
+        this.URL = DouyinAPI.热点词({ query: data.query })
         const SuggestWordsData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
@@ -97,7 +97,7 @@ export default class DouyinData extends Base {
         return SuggestWordsData
       }
       case 'Search': {
-        this.URL = DouyinAPI.搜索(data.query)
+        this.URL = DouyinAPI.搜索({ query: data.query })
         const SearchData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: {
@@ -108,28 +108,12 @@ export default class DouyinData extends Base {
         return SearchData
       }
       case 'Music': {
-        this.URL = DouyinAPI.音乐(data.music_id)
+        this.URL = DouyinAPI.背景音乐({ music_id: data.music_id })
         const MusicData = await this.GlobalGetData({
           url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
           headers: this.headers
         })
         return MusicData
-      }
-      case '直播间ID': {
-        this.URL = DouyinAPI.直播间ID(data)
-        const LiveIDData = await this.GlobalGetData({
-          url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
-          headers: this.headers
-        })
-        return LiveIDData
-      }
-      case '直播间信息': {
-        this.URL = DouyinAPI.直播间信息(data)
-        const LiveInfoData = await this.GlobalGetData({
-          url: `${this.URL}&a_bogus=${Sign.AB(this.URL)}`,
-          headers: this.headers
-        })
-        return LiveInfoData
       }
       default:
         break
