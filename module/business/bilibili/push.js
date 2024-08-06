@@ -288,7 +288,7 @@ export default class Bilibilipush extends Base {
 
     try {
       for (const item of Config.pushlist.bilibili) {
-        const dynamic_list = await new Bilidata('获取用户空间动态').GetData({ host: item.host_mid })
+        const dynamic_list = await new Bilidata('获取用户空间动态').GetData({ host_mid: item.host_mid })
         const ALL_DBdata = await DB.FindAll('bilibili')
 
         // 将数据库中的 group_id 转换为 Set，便于后续检查是否存在
