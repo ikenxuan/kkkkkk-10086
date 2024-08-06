@@ -93,7 +93,7 @@ export default class Bilidata extends Base {
 
       case '用户名片信息': {
         result = await this.GlobalGetData({
-          url: BiLiBiLiAPI.用户名片信息({ host_mid: data.id }),
+          url: BiLiBiLiAPI.用户名片信息({ host_mid: data.host_mid }),
           headers: this.headers
         })
         return result
