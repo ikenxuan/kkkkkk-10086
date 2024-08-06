@@ -59,7 +59,7 @@ _**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.
 - icqq 协议 [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
 - Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)
-  :::
+:::
 
 开源协议: [**GPL-3.0**](https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE)
 
