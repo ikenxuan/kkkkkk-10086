@@ -9,7 +9,8 @@ const APPType = {
   视频解析: 'videotool',
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
-  上传限制: 'usefilelimit'
+  上传限制: 'usefilelimit',
+  API服务: 'APIServer',
 }
 
 const DouYinType = {

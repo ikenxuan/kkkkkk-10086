@@ -57,6 +57,16 @@
       path: 'rmmp4'
       type: 'boolean'
     -
+      key: API服务
+      comment: '将所有api接口放出，作为一个本地的视频解析API服务，默认端口4567'
+      path: 'APIServer'
+      type: 'boolean'
+    -
+      key: API服务端口
+      comment: 'API服务端口'
+      path: 'APIServerPort'
+      type: 'number'
+    -
       key: 自定义优先级
       comment: 「默认解析」关闭后才会生效。修改后重启生效
       path: 'priority'

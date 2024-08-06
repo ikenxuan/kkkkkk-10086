@@ -120,6 +120,19 @@ export function supportGuoba () {
             addonAfter: 'MB'
           }
         },
+        {
+          field: 'app.APIServer',
+          label: 'API服务开关',
+          bottomHelpMessage: '将所有api接口放出，作为一个本地的视频解析API服务，默认端口4567',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'app.APIServerPort',
+          label: 'API服务端口',
+          component: 'InputNumber',
+          required: false,
+        },
         /** 抖音视频解析配置 */
         {
           component: 'Divider',
