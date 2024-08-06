@@ -1,35 +1,11 @@
-/* eslint-disable no-useless-escape */
 import { Config, Pushlist } from '#components'
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '#bilibili'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '#douyin'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '#kuaishou'
 import { plugin } from '#lib'
+import amagi, { StartClient } from '@ikenxuan/amagi'
 
-const task = []
-const rule = []
 
-if (Config.app.videotool) {
-  if (Config.douyin.douyintool) {
-    rule.push({
-      reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
-      fnc: 'douy'
-    })
-  }
-
-  if (Config.bilibili.bilibilitool) {
-    rule.push({
-      reg: '(bilibili.com|b23.tv|t.bilibili.com)',
-      fnc: 'bilib'
-    })
-  }
-
-  if (Config.kuaishou.kuaishoutool) {
-    rule.push({
-      reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
-      fnc: 'kuais'
-    })
-  }
-}
 
 export class Tools extends plugin {
   constructor () {
@@ -181,3 +157,32 @@ export class Tools extends plugin {
 }
 
 const user = {}
+
+const client = await new amagi({ douyin: Config.cookies.douyin, bilibili: Config.cookies.bilibili }).initServer()
+if (Config.app.APIServer) await StartClient(client, { port: Config.app.APIServerPort })
+
+const task = []
+const rule = []
+
+if (Config.app.videotool) {
+  if (Config.douyin.douyintool) {
+    rule.push({
+      reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
+      fnc: 'douy'
+    })
+  }
+
+  if (Config.bilibili.bilibilitool) {
+    rule.push({
+      reg: '(bilibili.com|b23.tv|t.bilibili.com)',
+      fnc: 'bilib'
+    })
+  }
+
+  if (Config.kuaishou.kuaishoutool) {
+    rule.push({
+      reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
+      fnc: 'kuais'
+    })
+  }
+}
