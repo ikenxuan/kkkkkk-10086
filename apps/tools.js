@@ -143,7 +143,7 @@ export class Tools extends plugin {
 
   async setpushbili (e) {
     if (e.isPrivate) return true
-    const data = await new Bilidata('用户名片信息').GetData(/^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1])
+    const data = await new Bilidata('用户名片信息').GetData({ host_mid: /^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1] })
     await e.reply(await new Bilibilipush(e).setting(data))
     return true
   }
