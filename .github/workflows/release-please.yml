@@ -52,6 +52,9 @@ jobs:
           git checkout docs
           # 将master分支的CHANGELOG.md内容复制到docs分支的docs/timeline.md
           cp /tmp/repo/CHANGELOG.md /tmp/repo/docs/timeline.md
+          # 配置Git用户信息
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # 添加并提交更改
           git add docs/timeline.md
           git commit -m "Sync CHANGELOG.md to docs/timeline.md"
