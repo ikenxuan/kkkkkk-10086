@@ -128,7 +128,7 @@ export default class Networks {
       }
       return this.fetch
     } catch (error) {
-      logger.log(error)
+      logger.error(error)
       return false
     }
   }
@@ -179,7 +179,7 @@ export default class Networks {
             headers[key] = value
           }
         } else {
-          logger.log('未获取到响应头')
+          logger.error('未获取到响应头')
         }
 
         // 获取响应数据
