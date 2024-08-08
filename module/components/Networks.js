@@ -44,9 +44,6 @@ export default class Networks {
     if (this.method == 'POST') {
       data = { ...data, body: JSON.stringify(this.body) || '' }
     }
-    if (this.follow == 0) {
-      data = { ...data, follow: this.follow }
-    }
     return data
   }
 
@@ -131,7 +128,7 @@ export default class Networks {
       }
       return this.fetch
     } catch (error) {
-      console.log(error)
+      logger.log(error)
       return false
     }
   }
@@ -182,7 +179,7 @@ export default class Networks {
             headers[key] = value
           }
         } else {
-          console.log('未获取到响应头')
+          logger.log('未获取到响应头')
         }
 
         // 获取响应数据
