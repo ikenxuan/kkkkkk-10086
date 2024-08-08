@@ -36,11 +36,8 @@ jobs:
 
       - name: Push CHANGELOG to docs/timeline.md
         run: |
-          # 使用GITHUB_REPOSITORY获取仓库的所有者和名称
-          REPO_PATH=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $2}')
-          OWNER=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $1}')
           # 克隆仓库到临时目录
-          git clone https://github.com/$OWNER/$REPO_PATH.git /tmp/repo --branch master --single-branch --quiet
+          git clone https://github.com/ikenxuan/kkkkkk-10086.git /tmp/repo --branch master --single-branch --quiet
           # 切换到docs分支
           cd /tmp/repo
           git checkout docs
