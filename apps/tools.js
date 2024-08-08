@@ -3,7 +3,6 @@ import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '#bilibili'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '#douyin'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '#kuaishou'
 import { plugin } from '#lib'
-import amagi, { StartClient } from '@ikenxuan/amagi'
 
 
 
@@ -157,10 +156,6 @@ export class Tools extends plugin {
 }
 
 const user = {}
-
-const client = await new amagi({ douyin: Config.cookies.douyin, bilibili: Config.cookies.bilibili }).initServer()
-if (Config.app.APIServer) await StartClient(client, { port: Config.app.APIServerPort })
-
 const task = []
 const rule = []
 

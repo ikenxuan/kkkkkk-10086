@@ -4,8 +4,7 @@ export default [{
   languageOptions: {
     globals: {
       ...globals.node
-    },
-
+    }
   },
 
   rules: {
@@ -15,6 +14,7 @@ export default [{
     'comma-dangle': [2, 'never'],
     'arrow-body-style': 'off',
     'default-case': 2,
-    'indent': ['error', 2]
+    'indent': ['error', 2],
+    'space-before-function-paren': 1
   }
 }]
