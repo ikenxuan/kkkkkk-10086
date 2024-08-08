@@ -34,12 +34,6 @@ jobs:
           # 指定默认分支名称
           default-branch: master
 
-      # 步骤：将CHANGELOG.md推送到docs分支的timeline.md
-      - name: Git config
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
       - name: Push CHANGELOG to docs/timeline.md
         run: |
           # 使用GITHUB_REPOSITORY获取仓库的所有者和名称
