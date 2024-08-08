@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable n/handle-callback-err */
 import querystring from 'querystring'
 import fetch from 'node-fetch'
 import fs from 'fs'

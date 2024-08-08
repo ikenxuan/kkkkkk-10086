@@ -17,7 +17,7 @@ sequelize.define(
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
       comment: '缓存数据'
-    },
+    }
   },
   {
     timestamps: true
@@ -41,7 +41,7 @@ sequelize.define(
       type: DataTypes.STRING, // 存储为字符串，JSON 格式
       defaultValue: '{}',
       comment: '缓存数据'
-    },
+    }
   },
   {
     timestamps: true
@@ -100,7 +100,7 @@ async function FindAll (ModelName) {
 async function FindGroup (ModelName, Group_ID) {
   const AllData = await FindAll(ModelName)
   // 检查传入的 Group_ID 是否存在于 AllData 中
-  // eslint-disable-next-line no-prototype-builtins
+   
   if (AllData.hasOwnProperty(Group_ID)) {
     // 直接返回找到的群号对应的对象
     return AllData[Group_ID]
@@ -119,7 +119,7 @@ async function FindGroup (ModelName, Group_ID) {
 async function UpdateGroupData (ModelName, Group_ID, NewData = {}) {
   const Model = sequelize.models[ModelName]
 
-  // eslint-disable-next-line no-unused-vars
+   
   const [affectedRows, affectedRowsData] = await Model.update(
     {
       data: JSON.stringify(NewData)

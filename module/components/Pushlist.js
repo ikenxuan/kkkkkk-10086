@@ -53,7 +53,7 @@ export default async function Pushlist (e, list) {
         : `<h1>群: <code>${e.bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
       length: list,
       data: transformedData
-    },
+    }
   )
   return img
 }

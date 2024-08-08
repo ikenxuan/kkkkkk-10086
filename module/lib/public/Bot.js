@@ -2,12 +2,12 @@ import { Version } from '#components'
 
 const Bot = await (async () => {
   switch (Version.BotName) {
-    case 'Karin':
-      return (await import('node-karin')).Bot
-    case 'Miao-Yunzai V4':
-      return (await import('yunzai/core')).Bot
-    default:
-      return global.Bot
+  case 'Karin':
+    return (await import('node-karin')).Bot
+  case 'Miao-Yunzai V4':
+    return (await import('yunzai/core')).Bot
+  default:
+    return global.Bot
   }
 })()
 

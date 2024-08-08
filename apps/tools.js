@@ -40,7 +40,7 @@ export class Tools extends plugin {
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
-        { reg: '^#?BGM', fnc: 'uploadrecord' },
+        { reg: '^#?BGM', fnc: 'uploadrecord' }
       ]
     })
     this.task = task
@@ -63,7 +63,7 @@ export class Tools extends plugin {
       bilibili: Config.pushlist.bilibili ? Config.pushlist.bilibili : []
     }
     for (const platform in platforms) {
-      // eslint-disable-next-line no-prototype-builtins
+       
       if (platforms.hasOwnProperty(platform)) {
         const list = platforms[platform]
         for (const item of list) {

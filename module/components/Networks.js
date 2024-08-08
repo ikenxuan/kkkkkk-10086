@@ -84,7 +84,7 @@ export default class Networks {
     try {
       const response = await fetch(this.url, {
         method: 'GET',
-        redirect: 'manual', // 不跟随重定向
+        redirect: 'manual' // 不跟随重定向
       })
       // 取location返回
       return response.headers.get('location')
@@ -113,18 +113,21 @@ export default class Networks {
         this.fetch = new_fetch
       }
       switch (this.type) {
-        case 'json':
-          await this.Tojson()
-          break
-        case 'text':
-          await this.ToText()
-          break
-        case 'arrayBuffer':
-          await this.ToArrayBuffer()
-          break
-        case 'blob':
-          await this.ToBlob()
-          break
+      case 'json':{
+        await this.Tojson()
+        break}
+      case 'text':{
+        await this.ToText()
+        break}
+      case 'arrayBuffer':{
+        await this.ToArrayBuffer()
+        break}
+      case 'blob':{
+        await this.ToBlob()
+        break
+      }
+      default:
+        break
       }
       return this.fetch
     } catch (error) {
@@ -184,18 +187,21 @@ export default class Networks {
 
         // 获取响应数据
         switch (this.type) {
-          case 'json':
-            data = await this.fetch.json()
-            break
-          case 'text':
-            data = await this.fetch.text()
-            break
-          case 'arrayBuffer':
-            data = await this.ToArrayBuffer()
-            break
-          case 'blob':
-            data = await this.ToBlob()
-            break
+        case 'json':{
+          data = await this.fetch.json()
+          break}
+        case 'text':{
+          data = await this.fetch.text()
+          break}
+        case 'arrayBuffer':{
+          data = await this.ToArrayBuffer()
+          break}
+        case 'blob':{
+          data = await this.ToBlob()
+          break
+        }
+        default: 
+          break
         }
       } else {
         console.log('未获取到响应对象')

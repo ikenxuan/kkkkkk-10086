@@ -61,7 +61,7 @@ class Config {
         'douyintip', 'douyintool', 'numcomments', 'sendHDrecord'], // 省略douyin相关配置项
       pushlist: {
         douyin: oldCfg.douyinpushlist.map(item => ({
-          ...item,
+          ...item
         })),
         bilibili: oldCfg.bilibilipushlist.map(item => ({
           ...item
@@ -70,20 +70,20 @@ class Config {
     }
     for (const [category, keys] of Object.entries(configMap)) {
       switch (category) {
-        case 'cookies':
-          for (const key of keys) {
-            this.modify(category, key, key === 'douyin' ? oldCfg['ck'] : oldCfg['bilibilick'])
-          }
-          break
-        case 'pushlist':
-          for (const [subCategory, items] of Object.entries(keys)) {
-            this.modify(category, subCategory, items)
-          }
-          break
-        default:
-          for (const key of keys) {
-            this.modify(category, key, oldCfg[key])
-          }
+      case 'cookies':
+        for (const key of keys) {
+          this.modify(category, key, key === 'douyin' ? oldCfg['ck'] : oldCfg['bilibilick'])
+        }
+        break
+      case 'pushlist':
+        for (const [subCategory, items] of Object.entries(keys)) {
+          this.modify(category, subCategory, items)
+        }
+        break
+      default:
+        for (const key of keys) {
+          this.modify(category, key, oldCfg[key])
+        }
       }
     }
     const newCfg = this.All()

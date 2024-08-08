@@ -24,7 +24,7 @@ export default async function comments (data, emojidata) {
       userimageurl,
       text,
       digg_count,
-      create_time: time,
+      create_time: time
     }
     jsonArray.push(commentObj)
   }

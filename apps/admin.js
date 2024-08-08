@@ -10,7 +10,7 @@ const APPType = {
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
   上传限制: 'usefilelimit',
-  API服务: 'APIServer',
+  API服务: 'APIServer'
 }
 
 const DouYinType = {
@@ -36,7 +36,7 @@ const BilibiliType = {
 
 const KuaiShouType = {
   快手解析: 'kuaishoutool',
-  快手解析提示: 'kuaishoutip',
+  快手解析提示: 'kuaishoutip'
 }
 
 /** 数字相关设置 */
@@ -155,7 +155,7 @@ export class Admin extends plugin {
     const number = checkNumberValue(regRet[2], type.limit)
     if (type.key === 'douyinpushGroup' || type.key === 'bilibilipushGroup') {
       const groupMapping = { 0: 'all', 1: 'admin', 2: 'owner', 3: 'master' }
-      // eslint-disable-next-line no-prototype-builtins
+       
       if (groupMapping.hasOwnProperty(number)) {
         Config.modify(type.type, type.key, groupMapping[number])
       } else {
@@ -244,16 +244,16 @@ export class Admin extends plugin {
 
 const getStatus = function (rote) {
   switch (true) {
-    case Array.isArray(rote):
-      if (rote.length === 0) return `<div class="cfg-status status-off" >已配置 ${rote.length} 项</div>`
-      else return `<div class="cfg-status " >已配置 ${rote.length} 项</div>`
-    case rote === true:
-      return '<div class="cfg-status" >已开启</div>'
-    case rote === false:
-      return '<div class="cfg-status status-off">已关闭</div>'
-    default:
-      if (rote == null || rote === '') return '<div class="cfg-status status-off">未配置</div>'
-      else return `<div class="cfg-status">${String(rote).length > 10 ? String(rote).substring(0, 10) + '...' : String(rote)}</div>`
+  case Array.isArray(rote):
+    if (rote.length === 0) return `<div class="cfg-status status-off" >已配置 ${rote.length} 项</div>`
+    else return `<div class="cfg-status " >已配置 ${rote.length} 项</div>`
+  case rote === true:
+    return '<div class="cfg-status" >已开启</div>'
+  case rote === false:
+    return '<div class="cfg-status status-off">已关闭</div>'
+  default:
+    if (rote == null || rote === '') return '<div class="cfg-status status-off">未配置</div>'
+    else return `<div class="cfg-status">${String(rote).length > 10 ? String(rote).substring(0, 10) + '...' : String(rote)}</div>`
   }
 }
 

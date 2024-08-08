@@ -6,17 +6,8 @@
   "repository": "https://gitee.com/ikenxuan/kkkkkk-10086.git",
   "author": "ikenxuan",
   "license": "GPL-3.0",
-  "dependencies": {
-    "@ikenxuan/amagi": "^1.5.3",
-    "@karinjs/md-html": "^1.1.3",
-    "child_process": "^1.0.2",
-    "jsdom": "^24.1.1",
-    "md5": "^2.3.0",
-    "node-fetch": "^3.3.2",
-    "qrcode": "^1.5.3",
-    "sequelize": "^6.37.3",
-    "sharp": "^0.33.4",
-    "sqlite3": "5.1.7"
+  "scripts": {
+    "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "imports": {
     "#lib": "./module/lib/public/index.js",
@@ -25,8 +16,19 @@
     "#bilibili": "./module/business/bilibili/index.js",
     "#kuaishou": "./module/business/kuaishou/index.js"
   },
+  "dependencies": {
+    "@ikenxuan/amagi": "^1.5.7",
+    "@karinjs/md-html": "^1.1.3",
+    "child_process": "^1.0.2",
+    "md5": "^2.3.0",
+    "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.3",
+    "sharp": "^0.33.4",
+    "sqlite3": "5.1.7"
+  },
   "devDependencies": {
-    "eslint": "latest",
-    "neostandard": "latest"
+    "eslint": "^9.8.0",
+    "globals": "^15.9.0"
   }
 }

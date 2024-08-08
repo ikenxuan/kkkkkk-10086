@@ -26,7 +26,7 @@ export default class KuaiShou extends Base {
         CommentLength: String(CommentsData?.length ? CommentsData.length : 0),
         VideoUrl: video_url,
         VideoSize: '？？？',
-        VideoFPS: '？？？',
+        VideoFPS: '？？？'
       }
     )
     await this.e.reply(img)
