@@ -37,7 +37,7 @@ jobs:
       - name: Push CHANGELOG to docs/timeline.md
         run: |
           # 克隆仓库到临时目录
-          git clone https://github.com/ikenxuan/kkkkkk-10086.git /tmp/repo --branch master --single-branch --quiet
+          git clone --mirror https://github.com/ikenxuan/kkkkkk-10086.git /tmp/repo --branch master --single-branch --quiet
           # 切换到docs分支
           cd /tmp/repo
           git checkout docs
