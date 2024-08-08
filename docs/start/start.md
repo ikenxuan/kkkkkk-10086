@@ -49,6 +49,7 @@ _**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.
 - [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [NearHuiwen/TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
 - [B1gM8c/X-Bogus](https://github.com/B1gM8c/X-Bogus)
+- [ikenxuan/amagi](https://github.com/ikenxuan/amagi)
 
 **友情链接**
 
