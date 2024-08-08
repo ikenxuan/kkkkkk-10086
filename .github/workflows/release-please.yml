@@ -33,3 +33,31 @@ jobs:
           package-name: 'kkkkkk-10086'
           # 指定默认分支名称
           default-branch: master
+
+      # 步骤：将CHANGELOG.md推送到docs分支的timeline.md
+      - name: Git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Push CHANGELOG to docs/timeline.md
+        run: |
+          # 使用GITHUB_REPOSITORY获取仓库的所有者和名称
+          REPO_PATH=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $2}')
+          OWNER=$(echo $GITHUB_REPOSITORY | awk -F'/' '{print $1}')
+          # 克隆仓库到临时目录
+          git clone https://github.com/$OWNER/$REPO_PATH.git /tmp/repo --branch master --single-branch --quiet
+          # 切换到docs分支
+          cd /tmp/repo
+          git checkout docs
+          # 将master分支的CHANGELOG.md内容复制到docs分支的docs/timeline.md
+          cp /tmp/repo/CHANGELOG.md /tmp/repo/docs/timeline.md
+          # 添加并提交更改
+          git add docs/timeline.md
+          git commit -m "Sync CHANGELOG.md to docs/timeline.md"
+          # 推送更改到远程仓库的docs分支
+          git push --force origin docs
+
+        if: github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
