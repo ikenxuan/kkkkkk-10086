@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.2...v1.2.3) (2024-08-08)
+
+
+### Bug Fixes
+
+* 细节优化 ([e4b7b28](https://github.com/ikenxuan/kkkkkk-10086/commit/e4b7b28c7fd4fc2f06f688b66ed5fe0b5c4c67d0))
+
 ## [1.2.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.1...v1.2.2) (2024-08-08)
 
 
