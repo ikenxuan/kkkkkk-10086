@@ -42,14 +42,14 @@ jobs:
       - name: Copy CHANGELOG.md to docs/timeline.md
         run: |
           mkdir -p docs
-          cp CHANGELOG.md docs/timeline.md
+          cp CHANGELOG.md docs/other/timeline.md
 
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/other/timeline.md
-          git commit -m 'Update docs/timeline.md with latest CHANGELOG.md'
+          git commit -m 'Update docs/other/timeline.md with latest CHANGELOG.md'
           git push --force origin docs
 
         env:
