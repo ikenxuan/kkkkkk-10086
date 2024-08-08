@@ -1,69 +1,91 @@
-# 版本历史
+# Changelog
 
-Reaease 地址: https://github.com/ikenxuan/kkkkkk-10086/releases
+## [1.2.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.1...v1.2.2) (2024-08-08)
 
-::: timeline v0.2.3.1
-### What's Changed
-* feat: 新增快手评论图
-* feat: 新增 `#kkk设置快手评论数量 + 1 ~ 30`
-
-**Full Changelog**: [`v0.2.3...v0.2.3.1`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.3...v0.2.3.1)
-:::
-
-
-::: timeline v0.2.3
-### What's Changed
-* feat: 简略支持下快手
-
-新增内容请前往文档查阅 [快手相关](https://ikenxuan.github.io/kkkkkk-10086/docs/intro/kuaishou)
-
-**Full Changelog**: [`v0.2.2.1...v0.2.3`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.2.1...v0.2.3)
-:::
-
-
-::: timeline v0.2.2.1
 
 ### Bug Fixes
-* 修复 `#kkk设置`
 
-**Full Changelog**: [`v0.2.2...v0.2.2.1`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.2...v0.2.2.1)
-:::
+* B站评论数量异常 ([d590c8c](https://github.com/ikenxuan/kkkkkk-10086/commit/d590c8c6356915dab914cabb2e2ff0814c292b63))
+* eslint ([d590c8c](https://github.com/ikenxuan/kkkkkk-10086/commit/d590c8c6356915dab914cabb2e2ff0814c292b63))
+* logger.log ([a239a35](https://github.com/ikenxuan/kkkkkk-10086/commit/a239a35297fc0aaa2656954e0bfa096e655b0f57))
+* **package:** 降低sqlite3版本 ([59df939](https://github.com/ikenxuan/kkkkkk-10086/commit/59df939e21db779d256732f5266bc7212061bf40))
+* **push:** 跳出switch ([8c3c657](https://github.com/ikenxuan/kkkkkk-10086/commit/8c3c657c3ae50db1f5fd983400e815c3f4106503))
+* 载入数据库报错 ([492670c](https://github.com/ikenxuan/kkkkkk-10086/commit/492670cf176e6c1fcb628e896fc2d96b42f3e38d))
 
+## [1.2.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.0...v1.2.1) (2024-08-06)
 
-::: timeline v0.2.2
-### What's Changed
-* feat:  添加 `#kkk设置B站动态视频发送` 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [`48cb921`](https://github.com/ikenxuan/kkkkkk-10086/commit/48cb921a2fe6c16a211f39a33932d1bde0601a83)
-* refactor: 使用 `YAML` 格式的配置文件 和 适配 [Karin Manage](https://github.com/HalcyonAlcedo/karin-plugin-manage) 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [`88fa787`](https://github.com/ikenxuan/kkkkkk-10086/commit/88fa787ea2365821deff71298ebc60f8adcd0815)
-* style: 微调UI 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [`3fb14ae`](https://github.com/ikenxuan/kkkkkk-10086/commit/3fb14ae7a4fbe8004e208195b39cdc6503ff8bf6)
-
-**Full Changelog**: [`v0.2.1...v0.2.2`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.1...v0.2.2)
-:::
-
-
-::: timeline v0.2.1
-### What's Changed
-* Formatting via [**@CalmLexi**](https://github.com/CalmLexi) in [`e2be6d5`](https://github.com/ikenxuan/kkkkkk-10086/commit/e2be6d56e550729cd73a0869bab4840786773da3)
 
 ### Bug Fixes
-* **!!serious**: configure file modification permissions [`b693e1b`](https://github.com/ikenxuan/kkkkkk-10086/commit/b693e1b38ebc0cb0621b5d9365c906e908db3886)
-* init file [`a959644`](https://github.com/ikenxuan/kkkkkk-10086/commit/a959644e4b4d9fe294a843785e99bcd9e4941c25)
 
-**Full Changelog**: [`v0.2.0...v0.2.1`](https://github.com/ikenxuan/kkkkkk-10086/compare/0.2.0...v0.2.1)
-:::
+* B站推送 ([31c0f2a](https://github.com/ikenxuan/kkkkkk-10086/commit/31c0f2aad5bf4f9d923a4c3b0f118443466bca48))
+* B站推送 ([9b0feab](https://github.com/ikenxuan/kkkkkk-10086/commit/9b0feab5d3536e47d5be33a0d84295e4fef0ec44))
+* 设置B站推送 ([8ac5cb4](https://github.com/ikenxuan/kkkkkk-10086/commit/8ac5cb411efd8136ce96e0222a2f212129199645))
 
-
-::: timeline v0.2.0
-### What's Changed
-* feature: 适配Karin、Yunzai V4/V3 by [**@ikenxuan**](https://github.com/ikenxuan) in [#21](https://github.com/ikenxuan/kkkkkk-10086/pull/21)
-* feature: 处理不同机器人框架的自定义模块 via [**@XasYer**](https://github.com/XasYer) in [XasYer/Shiranai-Plugin@`b29ec03`](https://github.com/XasYer/Shiranai-Plugin/commit/b29ec034fca79cce7f26d55b1573f3e22ecb0942) and [**@OduckO**](https://github.com/OduckO)
-
-**Full Changelog**: [`v0.1.8...v0.2.0`](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.1.8...0.2.0)
-:::
+## [1.2.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.1.2...v1.2.0) (2024-08-06)
 
 
-::: timeline v0.1.8
-### 新增与调整
-* 可自行选择是否上传视频（当解析的 `视频文件大小` > `设定值` 时不会上传），使用此功能需先使用 `#kkk设置上传限制开启` 后再使用 `#kkk设置限制 + 5~114514` 单位: MB
-### 修复与优化
-* 💦细节优化
-:::
+### Features
+
+* 使用@ikenxuan/amagi库放出本地api为http服务 ([#31](https://github.com/ikenxuan/kkkkkk-10086/issues/31)) ([61474cd](https://github.com/ikenxuan/kkkkkk-10086/commit/61474cde08d10d9840606054116a211793ec42d9))
+* 增加相关配置项 ([67f1dbd](https://github.com/ikenxuan/kkkkkk-10086/commit/67f1dbdfb0b37ebd667e691d9239d79da34ad600))
+
+## [1.1.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.1.1...v1.1.2) (2024-08-05)
+
+
+### Bug Fixes
+
+* **admin:** 增加快手ck的设置 ([edd177d](https://github.com/ikenxuan/kkkkkk-10086/commit/edd177d697ac74c1fff5db1ea999f3a1f9bcf705))
+* **dependencies:** update version ([40ea999](https://github.com/ikenxuan/kkkkkk-10086/commit/40ea999f5b5e1264563c3280c1ad94cee6e5455b))
+* **guoba.support:** 增加快手CK设置和优化抖音推送配置 ([f85a589](https://github.com/ikenxuan/kkkkkk-10086/commit/f85a589fa20f9221c986e11d539b17ea9833dccd))
+* 暂时修复kkk版本 ([bfca282](https://github.com/ikenxuan/kkkkkk-10086/commit/bfca2829f52d161c5bc054c18dbe36c0fbb085c0))
+* 跟进@karinjs/md-html包版本，修复kkk版本样式 ([600e913](https://github.com/ikenxuan/kkkkkk-10086/commit/600e9131a1f10fb457ad0a2fbf39620026bcc943))
+
+## [1.1.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.1.0...v1.1.1) (2024-08-05)
+
+
+### Bug Fixes
+
+* 处理HTTP 429状态码的异常情况 ([d21cae2](https://github.com/ikenxuan/kkkkkk-10086/commit/d21cae2c9c756a7380055340cbde33bc5c185c70))
+
+## [1.1.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.0.1...v1.1.0) (2024-08-05)
+
+
+### Features
+
+* **bilibili:** 新增直播动态支持 ([0526f85](https://github.com/ikenxuan/kkkkkk-10086/commit/0526f85c1de7d0a0b9877863d98c386d077cdae0))
+
+## [1.0.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.0.0...v1.0.1) (2024-08-03)
+
+
+### Bug Fixes
+
+* actions ([86e405a](https://github.com/ikenxuan/kkkkkk-10086/commit/86e405a2bc80a25c7728921192a317f849a12fb3))
+* 插件版本号错误 ([50254d8](https://github.com/ikenxuan/kkkkkk-10086/commit/50254d847bdc85e11c2e2c0992bcd80bb51db9e0))
+
+## [1.0.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v0.2.3...v1.0.0) (2024-08-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* Changed import paths for components and lib. Update dependent files accordingly.
+
+### Features
+
+* **gitignore:** add eslint.config.js and jsconfig.json to .gitignore ([accb74c](https://github.com/ikenxuan/kkkkkk-10086/commit/accb74c40e2614ec4b37547eaac3611ba5b403a0))
+* **kuaishou:** add support for setting and retrieving快手评论数量 ([b379497](https://github.com/ikenxuan/kkkkkk-10086/commit/b379497062b4a3be29017635824c8381dbb9f9be))
+* 快手支持自定义ck，默认使用游客（随时失效） ([2a8afd9](https://github.com/ikenxuan/kkkkkk-10086/commit/2a8afd9ca06ac29c3d1e4726aa7a59a1e70e37cf))
+
+
+### Bug Fixes
+
+* **bilibili:** ensure strict equality in API URL construction and add missing comma in comments.js ([951343f](https://github.com/ikenxuan/kkkkkk-10086/commit/951343ff1bbd801b1e412b76db000b8c14c3f783))
+* **module:** correct import path for makeForwardMsg in makeForwardMsg.js ([992c61c](https://github.com/ikenxuan/kkkkkk-10086/commit/992c61c0d3c5bb277f3f068f1fffcb9d0b112175))
+* **module:** update import paths and correct plugin URLs in public scripts ([da883a6](https://github.com/ikenxuan/kkkkkk-10086/commit/da883a6402490c003f3af5d5c8776de7e9d6b8e4))
+* 先暂时移除node-amagi ([9d0422d](https://github.com/ikenxuan/kkkkkk-10086/commit/9d0422dabad8932fbf199cac717ab3241abcff27))
+* 发送主动消息传入uin，需重新配置所有推送用户 ([#26](https://github.com/ikenxuan/kkkkkk-10086/issues/26)) ([342f65c](https://github.com/ikenxuan/kkkkkk-10086/commit/342f65ca725b31174c801d9715a1d8d91b1869b4))
+* 暂时移除kkk版本命令 ([954d9bc](https://github.com/ikenxuan/kkkkkk-10086/commit/954d9bcbc33a589c4c7219e77240c960041258e4))
+
+
+### Code Refactoring
+
+* restructure modules and update component imports ([9e9ede1](https://github.com/ikenxuan/kkkkkk-10086/commit/9e9ede1df4d3b7bf8f6a4b4ccac05d7ec96a1c52))

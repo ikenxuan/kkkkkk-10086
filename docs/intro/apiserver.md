@@ -1,6 +1,6 @@
 # 本地视频解析 API 服务
 
-该功能通过配置文件 `app.yaml` 进行该功能的启停
+该功能通过配置文件 `app.yaml` 进行管理
 
 ```yaml
 # 放出API服务（本地部署一个抖音、B站的api服务）
@@ -10,8 +10,8 @@ APIServer: true
 APIServerPort: 4567
 ```
 
-### 🚧该页面正在施工中
+API 文档请查看 [**Apifox**](https://amagi.apifox.cn)
 
 
 ## TODO
-- [ ] API 文档 
+- [x] API 文档 
