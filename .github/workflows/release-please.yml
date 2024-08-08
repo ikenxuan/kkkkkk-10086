@@ -34,24 +34,23 @@ jobs:
           # 指定默认分支名称
           default-branch: master
 
-      - name: Push CHANGELOG to docs/timeline.md
+      - name: Checkout master branch
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Copy CHANGELOG.md to docs/timeline.md
         run: |
-          # 克隆仓库到临时目录
-          git clone --mirror https://github.com/ikenxuan/kkkkkk-10086.git /tmp/repo --branch master --single-branch --quiet
-          # 切换到docs分支
-          cd /tmp/repo
-          git checkout docs
-          # 将master分支的CHANGELOG.md内容复制到docs分支的docs/timeline.md
-          cp /tmp/repo/CHANGELOG.md /tmp/repo/docs/timeline.md
-          # 配置Git用户信息
+          mkdir -p docs
+          cp CHANGELOG.md docs/timeline.md
+
+      - name: Commit changes
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 添加并提交更改
-          git add docs/timeline.md
-          git commit -m "Sync CHANGELOG.md to docs/timeline.md"
-          # 推送更改到远程仓库的docs分支
+          git add docs/other/timeline.md
+          git commit -m 'Update docs/timeline.md with latest CHANGELOG.md'
           git push --force origin docs
 
-        if: github.ref == 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
