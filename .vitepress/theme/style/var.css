@@ -1,19 +1,25 @@
 /* var.css */
+/*  */
+.VPSocialLinks.VPNavBarSocialLinks.social-links {
+    margin-right: 0;
+}
+
 :root {
-    --vp-c-brand-1: #371879;
-    --vp-c-brand-2: #382997;
-    --vp-c-brand-3: #3630a4;
-    /* 设置右图像渐变 */
+    --vp-c-brand-1: #5224b6;
+    --vp-c-brand-2: #352984;
+    --vp-c-brand-3: #6d68c1;
     --vp-home-hero-image-background-image: linear-gradient(-45deg, #f6abe9 50%, #ebe0ba 50%);
     --vp-home-hero-image-filter: blur(150px);
 }
 
+/* 主题色，浅色模式，深紫色调 */
 .dark {
     --vp-c-brand-1: #C8ABFA;
     --vp-c-brand-2: #3c30a4;
     --vp-c-brand-3: #352984;
 }
 
+/* 移除链接跳转下划线 */
 .vp-doc a {
     text-decoration: none;
 }
@@ -26,22 +32,22 @@
 }
 
 /* 提示框 */
-.custom-block.tip {
+/* .custom-block.tip {
     border-color: var(--vp-c-green-2);
-}
+} */
 
 /* 警告框 */
-.custom-block.warning {
-    /* border-color: #d97706; */
+/* .custom-block.warning {
     border-color: var(--vp-c-yellow-2);
-}
+} */
 
 /* 危险框 */
-.custom-block.danger {
-    /* border-color: #f43f5e; */
+/* .custom-block.danger {
     border-color: var(--vp-c-red-2);
-}
+} */
 
+/** 响应式图片缩放覆盖范围 */
+/** 最顶层 */
 .medium-zoom-overlay {
     z-index: 20;
 }
