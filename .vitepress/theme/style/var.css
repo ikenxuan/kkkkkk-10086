@@ -56,3 +56,20 @@
     z-index: 9999 !important;
     /* 给的值是21，但是实测盖不住，直接999 */
 }
+
+/* 标题栏毛玻璃 */
+.VPNavBar:not(.home.top) .content-body[data-v-486f4285] {
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.VPLocalNav.has-sidebar[data-v-f46ab541] {
+    padding-left: var(--vp-sidebar-width);
+    background-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
