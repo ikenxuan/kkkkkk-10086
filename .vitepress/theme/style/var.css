@@ -10,6 +10,22 @@
     --vp-c-brand-3: #6d68c1;
     --vp-home-hero-image-background-image: linear-gradient(-45deg, #f6abe9 50%, #ebe0ba 50%);
     --vp-home-hero-image-filter: blur(150px);
+
+    .VPNavBar:not(.home.top) .content-body[data-v-486f4285] {
+        position: relative;
+        background-color: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .VPLocalNav.has-sidebar[data-v-f46ab541] {
+        padding-left: var(--vp-sidebar-width);
+        background-color: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+    }
 }
 
 /* 主题色，浅色模式，深紫色调 */
@@ -17,6 +33,23 @@
     --vp-c-brand-1: #C8ABFA;
     --vp-c-brand-2: #3c30a4;
     --vp-c-brand-3: #352984;
+
+    /* 标题栏毛玻璃 */
+    .VPNavBar:not(.home.top) .content-body[data-v-486f4285] {
+        position: relative;
+        background-color: rgba(27, 27, 31, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(27, 27, 31, 0.18);
+    }
+
+    .VPLocalNav.has-sidebar[data-v-f46ab541] {
+        padding-left: var(--vp-sidebar-width);
+        background-color: rgba(27, 27, 31, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(27, 27, 31, 0.18);
+    }
 }
 
 /* 移除链接跳转下划线 */
@@ -55,21 +88,4 @@
 .medium-zoom-image {
     z-index: 9999 !important;
     /* 给的值是21，但是实测盖不住，直接999 */
-}
-
-/* 标题栏毛玻璃 */
-.VPNavBar:not(.home.top) .content-body[data-v-486f4285] {
-    position: relative;
-    background-color: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.VPLocalNav.has-sidebar[data-v-f46ab541] {
-    padding-left: var(--vp-sidebar-width);
-    background-color: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
 }
