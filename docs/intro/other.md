@@ -25,7 +25,7 @@
 :::
 
 ::: details 移动端（Android）
-使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问以下网址的网页版并<mark>登录你自己的账号</mark><br><br>[www.douyin.com](https://www.douyin.com) <br> [www.bilibili.com](https://www.bilibili.com) <br> [www.kuaishou.com](https://www.kuaishou.com)<br><br>登录成功后点击 **`左上角按钮`** => **`查看 Cookies`** => **`复制文本`**
+使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问以下网址的网页版并<mark>登录你自己的账号</mark><br><br>抖音: [www.douyin.com](https://www.douyin.com) <br> 哔哩哔哩: [www.bilibili.com](https://www.bilibili.com) <br> 快手: [www.kuaishou.com](https://www.kuaishou.com)<br><br>登录成功后点击 **`左上角按钮`** => **`查看 Cookies`** => **`复制文本`**
 :::
 
 ### 如何配置？
