@@ -8,47 +8,42 @@
 ### 使用 Git 克隆（推荐）
 
 机器人目录下打开终端执行
+#### Yunzai
 ::: code-group
 
 ```sh [GitHub]
-# （国外推荐）使用 GitHub
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ```sh [Gitee]
-# （国内推荐）使用 Gitee
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ```sh [Ghproxy]
-# （国内推荐）使用 Ghproxy 代理 Github
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 :::
 
-::: details 如果你想在 [`Karin`](https://github.com/KarinJS/Karin) 安装
-
+#### Karin
 Karin 框架 文档: https://karinjs.github.io/Karin<br>
 Karin 务必使用以下的命令安装，否则插件可能不会被识别
 
 ::: code-group
 
 ```sh [GitHub]
-# （国外推荐）使用 GitHub
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Gitee]
-# （国内推荐）使用 Gitee
 git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Ghproxy]
-# （国内推荐）使用 Ghproxy 代理 Github
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 :::
+
 
 ### 使用 Release 发行版（不推荐）
 **_不推荐该方式，后续无法通过 Git 进行更新_**<br><br>
@@ -63,13 +58,12 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 
 ## 安装依赖
 二选一
+1. 根目录下执行
 ```sh
-# 1.根目录下执行
 pnpm install --filter=kkkkkk-10086
 ```
-
+2. 插件目录下执行
 ```sh
-# 2.插件目录下执行
 cd plugins/kkkkkk-10086
 pnpm install -P
 ```
