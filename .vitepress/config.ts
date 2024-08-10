@@ -1,3 +1,4 @@
+import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
 // 时间线
 import timeline from 'vitepress-markdown-timeline'
@@ -93,6 +94,18 @@ export default defineConfig({
         '@nolebase/*',
       ],
     },
+    resolve: {
+      alias: [
+        {
+          find: /^.*\/VPFooter\.vue$/, replacement: fileURLToPath(
+            new URL('./theme/components/HomeFooter.vue', import.meta.url)
+          )
+        }
+      ]
+    },
+    define: {
+      FooterData: JSON.stringify(require('./data/fooertData').Footer_Data)
+    }
   },
   vue: {
     template: {

@@ -16,6 +16,7 @@
     "@nolebase/vitepress-plugin-page-properties": "latest",
     "@nolebase/vitepress-plugin-thumbnail-hash": "latest",
     "@shikijs/vitepress-twoslash": "^1.12.1",
+    "@theo-messi/tm-fe": "^2.4.1",
     "@types/node": "^20.14.15",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vueuse/core": "^10.11.1",
