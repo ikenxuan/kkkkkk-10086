@@ -131,7 +131,14 @@ export function supportGuoba () {
           field: 'app.APIServerPort',
           label: 'API服务端口',
           component: 'InputNumber',
-          required: false,
+          required: false
+        },
+        {
+          field: 'app.APIServerLog',
+          label: 'API服务日志',
+          bottomHelpMessage: '打开或关闭运行日志',
+          component: 'Switch',
+          required: false
         },
         /** 抖音视频解析配置 */
         {

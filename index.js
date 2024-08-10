@@ -5,7 +5,7 @@ import amagi, { StartClient } from '@ikenxuan/amagi'
 const { Instance } = await new amagi({
   douyin: Config.cookies.douyin,
   bilibili: Config.cookies.bilibili
-}).initServer(true)
+}).initServer(Config.app.APIServerLog)
 
 if (Config.app.APIServer) await StartClient(Instance, Config.app.APIServerPort)
 

@@ -67,6 +67,11 @@
       path: 'APIServerPort'
       type: 'number'
     -
+      key: API服务日志
+      comment: '打开或关闭运行日志'
+      path: 'APIServerLog'
+      type: 'boolean'
+    -
       key: 自定义优先级
       comment: 「默认解析」关闭后才会生效。修改后重启生效
       path: 'priority'

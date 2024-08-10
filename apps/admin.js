@@ -10,7 +10,8 @@ const APPType = {
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
   上传限制: 'usefilelimit',
-  API服务: 'APIServer'
+  API服务: 'APIServer',
+  API服务日志: 'APIServerLog'
 }
 
 const DouYinType = {
