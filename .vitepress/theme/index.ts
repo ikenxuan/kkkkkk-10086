@@ -38,7 +38,7 @@ import {
 import Share from './components/Share.vue'
 // 卡片
 import Ncard from './components/Ncard.vue'
-
+import Video from './components/Video.vue'
 import HomeUnderline from './components/HomeUnderline.vue'
 // import HomeFooter from './components/HomeFooter.vue'
 // 页面属性
@@ -65,6 +65,7 @@ export default {
     } as Options)
     app.component('HomeUnderline', HomeUnderline)
     app.component('NCard', Ncard)
+    app.component('Video', Video)
     // app.component('HomeFooter', HomeFooter)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)

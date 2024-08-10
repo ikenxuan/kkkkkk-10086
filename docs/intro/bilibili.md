@@ -2,7 +2,9 @@
 
 ---
 
-插件会自动识别 `B站的分享链接`[^1] 进行解析
+插件会自动识别 `B站的分享链接`[^1] 进行解析<br>
+如何配置B站ck？请看 [**配置不同平台的 cookies**](./other.md)
+
 
 | 功能          | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                                  |
 | ------------- | -------- | ----------------------- | ------------------------------------------------------------------------------------- |
@@ -18,30 +20,3 @@
 ---
 
 [^1]: B 站的分享链接: 包括 `APP分享`、`web地址`、`小程序分享`
-
-::: details 如何配置 B 站 `Cookie`
-
-### 浏览器
-
-找到携带 Cookie 的请求复制请求头中的 Cookie
-![img](../../public/intro/pic1.png)
-
-### 移动端
-
-使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [bilibili](https://www.bilibili.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
-
-### 配置 Cookie
-
-获取到 Cookie 后 使用 `#kkk设置B站ck` 后发送 Cookie 即可配置成功<br><br>
-或者使用 [**后台面板**](../start/start.config.md) 进行配置<br><br>
-手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
-
-```yaml{5}
-# 抖音ck
-douyin:
-
-# B站ck，注意冒号后有个空格！ // [!code focus]
-bilibili: 此处填上你的B站ck // [!code focus]
-```
-
-:::

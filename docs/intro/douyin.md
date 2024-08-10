@@ -2,7 +2,8 @@
 
 ---
 
-插件会自动识别 `APP分享链接`[^1] `web视频链接`[^2] 进行解析
+插件会自动识别 `APP分享链接`[^1] `web视频链接`[^2] 进行解析<br>
+如何配置抖音ck？请看 [**配置不同平台的 cookies**](./other.md)
 
 | 功能           | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                        |
 | -------------- | -------- | ----------------------- | --------------------------------------------------------------------------- |
@@ -18,34 +19,7 @@
 
 [^1]: 抖音的分享链接: [`8.74 复制打开抖音，看看【Aleks Kost的作品】当代网友：这是亚当本人吧？ # 亚当仿妆# 用亚当... https://v.douyin.com/i6msCtFe/ l@P.KJ pDH:/ 12/11`](https://v.douyin.com/i6msCtFe/)
 
-::: details 如何配置抖音 `Cookie`
-
 [^2]: web 视频链接: [`https://www.douyin.com/video/7375088329701854498`](https://www.douyin.com/video/7375088329701854498)
-
-### 浏览器
-
-找到携带 Cookie 的请求复制请求头中的 Cookie
-![img](../../public/intro/pic1.png)
-
-### 移动端
-
-使用 [via 浏览器](https://res.viayoo.com/v1/via-release-cn.apk) 访问 [抖音](https://www.douyin.com/) 网页版并登录，点击 `左上角按钮` => `查看 Cookies` => `复制文本`
-
-### 配置 Cookie
-
-获取到 Cookie 后 使用 `#kkk设置抖音ck` 后发送 Cookie 即可配置成功<br><br>
-或者使用 [**后台面板**](../start/start.config.md) 进行配置<br><br>
-手动配置则需要打开配置文件 `config/config/cookies.yaml` ，根据提示将对应的值替换成你获取到的 Cookie
-
-```yaml{2}
-# 抖音ck，注意冒号后有个空格！ // [!code focus]
-douyin: 此处填上你的抖音ck // [!code focus]
-
-# B站ck
-bilibili:
-```
-
-:::
 
 ::: warning 注意！！
 
