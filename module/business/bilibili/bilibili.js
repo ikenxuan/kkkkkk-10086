@@ -168,7 +168,7 @@ export default class BiLiBiLi extends Base {
               shareurl: '动态分享链接'
             })
             if (imgArray.length === 1) this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
+            if (imgArray.length > 1) await this.e.reply([ 'QQBot', 'KOOKBot' ].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
             if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
@@ -199,7 +199,7 @@ export default class BiLiBiLi extends Base {
               Botadapter: this.botadapter,
               dynamicTYPE: '图文动态'
             })
-            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
+            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [ { text: '加纳~', send: true } ]))
             break
           }
           /** 纯文 */
@@ -249,7 +249,7 @@ export default class BiLiBiLi extends Base {
         const img = await Render.render(
           'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
           {
-            image_url: [{ image_src: OBJECT.live_info.data.user_cover }],
+            image_url: [ { image_src: OBJECT.live_info.data.user_cover } ],
             text: br(OBJECT.live_info.data.title),
             liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
             username: OBJECT.USERDATA.data.card.name,

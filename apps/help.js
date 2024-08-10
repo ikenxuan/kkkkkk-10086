@@ -41,7 +41,7 @@ export class Help extends plugin {
       columnCount: 3,
       colWidth: 265,
       theme: 'all',
-      themeExclude: ['default'],
+      themeExclude: [ 'default' ],
       style: {
         fontColor: '#ceb78b',
         descColor: '#eee',

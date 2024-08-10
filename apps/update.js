@@ -36,7 +36,7 @@ export class MusicUpdate extends plugin {
 
     switch (Version.BotName) {
       case 'Karin': {
-        let [name, cmd] = [Version.pluginName, 'git pull']
+        let [ name, cmd ] = [ Version.pluginName, 'git pull' ]
         if (e.msg.includes('强制')) cmd = 'git reset --hard && git pull --allow-unrelated-histories'
         try {
           const { data } = await Update.update(Version.pluginPath, cmd)

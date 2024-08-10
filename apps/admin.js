@@ -139,7 +139,7 @@ export class Admin extends plugin {
     const regRet = SwitchCfgReg.exec(e.msg)
     const key = regRet[1]
     const file = Object.entries(FileWitch)
-      .find(([, values]) => Object.keys(values).includes(key))[0]
+      .find(([ , values ]) => Object.keys(values).includes(key))[0]
     const is = regRet[2] == '开启'
     const _key = SwitchCfgType[key]
     Config.modify(file, _key?.key ?? _key, is)
@@ -202,7 +202,7 @@ export class Admin extends plugin {
     this.setContext('savedyck')
     const _path = ''
     const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply([ '请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img) ], true)
     return true
   }
 
@@ -216,7 +216,7 @@ export class Admin extends plugin {
   async setbilick () {
     this.setContext('savebilick')
     const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply([ '请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img) ], true)
     return true
   }
 
@@ -230,7 +230,7 @@ export class Admin extends plugin {
   async setksck () {
     this.setContext('saveksck')
     const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply([ '请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img) ], true)
     return true
   }
 
@@ -263,7 +263,7 @@ function checkNumberValue (value, limit) {
     return value
   }
   // 解析限制条件
-  const [symbol, limitValue] = limit.match(/^([<>])?(.+)$/).slice(1)
+  const [ symbol, limitValue ] = limit.match(/^([<>])?(.+)$/).slice(1)
   const parsedLimitValue = parseFloat(limitValue)
 
   // 检查比较限制条件
@@ -273,7 +273,7 @@ function checkNumberValue (value, limit) {
 
   // 检查范围限制条件
   if (!isNaN(value)) {
-    const [lowerLimit, upperLimit] = limit.split('-').map(parseFloat)
+    const [ lowerLimit, upperLimit ] = limit.split('-').map(parseFloat)
     const clampedValue = Math.min(Math.max(value, lowerLimit || -Infinity), upperLimit || Infinity)
     return clampedValue
   }

@@ -270,7 +270,7 @@ export default class DouYin extends Base {
           )
         }
 
-        const tip = ['视频正在上传']
+        const tip = [ '视频正在上传' ]
         let res
         if (this.is_mp4) {
           res = full_data
@@ -394,7 +394,7 @@ export default class DouYin extends Base {
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
               `music_id: ${data.music_info.id}`
             ],
-            [{ text: '音乐文件', link: data.music_info.play_url.uri }]
+            [ { text: '音乐文件', link: data.music_info.play_url.uri } ]
           )
         )
 

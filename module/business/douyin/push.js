@@ -61,7 +61,7 @@ export default class DouYinpush extends Base {
       // 遍历 group_id 数组，并发送消息
       try {
         for (const groupId of data[awemeId].group_id) {
-          const [group_id, uin] = groupId.split(':')
+          const [ group_id, uin ] = groupId.split(':')
           const status = await sendMsg(uin, group_id, img)
           if (status) {
             const DBdata = await DB.FindGroup('douyin', groupId)
@@ -101,7 +101,7 @@ export default class DouYinpush extends Base {
                   remark: data[awemeId].remark,
                   create_time: Number(data[awemeId].create_time),
                   sec_uid: data[awemeId].sec_uid,
-                  aweme_idlist: [awemeId],
+                  aweme_idlist: [ awemeId ],
                   avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
                 }
                 DBdata[data[awemeId].sec_uid] = newEntry
@@ -115,7 +115,7 @@ export default class DouYinpush extends Base {
                   remark: data[awemeId].remark,
                   create_time: data[awemeId].create_time,
                   sec_uid: data[awemeId].sec_uid,
-                  aweme_idlist: [awemeId],
+                  aweme_idlist: [ awemeId ],
                   avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + data[awemeId].Detail_Data.user_info.user.avatar_larger.uri
                 }
               })
@@ -142,7 +142,7 @@ export default class DouYinpush extends Base {
 
         // 配置文件中的 group_id 转换为对象数组，每个对象包含群号和机器人账号
         const configGroupIdObjs = item.group_id.map(groupIdStr => {
-          const [groupId, robotId] = groupIdStr.split(':')
+          const [ groupId, robotId ] = groupIdStr.split(':')
           return { groupId: Number(groupId), robotId }
         })
 
@@ -325,7 +325,7 @@ export default class DouYinpush extends Base {
 
   async forcepush (data) {
     for (const detail in data) {
-      data[detail].group_id = [...[`${this.e.group_id}:${this.e.self_id}`]]
+      data[detail].group_id = [ ...[ `${this.e.group_id}:${this.e.self_id}` ] ]
     }
     await this.getdata(data)
   }
@@ -397,7 +397,7 @@ export default class DouYinpush extends Base {
           await DB.CreateSheet('douyin', `${group_id}:${this.e.self_id}`, {}, this.e.self_id)
         }
         // 如果不存在相同的 sec_uid，则新增一个属性
-        config.douyin.push({ sec_uid, group_id: [`${group_id}:${this.e.self_id}`], remark: UserInfoData.user.nickname, short_id: user_shortid })
+        config.douyin.push({ sec_uid, group_id: [ `${group_id}:${this.e.self_id}` ], remark: UserInfoData.user.nickname, short_id: user_shortid })
         msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
       }
 

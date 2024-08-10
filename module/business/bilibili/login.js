@@ -18,7 +18,7 @@ export default class BiLogin extends Base {
       '免责声明:\n您将通过扫码完成获取哔哩哔哩的ck用于请求B站API接口以获取数据。\n本Bot不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~',
       { recallMsg: 180 }
     )
-    await this.e.reply([segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')), segment.at(this.e.user_id), '请扫码以完成获取'], { recallMsg: 180 })
+    await this.e.reply([ segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')), segment.at(this.e.user_id), '请扫码以完成获取' ], { recallMsg: 180 })
 
     /** 判断二维码状态 */
     // let Execution86038 = -1

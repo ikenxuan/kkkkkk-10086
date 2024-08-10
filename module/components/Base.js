@@ -94,12 +94,12 @@ export default class Base {
    */
   mkMsg (msg, btns = []) {
     if (!Array.isArray(msg)) {
-      msg = [msg]
+      msg = [ msg ]
     }
     if (btns.length > 0) {
       btns = this.mkbutton(btns)
       if (btns) {
-        return [...msg, btns]
+        return [ ...msg, btns ]
       } else return msg
     } else return msg.flat(Infinity)
   }

@@ -46,7 +46,7 @@ class Config {
     }
     const oldCfg = JSON.parse(fs.readFileSync(`${Version.pluginPath}/config/config.json`, 'utf8'))
     const configMap = {
-      cookies: ['douyin', 'bilibili'],
+      cookies: [ 'douyin', 'bilibili' ],
       app: [
         'priority', 'filelimit', 'defaulttool', 'rmmp4',
         'sendforwardmsg', 'usefilelimit', 'videotool'
@@ -56,9 +56,9 @@ class Config {
         'bilibilipush', 'bilibilipushcron', 'bilibilipushGroup',
         'bilibilipushlog', 'bilibilitip', 'bilibilitool'
       ],
-      douyin: ['comments', 'commentsimg', 'douyinpush',
+      douyin: [ 'comments', 'commentsimg', 'douyinpush',
         'douyinpushcron', 'douyinpushGroup', 'douyinpushlog',
-        'douyintip', 'douyintool', 'numcomments', 'sendHDrecord'], // 省略douyin相关配置项
+        'douyintip', 'douyintool', 'numcomments', 'sendHDrecord' ], // 省略douyin相关配置项
       pushlist: {
         douyin: oldCfg.douyinpushlist.map(item => ({
           ...item
@@ -68,7 +68,7 @@ class Config {
         }))
       }
     }
-    for (const [category, keys] of Object.entries(configMap)) {
+    for (const [ category, keys ] of Object.entries(configMap)) {
       switch (category) {
         case 'cookies':
           for (const key of keys) {
@@ -76,7 +76,7 @@ class Config {
           }
           break
         case 'pushlist':
-          for (const [subCategory, items] of Object.entries(keys)) {
+          for (const [ subCategory, items ] of Object.entries(keys)) {
             this.modify(category, subCategory, items)
           }
           break

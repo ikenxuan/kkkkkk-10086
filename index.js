@@ -2,12 +2,12 @@ import { Version, Init, Config } from '#components'
 import { logger } from '#lib'
 import amagi, { StartClient } from '@ikenxuan/amagi'
 
-const client = await new amagi({
+const { Instance } = await new amagi({
   douyin: Config.cookies.douyin,
   bilibili: Config.cookies.bilibili
 }).initServer(true)
 
-if (Config.app.APIServer) await StartClient(client, { port: Config.app.APIServerPort })
+if (Config.app.APIServer) await StartClient(Instance, Config.app.APIServerPort)
 
 
 export const apps = await Init().catch(error => logger.error(error))

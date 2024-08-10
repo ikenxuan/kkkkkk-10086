@@ -19,7 +19,7 @@ export default class Networks {
   constructor (data) {
     this.Headers = new Headers()
     if (data.headers && Object.keys(data.headers).length > 0) {
-      for (const [key, value] of Object.entries(data.headers)) {
+      for (const [ key, value ] of Object.entries(data.headers)) {
         this.Headers.append(key, value)
       }
     } else this.Headers = {}
@@ -142,7 +142,7 @@ export default class Networks {
         if (this.fetch.headers) {
           const headers = this.fetch.headers
           const headersObject = {}
-          for (const [key, value] of headers.entries()) {
+          for (const [ key, value ] of headers.entries()) {
             headersObject[key] = value
           }
           return headersObject
@@ -175,7 +175,7 @@ export default class Networks {
         if (this.fetch.headers) {
           headers = {}
           const fetchHeaders = this.fetch.headers
-          for (const [key, value] of fetchHeaders.entries()) {
+          for (const [ key, value ] of fetchHeaders.entries()) {
             headers[key] = value
           }
         } else {

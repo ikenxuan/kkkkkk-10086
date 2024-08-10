@@ -148,7 +148,7 @@ export default class Bilibilipush extends Base {
             img = await Render.render(
               'html/bilibili/dynamic/DYNAMIC_TYPE_AV',
               {
-                image_url: [{ image_src: INFODATA.INFODATA.data.pic }],
+                image_url: [ { image_src: INFODATA.INFODATA.data.pic } ],
                 text: br(INFODATA.INFODATA.data.title),
                 desc: br(dycrad.desc),
                 dianzan: this.count(INFODATA.INFODATA.data.stat.like),
@@ -173,7 +173,7 @@ export default class Bilibilipush extends Base {
           img = await Render.render(
             'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
             {
-              image_url: [{ image_src: dycrad.live_play_info.cover }],
+              image_url: [ { image_src: dycrad.live_play_info.cover } ],
               text: br(dycrad.live_play_info.title),
               liveinf: br(`${dycrad.live_play_info.area_name} | 房间号: ${dycrad.live_play_info.room_id}`),
               username: userINFO.data.card.name,
@@ -197,7 +197,7 @@ export default class Bilibilipush extends Base {
       // 遍历 group_id 数组，并发送消息
       try {
         for (const groupId of data[dynamicId].group_id) {
-          const [group_id, uin] = groupId.split(':')
+          const [ group_id, uin ] = groupId.split(':')
           let status
           if (send) status = await sendMsg(uin, group_id, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
@@ -248,7 +248,7 @@ export default class Bilibilipush extends Base {
                   remark: data[dynamicId].remark,
                   create_time: data[dynamicId].create_time,
                   host_mid: data[dynamicId].host_mid,
-                  dynamic_idlist: [dynamicId],
+                  dynamic_idlist: [ dynamicId ],
                   avatar_img: data[dynamicId].Dynamic_Data.modules.module_author.face,
                   dynamic_type: data[dynamicId].dynamic_type
                 }
@@ -263,7 +263,7 @@ export default class Bilibilipush extends Base {
                   remark: data[dynamicId].remark,
                   create_time: data[dynamicId].create_time,
                   host_mid: data[dynamicId].host_mid,
-                  dynamic_idlist: [dynamicId],
+                  dynamic_idlist: [ dynamicId ],
                   avatar_img: data[dynamicId].Dynamic_Data.modules.module_author.face,
                   dynamic_type: data[dynamicId].dynamic_type
                 }
@@ -297,7 +297,7 @@ export default class Bilibilipush extends Base {
 
         // 配置文件中的 group_id 转换为对象数组，每个对象包含群号和机器人账号
         const configGroupIdObjs = item.group_id.map(groupIdStr => {
-          const [groupId, robotId] = groupIdStr.split(':')
+          const [ groupId, robotId ] = groupIdStr.split(':')
           return { groupId: Number(groupId), robotId }
         })
 
@@ -405,7 +405,7 @@ export default class Bilibilipush extends Base {
         await DB.CreateSheet('bilibili', `${group_id}:${this.e.self_id}`, {}, this.e.self_id)
       }
       // 不存在相同的 host_mid，新增一个配置项
-      config.bilibili.push({ host_mid, group_id: [`${group_id}:${this.e.self_id}`], remark: data.data.card.name })
+      config.bilibili.push({ host_mid, group_id: [ `${group_id}:${this.e.self_id}` ], remark: data.data.card.name })
       msg = `群：${group_id}\n添加成功！${data.data.card.name}\nUID：${host_mid}`
     }
 
@@ -529,7 +529,7 @@ export default class Bilibilipush extends Base {
 
   async forcepush (data) {
     for (const detail in data) {
-      data[detail].group_id = [...[`${this.e.group_id}:${this.e.self_id}`]]
+      data[detail].group_id = [ ...[ `${this.e.group_id}:${this.e.self_id}` ] ]
     }
     await this.getdata(data)
   }

@@ -120,7 +120,7 @@ async function UpdateGroupData (ModelName, Group_ID, NewData = {}) {
   const Model = sequelize.models[ModelName]
 
 
-  const [affectedRows, affectedRowsData] = await Model.update(
+  const [ affectedRows, affectedRowsData ] = await Model.update(
     {
       data: JSON.stringify(NewData)
     },
