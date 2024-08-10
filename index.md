@@ -3,10 +3,10 @@
 layout: home
 hero:
   name: 'kkkkkk-10086'
-  tagline: <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 的视频解析插件
+  text: 视频解析插件
+  tagline: 适用于 <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 生态
   image:
     src: /logo.png
-    alt: LOGO
   actions:
     - theme: brand
       text: 简介
@@ -48,3 +48,5 @@ features:
     link: /docs/intro/apiserver
     linkText: API Server
 ---
+
+<HomeUnderline />

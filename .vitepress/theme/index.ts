@@ -38,6 +38,8 @@ import {
 import Share from './components/Share.vue'
 // 卡片
 import Ncard from './components/Ncard.vue'
+
+import HomeUnderline from './components/HomeUnderline.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -60,6 +62,7 @@ export default {
         defaultToggle: true,
       }
     } as Options)
+    app.component('HomeUnderline', HomeUnderline)
     app.component('NCard', Ncard)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
