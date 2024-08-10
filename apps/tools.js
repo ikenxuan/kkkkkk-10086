@@ -62,7 +62,7 @@ export class Tools extends plugin {
       bilibili: Config.pushlist.bilibili ? Config.pushlist.bilibili : []
     }
     for (const platform in platforms) {
-       
+
       if (platforms.hasOwnProperty(platform)) {
         const list = platforms[platform]
         for (const item of list) {

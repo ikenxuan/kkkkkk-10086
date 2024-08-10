@@ -219,7 +219,7 @@ export default class Bilibilipush extends Base {
              */
             const findMatchingSecUid = (DBdata, host_midToCheck) => {
               for (const host_mid in DBdata) {
-                 
+
                 if (DBdata.hasOwnProperty(host_mid) && DBdata[host_mid].host_mid === host_midToCheck) {
                   return host_midToCheck
                 }

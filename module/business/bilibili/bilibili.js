@@ -26,7 +26,7 @@ export default class BiLiBiLi extends Base {
         const { owner, pic, title, stat } = OBJECT.INFODATA.data
         const { name } = owner
         const { coin, like, share, view, favorite, danmaku } = stat
-       
+
         this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
         const nocd_data = await new Networks({
@@ -128,7 +128,7 @@ export default class BiLiBiLi extends Base {
             ])
           )
         } else {
-         
+
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
           const bangumidataBASEURL = BiLiBiLiAPI.番剧视频流信息({
             cid: OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].cid,
@@ -239,7 +239,7 @@ export default class BiLiBiLi extends Base {
           default:
             break
         }
-      
+
       }
       case '直播live': {
         if (OBJECT.room_init_info.data.live_status === 0) {
@@ -263,9 +263,9 @@ export default class BiLiBiLi extends Base {
         )
         this.e.reply(img)
         break
-      
+
       }
-      default: 
+      default:
         break
     }
   }
@@ -324,7 +324,7 @@ export default class BiLiBiLi extends Base {
         await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
         break
       }
-      default: 
+      default:
         break
     }
   }

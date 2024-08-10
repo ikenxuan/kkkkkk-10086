@@ -55,7 +55,7 @@ export default class DouYin extends Base {
           let image_url
           for (let i = 0; i < data.VideoData.aweme_detail.images.length; i++) {
             image_url = data.VideoData.aweme_detail.images[i].url_list[2] || data.VideoData.aweme_detail.images[i].url_list[1] // 图片地址
-           
+
             const title = data.VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
             g_title = title
             let imgresp
@@ -180,7 +180,7 @@ export default class DouYin extends Base {
               break}
             default:
               break
-      
+
           }
         }
 
@@ -206,7 +206,7 @@ export default class DouYin extends Base {
             }).getLongLink()
           }
           const cover = video.origin_cover.url_list[0] // video cover image
-         
+
           const title = data.VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.play_addr.data_size / (1024 * 1024)).toFixed(2)
@@ -439,7 +439,7 @@ export default class DouYin extends Base {
           break
         default:
           break
-    
+
       }
     }
   }

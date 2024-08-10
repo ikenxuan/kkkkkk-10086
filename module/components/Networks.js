@@ -197,7 +197,7 @@ export default class Networks {
             data = await this.ToBlob()
             break
           }
-          default: 
+          default:
             break
         }
       } else {

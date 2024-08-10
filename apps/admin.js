@@ -155,7 +155,7 @@ export class Admin extends plugin {
     const number = checkNumberValue(regRet[2], type.limit)
     if (type.key === 'douyinpushGroup' || type.key === 'bilibilipushGroup') {
       const groupMapping = { 0: 'all', 1: 'admin', 2: 'owner', 3: 'master' }
-       
+
       if (groupMapping.hasOwnProperty(number)) {
         Config.modify(type.type, type.key, groupMapping[number])
       } else {

@@ -16,9 +16,9 @@ export default class KuaishouData extends Base {
   }
 
   /**
-   * 
+   *
    * @param {any} data param
-   * @returns 
+   * @returns
    */
   async GetData (data) {
     switch (this.type) {

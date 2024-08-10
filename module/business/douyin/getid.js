@@ -4,7 +4,7 @@ import { logger } from '#lib'
 /**
  * 返回作品id对象
  * @param {string} url 分享连接
- * @returns 
+ * @returns
  */
 export default async function GetDouyinID (url) {
   const longLink = await new Networks({ url }).getLongLink()

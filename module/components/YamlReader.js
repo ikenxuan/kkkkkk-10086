@@ -46,6 +46,11 @@ export default class YamlReader {
      * 将更新后的Document对象写入YAML文件中。
      */
   write () {
-    fs.writeFileSync(this.filePath, this.document.toString(), 'utf8')
+    fs.writeFileSync(this.filePath,
+      this.document.toString({
+        lineWidth: -1,
+        noCompatMode: true,
+        simpleKeys: true
+      }), 'utf8')
   }
 }
