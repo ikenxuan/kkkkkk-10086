@@ -27,59 +27,59 @@ export default class Base {
 
   /** 获取适配器名称 */
   get botadapter () {
-    if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
+    if (this.botname === 'Miao-Yunzai' || this.botname === 'yunzai') {
       if (this.e.bot?.sendUni) {
         return 'ICQQ'
       }
       switch (true) {
-      case this.e.bot?.adapter === 'LagrangeCore':
-        return 'LagrangeCore'
-      case this.e.bot?.adapter === 'QQBot':
-        return 'QQBot'
-      case this.e.bot?.adapter === 'OneBotv11':
-        return 'OneBotv11'
-      default:
-        return 'ICQQ'
+        case this.e.bot?.adapter === 'LagrangeCore':
+          return 'LagrangeCore'
+        case this.e.bot?.adapter === 'QQBot':
+          return 'QQBot'
+        case this.e.bot?.adapter === 'OneBotv11':
+          return 'OneBotv11'
+        default:
+          return 'ICQQ'
       }
     } else if (this.botname === 'TRSS-Yunzai') {
       switch (true) {
-      case this.e.bot?.adapter?.name === 'ICQQ':
-        return 'ICQQ'
-      case this.e.bot?.adapter?.name === 'QQBot':
-        return 'QQBot'
-      case this.e.bot?.adapter?.name === 'OneBotv11':
-        switch (this.e.bot?.version?.app_name) {
-        case 'Lagrange.OneBot':
-          return 'Lagrange.OneBot'
+        case this.e.bot?.adapter?.name === 'ICQQ':
+          return 'ICQQ'
+        case this.e.bot?.adapter?.name === 'QQBot':
+          return 'QQBot'
+        case this.e.bot?.adapter?.name === 'OneBotv11':
+          switch (this.e.bot?.version?.app_name) {
+            case 'Lagrange.OneBot':
+              return 'Lagrange.OneBot'
+            default:
+              return 'OneBotv11'
+          }
+        case this.e.bot?.adapter?.name === 'Lagrange':
+          return 'LagrangeCore'
+        case this.e.bot?.adapter?.name === 'KOOKBot':
+          return 'KOOKBot'
         default:
-          return 'OneBotv11'
-        }
-      case this.e.bot?.adapter?.name === 'Lagrange':
-        return 'LagrangeCore'
-      case this.e.bot?.adapter?.name === 'KOOKBot':
-        return 'KOOKBot'
-      default:
-        return 'ICQQ'
+          return 'ICQQ'
       }
     }
   }
 
   resultMsg (forwardmsg) {
-    if (this.botname === 'Miao-Yunzai' || this.botname === 'Miao-Yunzai V4') {
+    if (this.botname === 'Miao-Yunzai' || this.botname === 'yunzai') {
       if (this.botadapter === 'OneBotv11') return null
       return forwardmsg
     } else if (this.botname === 'TRSS-Yunzai') {
       switch (this.botadapter) {
-      case 'ICQQ':
-      case 'LagrangeCore':
-      case 'QQBot':
-      case 'OneBotv11':{
-        return forwardmsg}
-      case 'KOOKBot':{
-        return null
-      }
-      default:
-        break
+        case 'ICQQ':
+        case 'LagrangeCore':
+        case 'QQBot':
+        case 'OneBotv11':{
+          return forwardmsg}
+        case 'KOOKBot':{
+          return null
+        }
+        default:
+          break
       }
     } else {
       return forwardmsg
@@ -111,27 +111,27 @@ export default class Base {
    */
   mkbutton (btn) {
     switch (this.botname) {
-    case 'Miao-Yunzai':
-    case 'Miao-Yunzai V4':{
+      case 'Miao-Yunzai':
+      case 'yunzai':{
       /** 判断是否ICQQ */
-      switch (this.botadapter) {
-      case 'QQBot':{
-        if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
-          return Bot.Button(btn)
-        } else {
-          return null
+        switch (this.botadapter) {
+          case 'QQBot':{
+            if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
+              return Bot.Button(btn)
+            } else {
+              return null
+            }
+          }
+          default:
+            return null
         }
       }
-      default:
-        return null
-      }
-    }
 
-    case 'TRSS-Yunzai':{
-      return segment.button(btn)
-    }
-    default:
-      break
+      case 'TRSS-Yunzai':{
+        return segment.button(btn)
+      }
+      default:
+        break
     }
   }
 
@@ -146,108 +146,108 @@ export default class Base {
   async upload_file (file, video_url, groupfile = false) {
     try {
       switch (this.botname) {
-      case 'Miao-Yunzai':
-      case 'Miao-Yunzai V4':{
-        switch (this.botadapter) {
-        case 'ICQQ':{
-          if (this.e.isGroup) {
-            groupfile
-              ? await this.e.group.fs.upload(file.filepath)
-              : await this.e.reply(
-                segment.video(file.filepath || video_url)
-              )
-          } else {
-            groupfile
-              ? await this.e.friend.fs.upload(file.filepath)
-              : await this.e.reply(
-                segment.video(file.filepath || video_url)
-              )
-          }
-          break
-        }
-        case 'LagrangeCore':{
-          /** 拉格朗视频默认传群文件 */
-          await this.e.group.sendFile(file.filepath)
-          break
-        }
-        case 'OneBotv11':{
-          groupfile
-            ? await this.e.group.fs.upload(file.filepath)
-            : await this.e.reply(segment.video(file.filepath || video_url))
-          break
-        }
-        case 'QQBot':{
-          if (file.totalBytes < 10) {
-            await this.e.reply(segment.video(video_url || file.filepath))
-            break
-          }
-          (() => {
-            return new Promise((resolve, reject) => {
-              try {
-                /** 尝试硬发 */
-                this.e.reply(segment.video(video_url || file.filepath))
-              } catch {
-                reject(new Error('视频太大了，发不出来'))
+        case 'Miao-Yunzai':
+        case 'yunzai':{
+          switch (this.botadapter) {
+            case 'ICQQ':{
+              if (this.e.isGroup) {
+                groupfile
+                  ? await this.e.group.fs.upload(file.filepath)
+                  : await this.e.reply(
+                    segment.video(file.filepath || video_url)
+                  )
+              } else {
+                groupfile
+                  ? await this.e.friend.fs.upload(file.filepath)
+                  : await this.e.reply(
+                    segment.video(file.filepath || video_url)
+                  )
               }
-            })
-          })()
-          break
-        }
-        default:
-          break
-        }
-        break
-      }
-      case 'TRSS-Yunzai':
-        switch (this.botadapter) {
-        case 'LagrangeCore':{
-          logger.warn(
-            'TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange'
-          )
-          break
-        }
-        case 'Lagrange.OneBot':{
-          await this.e.group.sendFile(file.filepath)
-          break
-        }
-        case 'QQBot':{
-          file.totalBytes >= 10
-            ? await this.e.reply(segment.file(file.filepath))
-            : await this.e.reply(segment.video(video_url || file.filepath))
-          break
-        }
-        case 'ICQQ':{
-          if (this.e.isGroup) {
-            groupfile
-              ? await this.e.reply(segment.file(file.filepath))
-              : await this.e.reply(
-                segment.video(file.filepath || video_url)
-              )
-          } else {
-            groupfile
-              ? await this.e.reply(segment.file(file.filepath))
-              : await this.e.reply(
-                segment.video(file.filepath || video_url)
-              )
+              break
+            }
+            case 'LagrangeCore':{
+              /** 拉格朗视频默认传群文件 */
+              await this.e.group.sendFile(file.filepath)
+              break
+            }
+            case 'OneBotv11':{
+              groupfile
+                ? await this.e.group.fs.upload(file.filepath)
+                : await this.e.reply(segment.video(file.filepath || video_url))
+              break
+            }
+            case 'QQBot':{
+              if (file.totalBytes < 10) {
+                await this.e.reply(segment.video(video_url || file.filepath))
+                break
+              }
+              (() => {
+                return new Promise((resolve, reject) => {
+                  try {
+                    /** 尝试硬发 */
+                    this.e.reply(segment.video(video_url || file.filepath))
+                  } catch {
+                    reject(new Error('视频太大了，发不出来'))
+                  }
+                })
+              })()
+              break
+            }
+            default:
+              break
           }
           break
         }
-        case 'OneBotv11':
-        case 'KOOKBot':{
-          groupfile
-            ? await this.e.reply(segment.file(file.filepath))
-            : await this.e.reply(segment.video(file.filepath || video_url))
+        case 'TRSS-Yunzai':
+          switch (this.botadapter) {
+            case 'LagrangeCore':{
+              logger.warn(
+                'TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange'
+              )
+              break
+            }
+            case 'Lagrange.OneBot':{
+              await this.e.group.sendFile(file.filepath)
+              break
+            }
+            case 'QQBot':{
+              file.totalBytes >= 10
+                ? await this.e.reply(segment.file(file.filepath))
+                : await this.e.reply(segment.video(video_url || file.filepath))
+              break
+            }
+            case 'ICQQ':{
+              if (this.e.isGroup) {
+                groupfile
+                  ? await this.e.reply(segment.file(file.filepath))
+                  : await this.e.reply(
+                    segment.video(file.filepath || video_url)
+                  )
+              } else {
+                groupfile
+                  ? await this.e.reply(segment.file(file.filepath))
+                  : await this.e.reply(
+                    segment.video(file.filepath || video_url)
+                  )
+              }
+              break
+            }
+            case 'OneBotv11':
+            case 'KOOKBot':{
+              groupfile
+                ? await this.e.reply(segment.file(file.filepath))
+                : await this.e.reply(segment.video(file.filepath || video_url))
+              break
+            }
+            default:
+              break
+          }
           break
-        }
+        case 'Karin':{
+          await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
+          break}
         default:
           break
-        }
-        break
-      case 'Karin':{
-        await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
-        break}
-      default:
-        break
       }
     } catch (error) {
       logger.error('视频上传错误,' + error)

@@ -22,54 +22,54 @@ export default class KuaishouData extends Base {
    */
   async GetData (data) {
     switch (this.type) {
-    case '单个作品信息': {
-      this.obj = KuaishouAPI.单个作品信息(data.photoId)
-      const VideoData = await this.GlobalGetData(
-        {
-          url: this.obj.url,
-          method: 'POST',
-          headers: this.headers,
-          body: this.obj.body
-        }
-      )
+      case '单个作品信息': {
+        this.obj = KuaishouAPI.单个作品信息(data.photoId)
+        const VideoData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          }
+        )
 
-      this.obj = KuaishouAPI.作品评论信息(data.photoId)
-      const CommentData = await this.GlobalGetData(
-        {
-          url: this.obj.url,
-          method: 'POST',
-          headers: this.headers,
-          body: this.obj.body
-        }
-      )
+        this.obj = KuaishouAPI.作品评论信息(data.photoId)
+        const CommentData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          }
+        )
 
-      this.obj = KuaishouAPI.表情()
-      const EmojiData = await this.GlobalGetData(
-        {
-          url: this.obj.url,
-          method: 'POST',
-          headers: this.headers,
-          body: this.obj.body
-        }
-      )
+        this.obj = KuaishouAPI.表情()
+        const EmojiData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          }
+        )
 
-      return { VideoData, CommentData, EmojiData }
-    }
+        return { VideoData, CommentData, EmojiData }
+      }
 
-    case '作品评论信息': {
-      this.obj = KuaishouAPI.作品评论信息(data.photoId)
-      const CommentData = await this.GlobalGetData(
-        {
-          url: this.obj.url,
-          method: 'POST',
-          headers: this.headers,
-          body: this.obj.body
-        }
-      )
-      return CommentData
-    }
-    default:
-      break
+      case '作品评论信息': {
+        this.obj = KuaishouAPI.作品评论信息(data.photoId)
+        const CommentData = await this.GlobalGetData(
+          {
+            url: this.obj.url,
+            method: 'POST',
+            headers: this.headers,
+            body: this.obj.body
+          }
+        )
+        return CommentData
+      }
+      default:
+        break
     }
 
   }

@@ -86,13 +86,13 @@ const pluginPath = join(__dirname, '..', '..').replace(/\\/g, '/')
 const pluginName = basename(pluginPath)
 
 /**
- * @type {'Karin'|'Miao-Yunzai'|'Trss-Yunzai'|'Miao-Yunzai V4'}
+ * @type {'Karin'|'Miao-Yunzai'|'Trss-Yunzai'|'yunzai'}
  */
 const BotName = (() => {
   if (/^karin/i.test(pluginName)) {
     return 'Karin'
-  } else if (packageJson.dependencies.react) {
-    return 'Miao-Yunzai V4'
+  } else if (packageJson.name === 'yunzai') {
+    return 'yunzai'
   } else if (Array.isArray(global.Bot?.uin)) {
     return 'TRSS-Yunzai'
   } else if (packageJson.dependencies.sequelize) {
@@ -146,7 +146,7 @@ export default {
   pluginPath,
 
   /**
-   * @type {'Karin'|'Miao-Yunzai'|'Trss-Yunzai'|'Miao-Yunzai V4'} Bot名称
+   * @type {'Karin'|'Miao-Yunzai'|'Trss-Yunzai'|'yunzai'} Bot名称
    */
   BotName,
 

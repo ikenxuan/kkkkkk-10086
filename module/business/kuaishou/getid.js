@@ -11,19 +11,19 @@ export default async function GetKuaishouID (url) {
   let result
 
   switch (true) {
-  case /photoId=(.*)/.test(longLink): {
-    const workid = longLink.match(/photoId=([^&]+)/)
-    result = {
-      type: '单个作品信息',
-      id: workid[1],
-      P: '快手'
+    case /photoId=(.*)/.test(longLink): {
+      const workid = longLink.match(/photoId=([^&]+)/)
+      result = {
+        type: '单个作品信息',
+        id: workid[1],
+        P: '快手'
+      }
+      break
     }
-    break
-  }
 
-  default:
-    logger.warn('无法获取作品ID')
-    break
+    default:
+      logger.warn('无法获取作品ID')
+      break
   }
 
   console.log(result)

@@ -27,29 +27,29 @@ export default class BiLogin extends Base {
     for (let i = 0; i < 33; i++) {
       const qrcodestatusdata = await new Bilidata('判断二维码状态').GetData({ qrcode_key: this.qrcode_key })
       switch (qrcodestatusdata.data.data.code) {
-      case 0:{
+        case 0:{
         // console.log(qrcodestatusdata.data.data.refresh_token)
-        Config.modify('cookies', 'bilibili', qrcodestatusdata.headers['set-cookie'])
-        // Config.bilibilirefresh_token = qrcodestatusdata.data.data.refresh_token
-        this.e.reply('登录成功！相关信息已保存至cookies.yaml', true)
-        completedCase0 = true
-        break
-      }
-      case 86038:{
-        i === 17 && this.e.reply('二维码已失效', true)
-        break
-      }
-      case 86090:{
-        if (!executed86090) {
-          this.e.reply('二维码已扫码，未确认', true)
-          executed86090 = true
-        } else {
-          executed86090 = true
+          Config.modify('cookies', 'bilibili', qrcodestatusdata.headers['set-cookie'])
+          // Config.bilibilirefresh_token = qrcodestatusdata.data.data.refresh_token
+          this.e.reply('登录成功！相关信息已保存至cookies.yaml', true)
+          completedCase0 = true
+          break
         }
-        break
-      }
-      default:
-        break
+        case 86038:{
+          i === 17 && this.e.reply('二维码已失效', true)
+          break
+        }
+        case 86090:{
+          if (!executed86090) {
+            this.e.reply('二维码已扫码，未确认', true)
+            executed86090 = true
+          } else {
+            executed86090 = true
+          }
+          break
+        }
+        default:
+          break
       }
       if (completedCase0) break
       await Sleep(5000)

@@ -14,7 +14,7 @@ export default [{
     'comma-dangle': [2, 'never'],
     'arrow-body-style': 'off',
     'default-case': 2,
-    'indent': ['error', 2],
+    'indent': ['error', 2, { "SwitchCase": 1 }],
     'space-before-function-paren': 1
   }
 }]

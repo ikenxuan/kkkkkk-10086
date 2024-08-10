@@ -244,16 +244,16 @@ export class Admin extends plugin {
 
 const getStatus = function (rote) {
   switch (true) {
-  case Array.isArray(rote):
-    if (rote.length === 0) return `<div class="cfg-status status-off" >已配置 ${rote.length} 项</div>`
-    else return `<div class="cfg-status " >已配置 ${rote.length} 项</div>`
-  case rote === true:
-    return '<div class="cfg-status" >已开启</div>'
-  case rote === false:
-    return '<div class="cfg-status status-off">已关闭</div>'
-  default:
-    if (rote == null || rote === '') return '<div class="cfg-status status-off">未配置</div>'
-    else return `<div class="cfg-status">${String(rote).length > 10 ? String(rote).substring(0, 10) + '...' : String(rote)}</div>`
+    case Array.isArray(rote):
+      if (rote.length === 0) return `<div class="cfg-status status-off" >已配置 ${rote.length} 项</div>`
+      else return `<div class="cfg-status " >已配置 ${rote.length} 项</div>`
+    case rote === true:
+      return '<div class="cfg-status" >已开启</div>'
+    case rote === false:
+      return '<div class="cfg-status status-off">已关闭</div>'
+    default:
+      if (rote == null || rote === '') return '<div class="cfg-status status-off">未配置</div>'
+      else return `<div class="cfg-status">${String(rote).length > 10 ? String(rote).substring(0, 10) + '...' : String(rote)}</div>`
   }
 }
 
