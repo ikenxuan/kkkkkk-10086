@@ -133,10 +133,10 @@ export default {
     const { frontmatter } = useData()
     // giscus配置
     giscusTalk({
-      repo: 'KarinJS/Karin', //仓库
-      repoId: 'R_kgDOLcebnw', //仓库ID
+      repo: 'ikenxuan/kkkkkk-10086', //仓库
+      repoId: 'R_kgDOJf_8Pw', //仓库ID
       category: 'Announcements', // 讨论分类
-      categoryId: 'DIC_kwDOLcebn84CeJZH', //讨论分类ID
+      categoryId: 'DIC_kwDOJf_8P84CWVhT', //讨论分类ID
       mapping: 'pathname',
       inputPosition: 'bottom',
       lang: 'zh-CN',
