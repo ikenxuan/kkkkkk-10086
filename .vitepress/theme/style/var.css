@@ -5,18 +5,18 @@
 }
 
 :root {
-    --vp-c-brand-1: #5224b6;
-    --vp-c-brand-2: #352984;
-    --vp-c-brand-3: #6d68c1;
+    --vp-c-brand-1: #1B31B8;
+    --vp-c-brand-2: #7d9300;
+    --vp-c-brand-3: #e9c93a;
     --vp-home-hero-image-background-image: linear-gradient(-45deg, #f6abe9 50%, #ebe0ba 50%);
     --vp-home-hero-image-filter: blur(150px);
 }
 
 /* 主题色，浅色模式，深紫色调 */
 .dark {
-    --vp-c-brand-1: #C8ABFA;
-    --vp-c-brand-2: #3c30a4;
-    --vp-c-brand-3: #352984;
+    --vp-c-brand-1: #FFB805;
+    --vp-c-brand-2: #7d9300;
+    --vp-c-brand-3: #3c55f4;
 }
 
 /* 移除链接跳转下划线 */
@@ -28,7 +28,7 @@
 :root {
     --vp-custom-block-tip-bg: var(--vp-c-green-soft);
     --vp-home-hero-name-color: transparent;
-    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #6B7BF8, #F68BC6);
+    --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #9affa1, #ffca45);
 }
 
 /* 提示框 */
