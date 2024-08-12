@@ -1,7 +1,7 @@
 # 其他功能
 
 ## 配置不同平台的 cookies
-<mark>没有后门</mark>，本插件 <mark>不会上传</mark> 有关你的任何信息到第三方。<br>
+本插件<mark>没有后门</mark>，本插件<mark>不会上传</mark>有关你的任何信息到第三方。<br>
 你所配置的ck只会用于请求官方API接口
 ### 如何获取 Cookies ？
 <mark>所有平台都可用</mark>该方法来获取ck

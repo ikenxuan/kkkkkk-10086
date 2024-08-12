@@ -7,16 +7,16 @@ export const Footer_Data = {
       links: [
         { name: 'Miao-Yunzai', href: 'https://github.com/yoimiya-kokomi/Miao-Yunzai' },
         { name: 'TRSS-Yunzai', href: 'https://github.com/TimeRainStarSky/Yunzai' },
-        { name: 'Yunzai.js', href: 'https://github.com/yunzai-org/yunzaijs' },
+        { name: 'Yunzaijs', href: 'https://github.com/yunzai-org/yunzaijs' },
         { name: 'Karin', href: 'https://github.com/Karinjs/Karin' },
-        { name: 'icqq protocol', href: 'https://github.com/icqqjs/icqq' },
+        { name: 'ICQQ Protocol', href: 'https://github.com/icqqjs/icqq' },
         { name: 'VitePress', href: 'https://vitepress.dev/' },
+        { name: 'amagi', href: 'https://www.npmjs.com/package/@ikenxuan/amagi' },
       ]
     },
     {
       title: 'Dependencies',
       links: [
-        { name: '@ikenxuan/amagi', href: 'https://www.npmjs.com/package/@ikenxuan/amagi' },
         { name: '@karinjs/md-html', href: 'https://www.npmjs.com/package/md5' },
         { name: 'child_process', href: 'https://www.npmjs.com/package/child_process' },
         { name: 'md5', href: 'https://www.npmjs.com/package/md5' },
