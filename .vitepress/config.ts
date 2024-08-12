@@ -1,5 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
+import { DefaultTheme } from 'vitepress/theme'
+import nav from './script/nav'
+import sidebar from './script/sidebar'
 // 时间线
 import timeline from 'vitepress-markdown-timeline'
 // 任务列表
@@ -140,44 +143,7 @@ export default
         pattern: 'https://github.com/ikenxuan/kkkkkk-10086/edit/docs/:path',
         text: '在 GitHub 上编辑此页面',
       },
-      nav: [
-        { text: '主页', link: '/' },
-        { text: '常见问题', link: '/docs/intro/QA' },
-        {
-          text: '🍉大纲',
-          items: [
-            {
-              text: '快速开始',
-              items: [
-                { text: '简介', link: '/docs/start/start' },
-                { text: '安装插件', link: '/docs/start/install' },
-                { text: '配置文件', link: '/docs/start/start.config' },
-              ],
-            },
-            {
-              text: '功能',
-              items: [
-                { text: '抖音相关', link: '/docs/intro/douyin' },
-                { text: 'B站相关', link: '/docs/intro/bilibili' },
-                { text: '快手相关', link: '/docs/intro/kuaishou' },
-                { text: '动态推送', link: '/docs/intro/push' },
-                { text: 'API Server', link: '/docs/intro/apiserver' },
-                { text: '其他功能', link: '/docs/intro/other' },
-              ],
-            },
-            {
-              text: '其他',
-              items: [
-                { text: '常见问题', link: '/docs/intro/QA' },
-                { text: '投喂', link: '/docs/other/afdian' },
-                { text: '免责声明', link: '/docs/other/disclaimer' },
-                { text: '版本历史', link: '/docs/other/timeline' },
-
-              ],
-            },
-          ],
-        },
-      ],
+      nav: nav as DefaultTheme.NavItem[],
       search: {
         provider: 'local',
         options: {
@@ -201,36 +167,7 @@ export default
           }
         }
       },
-      sidebar: [
-        {
-          text: '快速开始',
-          items: [
-            { text: '简介', link: '/docs/start/start' },
-            { text: '安装插件', link: '/docs/start/install' },
-            { text: '配置文件', link: '/docs/start/start.config' },
-          ],
-        },
-        {
-          text: '功能',
-          items: [
-            { text: '抖音相关', link: '/docs/intro/douyin' },
-            { text: 'B站相关', link: '/docs/intro/bilibili' },
-            { text: '快手相关', link: '/docs/intro/kuaishou' },
-            { text: '动态推送', link: '/docs/intro/push' },
-            { text: 'API Server', link: '/docs/intro/apiserver' },
-            { text: '其他功能', link: '/docs/intro/other' },
-          ],
-        },
-        {
-          text: '其他',
-          items: [
-            { text: '常见问题', link: '/docs/intro/QA' },
-            { text: '投喂', link: '/docs/other/afdian' },
-            { text: '免责声明', link: '/docs/other/disclaimer' },
-            { text: '版本历史', link: '/docs/other/timeline' },
-          ],
-        },
-      ],
+      sidebar: sidebar,
       socialLinks: [
         { icon: 'github', link: 'https://github.com/ikenxuan/kkkkkk-10086' },
         {

@@ -50,3 +50,4 @@ features:
 ---
 
 <HomeUnderline />
+<confetti />

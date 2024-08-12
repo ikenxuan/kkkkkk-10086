@@ -40,7 +40,8 @@ import Share from './components/Share.vue'
 import Ncard from './components/Ncard.vue'
 import Video from './components/Video.vue'
 import HomeUnderline from './components/HomeUnderline.vue'
-// import HomeFooter from './components/HomeFooter.vue'
+import HomeFooter from './components/HomeFooter.vue'
+import Confetti from './components/Confetti.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -66,7 +67,8 @@ export default {
     app.component('HomeUnderline', HomeUnderline)
     app.component('NCard', Ncard)
     app.component('Video', Video)
-    // app.component('HomeFooter', HomeFooter)
+    app.component('HomeFooter', HomeFooter)
+    app.component('Confetti', Confetti)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
     app.provide(InjectionKey, {

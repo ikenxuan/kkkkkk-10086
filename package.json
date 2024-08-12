@@ -22,6 +22,7 @@
     "@vitejs/plugin-vue": "^5.1.2",
     "@vueuse/core": "^10.11.1",
     "busuanzi.pure.js": "^1.0.3",
+    "canvas-confetti": "^1.9.3",
     "less": "^4.2.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-mathjax3": "^4.3.2",
