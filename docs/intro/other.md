@@ -29,9 +29,11 @@
 :::
 
 ### 如何配置？
-打开 `config/config/cookies.yaml` 文件<br>
+打开 `config/config/cookies.yaml` 根据需要配置ck<br>
 注意冒号后有个空格！
-```yaml{2,5,8}
+
+::: code-group
+```yaml{2,5,8} [config/config/cookies.yaml]
 # 抖音ck
 douyin: 此处填上你的抖音ck
 
@@ -41,6 +43,7 @@ bilibili: 此处填上你的B站ck
 # 快手ck
 kuaisha: 此处填上你的快手ck
 ```
+:::
 
 ## 其他功能
 更多信息可使用 `#kkk帮助` `#kkk版本` `#kkk设置`查看
