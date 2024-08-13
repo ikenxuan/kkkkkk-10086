@@ -42,6 +42,7 @@ import Video from './components/Video.vue'
 import HomeUnderline from './components/HomeUnderline.vue'
 import HomeFooter from './components/HomeFooter.vue'
 import Confetti from './components/Confetti.vue'
+import ChangeLogs from './components/ChangeLogs.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -72,6 +73,7 @@ export default {
     app.component('Video', Video)
     app.component('HomeFooter', HomeFooter)
     app.component('Confetti', Confetti)
+    app.component('ChangeLogs', ChangeLogs)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
     app.provide(InjectionKey, {
