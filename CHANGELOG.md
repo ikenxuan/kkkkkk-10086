@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.2...v1.2.3) (2024-08-13)
+
+
+### Bug Fixes
+
+* **pushlist:** 修复推送列表获取群名错误 ([9f5fa3c](https://github.com/ikenxuan/kkkkkk-10086/commit/9f5fa3c0d1984af38095654fe0828d4dcd83f48e))
+* 修复yunzai v4载入报错 ([613a518](https://github.com/ikenxuan/kkkkkk-10086/commit/613a518725ec431dbabd88429fbb726f80ad5bd0))
+* 修复评论中艾特用户昵称正则表达式错误 ([8f49b95](https://github.com/ikenxuan/kkkkkk-10086/commit/8f49b95d9db41203bb92637a148cf316c6f3c21d))
+* 增加本地api服务日志开关 ([c928581](https://github.com/ikenxuan/kkkkkk-10086/commit/c928581f57c062062c3492bcef2aa9aa21573d28))
+* 移除写入配置文件时的换行 ([ddff5eb](https://github.com/ikenxuan/kkkkkk-10086/commit/ddff5ebc2a9d160cd0fe674fe609d044799afdb7))
+* 细节优化 ([e4b7b28](https://github.com/ikenxuan/kkkkkk-10086/commit/e4b7b28c7fd4fc2f06f688b66ed5fe0b5c4c67d0))
+* 跟进解析库版本，需更新依赖 ([5b8f588](https://github.com/ikenxuan/kkkkkk-10086/commit/5b8f588499399e7eddd09599ca97f1e366d731e4))
+
 ## [1.2.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.1...v1.2.2) (2024-08-08)
 
 
