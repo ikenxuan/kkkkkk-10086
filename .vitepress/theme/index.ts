@@ -36,12 +36,13 @@ import {
 } from '@nolebase/vitepress-plugin-highlight-targeted-heading/client'
 // 快速复制当前页的url
 import Share from './components/Share.vue'
-// 卡片
+// 组件
 import Ncard from './components/Ncard.vue'
 import Video from './components/Video.vue'
 import HomeUnderline from './components/HomeUnderline.vue'
 import HomeFooter from './components/HomeFooter.vue'
 import Confetti from './components/Confetti.vue'
+import busuanzi from './components/busuanzi.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -123,6 +124,7 @@ export default {
       'layout-top': () => [
         h(NolebaseHighlightTargetedHeading),
       ],
+      'layout-bottom': () => h(busuanzi),
     })
   },
 
