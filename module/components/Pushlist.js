@@ -74,7 +74,7 @@ const groupName = async (e, group_list) => {
   try {
     for (const gid of group_list) {
       try {
-        group_name_list.push(String(e.bot?.pickGroup(Number(gid)).info.group_name))
+        group_name_list.push(String(e.bot?.pickGroup(Number(gid.split(':')[0])).info.group_name))
       } catch {
         group_name_list.push((await e.bot?.GetGroupInfo(gid.split(':')[0]))?.group_name)
       }
