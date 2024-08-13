@@ -1,6 +1,6 @@
 <template>
   <div v-if="loading">正在请求更新日志...</div>
-  <div v-else-if="error">错误: {{ error }}</div>
+  <div v-else-if="error">获取更新日志失败，错误: {{ error }}</div>
   <div v-else v-html="compiledMarkdown"></div>
 </template>
 
@@ -28,7 +28,9 @@ export default {
   },
   methods: {
     fetchMarkdown() {
-      axios.get(this.src)
+      axios.get(this.src, {
+        timeout: 10000
+      })
         .then(response => {
           this.markdownContent = response.data;
           this.compileMarkdown();
