@@ -42,7 +42,6 @@ import Video from './components/Video.vue'
 import HomeUnderline from './components/HomeUnderline.vue'
 import HomeFooter from './components/HomeFooter.vue'
 import Confetti from './components/Confetti.vue'
-import busuanzi from './components/busuanzi.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -55,10 +54,13 @@ import giscusTalk from 'vitepress-plugin-comment-with-giscus'
 // 代码块内的代码类型提示
 import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
 import '@shikijs/vitepress-twoslash/style.css'
+// 卜算子浏览器统计
+import { inBrowser } from 'vitepress'
+import busuanzi from 'busuanzi.pure.js'
 
 export default {
   extends: DefaultTheme,
-  enhanceApp ({ app }) {
+  enhanceApp ({ app, router }) {
     app.use(NolebaseEnhancedReadabilitiesPlugin, {
       spotlight: {
         disableHelp: true,
@@ -77,6 +79,11 @@ export default {
       displayAuthorsInsideCommitLine: true
     })
     app.use(NolebaseInlineLinkPreviewPlugin as Plugin)
+    if (inBrowser) {
+      router.onAfterRouteChanged = () => {
+        busuanzi.fetch()
+      }
+    }
     app.use(NolebasePagePropertiesPlugin<{
       progress: number
     }>() as Plugin, {
@@ -123,8 +130,7 @@ export default {
       'nav-screen-content-after': () => h(NolebaseEnhancedReadabilitiesScreenMenu),
       'layout-top': () => [
         h(NolebaseHighlightTargetedHeading),
-      ],
-      'layout-bottom': () => h(busuanzi),
+      ]
     })
   },
 

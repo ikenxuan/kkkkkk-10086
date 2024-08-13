@@ -71,8 +71,7 @@ _**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.
 - **本站面底部评论**
 - [创建 ISSUE](https://github.com/ikenxuan/kkkkkk-10086/issues/new/choose)
 - [QQ 群聊: 795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
-  <br>
-  <br>
-  该页面访问量 <span id="busuanzi_value_site_pv" /> 次
+
+  本站总访问量 <span id="busuanzi_value_site_pv" /> 次
 
 ![Star History Chart](https://api.star-history.com/svg?repos=ikenxuan/kkkkkk-10086&type=Date)
