@@ -86,7 +86,7 @@ export default class DouYin extends Base {
           if (imageres.length === 1) {
             await this.e.reply(segment.image(image_url))
           } else {
-            !Config.app.sendforwardmsg && (this.botname === 'Karin' ? res.length : res.data.length) > 1 && this.botname === 'Karin' ? await this.e.sendForwardMessage(this.e.contact, res) : await this.e.reply(res)
+            !Config.app.sendforwardmsg && (this.botname === 'Karin' ? res.length : res.data.length) > 1 && this.botname === 'Karin' ? await this.e.bot.sendForwardMessage(this.e.contact, res) : await this.e.reply(res)
           }
         } else {
           image_res.push('图集信息解析失败')
