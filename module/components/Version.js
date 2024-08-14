@@ -91,7 +91,7 @@ const pluginName = basename(pluginPath)
 const BotName = (() => {
   if (/^karin/i.test(pluginName)) {
     return 'Karin'
-  } else if (packageJson.name === 'yunzai') {
+  } else if (packageJson.name === 'yunzai-next') {
     return 'yunzai'
   } else if (Array.isArray(global.Bot?.uin)) {
     return 'TRSS-Yunzai'
