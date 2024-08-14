@@ -9,6 +9,13 @@
   "scripts": {
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
+  "Karin": {
+    "apps": [
+      "module/business/douyin",
+      "module/business/bilibili",
+      "module/business/kuaishou"
+    ]
+  },
   "imports": {
     "#lib": "./module/lib/public/index.js",
     "#components": "./module/components/index.js",

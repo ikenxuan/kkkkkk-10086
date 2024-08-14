@@ -1,7 +1,9 @@
-import { Base, Config, UploadRecord, Networks, Render, FFmpeg } from '#components'
+import { Base, Config, UploadRecord, Networks, Render, FFmpeg, Version } from '#components'
 import { DouyinData, Emoji, comments } from '#douyin'
 import { makeForwardMsg, segment, logger } from '#lib'
 import fs from 'fs'
+import { markdown } from '@karinjs/md-html'
+import QRCode from 'qrcode'
 
 let mp4size = ''
 let img
@@ -358,12 +360,24 @@ export default class DouYin extends Base {
 
       case 'UserVideosList': {
         const veoarray = []
+        veoarray.unshift(`------------------------------ | ---------------------------- |\n`)
+        veoarray.unshift(`标题                           | 分享二维码                    |\n`)
+        const forwardmsg = []
         for (let i = 0; i < data.aweme_list.length; i++) {
           const title = data.aweme_list[i].desc
           const cover = data.aweme_list[i].share_url
-          veoarray.push(`作品标题: ${title}\n${cover}`)
+          veoarray.push(`${title}       | ![img](${await QRCode.toDataURL(cover, {
+            errorCorrectionLevel: 'H',
+            type: 'image/png',
+            color: { light: '#00000000' }
+          })})    |\n`)
+          forwardmsg.push(`作品标题: ${title}\n分享链接: ${cover}`)
         }
-        await this.e.reply(await makeForwardMsg(this.e, veoarray, '用户主页视频列表'))
+        const matext = markdown(veoarray.join(''))
+        fs.writeFileSync(`${Version.pluginPath}/resources/html/douyin/user_worklist.html`, matext, 'utf8')
+        const img = await Render.render('html/douyin/user_worklist')
+        await this.e.reply(img)
+        await this.e.reply(await makeForwardMsg(this.e, forwardmsg, '用户主页视频列表'))
         return true
       }
       case 'Music': {
