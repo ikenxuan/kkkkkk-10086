@@ -140,7 +140,8 @@ export default class DouYin extends Base {
           music_res.push(music_data)
           const haspath = music_url && this.is_mp4 === false && music_url !== undefined
           switch (this.botname) {
-            case 'Miao-Yunzai':{
+            case 'Miao-Yunzai':
+            case 'yunzai': {
               if (haspath && this.botadapter === 'ICQQ') {
                 if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                 else await this.e.reply(segment.record(music_url))
@@ -420,7 +421,7 @@ export default class DouYin extends Base {
     const data = await new IKun('Music').GetData({ music_id })
     const title = data.music_info.title // BGM名字
     const music_url = data.music_info.play_url.uri // BGM link
-    if (this.botname === 'Miao-Yunzai') {
+    if (this.botname === 'Miao-Yunzai' || this.botname === 'yunzai') {
       if (this.botadapter === 'ICQQ') {
         await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
       } else {
