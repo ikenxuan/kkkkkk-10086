@@ -140,18 +140,16 @@ export default class DouYin extends Base {
           music_res.push(music_data)
           const haspath = music_url && this.is_mp4 === false && music_url !== undefined
           switch (this.botname) {
-            case 'miao-yunzai':{
+            case 'Miao-Yunzai':{
               if (haspath && this.botadapter === 'ICQQ') {
-                try {
-                  if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                  else await this.e.reply(segment.record(music_url))
-                } catch { }
+                if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                else await this.e.reply(segment.record(music_url))
               } else if (haspath && this.botadapter !== 'ICQQ') {
                 await this.e.reply(segment.record(music_url))
               }
               break
             }
-            case 'trss-yunzai':
+            case 'TRSS-Yunzai':{
               switch (this.botadapter) {
                 case 'QQBot':
                 case 'OneBotv11':
@@ -163,20 +161,15 @@ export default class DouYin extends Base {
                   break
                 }
                 case 'ICQQ':{
-                  try {
-                    if (haspath) {
-                      if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                      else this.e.reply(segment.record(music_url))
-                    }
-                  } catch (error) {
-                    logger.error('高清语音发送失败', error)
-                    haspath && await this.e.reply(segment.record(music_url))
+                  if (haspath) {
+                    if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                    else this.e.reply(segment.record(music_url))
                   }
                   break
                 }
-                default:
-                  break
               }
+              break
+            }
             case 'Karin':{
               haspath && await this.e.reply(segment.record(music_url))
               break}
@@ -224,7 +217,7 @@ export default class DouYin extends Base {
           videores.push(segment.image(cover))
           g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           logger.info('视频地址', g_video_url)
-          const dsc = this.botname === 'miao-yunzai' ? '视频基本信息' : null
+          const dsc = this.botname === 'Miao-Yunzai' ? '视频基本信息' : null
           const res = await makeForwardMsg(this.e, videores, dsc)
           video_data.push(res)
           video_res.push(video_data)
@@ -341,7 +334,7 @@ export default class DouYin extends Base {
                 const stats = fs.statSync(filePath)
                 const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
                 if (fileSizeInMB > 75) {
-                  if (this.botname !== 'trss-yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                  if (this.botname !== 'TRSS-Yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                   await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
                 } else {
                 /** 因为本地合成，没有视频直链 */
@@ -427,7 +420,7 @@ export default class DouYin extends Base {
     const data = await new IKun('Music').GetData({ music_id })
     const title = data.music_info.title // BGM名字
     const music_url = data.music_info.play_url.uri // BGM link
-    if (this.botname === 'miao-yunzai') {
+    if (this.botname === 'Miao-Yunzai') {
       if (this.botadapter === 'ICQQ') {
         await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
       } else {

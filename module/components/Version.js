@@ -146,7 +146,7 @@ export default {
   pluginPath,
 
   /**
-   * @type {'Karin'|'Miao-Yunzai'|'Trss-Yunzai'|'yunzai'} Bot名称
+   * @type {'Karin'|'Miao-Yunzai'|'TRSS-Yunzai'|'yunzai'} Bot名称
    */
   BotName,
 

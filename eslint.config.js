@@ -18,8 +18,6 @@ export default [ {
     'comma-dangle': [ 1, 'never' ],
     // 禁用箭头函数体风格规则，允许使用任意风格。
     'arrow-body-style': 'off',
-    // 启用default-case规则，要求switch语句必须有default分支。
-    'default-case': 1,
     // 启用缩进规则，要求使用两个空格进行缩进，并且switch语句的case子句缩进增加一层。
     'indent': [ 1, 2, { "SwitchCase": 1 } ],
     // 要求函数参数列表前的空格，设置为错误等级1。
