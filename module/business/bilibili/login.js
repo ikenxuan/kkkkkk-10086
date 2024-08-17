@@ -29,7 +29,7 @@ export default class BiLogin extends Base {
       switch (qrcodestatusdata.data.data.code) {
         case 0:{
         // console.log(qrcodestatusdata.data.data.refresh_token)
-          Config.modify('cookies', 'bilibili', qrcodestatusdata.headers['set-cookie'])
+          Config.modify('cookies', 'bilibili', formatCookies(qrcodestatusdata.headers['set-cookie']))
           // Config.bilibilirefresh_token = qrcodestatusdata.data.data.refresh_token
           this.e.reply('登录成功！相关信息已保存至cookies.yaml', true)
           completedCase0 = true
@@ -55,4 +55,15 @@ export default class BiLogin extends Base {
       await Sleep(5000)
     }
   }
+}
+
+function formatCookies (cookies) {
+  return cookies.map(cookie => {
+    // 分割每个cookie字符串以获取名称和值
+    const [ nameValue, ...attributes ] = cookie.split(';').map(part => part.trim())
+    const [ name, value ] = nameValue.split('=')
+
+    // 重新组合名称和值，忽略其他属性
+    return `${name}=${value}`
+  }).join('; ')
 }
