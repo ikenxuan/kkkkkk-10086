@@ -1,4 +1,4 @@
-import { Version } from '#components'
+import  Version  from '../../components/Version.js'
 import { common } from '#lib'
 
 const makeForwardMsg = await (async () => {

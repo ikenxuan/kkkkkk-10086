@@ -1,5 +1,5 @@
 import { Bilidata } from '#bilibili'
-import { BiLiBiLiAPI } from '@ikenxuan/amagi'
+import { GetBilibiliData } from '@ikenxuan/amagi'
 import { Base, Config, Render, Networks, DB, Version } from '#components'
 import { sendMsg, segment, logger } from '#lib'
 import YAML from 'yaml'
@@ -140,10 +140,7 @@ export default class Bilibilipush extends Base {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
             const INFODATA = await new Bilidata('bilibilivideo').GetData({ id_type: 'bvid', id: bvid })
-            nocd_data = await new Networks({
-              url: BiLiBiLiAPI.视频流信息({ avid: aid, cid: INFODATA.INFODATA.data.cid }) + '&platform=html5',
-              headers: this.headers
-            }).getData()
+            nocd_data = await GetBilibiliData('单个视频下载信息数据', '', { avid: INFODATA.INFODATA.data.aid,cid:INFODATA.INFODATA.data.cid })
 
             img = await Render.render(
               'html/bilibili/dynamic/DYNAMIC_TYPE_AV',

@@ -239,7 +239,7 @@ export default class BiLiBiLi extends Base {
           default:
             break
         }
-
+        break
       }
       case '直播live': {
         if (OBJECT.room_init_info.data.live_status === 0) {
@@ -263,7 +263,6 @@ export default class BiLiBiLi extends Base {
         )
         this.e.reply(img)
         break
-
       }
       default:
         break

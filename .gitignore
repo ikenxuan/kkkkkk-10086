@@ -6,5 +6,6 @@ yarn.lock/*
 package-lock.json
 !.gitignore
 jsconfig.json
+lib/*
 resources/html/help/changelogs.html
 resources/html/douyin/user_worklist.html
