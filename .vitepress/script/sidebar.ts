@@ -21,7 +21,11 @@ const sidebar = [
   {
     text: '其他',
     items: [
-      { text: '常见问题', link: '/docs/intro/QA' },
+      {
+        text: '遇到问题了？', link: '/docs/intro/problems', items: [
+          { text: '常见问题解答', link: '/docs/intro/QA' },
+        ]
+      },
       { text: '投喂', link: '/docs/other/afdian' },
       { text: '免责声明', link: '/docs/other/disclaimer' },
       { text: '版本历史', link: '/docs/other/timeline' },

@@ -1,18 +1,25 @@
 # 本地视频解析 API 服务
-::: warning
-**🚧该功能正在开发中，存在各种不稳定性**
+> [!NOTE] 🚧 该功能正在测试中，存在各种不稳定性
+>
+>此功能依赖 [解析库](https://github.com/ikenxuan/amagi) ，该库版本正在快速迭代中，你可能需要及时更新插件依赖以确保正常运作
 
-此功能依赖 [npm包](https://www.npmjs.com/package/@ikenxuan/amagi) ，包版本迭代可能过快，你需要及时更新插件依赖以确保正常运作
-:::
+## 功能介绍
+该功能通过本地部署一个 API 服务，将解析库的接口暴露出来，方便用户使用。<br>
+接口范围为本插件用到的所有 **_抖音_** **_B站_** API。其他平台暂不考虑<br><br>
+如果你想增加更多接口，可以给 [解析库](https://github.com/ikenxuan/amagi) 进行贡献，测试成功后将会将相关接口的功能添加到 kkkkkk-10086 插件中
 
+## 配置
 该功能通过配置文件 `app.yaml` 进行管理
 
 ```yaml
-# 放出API服务（本地部署一个抖音、B站的api服务）
+# 放出插件所需的 API（本地部署一个抖音、B站的api服务）
 APIServer: true
 
 # API服务端口
 APIServerPort: 4567
+
+# API服务日志
+APIServerLog: false
 ```
 
 🛰️ API 文档请查看 [**Apifox**](https://amagi.apifox.cn)

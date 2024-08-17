@@ -1,5 +1,9 @@
 # 常见问题
 
+::: tip 编辑提示
+如果文档中发现错误，或提交文档修改，或丰富本站文档，可点击下方的编辑按钮
+:::
+
 ::: details 报错：**<span style="color:#D7474B">TypeError: response.body.on is not a function</span>**
 ```sh
 # 方法1：到插件目录下重新安装依赖（推荐）
