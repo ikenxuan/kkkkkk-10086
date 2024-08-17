@@ -1,6 +1,8 @@
 import { checkuser, wbi_sign } from '#bilibili'
 import { BiLiBiLiAPI, GetBilibiliData } from '@ikenxuan/amagi'
-import { Base, Config } from '#components'
+import { Config } from '#components'
+import  Base  from '../../components/Base.js'
+
 
 export default class Bilidata extends Base {
   constructor (type) {
