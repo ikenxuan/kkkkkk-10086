@@ -102,18 +102,8 @@ export default
           '@nolebase/*',
         ],
       },
-      resolve: {
-        alias: [
-          {
-            find: /^.*\/VPFooter\.vue$/, replacement: fileURLToPath(
-              new URL('./theme/components/HomeFooter.vue', import.meta.url)
-            )
-          }
-        ]
-      },
-      define: {
-        FooterData: JSON.stringify(require('./data/fooertData').Footer_Data)
-      }
+      resolve: { alias: [{ find: /^.*\/VPFooter\.vue$/, replacement: '@theojs/lumen/Footer' }] },
+      define: { FooterData: JSON.stringify(require('./data/fooertData.ts').Footer_Data) }
     },
     vue: {
       template: {

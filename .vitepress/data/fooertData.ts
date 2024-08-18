@@ -1,5 +1,5 @@
 export const Footer_Data = {
-  // beian: { icp: '备案号', police: '公网安备号' },
+  beian: { icp: '', police: '' },
   author: { name: 'ikenxuan', link: 'https://github.com/ikenxuan', time: '2023' },
   group: [
     {

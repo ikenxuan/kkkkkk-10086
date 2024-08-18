@@ -4,7 +4,10 @@ layout: home
 hero:
   name: 'kkkkkk-10086'
   text: 视频解析插件
-  tagline: 适用于 <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 生态
+  tagline: ✨适用于 <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 生态
+  prelink:
+    title: '⚡️快速开始<div style="text-align: right; font-weight: bold;"><i class="fas fa-pnpm" style="color: #FFD43B;"></i>git clone https://github.com/ikenxuan/kkkkkk-10086.git</div>'
+    # link: docs/other/timeline
   image:
     src: /logo.png
   actions:

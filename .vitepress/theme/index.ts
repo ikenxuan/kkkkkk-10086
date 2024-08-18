@@ -39,8 +39,7 @@ import Share from './components/Share.vue'
 // 组件
 import Ncard from './components/Ncard.vue'
 import Video from './components/Video.vue'
-import HomeUnderline from './components/HomeUnderline.vue'
-import HomeFooter from './components/HomeFooter.vue'
+import { HomeUnderline } from '@theojs/lumen'
 import Confetti from './components/Confetti.vue'
 import ChangeLogs from './components/ChangeLogs.vue'
 import Task from './components/Task.vue'
@@ -59,6 +58,8 @@ import '@shikijs/vitepress-twoslash/style.css'
 // 卜算子浏览器统计
 import { inBrowser } from 'vitepress'
 import busuanzi from 'busuanzi.pure.js'
+// 首页公告栏
+import { Announcement } from '@theojs/lumen'
 
 export default {
   extends: DefaultTheme,
@@ -72,7 +73,6 @@ export default {
     app.component('HomeUnderline', HomeUnderline)
     app.component('NCard', Ncard)
     app.component('Video', Video)
-    app.component('HomeFooter', HomeFooter)
     app.component('Confetti', Confetti)
     app.component('ChangeLogs', ChangeLogs)
     app.component('Task', Task)
@@ -134,7 +134,8 @@ export default {
       'nav-screen-content-after': () => h(NolebaseEnhancedReadabilitiesScreenMenu),
       'layout-top': () => [
         h(NolebaseHighlightTargetedHeading),
-      ]
+      ],
+      'home-hero-info-before': () => h(Announcement)
     })
   },
 
