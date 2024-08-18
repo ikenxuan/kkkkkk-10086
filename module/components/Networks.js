@@ -1,6 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import fs from 'fs'
-import { logger } from '#lib'
+import logger from '../lib/public/logger.js'
 
 const controller = new AbortController()
 // let signal = controller.signal

@@ -1,5 +1,5 @@
-import { Version } from '#components'
-import { Bot } from '#lib'
+import Version from '../../components/Version.js'
+import Bot from './Bot.js'
 
 /** 发送主动消息
  * @param {number|string} uin 发送者qq

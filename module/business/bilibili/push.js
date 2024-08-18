@@ -1,7 +1,7 @@
-import { Bilidata } from '#bilibili'
+import Bilidata from './getdata.js'
 import { GetBilibiliData } from '@ikenxuan/amagi'
-import { Base, Config, Render, Networks, DB, Version } from '#components'
-import { sendMsg, segment, logger } from '#lib'
+import { Base, Config, Render, DB, Version } from '../../components/index.js'
+import { sendMsg, segment, logger } from '../../lib/public/index.js'
 import YAML from 'yaml'
 import fs from 'fs'
 

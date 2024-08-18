@@ -1,5 +1,5 @@
-import { Version, Init, Config } from '#components'
-import { logger } from '#lib'
+import { Version, Init, Config } from './module/components/index.js'
+import logger from './module/lib/public/logger.js'
 import amagi, { StartClient } from '@ikenxuan/amagi'
 
 const { Instance } = await new amagi({

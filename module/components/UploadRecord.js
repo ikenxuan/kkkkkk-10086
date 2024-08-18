@@ -6,7 +6,7 @@ import util from 'util'
 import stream from 'stream'
 import crypto from 'crypto'
 import { exec } from 'child_process'
-import { logger, Bot } from '#lib'
+import { logger, Bot } from '../lib/public/index.js'
 
 let core
 try {

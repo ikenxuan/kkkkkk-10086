@@ -1,6 +1,5 @@
-import { Config } from '#components'
-import { wbi_sign } from '#bilibili'
-import { GetBilibiliData } from '@ikenxuan/amagi'
+import Config from '../../components/Config.js'
+import { GetBilibiliData, wbi_sign } from '@ikenxuan/amagi'
 export default async function checkuser (BASEURL) {
   if (Config.cookies.bilibili == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
   const logininfo = await GetBilibiliData('登录基本信息', Config.cookies.bilibili)

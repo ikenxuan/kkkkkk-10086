@@ -1,4 +1,4 @@
-import { Config } from '#components'
+import Config from '../../components/Config.js'
 import Base from '../../components/Base.js'
 import { GetDouyinData } from '@ikenxuan/amagi'
 

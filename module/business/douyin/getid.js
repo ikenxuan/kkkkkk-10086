@@ -1,5 +1,5 @@
-import { Networks } from '#components'
-import { logger } from '#lib'
+import Networks from '../../components/Networks.js'
+import logger from '../../lib/public/logger.js'
 
 /**
  * 返回作品id对象

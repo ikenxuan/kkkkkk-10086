@@ -1,5 +1,5 @@
 import  Version  from '../../components/Version.js'
-import { common } from '#lib'
+import common from './common.js'
 
 const makeForwardMsg = await (async () => {
   switch (Version.BotName) {

@@ -1,6 +1,7 @@
 import { join } from 'path'
-import { Version, Config } from '#components'
-import { puppeteer } from '#lib'
+import Version from './Version.js'
+import Config from './Config.js'
+import puppeteer from '../lib/public/puppeteer.js'
 
 function scale (pct = 1) {
   const scale = Math.min(2, Math.max(0.5, Number(Config.app.renderScale) / 100))

@@ -1,4 +1,4 @@
-import { Version } from '#components'
+import Version from '../../components/Version.js'
 
 const common = await (async () => {
   switch (Version.BotName) {

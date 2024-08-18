@@ -1,7 +1,7 @@
-import { checkuser, wbi_sign } from '#bilibili'
-import { BiLiBiLiAPI, GetBilibiliData } from '@ikenxuan/amagi'
-import { Config } from '#components'
-import  Base  from '../../components/Base.js'
+import checkuser from './cookie.js'
+import { BiLiBiLiAPI, GetBilibiliData, wbi_sign } from '@ikenxuan/amagi'
+import Config from '../../components/Config.js'
+import Base from '../../components/Base.js'
 
 
 export default class Bilidata extends Base {

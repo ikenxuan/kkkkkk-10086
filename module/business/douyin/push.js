@@ -1,6 +1,6 @@
-import { Base, Render, Config, DB, Version } from '#components'
-import { DouyinData, GetDouyinID } from '#douyin'
-import { sendMsg, logger } from '#lib'
+import { Base, Render, Config, DB, Version } from '../../components/index.js'
+import { DouyinData, GetDouyinID } from './index.js'
+import { sendMsg, logger } from '../../lib/public/index.js'
 import YAML from 'yaml'
 import fs from 'fs'
 

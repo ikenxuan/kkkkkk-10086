@@ -1,6 +1,6 @@
-import { Base, Config, Networks } from '#components'
-import { KuaishouAPI } from '#kuaishou'
-import { logger } from '#lib'
+import { Base, Config, Networks } from '../../components/index.js'
+import  KuaishouAPI  from './API.js'
+import logger from '../../lib/public/logger.js'
 
 export default class KuaishouData extends Base {
   constructor (type) {

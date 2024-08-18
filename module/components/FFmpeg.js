@@ -1,5 +1,5 @@
 import { exec } from 'child_process'
-import { logger } from '#lib'
+import logger from '../lib/public/logger.js'
 
 class FFmpeg {
   /** 检查FFmpeg环境 */

@@ -1,5 +1,5 @@
-import { Networks } from '#components'
-import { logger } from '#lib'
+import Networks from '../../components/Networks.js'
+import { logger } from '../../lib/public/index.js'
 
 /**
  * return aweme_id

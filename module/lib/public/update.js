@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { pathToFileURL } from 'url'
-import { Version } from '#components'
+import Version from '../../components/Version.js'
 
 const Update = await (async () => {
   if (Version.BotName === 'Karin') {

@@ -1,4 +1,4 @@
-import { Version } from '#components'
+import Version from '../../components/Version.js'
 
 const plugin = await (async () => {
   switch (Version.BotName) {

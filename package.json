@@ -9,20 +9,6 @@
   "scripts": {
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
-  "Karin": {
-    "apps": [
-      "module/business/douyin",
-      "module/business/bilibili",
-      "module/business/kuaishou"
-    ]
-  },
-  "imports": {
-    "#lib": "./module/lib/public/index.js",
-    "#components": "./module/components/index.js",
-    "#douyin": "./module/business/douyin/index.js",
-    "#bilibili": "./module/business/bilibili/index.js",
-    "#kuaishou": "./module/business/kuaishou/index.js"
-  },
   "dependencies": {
     "@ikenxuan/amagi": "^2.1.4",
     "@karinjs/md-html": "^1.1.3",

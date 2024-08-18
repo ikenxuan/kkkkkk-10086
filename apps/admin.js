@@ -1,6 +1,6 @@
-import { Config, Render, Version } from '#components'
-import { plugin, segment } from '#lib'
-import { BiLogin } from '#bilibili'
+import { Config, Render, Version } from '../module/components/index.js'
+import { plugin, segment } from '../module/lib/public/index.js'
+import BiLogin from '../module/business/bilibili/login.js'
 import fs from 'fs'
 import path from 'path'
 

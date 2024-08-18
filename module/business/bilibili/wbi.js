@@ -1,4 +1,4 @@
-import { Config } from '#components'
+import Config from '../../components/Config.js'
 import md5 from 'md5'
 
 const mixinKeyEncTab = [

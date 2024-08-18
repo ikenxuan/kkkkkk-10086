@@ -1,8 +1,8 @@
 import _ from 'lodash'
 import YAML from 'yaml'
 import fs from 'node:fs'
-import { logger } from '#lib'
-import { Version } from '#components'
+import logger from '../lib/public/logger.js'
+import Version from '../components/Version.js'
 import chokidar from 'chokidar'
 import YamlReader from './YamlReader.js'
 

@@ -1,5 +1,5 @@
-import { Version } from '#components'
-import { segment } from '#lib'
+import Version from '../../components/Version.js'
+import segment from './segment.js'
 
 const puppeteer = await (async () => {
   switch (Version.BotName) {

@@ -1,5 +1,5 @@
-import { Update, Restart, plugin, makeForwardMsg, common } from '#lib'
-import { Version } from '#components'
+import { Update, Restart, plugin, makeForwardMsg, common } from '../module/lib/public/index.js'
+import Version from '../module/components/Version.js'
 import _ from 'lodash'
 
 let uping = false

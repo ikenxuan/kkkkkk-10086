@@ -1,7 +1,7 @@
-import { Base, Render, Config, Networks, FFmpeg } from '#components'
-import { Bilidata, bilicomments, checkuser } from '#bilibili'
+import { Base, Render, Config, Networks, FFmpeg } from '../../components/index.js'
+import { Bilidata, bilicomments, checkuser } from './index.js'
 import { BiLiBiLiAPI } from '@ikenxuan/amagi'
-import { makeForwardMsg, segment, logger } from '#lib'
+import { makeForwardMsg, segment, logger } from '../../lib/public/index.js'
 import fs from 'fs'
 
 let img

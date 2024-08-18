@@ -1,5 +1,7 @@
-import { Config, Networks, Version } from '#components'
-import { segment, logger, Bot, common } from '#lib'
+import Config from './Config.js'
+import Networks from './Networks.js'
+import Version from './Version.js'
+import { segment, logger, Bot, common } from '../lib/public/index.js'
 import fs from 'fs'
 import path from 'path'
 

@@ -1,8 +1,8 @@
-import { Config, Pushlist } from '#components'
-import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '#bilibili'
-import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '#douyin'
-import { KuaiShou, GetKuaishouID, KuaishouData } from '#kuaishou'
-import { plugin } from '#lib'
+import { Config, Pushlist } from '../module/components/index.js'
+import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/business/bilibili/index.js'
+import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/douyin/index.js'
+import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
+import plugin from '../module/lib/public/plugin.js'
 
 
 

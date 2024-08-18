@@ -1,6 +1,6 @@
-import { Config, Base, Sleep } from '#components'
-import { Bilidata } from '#bilibili'
-import { segment } from '#lib'
+import { Config, Base, Sleep } from '../../components/index.js'
+import Bilidata from './getdata.js'
+import { segment } from '../../lib/public/index.js'
 import QRCode from 'qrcode'
 
 export default class BiLogin extends Base {

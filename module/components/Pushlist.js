@@ -1,6 +1,6 @@
-import { Render } from '#components'
-import { DouyinData } from '#douyin'
-import { Bilidata } from '#bilibili'
+import Render from '../components/Render.js'
+import DouyinData from '../business/douyin/getdata.js'
+import Bilidata from '../business/bilibili/getdata.js'
 
 /**
  *

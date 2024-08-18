@@ -1,4 +1,4 @@
-import { DouyinData } from '#douyin'
+import DouyinData from './getdata.js'
 /**
  *
  * @param {*} data 完整的评论数据

@@ -1,4 +1,4 @@
-import { Version } from '#components'
+import { Version } from '../../components/index.js'
 
 const Bot = await (async () => {
   switch (Version.BotName) {

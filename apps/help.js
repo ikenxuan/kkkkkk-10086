@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import { Render, Version } from '#components'
-import { plugin } from '#lib'
+import { Render, Version } from '../module/components/index.js'
+import { plugin } from '../module/lib/public/index.js'
 import fs from 'node:fs'
 import { markdown } from '@karinjs/md-html'
 

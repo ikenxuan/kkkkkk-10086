@@ -1,4 +1,4 @@
-import { Config } from '#components'
+import Config from '../../components/Config.js'
 
 /**
  *
