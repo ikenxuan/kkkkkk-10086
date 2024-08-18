@@ -20,7 +20,7 @@ export default class Bilidata extends Base {
         const DATA = await GetBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { avid: INFODATA.data.aid, cid: INFODATA.data.cid })
         const BASEURL = BiLiBiLiAPI.视频流信息({ avid: INFODATA.data.aid, cid: INFODATA.data.cid })
         const SIGN = await checkuser(BASEURL)
-        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid }))
+        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid }), Config.cookies.bilibili)
         COMMENTSDATA = await GetBilibiliData('评论数据', Config.cookies.bilibili, { number: Config.bilibili.bilibilinumcomments, commentstype: 1, oid: INFODATA.data.aid })
         EMOJIDATA = await GetBilibiliData('emoji数据', Config.cookies.bilibili)
         return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
@@ -66,7 +66,7 @@ export default class Bilidata extends Base {
         delete this.headers.Referer
         const dynamicINFO = await GetBilibiliData('动态详情数据', Config.cookies.bilibili, { dynamic_id: data.dynamic_id })
         const dynamicINFO_CARD = await GetBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: dynamicINFO.data.item.id_str })
-        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ type: 1, oid: dynamicINFO_CARD.data.card.desc.rid, number: Config.bilibili.bilibilinumcomments }))
+        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ type: 1, oid: dynamicINFO_CARD.data.card.desc.rid, number: Config.bilibili.bilibilinumcomments }), Config.cookies.bilibili)
         this.headers.Referer = 'https://api.bilibili.com/'
         COMMENTSDATA = await GetBilibiliData('评论数据', Config.cookies.bilibili, { commentstype: mapping_table(dynamicINFO.data.item.type), oid: oid(dynamicINFO, dynamicINFO_CARD), number: Config.bilibili.bilibilinumcomments })
         EMOJIDATA = await GetBilibiliData('emoji数据')

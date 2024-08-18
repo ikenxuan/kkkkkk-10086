@@ -3,7 +3,7 @@ import { GetBilibiliData, wbi_sign } from '@ikenxuan/amagi'
 export default async function checkuser (BASEURL) {
   if (Config.cookies.bilibili == '') return { QUERY: '&platform=html5', STATUS: '!isLogin' }
   const logininfo = await GetBilibiliData('登录基本信息', Config.cookies.bilibili)
-  const sign = await wbi_sign(BASEURL)
+  const sign = await wbi_sign(BASEURL, Config.cookies.bilibili)
 
   const qn = [ 6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127 ]
   let isvip
