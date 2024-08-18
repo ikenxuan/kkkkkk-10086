@@ -1,5 +1,5 @@
 import { Base, Config, Render } from '../../components/index.js'
-import  comments  from './getdata.js'
+import  comments  from './comments.js'
 
 export default class KuaiShou extends Base {
   constructor (e = {}, Iddata) {
