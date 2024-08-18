@@ -1,4 +1,4 @@
-import { Base, Config, Render } from '../../components/index.js'
+import { Base, Config, Render, Networks } from '../../components/index.js'
 import  comments  from './comments.js'
 
 export default class KuaiShou extends Base {
@@ -18,6 +18,9 @@ export default class KuaiShou extends Base {
       return { name, url: `https:${path}` }
     })
     const CommentsData = await comments(data.CommentData, transformedData)
+    const videoheaders = await new Networks({ url: video_url, headers: this.headers }).getHeaders()
+    const Size = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
+    const videoSizeInMB = (Size / (1024 * 1024)).toFixed(2)
     const img = await Render.render(
       'html/kuaishou/comment',
       {
@@ -25,8 +28,8 @@ export default class KuaiShou extends Base {
         CommentsData,
         CommentLength: String(CommentsData?.length ? CommentsData.length : 0),
         VideoUrl: video_url,
-        VideoSize: '？？？',
-        VideoFPS: '？？？'
+        VideoSize: videoSizeInMB,
+        VideoFPS: 59.94
       }
     )
     await this.e.reply(img)
