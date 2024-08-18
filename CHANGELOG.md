@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.3...v1.3.0) (2024-08-18)
+
+
+### Features
+
+* **bilibili,douyin:** 获取相关接口数据由amagi库全程接管 ([87d0839](https://github.com/ikenxuan/kkkkkk-10086/commit/87d08390ea674bd374ef8ffe1a6cad013f819207))
+* **douyin:** 使用@karinjs/md-html和qrcode库来创建和简单渲染用户作品列表。 ([96221e7](https://github.com/ikenxuan/kkkkkk-10086/commit/96221e76a23db0d612e2a14e9e97d964a8b6a5f3))
+
+
+### Bug Fixes
+
+* B站扫码登录格式化字符串 ([176a777](https://github.com/ikenxuan/kkkkkk-10086/commit/176a7776287c3239f16da272cd34deacfe7c83b6))
+* 修复Karin发送语音 ([0724745](https://github.com/ikenxuan/kkkkkk-10086/commit/072474543ab47e72f13b6d8fdb26422c07e13099))
+* 修复yunzai next发送语音 ([fae0662](https://github.com/ikenxuan/kkkkkk-10086/commit/fae0662b8e486cad5e3feabf6b650e31de1418d9))
+* 修复图集无法发送语音 ([f3ca5d6](https://github.com/ikenxuan/kkkkkk-10086/commit/f3ca5d60bff5c40e62c7df9d9be44a57f3b45717))
+* 修复载入报错 ([2d69422](https://github.com/ikenxuan/kkkkkk-10086/commit/2d69422716b9dbae340dd85cbc3882dca74ee302))
+* 移除自定义模块 ([e6d9e34](https://github.com/ikenxuan/kkkkkk-10086/commit/e6d9e348a00372611c6ad3197830528a8e641545))
+* 适配新版yunzai next ([ee837b0](https://github.com/ikenxuan/kkkkkk-10086/commit/ee837b0d5ef1da00cbd597517fd10447aae83bf0))
+
 ## [1.2.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.2...v1.2.3) (2024-08-13)
 
 
