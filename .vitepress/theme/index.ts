@@ -43,6 +43,7 @@ import HomeUnderline from './components/HomeUnderline.vue'
 import HomeFooter from './components/HomeFooter.vue'
 import Confetti from './components/Confetti.vue'
 import ChangeLogs from './components/ChangeLogs.vue'
+import Task from './components/Task.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -74,6 +75,7 @@ export default {
     app.component('HomeFooter', HomeFooter)
     app.component('Confetti', Confetti)
     app.component('ChangeLogs', ChangeLogs)
+    app.component('Task', Task)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
     app.provide(InjectionKey, {

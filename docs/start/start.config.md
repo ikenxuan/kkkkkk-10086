@@ -24,5 +24,4 @@ _**Karin**_ 生态用户建议使用 [**Karin Manage**](https://github.com/Halcy
 ```
 
 # TODO
-
-- [x] 后续版本将使用 `YAML` 格式配置文件<br>由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**88fa787**](https://github.com/ikenxuan/kkkkkk-10086/commit/88fa787ea2365821deff71298ebc60f8adcd0815) 完成
+<Task status="已发布" content="后续版本将使用 `YAML` 格式配置文件。由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**88fa787**](https://github.com/ikenxuan/kkkkkk-10086/commit/88fa787ea2365821deff71298ebc60f8adcd0815) 完成"></Task>
