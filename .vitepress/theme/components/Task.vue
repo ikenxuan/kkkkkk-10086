@@ -39,7 +39,7 @@ export default {
         case '待确定':
           return 'grey';
         case '开发中':
-          return 'yellow';
+          return '#FFB805';
         case '已发布':
           return 'green';
         default:
