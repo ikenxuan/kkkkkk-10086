@@ -1,5 +1,4 @@
 export const Footer_Data = {
-  beian: { icp: '', police: '' },
   author: { name: 'ikenxuan', link: 'https://github.com/ikenxuan', time: '2023' },
   group: [
     {
