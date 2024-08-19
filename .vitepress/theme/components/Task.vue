@@ -70,7 +70,7 @@ export default {
   position: relative;
   width: 20px;
   height: 20px;
-  border: 1.5px solid #20CC20;
+  border: 2px solid #00D26A;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -79,13 +79,14 @@ export default {
 
 .check-circle::after {
     content: '';
-    width: 5px;
-    height: 10px;
-    border-right: 1.5px solid #20CC20;
-    border-bottom: 1.5px solid #20CC20;
+    width: 6px;
+    height: 11px;
+    border-right: 2px solid #00D26A;
+    border-bottom: 2px solid #00D26A;
     transform: rotate(45deg);
     position: absolute;
-    margin: 0 0 1.5px 0.8px;
+    margin: 0 0 2px 0.1px;
+    border-radius: 1px;
 }
 
 /* 动态旋转的小圆点动画 */
