@@ -28,7 +28,7 @@ const Render = {
       sys: {
         scale: scale(1)
       },
-      copyright: `${Version.BotName}<span class="version">${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version">${Version.version}`,
+      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}`,
       pageGotoParams: {
         waitUntil: 'load'
       },
