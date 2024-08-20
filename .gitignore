@@ -9,3 +9,4 @@ jsconfig.json
 lib/*
 resources/html/help/changelogs.html
 resources/html/douyin/user_worklist.html
+amagi/node_modules/*
