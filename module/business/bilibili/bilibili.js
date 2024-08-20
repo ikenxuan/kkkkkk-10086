@@ -298,6 +298,7 @@ export default class BiLiBiLi extends Base {
                 this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,
                 filePath
               )
+              logger.mark('正在尝试删除缓存文件')
               await this.removeFile(bmp4.filepath, true)
               await this.removeFile(bmp3.filepath, true)
 

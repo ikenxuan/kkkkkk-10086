@@ -247,7 +247,8 @@ export default class Base {
           break
         case 'Karin':{
           await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
-          break}
+          break
+        }
         default:
           break
       }
@@ -322,16 +323,16 @@ export default class Base {
     if (Config.app.rmmp4) {
       try {
         fs.promises.unlink(path)
-        console.log(path + ' 删除成功！')
+        logger.mark('缓存文件: ', path + ' 删除成功！')
       } catch (err) {
-        console.error(path + ' 删除失败！', err)
+        logger.error('缓存文件: ', path + ' 删除失败！', err)
       }
     } else if (force) {
       try {
         fs.promises.unlink(path)
-        console.log(path + ' 删除成功！')
+        logger.mark('缓存文件: ', path + ' 删除成功！')
       } catch (err) {
-        console.error(path + ' 删除失败！', err)
+        logger.error('缓存文件: ', path + ' 删除失败！', err)
       }
     }
   }
