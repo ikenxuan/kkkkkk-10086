@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.0...v1.3.1) (2024-08-20)
+
+
+### Bug Fixes
+
+* **dependencies:** 使用本地链接amagi库，需更新依赖 ([#38](https://github.com/ikenxuan/kkkkkk-10086/issues/38)) ([4ea4078](https://github.com/ikenxuan/kkkkkk-10086/commit/4ea4078141097bce1c8600d90758949ac31acde0))
+* wbi签名忘记传入ck了 ([9ae7492](https://github.com/ikenxuan/kkkkkk-10086/commit/9ae7492c2c30deb290e9e2e320f141d7fb5e9738))
+* 修复ck为空的情况下B站相关功能报错 ([d4d7666](https://github.com/ikenxuan/kkkkkk-10086/commit/d4d7666f0c663667c97e8d801db0527e23acb91d))
+* 导入快手评论处理模块错误 ([737af8d](https://github.com/ikenxuan/kkkkkk-10086/commit/737af8d9f1b64f8c168e3c460df845eee3c2617c))
+* 快手评论图添加`视频大小`信息 ([794ac38](https://github.com/ikenxuan/kkkkkk-10086/commit/794ac383f382914c22e04556c91b2f9f0218d1ae))
+
 ## [1.3.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.2.3...v1.3.0) (2024-08-18)
 
 
