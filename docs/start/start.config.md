@@ -8,7 +8,7 @@ _**Karin**_ 生态用户建议使用 [**Karin Manage**](https://github.com/Halcy
 ├─config // 插件配置文件目录
 │  │  PluginConfigView.yaml // Karin Manage 配置文件（请勿修改该文件的任何内容！）
 │  │
-│  ├─config // 用户配置文件目录 // [!code focus]
+│  ├─config // 用户配置文件目录，可修改该目录下的任何文件 // [!code focus]
 │  │      app.yaml // 插件应用配置 // [!code focus]
 │  │      bilibili.yaml // B站相关配置 // [!code focus]
 │  │      cookies.yaml // 账号Cookies相关配置 // [!code focus]

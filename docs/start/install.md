@@ -15,13 +15,15 @@
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
-```sh [Gitee]
-git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
-```
-
 ```sh [Ghproxy]
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
+
+```sh [Gitee 可能更新不及时]
+git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+```
+
+
 
 :::
 
@@ -35,17 +37,21 @@ Karin 务必使用以下的命令安装，否则插件可能不会被识别
 git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
-```sh [Gitee]
-git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
-```
-
 ```sh [Ghproxy]
 git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
+```
+
+```sh [Gitee 可能更新不及时]
+git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 :::
 
 
 ### 使用 Release 发行版（不推荐）
+
+<details>
+<summary>点击展开</summary>
+
 **_不推荐该方式，后续无法通过 Git 进行更新_**<br><br>
 - 打开 Release 页面: https://github.com/ikenxuan/kkkkkk-10086/releases
 - 找到最新的版本，下载后缀名为 `.zip` 的压缩包
@@ -54,7 +60,7 @@ git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkk
 
 
 你可以在此处查看发布过的所有版本: [**版本历史**](../other/timeline.md)
-
+</details>
 
 ## 安装依赖
 二选一

@@ -2,7 +2,8 @@ export const Footer_Data = {
   author: { name: 'ikenxuan', link: 'https://github.com/ikenxuan', time: '2023' },
   group: [
     {
-      title: 'Related link',
+      title: '相关链接',
+      icon: 'fab fa-github',
       links: [
         { name: 'Miao-Yunzai', href: 'https://github.com/yoimiya-kokomi/Miao-Yunzai' },
         { name: 'TRSS-Yunzai', href: 'https://github.com/TimeRainStarSky/Yunzai' },
@@ -14,7 +15,8 @@ export const Footer_Data = {
       ]
     },
     {
-      title: 'Dependencies',
+      title: '生产依赖',
+      icon: 'fa-brands fa-npm',
       links: [
         { name: '@karinjs/md-html', href: 'https://www.npmjs.com/package/md5' },
         { name: 'child_process', href: 'https://www.npmjs.com/package/child_process' },

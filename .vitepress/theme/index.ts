@@ -43,6 +43,7 @@ import { HomeUnderline } from '@theojs/lumen'
 import Confetti from './components/Confetti.vue'
 import ChangeLogs from './components/ChangeLogs.vue'
 import Task from './components/Task.vue'
+import BackTop from './components/BackTop.vue'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -60,6 +61,8 @@ import { inBrowser } from 'vitepress'
 import busuanzi from 'busuanzi.pure.js'
 // 首页公告栏
 import { Announcement } from '@theojs/lumen'
+// 图标库
+import '@theojs/lumen/icon'
 
 export default {
   extends: DefaultTheme,
@@ -110,13 +113,6 @@ export default {
               dateFnsLocaleName: 'zhCN',
             },
           },
-          {
-            key: 'updatedAt',
-            type: 'datetime',
-            title: '更新时间',
-            formatAsFrom: true,
-            dateFnsLocaleName: 'zhCN',
-          },
         ],
       },
     })
@@ -135,7 +131,8 @@ export default {
       'layout-top': () => [
         h(NolebaseHighlightTargetedHeading),
       ],
-      'home-hero-info-before': () => h(Announcement)
+      'home-hero-info-before': () => h(Announcement),
+      'doc-footer-before': () => h(BackTop),
     })
   },
 
