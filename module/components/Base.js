@@ -247,7 +247,8 @@ export default class Base {
           break
         case 'Karin':{
           await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
-          break}
+          break
+        }
         default:
           break
       }
