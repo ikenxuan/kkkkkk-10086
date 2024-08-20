@@ -322,9 +322,9 @@ export default class Base {
     if (Config.app.rmmp4) {
       try {
         fs.promises.unlink(path)
-        logger.mark(path + ' 删除成功！')
+        logger.mark('缓存文件: ', path + ' 删除成功！')
       } catch (err) {
-        logger.error(path + ' 删除失败！', err)
+        logger.error('缓存文件: ', path + ' 删除失败！', err)
       }
     } else if (force) {
       try {

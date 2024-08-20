@@ -303,6 +303,10 @@ export default class DouYin extends Base {
         const images = []
         const bgmurl = data.LiveImageData.aweme_details[0].music.play_url.uri
         for (const item of data.LiveImageData.aweme_details[0].images) {
+          if (item.clip_type === 2) {
+            images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.uri}&ratio=1080p&line=0`)
+            continue
+          }
           images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`)
           const liveimg = await this.DownLoadFile(
             `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
@@ -329,8 +333,8 @@ export default class DouYin extends Base {
                   resolvefilepath,
                   filePath
                 )
-                await this.removeFile(liveimg.filepath, true)
                 await this.removeFile(liveimgbgm.filepath, true)
+                await this.removeFile(liveimg.filepath, true)
 
                 const stats = fs.statSync(filePath)
                 const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
