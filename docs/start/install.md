@@ -1,7 +1,7 @@
 
 # 安装插件
 ::: tip 注意
-支持 [`Miao-Yunzai V3`](https://github.com/yoimiya-kokomi/Miao-Yunzai) [`TRSS-Yunzai V3`](https://github.com/TimeRainStarSky/Yunzai) [`Yunzai Next`](https://github.com/yunzai-org/yunzaijs) [`Karin`](https://github.com/Karinjs/Karin)<br>
+支持 [**Miao-Yunzai V3**](https://github.com/yoimiya-kokomi/Miao-Yunzai) 、[**TRSS-Yunzai V3**](https://github.com/TimeRainStarSky/Yunzai) 、[**Yunzai Next**](https://github.com/yunzai-org/yunzaijs) 、[**Karin**](https://github.com/Karinjs/Karin)<br>
 :::
 ## 获取源码
 
@@ -28,8 +28,8 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 :::
 
 #### Karin
-Karin 框架文档: https://karinjs.github.io/Karin<br>
-Karin 务必使用以下的命令安装，否则插件可能不会被识别
+Karin 框架文档: **https://karinjs.github.io/Karin**<br>
+Karin 用户 <mark>**务必使用**</mark> 以下的命令安装，否则插件可能不会被识别
 
 ::: code-group
 
