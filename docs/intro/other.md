@@ -48,7 +48,7 @@ kuaisha: 此处填上你的快手ck
 ## 其他功能
 更多信息可使用 `#kkk帮助` `#kkk版本` `#kkk设置`查看
 
-::: warning 警告
+::: warning <i class="fa-solid fa-circle-exclamation fa-beat"></i> 警告
 以下内容可能具有时效性
 :::
 

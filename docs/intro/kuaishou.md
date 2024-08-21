@@ -5,8 +5,8 @@
 
 | 功能 | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                  |
 | ---- | -------- | ----------------------- | --------------------------------------------------------------------- |
-| 视频 | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      | 目前用的游客 ck，可能随时失效 |
-| 评论 | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      |                                                                       |
+| 视频 | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 目前用的游客 ck，可能随时失效 |
+| 评论 | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                       |
 | ...  | ...      | ...                     |                                                                       |
 
 ---

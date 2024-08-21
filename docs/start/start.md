@@ -59,7 +59,7 @@ _**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.
 - TRSS-Yunzai [**GitHub**](https://github.com/TimeRainStarSky/Yunzai) | [**Gitee**](https://gitee.com/TimeRainStarSky/Yunzai)
 - Yunzai-Bot 插件库 [**Github**](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) | [**Gitee**](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
 - ~~Lain-plugin [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
-- icqq 协议 [**GitHub**](https://github.com/icqqjs/icqq)
+- ICQQ Protocol [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
 - Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)
 :::
@@ -68,10 +68,16 @@ _**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.
 
 ## 反馈渠道
 
-- **本站面底部评论**
-- [创建 ISSUE](https://github.com/ikenxuan/kkkkkk-10086/issues/new/choose)
-- [QQ 群聊: 795874649](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649)
+<NCard title='<i class="fa-regular fa-comment-dots fa-bounce" style="color: #FFB805;"></i> 底部发表评论' >
+在每个功能页面的的底部通过 GitHub 登录后可发表对应功能的建议和反馈
+</NCard>
+<NCard title='<i class="fa-solid fa-hand fa-bounce" style="color: #FFB805;"></i> 获取即时支持' link="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649" >
+你可以加入我们的用户交流群来提问
+</NCard>
+<NCard title='<i class="fa-solid fa-envelope fa-shake" style="color: #FFB805;"></i> 通过 GitHub issue' link="https://github.com/ikenxuan/kkkkkk-10086/issues/new/choose" >
+也可以给通过创建新的 GitHub issue 工单
+</NCard>
 
-  本站总访问量 <span id="busuanzi_value_site_pv" /> 次
+本站总访问量 <span id="busuanzi_value_site_pv" /> 次
 
 ![Star History Chart](https://api.star-history.com/svg?repos=ikenxuan/kkkkkk-10086&type=Date)

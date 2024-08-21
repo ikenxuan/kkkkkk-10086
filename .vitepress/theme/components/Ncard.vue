@@ -18,7 +18,9 @@ const props = withDefaults(
     <div class="ncard">
         <a :href="props.link" :target="props.target">
             <div class="ncardBody">
-                <div class="card-title text">{{ props.title }}</div>
+                <!-- 使用 v-html 来渲染 title 属性中的 HTML -->
+                <div class="card-title" v-html="title"></div>
+                <!-- 使用一个额外的 div 来插入 slot 内容 -->
                 <div class="card-text text">
                     <slot></slot>
                 </div>

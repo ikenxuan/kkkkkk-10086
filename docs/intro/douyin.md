@@ -7,12 +7,12 @@
 
 | 功能           | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                        |
 | -------------- | -------- | ----------------------- | --------------------------------------------------------------------------- |
-| 扫码登录取 ck  | <i class="fa-solid fa-xmark fa-beat-fade fa-lg" style="color: #f20707;"></i>       |                         | 风控太严格，无法实现                                                        |
-| 视频           | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      |                                                                             |
-| 图集           | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      |                                                                             |
-| 评论           | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      |                                                                             |
-| 用户主视频列表 | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      |                                                                             |
-| 视频更新推送   | 🟢       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #63E6BE;"></i>                      | 支持的推送类型: 视频/图集<br>如何设置推送博主请看 [**动态推送**](./push.md) |
+| 扫码登录取 ck  | <i class="fa-solid fa-xmark fa-beat-fade fa-lg" style="color: #f20707;"></i>       |                         | 风控太严格，无法实现                                   |
+| 视频           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
+| 图集           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
+| 评论           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
+| 用户主视频列表 | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
+| 视频更新推送   | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的推送类型: 视频/图集<br>如何设置推送博主请看 [**动态推送**](./push.md) |
 | ...            | ...      | ...                     |                                                                             |
 
 ---
@@ -21,7 +21,7 @@
 
 [^2]: web 视频链接: [`https://www.douyin.com/video/7375088329701854498`](https://www.douyin.com/video/7375088329701854498)
 
-::: warning 注意！！
+::: warning <i class="fa-solid fa-circle-exclamation fa-beat"></i> 注意！！
 
 ### 关于抖音 Cookie
 
