@@ -76,7 +76,8 @@ export default class Base {
         case 'LagrangeCore':
         case 'QQBot':
         case 'OneBotv11':{
-          return forwardmsg}
+          return forwardmsg
+        }
         case 'KOOKBot':{
           return null
         }
@@ -169,7 +170,9 @@ export default class Base {
             }
             case 'LagrangeCore':{
               /** 拉格朗视频默认传群文件 */
-              await this.e.group.sendFile(file.filepath)
+              groupfile
+                ? await this.e.group.sendFile(file.filepath)
+                : await this.e.reply(segment.video(file.filepath || video_url))
               break
             }
             case 'OneBotv11':{
@@ -209,7 +212,9 @@ export default class Base {
               break
             }
             case 'Lagrange.OneBot':{
-              await this.e.group.sendFile(file.filepath)
+              groupfile
+                ? await this.e.group.sendFile(file.filepath)
+                : await this.e.reply(segment.video(file.filepath || video_url))
               break
             }
             case 'QQBot':{
@@ -254,9 +259,9 @@ export default class Base {
       }
     } catch (error) {
       logger.error('视频上传错误,' + error)
+    } finally {
       await this.removeFile(file.filepath)
     }
-    await this.removeFile(file.filepath)
   }
 
   /**
