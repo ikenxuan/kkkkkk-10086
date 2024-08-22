@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.1...v1.3.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* 拉格兰优先发送视频 ([bff25c6](https://github.com/ikenxuan/kkkkkk-10086/commit/bff25c68224908958038aa060d501ca691e4a467))
+
 ## [1.3.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.0...v1.3.1) (2024-08-20)
 
 
