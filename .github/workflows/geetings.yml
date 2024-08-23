@@ -13,5 +13,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '👋 Thanks for reporting!'
+              body: '👋 你好！感谢你提交了第一个问题！🔍 你的细心帮助我们发现了新的改进机会，我们会尽快处理。🚀 如果你有更多的想法或疑问，请继续分享，我们非常乐意听取你的声音！🌟 感谢你的支持！'
             })
