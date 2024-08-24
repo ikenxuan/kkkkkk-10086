@@ -115,6 +115,8 @@ export class Tools extends plugin {
       url = bShortRex.exec(url)?.[0]
     } else if (url.includes('www.bilibili.com')) {
       url = urlRex.exec(url)[0]
+    } else if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
+      url = `https://www.bilibili.com/video/${ url }`
     }
     const bvid = await GetBilibiliID(url)
     const data = await new Bilidata(bvid.type).GetData(bvid)
@@ -169,7 +171,7 @@ if (Config.app.videotool) {
 
   if (Config.bilibili.bilibilitool) {
     rule.push({
-      reg: '(bilibili.com|b23.tv|t.bilibili.com)',
+      reg: '(bilibili.com|b23.tv|t.bilibili.com|BV[a-zA-Z0-9]{10})',
       fnc: 'bilib'
     })
   }
