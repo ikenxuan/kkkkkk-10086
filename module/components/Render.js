@@ -40,8 +40,8 @@ const Render = {
       ...params
     }
     return multiPage === true
-      ? await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
-      : await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+      ? await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+      : await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
   }
 }
 
