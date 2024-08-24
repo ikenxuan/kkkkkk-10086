@@ -18,6 +18,7 @@
     "qrcode": "^1.5.4",
     "sequelize": "6.37.3",
     "sharp": "0.33.4",
+    "simple-git": "^3.25.0",
     "sqlite3": "5.1.6"
   },
   "devDependencies": {

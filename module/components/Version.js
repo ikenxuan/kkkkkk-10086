@@ -2,6 +2,8 @@ import fs from 'fs'
 import lodash from 'lodash'
 import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
+import { exec } from 'child_process'
+import simpleGit from 'simple-git'
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -115,6 +117,52 @@ const { changelogs, currentVersion } = readLogFile(pluginPath)
 
 const clientPath = process.cwd()
 
+function checkCommitIdAndUpdateStatus () {
+  const git = simpleGit({ baseDir: pluginPath })
+
+  return new Promise((resolve, reject) => {
+    // 获取当前commit ID的短版本
+    exec(`git -C "${pluginPath}" rev-parse --short=6 HEAD`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`)
+        return reject({ error: '获取当前commit ID失败' })
+      }
+      const currentCommitIdShort = stdout.trim()
+
+      git.fetch().then(() => {
+        return git.revparse([ 'HEAD@{u}' ])
+      }).then(remoteCommitId => {
+        const remoteCommitIdShort = remoteCommitId.substring(0, 6)
+
+        let result = {
+          currentCommitId: currentCommitIdShort,
+          remoteCommitId: remoteCommitIdShort,
+          latest: false
+        }
+
+        if (currentCommitIdShort === remoteCommitIdShort) {
+          result.latest = true
+          git.log({ from: currentCommitIdShort, to: currentCommitIdShort }).then(log => {
+            if (log && log.all && log.all.length > 0) {
+              result.commitLog = log.all[0].message
+            }
+            resolve(result)
+          }).catch(logError => {
+            console.error(`获取提交日志失败: ${logError}`)
+            resolve(result) // 即使获取日志失败，也返回结果对象
+          })
+        } else {
+          resolve(result)
+        }
+      }).catch(err => {
+        console.error(err)
+        reject({ error: '检查更新状态失败' })
+      })
+    })
+  })
+}
+
+
 export default {
   /**
    * @type {string} 插件版本号
@@ -158,5 +206,6 @@ export default {
   /**
    * @type {string} 机器人程序/客户端路径
    */
-  clientPath
+  clientPath,
+  checkCommitIdAndUpdateStatus
 }

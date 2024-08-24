@@ -9,6 +9,16 @@ function scale (pct = 1) {
   return `style=transform:scale(${pct})`
 }
 
+async function gitstatus () {
+  const status = await Version.checkCommitIdAndUpdateStatus()
+  console.log(status)
+  if (status.latest) {
+    return `:<span class="commit_id">${status.currentCommitId}</span>`
+  } else {
+    return `:<span class="commit_id_new">${status.remoteCommitId}</span>`
+  }
+}
+
 const Render = {
   /**
    *
@@ -18,7 +28,7 @@ const Render = {
    * @param {boolean} multiPage 是否分页截图，默认false
    * @returns
    */
-  async render (path, params, multiPage = false) {
+  async render (path, params) {
     path = path.replace(/.html$/, '')
     const savePath = '/' + path.replace('html/', '') + '/'
     const data = {
@@ -29,7 +39,7 @@ const Render = {
       sys: {
         scale: scale(1)
       },
-      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}`,
+      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
       pageGotoParams: {
         waitUntil: 'load'
       },
@@ -37,11 +47,11 @@ const Render = {
       pluResPath: `${Version.pluginPath}/resources/`,
       saveId: path.split('/').pop(),
       imgType: 'jpeg',
+      multiPage: true,
+      multiPageHeight: 8000,
       ...params
     }
-    return multiPage === true
-      ? await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
-      : await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+    return await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
   }
 }
 
