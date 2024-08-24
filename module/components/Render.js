@@ -11,7 +11,6 @@ function scale (pct = 1) {
 
 async function gitstatus () {
   const status = await Version.checkCommitIdAndUpdateStatus()
-  console.log(status)
   if (status.latest) {
     return `:<span class="commit_id">${status.currentCommitId}</span>`
   } else {
