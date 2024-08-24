@@ -9,6 +9,16 @@ function scale (pct = 1) {
   return `style=transform:scale(${pct})`
 }
 
+async function gitstatus () {
+  const status = await Version.checkCommitIdAndUpdateStatus()
+  console.log(status)
+  if (status.latest) {
+    return `:<span class="commit_id">${status.currentCommitId}</span>`
+  } else {
+    return `:<span class="commit_id_new">${status.remoteCommitId}</span>`
+  }
+}
+
 const Render = {
   /**
    *
@@ -29,7 +39,7 @@ const Render = {
       sys: {
         scale: scale(1)
       },
-      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}`,
+      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
       pageGotoParams: {
         waitUntil: 'load'
       },
