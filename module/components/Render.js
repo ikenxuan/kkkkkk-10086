@@ -18,7 +18,7 @@ const Render = {
    * @param {boolean} multiPage 是否分页截图，默认false
    * @returns
    */
-  async render (path, params, multiPage = false) {
+  async render (path, params) {
     path = path.replace(/.html$/, '')
     const savePath = '/' + path.replace('html/', '') + '/'
     const data = {
@@ -37,11 +37,11 @@ const Render = {
       pluResPath: `${Version.pluginPath}/resources/`,
       saveId: path.split('/').pop(),
       imgType: 'jpeg',
+      multiPage: true,
+      multiPageHeight: 8000,
       ...params
     }
-    return multiPage === true
-      ? await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
-      : await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+    return await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
   }
 }
 

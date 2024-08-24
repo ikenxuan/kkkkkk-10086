@@ -5,7 +5,7 @@ const puppeteer = await (async () => {
   switch (Version.BotName) {
     case 'Karin': {
       const Renderer = (await import('node-karin')).render
-      const renderImage = async (path, options, multiPage = false) => {
+      const renderImage = async (path, options) => {
         const mergedOptions = {
           ...options,
           data: { ...options },
@@ -14,7 +14,7 @@ const puppeteer = await (async () => {
           type: options.imgType || 'jpeg',
           fileID: options.saveId,
           screensEval: '#container',
-          multiPage
+          multiPage: options.multiPageHeight
         }
         const img = await Renderer.render(mergedOptions)
         if(Array.isArray(img)) {
@@ -27,8 +27,7 @@ const puppeteer = await (async () => {
         }
       }
       return {
-        screenshot: (path, options) => renderImage(path, options),
-        screenshots: (path, options) => renderImage(path, options, true)
+        screenshots: (path, options) => renderImage(path, options)
       }
     }
     case 'yunzai':

@@ -99,8 +99,7 @@ export default class Bilibilipush extends Base {
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
               dynamicTYPE: '图文动态推送'
-            },
-            true
+            }
           )
           break
         }
