@@ -121,6 +121,15 @@ body {
   padding: 0 3px;
 }
 
+.copyright .commit_id {
+  color: #d3bc8e;
+
+}
+
+.copyright .commit_id_new {
+  color: #9dff00;
+}
+
 /* cont */
 .cont {
   border-radius: 20px;
