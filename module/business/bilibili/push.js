@@ -1,7 +1,8 @@
 import Bilidata from './getdata.js'
 import { GetBilibiliData } from '@ikenxuan/amagi'
-import { Base, Config, Render, DB, Version, Networks } from '../../components/index.js'
+import { Base, Config, Render, DB, Version } from '../../components/index.js'
 import { sendMsg, segment, logger } from '../../lib/public/index.js'
+import { randomUUID } from 'node:crypto'
 import YAML from 'yaml'
 import fs from 'fs'
 
@@ -200,9 +201,16 @@ export default class Bilibilipush extends Base {
           if (send) status = await sendMsg(uin, group_id, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
-              send && Config.bilibili.senddynamicvideo && await sendMsg(uin, group_id, segment.video(await new Networks({ url: nocd_data.data.durl[0].url }).getLongLink()))
+              if(send && Config.bilibili.senddynamicvideo) {
+                const video = await this.DownLoadFile(nocd_data.data.durl[0].url, randomUUID())
+                if (video.totalBytes < 100 && (!Config.usefilelimit || Config.app.filelimit < video.totalBytes)) {
+                  await sendMsg(uin, group_id, segment.video(video.filepath))
+                }
+              }
             } catch (error) {
               logger.error(error)
+            } finally {
+              await this.deleteFile(video.filepath)
             }
           }
 
