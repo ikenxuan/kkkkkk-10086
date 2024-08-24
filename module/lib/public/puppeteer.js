@@ -17,7 +17,14 @@ const puppeteer = await (async () => {
           multiPage
         }
         const img = await Renderer.render(mergedOptions)
-        return segment.image(img)
+        if(Array.isArray(img)) {
+          const ret = []
+          for (const imgae of img)
+            ret.push(imgae ? segment.image(imgae) : imgae)
+          return ret.length > 0 ? ret : false
+        } else {
+          return img ? segment.image(img) : img
+        }
       }
       return {
         screenshot: (path, options) => renderImage(path, options),
