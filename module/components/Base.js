@@ -63,6 +63,15 @@ export default class Base {
         default:
           return 'ICQQ'
       }
+    } else if (this.botname === 'Karin') {
+      switch (this.e.bot?.adapter?.name) {
+        case 'ICQQ':
+          return 'ICQQ'
+        case 'OneBot11':
+          return 'OneBot11'
+        case 'QQBot':
+          return 'QQBot'
+      }
     }
   }
 
@@ -129,7 +138,6 @@ export default class Base {
             return null
         }
       }
-
       case 'TRSS-Yunzai':{
         return segment.button(btn)
       }
@@ -251,7 +259,9 @@ export default class Base {
           }
           break
         case 'Karin':{
-          await this.e.reply(segment.video(video_url || 'base64://' + await common.base64(file.filepath)))
+          groupfile
+            ? await this.e.reply('暂时不支持群文件上传')
+            : await this.e.reply(segment.video('base64://' + await common.base64(file.filepath) || video_url))
           break
         }
         default:
@@ -275,15 +285,15 @@ export default class Base {
     const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
-    // 如果视频大于75MB且botadapter不是'OneBotv11'，或者视频大于99MB且botadapter是'OneBotv11'，则使用群文件上传
-    if ((res.totalBytes > 75 && this.botadapter !== 'OneBotv11') || (res.totalBytes > 99 && this.botadapter == 'OneBotv11')) {
+    // 根据视频大小和适配器类型决定上传方式
+    // 视频75兆时不被拦截的适配器
+    const continueAdapter = [ 'LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11' ]
+    const useGroupFile = (res.totalBytes > 75 && !continueAdapter.includes(this.botadapter)) || (res.totalBytes > 99 && continueAdapter.includes(this.botadapter))
+    if (useGroupFile) {
       this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
-      /** 使用群文件上传视频 */
-      await this.upload_file(res, video_url, true)
-    } else {
-      /** 直接上传视频 */
-      await this.upload_file(res, video_url)
     }
+    /** 上传视频 */
+    await this.upload_file(res, video_url, useGroupFile)
   }
 
   /**
