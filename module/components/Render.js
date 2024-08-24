@@ -15,9 +15,10 @@ const Render = {
    * @param {string} path html模板路径
    * @param {*} params 模板参数
    * @param {*} cfg 渲染参数
+   * @param {boolean} multiPage 是否分页截图，默认false
    * @returns
    */
-  async render (path, params) {
+  async render (path, params, multiPage = false) {
     path = path.replace(/.html$/, '')
     const savePath = '/' + path.replace('html/', '') + '/'
     const data = {
@@ -38,7 +39,9 @@ const Render = {
       imgType: 'jpeg',
       ...params
     }
-    return await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+    return multiPage === true
+      ? await puppeteer.screenshot(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
+      : await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
   }
 }
 

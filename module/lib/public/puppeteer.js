@@ -4,18 +4,24 @@ import segment from './segment.js'
 const puppeteer = await (async () => {
   switch (Version.BotName) {
     case 'Karin': {
-      const Renderer = (await import('node-karin')).Renderer
-      return {
-        screenshot: async (path, options) => {
-          options.data = { ...options }
-          options.name = Version.pluginName + path
-          options.file = options.tplFile
-          options.type = options.imgType || 'jpeg'
-          options.fileID = options.saveId
-          options.screensEval = '#container'
-          const img = await Renderer.render(options)
-          return segment.image(img)
+      const Renderer = (await import('node-karin')).render
+      const renderImage = async (path, options, multiPage = false) => {
+        const mergedOptions = {
+          ...options,
+          data: { ...options },
+          name: Version.pluginName + path,
+          file: options.tplFile,
+          type: options.imgType || 'jpeg',
+          fileID: options.saveId,
+          screensEval: '#container',
+          multiPage
         }
+        const img = await Renderer.render(mergedOptions)
+        return segment.image(img)
+      }
+      return {
+        screenshot: (path, options) => renderImage(path, options),
+        screenshots: (path, options) => renderImage(path, options, true)
       }
     }
     case 'yunzai':
