@@ -64,14 +64,8 @@ export default class Base {
           return 'ICQQ'
       }
     } else if (this.botname === 'Karin') {
-      switch (this.e.bot?.adapter?.name) {
-        case 'ICQQ':
-          return 'ICQQ'
-        case 'OneBot11':
-          return 'OneBot11'
-        case 'QQBot':
-          return 'QQBot'
-      }
+      return this.e.bot?.adapter?.name
+    }
     }
   }
 
