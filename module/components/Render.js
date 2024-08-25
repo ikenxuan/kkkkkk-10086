@@ -47,7 +47,7 @@ const Render = {
       saveId: path.split('/').pop(),
       imgType: 'jpeg',
       multiPage: true,
-      multiPageHeight: 8000,
+      multiPageHeight: 12000,
       ...params
     }
     return await puppeteer.screenshots(Version.BotName === 'Karin' ? savePath : Version.pluginName + savePath, data)
