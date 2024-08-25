@@ -208,7 +208,7 @@ export default class Bilibilipush extends Base {
             } catch (error) {
               logger.error(error)
             } finally {
-              await this.removeFile(video?.filepath)
+              if(send && Config.bilibili.senddynamicvideo) await this.removeFile(video?.filepath)
             }
           }
 
