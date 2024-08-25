@@ -209,7 +209,7 @@ export default class Bilibilipush extends Base {
             } catch (error) {
               logger.error(error)
             } finally {
-              await this.deleteFile(video.filepath)
+              await this.removeFile(video.filepath)
             }
           }
 
