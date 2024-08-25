@@ -7,7 +7,6 @@ const puppeteer = await (async () => {
       const Renderer = (await import('node-karin')).render
       const renderImage = async (path, options) => {
         const mergedOptions = {
-          ...options,
           data: { ...options },
           name: Version.pluginName + path,
           file: options.tplFile,
