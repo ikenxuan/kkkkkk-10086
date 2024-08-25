@@ -12,6 +12,7 @@
 | 图集           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 评论           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 用户主视频列表 | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
+| 背景音乐           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 视频更新推送   | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的推送类型: 视频/图集<br>如何设置推送博主请看 [**动态推送**](./push.md) |
 | ...            | ...      | ...                     |                                                                             |
 
