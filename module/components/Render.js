@@ -14,7 +14,7 @@ async function gitstatus () {
   if (status.latest) {
     return ` SHA: <span class="version">${status.currentCommitId}</span>`
   } else {
-    return ` SHA: <span class="commit_id_old">${status.currentCommitId}</span> <span class="tip">(有新版本)</span>`
+    return ` SHA: <span class="commit_id_old">${status.currentCommitId}</span> <span class="tip">(有新版本: ${status.remoteCommitId})</span>`
   }
 }
 

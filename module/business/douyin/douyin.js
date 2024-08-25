@@ -401,7 +401,7 @@ export default class DouYin extends Base {
         await this.e.reply(
           this.mkMsg(
             [
-              img,
+              img[0],
               `\n正在上传 ${data.music_info.title}\n`,
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
               `music_id: ${data.music_info.id}`
