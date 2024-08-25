@@ -7,7 +7,6 @@ hero:
   tagline: ✨ 适用于 <a href='https://yunzai-org.github.io/docs' target='_blank'>Yunzai</a> / <a href='https://github.com/Karinjs/Karin' target='_blank'>Karin</a> 生态
   prelink:
     title: '<p style="text-align: left;"><i class="fa-solid fa-bolt fa-shake" style="color: #FFD43B;"></i> 快速开始</p><div style="text-align: left; font-weight: bold;"><i class="fas fa-pnpm" style="color: #FFD43B;"></i>git clone https://github.com/ikenxuan/kkkkkk-10086.git</div>'
-    # link: docs/other/timeline
   image:
     src: /logo.png
   actions:
@@ -52,5 +51,5 @@ features:
     linkText: API Server
 ---
 
-<HomeUnderline />
+<Home />
 <confetti />

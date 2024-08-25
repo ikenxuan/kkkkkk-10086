@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme'
 import mediumZoom from 'medium-zoom'
 import { type Plugin, onMounted, watch, nextTick, h } from 'vue'
 import { useData, useRoute } from 'vitepress'
+import { Footer_Data } from '../data/fooertData'
 import 'vitepress-markdown-timeline/dist/theme/index.css'
 import './style/index.css'
 // 代码块添加折叠
@@ -44,6 +45,7 @@ import Confetti from './components/Confetti.vue'
 import ChangeLogs from './components/ChangeLogs.vue'
 import Task from './components/Task.vue'
 import BackTop from './components/BackTop.vue'
+import { HomeFooter } from '@theojs/lumen'
 // 页面属性
 import {
   NolebasePagePropertiesPlugin,
@@ -73,7 +75,7 @@ export default {
         defaultToggle: true,
       }
     } as Options)
-    app.component('HomeUnderline', HomeUnderline)
+    app.component('Home', HomeUnderline)
     app.component('NCard', Ncard)
     app.component('Video', Video)
     app.component('Confetti', Confetti)
@@ -133,6 +135,7 @@ export default {
       ],
       'home-hero-info-before': () => h(Announcement),
       'doc-footer-before': () => h(BackTop),
+      'layout-bottom': () => h(HomeFooter, { Footer_Data })
     })
   },
 
