@@ -66,7 +66,6 @@ export default class Base {
     } else if (this.botname === 'Karin') {
       return this.e.bot?.adapter?.name
     }
-    }
   }
 
   resultMsg (forwardmsg) {
