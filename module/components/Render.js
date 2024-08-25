@@ -12,9 +12,9 @@ function scale (pct = 1) {
 async function gitstatus () {
   const status = await Version.checkCommitIdAndUpdateStatus()
   if (status.latest) {
-    return `:<span class="commit_id">${status.currentCommitId}</span>`
+    return ` SHA: <span class="version">${status.currentCommitId}</span>`
   } else {
-    return `:<span class="commit_id_new">${status.remoteCommitId}</span>`
+    return ` SHA: <span class="commit_id_old">${status.currentCommitId}</span> <span class="tip">(有新版本)</span>`
   }
 }
 

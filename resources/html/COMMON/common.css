@@ -111,7 +111,7 @@ body {
   color: #fff;
   position: relative;
   padding-left: 10px;
-  text-shadow: 3px 3px 3px #000;
+  text-shadow: 2px 2px 3px #000;
   margin: 15px 0;
 }
 
@@ -121,13 +121,12 @@ body {
   padding: 0 3px;
 }
 
-.copyright .commit_id {
-  color: #d3bc8e;
-
+.copyright .commit_id_old {
+  color: #808080;
 }
 
-.copyright .commit_id_new {
-  color: #9dff00;
+.copyright .tip {
+  color: #ff0000;
 }
 
 /* cont */
