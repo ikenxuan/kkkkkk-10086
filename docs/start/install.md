@@ -52,11 +52,12 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-
 <details>
 <summary>点击展开</summary>
 
-**_不推荐该方式，后续无法通过 Git 进行更新_**<br><br>
-- 打开 Release 页面: https://github.com/ikenxuan/kkkkkk-10086/releases
-- 找到最新的版本，下载后缀名为 `.zip` 的压缩包
-- 在 `机器人根目录/plugins/` 中解压该压缩包
-- 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码) 则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
+<p style="color: red; font-weight: bolder;">不推荐该方式，后续无法通过 Git 进行更新</p>
+
+1. 打开 Release 页面: https://github.com/ikenxuan/kkkkkk-10086/releases
+2. 找到最新的版本，下载后缀名为 `.zip` 的压缩包
+3. 在 `机器人根目录/plugins/` 中解压该压缩包
+4. 完成后插件应在 `机器人根目录/plugins/kkkkkk-10086/`<br>[Karin](#获取源码) 则为 `机器人目录/plugins/karin-plugin-kkkkkk-10086/`
 
 
 你可以在此处查看发布过的所有版本: [**版本历史**](../other/timeline.md)
