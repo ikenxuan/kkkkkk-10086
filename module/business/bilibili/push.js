@@ -196,12 +196,12 @@ export default class Bilibilipush extends Base {
       try {
         for (const groupId of data[dynamicId].group_id) {
           const [ group_id, uin ] = groupId.split(':')
-          let status
+          let status, video
           if (send) status = await sendMsg(uin, group_id, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
               if(send && Config.bilibili.senddynamicvideo) {
-                const video = await this.DownLoadFile(nocd_data.data.durl[0].url, randomUUID())
+                video = await this.DownLoadFile(nocd_data.data.durl[0].url, randomUUID())
                 if (video.totalBytes < 100 && (!Config.usefilelimit || Config.app.filelimit < video.totalBytes)) {
                   await sendMsg(uin, group_id, segment.video(video.filepath))
                 }
