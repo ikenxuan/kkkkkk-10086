@@ -4,6 +4,7 @@ import { makeForwardMsg, segment, logger } from '../../lib/public/index.js'
 import fs from 'fs'
 import { markdown } from '@karinjs/md-html'
 import QRCode from 'qrcode'
+import { GetDouyinData } from '@ikenxuan/amagi'
 
 let mp4size = ''
 let img
@@ -416,6 +417,32 @@ export default class DouYin extends Base {
 
         return true
       }
+      case 'Live': {
+        if (data.user.live_status === 1) {
+          // 直播中
+          const live_data = await GetDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: data.user.sec_uid })
+          const room_data = JSON.parse(data.user.room_data)
+          const img = await Render.render(
+            'html/douyin/douyinlive',
+            {
+              image_url: [ { image_src: live_data.data.data[0].cover.url_list[0] } ],
+              text: live_data.data.data[0].title,
+              liveinf: `${live_data.data.partition_road_map.partition.title} | 房间号: ${room_data.owner.web_rid}`,
+              在线观众: this.count(live_data.data.data[0].stats.user_count_str),
+              总观看次数: this.count(live_data.data.data[0].stats.total_user_str),
+              username: data.user.nickname,
+              avater_url: data.user.avatar_larger.url_list[0],
+              fans: this.count(data.user.follower_count),
+              create_time: convertTimestampToDateTime(new Date().getTime()),
+              now_time: convertTimestampToDateTime(new Date().getTime()),
+              share_url: 'https://live.douyin.com/' + room_data.owner.web_rid,
+              dynamicTYPE: '直播间信息'
+            }
+          )
+          await this.e.reply(img)
+        }
+        return true
+      }
       default:
         break
     }
@@ -474,4 +501,20 @@ function Time (delay) {
   const seconds = String(currentDate.getSeconds()).padStart(2, '0')
 
   return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+}
+
+/**
+   *
+   * @param {string} timestamp 时间戳
+   * @returns 获取 年-月-日 时:分
+   */
+function convertTimestampToDateTime (timestamp) {
+  const date = new Date(timestamp * 1000)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }

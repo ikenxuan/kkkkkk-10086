@@ -23,14 +23,15 @@ export default async function GetDouyinID (url) {
       break
     }
 
-    case longLink.includes('webcast.amemv.com'):
+    case longLink.includes('webcast.amemv.com'): {
+      const sec_uid = longLink.match(/sec_user_id=([^&]+)/)
       result = {
         type: 'Live',
-        baseurl: url,
+        user_id: sec_uid[1],
         P: '抖音'
       }
-      logger.warn('直播间相关暂未支持解析')
-      return {}
+      break
+    }
 
     case /video\/(\d+)/.test(longLink): {
       const videoMatch = longLink.match(/video\/(\d+)/)

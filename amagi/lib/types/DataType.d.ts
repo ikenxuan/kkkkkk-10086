@@ -13,7 +13,8 @@ export declare const enum DouyinDataType {
     动态表情数据 = "\u52A8\u6001\u8868\u60C5\u6570\u636E",
     音乐数据 = "\u97F3\u4E50\u6570\u636E",
     图集作品数据 = "\u56FE\u96C6\u4F5C\u54C1\u6570\u636E",
-    实况图片图集数据 = "\u5B9E\u51B5\u56FE\u7247\u56FE\u96C6\u6570\u636E"
+    实况图片图集数据 = "\u5B9E\u51B5\u56FE\u7247\u56FE\u96C6\u6570\u636E",
+    直播间信息数据 = "\u76F4\u64AD\u95F4\u4FE1\u606F\u6570\u636E"
 }
 /**
  * B站接口类型

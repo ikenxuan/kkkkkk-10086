@@ -1,6 +1,6 @@
 {{extend defaultLayout}} {{block 'css'}}
 <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" type="text/css" href="{{_res_path}}html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD.css" />
+<link rel="stylesheet" type="text/css" href="{{_res_path}}html/douyin/douyinlive.css" />
 {{/block}} {{block 'main'}}
 
 <div class="spacer1"></div>
@@ -28,7 +28,7 @@
       <img class="livestat" src="{{_res_path}}html/douyin/img/抖音-直播中.png" alt="直播中" />
     </div>
     <div>
-      <span style="color: #808080">{{fans}}粉丝</span>
+      <span style="color: #808080; font-size: 35px;">{{fans}}粉丝</span>
     </div>
   </div>
 </div>
@@ -40,7 +40,7 @@
       <div class="user" style="align-items: center">
         <div class="userinfo">
           <div class="bitop">
-            <img style="width: 200px; height: auto;" src="https://p3-pc-weboff.byteimg.com/tos-cn-i-9r5gewecjs/logo-horizontal.svg" alt="Logo" />
+            <img style="width: 400px; height: auto;" src="https://p3-pc-weboff.byteimg.com/tos-cn-i-9r5gewecjs/logo-horizontal.svg" alt="Logo" />
           </div>
           <div class="ftext">
             <span style="letter-spacing: 10px">抖音 记录美好生活</span>
@@ -63,5 +63,5 @@
     })
     qrcode.makeCode('{{share_url}}')
   </script>
+  {{/block}}
 </div>
-{{/block}}

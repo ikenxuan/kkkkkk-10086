@@ -30,6 +30,7 @@ export default class DouyinData extends Base {
         const LiveImageData = await GetDouyinData('实况图片图集数据', Config.cookies.douyin, { aweme_id: data.id })
         return { LiveImageData }
       }
+      case 'Live':
       case 'UserInfoData': {
         const UserInfoData = await GetDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid: data.user_id })
         return UserInfoData

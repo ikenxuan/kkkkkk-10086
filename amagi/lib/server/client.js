@@ -22,7 +22,7 @@ export class client {
      * @returns fastify 实例
      */
   async initServer (log = false) {
-    const client = Fastify({
+    const Client = Fastify({
       logger: log && {
         transport: {
           target: 'pino-pretty',
@@ -35,170 +35,176 @@ export class client {
         }
       }
     })
-    client.get('/', async (_request, reply) => {
+    Client.get('/', async (_request, reply) => {
       reply.redirect('https://amagi.apifox.cn', 301)
     })
-    client.get('/docs', async (_request, reply) => {
+    Client.get('/docs', async (_request, reply) => {
       reply.redirect('https://amagi.apifox.cn', 301)
     })
-    client.get('/api/douyin/aweme', async (request, reply) => {
+    Client.get('/api/douyin/aweme', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u5355\u4E2A\u89C6\u9891\u4F5C\u54C1\u6570\u636E" /* DouyinDataType.单个视频作品数据 */,
         cookie: this.douyin
       }, { url: request.query.url }))
     })
-    client.get('/api/douyin/comments', async (request, reply) => {
+    Client.get('/api/douyin/comments', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u8BC4\u8BBA\u6570\u636E" /* DouyinDataType.评论数据 */,
         cookie: this.douyin
       }, { url: request.query.url }))
     })
-    client.get('/api/douyin/comments/reply', async (request, reply) => {
+    Client.get('/api/douyin/comments/reply', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u4E8C\u7EA7\u8BC4\u8BBA\u6570\u636E" /* DouyinDataType.二级评论数据 */,
         cookie: this.douyin
       }, { aweme_id: request.query.aweme_id, comment_id: request.query.comment_id }))
     })
-    client.get('/api/douyin/userinfo', async (request, reply) => {
+    Client.get('/api/douyin/userinfo', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u7528\u6237\u4E3B\u9875\u6570\u636E" /* DouyinDataType.用户主页数据 */,
         cookie: this.douyin
       }, { sec_uid: request.query.sec_uid }))
     })
-    client.get('/api/douyin/uservideoslist', async (request, reply) => {
+    Client.get('/api/douyin/uservideoslist', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u7528\u6237\u4E3B\u9875\u89C6\u9891\u5217\u8868\u6570\u636E" /* DouyinDataType.用户主页视频列表数据 */,
         cookie: this.douyin
       }, { sec_uid: request.query.sec_uid }))
     })
-    client.get('/api/douyin/suggestwords', async (request, reply) => {
+    Client.get('/api/douyin/suggestwords', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u70ED\u70B9\u8BCD\u6570\u636E" /* DouyinDataType.热点词数据 */,
         cookie: this.douyin
       }, { query: request.query.query }))
     })
-    client.get('/api/douyin/search', async (request, reply) => {
+    Client.get('/api/douyin/search', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u641C\u7D22\u6570\u636E" /* DouyinDataType.搜索数据 */,
         cookie: this.douyin
       }, { query: request.query.query }))
     })
-    client.get('/api/douyin/emoji', async (_request, reply) => {
+    Client.get('/api/douyin/emoji', async (_request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u5B98\u65B9emoji\u6570\u636E" /* DouyinDataType.官方emoji数据 */,
         cookie: this.douyin
       }))
     })
-    client.get('/api/douyin/expressionplus', async (_request, reply) => {
+    Client.get('/api/douyin/expressionplus', async (_request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u52A8\u6001\u8868\u60C5\u6570\u636E" /* DouyinDataType.动态表情数据 */,
         cookie: this.douyin
       }))
     })
-    client.get('/api/douyin/music', async (request, reply) => {
+    Client.get('/api/douyin/music', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u97F3\u4E50\u6570\u636E" /* DouyinDataType.音乐数据 */,
         cookie: this.douyin
       }, { music_id: request.query.music_id }))
     })
-    client.get('/api/douyin/liveimages', async (request, reply) => {
+    Client.get('/api/douyin/liveimages', async (request, reply) => {
       reply.type('application/json').send(await DouyinResult({
         type: "\u5B9E\u51B5\u56FE\u7247\u56FE\u96C6\u6570\u636E" /* DouyinDataType.实况图片图集数据 */,
         cookie: this.douyin
       }, { url: request.query.url }))
     })
-    client.get('/api/bilibili/generateqrcode', async (request, reply) => {
+    Client.get('/api/douyin/livedata', async (request, reply) => {
+      reply.type('application/json').send(await DouyinResult({
+        type: "\u76F4\u64AD\u95F4\u4FE1\u606F\u6570\u636E" /* DouyinDataType.直播间信息数据 */,
+        cookie: this.douyin
+      }, { sec_uid: request.query.sec_uid }))
+    })
+    Client.get('/api/bilibili/generateqrcode', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u7533\u8BF7\u4E8C\u7EF4\u7801" /* BilibiliDataType.申请二维码 */,
         cookie: ''
       }, {}))
     })
-    client.get('/api/bilibili/qrcodepoll', async (request, reply) => {
+    Client.get('/api/bilibili/qrcodepoll', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u4E8C\u7EF4\u7801\u72B6\u6001" /* BilibiliDataType.二维码状态 */,
         cookie: ''
       }, { qrcode_key: request.query.qrcode_key }))
     })
-    client.get('/api/bilibili/login', async (request, reply) => {
+    Client.get('/api/bilibili/login', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u767B\u5F55\u57FA\u672C\u4FE1\u606F" /* BilibiliDataType.登录基本信息 */,
         cookie: request.headers.cookie
       }, {}))
     })
-    client.get('/api/bilibili/work', async (request, reply) => {
+    Client.get('/api/bilibili/work', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u5355\u4E2A\u89C6\u9891\u4F5C\u54C1\u6570\u636E" /* BilibiliDataType.单个视频作品数据 */,
         cookie: this.bilibili
       }, { url: request.query.url }))
     })
-    client.get('/api/bilibili/downloadwork', async (request, reply) => {
+    Client.get('/api/bilibili/downloadwork', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u5355\u4E2A\u89C6\u9891\u4E0B\u8F7D\u4FE1\u606F\u6570\u636E" /* BilibiliDataType.单个视频下载信息数据 */,
         cookie: this.bilibili
       }, { avid: request.query.avid, cid: request.query.cid }))
     })
-    client.get('/api/bilibili/comment', async (request, reply) => {
+    Client.get('/api/bilibili/comment', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u8BC4\u8BBA\u6570\u636E" /* BilibiliDataType.评论数据 */,
         cookie: this.bilibili
       }, { bvid: request.query.bvid }))
     })
-    client.get('/api/bilibili/emoji', async (_request, reply) => {
+    Client.get('/api/bilibili/emoji', async (_request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "emoji\u6570\u636E" /* BilibiliDataType.emoji数据 */,
         cookie: this.bilibili
       }, {}))
     })
-    client.get('/api/bilibili/bangumivideoinfo', async (request, reply) => {
+    Client.get('/api/bilibili/bangumivideoinfo', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u756A\u5267\u57FA\u672C\u4FE1\u606F\u6570\u636E" /* BilibiliDataType.番剧基本信息数据 */,
         cookie: this.bilibili
       }, { url: request.query.url }))
     })
-    client.get('/api/bilibili/bangumivideodownloadlink', async (request, reply) => {
+    Client.get('/api/bilibili/bangumivideodownloadlink', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u756A\u5267\u4E0B\u8F7D\u4FE1\u606F\u6570\u636E" /* BilibiliDataType.番剧下载信息数据 */,
         cookie: this.bilibili
       }, { cid: request.query.cid, ep_id: request.query.ep_id }))
     })
-    client.get('/api/bilibili/dynamiclist', async (request, reply) => {
+    Client.get('/api/bilibili/dynamiclist', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u7528\u6237\u4E3B\u9875\u52A8\u6001\u5217\u8868\u6570\u636E" /* BilibiliDataType.用户主页动态列表数据 */,
         cookie: this.bilibili
       }, { host_mid: request.query.host_mid }))
     })
-    client.get('/api/bilibili/dynamicinfo', async (request, reply) => {
+    Client.get('/api/bilibili/dynamicinfo', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u52A8\u6001\u8BE6\u60C5\u6570\u636E" /* BilibiliDataType.动态详情数据 */,
         cookie: this.bilibili
       }, { dynamic_id: request.query.dynamic_id }))
     })
-    client.get('/api/bilibili/dynamicdard', async (request, reply) => {
+    Client.get('/api/bilibili/dynamicdard', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u52A8\u6001\u5361\u7247\u6570\u636E" /* BilibiliDataType.动态卡片数据 */,
         cookie: this.bilibili
       }, { dynamic_id: request.query.dynamic_id }))
     })
-    client.get('/api/bilibili/userinfo', async (request, reply) => {
+    Client.get('/api/bilibili/userinfo', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u7528\u6237\u4E3B\u9875\u6570\u636E" /* BilibiliDataType.用户主页数据 */,
         cookie: this.bilibili
       }, { host_mid: request.query.host_mid }))
     })
-    client.get('/api/bilibili/liveroominfo', async (request, reply) => {
+    Client.get('/api/bilibili/liveroominfo', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u76F4\u64AD\u95F4\u4FE1\u606F" /* BilibiliDataType.直播间信息 */,
         cookie: this.bilibili
       }, { room_id: request.query.room_id }))
     })
-    client.get('/api/bilibili/liveroominit', async (request, reply) => {
+    Client.get('/api/bilibili/liveroominit', async (request, reply) => {
       reply.type('application/json').send(await BilibiliResult({
         type: "\u76F4\u64AD\u95F4\u521D\u59CB\u5316\u4FE1\u606F" /* BilibiliDataType.直播间初始化信息 */,
         cookie: this.bilibili
       }, { room_id: request.query.room_id }))
     })
     return {
-      Instance: client,
+      Instance: Client,
       GetDouyinData: this.GetDouyinData,
       GetBilibiliData: this.GetBilibiliData
     }
@@ -221,3 +227,4 @@ export class client {
     }
   }
 }
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiY2xpZW50LmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vc3JjL3NlcnZlci9jbGllbnQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsT0FBTyxFQUFFLGNBQWMsRUFBRSxNQUFNLHlCQUF5QixDQUFBO0FBQ3hELE9BQU8sRUFBRSxZQUFZLEVBQUUsTUFBTSx1QkFBdUIsQ0FBQTtBQU9wRCxPQUFPLE9BQTRCLE1BQU0sU0FBUyxDQUFBO0FBd0JsRCxNQUFNLE9BQU8sTUFBTTtJQUNqQixxQkFBcUI7SUFDckIsTUFBTSxDQUFRO0lBQ2Qsc0JBQXNCO0lBQ3RCLFFBQVEsQ0FBUTtJQUVoQjs7O09BR0c7SUFDSCxZQUFhLE9BQXlCO1FBQ3BDLFdBQVc7UUFDWCxJQUFJLENBQUMsTUFBTSxHQUFHLE9BQU8sQ0FBQyxNQUFNLENBQUE7UUFDNUIsV0FBVztRQUNYLElBQUksQ0FBQyxRQUFRLEdBQUcsT0FBTyxDQUFDLFFBQVEsQ0FBQTtJQUNsQyxDQUFDO0lBRUQ7Ozs7T0FJRztJQUNILEtBQUssQ0FBQyxVQUFVLENBQUUsTUFBZSxLQUFLO1FBQ3BDLE1BQU0sTUFBTSxHQUFHLE9BQU8sQ0FBQztZQUNyQixNQUFNLEVBQUUsR0FBRyxJQUFJO2dCQUNiLFNBQVMsRUFBRTtvQkFDVCxNQUFNLEVBQUUsYUFBYTtvQkFDckIsT0FBTyxFQUFFO3dCQUNQLFFBQVEsRUFBRSxJQUFJO3dCQUNkLGFBQWEsRUFBRSxxQkFBcUI7d0JBQ3BDLE1BQU0sRUFBRSw0RUFBNEU7d0JBQ3BGLGFBQWEsRUFBRSxPQUFPO3FCQUN2QjtpQkFDRjthQUNGO1NBQ0YsQ0FBQyxDQUFBO1FBRUYsTUFBTSxDQUFDLEdBQUcsQ0FBQyxHQUFHLEVBQUUsS0FBSyxFQUFFLFFBQVEsRUFBRSxLQUFLLEVBQUUsRUFBRTtZQUN4QyxLQUFLLENBQUMsUUFBUSxDQUFDLHlCQUF5QixFQUFFLEdBQUcsQ0FBQyxDQUFBO1FBQ2hELENBQUMsQ0FBQyxDQUFBO1FBRUYsTUFBTSxDQUFD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
