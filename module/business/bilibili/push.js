@@ -201,7 +201,7 @@ export default class Bilibilipush extends Base {
             try {
               if(send && Config.bilibili.senddynamicvideo) {
                 video = await this.DownLoadFile(nocd_data.data.durl[0].url, 'tmp_' + Date.now())
-                if (video.totalBytes < 100 && (!Config.usefilelimit || Config.app.filelimit < video.totalBytes)) {
+                if ((Config.usefilelimit && video.totalBytes < 100 && Config.app.filelimit >= video.totalBytes) || (!Config.usefilelimit && video.totalBytes < 100)) {
                   await sendMsg(uin, group_id, segment.video(video.filepath))
                 }
               }
