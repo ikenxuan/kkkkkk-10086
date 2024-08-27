@@ -3,6 +3,8 @@
 @import './mathjax3.css';
 @import './blur.css';
 @import './VPImage.css';
+@import './custom-block.css';
+@import './blockquote.css';
 
 
 @import '../font/HarmonyOS_Sans_SC_Medium/font.css';
