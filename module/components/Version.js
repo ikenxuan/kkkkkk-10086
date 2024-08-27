@@ -117,15 +117,15 @@ const { changelogs, currentVersion } = readLogFile(pluginPath)
 
 const clientPath = process.cwd()
 
-function checkCommitIdAndUpdateStatus () {
+function checkCommitIdAndUpdateStatus (pluginPath) {
   const git = simpleGit({ baseDir: pluginPath })
 
-  return new Promise((resolve, reject) => {
-    // 获取当前commit ID的短版本
-    exec(`git -C "${pluginPath}" rev-parse --short=6 HEAD`, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`)
-        return reject({ error: '获取当前commit ID失败' })
+  return new Promise((resolve) => {
+    try {
+      // 尝试获取当前commit ID的短版本
+      const { stdout, stderr } = execSync(`git -C "${pluginPath}" rev-parse --short=6 HEAD`)
+      if (stderr) {
+        throw new Error(`exec error: ${stderr}`)
       }
       const currentCommitIdShort = stdout.trim()
 
@@ -137,28 +137,37 @@ function checkCommitIdAndUpdateStatus () {
         let result = {
           currentCommitId: currentCommitIdShort,
           remoteCommitId: remoteCommitIdShort,
-          latest: false
+          latest: false,
+          error: null
         }
 
         if (currentCommitIdShort === remoteCommitIdShort) {
           result.latest = true
-          git.log({ from: currentCommitIdShort, to: currentCommitIdShort }).then(log => {
-            if (log && log.all && log.all.length > 0) {
-              result.commitLog = log.all[0].message
-            }
-            resolve(result)
-          }).catch(logError => {
-            console.error(`获取提交日志失败: ${logError}`)
-            resolve(result) // 即使获取日志失败，也返回结果对象
-          })
-        } else {
-          resolve(result)
+          return git.log({ from: currentCommitIdShort, to: currentCommitIdShort })
         }
-      }).catch(err => {
-        console.error(err)
-        reject({ error: '检查更新状态失败' })
+        return result
+      }).then(log => {
+        if (log && log.all && log.all.length > 0) {
+          result.commitLog = log.all[0].message
+        }
+        resolve(result)
+      }).catch(logError => {
+        console.error(`获取提交日志失败: ${logError}`)
+        resolve({
+          ...result,
+          error: '获取提交日志失败'
+        })
       })
-    })
+    } catch (error) {
+      console.error(`检查更新状态失败: ${error}`)
+      resolve({
+        error: '检查更新状态失败',
+        currentCommitId: null,
+        remoteCommitId: null,
+        latest: false,
+        commitLog: null
+      })
+    }
   })
 }
 
