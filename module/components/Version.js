@@ -129,7 +129,7 @@ async function checkCommitIdAndUpdateStatus () {
 
   try {
     // 尝试获取当前commit ID的短版本
-    const stdout = execSync(`git -C "${pluginPath}" rev-parse --short=6 HEAD`).toString().trim()
+    const stdout = execSync(`git -C "${pluginPath}" rev-parse --short=7 HEAD`).toString().trim()
     result.currentCommitId = stdout
 
     // 执行git fetch
