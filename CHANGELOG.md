@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.4.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.2...v1.4.0) (2024-08-27)
+
+
+### Features
+
+* B站支解析仅BVID ([8105894](https://github.com/ikenxuan/kkkkkk-10086/commit/8105894b24a9ec93120a234f85cb49f7b463f73f))
+* B站视频上传新增保内容或保画质逻辑 #kkk设置B站内容优先开启/关闭 close [#49](https://github.com/ikenxuan/kkkkkk-10086/issues/49) ([68d68b9](https://github.com/ikenxuan/kkkkkk-10086/commit/68d68b956d221ea58c9ef3fd32121b95f8d690e9))
+* 增加下载超时和重试机制，优化下载进度显示 ([cae2eda](https://github.com/ikenxuan/kkkkkk-10086/commit/cae2eda5dc16a012ccc5ddbb9bf96ca09a52a07d))
+* 增加分片截图逻辑 ([954163e](https://github.com/ikenxuan/kkkkkk-10086/commit/954163ef4025a45be4dcb6e46f12294c2e96bd8b))
+* 支持引用链接解析 ([8b47cab](https://github.com/ikenxuan/kkkkkk-10086/commit/8b47cab5d89e38dc05b444e39fbb1270d24c64e4))
+* 新增前缀解析 [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46) ([#53](https://github.com/ikenxuan/kkkkkk-10086/issues/53)) ([cfee292](https://github.com/ikenxuan/kkkkkk-10086/commit/cfee292f48bdc19f8a21af6cd2ac0f18fc2810d8))
+* 新增前缀解析 fixes [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46) ([#53](https://github.com/ikenxuan/kkkkkk-10086/issues/53)) ([44516c5](https://github.com/ikenxuan/kkkkkk-10086/commit/44516c58d71f7f5694e9471ec108f9b8984f80b2))
+* 新增抖音直播链接解析 ([626c07d](https://github.com/ikenxuan/kkkkkk-10086/commit/626c07d891078a3b949f02b9720ac2586082cd25))
+
+
+### Bug Fixes
+
+* B站图文动态推送使用分片截图 ([c626367](https://github.com/ikenxuan/kkkkkk-10086/commit/c626367fd769832f258a0ae418e7b0dfaf3dfa24))
+* B站视频动态二维码错误 ([9fe9880](https://github.com/ikenxuan/kkkkkk-10086/commit/9fe988040c58ad7aa3cc9c0c6ae403044a44e3ab))
+* **douyin:** 修复图片上传回复中的数组访问错误 ([4f0269f](https://github.com/ikenxuan/kkkkkk-10086/commit/4f0269f25d12d6fa2f3295811813caca66228e80))
+* 仅在发送动态视频时删除文件以避免没文件删 ([476c6fb](https://github.com/ikenxuan/kkkkkk-10086/commit/476c6fb2394ac0dad008e44495cab8fed80e2dba))
+* 优化B站动态视频发送逻辑，使用Networks模块获取最终视频地址 ([0873fcd](https://github.com/ikenxuan/kkkkkk-10086/commit/0873fcde0121e92f0402d5c63c26af8a6db9f487))
+* 优化B站动态视频发送逻辑，使用Networks模块获取最终视频地址 ([5c6accf](https://github.com/ikenxuan/kkkkkk-10086/commit/5c6accfe5b634af6bbe2812f88391826fa10e5a1))
+* 优化B站动态视频发送逻辑，使用Networks模块获取最终视频地址 ([27d4640](https://github.com/ikenxuan/kkkkkk-10086/commit/27d464044e5d19e97a46d0bf893336fc976f3d5a))
+* 优化B站动态视频发送逻辑，改为发送本地视频 ([25d1e45](https://github.com/ikenxuan/kkkkkk-10086/commit/25d1e45d2cab837b095798366e71acf92d4ca385))
+* 优化puppeteer渲染逻辑，支持多页面图片渲染 ([6c44207](https://github.com/ikenxuan/kkkkkk-10086/commit/6c4420726299cbc7c89363c3b666b77575612ce6))
+* 优化图片底部版本信息 ([4719a18](https://github.com/ikenxuan/kkkkkk-10086/commit/4719a18285c00bb3906bd8e3580054d5a769c45b))
+* 优化视频上传逻辑，根据适配器类型和视频大小决定上传方式 ([b5eb55a](https://github.com/ikenxuan/kkkkkk-10086/commit/b5eb55af4d860e4b64c8b7e779a2bec4f25a70d4))
+* 修复B站动态视频下载逻辑，确保视频变量正确初始化 ([f069655](https://github.com/ikenxuan/kkkkkk-10086/commit/f06965560e63bed22a67413b97e4e3ed80e9641f))
+* 修复puppeteer多页面截图逻辑错误 ([25e68bf](https://github.com/ikenxuan/kkkkkk-10086/commit/25e68bf886175ee5b8c33c00344c83fff06262df))
+* 修复删除文件方法中视频文件路径可能为空的问题 ([421f609](https://github.com/ikenxuan/kkkkkk-10086/commit/421f609b1e2e05b0b704566c87ee216de1b0d253))
+* 修正B站动态视频下载条件判断逻辑 ([8c76ef2](https://github.com/ikenxuan/kkkkkk-10086/commit/8c76ef25c047d2058fbf0bc84a55ffa171106ff2))
+* 修正删除文件方法函数removeFile ([7507ce4](https://github.com/ikenxuan/kkkkkk-10086/commit/7507ce434526fb8bdaf2305f704baee389af82eb))
+* 修正动态视频发送条件判断并改为base64编码 ([ddf4832](https://github.com/ikenxuan/kkkkkk-10086/commit/ddf4832631807a09688c435a09439c8ba44d8c15))
+* 全局分片截图 ([#45](https://github.com/ikenxuan/kkkkkk-10086/issues/45)) ([c3ba6a4](https://github.com/ikenxuan/kkkkkk-10086/commit/c3ba6a489d147f5a35a4970915bed19076497723))
+* 分页高度12000 ([4fa8448](https://github.com/ikenxuan/kkkkkk-10086/commit/4fa844866ac5c171a8d1d4d76b13e49260b78943))
+* 暂时移除`kkk`前缀 ([fb54365](https://github.com/ikenxuan/kkkkkk-10086/commit/fb54365445e5a5ed78cea12a07f2a94a60329869))
+* 替换动态视频下载的UUID为时间戳 ([002a298](https://github.com/ikenxuan/kkkkkk-10086/commit/002a298c961702f0a60c8d42a7718f682a97a136))
+* 移除puppeteer渲染选项中的多余配置 ([2decbf1](https://github.com/ikenxuan/kkkkkk-10086/commit/2decbf1ec0f5ec10e3517518a4652e45cac933c0))
+* 移除多余的右花括号 ([5455a52](https://github.com/ikenxuan/kkkkkk-10086/commit/5455a5292a2a149e2edfc147407ec599adfb48f4))
+* 移除无关日志 ([3344755](https://github.com/ikenxuan/kkkkkk-10086/commit/334475526e51ad65e0a2a2bfb9cf52ab8904e2e5))
+* 简化Karin适配器名称返回逻辑 ([103680b](https://github.com/ikenxuan/kkkkkk-10086/commit/103680ba39811386bcdce3cc3e5858944230c3a9))
+
+
+### Performance Improvements
+
+* 版本获取 ([ba201d0](https://github.com/ikenxuan/kkkkkk-10086/commit/ba201d0d935f0a8619af88e7953a1ff28eb77c78))
+
 ## [1.3.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.1...v1.3.2) (2024-08-22)
 
 
