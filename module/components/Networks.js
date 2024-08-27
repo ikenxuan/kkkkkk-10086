@@ -170,83 +170,94 @@ export default class Networks {
    * @param {number} [retryCount=0] 当前重试次数
    */
   async downloadStream (progressCallback, retryCount = 0) {
-    const controller = new AbortController()  // 创建新的AbortController用于控制请求
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout)  // 设置请求超时定时器
+    // 创建用于取消请求的控制器和超时定时器
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
     try {
+      // 发起网络请求，并附加中止信号
       const response = await fetch(this.url, {
         ...this.config,
-        signal: controller.signal  // 将AbortController的signal传入fetch请求
+        signal: controller.signal
       })
 
-      clearTimeout(timeoutId)  // 请求成功后清除超时定时器
+      // 如果请求成功，清除超时定时器
+      clearTimeout(timeoutId)
 
+      // 检查响应状态，如果请求失败则抛出错误
       if (!response.ok) {
         throw new Error(`无法获取 ${this.url}。状态: ${response.status} ${response.statusText}`)
       }
 
-      const totalBytes = parseInt(response.headers.get('content-length'), 10)  // 获取响应体的总字节数
-      let downloadedBytes = 0
-      let lastPrintedPercentage = -1
-      const writer = fs.createWriteStream(this.filepath)  // 创建文件写入流
+      // 获取文件总大小（字节数）
+      const totalBytes = parseInt(response.headers.get('content-length'), 10)
+      let downloadedBytes = 0  // 已下载的字节数
+      let lastPrintedPercentage = -1  // 上一次打印的进度百分比
 
-      // 打印下载进度的函数
+      // 创建用于写入文件的流
+      const writer = fs.createWriteStream(this.filepath)
+
+      // 打印下载进度的辅助函数
       const printProgress = () => {
-        // 计算当前下载进度百分比
         const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
-        // 控制日志打印频率，只在百分比变化时打印日志
         if (progressPercentage !== lastPrintedPercentage) {
-          progressCallback(downloadedBytes, totalBytes)  // 更新下载进度
+          // 当进度百分比变化时，调用进度回调函数
+          progressCallback(downloadedBytes, totalBytes)
           lastPrintedPercentage = progressPercentage
         }
       }
 
-      // 设置每0.5秒打印一次下载进度
+      // 每0.5秒打印一次下载进度
       const intervalId = setInterval(printProgress, 500)
 
-      // 监听数据流的'data'事件
-      response.body.on('data', chunk => {
-        downloadedBytes += chunk.length
-        // progress.tick(chunk.length) // 暂时停用
-        // 如果writer.write(chunk)返回false，表示缓冲区已满，暂停读取数据流
-        if (!writer.write(chunk)) {
-          response.body.pause()  // 暂停读取数据流
-
-          // 等待'writer'缓冲区腾出空间后继续读取数据
-          writer.once('drain', () => {
-            response.body.resume()  // 恢复读取数据流
-          })
+      // 处理每个数据块的函数，使用背压机制来防止内存占用过多
+      const processChunk = (chunk) => {
+        downloadedBytes += chunk.length  // 累加已下载的字节数
+        if (!writer.write(chunk)) {  // 如果写入流的缓冲区已满
+          response.body.pause()  // 暂停数据流
+          writer.once('drain', () => response.body.resume())  // 当缓冲区有空间时恢复数据流
         }
-      })
+      }
 
-      // 将响应数据流直接管道到文件写入流中
-      response.body.pipe(writer)
+      // 监听数据事件，逐块处理数据
+      response.body.on('data', processChunk)
 
-      // 返回一个Promise，在下载完成或出错时解析或拒绝
+      // 确保数据全部写入文件后才完成操作
       return new Promise((resolve, reject) => {
-        writer.on('finish', () => {
-          clearInterval(intervalId)  // 下载完成后清除进度打印定时器
-          printProgress()  // 打印最终的进度
-          resolve({ filepath: this.filepath, totalBytes })  // 返回文件路径和下载的总字节数
+        response.body.on('end', () => {
+          writer.end(() => {
+            clearInterval(intervalId)  // 停止进度定时器
+            printProgress()  // 打印最终下载进度
+            resolve({ filepath: this.filepath, totalBytes })  // 解析最终结果
+          })
         })
 
-        writer.on('error', reject)  // 出现错误时拒绝Promise
+        // 处理写入流的错误事件
+        writer.on('error', (err) => {
+          clearInterval(intervalId)  // 停止进度定时器
+          reject(err)  // 拒绝Promise，并传递错误
+        })
       })
     } catch (error) {
-      clearTimeout(timeoutId)  // 请求出错时清除超时定时器
+      clearTimeout(timeoutId)  // 请求失败，清除超时定时器
+
+      // 如果错误是由于请求超时引起的
       if (error.name === 'AbortError') {
         logger.error(`请求在 ${this.timeout / 1000} 秒后超时`)
       } else {
         logger.error('下载失败:', error.message)
       }
+
+      // 如果未达到最大重试次数，则进行重试
       if (retryCount < this.maxRetries) {
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})`)
-        return this.downloadStream(progressCallback, retryCount + 1)  // 重试下载
+        return this.downloadStream(progressCallback, retryCount + 1)
       } else {
         throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${error.message}`)
       }
     }
   }
+
 
   /**
    * 根据指定类型处理响应数据
