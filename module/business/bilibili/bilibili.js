@@ -64,8 +64,8 @@ export default class BiLiBiLi extends Base {
           CommentsData: commentsdata,
           CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
           VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-          Clarity: OBJECT.DATA.data.accept_description[0],
-          VideoSize: videoSize,
+          Clarity: Config.bilibili.videopriority === true ? nocd_data.data.accept_description[0] : OBJECT.DATA.data.accept_description[0],
+          VideoSize: Config.bilibili.videopriority === true ? (nocd_data.data.durl[0].size / (1024 * 1024)).toFixed(2) : videoSize,
           ImageLength: 0,
           shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid
         })
@@ -80,7 +80,7 @@ export default class BiLiBiLi extends Base {
           ))
         if (Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) {
           await this.e.reply('视频太大了，还是去B站看吧~', true)
-        } else await this.getvideo(OBJECT)
+        } else await this.getvideo(Config.bilibili.videopriority === true ? { DATA: nocd_data } : OBJECT )
         break
       }
       case 'bangumivideo': {
@@ -272,6 +272,9 @@ export default class BiLiBiLi extends Base {
   async getvideo (OBJECT) {
     /** 获取视频 => FFMPEG合成 */
     await FFmpeg.checkEnv()
+    if (Config.bilibili.videopriority === true) {
+      this.STATUS = '!isLogin'
+    }
     switch (this.STATUS) {
       case 'isLogin': {
         const bmp4 = await this.DownLoadFile(

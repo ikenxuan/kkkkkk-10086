@@ -411,7 +411,13 @@ export function supportGuoba () {
           field: 'bilibili.senddynamicvideo',
           label: '发送动态的视频',
           helpMessage: '该UP的最新动态可能是视频，可选是否与推送图片一同发送',
-          bottomHelpMessage: '打开或关闭定时任务日志',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'bilibili.videopriority',
+          label: '内容优先',
+          helpMessage: '解析视频是否优先保内容，打开为优先保证上传将使用最低分辨率，关闭为优先保清晰度将使用最高分辨率',
           component: 'Switch',
           required: false
         },
