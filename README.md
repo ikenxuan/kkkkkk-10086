@@ -11,7 +11,6 @@
 
 [![GitHub License](https://img.shields.io/github/license/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/releases)
-![GitHub repo size](https://img.shields.io/github/repo-size/ikenxuan/kkkkkk-10086)
 
 <div>
 
