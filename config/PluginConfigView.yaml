@@ -233,6 +233,11 @@
       comment: 该UP的最新动态可能是视频，可选是否与推送图片一同发送
       path: 'senddynamicvideo'
       type: 'boolean'
+    -
+      key: B站动态视频发送
+      comment: 解析视频是否优先保内容，打开为优先保证上传将使用最低分辨率，关闭为优先保清晰度将使用最高分辨率
+      path: 'videopriority'
+      type: 'boolean'
 -
   # 配置文件描述
   name: 快手相关

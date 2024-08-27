@@ -32,7 +32,8 @@ const BilibiliType = {
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',
   B站解析: 'bilibilitool',
-  B站动态视频发送: 'senddynamicvideo'
+  B站动态视频发送: 'senddynamicvideo',
+  B站内容优先: 'videopriority'
 }
 
 const KuaiShouType = {
