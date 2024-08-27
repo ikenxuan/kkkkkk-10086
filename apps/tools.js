@@ -39,12 +39,23 @@ export class Tools extends plugin {
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
-        { reg: '^#?BGM', fnc: 'uploadrecord' }
+        { reg: '^#?BGM', fnc: 'uploadrecord' },
+        { reg: '^(?!#?kkk设置\\b)#?(解析|kkk|kkk解析)', fnc: 'prefix' }
       ]
     })
     this.task = task
   }
 
+  async prefix (e) {
+    if (reg.douyin.test(e.msg)) {
+      return await this.douy(e)
+    } else if (reg.bilibili.test(e.msg)) {
+      return await this.bilib(e)
+    } else if (reg.kuaishou.test(e.msg)) {
+      return await this.kuais(e)
+    }
+    return true
+  }
   async kuais (e) {
     const Iddata = await GetKuaishouID(String(e.msg).match((/(http|https):\/\/.*\.(kuaishou)\.com\/[^ ]+/g)))
     const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
@@ -161,24 +172,30 @@ const user = {}
 const task = []
 const rule = []
 
+const reg = {
+  douyin: new RegExp('^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*'),
+  bilibili: new RegExp('(bilibili.com|b23.tv|t.bilibili.com|BV[a-zA-Z0-9]{10})'),
+  kuaishou: new RegExp('^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$')
+}
+
 if (Config.app.videotool) {
   if (Config.douyin.douyintool) {
     rule.push({
-      reg: '^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*',
+      reg: reg.douyin,
       fnc: 'douy'
     })
   }
 
   if (Config.bilibili.bilibilitool) {
     rule.push({
-      reg: '(bilibili.com|b23.tv|t.bilibili.com|BV[a-zA-Z0-9]{10})',
+      reg: reg.bilibili,
       fnc: 'bilib'
     })
   }
 
   if (Config.kuaishou.kuaishoutool) {
     rule.push({
-      reg: '^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$',
+      reg: reg.kuaishou,
       fnc: 'kuais'
     })
   }

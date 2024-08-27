@@ -76,7 +76,7 @@ export function supportGuoba () {
         {
           field: 'app.videotool',
           label: '总开关',
-          bottomHelpMessage: '视频解析工具总开关，修改后重启生效',
+          bottomHelpMessage: '视频解析工具总开关，修改后重启生效，关闭后可使用 kkk/kkk解析/解析 + 视频分享链接代替',
           component: 'Switch',
           required: false
         },
