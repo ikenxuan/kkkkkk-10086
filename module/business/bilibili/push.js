@@ -153,7 +153,7 @@ export default class Bilibilipush extends Base {
                 share: this.count(INFODATA.INFODATA.data.stat.share),
                 create_time: this.convertTimestampToDateTime(INFODATA.INFODATA.data.ctime),
                 avater_url: INFODATA.INFODATA.data.owner.face,
-                share_url: 'https://t.bilibili.com/' + bvid,
+                share_url: 'https://www.bilibili.com/video/' + bvid,
                 username: checkvip(userINFO.data.card),
                 fans: this.count(userINFO.data.follower),
                 user_shortid: data[dynamicId].host_mid,
@@ -199,13 +199,14 @@ export default class Bilibilipush extends Base {
           if (send) status = await sendMsg(uin, group_id, img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
-              if(send && Config.bilibili.senddynamicvideo) {
+              // 判断是否发送视频动态的视频
+              if (send && Config.bilibili.senddynamicvideo) {
+                // 下载视频
                 video = await this.DownLoadFile(nocd_data.data.durl[0].url, 'tmp_' + Date.now())
-                if ((!Config.app.usefilelimit && video.totalBytes < 100) || (Config.app.usefilelimit && Config.app.filelimit > video.totalBytes && video.totalBytes < 100)) {
-                  const videoBuffer = await fs.promises.readFile(video.filepath)
-                  const videoBase64 = `base64://${videoBuffer.toString('base64')}`
-                  await sendMsg(uin, group_id, segment.video(videoBase64))
-                }
+                const videoBuffer = await fs.promises.readFile(video.filepath)
+                const videoBase64 = `base64://${videoBuffer.toString('base64')}`
+                // 发base64
+                await sendMsg(uin, group_id, segment.video(videoBase64))
               }
             } catch (error) {
               logger.error(error)
