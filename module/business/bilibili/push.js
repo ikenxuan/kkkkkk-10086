@@ -201,8 +201,10 @@ export default class Bilibilipush extends Base {
             try {
               if(send && Config.bilibili.senddynamicvideo) {
                 video = await this.DownLoadFile(nocd_data.data.durl[0].url, 'tmp_' + Date.now())
-                if ((Config.usefilelimit && video.totalBytes < 100 && Config.app.filelimit >= video.totalBytes) || (!Config.usefilelimit && video.totalBytes < 100)) {
-                  await sendMsg(uin, group_id, segment.video(video.filepath))
+                if ((!Config.app.usefilelimit && video.totalBytes < 100) || (Config.app.usefilelimit && Config.app.filelimit > video.totalBytes && video.totalBytes < 100)) {
+                  const videoBuffer = await fs.promises.readFile(video.filepath)
+                  const videoBase64 = `base64://${videoBuffer.toString('base64')}`
+                  await sendMsg(uin, group_id, segment.video(videoBase64))
                 }
               }
             } catch (error) {
