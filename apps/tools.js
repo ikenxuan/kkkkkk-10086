@@ -40,7 +40,7 @@ export class Tools extends plugin {
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
         { reg: '^#?BGM', fnc: 'uploadrecord' },
-        { reg: '^(?!#?kkk设置\\b)#?(解析|kkk|kkk解析)', fnc: 'prefix' }
+        { reg: '^#?(解析|kkk解析)', fnc: 'prefix' }
       ]
     })
     this.task = task
