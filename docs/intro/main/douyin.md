@@ -3,7 +3,7 @@
 ---
 
 插件会自动识别 `APP分享链接`[^1] `web视频链接`[^2] 进行解析<br>
-如何配置抖音ck？请看 [**其他功能**](./other.md#配置不同平台的-cookies)
+如何配置抖音ck？请看 [**其他功能**](../other.md#配置不同平台的-cookies)
 
 | 功能           | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                        |
 | -------------- | -------- | ----------------------- | --------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@
 | 评论           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 用户主视频列表 | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 背景音乐           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
-| 视频更新推送   | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的推送类型: 视频/图集<br>如何设置推送博主请看 [**动态推送**](./push.md) |
+| 视频更新推送   | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的推送类型: 视频/图集<br>如何设置推送博主请看 [**动态推送**](../push.md) |
 | ...            | ...      | ...                     |                                                                             |
 
 ---

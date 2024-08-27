@@ -3,7 +3,7 @@
 ---
 
 插件会自动识别 `B站的分享链接`[^1] 进行解析<br>
-如何配置B站ck？请看 [**其他功能**](./other.md#配置不同平台的-cookies)
+如何配置B站ck？请看 [**其他功能**](../other.md#配置不同平台的-cookies)
 
 
 | 功能          | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                                  |
@@ -14,7 +14,7 @@
 | 番剧          | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-question fa-bounce" style="color: #FFD43B;"></i>                      | 看剧集是否需要大会员                                                                  |
 | 动态          | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                                                          |
 | 直播          | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-xmark fa-beat-fade fa-lg" style="color: #58fe79;"></i>                      |                                                                                       |
-| 动态推送      | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的动态类型: 图文/纯文/视频/直播<br>如何设置推送 UP 请看 [**动态推送**](./push.md) |
+| 动态推送      | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      | 支持的动态类型: 图文/纯文/视频/直播<br>如何设置推送 UP 请看 [**动态推送**](../push.md) |
 | ...           | ...      | ...                     |                                                                                       |
 
 ---

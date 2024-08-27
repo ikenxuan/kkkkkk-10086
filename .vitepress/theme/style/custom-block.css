@@ -18,6 +18,9 @@
 
   --vp-custom-block-important: #a371f7;
   --vp-custom-block-important-bg: #f4eefe;
+
+  --vp-custom-block-details: #3e3e45;
+  --vp-custom-block-details-bg: #d3d3d3;
 }
 
 .dark {
@@ -38,8 +41,9 @@
 
   --vp-custom-block-important: #a371f7;
   --vp-custom-block-important-bg: #230555;
-}
 
+  --vp-custom-block-details-bg: #343434;
+}
 
 /* 标题字体大小 */
 .custom-block-title {
