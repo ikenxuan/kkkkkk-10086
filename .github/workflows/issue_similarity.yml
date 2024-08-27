@@ -13,7 +13,7 @@ jobs:
         uses: actions-cool/issues-similarity-analysis@v1
         with:
           filter-threshold: 0.5
-          comment-title: '### See'
+          comment-title: '### 似乎有相似的问题'
           comment-body: '${index}. ${similarity} #${number}'
           show-footer: false
           show-mentioned: true
