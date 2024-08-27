@@ -302,9 +302,11 @@ export default class Base {
     // 使用networks类进行文件下载，并通过回调函数实时更新下载进度
     await this.mkdirs(`${this._path}/resources/kkkdownload/video/`)
     const { filepath, totalBytes } = await new Networks({
-      url: video_url,
-      headers,
-      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`
+      url: video_url, // 视频地址
+      headers, // 请求头
+      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`, // 文件保存路径
+      timeout: 30000, // 设置30秒超时
+      maxRetries: 3   // 最多重试3次
     }).downloadStream((downloadedBytes, totalBytes) => {
       // 定义进度条长度及生成进度条字符串的函数
       const barLength = 45
@@ -315,9 +317,7 @@ export default class Base {
         progress += '#'.repeat(filledLength)
         progress += '-'.repeat(Math.max(0, barLength - filledLength - 1))
         const formattedProgress = progressPercentage.toFixed(2) + '%'
-        console.log(
-          `DownLoading ${title}${type} [${progress}] ${formattedProgress}\r`
-        )
+        console.log(`正在下载 ${title}${type} [${progress}] ${formattedProgress}\r`)
       }
       // 计算并打印当前下载进度
       const progressPercentage = (downloadedBytes / totalBytes) * 100

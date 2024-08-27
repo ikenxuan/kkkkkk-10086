@@ -14,7 +14,8 @@ export default class Networks {
    * @param {*} [data.body = ''] 请求体数据。对于 POST 请求，可设置请求体内容
    * @param {boolean} [data.isAgent = false] 是否启用 HTTPS 代理
    * @param {AbortSignal} [data.issignal] 用于中止请求的信号对象
-   * @param {number} [data.timeout = 15000] 请求超时时间，单位毫秒
+   * @param {number} [data.timeout = 30000] 请求超时时间，单位毫秒，默认30秒
+   * @param {number} [data.maxRetries = 3] 最大重试次数
    */
   constructor (data) {
     this.Headers = new Headers()
@@ -29,11 +30,12 @@ export default class Networks {
     this.method = data.method || 'GET'
     this.body = data.body || '' // 用于POST请求
     this.data = {}
-    this.timeout = data.timeout || 15000
+    this.timeout = data.timeout || 30000
     this.isGetResult = false
     this.timer = ''
     this.filepath = data.filepath
     this.redirect = 'follow' // 默认跟随重定向
+    this.maxRetries = data.maxRetries || 3 // 默认重试次数为3次
   }
 
   get config () {
@@ -211,13 +213,21 @@ export default class Networks {
     }
   }
 
-  /** 流 */
-  async downloadStream (progressCallback) {
+  /** 流下载 */
+  async downloadStream (progressCallback, retryCount = 0) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
     try {
-      const response = await fetch(this.url, this.config)
+      const response = await fetch(this.url, {
+        ...this.config,
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${this.url}. Status: ${response.status} ${response.statusText}`)
+        throw new Error(`无法获取 ${this.url}。状态: ${response.status} ${response.statusText}`)
       }
 
       const contentLength = response.headers.get('content-length')
@@ -241,6 +251,7 @@ export default class Networks {
         // progress.tick(chunk.length) // 暂时停用
       })
       response.body.pipe(writer)
+
       return new Promise((resolve, reject) => {
         writer.on('finish', () => {
           clearInterval(intervalId) // 停止定时器
@@ -252,8 +263,18 @@ export default class Networks {
         })
       })
     } catch (error) {
-      console.error('Download failed:', error)
-      throw error
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        console.error(`请求在 ${this.timeout / 1000} 秒后超时`)
+      } else {
+        console.error('下载失败:', error.message)
+      }
+      if (retryCount < this.maxRetries) {
+        console.log(`正在重试下载... (${retryCount + 1}/${this.maxRetries})`)
+        return this.downloadStream(progressCallback, retryCount + 1)
+      } else {
+        throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${error.message}`)
+      }
     }
   }
 
