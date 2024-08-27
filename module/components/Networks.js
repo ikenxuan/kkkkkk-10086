@@ -191,8 +191,8 @@ export default class Networks {
 
       // 获取文件总大小（字节数）
       const totalBytes = parseInt(response.headers.get('content-length'), 10)
-      let downloadedBytes = 0  // 已下载的字节数
-      let lastPrintedPercentage = -1  // 上一次打印的进度百分比
+      let downloadedBytes = 0 // 已下载的字节数
+      let lastPrintedPercentage = -1 // 上一次打印的进度百分比
 
       // 创建用于写入文件的流
       const writer = fs.createWriteStream(this.filepath)
@@ -211,35 +211,43 @@ export default class Networks {
       const intervalId = setInterval(printProgress, 500)
 
       // 处理每个数据块的函数，使用背压机制来防止内存占用过多
-      const processChunk = (chunk) => {
-        downloadedBytes += chunk.length  // 累加已下载的字节数
-        if (!writer.write(chunk)) {  // 如果写入流的缓冲区已满
-          response.body.pause()  // 暂停数据流
-          writer.once('drain', () => response.body.resume())  // 当缓冲区有空间时恢复数据流
+      response.body.on('data', (chunk) => {
+        downloadedBytes += chunk.length // 累加已下载的字节数
+        if (!writer.write(chunk)) { // 如果写入流的缓冲区已满
+          response.body.pause() // 暂停数据流
+          writer.once('drain', () => response.body.resume()) // 当缓冲区有空间时恢复数据流
         }
-      }
+      })
 
-      // 监听数据事件，逐块处理数据
-      response.body.on('data', processChunk)
+      // 监听数据流结束事件，确保所有数据写入文件
+      response.body.on('end', () => {
+        writer.end() // 结束写入操作
+      })
 
       // 确保数据全部写入文件后才完成操作
       return new Promise((resolve, reject) => {
-        response.body.on('end', () => {
-          writer.end(() => {
-            clearInterval(intervalId)  // 停止进度定时器
-            printProgress()  // 打印最终下载进度
-            resolve({ filepath: this.filepath, totalBytes })  // 解析最终结果
-          })
+        writer.on('finish', () => {
+          clearInterval(intervalId) // 停止进度定时器
+          printProgress() // 打印最终下载进度
+          resolve({ filepath: this.filepath, totalBytes }) // 解析最终结果
         })
 
         // 处理写入流的错误事件
         writer.on('error', (err) => {
-          clearInterval(intervalId)  // 停止进度定时器
-          reject(err)  // 拒绝Promise，并传递错误
+          clearInterval(intervalId) // 停止进度定时器
+          fs.unlinkSync(this.filepath) // 删除不完整的文件，避免错误文件存在
+          reject(err) // 拒绝Promise，并传递错误
+        })
+
+        // 处理下载中止的事件
+        response.body.on('error', (err) => {
+          clearInterval(intervalId) // 停止进度定时器
+          fs.unlinkSync(this.filepath) // 删除不完整的文件
+          reject(err) // 拒绝Promise，并传递错误
         })
       })
     } catch (error) {
-      clearTimeout(timeoutId)  // 请求失败，清除超时定时器
+      clearTimeout(timeoutId) // 请求失败，清除超时定时器
 
       // 如果错误是由于请求超时引起的
       if (error.name === 'AbortError') {
