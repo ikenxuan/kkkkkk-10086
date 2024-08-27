@@ -1,4 +1,4 @@
-import { Config, Pushlist } from '../module/components/index.js'
+import { Config, Pushlist, Version } from '../module/components/index.js'
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/business/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
@@ -47,6 +47,26 @@ export class Tools extends plugin {
   }
 
   async prefix (e) {
+    switch (Version.BotName) {
+      case 'Karin': {
+        if (e.reply_id) {
+          const reply = await e.bot.GetMessage(e.contact, e.reply_id)
+          for (const v of reply.elements) {
+            if (v.type === 'text') {
+              e.msg = v.text
+            }
+          }
+        }
+        break
+      }
+      default:
+        if (e.source) {
+          const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
+          e.msg = source.raw_message
+        }
+        break
+    }
+
     if (reg.douyin.test(e.msg)) {
       return await this.douy(e)
     } else if (reg.bilibili.test(e.msg)) {
@@ -56,6 +76,7 @@ export class Tools extends plugin {
     }
     return true
   }
+
   async kuais (e) {
     const Iddata = await GetKuaishouID(String(e.msg).match((/(http|https):\/\/.*\.(kuaishou)\.com\/[^ ]+/g)))
     const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
