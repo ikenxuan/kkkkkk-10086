@@ -167,7 +167,7 @@ export default class Networks {
   /**
    * 流下载方法
    * @param {Function} progressCallback 下载进度回调函数
-   * @param {number} [retryCount=0] 当前重试次数
+   * @param {number} [retryCount = 0] 当前重试次数
    */
   async downloadStream (progressCallback, retryCount = 0) {
     // 创建用于取消请求的控制器和超时定时器
@@ -257,7 +257,6 @@ export default class Networks {
       }
     }
   }
-
 
   /**
    * 根据指定类型处理响应数据
