@@ -1,5 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import logger from '../lib/public/logger.js'
+import crypto from 'crypto'
 import fs from 'fs'
 
 export default class Networks {
@@ -155,7 +156,7 @@ export default class Networks {
     try {
       this.fetch = await this.returnResult()  // 发起请求获取响应
       const headers = this.fetch.headers ? Object.fromEntries(this.fetch.headers.entries()) : null  // 获取并转换头部信息
-      if(!headers) logger.warn('未获取到响应头')
+      if (!headers) logger.warn('未获取到响应头')
       const data = await this.handleResponseByType()  // 获取响应体数据
       return { headers, data }  // 返回头部信息和响应数据
     } catch (error) {
@@ -191,60 +192,70 @@ export default class Networks {
 
       // 获取文件总大小（字节数）
       const totalBytes = parseInt(response.headers.get('content-length'), 10)
+      if (isNaN(totalBytes)) {
+        throw new Error('无效的 content-length 头')
+      }
+
       let downloadedBytes = 0 // 已下载的字节数
       let lastPrintedPercentage = -1 // 上一次打印的进度百分比
 
       // 创建用于写入文件的流
       const writer = fs.createWriteStream(this.filepath)
+      const hash = crypto.createHash('md5') // 创建 MD5 哈希对象
 
       // 打印下载进度的辅助函数
       const printProgress = () => {
         const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
         if (progressPercentage !== lastPrintedPercentage) {
-          // 当进度百分比变化时，调用进度回调函数
+        // 当进度百分比变化时，调用进度回调函数
           progressCallback(downloadedBytes, totalBytes)
           lastPrintedPercentage = progressPercentage
         }
       }
 
-      // 每0.5秒打印一次下载进度
-      const intervalId = setInterval(printProgress, 500)
+      // 根据文件大小动态调整进度回调频率
+      const interval = totalBytes < 10 * 1024 * 1024 ? 1000 : 500
+      const intervalId = setInterval(printProgress, interval)
 
-      // 处理每个数据块的函数，使用背压机制来防止内存占用过多
-      response.body.on('data', (chunk) => {
+      // 监听数据事件，更新下载进度和哈希值
+      const onData = (chunk) => {
         downloadedBytes += chunk.length // 累加已下载的字节数
-        if (!writer.write(chunk)) { // 如果写入流的缓冲区已满
-          response.body.pause() // 暂停数据流
-          writer.once('drain', () => response.body.resume()) // 当缓冲区有空间时恢复数据流
-        }
-      })
+        hash.update(chunk) // 更新哈希值
+      }
 
-      // 监听数据流结束事件，确保所有数据写入文件
-      response.body.on('end', () => {
-        writer.end() // 结束写入操作
-      })
+      response.body.on('data', onData)
 
-      // 确保数据全部写入文件后才完成操作
+      // 使用 pipe 方法将响应体数据写入文件
+      response.body.pipe(writer)
+
+      // 返回一个Promise，确保数据全部写入文件后才完成操作
       return new Promise((resolve, reject) => {
-        writer.on('finish', () => {
-          clearInterval(intervalId) // 停止进度定时器
+        const cleanup = () => {
+          clearInterval(intervalId)
+          response.body.off('data', onData)
+          writer.off('finish', onFinish)
+          writer.off('error', onError)
+        }
+
+        const onFinish = () => {
+          cleanup()
           printProgress() // 打印最终下载进度
+          // 校验文件的 MD5
+          const fileHash = hash.digest('hex')
+          const expectedHash = response.headers.get('content-md5')
+          if (expectedHash && fileHash !== expectedHash) {
+            return reject(new Error('文件校验失败，MD5 哈希值不匹配'))
+          }
           resolve({ filepath: this.filepath, totalBytes }) // 解析最终结果
-        })
+        }
 
-        // 处理写入流的错误事件
-        writer.on('error', (err) => {
-          clearInterval(intervalId) // 停止进度定时器
-          fs.unlinkSync(this.filepath) // 删除不完整的文件，避免错误文件存在
-          reject(err) // 拒绝Promise，并传递错误
-        })
+        const onError = (err) => {
+          cleanup()
+          fs.unlink(this.filepath, () => { reject(err) }) // 删除不完整的文件，并传递错误
+        }
 
-        // 处理下载中止的事件
-        response.body.on('error', (err) => {
-          clearInterval(intervalId) // 停止进度定时器
-          fs.unlinkSync(this.filepath) // 删除不完整的文件
-          reject(err) // 拒绝Promise，并传递错误
-        })
+        writer.on('finish', onFinish)
+        writer.on('error', onError)
       })
     } catch (error) {
       clearTimeout(timeoutId) // 请求失败，清除超时定时器
@@ -258,7 +269,9 @@ export default class Networks {
 
       // 如果未达到最大重试次数，则进行重试
       if (retryCount < this.maxRetries) {
-        logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})`)
+        const delay = Math.min(Math.pow(2, retryCount) * 1000, 1000) // 指数回退，最大延迟1秒
+        logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
+        await new Promise(resolve => setTimeout(resolve, delay)) // 添加重试前的延迟
         return this.downloadStream(progressCallback, retryCount + 1)
       } else {
         throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${error.message}`)
@@ -271,6 +284,10 @@ export default class Networks {
    * 返回处理后的数据
    */
   async handleResponseByType () {
+    if (!this.fetch) {
+      logger.error('没有响应数据！')
+      return null
+    }
     switch (this.type) {
       case 'json':
         return this.fetch.headers.get('content-type').includes('json')
@@ -283,7 +300,7 @@ export default class Networks {
       case 'blob':
         return this.fetch.blob()  // 解析为Blob格式
       default:
-        logger.error('未获取到响应对象')
+        logger.error('不支持的响应数据格式')
         return null
     }
   }
