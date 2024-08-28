@@ -218,7 +218,6 @@ export default class Networks {
       // 监听数据事件，更新下载进度和哈希值
       const onData = (chunk) => {
         downloadedBytes += chunk.length // 累加已下载的字节数
-        hash.update(chunk) // 更新哈希值
       }
 
       response.body.on('data', onData)
