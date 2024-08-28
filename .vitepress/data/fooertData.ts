@@ -18,6 +18,7 @@ export const Footer_Data = {
         { name: 'ICQQ Protocol', href: 'https://github.com/icqqjs/icqq' },
         { name: '静态站点生成器', href: 'https://vitepress.dev' },
         { name: '插件索引', href: 'https://github.com/yhArcadia/Yunzai-Bot-plugins-index' },
+        { name: '图标库', href: 'https://fontawesome.com/' },
       ]
     },
   ]
