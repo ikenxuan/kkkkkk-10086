@@ -1,6 +1,5 @@
 import fetch, { Response } from 'node-fetch'
 import logger from '../lib/public/logger.js'
-import crypto from 'crypto'
 import fs from 'fs'
 
 export default class Networks {
@@ -201,13 +200,12 @@ export default class Networks {
 
       // 创建用于写入文件的流
       const writer = fs.createWriteStream(this.filepath)
-      const hash = crypto.createHash('md5') // 创建 MD5 哈希对象
 
       // 打印下载进度的辅助函数
       const printProgress = () => {
         const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
         if (progressPercentage !== lastPrintedPercentage) {
-        // 当进度百分比变化时，调用进度回调函数
+          // 当进度百分比变化时，调用进度回调函数
           progressCallback(downloadedBytes, totalBytes)
           lastPrintedPercentage = progressPercentage
         }
@@ -240,12 +238,6 @@ export default class Networks {
         const onFinish = () => {
           cleanup()
           printProgress() // 打印最终下载进度
-          // 校验文件的 MD5
-          const fileHash = hash.digest('hex')
-          const expectedHash = response.headers.get('content-md5')
-          if (expectedHash && fileHash !== expectedHash) {
-            return reject(new Error('文件校验失败，MD5 哈希值不匹配'))
-          }
           resolve({ filepath: this.filepath, totalBytes }) // 解析最终结果
         }
 
