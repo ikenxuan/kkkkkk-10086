@@ -9,8 +9,12 @@ const { Instance } = await new amagi({
 
 if (Config.app.APIServer) await StartClient(Instance, Config.app.APIServerPort)
 
+let apps
+if (Version.BotName !== 'Karin') {
+  apps = await Init().catch(error => logger.error(error))
+}
+export { apps }
 
-export const apps = await Init().catch(error => logger.error(error))
 
 if (Version.BotName === 'Karin') {
   logger.info(`${logger.violet(`[插件:${Version.version}]`)} ${logger.green(Version.pluginName)} 初始化完成~`)
