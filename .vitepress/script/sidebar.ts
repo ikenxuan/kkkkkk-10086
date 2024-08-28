@@ -11,7 +11,7 @@ const sidebar = [
     text: '功能',
     items: [
       {
-        text: '作品解析', link: '/docs/intro/main/main', items: [
+        text: '<i class="fa-solid fa-bars fa-flip"></i> 作品解析', link: '/docs/intro/main/main', items: [
           { text: '<i class="fa-brands fa-tiktok fa-fade"></i> 抖音相关', link: '/docs/intro/main/douyin', },
           { text: '<i class="fa-brands fa-bilibili fa-fade"></i> B站相关', link: '/docs/intro/main/bilibili' },
           { text: '快手相关', link: '/docs/intro/main/kuaishou' },
