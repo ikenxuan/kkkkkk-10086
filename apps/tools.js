@@ -4,8 +4,6 @@ import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
 import plugin from '../module/lib/public/plugin.js'
 
-
-
 export class Tools extends plugin {
   constructor () {
     if (Config.bilibili.bilibilipush) {
@@ -59,12 +57,22 @@ export class Tools extends plugin {
         }
         break
       }
-      default:
+      default: {
         if (e.source) {
           const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
           e.msg = source.raw_message
         }
+        const source = e.message.find(msg => msg.type === 'reply')
+        const replyMessage = (await e.bot?.sendApi?.('get_msg', { message_id: source.id }))?.data
+        if (replyMessage?.message) {
+          for (const val of replyMessage.message) {
+            if (val.type === 'text') {
+              e.msg = val.data.text
+            }
+          }
+        }
         break
+      }
     }
 
     if (reg.douyin.test(e.msg)) {
