@@ -1,5 +1,8 @@
 import Version from '../../components/Version.js'
 
+/**
+ * @type {import('node-karin')['Plugin']}
+ */
 const plugin = await (async () => {
   switch (Version.BotName) {
     case 'Karin':
