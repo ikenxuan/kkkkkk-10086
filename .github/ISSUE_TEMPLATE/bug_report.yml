@@ -4,11 +4,10 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: 感谢您花时间填写此错误报告，请**务必确认您的issue不是重复的且不是因为您的操作或版本问题**
+      value: 感谢您花时间填写此错误报告，请**务必确认您的issue不是重复的**，填写前请先阅读 [**我应该提供哪些信息？**](https://ikenxuan.github.io/kkkkkk-10086/docs/intro/problems#%E6%88%91%E5%BA%94%E8%AF%A5%E6%8F%90%E4%BE%9B%E5%93%AA%E4%BA%9B%E4%BF%A1%E6%81%AF)
 
   - type: checkboxes
     attributes:
-      label: Please make sure of the following things
       description: 您必须勾选以下所有内容，否则您的issue可能会被直接关闭。或者您可以去[讨论区](https://github.com/ikenxuan/kkkkkk-10086/discussions)
       options:
         - label: 我已经阅读了[文档](https://ikenxuan.github.io/kkkkkk-10086/)。
@@ -36,11 +35,18 @@ body:
       label: 配置
       description: 请提供您的`kkkkkk-10086`应用的配置文件(隐藏隐私字段)
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: Operation procedure
+    attributes:
+      label: 操作步骤
+      description: 大意为聊天记录截图
+    validations:
+      required: true
   - type: textarea
     id: logs
     attributes:
       label: 日志
-      description: 请复制粘贴错误日志，或者截图
+      description: 请复制粘贴错误日志，或者截图。务必完整
     validations:
       required: true
