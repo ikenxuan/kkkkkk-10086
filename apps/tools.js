@@ -50,8 +50,8 @@ export class Tools extends plugin {
         if (e.reply_id) {
           const reply = await e.bot.GetMessage(e.contact, e.reply_id)
           for (const v of reply.elements) {
-            if (v.type === 'text') {
-              e.msg = v.text
+            if (v.type === 'text' || v.type === 'json') {
+              e.msg = v?.text || v?.data
             }
           }
         }
@@ -67,9 +67,7 @@ export class Tools extends plugin {
           const replyMessage = (await e.bot?.sendApi?.('get_msg', { message_id: source.id }))?.data
           if (replyMessage?.message) {
             for (const val of replyMessage.message) {
-              if (val.type === 'text') {
-                e.msg = val.data.text
-              }
+              if (val.type === 'text' || val.type === 'json') e.msg = val.data?.text || val.data?.data
             }
           }
         }
