@@ -3,6 +3,9 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 import Version from '../../components/Version.js'
 
+/**
+ * @type { import('node-karin').Update }
+ */
 const Update = await (async () => {
   if (Version.BotName === 'Karin') {
     return (await import('node-karin')).Update

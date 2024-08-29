@@ -1,6 +1,9 @@
 import Version from '../../components/Version.js'
 import segment from './segment.js'
 
+/**
+ * @type { import('node-karin').render }
+ */
 const puppeteer = await (async () => {
   switch (Version.BotName) {
     case 'Karin': {

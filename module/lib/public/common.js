@@ -1,5 +1,8 @@
 import Version from '../../components/Version.js'
 
+/**
+ * @type { import('node-karin').common }
+ */
 const common = await (async () => {
   switch (Version.BotName) {
     case 'Karin':

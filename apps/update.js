@@ -45,9 +45,7 @@ export class MusicUpdate extends plugin {
           if (!data.includes('更新成功')) return true
           try {
             await this.reply(`\n更新完成，开始重启 本次运行时间：${common.uptime()}`, { at: true })
-            const restart = new Restart(e)
-            restart.e = e
-            await restart.CmdRestart()
+            await Restart(e.self_id, e.contact, e.message_id, true)
             return true
           } catch (error) {
             return e.reply(`${Version.pluginName}重启失败，请手动重启以应用更新！`)
