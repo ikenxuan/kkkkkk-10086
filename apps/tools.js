@@ -1,4 +1,4 @@
-import { Config, Pushlist, Version } from '../module/components/index.js'
+import { Config, Pushlist, Version, Base } from '../module/components/index.js'
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/business/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
@@ -45,33 +45,42 @@ export class Tools extends plugin {
   }
 
   async prefix (e) {
-    switch (Version.BotName) {
-      case 'Karin': {
-        if (e.reply_id) {
-          const reply = await e.bot.GetMessage(e.contact, e.reply_id)
-          for (const v of reply.elements) {
-            if (v.type === 'text' || v.type === 'json') {
-              e.msg = v?.text || v?.data
-            }
+    const botAdapter = await new Base(e).botadapter
+    if (Version.BotName === 'Karin') {
+      if (e.reply_id) {
+        const reply = await e.bot.GetMessage(e.contact, e.reply_id)
+        for (const v of reply.elements) {
+          if (v.type === 'text' || v.type === 'json') {
+            e.msg = v?.text || v?.data
           }
         }
-        break
       }
-      default: {
-        if (e.source) {
-          const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
-          e.msg = source.raw_message
-        }
-        const source = e.message.find(msg => msg.type === 'reply')
-        if (source) {
-          const replyMessage = (await e.bot?.sendApi?.('get_msg', { message_id: source.id }))?.data
-          if (replyMessage?.message) {
-            for (const val of replyMessage.message) {
-              if (val.type === 'text' || val.type === 'json') e.msg = val.data?.text || val.data?.data
+    } else {
+      switch (botAdapter) {
+        case 'ICQQ': {
+          if (e.source) {
+            const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
+            for (const v of source.message) {
+              if (v.type === 'json' || v.type === 'text') e.msg = v.data || v.text
+              break
             }
           }
+          break
         }
-        break
+        case 'Lagrange.OneBot':
+        case 'OneBotv11': {
+          const source = e.message.find(msg => msg.type === 'reply')
+          if (source) {
+            const replyMessage = (await e.bot?.sendApi?.('get_msg', { message_id: source.id }))?.data
+            if (replyMessage?.message) {
+              for (const val of replyMessage.message) {
+                if (val.type === 'text' || val.type === 'json') e.msg = val.data?.text || val.data?.data
+                break
+              }
+            }
+          }
+          break
+        }
       }
     }
 
