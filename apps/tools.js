@@ -67,6 +67,7 @@ export class Tools extends plugin {
           }
           break
         }
+        case 'LagrangeCore':
         case 'Lagrange.OneBot':
         case 'OneBotv11': {
           const source = e.message.find(msg => msg.type === 'reply')
@@ -95,7 +96,7 @@ export class Tools extends plugin {
   }
 
   async kuais (e) {
-    const Iddata = await GetKuaishouID(String(e.msg).match((/(http|https):\/\/.*\.(kuaishou)\.com\/[^ ]+/g)))
+    const Iddata = await GetKuaishouID(String(e.msg.replaceAll('\\', '')).match(/https:\/\/v\.kuaishou\.com\/\w+/g))
     const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
     await new KuaiShou(e, Iddata).Action(WorkData)
     return true
