@@ -6,7 +6,7 @@ import { Version } from '../../components/index.js'
 const Bot = await (async () => {
   switch (Version.BotName) {
     case 'Karin':
-      return (await import('node-karin')).Karin
+      return (await import('node-karin')).karin
     case 'yunzai':
       return (await import('yunzai')).Bot
     default:
