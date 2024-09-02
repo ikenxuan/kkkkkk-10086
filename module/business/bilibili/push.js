@@ -589,7 +589,7 @@ function extractEmojisData (data) {
 
 function replacetext (text, obj) {
   for (const tag of obj.modules.module_dynamic.desc.rich_text_nodes) {
-    const regex = new RegExp(/b+${tag.orig_text}b+/, 'g')
+    const regex = new RegExp(`b+${tag.orig_text}b+`, 'g')
     switch (tag.type) {
       case 'RICH_TEXT_NODE_TYPE_TOPIC':
       case 'RICH_TEXT_NODE_TYPE_AT': {
