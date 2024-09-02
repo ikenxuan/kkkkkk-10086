@@ -32,7 +32,7 @@ export class Tools extends plugin {
       rule: [
         ...rule,
         { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyin.douyinpushGroup },
-        { reg: /^#设置[bB]站推送(?:UID:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
+        { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
         { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
@@ -213,7 +213,7 @@ const rule = []
 
 const reg = {
   douyin: new RegExp('^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*'),
-  bilibili: new RegExp('(bilibili.com|b23.tv|t.bilibili.com|BV[a-zA-Z0-9]{10})'),
+  bilibili: new RegExp(/(bilibili.com|b23.tv|t.bilibili.com|^BV[a-zA-Z0-9]{10}$)/),
   kuaishou: new RegExp('^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$')
 }
 
