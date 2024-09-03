@@ -1,6 +1,8 @@
-name: "Feature request"
-description: Feature request
-labels: [enhancement]
+name: 新功能提议
+description: 希望拥有新的功能
+title: '[Feature Request]: '
+labels: ["enhancement"]
+
 body:
   - type: checkboxes
     attributes:
