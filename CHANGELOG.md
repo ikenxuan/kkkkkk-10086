@@ -1,11 +1,6 @@
 # Changelog
 
-## [1.5.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.5.0) (2024-09-03)
-
-
-### Features
-
-* 优化下载流处理，增加背压机制和最终进度显示 ([7cb8941](https://github.com/ikenxuan/kkkkkk-10086/commit/7cb8941bcdad4a7a61d906be4bf8f93e662d589a))
+## [1.4,1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.5.0) (2024-09-03)
 
 
 ### Bug Fixes
@@ -30,6 +25,7 @@
 * 移除下载文件的MD5校验逻辑 ([34ae05c](https://github.com/ikenxuan/kkkkkk-10086/commit/34ae05c69f0a9cc9bf1036237656f144ab64bc82))
 * 移除下载文件的MD5校验逻辑 ([4e112f5](https://github.com/ikenxuan/kkkkkk-10086/commit/4e112f5c593d7a4a4838f094c20bc5ca5175428f))
 * 移除下载文件的MD5校验逻辑 ([0e1aa9b](https://github.com/ikenxuan/kkkkkk-10086/commit/0e1aa9b9a8103eb90978954fa5a35f245aafc911))
+* 优化下载流处理，增加背压机制和最终进度显示 ([62cf3b4](https://github.com/ikenxuan/kkkkkk-10086/commit/62cf3b4e309fb7f88714578cf47323b6951c5fd3))
 
 
 ### Performance Improvements
