@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.5.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.5.0) (2024-09-03)
+
+
+### Features
+
+* 优化下载流处理，增加背压机制和最终进度显示 ([7cb8941](https://github.com/ikenxuan/kkkkkk-10086/commit/7cb8941bcdad4a7a61d906be4bf8f93e662d589a))
+
+
+### Bug Fixes
+
+* 一点点改动 ([a958f61](https://github.com/ikenxuan/kkkkkk-10086/commit/a958f61aa5cf1592474336db5db4a5737d288a57))
+* 下载文件用回pipe方法，取消背压机制，使用md5校检下载的文件 ([e7a8a1f](https://github.com/ikenxuan/kkkkkk-10086/commit/e7a8a1fd6baebb0febfcfec49be478a5f2c96b3f))
+* 下载文件用回pipe方法，取消背压机制，使用md5校检下载的文件 ([95299ca](https://github.com/ikenxuan/kkkkkk-10086/commit/95299caf961c69880d6d4b98d1ff8e8fe5312134))
+* 优化下载流处理，增加背压机制和最终进度显示 ([62cf3b4](https://github.com/ikenxuan/kkkkkk-10086/commit/62cf3b4e309fb7f88714578cf47323b6951c5fd3))
+* 修复boom！ ([afb3225](https://github.com/ikenxuan/kkkkkk-10086/commit/afb32256402b9c3867421a85206689f2228aa290))
+* 修复boom！ ([4261b6c](https://github.com/ikenxuan/kkkkkk-10086/commit/4261b6c1a163558f266797c2b0f64e17752d2d29))
+* 修复回复消息解析逻辑 fix [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46), fix [#58](https://github.com/ikenxuan/kkkkkk-10086/issues/58) ([f5fa6cd](https://github.com/ikenxuan/kkkkkk-10086/commit/f5fa6cdf0a5d6140e2840ead59542bea295fc980))
+* 修复回复消息解析逻辑 fix [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46), fix [#58](https://github.com/ikenxuan/kkkkkk-10086/issues/58) ([0d2ad80](https://github.com/ikenxuan/kkkkkk-10086/commit/0d2ad802d8d55e550bffb1e7ab8ec88b0d5fc5cb))
+* 修复快手小程序识别 ([67086ce](https://github.com/ikenxuan/kkkkkk-10086/commit/67086cebea81253699a869b3fcc802bc4dea102f))
+* 修复快手小程序识别 ([0aab3a1](https://github.com/ikenxuan/kkkkkk-10086/commit/0aab3a1d751863c5e7ee3d6ee9663ad685edf76c))
+* 修正B站推送正则表达式语法错误 fix #IANW52 ([03fc012](https://github.com/ikenxuan/kkkkkk-10086/commit/03fc012263f8f818ce7b47890d4dd6fec3410122))
+* 修正正则表达式语法错误 ([b56f995](https://github.com/ikenxuan/kkkkkk-10086/commit/b56f995365821fb2976b0d90213db9f04552db0d))
+* 修正正则表达式语法错误 ([397911f](https://github.com/ikenxuan/kkkkkk-10086/commit/397911f0fdc1bcf4b82867492809fb99268d7213))
+* 修正正则表达式语法错误和Bot.js中的导入大小写 ([efae49d](https://github.com/ikenxuan/kkkkkk-10086/commit/efae49d3e485d29684998d2c5f59e54208f6c77b))
+* 扩展回复消息解析以支持json类型 fix [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46) ([71a2406](https://github.com/ikenxuan/kkkkkk-10086/commit/71a2406bbf6f55b10c563ee4c75c40e7f6030b26))
+* 扩展回复消息解析以支持json类型 fix [#46](https://github.com/ikenxuan/kkkkkk-10086/issues/46) ([711fc8b](https://github.com/ikenxuan/kkkkkk-10086/commit/711fc8bc091b905fda68e2b1f76bd37b9ed384a0))
+* 移除下载文件的MD5校验逻辑 ([dc7124a](https://github.com/ikenxuan/kkkkkk-10086/commit/dc7124afa8158acb97285b272f93475b059ed028))
+* 移除下载文件的MD5校验逻辑 ([34ae05c](https://github.com/ikenxuan/kkkkkk-10086/commit/34ae05c69f0a9cc9bf1036237656f144ab64bc82))
+* 移除下载文件的MD5校验逻辑 ([4e112f5](https://github.com/ikenxuan/kkkkkk-10086/commit/4e112f5c593d7a4a4838f094c20bc5ca5175428f))
+* 移除下载文件的MD5校验逻辑 ([0e1aa9b](https://github.com/ikenxuan/kkkkkk-10086/commit/0e1aa9b9a8103eb90978954fa5a35f245aafc911))
+
+
+### Performance Improvements
+
+* B站配置默认优先保画质 ([785d303](https://github.com/ikenxuan/kkkkkk-10086/commit/785d303f45265ed181aabcef9ba0d0efc23dfc5e))
+* **github-issues:** 更新Issue模板 ([757c493](https://github.com/ikenxuan/kkkkkk-10086/commit/757c493e66a69a5fd81e81387dd098289b878f3a))
+* **github-issues:** 更新Issue模板 ([d5ab38b](https://github.com/ikenxuan/kkkkkk-10086/commit/d5ab38b797f8c338034a360be4d6b6e896974013))
+* **github-issues:** 更新Issue模板以支持中文描述 ([093138b](https://github.com/ikenxuan/kkkkkk-10086/commit/093138b3970cbf405f5c7af9e344ba6867514c08))
+* icqq引用解析 ([358c62f](https://github.com/ikenxuan/kkkkkk-10086/commit/358c62f5d07307ebc0f539e0cc4cad02e043c048))
+* icqq引用解析 ([9e46692](https://github.com/ikenxuan/kkkkkk-10086/commit/9e4669220232138b7d722adf8a749c1d97d7d32c))
+* 优化B站推送图 ([7b9edc8](https://github.com/ikenxuan/kkkkkk-10086/commit/7b9edc8753ea78ad5e3a47d8e4963c88cdc1bc30))
+* 优化B站推送图 ([ca590d3](https://github.com/ikenxuan/kkkkkk-10086/commit/ca590d3eaedab8dfcc778eac0452eca853e91a53))
+* 优化加载 ([ebc9c06](https://github.com/ikenxuan/kkkkkk-10086/commit/ebc9c06befdf2a6320a6e274edc7ea97bf3895bb))
+* 优化加载 ([0ffa168](https://github.com/ikenxuan/kkkkkk-10086/commit/0ffa168db2a4a4d01526f886a4a7fd90a8412a45))
+
 ## [1.4.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.3.2...v1.4.0) (2024-08-27)
 
 
