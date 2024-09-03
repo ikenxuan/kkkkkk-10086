@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.4,1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.5.0) (2024-09-03)
+## [1.4,1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.4.1) (2024-09-03)
 
 
 ### Bug Fixes
