@@ -85,7 +85,7 @@
 在每个功能页面的的底部通过 GitHub 登录后可发表对应功能的建议和反馈
 </NCard>
 <NCard title='<i class="fa-solid fa-hand fa-bounce" style="color: #FFB805;"></i> 获取即时支持' link="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649" >
-你可以加入我们的用户交流群来提问
+你可以加入我们的用户交流群: 795874649 来提问
 </NCard>
 <NCard title='<i class="fa-solid fa-envelope fa-shake" style="color: #FFB805;"></i> 通过 GitHub issue' link="https://github.com/ikenxuan/kkkkkk-10086/issues/new/choose" >
 也可以给通过创建新的 GitHub issue 工单
