@@ -50,9 +50,8 @@ export class Tools extends plugin {
       if (e.reply_id) {
         const reply = await e.bot.GetMessage(e.contact, e.reply_id)
         for (const v of reply.elements) {
-          if (v.type === 'text' || v.type === 'json') {
-            e.msg = v?.text || v?.data
-          }
+          if (v.type === 'text' || v.type === 'json') e.msg = v?.text || v?.data
+          break
         }
       }
     } else {
@@ -61,7 +60,7 @@ export class Tools extends plugin {
           if (e.source) {
             const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
             for (const v of source.message) {
-              if (v.type === 'json' || v.type === 'text') e.msg = v.data || v.text
+              if (v.type === 'text' || v.type === 'json') e.msg =  v?.text || v?.data
               break
             }
           }
