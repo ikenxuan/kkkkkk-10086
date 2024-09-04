@@ -33,7 +33,6 @@ import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import pwa from './script/pwa'
 import { withPwa } from "@vite-pwa/vitepress"
 
-
 export default
   withPwa(defineConfig({
     pwa,

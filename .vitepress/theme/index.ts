@@ -84,8 +84,11 @@ export default {
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
     app.provide(InjectionKey, {
+      hideChangelogNoChangesText: true,
       commitsRelativeTime: true,
-      displayAuthorsInsideCommitLine: true
+      displayAuthorsInsideCommitLine: true,
+      hideContributorsHeader: true,
+      hideChangelogHeader: true
     })
     app.use(NolebaseInlineLinkPreviewPlugin as Plugin)
     if (inBrowser) {
