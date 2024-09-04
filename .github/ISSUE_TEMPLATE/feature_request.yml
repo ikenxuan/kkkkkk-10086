@@ -6,8 +6,8 @@ labels: ["enhancement"]
 body:
   - type: checkboxes
     attributes:
-      label: Please make sure of the following things
-      description: You may select more than one, even select all.
+      label: 请确保以下事项
+      description: 您可以选择多个，甚至全部选择。
       options:
         - label: 我已经阅读了[文档](https://ikenxuan.github.io/kkkkkk-10086/)。
         - label: 我确定没有重复的issue或讨论。
