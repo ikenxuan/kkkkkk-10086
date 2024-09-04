@@ -32,6 +32,8 @@ import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 // pwa支持
 import pwa from './script/pwa'
 import { withPwa } from "@vite-pwa/vitepress"
+// 代码组图标
+import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons'
 
 export default
   withPwa(defineConfig({
@@ -61,6 +63,8 @@ export default
         md.use(BiDirectionalLinks())
         // 行内链接预览
         md.use(InlineLinkPreviewElementTransform)
+        // 代码组图标
+        md.use(groupIconMdPlugin)
       },
       codeTransformers: [
         transformerTwoslash()
@@ -90,6 +94,8 @@ export default
             'index.md',
           ],
         }),
+        // 代码组图标
+        groupIconVitePlugin()
       ],
       optimizeDeps: {
         exclude: [

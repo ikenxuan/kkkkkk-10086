@@ -40,7 +40,7 @@ const nav = [
       },
     ],
   },
-  { text: `kkkkkk-10086 ${file.data.version}`, link: `https://github.com/ikenxuan/kkkkkk-10086/releases/tag/v${file.data.version}`, noIcon: false },
+  { text: `kkkkkk-10086 v${file.data.version}`, link: `https://github.com/ikenxuan/kkkkkk-10086/releases/tag/v${file.data.version}`, noIcon: false },
 ]
 
 

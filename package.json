@@ -39,6 +39,7 @@
     "vitepress-markdown-timeline": "^1.2.1",
     "vitepress-plugin-codeblocks-fold": "^1.2.28",
     "vitepress-plugin-comment-with-giscus": "^1.1.15",
+    "vitepress-plugin-group-icons": "^1.1.0",
     "vue": "^3.5.0"
   }
 }

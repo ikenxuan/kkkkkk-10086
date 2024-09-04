@@ -65,6 +65,8 @@ import busuanzi from 'busuanzi.pure.js'
 import { Announcement } from '@theojs/lumen'
 // 图标库
 import '@theojs/lumen/icon'
+//代码组图标样式
+import 'virtual:group-icons.css'
 
 export default {
   extends: DefaultTheme,
