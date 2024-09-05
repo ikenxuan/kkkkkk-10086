@@ -40,4 +40,5 @@ export default async function getMessage (e) {
       }
     }
   }
+  return e.msg
 }
