@@ -61,7 +61,6 @@ export class Tools extends plugin {
             const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
             for (const v of source.message) {
               if (v.type === 'text' || v.type === 'json') e.msg =  v?.text || v?.data
-              break
             }
           }
           break
