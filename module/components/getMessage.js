@@ -9,7 +9,6 @@ export default async function getMessage (e) {
       const reply = await e.bot.GetMessage(e.contact, e.reply_id)
       for (const v of reply.elements) {
         if (v.type === 'text' || v.type === 'json') e.msg = v?.text || v?.data
-        break
       }
     }
   } else {
@@ -32,7 +31,6 @@ export default async function getMessage (e) {
           if (replyMessage?.message) {
             for (const val of replyMessage.message) {
               if (val.type === 'text' || val.type === 'json') e.msg = val.data?.text || val.data?.data
-              break
             }
           }
         }
