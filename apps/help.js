@@ -75,7 +75,8 @@ export class Help extends plugin {
       helpGroup,
       bg: 'default.png',
       colCount: 3,
-      element: 'default'
+      element: 'default',
+      scale: 2.4
     })
     await e.reply(img)
     return true

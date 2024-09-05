@@ -127,32 +127,49 @@ async function checkCommitIdAndUpdateStatus () {
     commitLog: null
   }
 
-  try {
-    // 尝试获取当前commit ID的短版本
-    const stdout = execSync(`git -C "${pluginPath}" rev-parse --short=7 HEAD`).toString().trim()
-    result.currentCommitId = stdout
+  // Timeout Promise
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Operation timed out')), 5000)
+  )
 
-    // 执行git fetch
-    await git.fetch()
+  // Main logic wrapped in a promise
+  const mainLogic = (async () => {
+    try {
+      // Attempt to get the current commit ID (short version)
+      const stdout = execSync(`git -C "${pluginPath}" rev-parse --short=7 HEAD`).toString().trim()
+      result.currentCommitId = stdout
 
-    // 获取远程commit ID的短版本
-    const remoteCommitId = (await git.revparse([ 'HEAD@{u}' ])).substring(0, 7)
-    result.remoteCommitId = remoteCommitId
+      // Perform git fetch
+      await git.fetch()
 
-    // 比较本地和远程commit ID
-    if (result.currentCommitId === result.remoteCommitId) {
-      result.latest = true
-      const log = await git.log({ from: result.currentCommitId, to: result.currentCommitId })
-      if (log && log.all && log.all.length > 0) {
-        result.commitLog = log.all[0].message
+      // Get the remote commit ID (short version)
+      const remoteCommitId = (await git.revparse([ 'HEAD@{u}' ])).substring(0, 7)
+      result.remoteCommitId = remoteCommitId
+
+      // Compare local and remote commit IDs
+      if (result.currentCommitId === result.remoteCommitId) {
+        result.latest = true
+        const log = await git.log({ from: result.currentCommitId, to: result.currentCommitId })
+        if (log && log.all && log.all.length > 0) {
+          result.commitLog = log.all[0].message
+        }
       }
+    } catch (error) {
+      console.error(`Failed to check update status: ${error.message}`)
+      result.error = 'Failed to check update status'
     }
-  } catch (error) {
-    console.error(`检查更新状态失败: ${error.message}`)
-    result.error = '检查更新状态失败'
-  }
 
-  return result
+    return result
+  })()
+
+  // Race the main logic against the timeout
+  try {
+    return await Promise.race([ mainLogic, timeoutPromise ])
+  } catch (error) {
+    console.error(error.message)
+    result.error = error.message
+    return result
+  }
 }
 
 export default {

@@ -36,7 +36,7 @@ const Render = {
       defaultLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/default.html').replace(/\\/g, '/'),
       elemLayout: (join(Version.pluginPath, '/resources', 'html', 'COMMON', 'layout') + '/elem.html').replace(/\\/g, '/'),
       sys: {
-        scale: scale(1)
+        scale: scale(params.scale || 1)
       },
       copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
       pageGotoParams: {
