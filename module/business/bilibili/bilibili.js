@@ -204,7 +204,7 @@ export default class BiLiBiLi extends Base {
           }
           /** 纯文 */
           case 'DYNAMIC_TYPE_WORD': {
-            const text = OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text
+            const text = replacetext(br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text), OBJECT.dynamicINFO)
             this.e.reply(
               await Render.render('html/bilibili/dynamic/DYNAMIC_TYPE_WORD', {
                 text,
@@ -375,7 +375,7 @@ function replacetext (text, obj) {
       }
       case 'RICH_TEXT_NODE_TYPE_EMOJI': {
         const regex = new RegExp(tag.orig_text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-        text = text.replace(regex, `<img alt="${tag.emoji.text}" src="${tag.emoji.icon_url}" style="height: 60px; margin: 0 0 -10px 0;">`)
+        text = text.replace(regex, `<img src='${tag.emoji.icon_url}' style='height: 60px; margin: 0 0 -10px 0;'>`)
         break
       }
     }
