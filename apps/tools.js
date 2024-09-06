@@ -120,12 +120,12 @@ export class Tools extends plugin {
   }
 
   async bilib (e) {
-    const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g
+    const urlRex = /(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com)\/[A-Za-z\d._?%&+\-=\/#]*/g
     const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g
     let url = e.msg === undefined ? e.message.shift().data.replaceAll('\\', '') : e.msg.trim().replaceAll('\\', '')
     if (url.includes('b23.tv')) {
       url = bShortRex.exec(url)?.[0]
-    } else if (url.includes('www.bilibili.com')) {
+    } else if (url.includes('www.bilibili.com') || url.includes('m.bilibili.com')) {
       url = urlRex.exec(url)[0]
     } else if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
       url = `https://www.bilibili.com/video/${ url }`
