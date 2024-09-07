@@ -289,6 +289,13 @@ export function supportGuoba () {
           required: false
         },
         {
+          field: 'douyin.senddynamicwork',
+          label: '一同发送作品视频',
+          bottomHelpMessage: '和推送图一同将新作品内容发送出去（图集暂未支持）',
+          component: 'Switch',
+          required: false
+        },
+        {
           component: 'Divider',
           label: '哔哩哔哩视频解析配置',
           componentProps: {

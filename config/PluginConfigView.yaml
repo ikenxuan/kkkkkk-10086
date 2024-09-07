@@ -159,7 +159,12 @@
     -
       key: 图集BGM是否使用高清语音发送
       comment: 高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
-      path: 'true'
+      path: 'sendHDrecord'
+      type: 'boolean'
+    -
+      key: 抖音推送是否一同发送作品视频
+      comment: 和推送图一同将新作品内容发送出去（图集暂未支持）
+      path: 'senddynamicwork'
       type: 'boolean'
 
 -
