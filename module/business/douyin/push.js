@@ -1,6 +1,6 @@
 import { Base, Render, Config, DB, Version } from '../../components/index.js'
 import { DouyinData, GetDouyinID } from './index.js'
-import { sendMsg, logger } from '../../lib/public/index.js'
+import { sendMsg, logger, segment } from '../../lib/public/index.js'
 import YAML from 'yaml'
 import fs from 'fs'
 
@@ -63,6 +63,24 @@ export default class DouYinpush extends Base {
         for (const groupId of data[awemeId].group_id) {
           const [ group_id, uin ] = groupId.split(':')
           const status = await sendMsg(uin, group_id, img)
+          let video
+          if (Config.douyin.senddynamicwork) {
+            try {
+              // 如果新作品是视频
+              if (iddata.is_mp4){
+                // 下载视频
+                video = await this.DownLoadFile(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now())
+                const videoBuffer = await fs.promises.readFile(video.filepath)
+                const videoBase64 = `base64://${videoBuffer.toString('base64')}`
+                // 发base64
+                await sendMsg(uin, group_id, segment.video(videoBase64))
+              }
+            } catch (error) {
+              logger.error(error)
+            } finally {
+              if (Config.douyin.senddynamicwork) await this.removeFile(video?.filepath)
+            }
+          }
           if (status) {
             const DBdata = await DB.FindGroup('douyin', groupId)
             /**

@@ -17,7 +17,9 @@ class Config {
 
   /** 初始化配置 */
   initCfg () {
-    const path = `${Version.pluginPath}/config/config/`
+    let path
+    if(Version.BotName === 'Karin') path = `${Version.pluginPath}/config/`
+    path = `${Version.pluginPath}/config/config/`
     if (!fs.existsSync(path)) fs.mkdirSync(path)
     const pathDef = `${Version.pluginPath}/config/default_config/`
     const files = fs.readdirSync(pathDef).filter(file => file.endsWith('.yaml'))

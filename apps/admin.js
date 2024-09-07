@@ -22,7 +22,8 @@ const DouYinType = {
   抖音推送表达式: 'douyinpushcron',
   抖音解析提示: 'douyintip',
   抖音解析: 'douyintool',
-  抖音高清语音: 'sendHDrecord'
+  抖音高清语音: 'sendHDrecord',
+  抖音动态视频发送: 'senddynamicwork'
 }
 
 const BilibiliType = {
