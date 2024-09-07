@@ -304,17 +304,20 @@ export default class DouYin extends Base {
         const images = []
         const bgmurl = data.LiveImageData.aweme_details[0].music.play_url.uri
         for (const item of data.LiveImageData.aweme_details[0].images) {
+          // 静态图片，clip_type为2
           if (item.clip_type === 2) {
             images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.uri}&ratio=1080p&line=0`)
             continue
           }
           images.push(`动图直链:\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`)
+          // 动图
           const liveimg = await this.DownLoadFile(
             `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
             'Douyin_tmp_' + Date.now(),
             this.headers,
             '.mp4'
           )
+          // BGM
           const liveimgbgm = await this.DownLoadFile(
             bgmurl,
             'Douyin_tmp_' + Date.now(),

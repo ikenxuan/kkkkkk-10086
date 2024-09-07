@@ -25,6 +25,7 @@ class FFmpeg {
    */
   VideoComposite (v = 1, path = '', path2 = '', resultPath = '', suc, faith = () => { }) {
     if (v === 1) {
+      // 视频 + 音频
       exec(`ffmpeg -y -i ${path} -i ${path2} -c copy ${resultPath}`, async function (err) {
         if (err) {
           logger.error('视频合成失败\n', err)
@@ -35,7 +36,8 @@ class FFmpeg {
         }
       })
     } else if (v === 2) {
-      exec(`ffmpeg -y -stream_loop 3 -i ${path} -i ${path2} -c:v copy -map 0:v -map 1:a -shortest ${resultPath}`, async function (err) {
+      // 视频*3 + 音频
+      exec(`ffmpeg -y -stream_loop 2 -i ${path} -i ${path2} -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest ${resultPath}`, async function (err) {
         if (err) {
           logger.error('视频合成失败\n', err)
           await faith()
