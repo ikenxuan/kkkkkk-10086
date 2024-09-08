@@ -11,11 +11,11 @@ export default async function GetBilibiliID (url) {
   let result
 
   switch (true) {
-    case /video\/([A-Za-z0-9]+)/.test(longLink): {
-      const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)/)
+    case /(video\/|video\-)([A-Za-z0-9]+)/.test(longLink): {
+      const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)|bvid=([A-Za-z0-9]+)/)
       result = {
         type: 'bilibilivideo',
-        id: bvideoMatch[1],
+        id: bvideoMatch[1] || bvideoMatch[2],
         P: '哔哩哔哩'
       }
       break
