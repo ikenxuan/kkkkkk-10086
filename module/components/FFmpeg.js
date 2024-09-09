@@ -3,7 +3,7 @@ import logger from '../lib/public/logger.js'
 
 class FFmpeg {
   /** 检查FFmpeg环境 */
-  checkEnv () {
+  async checkEnv () {
     return new Promise((resolve, reject) => {
       exec('ffmpeg -version', (err) => {
         if (err) {
@@ -23,7 +23,7 @@ class FFmpeg {
    * @param {any} suc 合成成功后的处理函数
    * @param {any} faith 合成失败后的处理函数
    */
-  VideoComposite (v = 1, path = '', path2 = '', resultPath = '', suc, faith = () => { }) {
+  async VideoComposite (v = 1, path = '', path2 = '', resultPath = '', suc, faith = () => { }) {
     if (v === 1) {
       // 视频 + 音频
       exec(`ffmpeg -y -i ${path} -i ${path2} -c copy ${resultPath}`, async function (err) {

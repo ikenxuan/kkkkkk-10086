@@ -290,7 +290,7 @@ export default class BiLiBiLi extends Base {
           '.mp3'
         )
         if (bmp4.filepath && bmp3.filepath) {
-          FFmpeg.VideoComposite(1,
+          await FFmpeg.VideoComposite(1,
             bmp4.filepath,
             bmp3.filepath,
             this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,

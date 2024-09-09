@@ -326,7 +326,7 @@ export default class DouYin extends Base {
           )
           if (liveimg.filepath && liveimgbgm.filepath) {
             const resolvefilepath = this._path + `/resources/kkkdownload/video/Douyin_Result_${Date.now()}.mp4`
-            FFmpeg.VideoComposite(2,
+            await FFmpeg.VideoComposite(2,
               liveimg.filepath,
               liveimgbgm.filepath,
               resolvefilepath,
