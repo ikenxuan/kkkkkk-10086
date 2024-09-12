@@ -13,6 +13,9 @@ let m_id
 export default class DouYin extends Base {
   constructor (e = {}, iddata) {
     super()
+    /**
+     * @type { import('node-karin').KarinMessage }
+     */
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
@@ -443,6 +446,8 @@ export default class DouYin extends Base {
             }
           )
           await this.e.reply(img)
+        } else {
+          this.e.reply('当前博主未开播 ~')
         }
         return true
       }

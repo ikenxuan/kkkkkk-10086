@@ -7,6 +7,9 @@ import path from 'path'
 
 export default class Base {
   constructor (e = {}) {
+    /**
+     * @type { import('node-karin').KarinMessage }
+     */
     this.e = e
     this.headers = {
       Accept: '*/*',
