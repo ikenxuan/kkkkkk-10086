@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.5.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.1...v1.5.0) (2024-09-12)
+
+
+### Features
+
+* 抖音推送可选一同发送视频，默认关闭 close [#59](https://github.com/ikenxuan/kkkkkk-10086/issues/59) ([#61](https://github.com/ikenxuan/kkkkkk-10086/issues/61)) ([178bf9b](https://github.com/ikenxuan/kkkkkk-10086/commit/178bf9bfec139eb2f7b5e01bb734a344ec093b4e))
+
+
+### Bug Fixes
+
+* B站纯文、图文推送图tags替换错误 ([b021892](https://github.com/ikenxuan/kkkkkk-10086/commit/b021892392ab30def3a250795543de3b13ede507))
+* B站表情符号渲染错误 ([493fddd](https://github.com/ikenxuan/kkkkkk-10086/commit/493fddd8bf809fc531a5dbac5931c52bc7ec0ba8))
+* Github Issue 标签 ([1411399](https://github.com/ikenxuan/kkkkkk-10086/commit/14113997f2d1e82af9830c6e7f36eada4abf83e5))
+* icqq引用解析没反应 ([32240f2](https://github.com/ikenxuan/kkkkkk-10086/commit/32240f2eec947aa7fd98352a51243c752e419551))
+* long_msg无法引用主动解析 ([9ff6d0e](https://github.com/ikenxuan/kkkkkk-10086/commit/9ff6d0e8b650646c9baae6ebbfef72dcabc6e09c))
+* 修复B站链接匹配错误，优化结果获取 ([c692468](https://github.com/ikenxuan/kkkkkk-10086/commit/c692468536245255e1669d6c88ca3457e9c3c972))
+* 修复消息数组，循环一次提前break，而拿不到文本消息或者json消息 ([e55b090](https://github.com/ikenxuan/kkkkkk-10086/commit/e55b090e62066b709c05445e3f096600d7f037b3))
+* 快手评论模块优化@用户名处理函数，移除冗余console.log ([edeb469](https://github.com/ikenxuan/kkkkkk-10086/commit/edeb46993c9b8aa9ba84b64954435e3c31bca4d3))
+* 快手评论模块添加@用户名处理函数，优化展示样式 ([eef4aa0](https://github.com/ikenxuan/kkkkkk-10086/commit/eef4aa07869a89f04c458429cdad076f991f522b))
+* 适配` m.bilibili.com` 的 url ([9c97c23](https://github.com/ikenxuan/kkkkkk-10086/commit/9c97c231894d74ee648526eb1f4202975f5a78cd))
+
+
+### Performance Improvements
+
+* **github-issues:** 更新Issue模板描述 ([b89e8ef](https://github.com/ikenxuan/kkkkkk-10086/commit/b89e8efeef0263f8118a479d8aeb0cbaded6ae11))
+* 优化抖音动图视频合成效果 ([5250809](https://github.com/ikenxuan/kkkkkk-10086/commit/5250809d51825ff649042a010c21fb6713189367))
+* 加个超时 ([092d2b5](https://github.com/ikenxuan/kkkkkk-10086/commit/092d2b5d4f854c7e935330e16013c1bf269aada3))
+
 ## [1.4.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.0...v1.4.1) (2024-09-03)
 
 
