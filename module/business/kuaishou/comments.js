@@ -38,7 +38,7 @@ export default async function comments (data, emojidata) {
   // }
 
   jsonArray.text = br(jsonArray)
-  // jsonArray.text = await handling_at(jsonArray)
+  jsonArray.text = await handling_at(jsonArray)
   // jsonArray.text = await search_text(jsonArray)
 
   for (let i = 0; i < jsonArray.length; i++) {
@@ -99,6 +99,22 @@ function br (data) {
     let text = data[i].text
 
     text = text.replace(/\n/g, '<br>')
+    data[i].text = text
+  }
+  return data
+}
+
+async function handling_at (data) {
+  for (let i = 0; i < data.length; i++) {
+    let text = data[i].text
+
+    // 匹配 @后面的字符，允许空格，直到 (\w+\)
+    text = text.replace(/(@[\S\s]+?)\(\w+\)/g, (match, p1) => {
+      console.log('匹配到的字符串:', match, p1)
+      // 将 @后面的名字替换为带有样式的 <span>，保留空格
+      return `<span style="color: rgb(3,72,141);">${p1.trim()}</span>`
+    })
+
     data[i].text = text
   }
   return data
