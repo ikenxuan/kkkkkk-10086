@@ -140,6 +140,9 @@ douyinpushcron: '*/10 * * * *'
 
 # 图集BGM是否使用高清语音发送，高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
 sendHDrecord: true
+
+# 抖音推送是否一同发送作品视频
+senddynamicwork: false
 ```
 :::
 

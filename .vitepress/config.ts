@@ -172,10 +172,6 @@ export default
       ],
       lastUpdatedText: '最后编辑于',
       outlineTitle: '本页大纲',
-      // footer: {
-      //   message: "Released under the <a href='https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE'>GPL-3.0 License</a>",
-      //   copyright: "Copyright © 2023-2024 <a href='https://github.com/ikenxuan'>ikenxuan</a>",
-      // },
       docFooter: {
         prev: '上一页',
         next: '下一页',

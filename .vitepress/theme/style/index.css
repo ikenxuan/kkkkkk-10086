@@ -5,6 +5,8 @@
 @import './VPImage.css';
 @import './custom-block.css';
 @import './blockquote.css';
+@import './marker.css';
+@import './vp-code.css';
 
 
 @import '../font/HarmonyOS_Sans_SC_Medium/font.css';
