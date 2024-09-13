@@ -16,7 +16,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkk
 ```
 
 ```sh [Ghproxy]
-git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
+git clone --depth=1 https://ghp.ci/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086/
 ```
 
 ```sh [Gitee 可能更新不及时]
@@ -38,7 +38,7 @@ git clone --depth=1 https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin
 ```
 
 ```sh [Ghproxy]
-git clone --depth=1 https://mirror.ghproxy.com/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
+git clone --depth=1 https://ghp.ci/https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-plugin-kkkkkk-10086/
 ```
 
 ```sh [Gitee 可能更新不及时]
