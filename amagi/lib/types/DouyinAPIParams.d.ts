@@ -1,6 +1,11 @@
 type WorkParams = {
+    /**
+     * 视频分享URL。建议使用 aweme_id 参数，url参数可能不稳定
+     * @deprecated
+     */
+    url?: string;
     /** 视频ID */
-    aweme_id: string;
+    aweme_id?: string;
     /** 获取的评论数量 */
     number?: number | string;
 };
@@ -28,6 +33,10 @@ type LiveRoomParams = {
     /** 直播间真实房间号（可通过live.douyin.com/{web_rid}直接访问直播间），在用户主页信息的room_data中获取 */
     web_rid?: string;
 };
+type QrcodeParams = {
+    /** fp指纹 */
+    verify_fp: string;
+};
 /** 抖音API接口参数类型 */
 export type DouyinAPIParams = {
     WorkParams: WorkParams;
@@ -36,5 +45,21 @@ export type DouyinAPIParams = {
     SearchParams: SearchParams;
     MusicParams: MusicParams;
     LiveRoomParams: LiveRoomParams;
+    QrcodeParams: QrcodeParams;
+};
+export type DouyinDataOptionsMap = {
+    '二级评论数据': CommentParams;
+    '用户主页数据': UserParams;
+    '单个视频作品数据': WorkParams;
+    '评论数据': CommentParams;
+    '用户主页视频列表数据': UserParams;
+    '热点词数据': SearchParams;
+    '搜索数据': SearchParams;
+    '官方emoji数据': {};
+    '动态表情数据': {};
+    '音乐数据': MusicParams;
+    '图集作品数据': WorkParams;
+    '实况图片图集数据': WorkParams;
+    '直播间信息数据': LiveRoomParams;
 };
 export {}

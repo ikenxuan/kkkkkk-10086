@@ -29,7 +29,7 @@ export type DouyinOptionsType = {
     /**
      * 评论数量，单位条
      */
-    number?: number;
+    number?: number | string;
     /**
      * 直播间ID（虚拟的）
      */
@@ -38,6 +38,10 @@ export type DouyinOptionsType = {
      * 直播间真实房间号（可通过live.douyin.com/{web_rid}直接访问直播间），在用户主页信息的room_data中获取
      */
     web_rid?: string;
+    /**
+     * fp指纹
+     */
+    verify_fp?: string;
 };
 /**
  * 接口公共查询参数
@@ -82,7 +86,7 @@ export type BilibiliOptionsType = {
     /**
      * 评论数量，单位条
      */
-    number?: number;
+    number?: number | string;
     /**
      * 用户 Cookie
      */
@@ -94,9 +98,9 @@ export type BilibiliOptionsType = {
     /**
      * 评论区类型代码
      */
-    commentstype?: number;
+    commentstype?: number | string;
     /**
      * 评论区查询专属参数
      */
-    oid?: number;
+    oid?: number | string;
 };

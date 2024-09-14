@@ -1,13 +1,50 @@
 {
   "name": "@ikenxuan/amagi",
+  "version": "2.3.1",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "homepage": "https://github.com/ikenxuan/amagi",
+  "scripts": {
+    "dev": "tsx watch src/dev.ts",
+    "fix": "eslint lib/**/*.js --fix && eslint lib/**/*.d.ts --fix",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json && npm run fix"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "LICENSE",
+    "package.json",
+    "README.md"
+  ],
+  "bugs": {
+    "url": "https://github.com/ikenxuan/amagi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikenxuan/amagi.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "dependencies": {
-    "axios": "^1.7.3",
-    "fastify": "^4.28.0",
+    "axios": "^1.7.7",
+    "fastify": "^4.28.1",
+    "lodash": "^4.17.21",
     "log4js": "6.9.0",
     "md5": "^2.3.0",
     "pino-pretty": "^11.2.2"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.7",
+    "@types/md5": "^2.3.5",
+    "@types/node": "^22.5.5",
+    "@typescript-eslint/parser": "^8.5.0",
+    "eslint": "^9.10.0",
+    "globals": "^15.9.0",
+    "tsc-alias": "^1.8.10",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
   }
 }

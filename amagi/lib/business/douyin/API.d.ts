@@ -12,6 +12,7 @@ declare class DouyinAPI {
   互动表情(): string;
   背景音乐(data: DouyinAPIParams['MusicParams']): string;
   直播间信息(data: DouyinAPIParams['LiveRoomParams']): string;
+  申请二维码(data: DouyinAPIParams['QrcodeParams']): string;
 }
 /** 该类下的所有方法只会返回拼接好参数后的 Url 地址，需要手动请求该地址以获取数据 */
 declare const _default: DouyinAPI
