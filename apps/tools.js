@@ -1,4 +1,4 @@
-import { Config, Pushlist, Version, Base, getMessage } from '../module/components/index.js'
+import { Config, Pushlist, getMessage } from '../module/components/index.js'
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/business/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
