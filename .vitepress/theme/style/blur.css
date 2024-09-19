@@ -49,16 +49,16 @@
   @media (min-width: 960px) {
 
     /* 文档页分割线 */
-    .VPNavBar:not(.home.top) .divider-line {
+    /* .VPNavBar:not(.home.top) .divider-line {
       background-color: rgba(255, 255, 255, 0);
       backdrop-filter: blur(15px);
-    }
+    } */
 
     /* 首页分割线 */
-    .VPNavBar:not(.has-sidebar):not(.home.top) .divider {
+    /* .VPNavBar:not(.has-sidebar):not(.home.top) .divider {
       background-color: rgba(255, 255, 255, 0);
       backdrop-filter: blur(15px);
-    }
+    } */
   }
 
   /* 搜索框 VPNavBarSearchButton.vue */
