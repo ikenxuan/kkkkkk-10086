@@ -14,6 +14,7 @@ _**Karin**_ 生态用户建议使用 [**Karin Manage**](https://github.com/Halcy
 │  │      cookies.yaml // 账号Cookies相关配置 // [!code focus]
 │  │      douyin.yaml // 抖音相关配置 // [!code focus]
 │  │      pushlist.yaml // 推送相关配置 // [!code focus]
+│  │      kuaishou.yaml // 快手相关配置 // [!code focus]
 │  │
 │  └─default_config // 默认配置文件目录（请勿修改此目录下的任何文件！）
 │          app.yaml // 含义同上
