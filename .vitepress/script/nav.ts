@@ -1,6 +1,3 @@
-import axios from 'axios'
-
-const file = await axios.get('https://raw.githubusercontent.com/ikenxuan/kkkkkk-10086/master/package.json')
 const nav = [
   { text: '主页', link: '/' },
   { text: '常见问题', link: '/docs/intro/QA' },
@@ -40,7 +37,6 @@ const nav = [
       },
     ],
   },
-  { text: `kkkkkk-10086 v${file.data.version}`, link: `https://github.com/ikenxuan/kkkkkk-10086/releases/tag/v${file.data.version}`, noIcon: false },
 ]
 
 
