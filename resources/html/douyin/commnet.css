@@ -113,6 +113,7 @@
   align-items: center;
   letter-spacing: 0.5px;
   position: relative;
+  line-height: 1.6;
 }
 
 .comment-text img {
