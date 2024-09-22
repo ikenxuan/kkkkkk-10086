@@ -1,12 +1,16 @@
 <template>
-  <div v-if="loading">正在请求更新日志...</div>
-  <div v-else-if="error">获取更新日志失败，错误: {{ error }}</div>
-  <div v-else v-html="compiledMarkdown"></div>
+  <div>
+    <transition name="fade-slide" mode="out-in">
+      <div v-if="loading" key="loading" class="loading">处理中......</div>
+      <div v-else-if="error" key="error" class="error">获取更新日志失败，错误: {{ error }}</div>
+      <div v-else key="content" v-html="compiledMarkdown" class="content"></div>
+    </transition>
+  </div>
 </template>
 
 <script>
 import axios from 'axios';
-import {marked} from 'marked';
+import { marked } from 'marked';
 
 export default {
   props: {
@@ -48,3 +52,19 @@ export default {
   }
 };
 </script>
+
+<style>
+.fade-slide-enter-active, .fade-slide-leave-active {
+  transition: opacity 0.5s, transform 0.5s;
+}
+.fade-slide-enter, .fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(300px); /* 滑动效果 */
+}
+
+.loading, .error {
+  text-align: left;
+  font-size: 30px;
+  color: #000000;
+}
+</style>

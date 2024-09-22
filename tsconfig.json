@@ -11,12 +11,12 @@
       "vitepress": [
         "node_modules/vitepress/types/index"
       ]
-    }
+    },
   },
   "include": [
     "**/.vitepress/**/*.ts",
     "**/.vitepress/**/*.mts",
-    "**/.vitepress/**/*.vue"
+    "**/.vitepress/**/*.vue",
   ],
   "exclude": [
     "node_modules"

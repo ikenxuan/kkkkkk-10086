@@ -63,6 +63,11 @@ import { inBrowser } from 'vitepress'
 import busuanzi from 'busuanzi.pure.js'
 // 首页公告栏
 import { Announcement } from '@theojs/lumen'
+// 缩略图模糊哈希生成
+import {
+  NolebaseUnlazyImg,
+} from '@nolebase/vitepress-plugin-thumbnail-hash/client'
+import '@nolebase/vitepress-plugin-thumbnail-hash/client/style.css'
 // 图标库
 import '@theojs/lumen/icon'
 //代码组图标样式
@@ -83,6 +88,7 @@ export default {
     app.component('Confetti', Confetti)
     app.component('ChangeLogs', ChangeLogs)
     app.component('Task', Task)
+    app.component('NolebaseUnlazyImg', NolebaseUnlazyImg)
     app.use(TwoslashFloatingVue as unknown as Plugin)
     app.use(NolebaseGitChangelogPlugin as Plugin)
     app.provide(InjectionKey, {

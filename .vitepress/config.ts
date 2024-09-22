@@ -1,4 +1,4 @@
-import { fileURLToPath, URL } from 'node:url'
+import { cwd } from 'node:process'
 import { defineConfig } from 'vitepress'
 import { DefaultTheme } from 'vitepress/theme'
 import nav from './script/nav'
@@ -10,7 +10,7 @@ import taskLists from "markdown-it-task-lists"
 // mathjax3公式支持
 import mathjax3 from 'markdown-it-mathjax3'
 // 页脚
-import footnote_plugin from 'markdown-it-footnote'
+import MarkdownItFootnote from 'markdown-it-footnote'
 // 双向链接
 import { BiDirectionalLinks } from '@nolebase/markdown-it-bi-directional-links'
 // 行内链接预览
@@ -34,6 +34,8 @@ import pwa from './script/pwa'
 import { withPwa } from "@vite-pwa/vitepress"
 // 代码组图标
 import { groupIconMdPlugin, groupIconVitePlugin } from 'vitepress-plugin-group-icons'
+// 懒加载模糊预览图
+import { UnlazyImages } from '@nolebase/markdown-it-unlazy-img'
 
 export default
   withPwa(defineConfig({
@@ -58,13 +60,21 @@ export default
         // 公式
         md.use(mathjax3)
         // 脚注
-        md.use(footnote_plugin)
-        // 双向链接
-        md.use(BiDirectionalLinks())
+        md.use(MarkdownItFootnote)
         // 行内链接预览
         md.use(InlineLinkPreviewElementTransform)
         // 代码组图标
         md.use(groupIconMdPlugin)
+      },
+      preConfig: (md) => {
+        // 双向链接
+        md.use(BiDirectionalLinks({
+          dir: cwd(),
+        }))
+        // 懒加载模糊预览图
+        md.use(UnlazyImages(), {
+          imgElementTag: 'NolebaseUnlazyImg',
+        })
       },
       codeTransformers: [
         transformerTwoslash()
@@ -72,7 +82,9 @@ export default
     },
     vite: {
       plugins: [
+        // 缩略图模糊哈希生成
         ThumbnailHashImages(),
+        // git提交历史记录
         GitChangelog({
           maxGitLogCount: 2000,
           // 要获取git日志的仓库
@@ -105,11 +117,20 @@ export default
       ssr: {
         noExternal: [
           '@nolebase/*',
+          'axios'
         ]
       }
     },
     vue: {
       template: {
+        transformAssetUrls: {
+          video: ['src', 'poster'],
+          source: ['src'],
+          img: ['src'],
+          image: ['xlink:href', 'href'],
+          use: ['xlink:href', 'href'],
+          NolebaseUnlazyImg: ['src'],
+        },
         compilerOptions: {
           isCustomElement: (tag) => tag === 'iconify-icon'
         },
