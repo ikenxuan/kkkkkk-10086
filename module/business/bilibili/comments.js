@@ -100,11 +100,10 @@ export default async function bilicomments (OBJECT) {
   return res
 }
 
-/** 空格转 '&nbsp;' */
 function space (data) {
   for (let i = 0; i < data.length; i++) {
     if (data[i].message) {
-      data[i].message = data[i].message.replace(/\s/g, '&nbsp;')
+      data[i].message = data[i].message.replace(/\s/g, '&#32;') // 替换为HTML空格实体
     }
   }
   return data
