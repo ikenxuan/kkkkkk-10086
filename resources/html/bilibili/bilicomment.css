@@ -152,6 +152,7 @@ img:not([src]) {
   letter-spacing: 0.5px;
   position: relative;
   line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .comment-text img {
