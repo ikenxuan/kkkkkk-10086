@@ -22,6 +22,7 @@ _**Karin**_ 生态用户建议使用 [**Karin Manage**](https://github.com/Halcy
 │          cookies.yaml // 含义同上
 │          douyin.yaml // 含义同上
 │          pushlist.yaml // 含义同上
+│          kuaishou.yaml // 含义同上
 ```
 
 ## 默认配置文件
