@@ -36,8 +36,7 @@ import {
   NolebaseHighlightTargetedHeading,
 } from '@nolebase/vitepress-plugin-highlight-targeted-heading/client'
 // 快速复制当前页的url
-import Share from './components/Share.vue'
-// 组件
+import { ShareButton } from '@theojs/lumen'
 import Ncard from './components/Ncard.vue'
 import Video from './components/Video.vue'
 import { HomeUnderline } from '@theojs/lumen'
@@ -136,8 +135,6 @@ export default {
       'nav-bar-content-after': () => [
         // 为较宽的屏幕的导航栏添加阅读增强菜单
         h(NolebaseEnhancedReadabilitiesMenu),
-        // 快速复制当前页的url
-        h(Share),
       ],
       // 为较窄的屏幕（通常是小于 iPad Mini）添加阅读增强菜单
       'nav-screen-content-after': () => h(NolebaseEnhancedReadabilitiesScreenMenu),
@@ -146,7 +143,8 @@ export default {
       ],
       'home-hero-info-before': () => h(Announcement),
       'doc-footer-before': () => h(BackTop),
-      'layout-bottom': () => h(HomeFooter, { Footer_Data })
+      'layout-bottom': () => h(HomeFooter, { Footer_Data }),
+      'aside-outline-before': () => h(ShareButton),
     })
   },
 
