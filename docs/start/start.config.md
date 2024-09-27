@@ -148,7 +148,7 @@ senddynamicwork: false
 ```
 :::
 
-::: details 推送相关配置
+::: details 快手相关配置
 ```yaml
 # 快手解析开关，单独开关，受「总开关」影响
 kuaishoutool: true
