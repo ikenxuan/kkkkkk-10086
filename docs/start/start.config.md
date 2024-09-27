@@ -4,7 +4,7 @@
 _**Yunzai**_ 生态用户建议使用 [**Guoba-Plugin**](https://github.com/guoba-yunzai/guoba-plugin) 进行配置文件的修改。<br>
 _**Karin**_ 生态用户建议使用 [**Karin Manage**](https://github.com/HalcyonAlcedo/karin-plugin-manage) 进行配置文件的修改
 
-``` json{4-9}
+``` json{4-10}
 ├─config // 插件配置文件目录
 │  │  PluginConfigView.yaml // Karin Manage 配置文件（请勿修改该文件的任何内容！）
 │  │
