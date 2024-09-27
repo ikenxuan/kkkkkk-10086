@@ -28,7 +28,7 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 :::
 
 #### Karin
-Karin 框架文档: **https://karinjs.github.io/Karin**<br>
+Karin 框架文档: **https://karin.fun**<br>
 Karin 用户 <mark>**务必使用**</mark> 以下的命令安装，否则插件可能不会被识别
 
 ::: code-group

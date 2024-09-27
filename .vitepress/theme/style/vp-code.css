@@ -51,10 +51,10 @@ div[class*="language-"].vp-adaptive-theme.line-numbers-mode {
 
 
 /* 下移行号，与代码对齐；隐藏右侧竖线 */
-.vp-doc .line-numbers-wrapper {
+/* .vp-doc .line-numbers-wrapper {
   padding-top: 32px;
   border-right: none;
-}
+} */
 
 /* 重新建立行号右侧竖线 */
 .vp-doc .line-numbers-wrapper::after {
