@@ -34,7 +34,7 @@ div[class*="language-"].vp-adaptive-theme.line-numbers-mode {
 
 
 /* 有行号：添加 macOS 风格的小圆点 */
-.vp-doc div[class*="language-"].line-numbers-mode::before {
+/* .vp-doc div[class*="language-"].line-numbers-mode::before {
   content: "";
   display: block;
   position: relative;
@@ -46,7 +46,7 @@ div[class*="language-"].vp-adaptive-theme.line-numbers-mode {
   border-radius: 50%;
   box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
   z-index: 1;
-}
+} */
 
 
 

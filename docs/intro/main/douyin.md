@@ -1,9 +1,9 @@
 # 抖音视频解析
 
-::: warning <i class="fa-solid fa-circle-exclamation fa-beat"></i> 注意！！
-抖音解析功能必须要配置 ck ，否则无法解析视频<br>如何配置抖音 ck ？请看 [**其他功能**](../other.md#配置不同平台的-cookies)
+> [!IMPORTANT] 重要
+> 抖音解析功能必须要配置 ck ，否则无法解析视频<br>如何配置抖音 ck ？请看 [**其他功能**](../other.md#配置不同平台的-cookies)
+>
 
-:::
 ---
 
 插件会自动识别 `APP分享链接`[^1] `web视频链接`[^2] 进行解析<br>
@@ -25,7 +25,7 @@
 
 [^2]: web 视频链接: [`https://www.douyin.com/video/7375088329701854498`](https://www.douyin.com/video/7375088329701854498)
 
-::: warning <i class="fa-solid fa-circle-exclamation fa-beat"></i> 注意！！
+::: warning 警告
 
 ### 关于抖音 Cookie
 
