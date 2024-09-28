@@ -1,6 +1,6 @@
 import Config from '../../components/Config.js'
 import Base from '../../components/Base.js'
-import { GetDouyinData } from '@ikenxuan/amagi'
+import { getDouyinData } from '@ikenxuan/amagi'
 
 export default class DouyinData extends Base {
   constructor (type) {
@@ -15,44 +15,44 @@ export default class DouyinData extends Base {
     switch (this.type) {
       case 'video':
       case 'note': {
-        const VideoData = await GetDouyinData('单个视频作品数据', Config.cookies.douyin, { aweme_id:  data.id })
+        const VideoData = await getDouyinData('单个视频作品数据', Config.cookies.douyin, { aweme_id: data.id })
         const CommentsData = Config.douyin.comments
-          ? await GetDouyinData('评论数据', Config.cookies.douyin, {
+          ? await getDouyinData('评论数据', Config.cookies.douyin, {
             aweme_id: data.id,
             number: Config.douyin.numcomments
           })
           : { data: null }
-        if(VideoData!== '') VideoData.is_mp4 = data.is_mp4
+        if (VideoData !== '') VideoData.is_mp4 = data.is_mp4
         return { VideoData, CommentsData }
       }
 
       case 'LiveImage': {
-        const LiveImageData = await GetDouyinData('实况图片图集数据', Config.cookies.douyin, { aweme_id: data.id })
+        const LiveImageData = await getDouyinData('实况图片图集数据', Config.cookies.douyin, { aweme_id: data.id })
         return { LiveImageData }
       }
       case 'Live':
       case 'UserInfoData': {
-        const UserInfoData = await GetDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid: data.user_id })
+        const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid: data.user_id })
         return UserInfoData
       }
       case 'Emoji': {
-        const EmojiData = await GetDouyinData('官方emoji数据')
+        const EmojiData = await getDouyinData('官方emoji数据')
         return EmojiData
       }
       case 'UserVideosList': {
-        const UserVideoListData = await GetDouyinData('用户主页视频列表数据', Config.cookies.douyin, { sec_uid: data.user_id })
+        const UserVideoListData = await getDouyinData('用户主页视频列表数据', Config.cookies.douyin, { sec_uid: data.user_id })
         return UserVideoListData
       }
       case 'SuggestWords': {
-        const SuggestWordsData = await GetDouyinData('热点词数据', Config.cookies.douyin, { query: data.query })
+        const SuggestWordsData = await getDouyinData('热点词数据', Config.cookies.douyin, { query: data.query })
         return SuggestWordsData
       }
       case 'Search': {
-        const SearchData = await GetDouyinData('搜索数据', Config.cookies.douyin, { query: data.query })
+        const SearchData = await getDouyinData('搜索数据', Config.cookies.douyin, { query: data.query })
         return SearchData
       }
       case 'Music': {
-        const MusicData = await GetDouyinData('音乐数据', Config.cookies.douyin, { music_id: data.music_id })
+        const MusicData = await getDouyinData('音乐数据', Config.cookies.douyin, { music_id: data.music_id })
         return MusicData
       }
       default:

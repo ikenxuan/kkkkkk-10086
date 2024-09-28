@@ -1,4 +1,4 @@
-import Networks from './networks.js'
+export * from './networks.js'
 export * from './dir.js'
-import logger from './logger.js'
-export { Networks, logger }
+export * from './logger.js'
+export * from './DataFetchers.js'

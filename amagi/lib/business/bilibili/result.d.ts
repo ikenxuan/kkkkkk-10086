@@ -3,7 +3,7 @@ interface configParams {
     /** 请求数据的类型 */
     type: keyof typeof BilibiliDataType;
     /** B站用户ck */
-    cookie: string;
+    cookie: string | undefined;
 }
 /**
  *
@@ -11,5 +11,5 @@ interface configParams {
  * @param config
  * @returns
  */
-export default function BilibiliResult(config: configParams | undefined, options: BilibiliOptionsType): Promise<GetDataResponseType | any>
+export default function BilibiliResult(config?: configParams, options?: BilibiliOptionsType): Promise<GetDataResponseType | any>
 export {}

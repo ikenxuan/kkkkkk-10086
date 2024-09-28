@@ -3,7 +3,7 @@ import { NetworksConfigType } from '../types/index.js'
 interface HeadersObject {
     [key: string]: string;
 }
-export default class Networks {
+export declare class Networks {
   url: string
   method: string
   headers: HeadersObject

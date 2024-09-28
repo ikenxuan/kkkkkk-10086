@@ -1,4 +1,4 @@
-import { BilibiliDataType, DouyinDataType } from '../types/index.js'
+import { DouyinDataOptionsMap, BilibiliDataOptionsMap, XiaohongshuDataOptionsMap } from '../types/index.js'
 import { FastifyInstance } from 'fastify'
 interface initClientParams {
     /** 抖音ck */
@@ -6,50 +6,45 @@ interface initClientParams {
     /** B站ck */
     bilibili: string;
 }
-interface amagiInstance {
+interface AmagiInstance {
     /** Fastify 实例 */
     Instance: FastifyInstance;
     /**
-     * amagi.GetDouyinData 已废弃，请直接导入 GetDouyinData 方法使用
+     * amagi.getDouyinData 可能在未来版本废弃，建议直接导入 getDouyinData 方法使用
      * @deprecated
      */
-    GetDouyinData: (data: {
-        type: keyof typeof DouyinDataType;
-    }) => Error | any;
+    getDouyinData: <T extends keyof DouyinDataOptionsMap>(type: T, cookie?: string, options?: DouyinDataOptionsMap[T]) => Promise<any>;
     /**
-     * amagi.GetBilibiliData 已废弃！请直接导入 GetBilibiliData 方法使用
+     * amagi.getBilibiliData 可能在未来版本废弃，建议直接导入 getBilibiliData 方法使用
      * @deprecated
      */
-    GetBilibiliData: (data: {
-        type: keyof typeof BilibiliDataType;
-    }) => Error | any;
+    getBilibiliData: <T extends keyof BilibiliDataOptionsMap>(type: T, cookie?: string, options?: BilibiliDataOptionsMap[T]) => Promise<any>;
+    /**
+     * amagi.getXiaohongshuiData 可能在未来版本废弃，建议直接导入 getXiaohongshuiData 方法使用
+     * @deprecated
+     */
+    getXiaohongshuData: <T extends keyof XiaohongshuDataOptionsMap>(type: T, cookie: string, options: XiaohongshuDataOptionsMap[T]) => Promise<any>;
+    /**
+     *
+     * @param client Fastify 实例
+     * @param port 监听端口
+     * @returns
+     */
+    startClient: (client: FastifyInstance, port: 4567) => Promise<void>;
 }
-export declare class client {
-  /** douyin cookies */
-  douyin: string
-  /** bilibili cookes */
-  bilibili: string
+export declare class amagi {
+  private douyin
+  private bilibili
   /**
      *
-     * @param cookies 包含抖音和B站cookie的参数对象
+     * @param data 一个对象，里面包含 douyin 和 bilibili 两个字段，分别对应抖音和B站cookie
      */
-  constructor(cookies: initClientParams);
+  constructor(data: initClientParams);
   /**
      * 初始化 fastify 实例
-     * @param log 是否启用日志
-     * @returns fastify 实例
+     * @param log log 是否启用日志，默认为 false
+     * @returns amagi 实例
      */
-  initServer(log?: boolean): Promise<amagiInstance>;
-  GetDouyinData: (data: {
-        type: keyof typeof DouyinDataType;
-    }) => Error | any
-  GetBilibiliData: (data: {
-        type: keyof typeof BilibiliDataType;
-    }) => {
-        /**
-         * @deprecated
-         */
-        result: () => Promise<never>;
-    }
+  initServer(log?: boolean): AmagiInstance;
 }
 export {}

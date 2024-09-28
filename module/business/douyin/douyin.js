@@ -4,7 +4,7 @@ import { makeForwardMsg, segment, logger } from '../../lib/public/index.js'
 import fs from 'fs'
 import { markdown } from '@karinjs/md-html'
 import QRCode from 'qrcode'
-import { GetDouyinData } from '@ikenxuan/amagi'
+import { getDouyinData } from '@ikenxuan/amagi'
 
 let mp4size = ''
 let img
@@ -154,18 +154,18 @@ export default class DouYin extends Base {
               }
               break
             }
-            case 'TRSS-Yunzai':{
+            case 'TRSS-Yunzai': {
               switch (this.botadapter) {
                 case 'QQBot':
                 case 'OneBotv11':
                 case 'LagrangeCore':
-                case 'KOOKBot':{
+                case 'KOOKBot': {
                   if (haspath) {
                     await this.e.reply(segment.record(music_url))
                   }
                   break
                 }
-                case 'ICQQ':{
+                case 'ICQQ': {
                   if (haspath) {
                     if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
                     else this.e.reply(segment.record(music_url))
@@ -175,9 +175,10 @@ export default class DouYin extends Base {
               }
               break
             }
-            case 'Karin':{
+            case 'Karin': {
               haspath && await this.e.reply(segment.record(music_url))
-              break}
+              break
+            }
             default:
               break
 
@@ -270,7 +271,7 @@ export default class DouYin extends Base {
           )
         }
 
-        const tip = [ '视频正在上传' ]
+        const tip = ['视频正在上传']
         let res
         if (this.is_mp4) {
           res = full_data
@@ -349,7 +350,7 @@ export default class DouYin extends Base {
                   if (this.botname !== 'TRSS-Yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                   await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
                 } else {
-                /** 因为本地合成，没有视频直链 */
+                  /** 因为本地合成，没有视频直链 */
                   await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null)
                 }
               },
@@ -413,7 +414,7 @@ export default class DouYin extends Base {
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
               `music_id: ${data.music_info.id}`
             ],
-            [ { text: '音乐文件', link: data.music_info.play_url.uri } ]
+            [{ text: '音乐文件', link: data.music_info.play_url.uri }]
           )
         )
 
@@ -426,12 +427,12 @@ export default class DouYin extends Base {
       case 'Live': {
         if (data.user.live_status === 1) {
           // 直播中
-          const live_data = await GetDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: data.user.sec_uid })
+          const live_data = await getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: data.user.sec_uid })
           const room_data = JSON.parse(data.user.room_data)
           const img = await Render.render(
             'html/douyin/douyinlive',
             {
-              image_url: [ { image_src: live_data.data.data[0].cover.url_list[0] } ],
+              image_url: [{ image_src: live_data.data.data[0].cover.url_list[0] }],
               text: live_data.data.data[0].title,
               liveinf: `${live_data.data.partition_road_map.partition.title} | 房间号: ${room_data.owner.web_rid}`,
               在线观众: this.count(live_data.data.data[0].stats.user_count_str),

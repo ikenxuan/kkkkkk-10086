@@ -1,5 +1,5 @@
-import Networks from './networks.js'
+export * from './networks.js'
 export * from './dir.js'
-import logger from './logger.js'
-export { Networks, logger }
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbW9kZWwvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsT0FBTyxRQUFRLE1BQU0sWUFBWSxDQUFBO0FBQ2pDLGNBQWMsT0FBTyxDQUFBO0FBQ3JCLE9BQU8sTUFBTSxNQUFNLFVBQVUsQ0FBQTtBQUU3QixPQUFPLEVBQUUsUUFBUSxFQUFFLE1BQU0sRUFBRSxDQUFBIn0=
+export * from './logger.js'
+export * from './DataFetchers.js'
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaW5kZXguanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi8uLi9zcmMvbW9kZWwvaW5kZXgudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUEsY0FBYyxZQUFZLENBQUE7QUFDMUIsY0FBYyxPQUFPLENBQUE7QUFDckIsY0FBYyxVQUFVLENBQUE7QUFDeEIsY0FBYyxnQkFBZ0IsQ0FBQSJ9
