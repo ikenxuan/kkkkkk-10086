@@ -104,11 +104,11 @@ export default class Bilidata extends Base {
 }
 function mapping_table (type) {
   const Array = {
-    1: ['DYNAMIC_TYPE_AV', 'DYNAMIC_TYPE_PGC', 'DYNAMIC_TYPE_UGC_SEASON'],
-    11: ['DYNAMIC_TYPE_DRAW'],
-    12: ['DYNAMIC_TYPE_ARTICLE'],
-    17: ['DYNAMIC_TYPE_LIVE_RCMD', 'DYNAMIC_TYPE_FORWARD', 'DYNAMIC_TYPE_WORD', 'DYNAMIC_TYPE_COMMON_SQUARE'],
-    19: ['DYNAMIC_TYPE_MEDIALIST']
+    1: [ 'DYNAMIC_TYPE_AV', 'DYNAMIC_TYPE_PGC', 'DYNAMIC_TYPE_UGC_SEASON' ],
+    11: [ 'DYNAMIC_TYPE_DRAW' ],
+    12: [ 'DYNAMIC_TYPE_ARTICLE' ],
+    17: [ 'DYNAMIC_TYPE_LIVE_RCMD', 'DYNAMIC_TYPE_FORWARD', 'DYNAMIC_TYPE_WORD', 'DYNAMIC_TYPE_COMMON_SQUARE' ],
+    19: [ 'DYNAMIC_TYPE_MEDIALIST' ]
   }
   for (const key in Array) {
     if (Array[key].includes(type)) {
