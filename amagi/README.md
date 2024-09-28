@@ -1,11 +1,11 @@
 # amagi（泥干嘛哈哈
 
-* 抖音、B站的 web 端相关数据接口基于 Node.js 的实现，支持最低node版本为 v16
+* 抖音、B站的 web 端相关数据接口基于 Node.js 的实现，支持最低node版本为 v18
 
 ![amagi](https://socialify.git.ci/ikenxuan/amagi/image?font=Source%20Code%20Pro&forks=1&issues=1&language=1&name=1&owner=1&pattern=Floating%20Cogs&pulls=1&stargazers=1&theme=Auto)
 
 
-
+[English](./README.md)、中文、[日本語](./README-JP.md)
 ## 使用
 ```
 pnpm add @ikenxuan/amagi
@@ -14,14 +14,14 @@ pnpm add @ikenxuan/amagi
 
 **_直接获取相关数据_**
 ```js
-import { GetDouyinData, GetBilibiliData  } from '@ikenxuan/amagi'
+import { getDouyinData, getBilibiliData  } from '@ikenxuan/amagi'
 
 const douyinck = '你的抖音ck'
 const bilibilick = '你的B站ck'
 
-const Douyin = await GetDouyinData('单个视频作品数据', douyinck, { url: 'https://v.douyin.com/irHntHL7' })
+const Douyin = await getDouyinData('单个视频作品数据', douyinck, { url: 'https://v.douyin.com/irHntHL7' })
 
-const Bilibili = await GetBilibiliData('单个视频作品数据', bilibilick, { url: 'https://b23.tv/9JvEHhJ' })
+const Bilibili = await getBilibiliData('单个视频作品数据', bilibilick, { url: 'https://b23.tv/9JvEHhJ' })
 ```
 * 参数一详见 [**API数据类型枚举**](./src/types/DataType.ts)
 
@@ -33,7 +33,7 @@ const Bilibili = await GetBilibiliData('单个视频作品数据', bilibilick, {
 * API 文档: [**Apifox**](https://amagi.apifox.cn)
 
 ```js
-import amagi, { StartClient } from '@ikenxuan/amagi'
+import amagi, { startClient } from '@ikenxuan/amagi'
 
 const Client = await new amagi({
   douyin: '抖音ck',
@@ -41,7 +41,7 @@ const Client = await new amagi({
 }).initServer(true) // 是否开启调试模式
 
 // 启动监听 4567 端口，端口可自定义
-await StartClient(Client.Instance, 4567)
+await startClient(Client.Instance, 4567)
 ```
 
 ## 开发构建
