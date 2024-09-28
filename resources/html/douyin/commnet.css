@@ -73,6 +73,58 @@
   font-size: 45px;
 }
 
+.author-label {
+  background: rgb(254, 44, 85);
+  color: #f4f4f4;
+}
+
+body.dark-mode .status-label {
+  background: #262425;
+  color: #888686;
+}
+
+body.light-mode .status-label {
+  background: rgb(230, 230, 230);
+  color: #777"
+
+}
+
+body.dark-mode .search_text {
+  color: #FACE15;
+  position: relative;
+  display: inline-block;
+}
+
+.search-ico {
+  position: absolute;
+  top: 17px;
+  right: -45px;
+  width: 44px;
+  height: 50px;
+  background-image: url(./img/search-light.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+body.dark-mode .search-ico {
+  position: absolute;
+  top: 17px;
+  right: -45px;
+  width: 44px;
+  height: 50px;
+  background-image: url(./img/search-dark.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.handling_at {
+  color: rgb(3, 72, 141)
+}
+
+body.dark-mode .handling_at {
+  color: #FACE15
+}
+
 .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;

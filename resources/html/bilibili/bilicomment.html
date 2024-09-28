@@ -84,8 +84,8 @@
 <script>
   // 获取当前时间并自动设置主题
 function setThemeBasedOnTime() {
-  var body = document.body;
-  var currentHour = new Date().getHours(); // 获取当前小时
+  const body = document.body;
+  const currentHour = new Date().getHours(); // 获取当前小时
 
   // 假设白天（6点到18点）使用浅色模式，晚上（18点到6点）使用深色模式
   if (currentHour >= 6 && currentHour < 18) {
@@ -105,13 +105,17 @@ window.onload = function() {
 }
 </script>
 <script>
+  let light = false
+  const date = new Date().getHours()
+  if (date >= 6 && date < 18) {
+    light = true
+  }
   qrcode = new QRCode(document.getElementById('qrcode'), {
     width: 600,
     height: 600,
-    colorDark: '#3a3a3a',
-    colorLight: '#f4f4f4',
+    colorDark: light? '#3a3a3a': '#c3c3c3',
+    colorLight: light? '#f4f4f4': '#121212',
   })
   qrcode.makeCode('{{VideoUrl}}')
 </script>
-
 {{/block}}
