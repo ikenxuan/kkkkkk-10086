@@ -40,7 +40,7 @@ const Render = {
       },
       copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
       pageGotoParams: {
-        waitUntil: 'networkidle'
+        waitUntil: 'networkidle0'
       },
       tplFile: `${Version.pluginPath}/resources/${path}.html`,
       pluResPath: `${Version.pluginPath}/resources/`,
