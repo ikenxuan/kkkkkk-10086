@@ -182,7 +182,7 @@ async function handling_at (data) {
           /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
           const regex = new RegExp(`@${UserInfoData.user.nickname?.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&')}`, 'g')
           item.text = item.text.replace(regex, (match) => {
-            return `<span style="color: rgb(3,72,141);">${match}</span>`
+            return `<span class=${isdarktheme() ? 'dark-mode handling_at' : 'handling_at'}>${match}</span>`
           })
         }
       }
@@ -206,14 +206,11 @@ async function search_text (data) {
         ) {
           const regex = new RegExp(`${search_text.search_text}`, 'g')
           item.text = item.text.replace(regex, (match) => {
-            return `<span style="color: rgb(3,72,141); position: relative; display: inline-block;">
-        ${match}
-        <sup style="position: absolute; top: 0em; right: -0.65em;">
-            <svg style="fill: rgb(3,72,141); width: 30px; height: 30px;" xmlns="http://www.w3.org/2000/svg" class="F12FH4eE" viewBox="0 0 9 9">
-                <path clip-rule="evenodd" d="M1.2 4.024c0-1.375 1.05-2.426 2.426-2.426 1.217 0 2.269 1.051 2.269 2.426 0 1.218-1.051 2.269-2.27 2.269-1.374 0-2.425-1.051-2.425-2.269zM3.626.398C1.588.398 0 1.987 0 4.024 0 5.96 1.645 7.493 3.626 7.493c.729 0 1.414-.239 1.98-.64l1.57 1.57a.6.6 0 00.848-.85l-1.57-1.57c.402-.565.64-1.25.64-1.979 0-1.98-1.533-3.626-3.468-3.626z"></path>
-            </svg>
-        </sup>
-    </span>&nbsp&nbsp;`
+            const themeClass = isdarktheme() ? 'dark-mode' : ''
+            return `<span class="search_text ${themeClass}">
+                ${match}
+                <span class="search-ico"></span>
+            </span>&nbsp;&nbsp;&nbsp;`
           })
         }
       }
@@ -229,4 +226,17 @@ async function br (data) {
     data[i].text = text
   }
   return data
+}
+
+/**
+ * 是否启用深色模式
+ * @returns boolean
+ */
+function isdarktheme () {
+  let light = false
+  const date = new Date().getHours()
+  if (date >= 6 && date < 18) {
+    light = true
+  }
+  return light
 }

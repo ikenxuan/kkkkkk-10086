@@ -1,9 +1,10 @@
 export default async function bilicomments (OBJECT) {
-  const EMOJIDATA = extractEmojisData(OBJECT.EMOJIDATA.data.packages) // 处理表情
   let jsonArray = []
   for (let i = 0; i < OBJECT.COMMENTSDATA.data.replies.length; i++) {
     const ctime = getRelativeTimeFromTimestamp(OBJECT.COMMENTSDATA.data.replies[i].ctime)
-    const message = OBJECT.COMMENTSDATA.data.replies[i].content.message
+    const emote = OBJECT.COMMENTSDATA.data.replies[i].content.emote
+    let message = OBJECT.COMMENTSDATA.data.replies[i].content.message
+    if(message && emote) message = emoteToUrl(message, emote)
     const avatar = OBJECT.COMMENTSDATA.data.replies[i].member.avatar
     const frame = OBJECT.COMMENTSDATA.data.replies[i].member.pendant.image
     const uname = checkvip(OBJECT.COMMENTSDATA.data.replies[i].member)
@@ -78,33 +79,33 @@ export default async function bilicomments (OBJECT) {
     comment.message = originalText
   }
 
-  /** 检查评论是否带表情，是则添加img标签 */
-  for (const item1 of jsonArray) {
-    // 遍历emojidata中的每个元素
-    for (const item2 of EMOJIDATA) {
-      // 如果jsonArray中的message包含在EMOJIDATA中的text中
-      if (item1.message.includes(item2.text)) {
-        // 检查是否存在中括号
-        if (item1.message.includes('[') && item1.message.includes(']')) {
-          item1.message = item1.message.replace(/\[[^\]]*\]/g, `<img src="${item2.url}"/>`).replace(/\\/g, '')
-        } else {
-          item1.message = `<img src="${item2.url}"/>`
-        }
-        item1.message += '&#160'
-      }
-    }
-  }
   let res
   res = checklevel(jsonArray)
   res = br(res)
   return res
 }
 
-/** 空格转 '&nbsp;' */
+/** 检查评论是否带表情，是则添加img标签 */
+const emoteToUrl = (message, emote) => {
+  // 遍历 emote 对象的键
+  for (const key in emote) {
+    if (emote.hasOwnProperty(key)) {  // 确保是对象自身的属性
+      // 如果message中有对应的表情包名，替换为图片标签
+      if (message.includes(key)) {
+        if (message.includes('[') && message.includes(']')) {
+          message = message.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),  `<img src="${emote[key].url}"/>`)
+        }
+      }
+    }
+  }
+  return message
+}
+
+/** 替换空格 */
 function space (data) {
-  for (let i = 0; i < data.length; i++) {
+  for (const i in data) {
     if (data[i].message) {
-      data[i].message = data[i].message.replace(/\s/g, '&nbsp;')
+      data[i].message = data[i].message.replace(/\s/g, ' ') // 替换空格
     }
   }
   return data
@@ -112,10 +113,10 @@ function space (data) {
 
 /** 换行符转<br> */
 function br (data) {
-  for (let i = 0; i < data.length; i++) {
+  for (const i in data) {
     let message = data[i].message
 
-    message = message.replace(/\n/g, '<br>')
+    message = message?.replace(/\n/g, '<br>')
     data[i].message = message
   }
   return data
@@ -174,6 +175,7 @@ function checkvip (member) {
 }
 
 /** 处理表情，返回[{text: 表情名字, url: 表情地址}] */
+/**
 function extractEmojisData (data) {
   const emojisData = []
 
@@ -190,6 +192,7 @@ function extractEmojisData (data) {
 
   return emojisData
 }
+*/
 
 /** 返回创建时间 */
 function getRelativeTimeFromTimestamp (timestamp) {
