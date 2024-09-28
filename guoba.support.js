@@ -178,9 +178,9 @@ export function supportGuoba () {
           component: 'InputNumber',
           required: true,
           componentProps: {
-            placeholder: '范围：0 ~ 50',
+            placeholder: '范围：0 ~ 无限',
             min: 0,
-            max: 50,
+            max: 9999,
             addonAfter: '条'
           }
         },
@@ -332,9 +332,9 @@ export function supportGuoba () {
           component: 'InputNumber',
           required: true,
           componentProps: {
-            placeholder: '范围：0 ~ 20',
+            placeholder: '范围：0 ~ 无限',
             min: 0,
-            max: 20,
+            max: 9999,
             addonAfter: '条'
           }
         },
