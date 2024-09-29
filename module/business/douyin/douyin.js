@@ -33,25 +33,6 @@ export default class DouYin extends Base {
         let g_title
         const full_data = []
 
-        /** 评论 */
-        const comments_res = []
-        if (data.CommentsData !== null && data.CommentsData.comments && Config.douyin.comments) {
-          const comments_data = []
-          const commentsres = []
-          for (let i = 0; i < data.CommentsData.comments.length; i++) {
-            const text = data.CommentsData.comments[i].text
-            let digg_count = data.CommentsData.comments[i].digg_count
-            if (digg_count > 10000) {
-              digg_count = (digg_count / 10000).toFixed(1) + 'w'
-            }
-            commentsres.push(`${text}\n♥${digg_count}`)
-          }
-          const dsc = '评论数据'
-          const res = await makeForwardMsg(this.e, commentsres, dsc)
-          comments_data.push(res)
-          comments_res.push(comments_data)
-        } else comments_res.push('评论数据获取失败或这条视频没有评论')
-
         /** 图集 */
         let imagenum = 0
         const image_res = []
@@ -271,14 +252,13 @@ export default class DouYin extends Base {
           )
         }
 
-        const tip = [ '视频正在上传' ]
+        const tip = ['视频正在上传']
         let res
         if (this.is_mp4) {
           res = full_data
             .concat(tip)
             .concat(Config.douyin.commentsimg ? file : null)
             .concat(video_res)
-            .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
         } else {
@@ -286,7 +266,6 @@ export default class DouYin extends Base {
             .concat(Config.douyin.commentsimg ? file : null)
             .concat(video_res)
             .concat(image_res)
-            .concat(comments_res)
             .concat(music_res)
             .concat(author_res)
         }
@@ -414,7 +393,7 @@ export default class DouYin extends Base {
               `作曲: ${data.music_info.original_musician_display_name || data.music_info.owner_nickname}\n`,
               `music_id: ${data.music_info.id}`
             ],
-            [ { text: '音乐文件', link: data.music_info.play_url.uri } ]
+            [{ text: '音乐文件', link: data.music_info.play_url.uri }]
           )
         )
 
@@ -432,7 +411,7 @@ export default class DouYin extends Base {
           const img = await Render.render(
             'html/douyin/douyinlive',
             {
-              image_url: [ { image_src: live_data.data.data[0].cover.url_list[0] } ],
+              image_url: [{ image_src: live_data.data.data[0].cover.url_list[0] }],
               text: live_data.data.data[0].title,
               liveinf: `${live_data.data.partition_road_map.partition.title} | 房间号: ${room_data.owner.web_rid}`,
               在线观众: this.count(live_data.data.data[0].stats.user_count_str),
