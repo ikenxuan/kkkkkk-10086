@@ -106,6 +106,26 @@ body.dark-mode .search_text {
   background-repeat: no-repeat;
 }
 
+body.dark-mode .logo {
+  width: 133%;
+  height: 239px;
+  margin: 0 0 50px -55px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-image: url(./img/dylogo-light.svg);
+}
+
+body.light-mode .logo {
+  width: 133%;
+  height: 239px;
+  margin: 0 0 50px -55px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-image: url(./img/dylogo-dark.svg);
+}
+
 body.dark-mode .search-ico {
   position: absolute;
   top: 17px;
