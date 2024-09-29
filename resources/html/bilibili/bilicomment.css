@@ -17,7 +17,7 @@
 .comment-container {
   max-width: 100%;
   /* 宽度设置为百分之百，以适应不同屏幕大小 */
-  margin: 0 auto;
+  margin: 0 0 70px 0;
   /* overflow: auto; */
 }
 
