@@ -71,54 +71,14 @@ export default async function comments (data, emojidata) {
     jsonArray.unshift(commentTypeOne)
   }
 
-  /** 二级评论 咕咕咕 */
-  const CommentReplyData = await new DouyinData('CommentReplyData').GetData({
-    cid: jsonArray[0].cid,
-    id: jsonArray[0].aweme_id
-  })
 
   jsonArray.text = await br(jsonArray)
   jsonArray.text = await handling_at(jsonArray)
   jsonArray.text = await search_text(jsonArray)
 
-  const CommentReplyDataArray = []
-  try {
-    for (let i = 0; i < CommentReplyData.comments.length; i++) {
-      const nickname = CommentReplyData.comments[i].user.nickname
-      const userimageurl = CommentReplyData.comments[i].user.avatar_larger.url_list[0]
-      const text = CommentReplyData.comments[i].text
-      const ip = CommentReplyData.comments[i].ip_label
-      const time = CommentReplyData.comments[i].create_time
-      const digg_count = CommentReplyData.comments[i].digg_count
-      const imageurl =
-        CommentReplyData.comments[i].image_list &&
-          CommentReplyData.comments[i].image_list[0] &&
-          CommentReplyData.comments[i].image_list[0].origin_url &&
-          CommentReplyData.comments[i].image_list[0].origin_url.url_list
-          ? CommentReplyData.comments[i].image_list[0].origin_url.url_list[0]
-          : null
-      const relativeTime = await getRelativeTimeFromTimestamp(time)
-
-      const commentreplyObj = {
-        id: i + 1,
-        nickname,
-        userimageurl,
-        text,
-        digg_count,
-        ip_label: ip,
-        create_time: relativeTime,
-        commentimage: imageurl
-      }
-
-      CommentReplyDataArray.push(commentreplyObj)
-    }
-  } catch (error) {
-    CommentReplyDataArray.push({ commentreplyObj: null })
-  }
 
   const CommentData = {
-    jsonArray,
-    CommentReplyData: CommentReplyDataArray
+    jsonArray
   }
 
   for (let i = 0; i < jsonArray.length; i++) {
