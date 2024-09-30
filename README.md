@@ -1,5 +1,8 @@
 ![kkkkkk-10086](https://socialify.git.ci/ikenxuan/kkkkkk-10086/image?font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 
+> [!CAUTION]
+> # 主开发处于跑路边缘，找人接手
+
 🦄 _**kkkkkk-10086是一个[Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) & [Karin](https://github.com/KarinJS/Karin) 的自用辅助插件，提供对Bot的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
 
 ![Nodejs](https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white)
@@ -32,9 +35,9 @@
 
 本项目提供的开源代码是出于学习进行开发。如果您认为该项目侵犯了您的知识产权或其他合法权益，请通过 **[QQ](https://qm.qq.com/q/k6Up32hdWE)** 向我们提供书面通知。我们将在收到有效通知后，尽快进行审查，并采取必要的措施。
 
-本软件出于学习进行开发，使用本项目的使用本软件的用户应确保遵守所有适用的开源许可证协议，并且在使用过程中尊重原作者的知识产权。
-
-**未经同意，禁止将本项目的开源代码用于任何商业目的。因使用本项目产生的一切问题与后果由使用者自行承担，项目开发者不承担任何责任**
+> [!CAUTION]
+> 
+> **未经同意，禁止将本项目的开源代码用于任何商业目的。因使用本项目产生的一切问题与后果由使用者自行承担，项目开发者不承担任何责任**
 
 我们保留随时修改本免责声明的权利，并且这些修改将立即生效。
 
@@ -69,5 +72,5 @@
 - Yunzai-Bot 插件库 ☞ [**Github**](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) | [**Gitee**](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
 - ~~Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
 - icqq 协议 ☞ [**GitHub**](https://github.com/icqqjs/icqq)
-- Karin 框架 ☞ [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karinjs.github.io/Karin)
-- Yunzai V4 [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)
+- Karin 框架 ☞ [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karin.fun)
+- Yunzai NEXT [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzai-org.github.io/docs)

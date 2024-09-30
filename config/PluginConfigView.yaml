@@ -114,7 +114,7 @@
       type: 'boolean'
     -
       key: 抖音评论数量
-      comment: 范围1~50条
+      comment: 范围1~无限条
       path: 'numcomments'
       type: 'number'
     -
@@ -195,7 +195,7 @@
       type: 'boolean'
     -
       key: B站评论数量
-      comment: 范围1~20条
+      comment: 范围1~无限条
       path: 'bilibilinumcomments'
       type: 'number'
     -

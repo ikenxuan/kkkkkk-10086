@@ -358,7 +358,9 @@ function br (data) {
 
 function replacetext (text, obj) {
   for (const tag of obj.data.item.modules.module_dynamic.desc.rich_text_nodes) {
-    const regex = new RegExp(tag.orig_text, 'g')
+    // 对正则表达式中的特殊字符进行转义
+    const escapedText = tag.orig_text.replace(/([.*+?^${}()|[\]\\])/g, '\\$1').replace(/\n/g, '\\n')
+    const regex = new RegExp(escapedText, 'g')
     switch (tag.type) {
       case 'RICH_TEXT_NODE_TYPE_TOPIC':
       case 'RICH_TEXT_NODE_TYPE_AT': {

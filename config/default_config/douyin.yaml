@@ -7,7 +7,7 @@ douyintip: true
 # 抖音评论解析
 comments: true
 
-# 抖音评论数量，范围1~50条
+# 抖音评论数量，范围1~无限条
 numcomments: 5
 
 # 发送抖音作品评论图

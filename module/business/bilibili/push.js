@@ -1,5 +1,5 @@
 import Bilidata from './getdata.js'
-import { GetBilibiliData } from '@ikenxuan/amagi'
+import { getBilibiliData } from '@ikenxuan/amagi'
 import { Base, Config, Render, DB, Version } from '../../components/index.js'
 import { sendMsg, segment, logger } from '../../lib/public/index.js'
 import YAML from 'yaml'
@@ -61,15 +61,15 @@ export default class Bilibilipush extends Base {
       let send = true
       logger.debug(`UP: ${data[dynamicId].remark}\n动态id：${dynamicId}\nhttps://t.bilibili.com/${dynamicId}`)
       switch (data[dynamicId].dynamic_type) {
-      /** 处理图文动态 */
+        /** 处理图文动态 */
         case 'DYNAMIC_TYPE_DRAW': {
-        /**
-           * 生成图片数组
-           * 该函数没有参数。
-           * @returns {Object[]} imgArray - 包含图片源地址的对象数组。
-           */
+          /**
+             * 生成图片数组
+             * 该函数没有参数。
+             * @returns {Object[]} imgArray - 包含图片源地址的对象数组。
+             */
           const cover = () => {
-          // 初始化一个空数组来存放图片对象
+            // 初始化一个空数组来存放图片对象
             const imgArray = []
             // 遍历dycrad.item.pictures数组，将每个图片的img_src存入对象，并将该对象加入imgArray
             for (let i = 0; i < dycrad.item.pictures.length; i++) {
@@ -140,7 +140,7 @@ export default class Bilibilipush extends Base {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
             const INFODATA = await new Bilidata('bilibilivideo').GetData({ id_type: 'bvid', id: bvid })
-            nocd_data = await GetBilibiliData('单个视频下载信息数据', '', { avid: INFODATA.INFODATA.data.aid,cid:INFODATA.INFODATA.data.cid })
+            nocd_data = await getBilibiliData('单个视频下载信息数据', '', { avid: INFODATA.INFODATA.data.aid, cid: INFODATA.INFODATA.data.cid })
 
             img = await Render.render(
               'html/bilibili/dynamic/DYNAMIC_TYPE_AV',
@@ -211,7 +211,7 @@ export default class Bilibilipush extends Base {
             } catch (error) {
               logger.error(error)
             } finally {
-              if(send && Config.bilibili.senddynamicvideo) await this.removeFile(video?.filepath)
+              if (send && Config.bilibili.senddynamicvideo) await this.removeFile(video?.filepath)
             }
           }
 
@@ -589,7 +589,9 @@ function extractEmojisData (data) {
 
 function replacetext (text, obj) {
   for (const tag of obj.modules.module_dynamic.desc.rich_text_nodes) {
-    const regex = new RegExp(tag.orig_text, 'g')
+    // 对正则表达式中的特殊字符进行转义
+    const escapedText = tag.orig_text.replace(/([.*+?^${}()|[\]\\])/g, '\\$1').replace(/\n/g, '\\n')
+    const regex = new RegExp(escapedText, 'g')
     switch (tag.type) {
       case 'RICH_TEXT_NODE_TYPE_TOPIC':
       case 'RICH_TEXT_NODE_TYPE_AT': {

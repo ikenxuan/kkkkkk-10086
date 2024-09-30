@@ -73,6 +73,78 @@
   font-size: 45px;
 }
 
+.author-label {
+  background: rgb(254, 44, 85);
+  color: #f4f4f4;
+}
+
+body.dark-mode .status-label {
+  background: #262425;
+  color: #888686;
+}
+
+body.light-mode .status-label {
+  background: rgb(230, 230, 230);
+  color: #777"
+
+}
+
+body.dark-mode .search_text {
+  color: #FACE15;
+  position: relative;
+  display: inline-block;
+}
+
+.search-ico {
+  position: absolute;
+  top: 17px;
+  right: -45px;
+  width: 44px;
+  height: 50px;
+  background-image: url(./img/search-light.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+body.dark-mode .logo {
+  width: 133%;
+  height: 239px;
+  margin: 0 0 50px -55px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-image: url(./img/dylogo-light.svg);
+}
+
+body.light-mode .logo {
+  width: 133%;
+  height: 239px;
+  margin: 0 0 50px -55px;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-image: url(./img/dylogo-dark.svg);
+}
+
+body.dark-mode .search-ico {
+  position: absolute;
+  top: 17px;
+  right: -45px;
+  width: 44px;
+  height: 50px;
+  background-image: url(./img/search-dark.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.handling_at {
+  color: rgb(3, 72, 141)
+}
+
+body.dark-mode .handling_at {
+  color: #FACE15
+}
+
 .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;
@@ -113,6 +185,7 @@
   align-items: center;
   letter-spacing: 0.5px;
   position: relative;
+  line-height: 1.6;
 }
 
 .comment-text img {
@@ -302,29 +375,34 @@
 }
 
 /* 深色模式样式 */
-.dark-mode {
+body.dark-mode {
   background-color: #121212;
   color: #fff;
   /* 其他深色模式下的样式 */
 }
 
 /* 浅色模式样式 */
-.light-mode {
+body.light-mode {
   background-color: #f4f4f4;
   color: #333;
   /* 其他浅色模式下的样式 */
 }
 
+body.dark-mode .container {
+  background-color: #121212;
+  color: #fff;
+}
+
 /* 针对特定元素的样式 */
-.dark-mode .comment-text {
+body.dark-mode .comment-text {
   color: #f4f4f4;
 }
 
-.dark-mode .video_info_container {
+body.dark-mode .video_info_container {
   color: #c3c3c3;
 }
 
-.dark-mode .comment-text img {
+body.dark-mode .comment-text img {
   display: inline-block;
   vertical-align: middle;
   -webkit-transform: translateY(-10%) scale(0.9);
@@ -334,11 +412,11 @@
   transform: translateY(-10%) scale(0.9);
 }
 
-.light-mode .comment-text {
+body.light-mode .comment-text {
   color: #333;
 }
 
-.light-mode .comment-imgbox {
+body.light-mode .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -376,7 +454,7 @@
   flex: 1;
 }
 
-.dark-mode .comment-imgbox {
+body.dark-mode .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -395,7 +473,7 @@
   flex: 1;
 }
 
-.dark-mode .user-avatar {
+body.dark-mode .user-avatar {
   margin-bottom: 50px;
   width: 187.5px;
   height: 187.5px;

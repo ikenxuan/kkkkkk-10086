@@ -14,7 +14,8 @@ export declare const enum DouyinDataType {
     音乐数据 = "\u97F3\u4E50\u6570\u636E",
     图集作品数据 = "\u56FE\u96C6\u4F5C\u54C1\u6570\u636E",
     实况图片图集数据 = "\u5B9E\u51B5\u56FE\u7247\u56FE\u96C6\u6570\u636E",
-    直播间信息数据 = "\u76F4\u64AD\u95F4\u4FE1\u606F\u6570\u636E"
+    直播间信息数据 = "\u76F4\u64AD\u95F4\u4FE1\u606F\u6570\u636E",
+    申请二维码数据 = "\u7533\u8BF7\u4E8C\u7EF4\u7801\u6570\u636E"
 }
 /**
  * B站接口类型
@@ -35,4 +36,10 @@ export declare const enum BilibiliDataType {
     登录基本信息 = "\u767B\u5F55\u57FA\u672C\u4FE1\u606F",
     申请二维码 = "\u7533\u8BF7\u4E8C\u7EF4\u7801",
     二维码状态 = "\u4E8C\u7EF4\u7801\u72B6\u6001"
+}
+/**
+ * 小红书接口类型
+ */
+export declare const enum XiaohongshuDataType {
+    单个笔记 = "\u5355\u4E2A\u7B14\u8BB0"
 }

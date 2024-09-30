@@ -28,6 +28,7 @@ export type DouyinOptionsType = {
     music_id?: string;
     /**
      * 评论数量，单位条
+     * @default 50
      */
     number?: number | string;
     /**
@@ -42,6 +43,10 @@ export type DouyinOptionsType = {
      * fp指纹
      */
     verify_fp?: string;
+    /**
+     * 评论区游标值
+     */
+    cursor?: number;
 };
 /**
  * 接口公共查询参数
@@ -56,9 +61,9 @@ export type BilibiliOptionsType = {
      */
     url?: string;
     /**
-     * AV号
+     * 稿件AV号
      */
-    avid?: string;
+    avid?: number;
     /**
      * BV号
      */
@@ -66,7 +71,7 @@ export type BilibiliOptionsType = {
     /**
      * 用户ID
      */
-    host_mid?: string | number;
+    host_mid?: string;
     /**
      * 动态ID
      */
@@ -74,7 +79,7 @@ export type BilibiliOptionsType = {
     /**
      * 番剧视频CID
      */
-    cid?: string;
+    cid?: number;
     /**
      * 番剧视频EPID
      */
@@ -85,8 +90,9 @@ export type BilibiliOptionsType = {
     room_id?: string;
     /**
      * 评论数量，单位条
+     * @default 20
      */
-    number?: number | string;
+    number?: number;
     /**
      * 用户 Cookie
      */
@@ -98,9 +104,28 @@ export type BilibiliOptionsType = {
     /**
      * 评论区类型代码
      */
-    commentstype?: number | string;
+    type?: number;
     /**
-     * 评论区查询专属参数
+     * 稿件ID，也就是AV号去除前缀后的内容
      */
-    oid?: number | string;
+    oid?: number;
+    /**
+     * 评论区页码
+     * @default 1
+     */
+    pn?: number;
+};
+export type XiaohongshuOptionsType = {
+    /**
+     * 笔记ID
+     */
+    source_note_id?: string;
+    /**
+     * web端的路径参数xsec_token
+     */
+    xsec_token?: string;
+    /**
+     * 笔记分享URL
+     */
+    url?: string;
 };

@@ -17,7 +17,7 @@
 .comment-container {
   max-width: 100%;
   /* 宽度设置为百分之百，以适应不同屏幕大小 */
-  margin: 0 auto;
+  margin: 0 0 70px 0;
   /* overflow: auto; */
 }
 
@@ -151,6 +151,8 @@ img:not([src]) {
   align-items: center;
   letter-spacing: 0.5px;
   position: relative;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .comment-text img {
@@ -341,29 +343,34 @@ img:not([src]) {
 }
 
 /* 深色模式样式 */
-.dark-mode {
+body.dark-mode {
   background-color: #121212;
   color: #fff;
   /* 其他深色模式下的样式 */
 }
 
 /* 浅色模式样式 */
-.light-mode {
+body.light-mode {
   background-color: #f4f4f4;
   color: #333;
   /* 其他浅色模式下的样式 */
 }
 
+body.dark-mode .container {
+  background-color: #121212;
+  color: #fff;
+}
+
 /* 针对特定元素的样式 */
-.dark-mode .comment-text {
+body.dark-mode .comment-text {
   color: #f4f4f4;
 }
 
-.dark-mode .video_info_container {
+body.dark-mode .video_info_container {
   color: #c3c3c3;
 }
 
-.dark-mode .comment-text img {
+body.dark-mode .comment-text img {
   display: inline-block;
   vertical-align: middle;
   -webkit-transform: translateY(-10%) scale(0.9);
@@ -373,11 +380,11 @@ img:not([src]) {
   transform: translateY(-10%) scale(0.9);
 }
 
-.light-mode .comment-text {
+body.light-mode .comment-text {
   color: #333;
 }
 
-.light-mode .comment-imgbox {
+body.light-mode .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;
@@ -415,7 +422,7 @@ img:not([src]) {
   flex: 1;
 }
 
-.dark-mode .comment-imgbox {
+body.dark-mode .comment-imgbox {
   display: -webkit-box;
   display: -webkit-flex;
   display: -moz-box;

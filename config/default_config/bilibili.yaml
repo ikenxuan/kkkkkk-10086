@@ -7,7 +7,7 @@ bilibilitip: true
 # B站评论图，发送哔哩哔哩作品评论图
 bilibilicommentsimg: true
 
-# B站评论数量，设置接口返回的评论数量，范围1~20条
+# B站评论数量，设置接口返回的评论数量，范围1~无限条
 bilibilinumcomments: 5
 
 # B站推送，开启后需重启；使用[#设置B站推送+用户UID]配置推送列表
