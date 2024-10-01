@@ -1,41 +1,14 @@
 {
   "name": "@ikenxuan/amagi",
-  "version": "3.1.0",
-  "homepage": "https://github.com/ikenxuan/amagi",
-  "bugs": {
-    "url": "https://github.com/ikenxuan/amagi/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ikenxuan/amagi.git"
-  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "files": [
-    "lib/**/*.js",
-    "lib/**/*.d.ts",
-    "LICENSE",
-    "package.json",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json && npm run fix",
-    "dev": "tsx watch src/dev.ts",
-    "dev:js": "node src/dev.js",
-    "fix": "eslint lib/**/*.js --fix && eslint lib/**/*.d.ts --fix",
-    "sort": "npx sort-package-json",
-    "test": "node lib/test.js"
-  },
   "dependencies": {
     "axios": "^1.7.7",
-    "fastify": "^5.0.0",
+    "chalk": "^5.3.0",
+    "fastify": "^4.28.1",
     "lodash": "^4.17.21",
     "log4js": "6.9.0",
     "pino-pretty": "^11.2.2"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

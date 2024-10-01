@@ -1,13 +1,6 @@
 import { Version, Init, Config } from './module/components/index.js'
 import logger from './module/lib/public/logger.js'
-import amagi, { StartClient } from '@ikenxuan/amagi'
-
-const { Instance } = await new amagi({
-  douyin: Config.cookies.douyin,
-  bilibili: Config.cookies.bilibili
-}).initServer(Config.app.APIServerLog)
-
-if (Config.app.APIServer) await StartClient(Instance, Config.app.APIServerPort)
+import amagi from '@ikenxuan/amagi'
 
 let apps
 if (Version.BotName !== 'Karin') {
@@ -25,3 +18,10 @@ if (Version.BotName === 'Karin') {
   logger.info('Created By ikenxuan')
   logger.info('---------------------------------')
 }
+
+const client = new amagi({
+  douyin: Config.cookies.douyin,
+  bilibili: Config.cookies.bilibili
+})
+
+if (Config.app.APIServer) client.startClient(Config.app.APIServerPort)

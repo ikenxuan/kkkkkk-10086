@@ -52,6 +52,13 @@ export default class BiLiBiLi extends Base {
           )
         )
 
+        const simplify = OBJECT.DATA.data.dash.video.filter((item, index, self) => {
+          return self.findIndex((t) => {
+            return t.id === item.id
+          }) === index
+        })
+        if (this.islogin) OBJECT.DATA.data.dash.video = simplify
+        OBJECT = await this.processVideos(OBJECT)
         let videoSize
         if (this.islogin) {
           videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url)
@@ -79,8 +86,8 @@ export default class BiLiBiLi extends Base {
             ])
           ))
         if (Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) {
-          await this.e.reply('视频太大了，还是去B站看吧~', true)
-        } else await this.getvideo(Config.bilibili.videopriority === true ? { DATA: nocd_data } : OBJECT )
+          await this.e.reply(`设定的最大上传大小为 ${Config.app.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', true)
+        } else await this.getvideo(Config.bilibili.videopriority === true ? { DATA: nocd_data } : OBJECT)
         break
       }
       case 'bangumivideo': {
@@ -168,7 +175,7 @@ export default class BiLiBiLi extends Base {
               shareurl: '动态分享链接'
             })
             if (imgArray.length === 1) this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply([ 'QQBot', 'KOOKBot' ].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
+            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
             if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
@@ -199,7 +206,7 @@ export default class BiLiBiLi extends Base {
               Botadapter: this.botadapter,
               dynamicTYPE: '图文动态'
             })
-            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [ { text: '加纳~', send: true } ]))
+            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
             break
           }
           /** 纯文 */
@@ -249,7 +256,7 @@ export default class BiLiBiLi extends Base {
         const img = await Render.render(
           'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
           {
-            image_url: [ { image_src: OBJECT.live_info.data.user_cover } ],
+            image_url: [{ image_src: OBJECT.live_info.data.user_cover }],
             text: br(OBJECT.live_info.data.title),
             liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
             username: OBJECT.USERDATA.data.card.name,
@@ -311,7 +318,7 @@ export default class BiLiBiLi extends Base {
                 if (this.botname !== 'TRSS-Yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
               } else {
-              /** 因为本地合成，没有视频直链 */
+                /** 因为本地合成，没有视频直链 */
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null)
               }
             },
@@ -322,8 +329,8 @@ export default class BiLiBiLi extends Base {
         }
         break
       }
-      case '!isLogin':{
-      /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
+      case '!isLogin': {
+        /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
         await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
         break
       }
@@ -345,7 +352,53 @@ export default class BiLiBiLi extends Base {
     const totalSizeInMB = parseFloat(videoSizeInMB) + parseFloat(audioSizeInMB)
     return totalSizeInMB.toFixed(2)
   }
+
+  async processVideos (data) {
+    let results = {}
+
+    for (let video of data.DATA.data.dash.video) {
+      let size = await this.getvideosize(video.base_url, data.DATA.data.dash.audio[0].base_url)
+      results[video.id] = size
+    }
+
+    // 将结果对象的值转换为数字，并找到最接近但不超过 Config.app.filelimit 的值
+    let sizes = Object.values(results).map(size => parseFloat(size.replace('MB', '')))
+    let closestId = null
+    let smallestDifference = Infinity
+
+    sizes.forEach((size, index) => {
+      if (size <= Config.app.filelimit) {
+        let difference = Math.abs(size - Config.app.filelimit)
+        if (difference < smallestDifference) {
+          smallestDifference = difference
+          closestId = Object.keys(results)[index]
+        }
+      }
+    })
+
+    if (closestId !== null) {
+      // 找到最接近但不超过文件大小限制的视频清晰度
+      const closestQuality = qnd[parseInt(closestId)]
+      // 更新 OBJECT.DATA.data.accept_description
+      data.DATA.data.accept_description = data.DATA.data.accept_description.filter(desc => desc === closestQuality)
+      if (data.DATA.data.accept_description.length === 0) {
+        data.DATA.data.accept_description = [closestQuality]
+      }
+      // 找到对应的视频对象
+      const video = data.DATA.data.dash.video.find(video => video.id === parseInt(closestId))
+      // 更新 OBJECT.DATA.data.dash.video 数组
+      data.DATA.data.dash.video = [video]
+    } else {
+      // 如果没有找到符合条件的视频，使用最低画质的视频对象
+      data.DATA.data.dash.video = [[...data.DATA.data.dash.video].pop()]
+      // 更新 OBJECT.DATA.data.accept_description 为最低画质的描述
+      data.DATA.data.accept_description = [...data.DATA.data.accept_description].pop()
+    }
+    return data
+  }
 }
+
+
 function checkvip (member) {
   return member.vip.vipStatus === 1
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
@@ -383,4 +436,19 @@ function replacetext (text, obj) {
     }
   }
   return text
+}
+
+const qnd = {
+  6: '极速 240P',
+  16: '流畅 360P',
+  32: '清晰480P',
+  64: '高清720P',
+  74: '高帧率 720P60',
+  80: '高清 1080P',
+  112: '高码率 1080P+',
+  116: '高帧率 1080P60',
+  120: '超清 4K',
+  125: '真彩色 HDR ',
+  126: '杜比视界',
+  127: '超高清 8K'
 }
