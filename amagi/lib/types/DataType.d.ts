@@ -35,7 +35,9 @@ export declare const enum BilibiliDataType {
     直播间初始化信息 = "\u76F4\u64AD\u95F4\u521D\u59CB\u5316\u4FE1\u606F",
     登录基本信息 = "\u767B\u5F55\u57FA\u672C\u4FE1\u606F",
     申请二维码 = "\u7533\u8BF7\u4E8C\u7EF4\u7801",
-    二维码状态 = "\u4E8C\u7EF4\u7801\u72B6\u6001"
+    二维码状态 = "\u4E8C\u7EF4\u7801\u72B6\u6001",
+    BV转AV = "BV\u8F6CAV",
+    AV转BV = "AV\u8F6CBV"
 }
 /**
  * 小红书接口类型
