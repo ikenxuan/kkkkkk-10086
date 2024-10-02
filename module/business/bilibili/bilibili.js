@@ -61,7 +61,7 @@ export default class BiLiBiLi extends Base {
         OBJECT = await this.processVideos(OBJECT)
         let videoSize
         if (this.islogin) {
-          videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url)
+          videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url, OBJECT.INFODATA.data.bvid)
         } else {
           videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
@@ -339,9 +339,9 @@ export default class BiLiBiLi extends Base {
     }
   }
 
-  async getvideosize (videourl, audiourl) {
-    const videoheaders = await new Networks({ url: videourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
-    const audioheaders = await new Networks({ url: audiourl, headers: { ...this.headers, Referer: 'https://api.bilibili.com/' } }).getHeaders()
+  async getvideosize (videourl, audiourl, bvid) {
+    const videoheaders = await new Networks({ url: videourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
+    const audioheaders = await new Networks({ url: audiourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
 
     const videoSize = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
     const audioSize = audioheaders['content-length'] ? parseInt(audioheaders['content-length'], 10) : 0
@@ -357,7 +357,7 @@ export default class BiLiBiLi extends Base {
     let results = {}
 
     for (let video of data.DATA.data.dash.video) {
-      let size = await this.getvideosize(video.base_url, data.DATA.data.dash.audio[0].base_url)
+      let size = await this.getvideosize(video.base_url, data.DATA.data.dash.audio[0].base_url, data.INFODATA.data.bvid)
       results[video.id] = size
     }
 
