@@ -1,13 +1,15 @@
 import globals from 'globals'
+import neostandard from 'neostandard'
 
 export default [{
   languageOptions: {
     globals: {
       ...globals.node
-    }
+    },
   },
-
+  files: ['app/**/*.js', 'module/**/*.js'],
   rules: {
+    ...neostandard.rules,
     // 禁用驼峰命名命名规则，允许使用下划线命名法。
     'camelcase': ['off'],
     // 禁用等号严格比较规则，允许使用==和!=进行比较。
@@ -27,6 +29,8 @@ export default [{
     // 要求代码中不能有尾随空格，设置为错误等级1。
     "no-trailing-spaces": 1,
     // 要求对象字面量大括号内两侧必须有空格，设置为错误等级1。
-    "object-curly-spacing": [1, 'always']
+    "object-curly-spacing": [1, 'always'],
+    // 要求数组字面量中括号内两侧必须有空格，设置为错误等级1。
+    "array-bracket-spacing": [1, 'always']
   }
 }]

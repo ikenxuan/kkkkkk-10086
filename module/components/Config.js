@@ -18,7 +18,7 @@ class Config {
   /** 初始化配置 */
   initCfg () {
     let path
-    if(Version.BotName === 'Karin') path = `${Version.pluginPath}/config/`
+    if (Version.BotName === 'Karin') path = `${Version.pluginPath}/config/`
     path = `${Version.pluginPath}/config/config/`
     if (!fs.existsSync(path)) fs.mkdirSync(path)
     const pathDef = `${Version.pluginPath}/config/default_config/`

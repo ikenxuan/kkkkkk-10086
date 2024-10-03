@@ -9,6 +9,9 @@ let img
 export default class BiLiBiLi extends Base {
   constructor (e = {}, data) {
     super()
+    /**
+     * @type {import('node-karin').KarinMessage}
+     */
     this.e = e
     this.STATUS = data?.USER?.STATUS
     this.ISVIP = data?.USER?.isvip
@@ -20,7 +23,7 @@ export default class BiLiBiLi extends Base {
   }
 
   async RESOURCES (OBJECT, Episode = false) {
-    !Episode && Config.bilibili.bilibilitip && this.e.reply('检测到B站链接，开始解析')
+    !Episode && Config.bilibili.bilibilitip && await this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo': {
         const { owner, pic, title, stat } = OBJECT.INFODATA.data
@@ -127,7 +130,7 @@ export default class BiLiBiLi extends Base {
               return str.replace(/,\s*$/, '')
             })
             .join('')
-          this.e.reply(
+          await this.e.reply(
             this.mkMsg(this.botadapter === 'QQBot' ? `# ${OBJECT.INFODATA.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数` : img, [
               { text: '第1集', callback: '第1集' },
               { text: '第2集', callback: '第2集' },
@@ -174,8 +177,8 @@ export default class BiLiBiLi extends Base {
               ImageLength: OBJECT.dynamicINFO.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
               shareurl: '动态分享链接'
             })
-            if (imgArray.length === 1) this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
+            if (imgArray.length === 1) await this.e.reply(imgArray[0])
+            if (imgArray.length > 1) await this.e.reply([ 'QQBot', 'KOOKBot' ].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
             if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
@@ -189,7 +192,7 @@ export default class BiLiBiLi extends Base {
               }
               return imgArray
             }
-            img = await Render.render('html/bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
+            await this.e.reply(await Render.render('html/bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
               image_url: cover(),
               text: replacetext(br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text), OBJECT.dynamicINFO),
               dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
@@ -205,14 +208,13 @@ export default class BiLiBiLi extends Base {
               following_count: this.count(OBJECT.USERDATA.data.card.attention),
               Botadapter: this.botadapter,
               dynamicTYPE: '图文动态'
-            })
-            if (Config.bilibili.bilibilicommentsimg) await this.e.reply(this.mkMsg(img, [{ text: '加纳~', send: true }]))
+            }))
             break
           }
           /** 纯文 */
           case 'DYNAMIC_TYPE_WORD': {
             const text = replacetext(br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text), OBJECT.dynamicINFO)
-            this.e.reply(
+            await this.e.reply(
               await Render.render('html/bilibili/dynamic/DYNAMIC_TYPE_WORD', {
                 text,
                 dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
@@ -230,7 +232,7 @@ export default class BiLiBiLi extends Base {
                 dynamicTYPE: '纯文动态'
               })
             )
-            this.e.reply(
+            await this.e.reply(
               await Render.render('html/bilibili/bilicomment', {
                 Type: '动态',
                 CommentsData: await bilicomments(OBJECT),
@@ -250,13 +252,13 @@ export default class BiLiBiLi extends Base {
       }
       case '直播live': {
         if (OBJECT.room_init_info.data.live_status === 0) {
-          this.e.reply(`${OBJECT.USERDATA.data.card.name} 未开播，正在休息中~`)
+          await this.e.reply(`${OBJECT.USERDATA.data.card.name} 未开播，正在休息中~`)
           return true
         }
         const img = await Render.render(
           'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
           {
-            image_url: [{ image_src: OBJECT.live_info.data.user_cover }],
+            image_url: [ { image_src: OBJECT.live_info.data.user_cover } ],
             text: br(OBJECT.live_info.data.title),
             liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
             username: OBJECT.USERDATA.data.card.name,
@@ -268,7 +270,7 @@ export default class BiLiBiLi extends Base {
             dynamicTYPE: '直播'
           }
         )
-        this.e.reply(img)
+        await this.e.reply(img)
         break
       }
       default:
@@ -315,7 +317,7 @@ export default class BiLiBiLi extends Base {
               const stats = fs.statSync(filePath)
               const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
               if (fileSizeInMB > 75) {
-                if (this.botname !== 'TRSS-Yunzai') this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
+                if (this.botname !== 'TRSS-Yunzai') await this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
                 await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
               } else {
                 /** 因为本地合成，没有视频直链 */
@@ -382,17 +384,17 @@ export default class BiLiBiLi extends Base {
       // 更新 OBJECT.DATA.data.accept_description
       data.DATA.data.accept_description = data.DATA.data.accept_description.filter(desc => desc === closestQuality)
       if (data.DATA.data.accept_description.length === 0) {
-        data.DATA.data.accept_description = [closestQuality]
+        data.DATA.data.accept_description = [ closestQuality ]
       }
       // 找到对应的视频对象
       const video = data.DATA.data.dash.video.find(video => video.id === parseInt(closestId))
       // 更新 OBJECT.DATA.data.dash.video 数组
-      data.DATA.data.dash.video = [video]
+      data.DATA.data.dash.video = [ video ]
     } else {
       // 如果没有找到符合条件的视频，使用最低画质的视频对象
-      data.DATA.data.dash.video = [[...data.DATA.data.dash.video].pop()]
+      data.DATA.data.dash.video = [ [ ...data.DATA.data.dash.video ].pop() ]
       // 更新 OBJECT.DATA.data.accept_description 为最低画质的描述
-      data.DATA.data.accept_description = [...data.DATA.data.accept_description].pop()
+      data.DATA.data.accept_description = [ ...data.DATA.data.accept_description ].pop()
     }
     return data
   }

@@ -80,10 +80,10 @@ export default class Base {
         case 'ICQQ':
         case 'LagrangeCore':
         case 'QQBot':
-        case 'OneBotv11':{
+        case 'OneBotv11': {
           return forwardmsg
         }
-        case 'KOOKBot':{
+        case 'KOOKBot': {
           return null
         }
         default:
@@ -120,10 +120,10 @@ export default class Base {
   mkbutton (btn) {
     switch (this.botname) {
       case 'Miao-Yunzai':
-      case 'yunzai':{
-      /** 判断是否ICQQ */
+      case 'yunzai': {
+        /** 判断是否ICQQ */
         switch (this.botadapter) {
-          case 'QQBot':{
+          case 'QQBot': {
             if (this.e.bot.config?.markdown?.type !== 0 || !undefined) {
               return Bot.Button(btn)
             } else {
@@ -134,7 +134,7 @@ export default class Base {
             return null
         }
       }
-      case 'TRSS-Yunzai':{
+      case 'TRSS-Yunzai': {
         return segment.button(btn)
       }
       default:
@@ -154,9 +154,9 @@ export default class Base {
     try {
       switch (this.botname) {
         case 'Miao-Yunzai':
-        case 'yunzai':{
+        case 'yunzai': {
           switch (this.botadapter) {
-            case 'ICQQ':{
+            case 'ICQQ': {
               if (this.e.isGroup) {
                 groupfile
                   ? await this.e.group.fs.upload(file.filepath)
@@ -172,20 +172,20 @@ export default class Base {
               }
               break
             }
-            case 'LagrangeCore':{
+            case 'LagrangeCore': {
               /** 拉格朗视频默认传群文件 */
               groupfile
                 ? await this.e.group.sendFile(file.filepath)
                 : await this.e.reply(segment.video(file.filepath || video_url))
               break
             }
-            case 'OneBotv11':{
+            case 'OneBotv11': {
               groupfile
                 ? await this.e.group.fs.upload(file.filepath)
                 : await this.e.reply(segment.video(file.filepath || video_url))
               break
             }
-            case 'QQBot':{
+            case 'QQBot': {
               if (file.totalBytes < 10) {
                 await this.e.reply(segment.video(video_url || file.filepath))
                 break
@@ -209,25 +209,25 @@ export default class Base {
         }
         case 'TRSS-Yunzai':
           switch (this.botadapter) {
-            case 'LagrangeCore':{
+            case 'LagrangeCore': {
               logger.warn(
                 'TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange'
               )
               break
             }
-            case 'Lagrange.OneBot':{
+            case 'Lagrange.OneBot': {
               groupfile
                 ? await this.e.group.sendFile(file.filepath)
                 : await this.e.reply(segment.video(file.filepath || video_url))
               break
             }
-            case 'QQBot':{
+            case 'QQBot': {
               file.totalBytes >= 10
                 ? await this.e.reply(segment.file(file.filepath))
                 : await this.e.reply(segment.video(video_url || file.filepath))
               break
             }
-            case 'ICQQ':{
+            case 'ICQQ': {
               if (this.e.isGroup) {
                 groupfile
                   ? await this.e.reply(segment.file(file.filepath))
@@ -244,7 +244,7 @@ export default class Base {
               break
             }
             case 'OneBotv11':
-            case 'KOOKBot':{
+            case 'KOOKBot': {
               groupfile
                 ? await this.e.reply(segment.file(file.filepath))
                 : await this.e.reply(segment.video(file.filepath || video_url))
@@ -254,7 +254,7 @@ export default class Base {
               break
           }
           break
-        case 'Karin':{
+        case 'Karin': {
           groupfile
             ? await this.e.reply('暂时不支持群文件上传')
             : await this.e.reply(segment.video('base64://' + await common.base64(file.filepath) || video_url))
@@ -286,7 +286,7 @@ export default class Base {
     const continueAdapter = [ 'LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11' ]
     const useGroupFile = (res.totalBytes > 75 && !continueAdapter.includes(this.botadapter)) || (res.totalBytes > 99 && continueAdapter.includes(this.botadapter))
     if (useGroupFile) {
-      this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
+      await this.e.reply(`视频大小: ${res.totalBytes}MB 正通过群文件上传中...`)
     }
     /** 上传视频 */
     await this.upload_file(res, video_url, useGroupFile)

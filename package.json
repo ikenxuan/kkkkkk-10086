@@ -5,15 +5,14 @@
   "type": "module",
   "repository": "https://github.com/ikenxuan/kkkkkk-10086.git",
   "author": "ikenxuan",
-  "license": "GPL-3.0",
+  "license": "GPL-3.0-only",
   "scripts": {
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
     "@ikenxuan/amagi": "link:./amagi",
-    "@karinjs/md-html": "^1.1.3",
+    "@karinjs/md-html": "^1.1.6",
     "child_process": "^1.0.2",
-    "md5": "^2.3.0",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.4",
     "sequelize": "6.37.3",
@@ -22,7 +21,8 @@
     "sqlite3": "5.1.6"
   },
   "devDependencies": {
-    "eslint": "^9.9.0",
-    "globals": "^15.9.0"
+    "eslint": "^9.11.1",
+    "globals": "^15.9.0",
+    "neostandard": "^0.11.6"
   }
 }
