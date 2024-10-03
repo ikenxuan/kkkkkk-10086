@@ -1,5 +1,5 @@
 import log4js from 'log4js'
-import chalk from 'chalk'
+declare const chalk: import("chalk").ChalkInstance
 declare module 'log4js' {
     interface Logger {
         chalk?: typeof chalk;
