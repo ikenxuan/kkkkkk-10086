@@ -30,7 +30,5 @@ export default [{
     "no-trailing-spaces": 1,
     // 要求对象字面量大括号内两侧必须有空格，设置为错误等级1。
     "object-curly-spacing": [1, 'always'],
-    // 要求数组字面量中括号内两侧必须有空格，设置为错误等级1。
-    "array-bracket-spacing": [1, 'always']
   }
 }]
