@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.6.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.5.0...v1.6.0) (2024-10-04)
+
+
+### Features
+
+* 抖音B站可获取 x 条评论（无限制） ([95bb86d](https://github.com/ikenxuan/kkkkkk-10086/commit/95bb86de47b172ad6d360c0fdd4660a33f578e65))
+
+
+### Bug Fixes
+
+* 15秒超时 ([1566cb4](https://github.com/ikenxuan/kkkkkk-10086/commit/1566cb45da51c510454d9a88fa1f4b9ddf74d300))
+* 修复B站动态正则表达式，转义特殊字符 ([45c50a6](https://github.com/ikenxuan/kkkkkk-10086/commit/45c50a6d426e2bd5d6fa83761a24e177ab161bf2))
+* 修复B站评论内容重复 ([aa2273e](https://github.com/ikenxuan/kkkkkk-10086/commit/aa2273eb792a3814d4b742ed157006a30a9f61b7))
+* 修复B站评论表情处理, 更新表情处理函数 ([7d3127b](https://github.com/ikenxuan/kkkkkk-10086/commit/7d3127b89ed98f9e444e312aea2a07a6b49d5438))
+* 修复ddos ([c97f42f](https://github.com/ikenxuan/kkkkkk-10086/commit/c97f42f5f280f71d395220c511771b7126f8cc97))
+* 修复上游获取数据 ([6bf207f](https://github.com/ikenxuan/kkkkkk-10086/commit/6bf207f1871dcabe1362ab02dc06e9025b6f6a60))
+* 修复抖音返回评论为null导致的错误 ([d0f46f2](https://github.com/ikenxuan/kkkkkk-10086/commit/d0f46f2419436e2221a69c42058e61637bdbe4d5))
+* 修复视频文件大小限制和B站内容优先的逻辑冲突 ([71eef28](https://github.com/ikenxuan/kkkkkk-10086/commit/71eef284e7705f8650334f9c8fdd5a44d7568339))
+* 修复空格转义问题, 修复评论区夜间模式不生效 ([2a9b817](https://github.com/ikenxuan/kkkkkk-10086/commit/2a9b81734fc19873f9f093241a6eb76ad45fef4f))
+* 忘了快手 ([aeab2ec](https://github.com/ikenxuan/kkkkkk-10086/commit/aeab2ec46fab27cda0f86f5f18dde0f618392da2))
+* 接受200-299，400-499，以及500及以上的状态码 ([43019ef](https://github.com/ikenxuan/kkkkkk-10086/commit/43019ef3cd1f3cfb3eb1557128073b9018cee985))
+* 更新上游数据获取 ([b599f32](https://github.com/ikenxuan/kkkkkk-10086/commit/b599f326f669a1c5ca1020512b388ca98fe50794))
+* 更新解析库版本 ([7e9e614](https://github.com/ikenxuan/kkkkkk-10086/commit/7e9e61401b4787213b74535af8dba4454d4439f8))
+* 移除小红书相关内容 ([25b492e](https://github.com/ikenxuan/kkkkkk-10086/commit/25b492e4010d20002485ec481a668b986fc4f124))
+* 补 ([a8701fe](https://github.com/ikenxuan/kkkkkk-10086/commit/a8701fe69305bdf3a66420d105da347cbd715123))
+
+
+### Performance Improvements
+
+* 优化深色模式 ([67d6846](https://github.com/ikenxuan/kkkkkk-10086/commit/67d68464503e29ae69f03c022ffcc889652ad757))
+* 优化深色模式的抖音logo ([f1600c4](https://github.com/ikenxuan/kkkkkk-10086/commit/f1600c422831d6c356cbcec8843e9b2393646e3c))
+* 合并空格并自动换行 ([41d8fd0](https://github.com/ikenxuan/kkkkkk-10086/commit/41d8fd04aaf1be7c131f10df1bf835f8076f463f))
+* 更新解析库版本 ([bc245ae](https://github.com/ikenxuan/kkkkkk-10086/commit/bc245aeb62afb24e119f9fbccff27213e8884d9f))
+* 移除评论转发消息 ([9997d1d](https://github.com/ikenxuan/kkkkkk-10086/commit/9997d1d42164f4d3325f8c682023df09ae903a0e))
+* 评论列表增加行间距 ([29f0a1e](https://github.com/ikenxuan/kkkkkk-10086/commit/29f0a1e41b3a99b49b27d4ef11b3430ceca33705))
+* 评论图增加深色模式 ([#66](https://github.com/ikenxuan/kkkkkk-10086/issues/66)) ([b11a9b4](https://github.com/ikenxuan/kkkkkk-10086/commit/b11a9b4caf12a14250479f48730bf7160f411fd3))
+
 ## [1.5.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.4.1...v1.5.0) (2024-09-12)
 
 
