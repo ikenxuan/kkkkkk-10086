@@ -39,9 +39,3 @@ export declare const enum BilibiliDataType {
     BV转AV = "BV\u8F6CAV",
     AV转BV = "AV\u8F6CBV"
 }
-/**
- * 小红书接口类型
- */
-export declare const enum XiaohongshuDataType {
-    单个笔记 = "\u5355\u4E2A\u7B14\u8BB0"
-}
