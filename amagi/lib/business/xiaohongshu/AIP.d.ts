@@ -1,6 +1,6 @@
-import { XiaohongshuDataOptionsMapKeys } from '../../types/index.js'
+import { XiaohongshuDataOptionsMapKeys } from '../../types/index.js';
 declare class XiaohongshuAPI {
-  单个笔记(data: XiaohongshuDataOptionsMapKeys['NoteInfoParams']): XiaoHongShuAPIType;
+    单个笔记(data: XiaohongshuDataOptionsMapKeys['NoteInfoParams']): XiaoHongShuAPIType;
 }
 interface XiaoHongShuAPIType {
     /** 请求地址 */
@@ -10,5 +10,5 @@ interface XiaoHongShuAPIType {
     /** 请求体 */
     body: any;
 }
-declare const _default: XiaohongshuAPI
-export default _default
+declare const _default: XiaohongshuAPI;
+export default _default;

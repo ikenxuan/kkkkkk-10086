@@ -1,4 +1,4 @@
-import { BilibiliDataType, BilibiliOptionsType, GetDataResponseType } from '../../types/index.js'
+import { BilibiliDataType, BilibiliOptionsType, GetDataResponseType } from '../../types/index.js';
 interface configParams {
     /** 请求数据的类型 */
     type: keyof typeof BilibiliDataType;
@@ -11,5 +11,5 @@ interface configParams {
  * @param config
  * @returns
  */
-export default function BilibiliResult(config?: configParams, options?: BilibiliOptionsType): Promise<GetDataResponseType | any>
-export {}
+export default function BilibiliResult(config?: configParams, options?: BilibiliOptionsType): Promise<GetDataResponseType | any>;
+export {};

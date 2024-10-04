@@ -1,1 +1,1 @@
-export default function getCorrespondPath(timestamp: number): Promise<string>
+export default function getCorrespondPath(timestamp: number): Promise<string>;
