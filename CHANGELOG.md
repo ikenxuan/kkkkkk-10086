@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.6.0...v1.6.1) (2024-10-09)
+
+
+### Bug Fixes
+
+* 添加动态卡片信息的空值检查 ([7e1bbdf](https://github.com/ikenxuan/kkkkkk-10086/commit/7e1bbdff6be9e1060e5baa4428cf5a0c39c16906))
+
 ## [1.6.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.5.0...v1.6.0) (2024-10-04)
 
 
