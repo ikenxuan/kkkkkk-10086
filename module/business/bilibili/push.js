@@ -56,7 +56,7 @@ export default class Bilibilipush extends Base {
       const userINFO = await new Bilidata('用户名片信息').GetData({ host_mid: data[dynamicId].host_mid })
       let emojiDATA = await new Bilidata('EMOJI').GetData()
       emojiDATA = extractEmojisData(emojiDATA.data.packages)
-      const dycrad = JSON.parse(dynamicCARDINFO.data.card.card)
+      const dycrad = dynamicCARDINFO.data.card && dynamicCARDINFO.data.card.card && JSON.parse(dynamicCARDINFO.data.card.card)
       let img
       let send = true
       logger.debug(`UP: ${data[dynamicId].remark}\n动态id：${dynamicId}\nhttps://t.bilibili.com/${dynamicId}`)
