@@ -17,9 +17,6 @@ APIServer: true
 
 # API服务端口
 APIServerPort: 4567
-
-# API服务日志
-APIServerLog: false
 ```
 <br>
 
