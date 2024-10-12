@@ -15,7 +15,7 @@
 
 # TODO
 <Task status="已发布" content="自定义 ck 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**2a8afd**](https://github.com/ikenxuan/kkkkkk-10086/commit/2a8afd9ca06ac29c3d1e4726aa7a59a1e70e37cf) 完成"></Task>
-<Task status="开发中" content="图集"></Task>
+<Task status="待确定" content="~~图集~~（鸽了）"></Task>
 <Task status="已发布" content="评论 由 [**@ikenxuan**](https://github.com/ikenxuan) 在 [**b37949**](https://github.com/ikenxuan/kkkkkk-10086/commit/b379497062b4a3be29017635824c8381dbb9f9be) 完成"></Task>
 <Task status="待确定" content="~~用户主视频列表~~"></Task>
 <Task status="待确定" content="~~视频更新推送~~"></Task>
