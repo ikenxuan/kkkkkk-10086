@@ -65,6 +65,5 @@ export default {
 .loading, .error {
   text-align: left;
   font-size: 30px;
-  color: #000000;
 }
 </style>

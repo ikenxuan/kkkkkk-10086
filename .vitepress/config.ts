@@ -119,6 +119,13 @@ export default
           '@nolebase/*',
           'axios'
         ]
+      },
+      css: {
+        preprocessorOptions: {
+          scss: {
+            api: 'modern'
+          }
+        }
       }
     },
     vue: {
