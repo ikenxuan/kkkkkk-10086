@@ -1,6 +1,8 @@
 import { cwd } from 'node:process'
 import { defineConfig } from 'vitepress'
 import { DefaultTheme } from 'vitepress/theme'
+import Inspect from 'vite-plugin-inspect'
+import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'
 import nav from './script/nav'
 import sidebar from './script/sidebar'
 // 时间线
@@ -82,6 +84,8 @@ export default
     },
     vite: {
       plugins: [
+        Inspect(),
+        ViteImageOptimizer(),
         // 缩略图模糊哈希生成
         ThumbnailHashImages(),
         // git提交历史记录
