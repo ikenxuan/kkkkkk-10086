@@ -1,7 +1,7 @@
 
 # 安装插件
 ::: tip 注意
-支持 [**Miao-Yunzai V3**](https://github.com/yoimiya-kokomi/Miao-Yunzai) 、[**TRSS-Yunzai V3**](https://github.com/TimeRainStarSky/Yunzai) 、[**Yunzai Next**](https://github.com/yunzai-org/yunzaijs) 、[**Karin**](https://github.com/Karinjs/Karin)<br>
+支持 [**Miao-Yunzai V3**](https://github.com/yoimiya-kokomi/Miao-Yunzai) 、[**TRSS-Yunzai V3**](https://github.com/TimeRainStarSky/Yunzai) 、[**Yunzai Next**](https://github.com/yunzai-org/yunzaijs)(只要它还适配V3应该就能用) 、[**Karin**](https://github.com/Karinjs/Karin)<br>
 :::
 ## 获取源码
 

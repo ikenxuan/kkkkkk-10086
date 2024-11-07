@@ -10,7 +10,7 @@
 
 | 功能           | 支持情况 | 调用相关接口是否需要 ck | 其他                                                                        |
 | -------------- | -------- | ----------------------- | --------------------------------------------------------------------------- |
-| 扫码登录取 ck  | <i class="fa-solid fa-xmark fa-beat-fade fa-lg" style="color: #f20707;"></i>       |                         | 风控太严格，无法实现                                   |
+| 扫码登录取 ck  | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       |                         | 仅支持 Windows 系统，命令：**_#抖音扫码登录_**                                   |
 | 视频           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 图集           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
 | 评论           | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #58fe79;"></i>       | <i class="fa-solid fa-check fa-shake fa-lg" style="color: #ff0000;"></i>                      |                                                                             |
