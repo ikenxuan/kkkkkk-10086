@@ -1,8 +1,8 @@
 ![kkkkkk-10086](https://socialify.git.ci/ikenxuan/kkkkkk-10086/image?font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
 
 > [!IMPORTANT]
-> ### 该插件仅为小范围使用，暂无上架插件库意图
-> 主开发跑路到 [Karin](https://github.com/KarinJS/Karin) 了，将使用更健壮的强类型语言 TypeScript 重写插件逻辑
+> ### 该插件仅为小范围使用，暂无上架插件库意图<br>
+> 主开发跑路到 [Karin](https://github.com/KarinJS/Karin) 了，将使用更健壮的强类型语言 TypeScript 重写插件逻<br>
 > 云崽版（该仓库）可能将由社区开发者维护。
 
 🦄 _**kkkkkk-10086是一个[Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) & [Karin](https://github.com/KarinJS/Karin) 的自用辅助插件，提供对Bot的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
