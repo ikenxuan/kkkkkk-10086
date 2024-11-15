@@ -69,15 +69,8 @@ export default class DouYinpush extends Base {
               // 如果新作品是视频
               if (iddata.is_mp4) {
                 // 下载视频
-                video = await this.DownLoadFile(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now())
-                if (Number(video.totalBytes) > 50) {
-                  logger.warn('视频大于50M，已取消发送')
-                } else {
-                  const videoBuffer = await fs.promises.readFile(video.filepath)
-                  const videoBase64 = `base64://${videoBuffer.toString('base64')}`
-                  // 发base64
-                  await sendMsg(uin, group_id, segment.video(videoBase64))
-                }
+                video = await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now(), false, { uin, group_id })
+                await sendMsg(uin, group_id, segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)

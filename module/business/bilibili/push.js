@@ -203,16 +203,8 @@ export default class Bilibilipush extends Base {
               // 判断是否发送视频动态的视频
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
-                video = await this.DownLoadFile(nocd_data.data.durl[0].url, 'tmp_' + Date.now())
-                if (Number(video.totalBytes) > 50) {
-                  logger.warn('视频大于50M，已取消发送')
-                } else {
-                  const videoBuffer = await fs.promises.readFile(video.filepath)
-                  const videoBase64 = `base64://${videoBuffer.toString('base64')}`
-                  // 发base64
-                  await sendMsg(uin, group_id, segment.video(videoBase64))
-                }
-
+                video = await this.DownLoadVideo(nocd_data.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
+                await sendMsg(uin, group_id, segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)

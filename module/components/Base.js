@@ -1,7 +1,7 @@
 import Config from './Config.js'
 import Networks from './Networks.js'
 import Version from './Version.js'
-import { segment, logger, Bot, common } from '../lib/public/index.js'
+import { segment, logger, Bot, common, sendMsg } from '../lib/public/index.js'
 import fs from 'fs'
 import path from 'path'
 
@@ -274,22 +274,28 @@ export default class Base {
    * 异步下载视频并根据大小决定上传方式。
    * @param {string} video_url - 视频的URL地址。
    * @param {string} title - 视频的标题。
+   * @param {boolean} isUpload - 下载完视频是否发送
+   * @param {object} contact - 主动消息联系人，如果没有，默认被动回复
    * @returns {Promise<void>} 不返回任何内容。
    */
-  async DownLoadVideo (video_url, title) {
+  async DownLoadVideo (video_url, title, isUpload = true, contact) {
     /** 获取文件大小 */
     const fileHeaders = await new Networks({ url: video_url, headers: this.headers }).getHeaders()
     const fileSizeContent = fileHeaders['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
     const fileSizeInMB = (fileSizeContent / (1024 * 1024)).toFixed(2)
     const fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
     if (Config.app.usefilelimit && fileSize > Config.app.filelimit) {
-      await this.e.reply(`视频：「${title ? title : 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.app.filelimit} MB），已取消上传`)
+      contact
+        ? await sendMsg(contact.uin, contact.group_id, `视频：「${title ? title : 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.app.filelimit} MB），已取消上传`)
+        : await this.e.reply(`视频：「${title ? title : 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.app.filelimit} MB），已取消上传`)
       return false
     }
     // 下载文件，视频URL，标题和自定义headers
     const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数
     res.totalBytes = (res.totalBytes / (1024 * 1024)).toFixed(2)
+    // 如果选择不上传直接返回视频下载路径和视频文件大小
+    if (!isUpload) return res
     // 根据视频大小和适配器类型决定上传方式
     // 视频75兆时不被拦截的适配器
     const continueAdapter = [ 'LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11' ]
