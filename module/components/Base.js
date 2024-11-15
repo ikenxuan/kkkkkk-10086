@@ -277,6 +277,15 @@ export default class Base {
    * @returns {Promise<void>} 不返回任何内容。
    */
   async DownLoadVideo (video_url, title) {
+    /** 获取文件大小 */
+    const fileHeaders = await new Networks({ url: video_url, headers: this.headers }).getHeaders()
+    const fileSizeContent = fileHeaders['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
+    const fileSizeInMB = (fileSizeContent / (1024 * 1024)).toFixed(2)
+    const fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
+    if (Config.app.usefilelimit && fileSize > Config.app.filelimit) {
+      await this.e.reply(`视频：「${title ? title : 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.app.filelimit} MB），已取消上传`)
+      return false
+    }
     // 下载文件，视频URL，标题和自定义headers
     const res = await this.DownLoadFile(video_url, title, this.headers)
     // 将下载的文件大小转换为MB并保留两位小数

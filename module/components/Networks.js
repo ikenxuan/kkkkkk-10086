@@ -139,6 +139,7 @@ export default class Networks {
    */
   async getHeaders () {
     try {
+      this.Headers.append('Range', 'bytes=0-0')
       this.fetch = await this.returnResult()  // 发起请求并获取响应
       return this.fetch.headers ? Object.fromEntries(this.fetch.headers.entries()) : null  // 将Headers转换为对象形式返回
     } catch (error) {

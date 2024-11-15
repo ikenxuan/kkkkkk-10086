@@ -345,8 +345,8 @@ export default class BiLiBiLi extends Base {
     const videoheaders = await new Networks({ url: videourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
     const audioheaders = await new Networks({ url: audiourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
 
-    const videoSize = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
-    const audioSize = audioheaders['content-length'] ? parseInt(audioheaders['content-length'], 10) : 0
+    const videoSize = videoheaders['content-range']?.match(/\/(\d+)/) ? parseInt(videoheaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
+    const audioSize = audioheaders['content-range']?.match(/\/(\d+)/) ? parseInt(audioheaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
 
     const videoSizeInMB = (videoSize / (1024 * 1024)).toFixed(2)
     const audioSizeInMB = (audioSize / (1024 * 1024)).toFixed(2)
