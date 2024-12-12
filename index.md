@@ -17,9 +17,9 @@ hero:
     - theme: alt
       text: 安装
       link: /docs/start/install
-    - theme: sponsor
-      text: 查看功能
-      link: /docs/intro/main/main
+    - theme: alt
+      text: 孪生版本
+      link: https://ikenxuan.github.io/karin-plugin-kkk/
 
 features:
   - title: 评论解析

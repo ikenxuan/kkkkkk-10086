@@ -6,9 +6,12 @@
 
 ## 这是什么
 
-_**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.bilibili.com) 和 [快手](https://www.kuaishou.com) 的 WEB API 编写的<mark>自用</mark>辅助插件，提供对 Bot 的视频解析功能，**_<br>
-<h1><mark>注意是自用！</mark></h1><br>基本随缘更新<br>
-通过接口获取数据并渲染图片返回
+_**这是一个基于 [抖音](https://www.douyin.com)、[bilibili](https://www.bilibili.com) 和 [快手](https://www.kuaishou.com) 的 WEB API 编写的<mark>自用</mark>辅助插件，提供对 Bot 的视频解析功能，通过接口获取数据并渲染图片返回**_<br>
+<h3><mark>主开发已跑路到Karin，使用 TypeScript 重构本插件！</mark></h3><br>
+<mark>等yunzai什么时候支持多适配器且拥有完整的类型声明和注释后再回坑吧</mark>
+
+可前往 [孪生版本](https://github.com/ikenxuan/karin-plugin-kkk) 查看<br>
+本项目可能会停滞...<br>
 <p>
 <img src="https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white" alt="Nodejs" style="display: inline-block;" />&nbsp;
 <img src="https://img.shields.io/badge/-JavaScript-eed718?style=flat&logo=javascript&logoColor=ffffff" alt="JavaScript" style="display: inline-block;" />&nbsp;
