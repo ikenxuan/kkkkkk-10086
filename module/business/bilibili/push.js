@@ -204,12 +204,12 @@ export default class Bilibilipush extends Base {
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
                 video = await this.DownLoadVideo(nocd_data.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
-                await sendMsg(uin, group_id, segment.video(video.filepath))
+                if (video) await sendMsg(uin, group_id, segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)
             } finally {
-              if (send && Config.bilibili.senddynamicvideo) await this.removeFile(video?.filepath)
+              if (send && Config.bilibili.senddynamicvideo && video) await this.removeFile(video?.filepath)
             }
           }
 

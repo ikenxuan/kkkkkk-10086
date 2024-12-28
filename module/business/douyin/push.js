@@ -70,12 +70,12 @@ export default class DouYinpush extends Base {
               if (iddata.is_mp4) {
                 // 下载视频
                 video = await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now(), false, { uin, group_id })
-                await sendMsg(uin, group_id, segment.video(video.filepath))
+                if (video) await sendMsg(uin, group_id, segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)
             } finally {
-              if (Config.douyin.senddynamicwork) await this.removeFile(video?.filepath)
+              if (Config.douyin.senddynamicwork && video) await this.removeFile(video?.filepath)
             }
           }
           if (status) {
