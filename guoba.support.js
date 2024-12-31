@@ -25,6 +25,10 @@ export function supportGuoba () {
       // 配置项 schemas
       schemas: [
         {
+          label: '基础配置',
+          component: 'SOFT_GROUP_BEGIN',
+        },
+        {
           component: 'Divider',
           label: 'Cookie 配置',
           helpMessage: '建议配置 Cookie',
@@ -121,6 +125,42 @@ export function supportGuoba () {
           }
         },
         {
+          component: 'Divider',
+          label: '其他配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
+          field: 'app.rmmp4',
+          label: '删除视频缓存',
+          helpMessage: '意义不明，但对作者有用',
+          bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'app.renderScale',
+          label: '渲染精度',
+          bottomHelpMessage: '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度',
+          component: 'InputNumber',
+          componentProps: {
+            placeholder: '范围：50 ~ 200',
+            min: 50,
+            max: 200,
+            addonAfter: '单位'
+          }
+        },
+        {
+          component: 'Divider',
+          label: 'API配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
           field: 'app.APIServer',
           label: 'API服务开关',
           bottomHelpMessage: '将所有api接口放出，作为一个本地的视频解析API服务，默认端口4567',
@@ -140,7 +180,10 @@ export function supportGuoba () {
           component: 'Switch',
           required: false
         },
-        /** 抖音视频解析配置 */
+        {
+          label: '抖音配置',
+          component: 'SOFT_GROUP_BEGIN',
+        },
         {
           component: 'Divider',
           label: '抖音视频解析配置',
@@ -296,6 +339,10 @@ export function supportGuoba () {
           required: false
         },
         {
+          label: '哔哩哔哩',
+          component: 'SOFT_GROUP_BEGIN',
+        },
+        {
           component: 'Divider',
           label: '哔哩哔哩视频解析配置',
           componentProps: {
@@ -429,6 +476,10 @@ export function supportGuoba () {
           required: false
         },
         {
+          label: '快手配置',
+          component: 'SOFT_GROUP_BEGIN',
+        },
+        {
           component: 'Divider',
           label: '快手配置',
           componentProps: {
@@ -462,34 +513,6 @@ export function supportGuoba () {
             min: 0,
             max: 30,
             addonAfter: '条'
-          }
-        },
-        {
-          component: 'Divider',
-          label: '其他配置',
-          componentProps: {
-            orientation: 'left',
-            plain: true
-          }
-        },
-        {
-          field: 'app.rmmp4',
-          label: '删除视频缓存',
-          helpMessage: '意义不明，但对作者有用',
-          bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
-          component: 'Switch',
-          required: false
-        },
-        {
-          field: 'app.renderScale',
-          label: '渲染精度',
-          bottomHelpMessage: '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度',
-          component: 'InputNumber',
-          componentProps: {
-            placeholder: '范围：50 ~ 200',
-            min: 50,
-            max: 200,
-            addonAfter: '单位'
           }
         }
       ],
