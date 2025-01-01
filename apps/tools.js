@@ -120,16 +120,17 @@ export class Tools extends plugin {
   }
 
   async bilib (e) {
-    const urlRex = /(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com)\/[A-Za-z\d._?%&+\-=\/#]*/g
+    const urlRex = /(https?:\/\/)?(www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[a-zA-Z0-9._%&+=\-\/?]*[a-zA-Z0-9_\/?=&#%+]*$/g
     const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g
     let url = e.msg === undefined ? e.message.shift().data.replaceAll('\\', '') : e.msg.trim().replaceAll('\\', '')
     if (url.includes('b23.tv')) {
       url = bShortRex.exec(url)?.[0]
-    } else if (url.includes('www.bilibili.com') || url.includes('m.bilibili.com')) {
-      url = urlRex.exec(url)[0]
+    } else if (url.includes('www.bilibili.com') || url.includes('m.bilibili.com') || url.includes('bili2233.cn')) {
+      url = urlRex.exec(url)?.[0]
     } else if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
       url = `https://www.bilibili.com/video/${ url }`
     }
+
     const bvid = await GetBilibiliID(url)
     const data = await new Bilidata(bvid.type).GetData(bvid)
     await new BiLiBiLi(e, data).RESOURCES(data)
@@ -175,7 +176,7 @@ const rule = []
 
 const reg = {
   douyin: new RegExp('^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*'),
-  bilibili: new RegExp(/(bilibili.com|b23.tv|t.bilibili.com|^BV[a-zA-Z0-9]{10}$)/),
+  bilibili: new RegExp(/(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|BV[a-zA-Z0-9]{10,})/),
   kuaishou: new RegExp('^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$')
 }
 
