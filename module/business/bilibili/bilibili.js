@@ -66,7 +66,11 @@ export default class BiLiBiLi extends Base {
         if (this.islogin) {
           videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url, OBJECT.INFODATA.data.bvid)
         } else {
-          videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
+          if (OBJECT.DATA.data.durl && OBJECT.DATA.data.durl[0]) {
+            videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
+          } else {
+            throw new Error('缺少视频下载信息,请配置Cookie后重试')
+          }
         }
         const commentsdata = await bilicomments(OBJECT)
         img = await Render.render('html/bilibili/bilicomment', {
@@ -333,7 +337,11 @@ export default class BiLiBiLi extends Base {
       }
       case '!isLogin': {
         /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
-        await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
+        if (OBJECT && OBJECT.DATA && OBJECT.DATA.data && Array.isArray(OBJECT.DATA.data.durl) && OBJECT.DATA.data.durl.length > 0) {
+          await this.DownLoadVideo(OBJECT.DATA.data.durl[0].url, Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename)
+        } else {
+          logger.error("无法下载视频,请配置CooKie后重试")
+        }
         break
       }
       default:
