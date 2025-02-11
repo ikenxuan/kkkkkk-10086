@@ -1,7 +1,7 @@
 
 # 安装插件
 ::: tip 注意
-支持 [**Miao-Yunzai V3**](https://github.com/yoimiya-kokomi/Miao-Yunzai) 、[**TRSS-Yunzai V3**](https://github.com/TimeRainStarSky/Yunzai) 、[**Yunzai Next**](https://github.com/yunzai-org/yunzaijs)(只要它还适配V3应该就能用) 、[**Karin**](https://github.com/Karinjs/Karin)<br>
+支持 [**Miao-Yunzai V3**](https://github.com/yoimiya-kokomi/Miao-Yunzai) 、[**TRSS-Yunzai V3**](https://github.com/TimeRainStarSky/Yunzai) 、[**Yunzai Next**](https://github.com/yunzai-org/yunzaijs)(只要它还适配V3应该就能用)<br>
 :::
 ## 获取源码
 
@@ -31,6 +31,9 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk
 Karin 框架文档: **https://karin.fun**<br>
 Karin 用户 <mark>**务必使用**</mark> 以下的命令安装，否则插件可能不会被识别
 
+<details>
+<summary>以下内容已作废</summary>
+
 ::: code-group
 
 ```sh [GitHub]
@@ -46,6 +49,10 @@ git clone --depth=1 https://gitee.com/ikenxuan/kkkkkk-10086.git ./plugins/karin-
 ```
 :::
 
+</details>
+
+karin已经发布正式版，本插件适配的是正式版之前的karin，故不可使用<br>
+**karin请前往https://github.com/ikenxuan/karin-plugin-kkk**
 
 ### 使用 Release 发行版（不推荐）
 
