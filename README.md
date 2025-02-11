@@ -2,10 +2,13 @@
 
 > [!IMPORTANT]
 > ### 该插件仅为小范围使用，暂无上架插件库意图<br>
-> 主开发跑路到 [Karin](https://github.com/KarinJS/Karin) 了，将使用更健壮的强类型语言 TypeScript 重写插件逻<br>
+> 主开发已跑路到 [Karin](https://github.com/KarinJS/Karin) 了，将使用可维护性更健壮的强类型语言 TypeScript 重写插件逻（JavaScript没类型和注释我写不下去了）。新仓库：https://github.com/ikenxuan/karin-plugin-kkk<br>
 > 云崽版（该仓库）可能将由社区开发者维护。
 
-🦄 _**kkkkkk-10086是一个[Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) & [Karin](https://github.com/KarinJS/Karin) 的自用辅助插件，提供对Bot的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
+Q: 什么时候回归？
+A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next？难评。）
+
+🦄 _**kkkkkk-10086是一个 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件，提供对Bot的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
 
 ![Nodejs](https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/-JavaScript-eed718?style=flat&logo=javascript&logoColor=ffffff)
