@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.7.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.6.0...v1.7.0) (2025-01-14)
+
+
+### Features
+
+* 新增抖音扫码登录 ([2269f55](https://github.com/ikenxuan/kkkkkk-10086/commit/2269f558c4c07a672958b049da7825a1a5117fa6))
+
+
+### Bug Fixes
+
+* B站风控校验失败 ([384cf65](https://github.com/ikenxuan/kkkkkk-10086/commit/384cf65bd91cdfa688f54631e039d0d9fe4ce7f4))
+* close [#65](https://github.com/ikenxuan/kkkkkk-10086/issues/65) ([f097cc6](https://github.com/ikenxuan/kkkkkk-10086/commit/f097cc651616b83d4eca2e5a2616892d722311a0))
+* 二维码js ([d895e7a](https://github.com/ikenxuan/kkkkkk-10086/commit/d895e7a9c489642c30df4e3fe43d50621d50de8d))
+* 二维码改本地, 推送视频改为发送本地视频 ([02cf730](https://github.com/ikenxuan/kkkkkk-10086/commit/02cf73084123a050210e6445d2bf8b9011fbbc5d))
+* 修复获取视频和音频文件大小的逻辑 fix [#71](https://github.com/ikenxuan/kkkkkk-10086/issues/71) ([2407114](https://github.com/ikenxuan/kkkkkk-10086/commit/240711478965fcbb1843bbb0ff171ae8ff5fd022))
+* 添加动态卡片信息的空值检查 ([7e1bbdf](https://github.com/ikenxuan/kkkkkk-10086/commit/7e1bbdff6be9e1060e5baa4428cf5a0c39c16906))
+* 添加视频下载成功判断以避免空文件发送 ([92ad7fe](https://github.com/ikenxuan/kkkkkk-10086/commit/92ad7fed0a7ec3aa3e443c02d69a9416079259b8))
+
 ## [1.6.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.5.0...v1.6.0) (2024-10-04)
 
 
