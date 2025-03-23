@@ -23,7 +23,6 @@ export default async function GetBilibiliID (url) {
         result.id_type = 'aid'
         result.id = result.id.replace('av', '')
       }
-      console.log('result' + JSON.stringify(result))
       break
     }
     case /play\/(\S+?)\??/.test(longLink): {
