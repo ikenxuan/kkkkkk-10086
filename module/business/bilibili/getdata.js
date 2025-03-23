@@ -16,7 +16,7 @@ export default class Bilidata extends Base {
     let result, COMMENTSDATA, EMOJIDATA, PARAM
     switch (this.type) {
       case 'bilibilivideo': {
-        const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { id_type: 'bvid', id: data.id })
+        const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { id_type: data.id_type, id: data.id })
         const DATA = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { avid: INFODATA.data.aid, cid: INFODATA.data.cid })
         const BASEURL = BiLiBiLiAPI.视频流信息({ avid: INFODATA.data.aid, cid: INFODATA.data.cid })
         const SIGN = await checkuser(BASEURL)
@@ -29,7 +29,7 @@ export default class Bilidata extends Base {
         const data = await getBilibiliData('单个视频下载信息数据', '', { avid: data.avid, cid: data.cid })
       }
       case 'COMMENTS': {
-        const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { id_type: 'bvid', id: data.id })
+        const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { id_type: data.id_type, id: data.id })
         const aCOMMENTSDATA = await getBilibiliData('评论数据', Config.cookies.bilibili, { number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid })
         return aCOMMENTSDATA
       }

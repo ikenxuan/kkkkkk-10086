@@ -27,7 +27,7 @@ export default class BilibiliData {
         let result;
         switch (this.type) {
             case '单个视频作品数据': {
-                const INFODATA = await this.GlobalGetData({ url: BiLiBiLiAPI.视频详细信息({ id_type: 'bvid', id: data.id }) });
+                const INFODATA = await this.GlobalGetData({ url: BiLiBiLiAPI.视频详细信息({ id_type: data.id_type, id: data.id }) });
                 return INFODATA;
             }
             case '单个视频下载信息数据': {
@@ -89,7 +89,7 @@ export default class BilibiliData {
                     }
                 }
                 else {
-                    const INFODATA = await this.GlobalGetData({ url: BiLiBiLiAPI.视频详细信息({ id_type: 'bvid', id: data.bvid }) });
+                    const INFODATA = await this.GlobalGetData({ url: BiLiBiLiAPI.视频详细信息({ id_type: data.id_type, id: data.bvid }) });
                     while (fetchedComments.length < Number(data.number || 20) && requestCount < maxRequestCount) {
                         let requestCount = Math.min(20, Number(data.number) - fetchedComments.length);
                         const url = BiLiBiLiAPI.评论区明细({

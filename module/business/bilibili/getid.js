@@ -15,8 +15,13 @@ export default async function GetBilibiliID (url) {
       const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)|bvid=([A-Za-z0-9]+)/)
       result = {
         type: 'bilibilivideo',
+        id_type: 'bvid',
         id: bvideoMatch[1] || bvideoMatch[2],
         P: '哔哩哔哩'
+      }
+      if (result.id.startsWith('av')) {
+        result.id_type = 'aid'
+        result.id = result.id.replace('av', '')
       }
       break
     }
