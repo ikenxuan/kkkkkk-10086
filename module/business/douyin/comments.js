@@ -13,7 +13,7 @@ export default async function comments (data, emojidata) {
     const cid = data.comments[i].cid
     const aweme_id = data.comments[i].aweme_id
     const nickname = data.comments[i].user.nickname
-    const userimageurl = data.comments[i].user.avatar_larger.url_list[0]
+    const userimageurl = data.comments[i].user.avatar_thumb.url_list[0]
     const text = data.comments[i].text
     const ip = data.comments[i].ip_label ? data.comments[i].ip_label : '未知'
     const time = data.comments[i].create_time
