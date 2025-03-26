@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.0...v1.7.1) (2025-03-23)
+
+
+### Bug Fixes
+
+* **bilibili:** 修复B站av号解析 ([#74](https://github.com/ikenxuan/kkkkkk-10086/issues/74)) ([7d39165](https://github.com/ikenxuan/kkkkkk-10086/commit/7d391650ceb840a6b090a63d3c98ccb9ee5d4d3d))
+
 ## [1.7.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.6.0...v1.7.0) (2025-01-14)
 
 
