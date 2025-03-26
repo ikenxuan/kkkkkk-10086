@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.1...v1.7.2) (2025-03-26)
+
+
+### Bug Fixes
+
+* 评论解析错误 ([b7cdbb5](https://github.com/ikenxuan/kkkkkk-10086/commit/b7cdbb5bd8470c00a1edf871c8ac0cc7b33a4321))
+
 ## [1.7.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.0...v1.7.1) (2025-03-23)
 
 
