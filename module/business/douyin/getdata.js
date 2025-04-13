@@ -15,7 +15,7 @@ export default class DouyinData extends Base {
     switch (this.type) {
       case 'video':
       case 'note': {
-        const VideoData = await getDouyinData('单个视频作品数据', Config.cookies.douyin, { aweme_id: data.id })
+        const VideoData = await getDouyinData('聚合解析', Config.cookies.douyin, { aweme_id: data.id })
         const CommentsData = Config.douyin.comments
           ? await getDouyinData('评论数据', Config.cookies.douyin, {
             aweme_id: data.id,
@@ -27,7 +27,7 @@ export default class DouyinData extends Base {
       }
 
       case 'LiveImage': {
-        const LiveImageData = await getDouyinData('实况图片图集数据', Config.cookies.douyin, { aweme_id: data.id })
+        const LiveImageData = await getDouyinData('合辑作品数据', Config.cookies.douyin, { aweme_id: data.id })
         return { LiveImageData }
       }
       case 'Live':
@@ -36,7 +36,7 @@ export default class DouyinData extends Base {
         return UserInfoData
       }
       case 'Emoji': {
-        const EmojiData = await getDouyinData('官方emoji数据')
+        const EmojiData = await getDouyinData('Emoji数据')
         return EmojiData
       }
       case 'UserVideosList': {

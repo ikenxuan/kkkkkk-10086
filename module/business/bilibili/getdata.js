@@ -1,5 +1,5 @@
 import checkuser from './cookie.js'
-import { BiLiBiLiAPI, getBilibiliData, wbi_sign } from '@ikenxuan/amagi'
+import { bilibiliAPI, getBilibiliData, wbi_sign } from '@ikenxuan/amagi'
 import Config from '../../components/Config.js'
 import Base from '../../components/Base.js'
 
@@ -18,9 +18,9 @@ export default class Bilidata extends Base {
       case 'bilibilivideo': {
         const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { id_type: data.id_type, id: data.id })
         const DATA = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { avid: INFODATA.data.aid, cid: INFODATA.data.cid })
-        const BASEURL = BiLiBiLiAPI.视频流信息({ avid: INFODATA.data.aid, cid: INFODATA.data.cid })
+        const BASEURL = bilibiliAPI.视频流信息({ avid: INFODATA.data.aid, cid: INFODATA.data.cid })
         const SIGN = await checkuser(BASEURL)
-        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid }), Config.cookies.bilibili)
+        PARAM = await wbi_sign(bilibiliAPI.评论区明细({ number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid }), Config.cookies.bilibili)
         COMMENTSDATA = await getBilibiliData('评论数据', Config.cookies.bilibili, { number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid })
         EMOJIDATA = await getBilibiliData('emoji数据', Config.cookies.bilibili)
         return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
@@ -53,7 +53,7 @@ export default class Bilidata extends Base {
           data.id = data.id.replace('ep', '')
           isep = true
         }
-        const QUERY = await checkuser(BiLiBiLiAPI.番剧明细({ id: data.id, isep }))
+        const QUERY = await checkuser(bilibiliAPI.番剧明细({ [isep ? ep_id : season_id]: data.id }))
         result = { INFODATA: INFO, USER: QUERY, TYPE: 'bangumivideo' }
         return result
       }
@@ -66,7 +66,7 @@ export default class Bilidata extends Base {
         delete this.headers.Referer
         const dynamicINFO = await getBilibiliData('动态详情数据', Config.cookies.bilibili, { dynamic_id: data.dynamic_id })
         const dynamicINFO_CARD = await getBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: dynamicINFO.data.item.id_str })
-        PARAM = await wbi_sign(BiLiBiLiAPI.评论区明细({ type: 1, oid: dynamicINFO_CARD.data.card.desc.rid, number: Config.bilibili.bilibilinumcomments }), Config.cookies.bilibili)
+        PARAM = await wbi_sign(bilibiliAPI.评论区明细({ type: 1, oid: dynamicINFO_CARD.data.card.desc.rid, number: Config.bilibili.bilibilinumcomments }), Config.cookies.bilibili)
         this.headers.Referer = 'https://api.bilibili.com/'
         COMMENTSDATA = await getBilibiliData('评论数据', Config.cookies.bilibili, { type: mapping_table(dynamicINFO.data.item.type), oid: oid(dynamicINFO, dynamicINFO_CARD), number: Config.bilibili.bilibilinumcomments })
         EMOJIDATA = await getBilibiliData('emoji数据')
@@ -104,11 +104,11 @@ export default class Bilidata extends Base {
 }
 function mapping_table (type) {
   const Array = {
-    1: [ 'DYNAMIC_TYPE_AV', 'DYNAMIC_TYPE_PGC', 'DYNAMIC_TYPE_UGC_SEASON' ],
-    11: [ 'DYNAMIC_TYPE_DRAW' ],
-    12: [ 'DYNAMIC_TYPE_ARTICLE' ],
-    17: [ 'DYNAMIC_TYPE_LIVE_RCMD', 'DYNAMIC_TYPE_FORWARD', 'DYNAMIC_TYPE_WORD', 'DYNAMIC_TYPE_COMMON_SQUARE' ],
-    19: [ 'DYNAMIC_TYPE_MEDIALIST' ]
+    1: ['DYNAMIC_TYPE_AV', 'DYNAMIC_TYPE_PGC', 'DYNAMIC_TYPE_UGC_SEASON'],
+    11: ['DYNAMIC_TYPE_DRAW'],
+    12: ['DYNAMIC_TYPE_ARTICLE'],
+    17: ['DYNAMIC_TYPE_LIVE_RCMD', 'DYNAMIC_TYPE_FORWARD', 'DYNAMIC_TYPE_WORD', 'DYNAMIC_TYPE_COMMON_SQUARE'],
+    19: ['DYNAMIC_TYPE_MEDIALIST']
   }
   for (const key in Array) {
     if (Array[key].includes(type)) {

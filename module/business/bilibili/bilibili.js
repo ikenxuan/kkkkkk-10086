@@ -1,6 +1,6 @@
 import { Base, Render, Config, Networks, FFmpeg } from '../../components/index.js'
 import { Bilidata, bilicomments, checkuser } from './index.js'
-import { BiLiBiLiAPI } from '@ikenxuan/amagi'
+import { bilibiliAPI } from '@ikenxuan/amagi'
 import { makeForwardMsg, segment, logger } from '../../lib/public/index.js'
 import fs from 'fs'
 
@@ -33,7 +33,7 @@ export default class BiLiBiLi extends Base {
         this.downloadfilename = title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
 
         const nocd_data = await new Networks({
-          url: BiLiBiLiAPI.视频流信息({ avid: OBJECT.INFODATA.data.aid, cid: OBJECT.INFODATA.data.cid }) + '&platform=html5',
+          url: bilibiliAPI.视频流信息({ avid: OBJECT.INFODATA.data.aid, cid: OBJECT.INFODATA.data.cid }) + '&platform=html5',
           headers: this.headers
         }).getData()
 
@@ -144,7 +144,7 @@ export default class BiLiBiLi extends Base {
         } else {
 
           this.downloadfilename = OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].share_copy.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n\s]/g, ' ')
-          const bangumidataBASEURL = BiLiBiLiAPI.番剧视频流信息({
+          const bangumidataBASEURL = bilibiliAPI.番剧视频流信息({
             cid: OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].cid,
             ep_id: OBJECT.INFODATA.result.episodes[Number(OBJECT.Episode - 1)].ep_id
           })
@@ -182,7 +182,7 @@ export default class BiLiBiLi extends Base {
               shareurl: '动态分享链接'
             })
             if (imgArray.length === 1) await this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply([ 'QQBot', 'KOOKBot' ].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
+            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
             if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)
@@ -262,7 +262,7 @@ export default class BiLiBiLi extends Base {
         const img = await Render.render(
           'html/bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
           {
-            image_url: [ { image_src: OBJECT.live_info.data.user_cover } ],
+            image_url: [{ image_src: OBJECT.live_info.data.user_cover }],
             text: br(OBJECT.live_info.data.title),
             liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
             username: OBJECT.USERDATA.data.card.name,
@@ -392,17 +392,17 @@ export default class BiLiBiLi extends Base {
       // 更新 OBJECT.DATA.data.accept_description
       data.DATA.data.accept_description = data.DATA.data.accept_description.filter(desc => desc === closestQuality)
       if (data.DATA.data.accept_description.length === 0) {
-        data.DATA.data.accept_description = [ closestQuality ]
+        data.DATA.data.accept_description = [closestQuality]
       }
       // 找到对应的视频对象
       const video = data.DATA.data.dash.video.find(video => video.id === parseInt(closestId))
       // 更新 OBJECT.DATA.data.dash.video 数组
-      data.DATA.data.dash.video = [ video ]
+      data.DATA.data.dash.video = [video]
     } else {
       // 如果没有找到符合条件的视频，使用最低画质的视频对象
-      data.DATA.data.dash.video = [ [ ...data.DATA.data.dash.video ].pop() ]
+      data.DATA.data.dash.video = [[...data.DATA.data.dash.video].pop()]
       // 更新 OBJECT.DATA.data.accept_description 为最低画质的描述
-      data.DATA.data.accept_description = [ ...data.DATA.data.accept_description ].pop()
+      data.DATA.data.accept_description = [...data.DATA.data.accept_description].pop()
     }
     return data
   }
