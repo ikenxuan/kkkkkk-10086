@@ -195,12 +195,6 @@ export default
       sidebar: sidebar,
       socialLinks: [
         { icon: { svg: '<i class="fa-brands fa-github fa-fade fa-lg"></i>' }, link: 'https://github.com/ikenxuan/kkkkkk-10086' },
-        {
-          icon: {
-            svg: '<i class="fa-brands fa-qq fa-fade fa-lg"></i>',
-          },
-          link: 'http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=S8y6baEcSkO6TEO5kEdfgmJhz79Oxdw5&authKey=ficWQytHGz3KIv5i0HpGbEeMBpABBXfjEMYRzo3ZwMV%2B0Y5mq8cC0Yxbczfa904H&noverify=0&group_code=795874649',
-        },
       ],
       lastUpdatedText: '最后编辑于',
       outlineTitle: '本页大纲',
