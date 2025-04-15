@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.1...v1.7.2) (2025-04-15)
+
+
+### Bug Fixes
+
+* **bilibili:** B站没有bvid的错误 ([8f9ae79](https://github.com/ikenxuan/kkkkkk-10086/commit/8f9ae793aef573bf943b18c3ee6b9681e904aa98))
+* 回退解析库本地集成。使用npm上的解析库（需更新依赖） ([99094b4](https://github.com/ikenxuan/kkkkkk-10086/commit/99094b4ff2d06cdc9cbbdc89c982ef8df565dae2))
+* 评论解析错误 ([b7cdbb5](https://github.com/ikenxuan/kkkkkk-10086/commit/b7cdbb5bd8470c00a1edf871c8ac0cc7b33a4321))
+
 ## [1.7.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.0...v1.7.1) (2025-03-23)
 
 
