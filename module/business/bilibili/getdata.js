@@ -36,7 +36,7 @@ export default class Bilidata extends Base {
         return aCOMMENTSDATA
       }
       case 'EMOJI':
-        return await getBilibiliData('emoji数据')
+        return await getBilibiliData('Emoji数据')
       case '申请二维码':
         return await getBilibiliData('申请二维码', Config.cookies.bilibili)
 
