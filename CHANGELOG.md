@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.7.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.1...v1.7.2) (2025-04-21)
+
+
+### Bug Fixes
+
+* **bilibili:** B站没有bvid的错误 ([8f9ae79](https://github.com/ikenxuan/kkkkkk-10086/commit/8f9ae793aef573bf943b18c3ee6b9681e904aa98))
+* **Douyin:** 修复抖音解析md无法发送语音 ([#78](https://github.com/ikenxuan/kkkkkk-10086/issues/78)) ([303608f](https://github.com/ikenxuan/kkkkkk-10086/commit/303608f426a188c28877719ca9b3649dab56676c))
+* 函数名修正 ([2967f1b](https://github.com/ikenxuan/kkkkkk-10086/commit/2967f1bd16b07eec1c7d5256b3dc2fe8cfaa99d3))
+* 回退解析库本地集成。使用npm上的解析库（需更新依赖） ([99094b4](https://github.com/ikenxuan/kkkkkk-10086/commit/99094b4ff2d06cdc9cbbdc89c982ef8df565dae2))
+* 评论解析错误 ([b7cdbb5](https://github.com/ikenxuan/kkkkkk-10086/commit/b7cdbb5bd8470c00a1edf871c8ac0cc7b33a4321))
+
 ## [1.7.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.0...v1.7.1) (2025-03-23)
 
 
