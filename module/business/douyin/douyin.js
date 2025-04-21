@@ -437,7 +437,7 @@ export default class DouYin extends Base {
   }
 
   async uploadRecord (music_id) {
-    const data = await new IKun('Music').GetData({ music_id })
+    const data = await new DouyinData('Music').GetData({ music_id })
     const title = data.music_info.title // BGM名字
     const music_url = data.music_info.play_url.uri // BGM link
     if (this.botname === 'Miao-Yunzai' || this.botname === 'yunzai') {

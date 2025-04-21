@@ -142,7 +142,7 @@ export class Tools extends plugin {
 
   async uploadrecord (e) {
     const music_id = String(e.msg).match(/BGM(\d+)/)
-    await new DouYin(e).uploadrecord(music_id[1])
+    await new DouYin(e).uploadRecord(music_id[1])
     return true
   }
 
