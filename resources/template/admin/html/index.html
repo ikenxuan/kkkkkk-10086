@@ -86,7 +86,6 @@
       </div>
       <div class="cfg-desc">本地部署一个视频解析API服务，接口范围为本插件用到的所有，默认端口4567</div>
     </li>
-    <!-- <li class="cfg-li">
       <div class="cfg-line">
         主题色
         <span class="cfg-hint">#kkk设置主题 + 0 ~ 2</span>
@@ -179,7 +178,6 @@
       </div>
       <div class="cfg-desc">推送新作品时一同解析其中内容并发送</div>
     </li>
-    <!-- <li class="cfg-li">
       <div class="cfg-line">
         抖音自动清晰度
         <span class="cfg-hint">#kkk设置抖音自动清晰度 + 开启/关闭</span>
@@ -272,7 +270,6 @@
       </div>
       <div class="cfg-desc">番剧解析自动选择分辨率。<br />开启时根据上传设置的「视频拦截阈值」值自动选择合适分辨率<br />关闭时下载番剧将不受视频文件大小限制，下载可支持的最高分辨率视频文件</div>
     </li>
-    <!-- <li class="cfg-li">
       <div class="cfg-line">
         B站自动清晰度
         <span class="cfg-hint">#kkk设置B站自动清晰度 + 开启/关闭</span>
@@ -339,16 +336,6 @@
 <div class="cfg-box">
   <div class="cfg-group">上传设置（该板块设置是全局生效的）</div>
   <ul class="cfg-ul">
-    <!-- <li class="cfg-li">
-      <div class="cfg-line">
-        转换为base64格式
-        <span class="cfg-hint">#kkk设置上传base64 + 开启/关闭</span>
-        {{@data.upload.sendbase64}}
-      </div>
-      <div class="cfg-desc">
-        发送视频经本插件转换为base64格式后再发送，适合Karin与Bot不在同一网络环境下开启。<br />若发送的文件过大，可能会卡死系统，酌情开启（2c4g配置实测发送
-        90MB左右base64格式编码的视频文件将导致系统无响应）</div>
-    </li> -->
     <li class="cfg-li">
       <div class="cfg-line">
         视频上传拦截
@@ -365,31 +352,6 @@
       </div>
       <div class="cfg-desc">视频文件大于该数值则直接结束任务，不会上传，单位: MB，「视频上传拦截」开启后才会生效。</div>
     </li>
-    <!-- <li class="cfg-li">
-      <div class="cfg-line">
-        压缩视频
-        <span class="cfg-hint">#kkk设置上传压缩 + 开启/关闭</span>
-        {{@data.upload.compress}}
-      </div>
-      <div class="cfg-desc">开启后会将视频文件压缩后再上传，适合上传大文件，任务过程中会吃满CPU，对低配服务器不友好。需配置「压缩触发阈值」与「压缩后的值」</div>
-    </li> -->
-    <!-- <li class="cfg-li">
-      <div class="cfg-line">
-        压缩触发阈值
-        <span class="cfg-hint">#kkk设置上传压缩触发值 + 0 ~ x</span>
-        {{@data.upload.compresstrigger}}
-      </div>
-      <div class="cfg-desc">触发视频压缩的阈值，单位：MB。当文件大小超过该值时，才会压缩视频，「压缩视频」开启后才会生效</div>
-    </li> -->
-    <!-- <li class="cfg-li">
-      <div class="cfg-line">
-        压缩后的值
-        <span class="cfg-hint">#kkk设置上传压缩后的值 + 0 ~ x</span>
-        {{@data.upload.compressvalue}}
-      </div>
-      <div class="cfg-desc">单位：MB，若视频文件大小大于「压缩触发阈值」的值，则会进行压缩至该值（±5%），「压缩视频」开启后才会生效</div>
-    </li> -->
-    <!-- <li class="cfg-li">
       <div class="cfg-line">
         群文件上传
         <span class="cfg-hint">#kkk设置上传群文件 + 开启/关闭</span>
