@@ -1,0 +1,42 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/help/css/index.css" />
+{{/block}} {{block 'main'}}
+<div class="spacer"></div>
+<div class="menu-container">
+  <div class="menu-column">
+    <h2>常用功能</h2>
+    <div class="menu-item">「#解析」「#kkk解析」</div>
+    <div class="menu-description">在解析功能关闭的情况下，可对引用消息进行解析</div>
+  </div>
+</div>
+<div class="menu-container">
+  <div class="menu-column">
+    <h2>推送相关</h2>
+    <div class="menu-column-second">
+      <h3>在群聊中再发送一次即可取消订阅</h3>
+      <div class="menu-item">#设置抖音推送 + 抖音号</div>
+      <div class="menu-description">订阅喜欢的抖音主包，推送最新作品</div>
+      <div class="menu-item">#设置B站推送 + UP主UID</div>
+      <div class="menu-description">订阅喜欢的b站阿婆主，推送最新作品以及动态</div>
+    </div>
+    <div class="menu-item">#抖音/B站全部?强制推送</div>
+    <div class="menu-description">全部强制推送：手动模拟一次定时任务；<br />强制推送：只在触发群模拟一次定时任务；<br />已推送过的不会再推送</div>
+    <div class="menu-item">#kkk设置推送机器人 + Bot ID</div>
+    <div class="menu-description">一键更换推送机器人</div>
+    <div class="menu-item">#抖音/B站推送列表</div>
+    <div class="menu-description">查看当前群的订阅推送列表</div>
+  </div>
+</div>
+<div class="menu-container">
+  <div class="menu-column">
+    <h2>其他</h2>
+    <div class="menu-item">#抖音登录</div>
+    <div class="menu-description">使用抖音APP扫码登录获取 Cookies</div>
+    <div class="menu-item">#B站登录</div>
+    <div class="menu-description">使用哔哩哔哩APP扫码登录获取 Cookies</div>
+    <div class="menu-item">「#kkk更新日志」「#kkk更新」「#kkk更新预览版」</div>
+    <div class="menu-description">字面意思~</div>
+  </div>
+</div>
+{{/block}}

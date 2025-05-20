@@ -1,8 +1,7 @@
-import { Config, Pushlist, getMessage } from '../module/components/index.js'
-import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/business/bilibili/index.js'
-import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/business/douyin/index.js'
-import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/business/kuaishou/index.js'
-import plugin from '../module/lib/public/plugin.js'
+import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
+import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/platform/douyin/index.js'
+import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
+import { Config, Pushlist, getMessage } from '../module/utils/index.js'
 
 export class Tools extends plugin {
   constructor () {
@@ -35,9 +34,9 @@ export class Tools extends plugin {
         { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
-        { reg: '^#?kkk推送列表$', fnc: 'pushlist' },
+        { reg: /^#?(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
-        { reg: '^#?BGM', fnc: 'uploadrecord' },
+        { reg: '^#?BGM', fnc: 'uploadRecord' },
         { reg: '^#?(解析|kkk解析)', fnc: 'prefix' }
       ]
     })
@@ -65,30 +64,23 @@ export class Tools extends plugin {
   }
 
   async pushlist (e) {
+    // 根据消息内容判断显示哪个平台的推送列表
+    const platform = e.msg.includes('抖音') ? 'douyin' : 'bilibili'
     const obj = {
-      douyin: [],
-      bilibili: []
+      [platform]: []
     }
-    const platforms = {
-      douyin: Config.pushlist.douyin ? Config.pushlist.douyin : [],
-      bilibili: Config.pushlist.bilibili ? Config.pushlist.bilibili : []
-    }
-    for (const platform in platforms) {
-
-      if (platforms.hasOwnProperty(platform)) {
-        const list = platforms[platform]
-        for (const item of list) {
-          // 根据平台不同，选择不同的属性 key
-          const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
-          // 检查 item[key] 是否不为 null 且 item.group_id 是否不是空数组
-          if (item[key] && item.group_id.length > 0) {
-            obj[platform].push({
-              group_id: item.group_id,
-              remark: item.remark,
-              [key]: item[key]
-            })
-          }
-        }
+    
+    const list = Config.pushlist[platform] || []
+    
+    for (const item of list) {
+      // 根据平台选择对应的key
+      const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
+      if (item[key] && item.group_id.length > 0) {
+        obj[platform].push({
+          group_id: item.group_id,
+          remark: item.remark,
+          [key]: item[key]
+        })
       }
     }
     const img = await Pushlist(e, obj)
@@ -140,7 +132,7 @@ export class Tools extends plugin {
     return true
   }
 
-  async uploadrecord (e) {
+  async uploadRecord (e) {
     const music_id = String(e.msg).match(/BGM(\d+)/)
     await new DouYin(e).uploadRecord(music_id[1])
     return true

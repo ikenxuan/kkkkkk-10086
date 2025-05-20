@@ -1,0 +1,77 @@
+body.light-mode {
+  --background-color: #fff;
+  --text-color: #000;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+
+body.dark-mode {
+  --background-color: #4d4d4d;
+  --text-color: #ededed;
+  --shadow-color: rgb(6 6 6);
+}
+
+.user-list {
+  display: flex;
+  list-style-type: none;
+  padding: 0;
+  align-items: center;
+  flex-direction: column-reverse;
+}
+
+.user-item {
+  display: flex;
+  width: 90%;
+  align-items: center;
+  background-color: var(--background-color);
+  padding: 35px 45px;
+  border-radius: 25px;
+  box-shadow: 0 4px 20px 0px var(--shadow-color);
+}
+
+.user-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  margin-right: 50px;
+}
+
+.user-info {
+  flex-grow: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  color: var(--text-color);
+  font-size: 55px;
+  margin-bottom: 15px;
+}
+
+.user-stats {
+  display: flex;
+  gap: 30px;
+  color: var(--text-color);
+  font-size: 25px;
+}
+
+.pending-push {
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 40px;
+}
+
+.pending-push.active {
+  background-color: #00a1d6;
+}
+
+.pending-push.inactive {
+  background-color: #dddddd;
+}

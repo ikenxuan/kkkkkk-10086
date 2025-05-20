@@ -1,6 +1,5 @@
+import { Version } from './utils/index.js'
 import fs from 'fs'
-import { Version } from './components/index.js'
-import { logger } from './lib/public/index.js'
 
 export default async () => {
   const files = fs.readdirSync(`${Version.pluginPath}/apps`).filter(file => file.endsWith('.js'))

@@ -1,0 +1,425 @@
+{{extend defaultLayout}} {{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/admin/css/index.css" />
+<title>kkkkkk-10086</title>
+<style>
+  .container {
+    background: url('{{@_res_path}}image/admin/default.jpg') #000144 top !important;
+    background-size: cover !important;
+  }
+</style>
+{{/block}} {{block 'main'}}
+<div class="info_box">
+  <div class="head-box type{{bgType}}">
+    <div style="height: 280px;"></div>
+    <div class="title">kkkkkk-10086管理面板</div>
+  </div>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">Cookies相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音ck
+        <span class="cfg-hint">#kkk设置抖音ck</span>
+        {{@data.cookies.douyin}}
+      </div>
+      <div class="cfg-desc">抖音ck，用于请求官方API数据</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站ck
+        <span class="cfg-hint">#kkk设置B站ck</span>
+        {{@data.cookies.bilibili}}
+      </div>
+      <div class="cfg-desc">B站ck，用于请求官方API数据</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        快手ck
+        <span class="cfg-hint">#kkk设置快手ck</span>
+        {{@data.cookies.kuaishou}}
+      </div>
+      <div class="cfg-desc">快手ck，用于请求官方API数据</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">应用设置</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        默认解析
+        <span class="cfg-hint">#kkk设置默认解析 + 开启/关闭</span>
+        {{@data.app.defaulttool}}
+      </div>
+      <div class="cfg-desc">识别最高优先级，修改后重启生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        解析优先级
+        <span class="cfg-hint">#kkk设置优先级 + 优先级</span>
+        {{@data.app.priority}}
+      </div>
+      <div class="cfg-desc">自定义优先级，「默认解析」关闭后才会生效。修改后重启生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        发送合并转发消息
+        <span class="cfg-hint">#kkk设置转发 + 开启/关闭</span>
+        {{@data.app.sendforwardmsg}}
+      </div>
+      <div class="cfg-desc">发送合并转发消息，可能多用于抖音解析</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        缓存删除
+        <span class="cfg-hint">#kkk设置缓存删除 + 开启/关闭</span>
+        {{@data.app.rmmp4}}
+      </div>
+      <div class="cfg-desc">自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        API服务
+        <span class="cfg-hint">#kkk设置API服务 + 开启/关闭</span>
+        {{@data.app.APIServer}}
+      </div>
+      <div class="cfg-desc">本地部署一个视频解析API服务，接口范围为本插件用到的所有，默认端口4567</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        主题色
+        <span class="cfg-hint">#kkk设置主题 + 0 ~ 2</span>
+        {{@data.app.Theme}}
+      </div>
+      <div class="cfg-desc">渲染评论图和推送图的主题色。0：早晨和傍晚6点自动切换浅色和深色；1：浅色；2：深色</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">抖音相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音解析开关
+        <span class="cfg-hint">#kkk设置抖音解析 + 开启/关闭</span>
+        {{@data.douyin.switch}}
+      </div>
+      <div class="cfg-desc">抖音解析开关，单独开关</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音解析提示
+        <span class="cfg-hint">#kkk设置抖音解析提示 + 开启/关闭</span>
+        {{@data.douyin.tip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到抖音链接，开始解析”</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音评论解析
+        <span class="cfg-hint">#kkk设置抖音评论 + 开启/关闭</span>
+        {{@data.douyin.comment}}
+      </div>
+      <div class="cfg-desc">开启抖音评论解析</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音评论数量
+        <span class="cfg-hint">#kkk设置抖音评论数量 + 1 ~ x</span>
+        {{@data.douyin.numcomment}}
+      </div>
+      <div class="cfg-desc">设置接口返回的评论数量，范围 x 条</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送
+        <span class="cfg-hint">#kkk设置抖音推送 + 开启/关闭</span>
+        {{@data.douyin.push.switch}}
+      </div>
+      <div class="cfg-desc">修改后需重启；使用[#设置抖音推送+抖音号]配置推送列表</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送日志
+        <span class="cfg-hint">#kkk设置抖音推送日志 + 开启/关闭</span>
+        {{@data.douyin.push.log}}
+      </div>
+      <div class="cfg-desc">打开或关闭定时任务日志</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送设置权限
+        <span class="cfg-hint">#kkk设置抖音推送设置权限 + 权限</span>
+        {{@data.douyin.push.permission}}
+      </div>
+      <div class="cfg-desc">all为所有人，admin为管理员，master为主人，group.owner为群主，group.admin为群管理员</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送表达式
+        <span class="cfg-hint">#kkk设置抖音推送表达式 + Cron表达式</span>
+        {{@data.douyin.push.cron}}
+      </div>
+      <div class="cfg-desc">建议使用后台面板设置</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        图集BGM是否使用高清语音发送
+        <span class="cfg-hint">#kkk设置抖音高清语音 + 开启/关闭</span>
+        {{@data.douyin.sendHDrecord}}
+      </div>
+      <div class="cfg-desc">高清语音「ios/PC」系统均无法播放，自行衡量开关</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送解析
+        <span class="cfg-hint">#kkk设置抖音推送解析 + 开启/关闭</span>
+        {{@data.douyin.push.parsedynamic}}
+      </div>
+      <div class="cfg-desc">推送新作品时一同解析其中内容并发送</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音自动清晰度
+        <span class="cfg-hint">#kkk设置抖音自动清晰度 + 开启/关闭</span>
+        {{@data.bilibili.autoResolution}}
+      </div>
+      <div class="cfg-desc">根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">bilibili相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站解析开关
+        <span class="cfg-hint">#kkk设置B站解析 + 开启/关闭</span>
+        {{@data.bilibili.switch}}
+      </div>
+      <div class="cfg-desc">B站解析开关，单独开关</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站解析提示
+        <span class="cfg-hint">#kkk设置B站解析提示 + 开启/关闭</span>
+        {{@data.bilibili.tip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到B站链接，开始解析”</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站评论解析
+        <span class="cfg-hint">#kkk设置B站评论 + 开启/关闭</span>
+        {{@data.bilibili.comment}}
+      </div>
+      <div class="cfg-desc">开启B站评论解析</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站评论数量
+        <span class="cfg-hint">#kkk设置B站评论数量 + 1 ~ x</span>
+        {{@data.bilibili.numcomment}}
+      </div>
+      <div class="cfg-desc">设置接口返回的评论数量，范围 x 条</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送
+        <span class="cfg-hint">#kkk设置B站推送 + 开启/关闭</span>
+        {{@data.bilibili.push.switch}}
+      </div>
+      <div class="cfg-desc">修改后需重启；使用[#设置B站推送+用户UID]配置推送列表</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送日志
+        <span class="cfg-hint">#kkk设置B站推送日志 + 开启/关闭</span>
+        {{@data.bilibili.push.log}}
+      </div>
+      <div class="cfg-desc">打开或关闭定时任务日志</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送设置权限
+        <span class="cfg-hint">#kkk设置B站推送设置权限 + 权限</span>
+        {{@data.bilibili.push.permission}}
+      </div>
+      <div class="cfg-desc">all为所有人，admin为管理员，master为主人，group.owner为群主，group.admin为群管理员</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送表达式
+        <span class="cfg-hint">#kkk设置B站推送表达式 + Cron表达式</span>
+        {{@data.bilibili.push.cron}}
+      </div>
+      <div class="cfg-desc">建议使用[后台面板]设置</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送解析
+        <span class="cfg-hint">#kkk设置B站推送解析 + 开启/关闭</span>
+        {{@data.bilibili.push.parsedynamic}}
+      </div>
+      <div class="cfg-desc">推送新作品时一同解析其中内容并发送（暂只支持「视频动态」与「图文动态」）</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站视频解析内容优先
+        <span class="cfg-hint">#kkk设置B站内容优先 + 开启/关闭</span>
+        {{@data.bilibili.videopriority}}
+      </div>
+      <div class="cfg-desc">番剧解析自动选择分辨率。<br />开启时根据上传设置的「视频拦截阈值」值自动选择合适分辨率<br />关闭时下载番剧将不受视频文件大小限制，下载可支持的最高分辨率视频文件</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站自动清晰度
+        <span class="cfg-hint">#kkk设置B站自动清晰度 + 开启/关闭</span>
+        {{@data.bilibili.autoResolution}}
+      </div>
+      <div class="cfg-desc">根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">推送相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        抖音推送
+        <span class="cfg-hint">#设置抖音推送 + 抖音号</span>
+        {{@data.pushlist.douyin}}
+      </div>
+      <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        B站推送
+        <span class="cfg-hint">#设置B站推送 + 用户UID</span>
+        {{@data.pushlist.bilibili}}
+      </div>
+      <div class="cfg-desc">再发送此命令一次即可取消在当前群的推送</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">快手相关</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        快手解析开关
+        <span class="cfg-hint">#kkk设置快手解析 + 开启/关闭</span>
+        {{@data.kuaishou.switch}}
+      </div>
+      <div class="cfg-desc">快手解析开关，单独开关</div>
+    </li>
+  </ul>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        快手解析提示
+        <span class="cfg-hint">#kkk设置快手解析提示 + 开启/关闭</span>
+        {{@data.kuaishou.tip}}
+      </div>
+      <div class="cfg-desc">发送提示信息：“检测到快手链接，开始解析”</div>
+    </li>
+  </ul>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        快手评论数量
+        <span class="cfg-hint">#kkk设置快手评论数量 + 1 ~ 30</span>
+        {{@data.kuaishou.numcomment}}
+      </div>
+      <div class="cfg-desc">快手评论数量，范围1 ~ 30条</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">上传设置（该板块设置是全局生效的）</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        转换为base64格式
+        <span class="cfg-hint">#kkk设置上传base64 + 开启/关闭</span>
+        {{@data.upload.sendbase64}}
+      </div>
+      <div class="cfg-desc">
+        发送视频经本插件转换为base64格式后再发送，适合Karin与Bot不在同一网络环境下开启。<br />若发送的文件过大，可能会卡死系统，酌情开启（2c4g配置实测发送
+        90MB左右base64格式编码的视频文件将导致系统无响应）</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        视频上传拦截
+        <span class="cfg-hint">#kkk设置上传拦截 + 开启/关闭</span>
+        {{@data.upload.usefilelimit}}
+      </div>
+      <div class="cfg-desc">开启后会根据视频文件大小判断是否需要上传，需配置「视频拦截阈值」。</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        视频拦截阈值
+        <span class="cfg-hint">#kkk设置上传拦截阈值 + 0 ~ x</span>
+        {{@data.upload.filelimit}}
+      </div>
+      <div class="cfg-desc">视频文件大于该数值则直接结束任务，不会上传，单位: MB，「视频上传拦截」开启后才会生效。</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        压缩视频
+        <span class="cfg-hint">#kkk设置上传压缩 + 开启/关闭</span>
+        {{@data.upload.compress}}
+      </div>
+      <div class="cfg-desc">开启后会将视频文件压缩后再上传，适合上传大文件，任务过程中会吃满CPU，对低配服务器不友好。需配置「压缩触发阈值」与「压缩后的值」</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        压缩触发阈值
+        <span class="cfg-hint">#kkk设置上传压缩触发值 + 0 ~ x</span>
+        {{@data.upload.compresstrigger}}
+      </div>
+      <div class="cfg-desc">触发视频压缩的阈值，单位：MB。当文件大小超过该值时，才会压缩视频，「压缩视频」开启后才会生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        压缩后的值
+        <span class="cfg-hint">#kkk设置上传压缩后的值 + 0 ~ x</span>
+        {{@data.upload.compressvalue}}
+      </div>
+      <div class="cfg-desc">单位：MB，若视频文件大小大于「压缩触发阈值」的值，则会进行压缩至该值（±5%），「压缩视频」开启后才会生效</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        群文件上传
+        <span class="cfg-hint">#kkk设置上传群文件 + 开启/关闭</span>
+        {{@data.upload.usegroupfile}}
+      </div>
+      <div class="cfg-desc">使用群文件上传，开启后会将视频文件上传到群文件中，需配置「群文件上传阈值」</div>
+    </li>
+    <li class="cfg-li">
+      <div class="cfg-line">
+        群文件上传阈值
+        <span class="cfg-hint">#kkk设置群上传文件阈值 + 0 ~ x</span>
+        {{@data.upload.groupfilevalue}}
+      </div>
+      <div class="cfg-desc">群文件上传阈值，当文件大小超过该值时将使用群文件上传，单位：MB，「使用群文件上传」开启后才会生效</div>
+    </li>
+  </ul>
+</div>
+<div class="cfg-box">
+  <div class="cfg-group">其他设置</div>
+  <ul class="cfg-ul">
+    <li class="cfg-li">
+      <div class="cfg-line">
+        渲染精度
+        <span class="cfg-hint">#kkk设置渲染精度 + 100</span>
+        {{@data.app.renderScale}}
+      </div>
+      <div class="cfg-desc">可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度</div>
+    </li>
+  </ul>
+</div>
+{{/block}}
+
+<!-- from yenai-plugin -->

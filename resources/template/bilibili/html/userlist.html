@@ -1,0 +1,26 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/bilibili/css/userlist.css" />
+{{/block}} {{block 'main'}}
+
+<ul class="user-list">
+  {{each renderOpt val}}
+  <li class="user-item">
+    <img src="{{val.avatar_img}}" alt="用户头像" class="user-avatar">
+    <div class="user-info">
+      <div class="user-details">
+        <span class="user-name">{{val.username}}</span>
+        <div class="user-stats">
+          <span>UID: {{val.host_mid}}</span>
+          <span>粉丝: {{val.fans}}</span>
+          <span>获赞: {{val.total_favorited}}</span>
+          <span>关注: {{val.following_count}}</span>
+        </div>
+      </div>
+    </div>
+  </li>
+  <div style="height: 40px;"></div>
+  {{/each}}
+</ul>
+
+{{/block}}

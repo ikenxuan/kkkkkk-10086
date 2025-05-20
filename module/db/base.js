@@ -1,7 +1,7 @@
+import { Sequelize, DataTypes } from 'sequelize'
+import Version from '../utils/Version.js'
 import { join } from 'path'
 import fs from 'fs'
-import { Sequelize, DataTypes } from 'sequelize'
-import Version from '../components/Version.js'
 
 const mkdirSync = (...dirPath) => {
   let path = Version.pluginPath

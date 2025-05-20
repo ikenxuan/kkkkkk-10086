@@ -1,0 +1,134 @@
+.container {
+  background: url('../../../image/admin/default.jpg') #606060 left top no-repeat;
+  background-size: 520px auto;
+  padding: 20px 15px 10px 15px;
+  background-size: contain;
+  font-size: 45px;
+  color: #1e1f20;
+  width: 1440px;
+}
+
+.head-box {
+  border-radius: 15px;
+  padding: 10px 20px;
+  position: relative;
+  color: #fff;
+  margin-top: 30px;
+}
+
+.head-box .title {
+  font-size: 130px;
+  text-shadow: 6px 5px 13px #4a4a4a, 1px 1px 0px rgba(0, 0, 0, 0.9);
+  font-weight: 700;
+}
+
+.head-box .title .label {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.head-box .genshin_logo {
+  position: absolute;
+  top: 1px;
+  right: 15px;
+  width: 97px;
+}
+
+.head-box .label {
+  font-size: 50px;
+  text-shadow: 0 0 3px #000,
+    1px 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.head-box .label span {
+  color: #d3bc8e;
+  padding: 0 2px;
+}
+
+.head-box {
+  margin: 0 0 90px 0;
+}
+
+.cfg-box {
+  border-radius: 15px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 15px 20px;
+  overflow: hidden;
+  position: relative;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(100px);
+  background: #d5deff1f;
+  border-radius: 25px;
+  box-shadow: 0px 8px 20px 0px rgba(51, 51, 52, 0.5), inset 3px 3px 30px 10px rgba(255, 255, 255, 0.8);
+}
+
+.cfg-group {
+  color: #ffcfde;
+  font-size: 65px;
+  font-weight: 700;
+  padding: 30px 30px;
+  text-shadow: 2px 2px 5px #0000008f;
+}
+
+.cfg-li {
+  min-height: 36px;
+  position: relative;
+  list-style: none;
+  margin-bottom: 15px;
+  background: rgb(203 196 190 / 0%);
+}
+
+.cfg-line {
+  color: #303030;
+  line-height: 69px;
+  padding-left: 41px;
+  font-weight: 700;
+  border-radius: 5px 30px;
+  box-shadow: 3px 3px 20px 0px rgb(0 0 0 / 50%);
+  background-image: linear-gradient(90deg, #fceae7a1 40%, #fbf3f1b5 65%, #d5dfff9e);
+  font-size: 37px;
+}
+
+.cfg-hint {
+  font-size: 27px;
+  font-weight: 400;
+  margin-top: -4px;
+  margin-bottom: -3px;
+}
+
+.cfg-status {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 36px;
+  width: 345px;
+  text-align: center;
+  /* line-height: 80px; */
+  font-size: 37px;
+  color: #2d5285;
+  font-weight: 700;
+  border-radius: 0 16px 16px 0;
+}
+
+.cfg-status.status-off {
+  color: #b74545;
+}
+
+.cfg-desc {
+  font-size: 29px;
+  color: #454444;
+  margin: 10px 0 14px 23px;
+}
+
+.badge {
+  display: inline-block;
+  vertical-align: top;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 3px;
+  background: #f4cd00;
+  color: #fff;
+  font-size: 14px;
+  line-height: 18px;
+}

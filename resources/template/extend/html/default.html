@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link href="#" rel="shortcut icon" />
+    <mef="{{_res_path}}html/COMMON/common.css" rel="stylesheet" type="text/css" />
+    <link href="{{_res_path}}font/font.css" type="text/css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link hrf="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://gfonts.aby.pub/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.font.im/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&family=Noto+Color+Emoji&family=Noto+Emoji:wght@300..700&display=swap"
+      rel="stylesheet">
+    <link
+      href="https://fonts.font.im/css2?family=Libre+Barcode+128&family=Noto+Color+Emoji&family=Noto+Emoji:wght@300..700&display=swap"
+      rel="stylesheet">
+    <title>kkkkkk-10086</title>
+    {{block 'css'}} {{/block}}
+  </head>
+
+  <body {{@sys.scale}}>
+    <div class="container" id="container">
+      {{block 'main'}}{{/block}}
+      <div class="copyright">{{@copyright}}</div>
+      <script>
+        // 获取当前时间并自动设置主题
+        function setThemeBasedOnTime () {
+          const body = document.body
+          console.log('{{useDarkTheme}}' === 'true' ? '深色模式' : '浅色模式')
+          if ('{{useDarkTheme}}' === 'true') {
+            body.classList.remove('light-mode')
+            body.classList.add('dark-mode')
+          } else {
+            body.classList.remove('dark-mode')
+            body.classList.add('light-mode')
+          }
+        }
+  
+        // 页面加载时调用函数自动设置主题
+        window.onload = function () {
+          setThemeBasedOnTime()
+        }
+      </script>
+    </div>
+  </body>
+</html>

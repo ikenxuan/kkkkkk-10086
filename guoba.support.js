@@ -1,4 +1,4 @@
-import { Config } from './module/components/index.js'
+import { Config } from './module/utils/index.js'
 // 支持锅巴
 export function supportGuoba () {
   return {

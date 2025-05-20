@@ -1,0 +1,60 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/douyin/css/base.css" />
+{{/block}} {{block 'main'}}
+
+<div class="spacer1"></div>
+<div class="bitop">
+  <div class="logo"></div>
+  &nbsp;&nbsp;&nbsp;&nbsp;记录美好生活
+</div>
+<div class="spacer1"></div>
+<div class="cover">
+  <div class="imgbox">
+    <img class="imgbox_1" src="{{image_url}}" alt="封面" />
+  </div>
+</div>
+<div style="height: 20px"></div>
+<div class="info">
+  <div class="info_text">
+    {{@desc}}
+  </div>
+  <div class="spacer4"></div>
+  <div class="work_status">{{dianzan}}点赞 · {{pinglun}}评论 · {{shouchang}}收藏 · {{share}}分享</div>
+  <div class="spacer5"></div>
+  <div class="work_status">发布于{{create_time}}</div>
+</div>
+<div class="spacer6"></div>
+<div class="other_text">抖音作品推送</div>
+<div class="under">
+  <div class="rectangular_box">
+    <div class="user" style="align-items: center">
+      <div class="userinfo">
+        <div><img src="{{avater_url}}" alt="头像" class="avatar" /></div>
+        <div class="name_and_followers">
+          <span class="username">{{username}}</span>
+        </div>
+      </div>
+      <div class="userinfo_text">
+        <span>抖音号: {{抖音号}}</span>
+        <span>获赞: {{获赞}}</span>
+        <span>关注: {{关注}}</span>
+        <span>粉丝: {{粉丝}}</span>
+      </div>
+    </div>
+    <div class="qrcode_box">
+      <div class="qrcode_text" style="font-size: 45px; margin: 20px 0 0 0;">作品直链：永久有效</div>
+      <div id="qrcode"></div>
+    </div>
+  </div>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 600,
+    height: 600,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#c3c3c3' : '#3a3a3a',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#121212' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

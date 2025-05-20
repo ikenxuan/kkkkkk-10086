@@ -1,9 +1,8 @@
-import { Config, Render, Version } from '../module/components/index.js'
-import { plugin, segment } from '../module/lib/public/index.js'
-import BiLogin from '../module/business/bilibili/login.js'
-import { dylogin } from '../module/business/douyin/login.js'
-import fs from 'fs'
+import { Config, Render, Version } from '../module/utils/index.js'
+import { dylogin } from '../module/platform/douyin/login.js'
+import BiLogin from '../module/platform/bilibili/login.js'
 import path from 'path'
+import fs from 'fs'
 
 const APPType = {
   缓存删除: 'rmmp4',
@@ -71,7 +70,7 @@ const FileWitch = {
 
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
-export class Admin extends plugin {
+export class kkkAdmin extends plugin {
   constructor () {
     super({
       name: 'kkkkkk-10086-设置',
@@ -197,7 +196,7 @@ export class Admin extends plugin {
       }
     }
 
-    const img = await Render.render('html/admin/index', { data })
+    const img = await Render.render('admin/index', { data })
     await e.reply(img)
     return true
   }
@@ -214,9 +213,7 @@ export class Admin extends plugin {
 
   async setdyck () {
     this.setContext('savedyck')
-    const _path = ''
-    const img = `${_path}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送抖音ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply('请发在120秒内送抖音ck\n教程：https://ikenxuan.github.io/kkkkkk-10086/docs/intro/other#%E9%85%8D%E7%BD%AE%E4%B8%8D%E5%90%8C%E5%B9%B3%E5%8F%B0%E7%9A%84-cookies\n', true)
     return true
   }
 
@@ -229,8 +226,7 @@ export class Admin extends plugin {
 
   async setbilick () {
     this.setContext('savebilick')
-    const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送B站ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    await this.reply('请发在120秒内送B站ck\n教程：https://ikenxuan.github.io/kkkkkk-10086/docs/intro/other#%E9%85%8D%E7%BD%AE%E4%B8%8D%E5%90%8C%E5%B9%B3%E5%8F%B0%E7%9A%84-cookies\n')
     return true
   }
 
@@ -243,8 +239,8 @@ export class Admin extends plugin {
 
   async setksck () {
     this.setContext('saveksck')
-    const img = `${Version}/plugins/kkkkkk-10086/resources/pic/pic1.png`
-    await this.reply(['请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)], true)
+    const img = `${Version}/plugins/kkkkkk-10086/resources/image/pic1.png`
+    await this.reply(['请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)])
     return true
   }
 
