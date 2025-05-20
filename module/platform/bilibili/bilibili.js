@@ -1,5 +1,5 @@
 import { Base, Render, Config, Networks, FFmpeg } from '../../utils/index.js'
-import makeForwardMsg from '../../../../../lib/common/common.js'
+import common from '../../../../../lib/common/common.js'
 import { Bilidata, bilicomments, checkuser } from './index.js'
 import { bilibiliAPI } from '@ikenxuan/amagi'
 import fs from 'fs'
@@ -182,7 +182,7 @@ export default class BiLiBiLi extends Base {
               shareurl: '动态分享链接'
             })
             if (imgArray.length === 1) await this.e.reply(imgArray[0])
-            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await makeForwardMsg(this.e, imgArray))
+            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray))
             if (Config.bilibili.bilibilicommentsimg) await this.e.reply(img)
 
             const dynamicCARD = JSON.parse(OBJECT.dynamicINFO_CARD.data.card.card)

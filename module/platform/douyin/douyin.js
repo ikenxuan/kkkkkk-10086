@@ -1,5 +1,5 @@
 import { Base, Config, UploadRecord, Networks, Render, FFmpeg, Version } from '../../utils/index.js'
-import makeForwardMsg from '../../../../../lib/common/common.js'
+import common from '../../../../../lib/common/common.js'
 import { DouyinData, Emoji, comments } from './index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
 import { markdown } from '@karinjs/md-html'
@@ -65,7 +65,7 @@ export default class DouYin extends Base {
             }
           }
           const dsc = '解析完的图集图片'
-          const res = await makeForwardMsg(this.e, imageres, dsc)
+          const res = await common.makeForwadMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
           if (imageres.length === 1) {
