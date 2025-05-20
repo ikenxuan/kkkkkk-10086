@@ -49,7 +49,7 @@ const Render = {
       sys: {
         scale: scale(params?.scale ?? 1)
       },
-      copyright: `${Version.BotName}<span class="version"> v${await Version.BotVersion()}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
+      copyright: `${Version.BotName}<span class="version"> v${Version.BotVersion}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
       pageGotoParams: {
         waitUntil: 'load'
       },
