@@ -1,4 +1,4 @@
-import { Base, Config, Render, Networks } from '../../components/index.js'
+import { Base, Config, Render, Networks } from '../../utils/index.js'
 import  comments  from './comments.js'
 
 export default class KuaiShou extends Base {
