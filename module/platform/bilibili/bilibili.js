@@ -1,6 +1,6 @@
 import { Base, Render, Config, Networks, FFmpeg } from '../../utils/index.js'
-import common from '../../../../../lib/common/common.js'
 import { Bilidata, bilicomments, checkuser } from './index.js'
+import common from '../../../../../lib/common/common.js'
 import { bilibiliAPI } from '@ikenxuan/amagi'
 import fs from 'fs'
 

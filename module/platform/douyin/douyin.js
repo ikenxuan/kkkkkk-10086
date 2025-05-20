@@ -93,7 +93,7 @@ export default class DouYin extends Base {
           authorres.push(`创作者：${id}拥有${gz}个粉丝，${sc}个收藏和${sczs}个收藏总数`)
           authorres.push(`${id}今年${age}岁，Ta的简介是：\n${jj}`)
           const dsc = '创作者信息'
-          const res = await makeForwardMsg(this.e, authorres, dsc)
+          const res = await common.makeForwardMsg(this.e, authorres, dsc)
           author_data.push(res)
           author_res.push(author_data)
         }
@@ -120,7 +120,7 @@ export default class DouYin extends Base {
           musicres.push(`BGM下载直链：${music_url}`)
           musicres.push(segment.image(music_img))
           const dsc = 'BGM相关信息'
-          const res = await makeForwardMsg(this.e, musicres, dsc)
+          const res = await common.makeForwardMsg(this.e, musicres, dsc)
           music_data.push(res)
           music_res.push(music_data)
           const haspath = music_url && this.is_mp4 === false && music_url !== undefined
@@ -205,7 +205,7 @@ export default class DouYin extends Base {
           g_video_url = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${data.VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           logger.info('视频地址', g_video_url)
           const dsc = this.botname === 'Miao-Yunzai' ? '视频基本信息' : null
-          const res = await makeForwardMsg(this.e, videores, dsc)
+          const res = await common.makeForwardMsg(this.e, videores, dsc)
           video_data.push(res)
           video_res.push(video_data)
         }
@@ -277,7 +277,7 @@ export default class DouYin extends Base {
         }
         !sendvideofile && await this.e.reply(`设定的最大上传大小为 ${Config.app.filelimit}MB\n当前解析到的视频大小为 ${Number(mp4size)}MB\n` + '视频太大了，还是去抖音看吧~', true)
         /** 发送套娃转发消息 */
-        Config.app.sendforwardmsg && await this.e.reply(await makeForwardMsg(this.e, res, dec))
+        Config.app.sendforwardmsg && await this.e.reply(await common.makeForwardMsg(this.e, res, dec))
         /** 发送视频 */
         sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, Config.app.rmmp4 ? 'tmp_' + Date.now() : g_title)
         return true
@@ -339,7 +339,7 @@ export default class DouYin extends Base {
             )
           }
         }
-        await this.e.reply(makeForwardMsg(this.e, images))
+        await this.e.reply(common.makeForwardMsg(this.e, images))
         return true
       }
 
@@ -363,7 +363,7 @@ export default class DouYin extends Base {
         fs.writeFileSync(htmlpath, matext, 'utf8')
         const img = await Render.render(htmlpath)
         await this.e.reply(img)
-        await this.e.reply(await makeForwardMsg(this.e, forwardmsg, '用户主页视频列表'))
+        await this.e.reply(await common.makeForwardMsg(this.e, forwardmsg, '用户主页视频列表'))
         return true
       }
       case 'Music': {
