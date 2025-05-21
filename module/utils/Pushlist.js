@@ -19,7 +19,7 @@ export default async function Pushlist (e, list) {
         short_id: UserInfoData.user.unique_id === '' ? UserInfoData.user.unique_id : UserInfoData.user.unique_id,
         fans: count(UserInfoData.user.follower_count),
         total_favorited: count(UserInfoData.user.total_favorited),
-        following_count: count(userInfo.user.following_count)
+        following_count: count(UserInfoData.user.following_count)
       })
     }
   }
