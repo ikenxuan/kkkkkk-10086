@@ -62,7 +62,7 @@ export default class DouYinpush extends Base {
       try {
         for (const groupId of data[awemeId].group_id) {
           const [group_id, uin] = groupId.split(':')
-          const status = Bot[uin].pickGroup(Number(group_id)).sendMsg(img)
+          const status = await Bot[uin].pickGroup(Number(group_id)).sendMsg(img)
           let video
           if (Config.douyin.senddynamicwork) {
             try {
@@ -70,7 +70,7 @@ export default class DouYinpush extends Base {
               if (iddata.is_mp4) {
                 // 下载视频
                 video = await this.DownLoadVideo(`https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`, 'tmp_' + Date.now(), false, { uin, group_id })
-                if (video) Bot[uin].pickGroup(Number(group_id)).sendMsg(segment.video(video.filepath))
+                if (video) await Bot[uin].pickGroup(Number(group_id)).sendMsg(segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)

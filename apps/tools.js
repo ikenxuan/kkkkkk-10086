@@ -1,7 +1,7 @@
 import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/platform/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
-import { Config, Pushlist, getMessage } from '../module/utils/index.js'
+import { Config, Pushlist, Common } from '../module/utils/index.js'
 
 export class Tools extends plugin {
   constructor () {
@@ -44,7 +44,7 @@ export class Tools extends plugin {
   }
 
   async prefix (e) {
-    e.msg = await getMessage(e)
+    e.msg = await Common.getReplyMessage(e)
 
     if (reg.douyin.test(e.msg)) {
       return await this.douy(e)

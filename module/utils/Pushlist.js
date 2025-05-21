@@ -1,6 +1,7 @@
 import DouyinData from '../platform/douyin/getdata.js'
 import Bilidata from '../platform/bilibili/getdata.js'
 import Render from '../utils/Render.js'
+import Base from '../utils/Base.js'
 
 /**
  *
@@ -18,25 +19,30 @@ export default async function Pushlist (e, list) {
         username: UserInfoData.user.nickname,
         short_id: UserInfoData.user.unique_id === '' ? UserInfoData.user.unique_id : UserInfoData.user.unique_id,
         fans: count(UserInfoData.user.follower_count),
-        total_favorited: count(UserInfoData.user.total_favorited),
-        following_count: count(UserInfoData.user.following_count)
+        total_favorited: count(UserInfoData.user.total_favorited)
       })
     }
   }
   
   if (list['bilibili']) {
     for (const item of list['bilibili']) {
-      const userInfo = await new Bilidata('用户名片信息').GetData({ host_mid: item.host_mid })
+      const DynamicList = await new Bilidata('获取用户空间动态').GetData({ host_mid: item.host_mid })
+      // 过滤置顶
+      let NoTopIndex = 0
+      while (DynamicList.data.items[NoTopIndex]?.modules?.module_tag?.text === '置顶') {
+        NoTopIndex++
+      }
       transformedData.push({
-        avatar_img: userInfo.data.card.face,
-        username: userInfo.data.card.name,
-        host_mid: userInfo.data.card.mid,
-        fans: count(userInfo.data.follower),
-        total_favorited: count(userInfo.data.like_num),
-        following_count: count(userInfo.data.card.attention)
+        host_mid: DynamicList.data.items[NoTopIndex].modules.module_author.mid,
+        remark: DynamicList.data.items[NoTopIndex].modules.module_author.name,
+        avatar_img: DynamicList.data.items[NoTopIndex].modules.module_author.face,
+        create_time: convertTimestampToDateTime(DynamicList.data.items[NoTopIndex].modules.module_author.pub_ts),
+        group_id: await groupName(e, item.group_id)
       })
     }
   }
+
+  if(transformedData.length === 0) return e.reply('没有找到任何数据')
 
   const img = await Render.render(
     list['douyin'] ? 'douyin/userlist' : 'bilibili/userlist',
@@ -45,17 +51,7 @@ export default async function Pushlist (e, list) {
   return img
 }
 
-/**
- * 将数字转换为带单位的字符串
- * @param {number} num - 需要转换的数字
- * @returns {string} 转换后的字符串，超过10000则显示"xx万"，否则直接返回数字字符串
- */
-const count = (num) => {
-  if (num > 10000) {
-    return (num / 10000).toFixed(1) + '万'
-  }
-  return num.toString()
-}
+const count = await new Base().count()
 
 function convertTimestampToDateTime (timestamp) {
   const date = new Date(timestamp * 1000)

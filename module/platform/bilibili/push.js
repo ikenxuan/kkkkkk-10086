@@ -1,4 +1,4 @@
-import { Base, Config, Render, DB, Version } from '../../utils/index.js'
+import { Base, Config, Render, DB, Version, Common } from '../../utils/index.js'
 import { getBilibiliData } from '@ikenxuan/amagi'
 import Bilidata from './getdata.js'
 import YAML from 'yaml'
@@ -97,6 +97,8 @@ export default class Bilibilipush extends Base {
               user_shortid: data[dynamicId].host_mid,
               total_favorited: this.count(userINFO.data.like_num),
               following_count: this.count(userINFO.data.card.attention),
+              decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.modules.module_author.decorate),
+              render_time: Common.getCurrentTime(),
               dynamicTYPE: '图文动态推送'
             }
           )
