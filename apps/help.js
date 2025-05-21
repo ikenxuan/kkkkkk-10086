@@ -28,10 +28,10 @@ export class kkkHelp extends plugin {
     const html = markdown(changelogs, {
       gitcss: 'github-markdown-dark.css'
     })
-    fs.mkdirSync(join(Version.clientPath, 'temp', 'html', Version.pluginName,'version'), { recursive: true })
-    const htmlPath = join(Version.clientPath, 'temp', 'html', Version.pluginName, 'version', 'version.html')
+    fs.mkdirSync(join(Version.pluginPath, 'resources', 'template', 'version', 'html'), { recursive: true })
+    const htmlPath = join(Version.pluginPath, 'resources', 'template', 'version', 'index.html')
     fs.writeFileSync(htmlPath, html)
-    const img = await Render.render(htmlPath)
+    const img = await Render.render('version/index')
     await e.reply(img)
     return true
   }
