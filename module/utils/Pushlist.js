@@ -13,50 +13,34 @@ export default async function Pushlist (e, list) {
   if (list['douyin']) {
     for (const item of list['douyin']) {
       const UserInfoData = await new DouyinData('UserInfoData').GetData({ user_id: item.sec_uid })
-      const DynamicList = await new DouyinData('UserVideosList').GetData({ user_id: item.sec_uid })
-      // 过滤置顶
-      let NoTopIndex = 0
-      while (DynamicList.aweme_list[NoTopIndex].is_top === 1) {
-        NoTopIndex++
-      }
       transformedData.push({
         avatar_img: UserInfoData.user.avatar_larger.url_list[0],
         username: UserInfoData.user.nickname,
         short_id: UserInfoData.user.unique_id === '' ? UserInfoData.user.unique_id : UserInfoData.user.unique_id,
         fans: count(UserInfoData.user.follower_count),
-        total_favorited: count(UserInfoData.user.total_favorited)
+        total_favorited: count(UserInfoData.user.total_favorited),
+        following_count: count(userInfo.user.following_count)
       })
     }
   }
   
   if (list['bilibili']) {
     for (const item of list['bilibili']) {
-      const DynamicList = await new Bilidata('获取用户空间动态').GetData({ host_mid: item.host_mid })
-      // 过滤置顶
-      let NoTopIndex = 0
-      while (DynamicList.data.items[NoTopIndex]?.modules?.module_tag?.text === '置顶') {
-        NoTopIndex++
-      }
+      const userInfo = await new Bilidata('用户名片信息').GetData({ host_mid: item.host_mid })
       transformedData.push({
-        host_mid: DynamicList.data.items[NoTopIndex].modules.module_author.mid,
-        remark: DynamicList.data.items[NoTopIndex].modules.module_author.name,
-        avatar_img: DynamicList.data.items[NoTopIndex].modules.module_author.face,
-        create_time: convertTimestampToDateTime(DynamicList.data.items[NoTopIndex].modules.module_author.pub_ts),
-        group_id: await groupName(e, item.group_id)
+        avatar_img: userInfo.data.card.face,
+        username: userInfo.data.card.name,
+        host_mid: userInfo.data.card.mid,
+        fans: count(userInfo.data.follower),
+        total_favorited: count(userInfo.data.like_num),
+        following_count: count(userInfo.data.card.attention)
       })
     }
   }
 
   const img = await Render.render(
     list['douyin'] ? 'douyin/userlist' : 'bilibili/userlist',
-    {
-      isMaster: e.isMaster,
-      group_id: e.isMaster
-        ? `<h1>Bot: <code>${e.bot?.nickname || e?.bot?.account?.name}</code>推送列表</h1>`
-        : `<h1>群: <code>${e.bot?.pickGroup(Number(e.group_id))?.info?.group_name || (await e?.bot?.GetGroupInfo(e.group_id))?.group_name} </code>推送列表</h1>`,
-      length: list,
-      data: transformedData
-    }
+    transformedData
   )
   return img
 }
