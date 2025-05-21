@@ -7,6 +7,6 @@ package-lock.json
 !.gitignore
 jsconfig.json
 lib/*
-resources/html/help/changelogs.html
+resources/template/version/html/index.html
 resources/html/douyin/user_worklist.html
 amagi/node_modules/*
