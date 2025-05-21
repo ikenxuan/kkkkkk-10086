@@ -29,7 +29,7 @@ export class kkkHelp extends plugin {
       gitcss: 'github-markdown-dark.css'
     })
     fs.mkdirSync(join(Version.pluginPath, 'resources', 'template', 'version', 'html'), { recursive: true })
-    const htmlPath = join(Version.pluginPath, 'resources', 'template', 'version', 'index.html')
+    const htmlPath = join(Version.pluginPath, 'resources', 'template', 'version', 'html', 'index.html')
     fs.writeFileSync(htmlPath, html)
     const img = await Render.render('version/index')
     await e.reply(img)
