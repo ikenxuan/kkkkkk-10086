@@ -196,14 +196,14 @@ export default class Bilibilipush extends Base {
         for (const groupId of data[dynamicId].group_id) {
           const [group_id, uin] = groupId.split(':')
           let status, video
-          if (send) status = await sendMsg(uin, group_id, img)
+          if (send) status = await Bot[uin].pickGroup(group_id).sendMsg(img)
           if (data[dynamicId].dynamic_type === 'DYNAMIC_TYPE_AV') {
             try {
               // 判断是否发送视频动态的视频
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
                 video = await this.DownLoadVideo(nocd_data.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
-                if (video) await sendMsg(uin, group_id, segment.video(video.filepath))
+                if (video) Bot[uin].pickGroup(group_id).sendMsg(segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)
