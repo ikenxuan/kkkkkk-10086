@@ -7,10 +7,9 @@ import Networks from './Networks.js'
 import Pushlist from './Pushlist.js'
 import DB from '../db/index.js'
 import FFmpeg from './FFmpeg.js'
-import Init from '../init.js'
 import Common from './Common.js'
 
-export { Version, Render, Config, Base, UploadRecord, Networks, Pushlist, DB, Sleep, FFmpeg, Init, Common }
+export { Version, Render, Config, Base, UploadRecord, Networks, Pushlist, DB, Sleep, FFmpeg, Common }
 
 /**
  * 休眠函数
