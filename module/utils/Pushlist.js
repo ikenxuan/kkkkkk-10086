@@ -1,6 +1,5 @@
 import { getDouyinData, getBilibiliData } from '@ikenxuan/amagi'
-import Render from '../utils/Render.js'
-import Common from '../utils/Common.js'
+import { Common, Render, Config } from '../utils/index.js'
 
 /**
  *
@@ -13,7 +12,7 @@ export default async function Pushlist (e, list, platform) {
   const renderOpt = []
   if (platform === 'douyin') {
     for (const item of list['douyin']) {
-      const userInfo = await getDouyinData('用户主页数据', { sec_uid: item.sec_uid, typeMode: 'strict' })
+      const userInfo = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid: item.sec_uid, typeMode: 'strict' })
       renderOpt.push({
         avatar_img: userInfo.user.avatar_larger.url_list[0],
         username: userInfo.user.nickname,
@@ -25,7 +24,7 @@ export default async function Pushlist (e, list, platform) {
     }
   } else {
     for (const item of list['bilibili']) {
-      const userInfo = await getBilibiliData('用户主页数据', { host_mid: item.host_mid, typeMode: 'strict' })
+      const userInfo = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: item.host_mid, typeMode: 'strict' })
       renderOpt.push({
         avatar_img: userInfo.data.card.face,
         username: userInfo.data.card.name,
