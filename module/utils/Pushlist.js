@@ -11,7 +11,7 @@ import Common from '../utils/Common.js'
  */
 export default async function Pushlist (e, list, platform) {
   const transformedData = []
-  if (platform ) {
+  if (platform === 'douyin') {
     for (const item of list['douyin']) {
       const userInfo = await getDouyinData('用户主页数据', { sec_uid: item.sec_uid, typeMode: 'strict' })
       transformedData.push({
