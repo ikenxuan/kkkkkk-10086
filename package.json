@@ -10,8 +10,8 @@
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^4.4.15",
-    "@karinjs/md-html": "^1.1.6",
+    "@ikenxuan/amagi": "^4.4.16",
+    "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
     "node-fetch": "^3.3.2",
     "qrcode": "^1.5.4",
