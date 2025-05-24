@@ -15,7 +15,7 @@ export class kkkUpdate extends plugin {
     })
   }
 
-  async update (e = this.e) {
+  async update (e) {
     let msg = e.msg
     if (!msg.includes('日志') && !e.isMaster) return false
     if (msg.includes('强制') && msg.includes('日志')) {
