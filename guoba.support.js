@@ -141,6 +141,14 @@ export function supportGuoba () {
           required: false
         },
         {
+          field: 'app.Theme',
+          label: '是否使用深色主题',
+          helpMessage: '意义不明，但对作者有用',
+          bottomHelpMessage: '评论图、推送图是否使用深色主题 0为根据时间自动切换 1为浅色 2为深色',
+          component: 'Switch',
+          required: false
+        },
+        {
           field: 'app.renderScale',
           label: '渲染精度',
           bottomHelpMessage: '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度',

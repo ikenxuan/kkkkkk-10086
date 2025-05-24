@@ -1,4 +1,4 @@
-import { Render, Version } from '../module/utils/index.js'
+import { Render, Version, Common } from '../module/utils/index.js'
 import { markdown } from '@karinjs/md-html'
 import { join } from 'node:path'
 import fs from 'node:fs'
@@ -26,7 +26,7 @@ export class kkkHelp extends plugin {
   async version (e) {
     const changelogs = fs.readFileSync(Version.pluginPath + '/CHANGELOG.md', 'utf8')
     const html = markdown(changelogs, {
-      gitcss: 'github-markdown-dark.css'
+      gitcss: Common.useDarkTheme() ? 'github-markdown-dark.css' : 'github-markdown-light.css'
     })
     fs.mkdirSync(join(Version.pluginPath, 'resources', 'template', 'version', 'html'), { recursive: true })
     const htmlPath = join(Version.pluginPath, 'resources', 'template', 'version', 'html', 'index.html')

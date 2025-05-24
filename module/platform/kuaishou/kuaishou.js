@@ -22,14 +22,15 @@ export default class KuaiShou extends Base {
     const Size = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
     const videoSizeInMB = (Size / (1024 * 1024)).toFixed(2)
     const img = await Render.render(
-      'html/kuaishou/comment',
+      'kuaishou/comment',
       {
         Type: '视频',
+        viewCount: data.VideoData.data.visionVideoDetail.photo.viewCount,
         CommentsData,
         CommentLength: String(CommentsData?.length ? CommentsData.length : 0),
         VideoUrl: video_url,
         VideoSize: videoSizeInMB,
-        VideoFPS: 59.94
+        likeCount: data.VideoData.data.visionVideoDetail.photo.likeCount
       }
     )
     await this.e.reply(img)

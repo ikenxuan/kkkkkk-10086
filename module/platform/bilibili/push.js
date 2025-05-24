@@ -1,4 +1,5 @@
 import { Base, Config, Render, DB, Version, Common } from '../../utils/index.js'
+import { generateDecorationCard, cover, replacetext } from './bilibili.js'
 import { getBilibiliData } from '@ikenxuan/amagi'
 import Bilidata from './getdata.js'
 import YAML from 'yaml'
@@ -51,9 +52,9 @@ export default class Bilibilipush extends Base {
   async getdata (data) {
     let nocd_data
     for (const dynamicId in data) {
-      const dynamicCARDINFO = await new Bilidata('动态卡片信息').GetData({ dynamic_id: dynamicId })
-      const userINFO = await new Bilidata('用户名片信息').GetData({ host_mid: data[dynamicId].host_mid })
-      let emojiDATA = await new Bilidata('EMOJI').GetData()
+      const dynamicCARDINFO = await getBilibiliData('动态卡片数据', { dynamic_id: dynamicId, typeMode: 'strict' })
+      const userINFO = await getBilibiliData('用户主页数据', { host_mid: data[dynamicId].host_mid, typeMode: 'strict' })
+      let emojiDATA = await getBilibiliData('Emoji数据')
       emojiDATA = extractEmojisData(emojiDATA.data.packages)
       const dycrad = dynamicCARDINFO.data.card && dynamicCARDINFO.data.card.card && JSON.parse(dynamicCARDINFO.data.card.card)
       let img
@@ -62,35 +63,17 @@ export default class Bilibilipush extends Base {
       switch (data[dynamicId].dynamic_type) {
         /** 处理图文动态 */
         case 'DYNAMIC_TYPE_DRAW': {
-          /**
-             * 生成图片数组
-             * 该函数没有参数。
-             * @returns {Object[]} imgArray - 包含图片源地址的对象数组。
-             */
-          const cover = () => {
-            // 初始化一个空数组来存放图片对象
-            const imgArray = []
-            // 遍历dycrad.item.pictures数组，将每个图片的img_src存入对象，并将该对象加入imgArray
-            for (let i = 0; i < dycrad.item.pictures.length; i++) {
-              const obj = {
-                image_src: dycrad.item.pictures[i].img_src
-              }
-              imgArray.push(obj)
-            }
-            // 返回包含所有图片对象的数组
-            return imgArray
-          }
-
           img = await Render.render(
             'bilibili/dynamic/DYNAMIC_TYPE_DRAW',
             {
-              image_url: cover(),
-              text: replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data),
+              image_url: cover(dycrad.item.pictures),
+              text: replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.rich_text_nodes),
               dianzan: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.like.count),
               pinglun: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.comment.count),
               share: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.forward.count),
-              create_time: this.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
-              avater_url: data[dynamicId].Dynamic_Data.modules.module_author.face,
+              create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
+              avatar_url: data[dynamicId].Dynamic_Data.modules.module_author.face,
+              frame: data[dynamicId].Dynamic_Data.modules.module_author.pendant.image,
               share_url: 'https://t.bilibili.com/' + data[dynamicId].Dynamic_Data.id_str,
               username: checkvip(userINFO.data.card),
               fans: this.count(userINFO.data.follower),
@@ -106,7 +89,7 @@ export default class Bilibilipush extends Base {
         }
         /** 处理纯文动态 */
         case 'DYNAMIC_TYPE_WORD': {
-          let text = replacetext(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text, data[dynamicId].Dynamic_Data)
+          let text = replacetext(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text, data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.rich_text_nodes)
           for (const item of emojiDATA) {
             if (text.includes(item.text)) {
               if (text.includes('[') && text.includes(']')) {
@@ -122,8 +105,8 @@ export default class Bilibilipush extends Base {
               dianzan: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.like.count),
               pinglun: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.comment.count),
               share: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.forward.count),
-              create_time: this.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
-              avater_url: data[dynamicId].Dynamic_Data.modules.module_author.face,
+              create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
+              avatar_url: data[dynamicId].Dynamic_Data.modules.module_author.face,
               share_url: 'https://t.bilibili.com/' + data[dynamicId].Dynamic_Data.id_str,
               username: checkvip(userINFO.data.card),
               fans: this.count(userINFO.data.follower),
@@ -140,20 +123,30 @@ export default class Bilibilipush extends Base {
           if (data[dynamicId].Dynamic_Data.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
-            const INFODATA = await new Bilidata('bilibilivideo').GetData({ id_type: 'bvid', id: bvid })
-            nocd_data = await getBilibiliData('单个视频下载信息数据', '', { avid: INFODATA.INFODATA.data.aid, cid: INFODATA.INFODATA.data.cid })
+            const INFODATA = await getBilibiliData('单个视频下载信息数据', '', { bvid, typeMode: 'strict' })
+            /** 特殊字段，只有番剧和影视才会有，如果是该类型视频，默认不发送 */
+            if (INFODATA.data.redirect_url) {
+              send_video = false
+              logger.debug(`UP主：${INFODATA.data.owner.name} 的该动态类型为${logger.yellow('番剧或影视')}，默认跳过不下载，直达：${logger.green(INFODATA.data.redirect_url)}`)
+            } else {
+              nocd_data = await getBilibiliData('单个视频下载信息数据', '', { avid: aid, cid: INFODATA.data.cid })
+            }
 
             img = await Render.render(
               'bilibili/dynamic/DYNAMIC_TYPE_AV',
               {
-                image_url: [{ image_src: INFODATA.INFODATA.data.pic }],
-                text: br(INFODATA.INFODATA.data.title),
+                image_url: [{ image_src: INFODATA.data.pic }],
+                text: br(INFODATA.data.title),
                 desc: br(dycrad.desc),
-                dianzan: this.count(INFODATA.INFODATA.data.stat.like),
-                pinglun: this.count(INFODATA.INFODATA.data.stat.reply),
-                share: this.count(INFODATA.INFODATA.data.stat.share),
-                create_time: this.convertTimestampToDateTime(INFODATA.INFODATA.data.ctime),
-                avater_url: INFODATA.INFODATA.data.owner.face,
+                dianzan: this.count(INFODATA.data.stat.like),
+                pinglun: this.count(INFODATA.data.stat.reply),
+                share: this.count(INFODATA.data.stat.share),
+                view: this.count(dycrad.stat.view),
+                coin: this.count(dycrad.stat.coin),
+                duration_text: data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.duration_text,
+                create_time: Common.convertTimestampToDateTime(INFODATA.data.ctime),
+                avatar_url: INFODATA.data.owner.face,
+                frame: data[dynamicId].Dynamic_Data.modules.module_author.pendant.image,
                 share_url: 'https://www.bilibili.com/video/' + bvid,
                 username: checkvip(userINFO.data.card),
                 fans: this.count(userINFO.data.follower),
@@ -174,21 +167,111 @@ export default class Bilibilipush extends Base {
               image_url: [{ image_src: dycrad.live_play_info.cover }],
               text: br(dycrad.live_play_info.title),
               liveinf: br(`${dycrad.live_play_info.area_name} | 房间号: ${dycrad.live_play_info.room_id}`),
-              username: userINFO.data.card.name,
-              avater_url: userINFO.data.card.face,
+              username: checkvip(userINFO.data.card),
+              avatar_url: userINFO.data.card.face,
+              frame: data[dynamicId].Dynamic_Data.modules.module_author.pendant.image,
               fans: this.count(userINFO.data.follower),
-              create_time: this.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
-              now_time: this.getCurrentTime(),
+              create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.modules.module_author.pub_ts),
+              now_time: Common.getCurrentTime(),
               share_url: 'https://live.bilibili.com/' + dycrad.live_play_info.room_id,
               dynamicTYPE: '直播动态推送'
             }
           )
           break
         }
+        /** 处理转发动态 */
+        case 'DYNAMIC_TYPE_FORWARD': {
+          const text = replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.rich_text_nodes)
+          let param = {}
+          switch (data[dynamicId].Dynamic_Data.orig.type) {
+            case DynamicType.AV: {
+              param = {
+                username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
+                pub_action: data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_action,
+                avatar_url: data[dynamicId].Dynamic_Data.orig.modules.module_author.face,
+                duration_text: data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.archive.duration_text,
+                title: data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.archive.title,
+                danmaku: data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.archive.stat.danmaku,
+                play: data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.archive.stat.play,
+                cover: data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.archive.cover,
+                create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_ts),
+                decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.orig.modules.module_author.decorate),
+                frame: data[dynamicId].Dynamic_Data.orig.modules.module_author.pendant.image
+              }
+              break
+            }
+            case 'DYNAMIC_TYPE_DRAW': {
+              const dynamicCARD = await getBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: data[dynamicId].Dynamic_Data.orig.id_str, typeMode: 'strict' })
+              const cardData = JSON.parse(dynamicCARD.data.card.card)
+              param = {
+                username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
+                create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_ts),
+                avatar_url: data[dynamicId].Dynamic_Data.orig.modules.module_author.face,
+                text: replacetext(br(data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.desc.rich_text_nodes),
+                image_url: cover(cardData.item.pictures),
+                decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.orig.modules.module_author.decorate),
+                frame: data[dynamicId].Dynamic_Data.orig.modules.module_author.pendant.image
+              }
+              break
+            }
+            case 'DYNAMIC_TYPE_WORD': {
+              param = {
+                username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
+                create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_ts),
+                avatar_url: data[dynamicId].Dynamic_Data.orig.modules.module_author.face,
+                text: replacetext(br(data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.desc.rich_text_nodes),
+                decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.orig.modules.module_author.decorate),
+                frame: data[dynamicId].Dynamic_Data.orig.modules.module_author.pendant.image
+              }
+              break
+            }
+            case DynamicType.LIVE_RCMD: {
+              const liveData = JSON.parse(data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.live_rcmd.content)
+              param = {
+                username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
+                create_time: Common.convertTimestampToDateTime(data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_ts),
+                avatar_url: data[dynamicId].Dynamic_Data.orig.modules.module_author.face,
+                decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.orig.modules.module_author.decorate),
+                frame: data[dynamicId].Dynamic_Data.orig.modules.module_author.pendant.image,
+                cover: liveData.live_play_info.cover,
+                text_large: liveData.live_play_info.watched_show.text_large,
+                area_name: liveData.live_play_info.area_name,
+                title: liveData.live_play_info.title,
+                online: liveData.live_play_info.online
+              }
+              break
+            }
+            case 'DYNAMIC_TYPE_FORWARD':
+            default: {
+              logger.warn(`UP主：${data[dynamicId].remark}的${logger.green('转发动态')}转发的原动态类型为「${logger.yellow(data[dynamicId].Dynamic_Data.orig.type)}」暂未支持解析`)
+              break
+            }
+          }
+          img = await Render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
+            text,
+            dianzan: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.like.count),
+            pinglun: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.comment.count),
+            share: this.count(data[dynamicId].Dynamic_Data.modules.module_stat.forward.count),
+            create_time: data[dynamicId].Dynamic_Data.modules.module_author.pub_time,
+            avatar_url: data[dynamicId].Dynamic_Data.modules.module_author.face,
+            frame: data[dynamicId].Dynamic_Data.modules.module_author.pendant.image,
+            share_url: 'https://t.bilibili.com/' + data[dynamicId].Dynamic_Data.id_str,
+            username: checkvip(userINFO.data.card),
+            fans: this.count(userINFO.data.follower),
+            user_shortid: data[dynamicId].Dynamic_Data.modules.module_author.mid,
+            total_favorited: this.count(userINFO.data.like_num),
+            following_count: this.count(userINFO.data.card.attention),
+            dynamicTYPE: '转发动态推送',
+            decoration_card: generateDecorationCard(data[dynamicId].Dynamic_Data.modules.module_author.decorate),
+            render_time: Common.getCurrentTime(),
+            original_content: { [data[dynamicId].Dynamic_Data.orig.type]: param }
+          })
+          break
+        }
         /** 未处理的动态类型 */
         default: {
           send = false
-          logger.warn(`UP主：${data[dynamicId].remark}「${data[dynamicId].dynamic_type}」动态类型的暂未支持推送`)
+          logger.warn(`UP主：${data[dynamicId].remark}「${data[dynamicId].dynamic_type}」动态类型的暂未支持推送\n动态地址：${'https://t.bilibili.com/' + data[dynamicId].Dynamic_Data.id_str}`)
           break
         }
       }
@@ -205,7 +288,7 @@ export default class Bilibilipush extends Base {
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
                 video = await this.DownLoadVideo(nocd_data.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
-                if (video) Bot[uin].pickGroup(group_id).sendMsg(segment.video(video.filepath))
+                if (video) await Bot[uin].pickGroup(group_id).sendMsg(segment.video(video.filepath))
               }
             } catch (error) {
               logger.error(error)
@@ -420,49 +503,6 @@ export default class Bilibilipush extends Base {
     return msg
   }
 
-  /**
-   * 将时间戳转换为日期时间字符串
-   * @param {number} timestamp - 表示秒数的时间戳
-   * @returns {string} 格式为YYYY-MM-DD HH:MM的日期时间字符串
-   */
-  convertTimestampToDateTime (timestamp) {
-    // 创建一个Date对象，时间戳乘以1000是为了转换为毫秒
-    const date = new Date(timestamp * 1000)
-    const year = date.getFullYear() // 获取年份
-    const month = String(date.getMonth() + 1).padStart(2, '0') // 获取月份，确保两位数显示
-    const day = String(date.getDate()).padStart(2, '0') // 获取日，确保两位数显示
-    const hours = String(date.getHours()).padStart(2, '0') // 获取小时，确保两位数显示
-    const minutes = String(date.getMinutes()).padStart(2, '0') // 获取分钟，确保两位数显示
-
-    // 返回格式化后的日期时间字符串
-    return `${year}-${month}-${day} ${hours}:${minutes}`
-  }
-
-  /**
-   * 获取当前时间，并格式化为年-月-日 时:分:秒的字符串形式
-   * 参数：无
-   * 返回值：格式化后的时间字符串，例如"2023-03-15 12:30:45"
-   */
-  getCurrentTime () {
-    // 创建一个Date对象以获取当前时间
-    const now = new Date()
-    // 获取年、月、日、时、分、秒
-    const year = now.getFullYear()
-    let month = now.getMonth() + 1
-    let day = now.getDate()
-    let hour = now.getHours()
-    let minute = now.getMinutes()
-    let second = now.getSeconds()
-    // 对月、日、时、分、秒进行两位数格式化
-    month = month < 10 ? '0' + month : month
-    day = day < 10 ? '0' + day : day
-    hour = hour < 10 ? '0' + hour : hour
-    minute = minute < 10 ? '0' + minute : minute
-    second = second < 10 ? '0' + second : second
-    // 拼接时间为字符串，并返回
-    return year + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second
-  }
-
   findMismatchedDynamicIds (inputData) {
     if (!inputData.DBdata) return inputData.willbepushlist
     const willbepushByGroupId = {}
@@ -558,9 +598,9 @@ function br (data) {
  */
 function checkvip (member) {
   // 根据VIP状态选择不同的颜色显示成员名称
-  return member.vip.vipStatus === 1
-    ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.name}</span>`
-    : `<span style="color: #606060">${member.name}</span>`
+  return member.vip.status === 1
+    ? `<span style="color: ${member.vip.nickname_color ?? '#FB7299'}; font-weight: 700;">${member.name}</span>`
+    : `<span style="color: ${Common.useDarkTheme() ? '#EDEDED' : '#606060'}">${member.name}</span>`
 }
 
 /**
@@ -584,33 +624,4 @@ function extractEmojisData (data) {
   })
 
   return emojisData
-}
-
-function replacetext (text, obj) {
-  for (const tag of obj.modules.module_dynamic.desc.rich_text_nodes) {
-    // 对正则表达式中的特殊字符进行转义
-    const escapedText = tag.orig_text.replace(/([.*+?^${}()|[\]\\])/g, '\\$1').replace(/\n/g, '\\n')
-    const regex = new RegExp(escapedText, 'g')
-    switch (tag.type) {
-      case 'RICH_TEXT_NODE_TYPE_TOPIC':
-      case 'RICH_TEXT_NODE_TYPE_AT': {
-        text = text.replace(regex, `<span style="color: #0C6692;">${tag.orig_text}</span>`)
-        break
-      }
-      case 'RICH_TEXT_NODE_TYPE_LOTTERY': {
-        text = text.replace(regex, `<span style="color: #0C6692;"><svg style="width: 65px;height: 65px;margin: 0 -15px -12px 0;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" width="20" height="20"><path d="M3.7499750000000005 9.732083333333334C4.095158333333333 9.732083333333334 4.374975 10.011875000000002 4.374975 10.357083333333334L4.374975 15.357083333333334C4.374975 15.899458333333335 4.8147 16.339166666666667 5.357116666666667 16.339166666666667L14.642833333333334 16.339166666666667C15.185250000000002 16.339166666666667 15.625 15.899458333333335 15.625 15.357083333333334L15.625 10.357083333333334C15.625 10.011875000000002 15.904791666666668 9.732083333333334 16.25 9.732083333333334C16.595166666666668 9.732083333333334 16.875 10.011875000000002 16.875 10.357083333333334L16.875 15.357083333333334C16.875 16.589833333333335 15.875625000000001 17.589166666666667 14.642833333333334 17.589166666666667L5.357116666666667 17.589166666666667C4.124341666666667 17.589166666666667 3.124975 16.589833333333335 3.124975 15.357083333333334L3.124975 10.357083333333334C3.124975 10.011875000000002 3.4048 9.732083333333334 3.7499750000000005 9.732083333333334z" fill="currentColor"></path><path d="M2.4106916666666667 7.3214250000000005C2.4106916666666667 6.384516666666666 3.1702083333333335 5.625 4.107116666666667 5.625L15.892833333333334 5.625C16.82975 5.625 17.58925 6.384516666666666 17.58925 7.3214250000000005L17.58925 8.917583333333335C17.58925 9.74225 16.987583333333337 10.467208333333334 16.13125 10.554C15.073666666666668 10.661208333333335 13.087708333333333 10.803583333333334 10 10.803583333333334C6.912275 10.803583333333334 4.9263 10.661208333333335 3.8687250000000004 10.554C3.0123833333333336 10.467208333333334 2.4106916666666667 9.74225 2.4106916666666667 8.917583333333335L2.4106916666666667 7.3214250000000005zM4.107116666666667 6.875C3.8605666666666667 6.875 3.6606916666666667 7.0748750000000005 3.6606916666666667 7.3214250000000005L3.6606916666666667 8.917583333333335C3.6606916666666667 9.135250000000001 3.8040833333333333 9.291041666666667 3.9947583333333334 9.310375C5.0068 9.412958333333334 6.950525000000001 9.553583333333334 10 9.553583333333334C13.049458333333334 9.553583333333334 14.993166666666669 9.412958333333334 16.005166666666668 9.310375C16.195875 9.291041666666667 16.33925 9.135250000000001 16.33925 8.917583333333335L16.33925 7.3214250000000005C16.33925 7.0748750000000005 16.139375 6.875 15.892833333333334 6.875L4.107116666666667 6.875z" fill="currentColor"></path><path d="M5.446408333333333 4.464341666666667C5.446408333333333 3.1329416666666665 6.525716666666667 2.0536333333333334 7.857116666666667 2.0536333333333334C9.188541666666666 2.0536333333333334 10.267833333333334 3.1329416666666665 10.267833333333334 4.464341666666667L10.267833333333334 6.875058333333333L7.857116666666667 6.875058333333333C6.525716666666667 6.875058333333333 5.446408333333333 5.795741666666666 5.446408333333333 4.464341666666667zM7.857116666666667 3.3036333333333334C7.216075000000001 3.3036333333333334 6.696408333333334 3.8233 6.696408333333334 4.464341666666667C6.696408333333334 5.105391666666667 7.216075000000001 5.6250583333333335 7.857116666666667 5.6250583333333335L9.017833333333334 5.6250583333333335L9.017833333333334 4.464341666666667C9.017833333333334 3.8233 8.498166666666668 3.3036333333333334 7.857116666666667 3.3036333333333334z" fill="currentColor"></path><path d="M9.732083333333334 4.464341666666667C9.732083333333334 3.1329416666666665 10.811416666666666 2.0536333333333334 12.142833333333334 2.0536333333333334C13.474250000000001 2.0536333333333334 14.553583333333336 3.1329416666666665 14.553583333333336 4.464341666666667C14.553583333333336 5.795741666666666 13.474250000000001 6.875058333333333 12.142833333333334 6.875058333333333L9.732083333333334 6.875058333333333L9.732083333333334 4.464341666666667zM12.142833333333334 3.3036333333333334C11.501791666666666 3.3036333333333334 10.982083333333334 3.8233 10.982083333333334 4.464341666666667L10.982083333333334 5.6250583333333335L12.142833333333334 5.6250583333333335C12.783875 5.6250583333333335 13.303583333333334 5.105391666666667 13.303583333333334 4.464341666666667C13.303583333333334 3.8233 12.783875 3.3036333333333334 12.142833333333334 3.3036333333333334z" fill="currentColor"></path><path d="M10 4.732058333333334C10.345166666666666 4.732058333333334 10.625 5.011875 10.625 5.357058333333334L10.625 16.428500000000003C10.625 16.773666666666667 10.345166666666666 17.053500000000003 10 17.053500000000003C9.654791666666668 17.053500000000003 9.375 16.773666666666667 9.375 16.428500000000003L9.375 5.357058333333334C9.375 5.011875 9.654791666666668 4.732058333333334 10 4.732058333333334z" fill="currentColor"></path></svg> ${tag.orig_text}</span>`)
-        break
-      }
-      case 'RICH_TEXT_NODE_TYPE_WEB': {
-        text = text.replace(regex, `<span style="color: #0C6692;"><svg style="width: 60px;height: 60px;margin: 0 -15px -12px 0;" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" width="20" height="20"><path d="M9.571416666666666 7.6439C9.721125 7.33675 10.091416666666667 7.209108333333334 10.398583333333335 7.358808333333333C10.896041666666667 7.540316666666667 11.366333333333333 7.832000000000001 11.767333333333333 8.232975C13.475833333333334 9.941541666666668 13.475833333333334 12.711625 11.767333333333333 14.420166666666669L9.704916666666666 16.482583333333334C7.996383333333334 18.191125000000003 5.226283333333334 18.191125000000003 3.5177416666666668 16.482583333333334C1.8091916666666668 14.774041666666669 1.8091916666666668 12.003916666666667 3.5177416666666668 10.295375L5.008791666666667 8.804333333333334C5.252875 8.56025 5.6486 8.56025 5.892683333333334 8.804333333333334C6.136758333333334 9.048416666666668 6.136758333333334 9.444125000000001 5.892683333333334 9.688208333333334L4.401625 11.179250000000001C3.1812333333333336 12.399666666666667 3.1812333333333336 14.378291666666668 4.401625 15.598708333333335C5.622000000000001 16.819083333333335 7.60065 16.819083333333335 8.821041666666668 15.598708333333335L10.883416666666667 13.536291666666667C12.103833333333334 12.315916666666666 12.103833333333334 10.337250000000001 10.883416666666667 9.116875C10.582458333333333 8.815875 10.229416666666667 8.600908333333333 9.856458333333334 8.471066666666667C9.549333333333333 8.321375 9.421708333333335 7.9510499999999995 9.571416666666666 7.6439z" fill="currentColor"></path><path d="M15.597541666666668 4.402641666666667C14.377166666666668 3.1822500000000002 12.398541666666667 3.1822500000000002 11.178125000000001 4.402641666666667L9.11575 6.465033333333333C7.895358333333333 7.685425 7.895358333333333 9.664041666666668 9.11575 10.884458333333333C9.397666666666668 11.166375 9.725916666666667 11.371583333333334 10.073083333333333 11.500958333333333C10.376583333333334 11.658083333333334 10.495291666666667 12.031416666666667 10.338208333333332 12.334875C10.181083333333333 12.638375 9.80775 12.757083333333334 9.504291666666667 12.6C9.042416666666666 12.420333333333334 8.606383333333333 12.142833333333334 8.231858333333333 11.768333333333334C6.523316666666667 10.059791666666667 6.523316666666667 7.289691666666666 8.231858333333333 5.58115L10.29425 3.5187583333333334C12.002791666666667 1.8102083333333334 14.772875 1.8102083333333334 16.481458333333336 3.5187583333333334C18.19 5.2273000000000005 18.19 7.997400000000001 16.481458333333336 9.705916666666667L15.054916666666667 11.132458333333334C14.810875000000001 11.3765 14.415166666666668 11.3765 14.171041666666667 11.132458333333334C13.927 10.888333333333334 13.927 10.492625 14.171041666666667 10.248541666666666L15.597541666666668 8.822041666666667C16.81791666666667 7.601666666666667 16.81791666666667 5.623025 15.597541666666668 4.402641666666667z" fill="currentColor"></path></svg> ${tag.text}</span>`)
-        break
-      }
-      case 'RICH_TEXT_NODE_TYPE_EMOJI': {
-        const regex = new RegExp(tag.orig_text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-        text = text.replace(regex, `<img src='${tag.emoji.icon_url}' style='height: 60px; margin: 0 0 -10px 0;'>`)
-        break
-      }
-    }
-  }
-  return text
 }

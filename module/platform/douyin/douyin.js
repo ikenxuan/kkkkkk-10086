@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, FFmpeg, Version } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, FFmpeg, Version, Common } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { DouyinData, Emoji, comments } from './index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
@@ -65,7 +65,7 @@ export default class DouYin extends Base {
             }
           }
           const dsc = '解析完的图集图片'
-          const res = await common.makeForwadMsg(this.e, imageres, dsc)
+          const res = await common.makeForwardMsg(this.e, imageres, dsc)
           image_data.push(res)
           image_res.push(image_data)
           if (imageres.length === 1) {
@@ -354,7 +354,10 @@ export default class DouYin extends Base {
           veoarray.push(`${title}       | ![img](${await QRCode.toDataURL(cover, {
             errorCorrectionLevel: 'H',
             type: 'image/png',
-            color: { light: '#00000000' }
+            color: {
+              light: '#ffffff00',
+              dark: Common.useDarkTheme() ? '#FFFFFF' : '#000000'
+            }
           })})    |\n`)
           forwardmsg.push(`作品标题: ${title}\n分享链接: ${cover}`)
         }

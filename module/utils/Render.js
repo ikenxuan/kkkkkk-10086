@@ -1,5 +1,6 @@
 import puppeteer from '../../../../lib/puppeteer/puppeteer.js'
 import Version from './Version.js'
+import Common from './Common.js'
 import Config from './Config.js'
 import { join } from 'node:path'
 
@@ -54,6 +55,7 @@ const Render = {
       pageGotoParams: {
         waitUntil: 'load'
       },
+      useDarkTheme: Common.useDarkTheme(),
       tplFile: `${Version.pluginPath}/resources/template/${path}.html`,
       pluResPath: `${Version.pluginPath}/resources/`,
       saveId: path.split('/').pop(),
