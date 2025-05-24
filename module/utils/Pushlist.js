@@ -48,7 +48,7 @@ export default async function Pushlist (e, list, platform) {
 
   const img = await Render.render(
     platform === 'douyin' ? 'douyin/userlist' : 'bilibili/userlist',
-    renderOpt
+    { renderOpt }
   )
   return img
 }
