@@ -359,15 +359,6 @@ export default class Base {
     }
   }
 
-  /** 过万整除 */
-  count (count) {
-    if (count > 10000) {
-      return (count / 10000).toFixed(1) + '万'
-    } else {
-      return count?.toString() || '无法获取'
-    }
-  }
-
   /** 文件夹名字 */
   async mkdirs (dirname) {
     if (fs.existsSync(dirname)) {

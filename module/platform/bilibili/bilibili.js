@@ -42,9 +42,9 @@ export default class BiLiBiLi extends Base {
             [
               segment.image(pic),
               `\n# 标题: ${title}\n`,
-              `\n作者: ${name}\n播放量: ${this.count(view)},    弹幕: ${this.count(danmaku)}\n点赞: ${this.count(like)},    投币: ${this.count(coin)}\n转发: ${this.count(
+              `\n作者: ${name}\n播放量: ${Common.count(view)},    弹幕: ${Common.count(danmaku)}\n点赞: ${Common.count(like)},    投币: ${Common.count(coin)}\n转发: ${Common.count(
                 share
-              )},    收藏: ${this.count(favorite)}`
+              )},    收藏: ${Common.count(favorite)}`
             ],
             [
               {
@@ -199,17 +199,17 @@ export default class BiLiBiLi extends Base {
             await this.e.reply(await Render.render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
               image_url: cover(),
               text: replacetext(br(OBJECT.dynamicINFO.data.item.modules.module_dynamic.desc.text), OBJECT.dynamicINFO),
-              dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
-              pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
-              share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+              dianzan: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+              pinglun: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+              share: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
               create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
               avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
               share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
               username: checkvip(OBJECT.USERDATA.data.card),
-              fans: this.count(OBJECT.USERDATA.data.follower),
+              fans: Common.count(OBJECT.USERDATA.data.follower),
               user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
-              total_favorited: this.count(OBJECT.USERDATA.data.like_num),
-              following_count: this.count(OBJECT.USERDATA.data.card.attention),
+              total_favorited: Common.count(OBJECT.USERDATA.data.like_num),
+              following_count: Common.count(OBJECT.USERDATA.data.card.attention),
               Botadapter: this.botadapter,
               dynamicTYPE: '图文动态'
             }))
@@ -221,17 +221,17 @@ export default class BiLiBiLi extends Base {
             await this.e.reply(
               await Render.render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
                 text,
-                dianzan: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
-                pinglun: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
-                share: this.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
+                dianzan: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.like.count),
+                pinglun: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.comment.count),
+                share: Common.count(OBJECT.dynamicINFO.data.item.modules.module_stat.forward.count),
                 create_time: OBJECT.dynamicINFO.data.item.modules.module_author.pub_time,
                 avater_url: OBJECT.dynamicINFO.data.item.modules.module_author.face,
                 share_url: 'https://t.bilibili.com/' + OBJECT.dynamicINFO.data.item.id_str,
                 username: checkvip(OBJECT.USERDATA.data.card),
-                fans: this.count(OBJECT.USERDATA.data.follower),
+                fans: Common.count(OBJECT.USERDATA.data.follower),
                 user_shortid: OBJECT.dynamicINFO.data.item.modules.module_author.mid,
-                total_favorited: this.count(OBJECT.USERDATA.data.like_num),
-                following_count: this.count(OBJECT.USERDATA.data.card.attention),
+                total_favorited: Common.count(OBJECT.USERDATA.data.like_num),
+                following_count: Common.count(OBJECT.USERDATA.data.card.attention),
                 Botadapter: this.botadapter,
                 dynamicTYPE: '纯文动态'
               })
@@ -267,7 +267,7 @@ export default class BiLiBiLi extends Base {
             liveinf: br(`${OBJECT.live_info.data.area_name} | 房间号: ${OBJECT.live_info.data.room_id}`),
             username: OBJECT.USERDATA.data.card.name,
             avater_url: OBJECT.USERDATA.data.card.face,
-            fans: this.count(OBJECT.USERDATA.data.card.fans),
+            fans: Common.count(OBJECT.USERDATA.data.card.fans),
             create_time: OBJECT.live_info.data.live_time === -62170012800 ? '获取失败' : OBJECT.live_info.data.live_time,
             now_time: 114514,
             share_url: 'https://live.bilibili.com/' + OBJECT.live_info.data.room_id,

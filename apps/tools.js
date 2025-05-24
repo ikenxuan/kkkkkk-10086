@@ -72,19 +72,21 @@ export class Tools extends plugin {
     
     const list = Config.pushlist[platform] || []
     
+    // 遍历推送列表,只获取当前群的推送配置
     for (const item of list) {
-      // 根据平台选择对应的key
       const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
-      if (item[key] && item.group_id.length > 0) {
+      // 检查group_id是否包含当前群号
+      if (item[key] && item.group_id.some(gid => gid.split(':')[0] === String(e.group_id))) {
         obj[platform].push({
-          group_id: item.group_id,
+          group_id: item.group_id.filter(gid => gid.split(':')[0] === String(e.group_id)),
           remark: item.remark,
           [key]: item[key]
         })
       }
     }
-    const img = await Pushlist(e, obj)
-    await e.reply(img)
+
+    const img = await Pushlist(e, obj, platform)
+    if (img) await e.reply(img)
     return true
   }
 

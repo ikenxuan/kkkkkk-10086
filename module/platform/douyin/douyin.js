@@ -83,8 +83,8 @@ export default class DouYin extends Base {
           const author_data = []
           const authorres = []
           const author = data.VideoData.aweme_detail.author
-          const sc = this.count(author.favoriting_count) // 收藏
-          const gz = this.count(author.follower_count) // 关注
+          const sc = Common.count(author.favoriting_count) // 收藏
+          const gz = Common.count(author.follower_count) // 关注
           const id = author.nickname // id
           const jj = author.signature // 简介
           const age = author.user_age // 年龄
@@ -379,7 +379,7 @@ export default class DouYin extends Base {
             desc: data.music_info.title,
             music_id: data.music_info.id,
             create_time: Time(0),
-            user_count: this.count(data.music_info.user_count),
+            user_count: Common.count(data.music_info.user_count),
             avater_url: data.music_info.avatar_large.url_list[0],
             fans: userdata.user.mplatform_followers_count || userdata.user.follower_count,
             following_count: userdata.user.following_count,
@@ -418,11 +418,11 @@ export default class DouYin extends Base {
               image_url: [{ image_src: live_data.data.data[0].cover.url_list[0] }],
               text: live_data.data.data[0].title,
               liveinf: `${live_data.data.partition_road_map.partition.title} | 房间号: ${room_data.owner.web_rid}`,
-              在线观众: this.count(live_data.data.data[0].stats.user_count_str),
-              总观看次数: this.count(live_data.data.data[0].stats.total_user_str),
+              在线观众: Common.count(live_data.data.data[0].stats.user_count_str),
+              总观看次数: Common.count(live_data.data.data[0].stats.total_user_str),
               username: data.user.nickname,
               avater_url: data.user.avatar_larger.url_list[0],
-              fans: this.count(data.user.follower_count),
+              fans: Common.count(data.user.follower_count),
               create_time: convertTimestampToDateTime(new Date().getTime()),
               now_time: convertTimestampToDateTime(new Date().getTime()),
               share_url: 'https://live.douyin.com/' + room_data.owner.web_rid,

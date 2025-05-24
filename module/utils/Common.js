@@ -119,6 +119,23 @@ class Tools {
   }
 
   /**
+   * 将数字转换为带"万"单位的字符串
+   * @param {number} count 需要转换的数字
+   * @returns {string} 转换后的字符串，超过1万的数字会转换为"xx万"的格式
+   * @example
+   * count(12345) // 返回 "1.2万"
+   * count(999) // 返回 "999"
+   * count(undefined) // 返回 "无法获取"
+   */
+  count (count) {
+    if (count > 10000) {
+      return (count / 10000).toFixed(1) + '万'
+    } else {
+      return count?.toString() || '无法获取'
+    }
+  }
+
+  /**
    * 删除文件
    * @param {string} path 文件路径
    * @param {boolean} force 是否强制删除

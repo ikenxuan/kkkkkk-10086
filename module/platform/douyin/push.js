@@ -1,4 +1,4 @@
-import { Base, Render, Config, DB, Version } from '../../utils/index.js'
+import { Base, Render, Config, DB, Version, Common } from '../../utils/index.js'
 import { DouyinData, GetDouyinID } from './index.js'
 import YAML from 'yaml'
 import fs from 'fs'
@@ -41,10 +41,10 @@ export default class DouYinpush extends Base {
         {
           image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover.url_list[0] || Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
           desc: this.desc(Detail_Data, Detail_Data.desc),
-          dianzan: this.count(Detail_Data.statistics.digg_count),
-          pinglun: this.count(Detail_Data.statistics.comment_count),
-          share: this.count(Detail_Data.statistics.share_count),
-          shouchang: this.count(Detail_Data.statistics.collect_count),
+          dianzan: Common.count(Detail_Data.statistics.digg_count),
+          pinglun: Common.count(Detail_Data.statistics.comment_count),
+          share: Common.count(Detail_Data.statistics.share_count),
+          shouchang: Common.count(Detail_Data.statistics.collect_count),
           create_time: this.convertTimestampToDateTime(data[awemeId].create_time),
           avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.user.avatar_larger.uri,
           share_url: iddata.is_mp4
@@ -52,9 +52,9 @@ export default class DouYinpush extends Base {
             : Detail_Data.share_url,
           username: Detail_Data.author.nickname,
           抖音号: Detail_Data.user_info.user.unique_id === '' ? Detail_Data.user_info.user.unique_id : Detail_Data.user_info.user.unique_id,
-          粉丝: this.count(Detail_Data.user_info.user.follower_count),
-          获赞: this.count(Detail_Data.user_info.user.total_favorited),
-          关注: this.count(Detail_Data.user_info.user.following_count)
+          粉丝: Common.count(Detail_Data.user_info.user.follower_count),
+          获赞: Common.count(Detail_Data.user_info.user.total_favorited),
+          关注: Common.count(Detail_Data.user_info.user.following_count)
         }
       )
 
