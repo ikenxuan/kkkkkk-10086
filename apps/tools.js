@@ -34,7 +34,7 @@ export class Tools extends plugin {
         { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
         { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
         { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
-        { reg: /^#?(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
+        { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
         { reg: '^#?BGM', fnc: 'uploadRecord' },
         { reg: '^#?(解析|kkk解析)', fnc: 'prefix' }
