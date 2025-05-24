@@ -1,10 +1,4 @@
 @charset "UTF-8";
-@import '../../../font/HarmonyOS_Sans_SC_Black/font.css';
-@import '../../../font/HarmonyOS_Sans_SC_Bold/font.css';
-@import '../../../font/HarmonyOS_Sans_SC_Light/font.css';
-@import '../../../font/HarmonyOS_Sans_SC_Medium/font.css';
-@import '../../../font//HarmonyOS_Sans_SC_Regular/font.css';
-@import '../../../font/HarmonyOS_Sans_SC_Thin/font.css';
 
 code[class*='language-'],
 pre[class*='language-'] {
