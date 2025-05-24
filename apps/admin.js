@@ -9,7 +9,7 @@ const APPType = {
   视频解析: 'videotool',
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
-  上传限制: 'usefilelimit',
+  上传拦截: 'usefilelimit',
   API服务: 'APIServer',
   API服务日志: 'APIServerLog'
 }
@@ -23,17 +23,17 @@ const DouYinType = {
   抖音解析提示: 'douyintip',
   抖音解析: 'douyintool',
   抖音高清语音: 'sendHDrecord',
-  抖音动态视频发送: 'senddynamicwork'
+  抖音推送解析: 'senddynamicwork'
 }
 
 const BilibiliType = {
-  B站评论图: 'bilibilicommentsimg',
+  设置B站评论: 'bilibilicommentsimg',
   B站推送: 'bilibilipush',
   B站推送日志: 'bilibilipushlog',
   B站推送表达式: 'bilibilipushcron',
   B站解析提示: 'bilibilitip',
   B站解析: 'bilibilitool',
-  B站动态视频发送: 'senddynamicvideo',
+  B站推送解析: 'senddynamicvideo',
   B站内容优先: 'videopriority'
 }
 
@@ -50,7 +50,7 @@ const NumberCfgType = {
   B站推送设置权限: { type: 'bilibili', key: 'bilibilipushGroup', limit: '0-2' },
   渲染精度: { type: 'app', key: 'renderScale', limit: '50-200' },
   优先级: { type: 'app', key: 'priority', limit: '0-114514' },
-  限制: { type: 'app', key: 'filelimit', limit: '5-114514' },
+  上传拦截阈值: { type: 'app', key: 'filelimit', limit: '5-114514' },
   快手评论数量: { type: 'kuaishou', key: 'kuaishounumcomments', limit: '0-30' }
 }
 
