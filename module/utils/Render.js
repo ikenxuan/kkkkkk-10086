@@ -45,9 +45,12 @@ const Render = {
     }
     path = `${basePaths[platform]}/${newPath}`
     const data = {
-      _res_path: (join(Version.pluginPath, '/resources') + '/').replace(/\\/g, '/'),
-      _layout_path: (join(Version.pluginPath, '/resources', 'template', 'extend') + '/').replace(/\\/g, '/'),
-      defaultLayout: (join(Version.pluginPath, '/resources', 'template', 'extend', 'html') + '/default.html').replace(/\\/g, '/'),
+      // 资源路径
+      _res_path: join(Version.pluginPath, 'resources').replace(/\\/g, '/') + '/',
+      // 布局模板路径
+      _layout_path: join(Version.pluginPath, 'resources', 'template', 'extend').replace(/\\/g, '/') + '/',
+      // 默认布局文件路径
+      defaultLayout: join(Version.pluginPath, 'resources', 'template', 'extend', 'html', 'default.html').replace(/\\/g, '/'),
       sys: {
         scale: scale(params?.scale ?? 1)
       },
