@@ -10,11 +10,11 @@ import Common from '../utils/Common.js'
  * @returns {any} 推送消息
  */
 export default async function Pushlist (e, list, platform) {
-  const transformedData = []
+  const renderOpt = []
   if (platform === 'douyin') {
     for (const item of list['douyin']) {
       const userInfo = await getDouyinData('用户主页数据', { sec_uid: item.sec_uid, typeMode: 'strict' })
-      transformedData.push({
+      renderOpt.push({
         avatar_img: userInfo.user.avatar_larger.url_list[0],
         username: userInfo.user.nickname,
         short_id: userInfo.user.unique_id === '' ? userInfo.user.short_id : userInfo.user.unique_id,
@@ -26,7 +26,7 @@ export default async function Pushlist (e, list, platform) {
   } else {
     for (const item of list['bilibili']) {
       const userInfo = await getBilibiliData('用户主页数据', { host_mid: item.host_mid, typeMode: 'strict' })
-      transformedData.push({
+      renderOpt.push({
         avatar_img: userInfo.data.card.face,
         username: userInfo.data.card.name,
         host_mid: userInfo.data.card.mid,
@@ -37,7 +37,7 @@ export default async function Pushlist (e, list, platform) {
     }
   }
 
-  if(transformedData.length === 0) {
+  if(renderOpt.length === 0) {
     if(platform === 'douyin') {
       await e.reply(`当前群：${e.group_name}(${e.group_id})\n没有设置任何抖音博主推送！\n可使用「#设置抖音推送 + 抖音号」进行设置`)
     } else {
@@ -48,7 +48,7 @@ export default async function Pushlist (e, list, platform) {
 
   const img = await Render.render(
     platform === 'douyin' ? 'douyin/userlist' : 'bilibili/userlist',
-    transformedData
+    renderOpt
   )
   return img
 }
