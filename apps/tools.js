@@ -37,10 +37,40 @@ export class Tools extends plugin {
         { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
         { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
         { reg: '^#?BGM', fnc: 'uploadRecord' },
-        { reg: '^#?(解析|kkk解析)', fnc: 'prefix' }
+        { reg: '^#?(解析|kkk解析)', fnc: 'prefix' },
+        { reg:/^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
       ]
     })
     this.task = task
+  }
+
+  async changeBotID (e) {
+    const newDouyinlist = Config.pushlist.douyin.map(item => {
+      // 操作每个 group_id
+      const modifiedGroupIds = item.group_id.map(groupId => {
+        const [group_id, uin] = groupId.split(':')
+        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
+      })
+      return {
+        ...item,
+        group_id: modifiedGroupIds
+      }
+    })
+    const newBilibililist = Config.pushlist.bilibili.map(item => {
+      // 操作每个 group_id
+      const modifiedGroupIds = item.group_id.map(groupId => {
+        const [group_id, uin] = groupId.split(':')
+        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
+      })
+      return {
+        ...item,
+        group_id: modifiedGroupIds
+      }
+    })
+    Config.modify('pushlist', 'douyin', newDouyinlist)
+    Config.modify('pushlist', 'bilibili', newBilibililist)
+    await e.reply('推送机器人已修改为' + e.msg.replace(/^#kkk设置推送机器人/, ''))
+    return true
   }
 
   async prefix (e) {
