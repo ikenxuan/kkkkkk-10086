@@ -139,7 +139,6 @@ body.dark-mode .copyright .commit_id_old {
 .copyright .tip {
   /* 核心：颜色设为红色 */
   color: #ff0000 !important; /* 使用 !important 确保覆盖其他可能存在的颜色设置 */
-  font-weight: bold; /* 保持加粗以示强调 */
   /* 与 .version 保持一致的样式 */
   padding: 0 10px;
   margin: 0 0 0 5px;
