@@ -50,7 +50,7 @@ export default class Bilibilipush extends Base {
    * - data 动态信息对象，必须包含 dynamic_id, host_mid, group_id, type 等属性。
    */
   async getdata (data) {
-    let nocd_data
+    let noCKData
     for (const dynamicId in data) {
       const dynamicCARDINFO = await getBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: dynamicId, typeMode: 'strict' })
       const userINFO = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: data[dynamicId].host_mid, typeMode: 'strict' })
@@ -129,7 +129,7 @@ export default class Bilibilipush extends Base {
               send_video = false
               logger.debug(`UP主：${INFODATA.data.owner.name} 的该动态类型为${logger.yellow('番剧或影视')}，默认跳过不下载，直达：${logger.green(INFODATA.data.redirect_url)}`)
             } else {
-              nocd_data = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { avid: aid, cid: INFODATA.data.cid })
+              noCKData = await getBilibiliData('单个视频下载信息数据', '', { avid: aid, cid: INFODATA.data.cid })
             }
 
             img = await Render.render(
@@ -184,7 +184,7 @@ export default class Bilibilipush extends Base {
           const text = replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.rich_text_nodes)
           let param = {}
           switch (data[dynamicId].Dynamic_Data.orig.type) {
-            case DynamicType.AV: {
+            case 'DYNAMIC_TYPE_AV': {
               param = {
                 username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
                 pub_action: data[dynamicId].Dynamic_Data.orig.modules.module_author.pub_action,
@@ -225,7 +225,7 @@ export default class Bilibilipush extends Base {
               }
               break
             }
-            case DynamicType.LIVE_RCMD: {
+            case 'DYNAMIC_TYPE_LIVE_RCMD': {
               const liveData = JSON.parse(data[dynamicId].Dynamic_Data.orig.modules.module_dynamic.major.live_rcmd.content)
               param = {
                 username: checkvip(data[dynamicId].Dynamic_Data.orig.modules.module_author),
@@ -287,7 +287,7 @@ export default class Bilibilipush extends Base {
               // 判断是否发送视频动态的视频
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
-                video = await this.DownLoadVideo(nocd_data.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
+                video = await this.DownLoadVideo(noCKData.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
                 if (video) await Bot[uin].pickGroup(group_id).sendMsg(segment.video(video.filepath))
               }
             } catch (error) {
