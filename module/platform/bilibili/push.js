@@ -123,7 +123,7 @@ export default class Bilibilipush extends Base {
           if (data[dynamicId].Dynamic_Data.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
-            const INFODATA = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { bvid, typeMode: 'strict' })
+            const INFODATA = await getBilibiliData('单个视频作品数据', Config.cookies.bilibili, { bvid, typeMode: 'strict' })
             /** 特殊字段，只有番剧和影视才会有，如果是该类型视频，默认不发送 */
             if (INFODATA.data.redirect_url) {
               send_video = false
