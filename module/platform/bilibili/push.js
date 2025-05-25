@@ -52,8 +52,8 @@ export default class Bilibilipush extends Base {
   async getdata (data) {
     let nocd_data
     for (const dynamicId in data) {
-      const dynamicCARDINFO = await getBilibiliData('动态卡片数据', { dynamic_id: dynamicId, typeMode: 'strict' })
-      const userINFO = await getBilibiliData('用户主页数据', { host_mid: data[dynamicId].host_mid, typeMode: 'strict' })
+      const dynamicCARDINFO = await getBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: dynamicId, typeMode: 'strict' })
+      const userINFO = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: data[dynamicId].host_mid, typeMode: 'strict' })
       let emojiDATA = await getBilibiliData('Emoji数据')
       emojiDATA = extractEmojisData(emojiDATA.data.packages)
       const dycrad = dynamicCARDINFO.data.card && dynamicCARDINFO.data.card.card && JSON.parse(dynamicCARDINFO.data.card.card)
@@ -123,13 +123,13 @@ export default class Bilibilipush extends Base {
           if (data[dynamicId].Dynamic_Data.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
             const aid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.aid
             const bvid = data[dynamicId].Dynamic_Data.modules.module_dynamic.major.archive.bvid
-            const INFODATA = await getBilibiliData('单个视频下载信息数据', '', { bvid, typeMode: 'strict' })
+            const INFODATA = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { bvid, typeMode: 'strict' })
             /** 特殊字段，只有番剧和影视才会有，如果是该类型视频，默认不发送 */
             if (INFODATA.data.redirect_url) {
               send_video = false
               logger.debug(`UP主：${INFODATA.data.owner.name} 的该动态类型为${logger.yellow('番剧或影视')}，默认跳过不下载，直达：${logger.green(INFODATA.data.redirect_url)}`)
             } else {
-              nocd_data = await getBilibiliData('单个视频下载信息数据', '', { avid: aid, cid: INFODATA.data.cid })
+              nocd_data = await getBilibiliData('单个视频下载信息数据', Config.cookies.bilibili, { avid: aid, cid: INFODATA.data.cid })
             }
 
             img = await Render.render(
