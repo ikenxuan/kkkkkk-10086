@@ -115,10 +115,48 @@ body.dark-mode .copyright .name {
 
 .copyright .commit_id_old {
   color: #808080;
+  /* 与 .version 保持一致的样式，但颜色不同 */
+  padding: 0 10px; /* 与 version 一致 */
+  margin: 0 0 0 5px; /* 与 version 一致 */
+  font-size: 25px; /* 与 version 一致 */
+  text-shadow: 0px 0px 20px #00000000; /* 与 version 一致 */
+  border-radius: 10px; /* 与 version 一致 */
+  vertical-align: super; /* 与 version 一致 */
+  /* 根据亮色/暗色模式设置背景色 */
+}
+
+/* 为 commit_id_old 和 tip 分别设置亮色和暗色模式下的背景色 */
+body.light-mode .copyright .commit_id_old {
+  background-color: #e9e9e9; /* 比 version 的背景色稍暗或不同，以作区分 */
+  color: #808080;
+}
+
+body.dark-mode .copyright .commit_id_old {
+  background-color: #505050; /* 比 version 的背景色稍亮或不同，以作区分 */
+  color: #a0a0a0;
 }
 
 .copyright .tip {
-  color: #ff0000;
+  /* 核心：颜色设为红色 */
+  color: #ff0000 !important; /* 使用 !important 确保覆盖其他可能存在的颜色设置 */
+  font-weight: bold; /* 保持加粗以示强调 */
+  /* 与 .version 保持一致的样式 */
+  padding: 0 10px;
+  margin: 0 0 0 5px;
+  font-size: 25px; /* 与 version 一致 */
+  text-shadow: 0px 0px 20px #00000000; /* 与 version 一致 */
+  border-radius: 10px; /* 与 version 一致 */
+  vertical-align: super; /* 与 version 一致 */
+  /* 根据亮色/暗色模式设置背景色，可以与 version 的背景色相同，或者略作区分 */
+}
+
+/* 为 .tip 设置亮色和暗色模式下的背景色 */
+body.light-mode .copyright .tip {
+  background-color: #d7d7d7; /* 与 version 在 light-mode 下的背景色一致 */
+}
+
+body.dark-mode .copyright .tip {
+  background-color: #666666; /* 与 version 在 dark-mode 下的背景色一致 */
 }
 
 /* cont */

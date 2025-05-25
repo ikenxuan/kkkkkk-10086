@@ -13,9 +13,9 @@ function scale (pct = 1) {
 async function gitstatus () {
   const status = await Version.checkCommitIdAndUpdateStatus()
   if (status.latest) {
-    return ` SHA: <span class="version">${status.currentCommitId}</span>`
+    return `<span class="name">Id</span><span class="version">${status.currentCommitId}</span>`
   } else {
-    return ` SHA: <span class="version">${status.currentCommitId}</span> <span class="tip">(有新版本: ${status.remoteCommitId})</span>`
+    return `<span class="name">Id</span><span class="commit_id_old">${status.currentCommitId}</span> <span class="name">New</span><span class="tip">${status.remoteCommitId}</span>`
   }
 }
 
@@ -54,7 +54,7 @@ const Render = {
       sys: {
         scale: scale(params?.scale ?? 1)
       },
-      copyright: `${Version.BotName}<span class="version"> v${Version.BotVersion}</span> & ${Version.pluginName}<span class="version"> v${Version.version}</span>${await gitstatus()}`,
+      copyright: `<span class="name">${Version.BotName}</span><span class="version">${Version.BotVersion}</span> & <span class="name">${Version.pluginName}</span><span class="version">${Version.version}</span> ${await gitstatus()}`,
       pageGotoParams: {
         waitUntil: 'load'
       },
