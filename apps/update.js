@@ -25,7 +25,7 @@ export class kkkUpdate extends plugin {
     msg = msg.replace(/kkk(插件)?/, '')
     msg += Version.pluginName
     e.msg = msg
-    const up = await new update(e)
+    const up = new update(e)
     up.e = e
     e.msg.includes('日志') ? up.updateLog() : up.update()
     return true
