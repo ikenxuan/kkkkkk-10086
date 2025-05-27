@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.8.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.2...v1.8.0) (2025-05-27)
+
+
+### Features
+
+* **tools:** 添加修改推送机器人功能 ([ef584cf](https://github.com/ikenxuan/kkkkkk-10086/commit/ef584cf45f67c5f997478edcf8ab8ba044b622ec))
+* **utils:** 添加常用工具类Common.js ([e04683a](https://github.com/ikenxuan/kkkkkk-10086/commit/e04683a740dc173635fb318d0185b69e100a95ec))
+* 添加深色主题支持并优化动态渲染逻辑 ([1f9419b](https://github.com/ikenxuan/kkkkkk-10086/commit/1f9419b70b111f2a71f72acc068e530e841e5a45))
+
+
+### Bug Fixes
+
+* **admin:** 移除群文件上传相关配置 ([260ee98](https://github.com/ikenxuan/kkkkkk-10086/commit/260ee98584d29c406d106ae3979060a585c8af9a))
+* **bilibili:** 修正视频数据请求的描述字段 ([6ab4c5e](https://github.com/ikenxuan/kkkkkk-10086/commit/6ab4c5e0753e29e8c95c0753bb196d87006b3d8a))
+* **help.js:** 修正html文件路径错误 ([5fdf593](https://github.com/ikenxuan/kkkkkk-10086/commit/5fdf5934de3cbe4c03b7d2b6417bb2e1d4d62c5f))
+* **html:** 修复默认模板中CSS文件路径错误 ([a359d69](https://github.com/ikenxuan/kkkkkk-10086/commit/a359d691208a3861593c1eed12681ea6199b356a))
+* **Pushlist:** 修复 ([7d14fb8](https://github.com/ikenxuan/kkkkkk-10086/commit/7d14fb89f533cfb133bfaea38808f21a84b9f4bd))
+* **Pushlist:** 修复平台判断条件以仅匹配douyin ([61ad225](https://github.com/ikenxuan/kkkkkk-10086/commit/61ad225b6fb262f9fa4da821caacf00f99c1930f))
+* **Pushlist:** 修复渲染选项未正确传递的问题 ([94a34df](https://github.com/ikenxuan/kkkkkk-10086/commit/94a34dff2934b9e0464bb975fa80e0b689b0367a))
+* **Render:** 不是函数 ([eebb48e](https://github.com/ikenxuan/kkkkkk-10086/commit/eebb48e4cb89570af615a1e9d57ba0da8f347d96))
+* **update.js:** 修正 kkkkkk-10086 插件更新及日志指令的处理逻辑 ([3b7af0c](https://github.com/ikenxuan/kkkkkk-10086/commit/3b7af0c904d447e59b1442abb931b63d72df4084))
+* 修复B站推送功能并更新渲染格式 ([cbd0172](https://github.com/ikenxuan/kkkkkk-10086/commit/cbd0172ec813da0734ced227f1b5f859f28aca28))
+* 修复版本页面渲染 ([8600da5](https://github.com/ikenxuan/kkkkkk-10086/commit/8600da5c1ba5d0e9b1c07197d7e1050c95f69f5a))
+* 修复转发函数导入 ([eeb63ec](https://github.com/ikenxuan/kkkkkk-10086/commit/eeb63ecfa313d9c8d462b1e799c0cd2185a5afbf))
+* 修正 update.js 中导入外部 update 模块的方式 ([c399aa0](https://github.com/ikenxuan/kkkkkk-10086/commit/c399aa0cb6ac7ff863927d5ec6fb6fde4b569455))
+* 修正following_count字段引用错误 ([152b060](https://github.com/ikenxuan/kkkkkk-10086/commit/152b060f619fa0bf9f9877c878b956ff615a1b3c))
+* 函数修正 ([71f5eef](https://github.com/ikenxuan/kkkkkk-10086/commit/71f5eef7365c43ee2e406bd7c80cb0297465c7cf))
+* 改改改 ([3dfc86f](https://github.com/ikenxuan/kkkkkk-10086/commit/3dfc86f049694d840248bf21ccd84dfe1e3365b2))
+* **渲染:** 修正git状态显示中的空格格式问题 ([806e529](https://github.com/ikenxuan/kkkkkk-10086/commit/806e529869bb5a57e1b2036a16bd0f1a7e964948))
+* 漏网之鱼 ([180bf22](https://github.com/ikenxuan/kkkkkk-10086/commit/180bf224390f35805731c7348ff91be037bb1754))
+* 移除gitstatus返回字符串中的多余空格 ([cfade8b](https://github.com/ikenxuan/kkkkkk-10086/commit/cfade8ba18d7425047c4b2e56288669d503b1839))
+* 移除未使用的logger导入 ([88cb589](https://github.com/ikenxuan/kkkkkk-10086/commit/88cb589c41c5f4592a027609eb7ac30f67fcd494))
+
 ## [1.7.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.1...v1.7.2) (2025-04-21)
 
 
