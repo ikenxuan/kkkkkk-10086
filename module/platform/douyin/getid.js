@@ -101,10 +101,7 @@ export default async function GetDouyinID (url, log = true) {
     }
 
     // 处理未匹配到任何模式的情况
-    if (Object.keys(result).length === 0) {
-      logger.warn(`[抖音链接] 无法识别的链接类型: ${longLink}`)
-      if (log) logger.error(`[抖音链接] 无法识别的链接: ${longLink}`)
-    }
+    if (Object.keys(result).length === 0) log & logger.warn(`[抖音链接] 无法识别的链接: ${longLink}`)
 
     return result
   } catch (error) {
