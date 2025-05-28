@@ -107,7 +107,7 @@ export default class DouYin extends Base {
                   `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
                   `Douyin_tmp_V_${Date.now()}`,
                   this.headers,
-                  mp4
+                  'mp4'
                 )
 
                 if (liveimg.filepath) {
