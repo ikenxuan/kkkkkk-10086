@@ -269,7 +269,7 @@ export default class DouYin extends Base {
           }
         }
         /** 发送视频 */
-        sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, `tmp_${g_title}_${Date.now()}.mp4`)
+        sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, `tmp_${g_title}_${Date.now()}`)
         return true
       }
       case 'user_dynamic': {
