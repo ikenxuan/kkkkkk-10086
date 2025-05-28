@@ -247,7 +247,7 @@ export default class Bilibilipush extends Base {
               break
             }
           }
-          img = await Render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
+          img = await Render.render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
             text,
             dianzan: Common.count(data[dynamicId].Dynamic_Data.modules.module_stat.like.count),
             pinglun: Common.count(data[dynamicId].Dynamic_Data.modules.module_stat.comment.count),
