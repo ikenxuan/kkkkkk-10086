@@ -1,4 +1,4 @@
-import { Config, Render, Version } from '../module/utils/index.js'
+import { Config, Render, Version, Common } from '../module/utils/index.js'
 import { dylogin } from '../module/platform/douyin/login.js'
 import BiLogin from '../module/platform/bilibili/login.js'
 import path from 'path'
@@ -136,9 +136,9 @@ export class kkkAdmin extends plugin {
   }
 
   async deltemp () {
-    removeAllFiles(process.cwd() + '/resources/kkkdownload/video/')
-      .then(() => this.reply('/resources/kkkdownload/video/' + '所有文件已删除'))
-      .catch((err) => console.error('删除文件时出错:', err))
+    removeAllFiles(Common.tempDri.video)
+      .then(() => this.reply(Common.tempDri.video + '所有文件已删除'))
+      .catch((err) => logger.error('删除文件时出错:', err))
   }
 
   /** 修改开关设置 */
@@ -291,6 +291,7 @@ function checkNumberValue (value, limit) {
   // 如果不符合以上任何条件，则返回原值
   return parseFloat(value)
 }
+
 async function removeAllFiles (dir) {
   const files = await fs.promises.readdir(dir)
   for (const file of files) {
