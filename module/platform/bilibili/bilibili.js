@@ -316,7 +316,7 @@ export default class BiLiBiLi extends Base {
 
                 const stats = fs.statSync(filePath)
                 const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
-                if (fileSizeInMB > Config.upload.groupfilevalue) {
+                if (fileSizeInMB > Config.app.filelimit) {
                   // 使用文件上传
                   return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '', { useGroupFile: true })
                 } else {
