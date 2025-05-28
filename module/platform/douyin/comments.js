@@ -1,12 +1,15 @@
-import DouyinData from './getdata.js'
+import { Common, Config, Networks } from '../../utils/index.js'
+import { getDouyinData } from '@ikenxuan/amagi'
+import convert from 'heic-convert'
+
 /**
  *
  * @param {*} data 完整的评论数据
  * @param {*} emojidata 处理过后的emoji列表
  * @returns obj
  */
-export default async function comments (data, emojidata) {
-  const jsonArray = []
+export async function douyinComments(data, emojidata) {
+  let jsonArray = []
   if (data.comments === null) return []
 
   for (let i = 0; i < data.comments.length; i++) {
@@ -15,32 +18,32 @@ export default async function comments (data, emojidata) {
     const nickname = data.comments[i].user.nickname
     const userimageurl = data.comments[i].user.avatar_thumb.url_list[0]
     const text = data.comments[i].text
-    const ip = data.comments[i].ip_label ? data.comments[i].ip_label : '未知'
+    const ip = data.comments[i].ip_label ?? '未知'
     const time = data.comments[i].create_time
-    const label_type = data.comments[i].label_type ? data.comments[i].label_type : -1
+    const label_type = data.comments[i].label_type ?? -1
     const sticker = data.comments[i].sticker ? data.comments[i].sticker.animate_url.url_list[0] : null
     const digg_count = data.comments[i].digg_count
     const imageurl =
       data.comments[i].image_list &&
-        data.comments[i].image_list[0] &&
-        data.comments[i].image_list[0].origin_url &&
-        data.comments[i].image_list[0].origin_url.url_list
-        ? data.comments[i].image_list[0].origin_url.url_list[0]
+        data.comments[i].image_list?.[0] &&
+        data.comments[i].image_list?.[0].origin_url &&
+        data.comments[i].image_list?.[0].origin_url.url_list
+        ? data.comments[i].image_list?.[0].origin_url.url_list[0]
         : null
-    const status_label = data.comments[i].label_list ? data.comments[i].label_list[0].text : null
+    const status_label = data.comments[i].label_list?.[0]?.text ?? null
     const userintextlongid =
       data.comments[i].text_extra && data.comments[i].text_extra[0] && data.comments[i].text_extra[0].sec_uid
-        ? data.comments[i].text_extra[0].sec_uid && data.comments[i].text_extra.map((extra) => extra.sec_uid)
+        ? data.comments[i].text_extra[0].sec_uid && data.comments[i].text_extra.map(extra => extra.sec_uid)
         : null
     const search_text =
       data.comments[i].text_extra && data.comments[i].text_extra[0] && data.comments[i].text_extra[0].search_text
         ? data.comments[i].text_extra[0].search_text &&
-        data.comments[i].text_extra.map((extra) => ({
+        data.comments[i].text_extra.map(extra => ({
           search_text: extra.search_text,
           search_query_id: extra.search_query_id
         }))
         : null
-    const relativeTime = await getRelativeTimeFromTimestamp(time)
+    const relativeTime = getRelativeTimeFromTimestamp(time)
     const reply_comment_total = data.comments[i].reply_comment_total
     const commentObj = {
       id: i + 1,
@@ -64,26 +67,25 @@ export default async function comments (data, emojidata) {
   }
 
   jsonArray.sort((a, b) => b.digg_count - a.digg_count)
-  const indexLabelTypeOne = jsonArray.findIndex((comment) => comment.label_type === 1)
+  const indexLabelTypeOne = jsonArray.findIndex(comment => comment.label_type === 1)
 
   if (indexLabelTypeOne !== -1) {
     const commentTypeOne = jsonArray.splice(indexLabelTypeOne, 1)[0]
     jsonArray.unshift(commentTypeOne)
   }
 
-
-  jsonArray.text = await br(jsonArray)
-  jsonArray.text = await handling_at(jsonArray)
-  jsonArray.text = await search_text(jsonArray)
-
+  jsonArray = br(jsonArray)
+  jsonArray = await handling_at(jsonArray)
+  jsonArray = await search_text(jsonArray)
+  jsonArray = await heic2jpg(jsonArray)
 
   const CommentData = {
     jsonArray
   }
 
-  for (let i = 0; i < jsonArray.length; i++) {
-    if (jsonArray[i].digg_count > 10000) {
-      jsonArray[i].digg_count = (jsonArray[i].digg_count / 10000).toFixed(1) + 'w'
+  for (const i of jsonArray) {
+    if (i.digg_count > 10000) {
+      i.digg_count = (i.digg_count / 10000).toFixed(1) + 'w'
     }
   }
 
@@ -105,8 +107,13 @@ export default async function comments (data, emojidata) {
   return CommentData
 }
 
-async function getRelativeTimeFromTimestamp (timestamp) {
-  const now = Math.floor(Date.now() / 1000) // 当前时间的时间戳
+/**
+ * 将时间戳转换为相对时间描述
+ * @param {number} timestamp Unix时间戳(秒)
+ * @returns {string} 相对时间描述，如"刚刚"、"30秒前"、"1小时前"等，超过3个月则返回具体日期(YYYY-MM-DD)
+ */
+function getRelativeTimeFromTimestamp(timestamp) {
+  const now = Math.floor(Date.now() / 1000)
   const differenceInSeconds = now - timestamp
 
   if (differenceInSeconds < 30) {
@@ -120,10 +127,9 @@ async function getRelativeTimeFromTimestamp (timestamp) {
   } else if (differenceInSeconds < 2592000) {
     return Math.floor(differenceInSeconds / 86400) + '天前'
   } else if (differenceInSeconds < 7776000) {
-    // 三个月的秒数
     return Math.floor(differenceInSeconds / 2592000) + '个月前'
   } else {
-    const date = new Date(timestamp * 1000) // 将时间戳转换为毫秒
+    const date = new Date(timestamp * 1000)
     const year = date.getFullYear()
     const month = (date.getMonth() + 1).toString().padStart(2, '0')
     const day = date.getDate().toString().padStart(2, '0')
@@ -131,32 +137,55 @@ async function getRelativeTimeFromTimestamp (timestamp) {
   }
 }
 
-async function handling_at (data) {
+/**
+ * 高亮 @ 的内容
+ * @param data 评论数据
+ * @returns
+ */
+async function handling_at(data) {
   for (const item of data) {
     if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
       for (const secUid of item.is_At_user_id) {
-        const UserInfoData = await new DouyinData('UserInfoData').GetData({
-          user_id: secUid
-        })
+        const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid: secUid, typeMode: 'strict' })
         if (UserInfoData.user.sec_uid === secUid) {
           /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
           const regex = new RegExp(`@${UserInfoData.user.nickname?.replace(/[-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&')}`, 'g')
-          item.text = item.text.replace(regex, (match) => {
-            return `<span class=${isdarktheme() ? 'dark-mode handling_at' : 'handling_at'}>${match}</span>`
+          item.text = item.text.replace(regex, match => {
+            return `<span class="${Common.useDarkTheme() ? 'dark-mode handling_at' : 'handling_at'}">${match}</span>`
           })
         }
       }
     }
   }
+  return data
 }
 
-async function search_text (data) {
+/**
+ * 高亮热点搜索关键词
+ * @param {Object[]} data 评论数据
+ * @param {number} data[].id 评论ID
+ * @param {any} data[].cid 评论唯一标识
+ * @param {any} data[].aweme_id 视频ID
+ * @param {any} data[].nickname 用户昵称
+ * @param {any} data[].userimageurl 用户头像URL
+ * @param {any} data[].text 评论文本内容
+ * @param {any} data[].digg_count 点赞数
+ * @param {any} data[].ip_label IP归属地
+ * @param {string} data[].create_time 创建时间
+ * @param {any} data[].commentimage 评论图片
+ * @param {any} data[].label_type 标签类型
+ * @param {any} data[].sticker 表情贴纸
+ * @param {any} data[].status_label 状态标签
+ * @param {any} data[].is_At_user_id 艾特用户ID
+ * @param {any} data[].search_text 搜索文本
+ * @param {any} data[].reply_comment_total 回复总数
+ * @returns {Promise<Object[]>} 处理后的评论数据
+ */
+async function search_text(data) {
   for (const item of data) {
     if (item.search_text !== null && Array.isArray(item.search_text)) {
       for (const search_text of item.search_text) {
-        const SuggestWordsData = await new DouyinData('SuggestWords').GetData({
-          query: search_text.search_text
-        })
+        const SuggestWordsData = await getDouyinData('热点词数据', Config.cookies.douyin, { query: search_text.search_text, typeMode: 'strict' })
         if (
           SuggestWordsData.data &&
           SuggestWordsData.data[0] &&
@@ -165,8 +194,8 @@ async function search_text (data) {
           SuggestWordsData.data[0].params.query_id === search_text.search_query_id
         ) {
           const regex = new RegExp(`${search_text.search_text}`, 'g')
-          item.text = item.text.replace(regex, (match) => {
-            const themeClass = isdarktheme() ? 'dark-mode' : ''
+          item.text = item.text.replace(regex, match => {
+            const themeClass = Common.useDarkTheme() ? 'dark-mode' : ''
             return `<span class="search_text ${themeClass}">
                 ${match}
                 <span class="search-ico"></span>
@@ -176,27 +205,42 @@ async function search_text (data) {
       }
     }
   }
+  return data
 }
 
-async function br (data) {
-  for (let i = 0; i < data.length; i++) {
-    let text = data[i].text
-
+/**
+ * 换行符转义为<br>
+ * @param data 评论数据
+ * @returns
+ */
+function br(data) {
+  for (const i of data) {
+    let text = i.text
     text = text.replace(/\n/g, '<br>')
-    data[i].text = text
+    i.text = text
   }
   return data
 }
 
 /**
- * 是否启用深色模式
- * @returns boolean
+ * HEIC转JPG
+ * @param jsonArray 评论数据
+ * @returns
  */
-function isdarktheme () {
-  let light = false
-  const date = new Date().getHours()
-  if (date >= 6 && date < 18) {
-    light = true
+const heic2jpg = async (jsonArray) => {
+  for (const item of jsonArray) {
+    if (item.commentimage) {
+      const headers = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).getHeaders()
+      if (headers['content-type'] && headers['content-type'] === 'image/heic') {
+        const response = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).returnResult()
+        const jpegBuffer = await convert({
+          buffer: response.data,
+          format: 'JPEG'
+        })
+        const base64Image = Buffer.from(jpegBuffer).toString('base64')
+        item.commentimage = `data:image/jpeg;base64,${base64Image}`
+      }
+    }
   }
-  return light
+  return jsonArray
 }

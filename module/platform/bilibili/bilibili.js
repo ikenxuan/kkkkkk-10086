@@ -284,7 +284,6 @@ export default class BiLiBiLi extends Base {
 
   async getvideo (OBJECT) {
     /** 获取视频 => FFMPEG合成 */
-    await FFmpeg.checkEnv()
     if (Config.bilibili.videopriority === true) {
       this.STATUS = '!isLogin'
     }
@@ -303,35 +302,34 @@ export default class BiLiBiLi extends Base {
           '.mp3'
         )
         if (bmp4.filepath && bmp3.filepath) {
-          await FFmpeg.VideoComposite(1,
-            bmp4.filepath,
-            bmp3.filepath,
-            this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,
-            /** 根据配置文件 `rmmp4` 重命名 */
-            async () => {
-              const filePath = this._path + `/resources/kkkdownload/video/${Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
-              fs.renameSync(
-                this._path + `/resources/kkkdownload/video/Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT.INFODATA.data.bvid : OBJECT.INFODATA.result.episodes[0].bvid}.mp4`,
-                filePath
-              )
-              logger.mark('正在尝试删除缓存文件')
-              await this.removeFile(bmp4.filepath, true)
-              await this.removeFile(bmp3.filepath, true)
+          await mergeFile('二合一（视频 + 音频）', {
+            path: bmp4.filepath,
+            path2: bmp3.filepath,
+            resultPath: Common.tempDri.video + `Bil_Result_${this.TYPE === 'bilibilivideo' ? OBJECT && OBJECT.data.bvid : OBJECT && OBJECT.result.season_id}.mp4`,
+            callback: async (success, resultPath) => {
+              if (success) {
+                const filePath = Common.tempDri.video + `${Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
+                fs.renameSync(resultPath, filePath)
+                logger.mark('正在尝试删除缓存文件')
+                await Common.removeFile(bmp4.filepath, true)
+                await Common.removeFile(bmp3.filepath, true)
 
-              const stats = fs.statSync(filePath)
-              const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(2)
-              if (fileSizeInMB > 75) {
-                if (this.botname !== 'TRSS-Yunzai') await this.e.reply(`视频大小: ${fileSizeInMB}MB 正通过群文件上传中...`)
-                await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
+                const stats = fs.statSync(filePath)
+                const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
+                if (fileSizeInMB > Config.upload.groupfilevalue) {
+                  // 使用文件上传
+                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '', { useGroupFile: true })
+                } else {
+                  /** 因为本地合成，没有视频直链 */
+                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '')
+                }
               } else {
-                /** 因为本地合成，没有视频直链 */
-                await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null)
+                await Common.removeFile(bmp4.filepath, true)
+                await Common.removeFile(bmp3.filepath, true)
+                return true
               }
-            },
-            async () => {
-              throw new Error('FFMPEG 合成失败')
             }
-          )
+          })
         }
         break
       }

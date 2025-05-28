@@ -45,7 +45,7 @@ export default class DouYinpush extends Base {
           pinglun: Common.count(Detail_Data.statistics.comment_count),
           share: Common.count(Detail_Data.statistics.share_count),
           shouchang: Common.count(Detail_Data.statistics.collect_count),
-          create_time: this.convertTimestampToDateTime(data[awemeId].create_time),
+          create_time: Common.convertTimestampToDateTime(data[awemeId].create_time),
           avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.user.avatar_larger.uri,
           share_url: iddata.is_mp4
             ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
@@ -304,22 +304,6 @@ export default class DouYinpush extends Base {
       }
       Config.modify('pushlist', 'douyin', config.douyin)
     }
-  }
-
-  /**
-   *
-   * @param {string} timestamp 时间戳
-   * @returns 获取 年-月-日 时:分
-   */
-  convertTimestampToDateTime (timestamp) {
-    const date = new Date(timestamp * 1000)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-
-    return `${year}-${month}-${day} ${hours}:${minutes}`
   }
 
   desc (video_obj, text) {

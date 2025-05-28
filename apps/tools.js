@@ -173,9 +173,8 @@ export class Tools extends plugin {
   async douy (e) {
     const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetDouyinID(url)
-    const data = await new DouyinData(iddata.type).GetData(iddata)
-    const res = await new DouYin(e, iddata).RESOURCES(data)
-    if (res) return true
+    await new DouYin(e, iddata).RESOURCES(iddata)
+    return true
   }
 
   async setpushbili (e) {

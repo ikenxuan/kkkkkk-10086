@@ -1,9 +1,24 @@
+import Version from './Version.js'
 import Config from './Config.js'
+import { join } from 'node:path'
 import Base from './Base.js'
 import fs from 'node:fs'
 
 /** 常用工具合集 */
 class Tools {
+  constructor() {
+    // 初始化default路径
+    const defaultPath = join(Version.clientPath, 'temp', Version.pluginName)
+    this.tempDri = {
+      /** 插件缓存目录 */
+      default: defaultPath,
+      /** 视频缓存文件 */
+      video: join(defaultPath, 'kkkdownload', 'video') + '/',
+      /** 图片缓存文件 */
+      images: join(defaultPath, 'kkkdownload', 'images') + '/'
+    }
+  }
+
   /**
    * 获取回复消息的内容
    * @param {object} e 消息事件对象

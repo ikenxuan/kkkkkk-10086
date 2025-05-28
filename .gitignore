@@ -8,5 +8,5 @@ package-lock.json
 jsconfig.json
 lib/*
 resources/template/version/html/index.html
-resources/html/douyin/user_worklist.html
+resources/template/douyin/html/user_worklist.html
 amagi/node_modules/*
