@@ -231,12 +231,12 @@ export default class DouYin extends Base {
           const title = VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
-          videores.push(segment.text(`标题：\n${title}`))
-          videores.push(segment.text(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`))
-          videores.push(segment.text(
+          videores.push(`标题：\n${title}`)
+          videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
+          videores.push(
             `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-          ))
-          videores.push(segment.text(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`))
+          )
+          videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
           videores.push(segment.image(cover))
           logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
           const res = common.makeForwardMsg(this.e, videores, '视频基本信息')
