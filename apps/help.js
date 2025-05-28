@@ -2,7 +2,6 @@ import { Render, Version, Common } from '../module/utils/index.js'
 import { markdown } from '@karinjs/md-html'
 import { join } from 'node:path'
 import fs from 'node:fs'
-import _ from 'lodash'
 
 export class kkkHelp extends plugin {
   constructor () {

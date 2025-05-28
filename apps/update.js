@@ -1,6 +1,6 @@
 import { update } from '../../../plugins/other/update.js'
 import Version from '../module/utils/Version.js'
-import _ from 'lodash'
+
 export class kkkUpdate extends plugin {
   constructor () {
     super({
