@@ -1,6 +1,7 @@
 import Networks from './Networks.js'
 import Version from './Version.js'
 import Config from './Config.js'
+import Common from './Common.js'
 import path from 'path'
 import fs from 'fs'
 
@@ -314,11 +315,11 @@ export default class Base {
    */
   async DownLoadFile (video_url, title, headers = {}, type = '.mp4') {
     // 使用networks类进行文件下载，并通过回调函数实时更新下载进度
-    await this.mkdirs(`${this._path}/resources/kkkdownload/video/`)
+    await this.mkdirs(Common.tempDri.video)
     const { filepath, totalBytes } = await new Networks({
       url: video_url, // 视频地址
       headers, // 请求头
-      filepath: `${this._path}/resources/kkkdownload/video/${title}${type}`, // 文件保存路径
+      filepath: Common.tempDri.video + title + type, // 文件保存路径
       timeout: 30000, // 设置30秒超时
       maxRetries: 3   // 最多重试3次
     }).downloadStream((downloadedBytes, totalBytes) => {
