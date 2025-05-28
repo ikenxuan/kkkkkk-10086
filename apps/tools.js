@@ -172,7 +172,7 @@ export class Tools extends plugin {
 
   async douy (e) {
     const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
-    const iddata = await GetDouyinID(url)
+    const iddata = await GetDouyinID(e, url)
     await new DouYin(e, iddata).RESOURCES(iddata)
     return true
   }
