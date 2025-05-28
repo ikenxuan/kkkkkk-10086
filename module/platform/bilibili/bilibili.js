@@ -1,4 +1,4 @@
-import { Base, Render, Config, Networks, FFmpeg, Common } from '../../utils/index.js'
+import { Base, Render, Config, Networks, mergeFile, Common } from '../../utils/index.js'
 import { Bilidata, bilicomments, checkuser } from './index.js'
 import common from '../../../../../lib/common/common.js'
 import { bilibiliAPI } from '@ikenxuan/amagi'
