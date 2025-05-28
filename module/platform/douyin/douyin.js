@@ -251,7 +251,7 @@ export default class DouYin extends Base {
           if (!commentsArray.jsonArray.length) {
             await this.e.reply('这个作品没有评论 ~')
           } else {
-            const img = await Render('douyin/comment',
+            const img = await Render.render('douyin/comment',
               {
                 Type: this.is_mp4 ? '视频' : this.is_slides ? '合辑' : '图集',
                 CommentsData: commentsArray,
@@ -322,7 +322,7 @@ export default class DouYin extends Base {
           await this.e.reply('解析错误！该音乐抖音未提供下载链接，无法下载', { reply: true })
           return true
         }
-        img = await Render('douyin/musicinfo',
+        img = await Render.render('douyin/musicinfo',
           {
             image_url: MusicData.music_info.cover_hd.url_list[0],
             desc: MusicData.music_info.title,
@@ -363,7 +363,7 @@ export default class DouYin extends Base {
           // 直播中
           const live_data = await getDouyinData('直播间信息数据', { sec_uid: UserInfoData.user.sec_uid, typeMode: 'strict' })
           const room_data = JSON.parse(UserInfoData.user.room_data)
-          const img = await Render('douyin/live',
+          const img = await Render.render('douyin/live',
             {
               image_url: [{ image_src: live_data.data.data[0].cover?.url_list[0] }],
               text: live_data.data.data[0].title,
