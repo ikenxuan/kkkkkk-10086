@@ -318,10 +318,10 @@ export default class BiLiBiLi extends Base {
                 const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
                 if (fileSizeInMB > Config.app.filelimit) {
                   // 使用文件上传
-                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '', { useGroupFile: true })
+                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null, true)
                 } else {
                   /** 因为本地合成，没有视频直链 */
-                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '')
+                  return await this.upload_file({ filepath: filePath, totalBytes: fileSizeInMB }, null)
                 }
               } else {
                 await Common.removeFile(bmp4.filepath, true)
