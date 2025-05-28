@@ -2,12 +2,11 @@ import Networks from '../../utils/Networks.js'
 
 /**
  * 解析抖音分享链接，返回作品ID对象
- * @param {object} e 消息对象
  * @param {string} url 分享链接
  * @param {boolean} log 是否记录日志
  * @returns {Promise<object|boolean>} 成功返回作品信息对象，失败返回true（已回复错误）或空对象
  */
-export default async function GetDouyinID (e, url, log = true) {
+export default async function GetDouyinID (url, log = true) {
   try {
     // 获取长链接
     const longLink = await new Networks({
@@ -19,12 +18,12 @@ export default async function GetDouyinID (e, url, log = true) {
 
     // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
-      await e.reply('获取抖音长链接失败，请稍后再试')
+      logger.error('获取抖音长链接失败，请稍后再试')
       return true
     }
 
     if (longLink.includes('失败')) {
-      await e.reply(longLink)
+      logger.error(longLink)
       return true
     }
 
@@ -110,7 +109,6 @@ export default async function GetDouyinID (e, url, log = true) {
     return result
   } catch (error) {
     logger.error(`[抖音链接] 解析失败:`, error)
-    await e.reply('解析抖音链接时发生错误，请稍后再试')
     return true
   }
 }

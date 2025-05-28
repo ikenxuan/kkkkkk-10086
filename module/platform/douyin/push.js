@@ -34,7 +34,7 @@ export default class DouYinpush extends Base {
     if (Object.keys(data).length === 0) return true
     for (const awemeId in data) {
       const Detail_Data = data[awemeId].Detail_Data
-      const iddata = await GetDouyinID(this.e, Detail_Data.share_url)
+      const iddata = await GetDouyinID(Detail_Data.share_url)
       // 普通作品推送
       const img = await Render.render(
         'douyin/dynamic',
