@@ -88,7 +88,7 @@ export default class DouYin extends Base {
               const images = []
               const temp = []
               /** BGM */
-              const liveimgbgm = await downloadFile(
+              const liveimgbgm = await this.DownLoadFile(
                 VideoData.aweme_detail.music.play_url.uri,
                 {
                   title: `Douyin_tmp_A_${Date.now()}.mp3`,
@@ -104,7 +104,7 @@ export default class DouYin extends Base {
                   continue
                 }
                 /** 动图 */
-                const liveimg = await downloadFile(
+                const liveimg = await this.DownLoadFile(
                   `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
                   {
                     title: `Douyin_tmp_V_${Date.now()}.mp4`,
