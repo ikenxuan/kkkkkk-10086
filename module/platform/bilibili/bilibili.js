@@ -446,6 +446,22 @@ export function replacetext(text, rich_text_nodes) {
 }
 
 /**
+ * 拼接B站动态卡片的html字符串
+ * @param colors 颜色数组
+ * @param text 卡片的文字
+ * @returns {string} 拼接好的html字符串
+ */
+export const generateGradientStyle = (colors, text) => {
+  if (!colors) return ''
+  const gradientString = colors.map((color) => {
+    return `${color}`
+  }).join(', ')
+
+  // 返回完整的CSS样式字符串
+  return `<span style="font-family: bilifont; color: transparent; background-clip: text; margin: 0 200px 0 0; font-size: 43px; background-image: linear-gradient(135deg, ${gradientString} 0%, ${gradientString} 100%); ">${text}</span>`
+}
+
+/**
  * 生成图片数组
  * @param pic 一个包含图片源字符串的数组
  * @returns {Object[]} imgArray - 包含图片源地址的对象数组。
