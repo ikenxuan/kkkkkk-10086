@@ -348,8 +348,8 @@ export default class DouYin extends Base {
           )
         )
         if (this.botadapter === 'ICQQ') {
-          await this.e.reply(await UploadRecord(this.e, data.music_info.play_url.uri, 0, false))
-        } else await this.e.reply(segment.record(data.music_info.play_url.uri))
+          await this.e.reply(await UploadRecord(this.e, MusicData.music_info.play_url.uri, 0, false))
+        } else await this.e.reply(segment.record(MusicData.music_info.play_url.uri))
         return true
       }
       case 'live_room_detail': {
