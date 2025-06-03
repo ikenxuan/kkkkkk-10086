@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.8.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.8.0...v1.8.1) (2025-06-03)
+
+
+### Bug Fixes
+
+* **bilibili:** 修复合并文件路径中OBJECT数据结构引用错误 ([dc4a358](https://github.com/ikenxuan/kkkkkk-10086/commit/dc4a35893c1569b7621d224358d3fa3b38151935))
+* **bilibili:** 修复默认清晰度显示问题 ([662c677](https://github.com/ikenxuan/kkkkkk-10086/commit/662c6770a1e8b7ba4206ea7520203e4233364269))
+* **bilibili:** 修正转发动态渲染方法调用错误 ([4acd48e](https://github.com/ikenxuan/kkkkkk-10086/commit/4acd48e985bc7c75f1a4ef73e4814613251cbee6))
+* **bilibili:** 添加生成B站动态卡片渐变样式功能缺失的函数 ([0e76428](https://github.com/ikenxuan/kkkkkk-10086/commit/0e76428d1c8c88f08bd88fb1ed5eb5c92bf26e1c))
+* **douyin:** 修复GetDouyinID调用缺少参数e的问题 ([78aa42a](https://github.com/ikenxuan/kkkkkk-10086/commit/78aa42af002059269855e2338ae6b647d6f22df6))
+* **douyin:** 修复Render方法调用错误 ([03e8548](https://github.com/ikenxuan/kkkkkk-10086/commit/03e854863ed0dc6142ffeee417ed8dfb95b8930d))
+* **douyin:** 修正 Networks 请求类型为 arrayBuffer 并为 getDouyinData 方法添加 cookies 参数 ([04018f3](https://github.com/ikenxuan/kkkkkk-10086/commit/04018f3ccb83ec1f4149db662302ddd6b284d368))
+* **douyin:** 修正文件扩展名前缺少点号的问题 ([9d044cc](https://github.com/ikenxuan/kkkkkk-10086/commit/9d044cc53934c81ab79898b043116d34eb9fa1f9))
+* **douyin:** 修正视频下载格式参数为字符串类型 ([c6275f6](https://github.com/ikenxuan/kkkkkk-10086/commit/c6275f6bc865f3aac3cefd4445b9c39c8d83638c))
+* **douyin:** 修正评论图片处理中的方法名和缓冲区转换问题 ([a0b45f0](https://github.com/ikenxuan/kkkkkk-10086/commit/a0b45f0a9963613b34e14aee283e2510c082c088))
+* **douyin:** 修正音乐播放URL引用变量名从data改为MusicData ([5d7568e](https://github.com/ikenxuan/kkkkkk-10086/commit/5d7568e85f889491a2c323ce6a8bf949ed6bfa10))
+* **douyin:** 在GetDouyinID调用中添加this.e参数 ([c472817](https://github.com/ikenxuan/kkkkkk-10086/commit/c4728179f6e196700a655f1bc3f13a78c30c8ca6))
+* **douyin:** 移除DownLoadVideo方法中多余的参数this.e ([84d04d4](https://github.com/ikenxuan/kkkkkk-10086/commit/84d04d41de02bb940ee6c22184b4cc15d5bdd91f))
+* **douyin:** 移除视频下载文件名中的.mp4后缀 ([804b4e2](https://github.com/ikenxuan/kkkkkk-10086/commit/804b4e20d24bb82759b1ea7892c96fa332fc6463))
+* **douyin:** 移除视频文件名中的标题以避免特殊字符问题 ([e330865](https://github.com/ikenxuan/kkkkkk-10086/commit/e33086502e5799a7341c2de2317296a11630cf2a))
+* 修复文件大小限制检查使用错误配置项的问题 ([e3ec8c7](https://github.com/ikenxuan/kkkkkk-10086/commit/e3ec8c7bc4b37da8201ea0d1b5246b987aead685))
+
 ## [1.8.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.2...v1.8.0) (2025-05-27)
 
 
