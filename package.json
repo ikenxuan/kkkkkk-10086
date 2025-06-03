@@ -10,7 +10,7 @@
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^4.4.16",
+    "@ikenxuan/amagi": "^4.4.17",
     "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
     "node-fetch": "^3.3.2",
@@ -18,7 +18,8 @@
     "sequelize": "6.37.3",
     "sharp": "0.33.4",
     "simple-git": "^3.25.0",
-    "sqlite3": "5.1.6"
+    "sqlite3": "5.1.6",
+    "heic-convert": "^2.1.0"
   },
   "devDependencies": {
     "eslint": "^9.11.1",
