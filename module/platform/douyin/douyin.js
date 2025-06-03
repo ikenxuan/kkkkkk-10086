@@ -70,7 +70,7 @@ export default class DouYin extends Base {
                 if (Config.app.rmmp4 === false) {
                   mkdirSync(`${Common.tempDri.images}${g_title}`)
                   const path = `${Common.tempDri.images}${g_title}/${i + 1}.png`
-                  await new Networks({ url: image_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+                  await new Networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
                 }
               }
               const res = common.makeForwardMsg(this.e, imageres, '解析完的图集图片')
@@ -154,7 +154,7 @@ export default class DouYin extends Base {
           if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
             try {
               const path = Common.tempDri.images + `${g_title}/BGM.mp3`
-              await new Networks({ url: music_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+              await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
             } catch (error) {
               logger.error(error)
             }
@@ -271,7 +271,7 @@ export default class DouYin extends Base {
         return true
       }
       case 'user_dynamic': {
-        const UserVideoListData = await getDouyinData('用户主页视频列表数据', {
+        const UserVideoListData = await getDouyinData('用户主页视频列表数据', Config.cookies.douyin, {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
@@ -303,12 +303,12 @@ export default class DouYin extends Base {
         return true
       }
       case 'music_work': {
-        const MusicData = await getDouyinData('音乐数据', {
+        const MusicData = await getDouyinData('音乐数据', Config.cookies.douyin, {
           music_id: data.music_id,
           typeMode: 'strict'
         })
         const sec_uid = MusicData.music_info.sec_uid
-        const UserData = await getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' })
+        const UserData = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid, typeMode: 'strict' })
         // if (userdata.status_code === 2) {
         //   const new_userdata = await getDouyinData('搜索数据', Config.cookies.douyin, { query: data.music_info.author })
         //   if (new_userdata.data[0].type === 4 && new_userdata.data[0].card_unique_name === 'user') {
@@ -353,13 +353,13 @@ export default class DouYin extends Base {
         return true
       }
       case 'live_room_detail': {
-        const UserInfoData = await getDouyinData('用户主页数据', {
+        const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin, {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
         if (UserInfoData.user.live_status === 1) {
           // 直播中
-          const live_data = await getDouyinData('直播间信息数据', { sec_uid: UserInfoData.user.sec_uid, typeMode: 'strict' })
+          const live_data = await getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.user.sec_uid, typeMode: 'strict' })
           const room_data = JSON.parse(UserInfoData.user.room_data)
           const img = await Render.render('douyin/live',
             {
