@@ -142,10 +142,17 @@ export function supportGuoba () {
         },
         {
           field: 'app.Theme',
-          label: '是否使用深色主题',
+          label: '主题配置',
           helpMessage: '意义不明，但对作者有用',
-          bottomHelpMessage: '评论图、推送图是否使用深色主题 0为根据时间自动切换 1为浅色 2为深色',
-          component: 'Switch',
+          bottomHelpMessage: '评论图、推送图主题配置',
+          component: 'Select',
+          componentProps: {
+            options: [
+              { label: '根据时间自动切换', value: 0 },
+              { label: '浅色', value: 1 },
+              { label: '深色', value: 2 }
+            ],
+          },
           required: false
         },
         {

@@ -8,16 +8,16 @@ class FFmpeg {
    *   - path2 {string} 文件2绝对路径
    *   - resultPath {string} 合并完成后存放的绝对路径
    *   - callback {Function} 处理结果的回调函数
-   * 
+   *
    * - '视频*3 + 音频': fffmpegClientOptions['Video3AudioOptions'] 视频循环3次并合并音频
    *   - path {string} 文件1绝对路径
    *   - path2 {string} 文件2绝对路径
    *   - resultPath {string} 合并完成后存放的绝对路径
    *   - callback {Function} 处理结果的回调函数
-   * 
+   *
    * - '获取指定视频文件时长': fffmpegClientOptions['getVideoSizeOptions'] 获取视频时长
    *   - path {string} 视频文件路径
-   * 
+   *
    * - '压缩视频': fffmpegClientOptions['compressVideoOptions'] 压缩视频文件
    *   - path {string} 文件绝对路径
    *   - targetBitrate {number} 目标比特率
@@ -51,19 +51,19 @@ class FFmpeg {
 
     switch (this.type) {
       case '二合一（视频 + 音频）': {
-        const result = await ffmpeg(`-y -i ${opt.path} -i ${opt.path2} -c copy ${opt.resultPath}`)
+        const result = await ffmpeg(`-y -i "${opt.path}" -i "${opt.path2}" -c copy "${opt.resultPath}"`)
         result.status ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
         await opt.callback(result.status, opt.resultPath)
         return result
       }
       case '视频*3 + 音频': {
-        const result = await ffmpeg(`-y -stream_loop 2 -i ${opt.path} -i ${opt.path2} -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest ${opt.resultPath}`)
+        const result = await ffmpeg(`-y -stream_loop 2 -i "${opt.path}" -i "${opt.path2}" -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest "${opt.resultPath}"`)
         result ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
         await opt.callback(result.status, opt.resultPath)
         return result
       }
       case '获取指定视频文件时长': {
-        const { stdout } = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${opt.path}`)
+        const { stdout } = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${opt.path}"`)
         return parseFloat(parseFloat(stdout.trim()).toFixed(2))
       }
       case '压缩视频': {
@@ -146,7 +146,7 @@ const exec = (cmd, options) => {
         '[exec] 执行命令:',
         `pwd: ${options?.cwd || process.cwd()}`,
         `cmd: ${cmd}`,
-        `options: ${JSON.stringify(options)}`,
+        `options: ${JSON.stringify(options)}`
       ].join('\n'))
     }
 
@@ -158,7 +158,7 @@ const exec = (cmd, options) => {
           '[exec] 执行结果:',
           `stderr: ${stderr.toString()}`,
           `stdout: ${stdout.toString()}`,
-          `error: ${JSON.stringify(info, null, 2)}`,
+          `error: ${JSON.stringify(info, null, 2)}`
         ].join('\n'))
       }
 
@@ -178,7 +178,7 @@ const exec = (cmd, options) => {
         status: !error,
         error,
         stdout,
-        stderr,
+        stderr
       }
       resolve(value)
     })
