@@ -147,57 +147,56 @@ export default class DouYin extends Base {
           }
         }
 
-        if (Config.douyin.detailMusic) {
-          /** 背景音乐 */
-          if (VideoData.aweme_detail.music) {
-            const music = VideoData.aweme_detail.music
-            const music_url = music.play_url.uri // BGM link
-            if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
-              try {
-                const path = Common.tempDri.images + `${g_title}/BGM.mp3`
-                await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
-              } catch (error) {
-                logger.error(error)
-              }
-            }
-            const haspath = music_url && this.is_mp4 === false && music_url !== undefined
-            switch (this.botname) {
-              case 'Miao-Yunzai':
-              case 'yunzai': {
-                if (haspath && this.botadapter === 'ICQQ') {
-                  if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                  else await this.e.reply(segment.record(music_url))
-                } else if (haspath && this.botadapter !== 'ICQQ') {
-                  await this.e.reply(segment.record(music_url))
-                }
-                break
-              }
-              case 'TRSS-Yunzai': {
-                switch (this.botadapter) {
-                  case 'QQBot':
-                  case 'OneBotv11':
-                  case 'LagrangeCore':
-                  case 'KOOKBot': {
-                    if (haspath) {
-                      await this.e.reply(segment.record(music_url))
-                    }
-                    break
-                  }
-                  case 'ICQQ': {
-                    if (haspath) {
-                      if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                      else this.e.reply(segment.record(music_url))
-                    }
-                    break
-                  }
-                }
-                break
-              }
-              default:
-                break
+        /** 背景音乐 */
+        if (VideoData.aweme_detail.music && Config.douyin.detailMusic) {
+          const music = VideoData.aweme_detail.music
+          const music_url = music.play_url.uri // BGM link
+          if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
+            try {
+              const path = Common.tempDri.images + `${g_title}/BGM.mp3`
+              await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+            } catch (error) {
+              logger.error(error)
             }
           }
+          const haspath = music_url && this.is_mp4 === false && music_url !== undefined
+          switch (this.botname) {
+            case 'Miao-Yunzai':
+            case 'yunzai': {
+              if (haspath && this.botadapter === 'ICQQ') {
+                if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                else await this.e.reply(segment.record(music_url))
+              } else if (haspath && this.botadapter !== 'ICQQ') {
+                await this.e.reply(segment.record(music_url))
+              }
+              break
+            }
+            case 'TRSS-Yunzai': {
+              switch (this.botadapter) {
+                case 'QQBot':
+                case 'OneBotv11':
+                case 'LagrangeCore':
+                case 'KOOKBot': {
+                  if (haspath) {
+                    await this.e.reply(segment.record(music_url))
+                  }
+                  break
+                }
+                case 'ICQQ': {
+                  if (haspath) {
+                    if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                    else this.e.reply(segment.record(music_url))
+                  }
+                  break
+                }
+              }
+              break
+            }
+            default:
+              break
+          }
         }
+        
         /** 视频 */
         let FPS
         const video_res = []
