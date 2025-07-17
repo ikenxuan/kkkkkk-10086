@@ -11,7 +11,7 @@ let mp4size = ''
 let img
 
 export default class DouYin extends Base {
-  constructor (e = {}, iddata) {
+  constructor(e = {}, iddata) {
     super()
     /**
      * @type { import('node-karin').KarinMessage }
@@ -22,7 +22,7 @@ export default class DouYin extends Base {
     this.is_slides = false
   }
 
-  async RESOURCES (data) {
+  async RESOURCES(data) {
     if (Config.douyin.douyintip) this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
@@ -147,56 +147,57 @@ export default class DouYin extends Base {
           }
         }
 
-        /** 背景音乐 */
-        if (VideoData.aweme_detail.music) {
-          const music = VideoData.aweme_detail.music
-          const music_url = music.play_url.uri // BGM link
-          if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
-            try {
-              const path = Common.tempDri.images + `${g_title}/BGM.mp3`
-              await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
-            } catch (error) {
-              logger.error(error)
-            }
-          }
-          const haspath = music_url && this.is_mp4 === false && music_url !== undefined
-          switch (this.botname) {
-            case 'Miao-Yunzai':
-            case 'yunzai': {
-              if (haspath && this.botadapter === 'ICQQ') {
-                if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                else await this.e.reply(segment.record(music_url))
-              } else if (haspath && this.botadapter !== 'ICQQ') {
-                await this.e.reply(segment.record(music_url))
+        if (Config.douyin.detailMusic) {
+          /** 背景音乐 */
+          if (VideoData.aweme_detail.music) {
+            const music = VideoData.aweme_detail.music
+            const music_url = music.play_url.uri // BGM link
+            if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
+              try {
+                const path = Common.tempDri.images + `${g_title}/BGM.mp3`
+                await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+              } catch (error) {
+                logger.error(error)
               }
-              break
             }
-            case 'TRSS-Yunzai': {
-              switch (this.botadapter) {
-                case 'QQBot':
-                case 'OneBotv11':
-                case 'LagrangeCore':
-                case 'KOOKBot': {
-                  if (haspath) {
-                    await this.e.reply(segment.record(music_url))
-                  }
-                  break
+            const haspath = music_url && this.is_mp4 === false && music_url !== undefined
+            switch (this.botname) {
+              case 'Miao-Yunzai':
+              case 'yunzai': {
+                if (haspath && this.botadapter === 'ICQQ') {
+                  if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                  else await this.e.reply(segment.record(music_url))
+                } else if (haspath && this.botadapter !== 'ICQQ') {
+                  await this.e.reply(segment.record(music_url))
                 }
-                case 'ICQQ': {
-                  if (haspath) {
-                    if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                    else this.e.reply(segment.record(music_url))
-                  }
-                  break
-                }
+                break
               }
-              break
+              case 'TRSS-Yunzai': {
+                switch (this.botadapter) {
+                  case 'QQBot':
+                  case 'OneBotv11':
+                  case 'LagrangeCore':
+                  case 'KOOKBot': {
+                    if (haspath) {
+                      await this.e.reply(segment.record(music_url))
+                    }
+                    break
+                  }
+                  case 'ICQQ': {
+                    if (haspath) {
+                      if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
+                      else this.e.reply(segment.record(music_url))
+                    }
+                    break
+                  }
+                }
+                break
+              }
+              default:
+                break
             }
-            default:
-              break
           }
         }
-
         /** 视频 */
         let FPS
         const video_res = []
@@ -421,7 +422,7 @@ export const douyinProcessVideos = (videos, filelimit) => {
  * @param {integer} delay
  * @returns
  */
-function Time (delay) {
+function Time(delay) {
   const currentDate = new Date()
   currentDate.setHours(currentDate.getHours() + delay)
 
@@ -444,7 +445,7 @@ function Time (delay) {
  * @param {Array} data.emoji_list[].emoji_url.url_list 表情URL列表
  * @returns {Array<{name: string, url: string}>} 处理后的表情数组,包含name和url属性
  */
-function Emoji (data) {
+function Emoji(data) {
   const ListArray = []
 
   for (const i of data.emoji_list) {

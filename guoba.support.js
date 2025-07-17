@@ -229,6 +229,13 @@ export function supportGuoba () {
           required: false
         },
         {
+          field: 'douyin.detailMusic',
+          label: '背景音乐',
+          bottomHelpMessage: '发送抖音背景音乐',
+          component: 'Switch',
+          required: false
+        },
+        {
           field: 'douyin.numcomments',
           label: '评论解析数量',
           helpMessage: '必填项',
