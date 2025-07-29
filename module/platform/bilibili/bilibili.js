@@ -23,7 +23,7 @@ export default class BiLiBiLi extends Base {
   }
 
   async RESOURCES (OBJECT, Episode = false) {
-    !Episode && Config.bilibili.bilibilitip && await this.e.reply('检测到B站链接，开始解析')
+    !Episode && (Config.bilibili.bilibiliTip).includes('提示信息') && await this.e.reply('检测到B站链接，开始解析')
     switch (this.TYPE) {
       case 'bilibilivideo': {
         const { owner, pic, title, stat } = OBJECT.INFODATA.data
@@ -37,64 +37,68 @@ export default class BiLiBiLi extends Base {
           headers: this.headers
         }).getData()
 
-        await this.e.reply(
-          this.mkMsg(
-            [
-              segment.image(pic),
-              `\n# 标题: ${title}\n`,
-              `\n作者: ${name}\n播放量: ${Common.count(view)},    弹幕: ${Common.count(danmaku)}\n点赞: ${Common.count(like)},    投币: ${Common.count(coin)}\n转发: ${Common.count(
-                share
-              )},    收藏: ${Common.count(favorite)}`
-            ],
-            [
-              {
-                text: "视频直链 ['流畅 360P']",
-                link: nocd_data.data.durl[0].url
-              }
-            ]
+        if ((Config.bilibili.bilibiliTip).includes('简介')) {
+          await this.e.reply(
+            this.mkMsg(
+              [
+                segment.image(pic),
+                `\n# 标题: ${title}\n`,
+                `\n作者: ${name}\n播放量: ${Common.count(view)},    弹幕: ${Common.count(danmaku)}\n点赞: ${Common.count(like)},    投币: ${Common.count(coin)}\n转发: ${Common.count(
+                  share
+                )},    收藏: ${Common.count(favorite)}`
+              ],
+              [
+                {
+                  text: "视频直链 ['流畅 360P']",
+                  link: nocd_data.data.durl[0].url
+                }
+              ]
+            )
           )
-        )
-
-        const simplify = OBJECT.DATA.data.dash.video.filter((item, index, self) => {
-          return self.findIndex((t) => {
-            return t.id === item.id
-          }) === index
-        })
-        if (this.islogin) OBJECT.DATA.data.dash.video = simplify
-        OBJECT = await this.processVideos(OBJECT)
-        let videoSize
-        if (this.islogin) {
-          videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url, OBJECT.INFODATA.data.bvid)
-        } else {
-          if (OBJECT.DATA.data.durl && OBJECT.DATA.data.durl[0]) {
-            videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
-          } else {
-            throw new Error('缺少视频下载信息,请配置Cookie后重试')
-          }
         }
-        const commentsdata = await bilicomments(OBJECT)
-        img = await Render.render('bilibili/comment', {
-          Type: '视频',
-          CommentsData: commentsdata,
-          CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
-          VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
-          Clarity: Config.bilibili.videopriority === true ? nocd_data.data.accept_description[0] : '"流畅 360P"',
-          VideoSize: Config.bilibili.videopriority === true ? (nocd_data.data.durl[0].size / (1024 * 1024)).toFixed(2) : videoSize,
-          ImageLength: 0,
-          shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid
-        })
-        Config.bilibili.bilibilicommentsimg &&
-          (await this.e.reply(
+        if ((Config.bilibili.bilibiliTip).includes('评论图')) {
+          const simplify = OBJECT.DATA.data.dash.video.filter((item, index, self) => {
+            return self.findIndex((t) => {
+              return t.id === item.id
+            }) === index
+          })
+          if (this.islogin) OBJECT.DATA.data.dash.video = simplify
+          OBJECT = await this.processVideos(OBJECT)
+          let videoSize
+          if (this.islogin) {
+            videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url, OBJECT.INFODATA.data.bvid)
+          } else {
+            if (OBJECT.DATA.data.durl && OBJECT.DATA.data.durl[0]) {
+              videoSize = (OBJECT.DATA.data.durl[0].size / (1024 * 1024)).toFixed(2)
+            } else {
+              throw new Error('缺少视频下载信息,请配置Cookie后重试')
+            }
+          }
+          const commentsdata = await bilicomments(OBJECT)
+          img = await Render.render('bilibili/comment', {
+            Type: '视频',
+            CommentsData: commentsdata,
+            CommentLength: String(commentsdata?.length ? commentsdata.length : 0),
+            VideoUrl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid,
+            Clarity: Config.bilibili.videopriority === true ? nocd_data.data.accept_description[0] : '"流畅 360P"',
+            VideoSize: Config.bilibili.videopriority === true ? (nocd_data.data.durl[0].size / (1024 * 1024)).toFixed(2) : videoSize,
+            ImageLength: 0,
+            shareurl: 'https://b23.tv/' + OBJECT.INFODATA.data.bvid
+          })
+          await this.e.reply(
             this.mkMsg(img, [
               {
                 text: "视频直链 ['流畅 360P']",
                 link: nocd_data.data.durl[0].url
               }
             ])
-          ))
-        if (Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) {
-          await this.e.reply(`设定的最大上传大小为 ${Config.app.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', true)
-        } else await this.getvideo(Config.bilibili.videopriority === true ? { DATA: nocd_data } : OBJECT)
+          )
+        }
+        if ((Config.bilibili.bilibiliTip).includes('视频')) {
+          if (Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) {
+            await this.e.reply(`设定的最大上传大小为 ${Config.app.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', true)
+          } else await this.getvideo(Config.bilibili.videopriority === true ? { DATA: nocd_data } : OBJECT)
+        }
         break
       }
       case 'bangumivideo': {
@@ -412,7 +416,7 @@ export default class BiLiBiLi extends Base {
  * @param {Object[]} rich_text_nodes - 富文本节点数组
  * @returns {string} - 替换后的文本内容
  */
-export function replacetext(text, rich_text_nodes) {
+export function replacetext (text, rich_text_nodes) {
   for (const tag of rich_text_nodes) {
     // 对正则表达式中的特殊字符进行转义
     const escapedText = tag.orig_text.replace(/([.*+?^${}()|[\]\\])/g, '\\$1').replace(/\n/g, '\\n')

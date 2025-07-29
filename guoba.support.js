@@ -1,6 +1,6 @@
 import { Config } from './module/utils/index.js'
 // 支持锅巴
-export function supportGuoba () {
+export function supportGuoba() {
   return {
     // 插件信息，将会显示在前端页面
     // 如果你的插件没有在插件库里，那么需要填上补充信息
@@ -215,25 +215,20 @@ export function supportGuoba () {
           required: false
         },
         {
-          field: 'douyin.douyintip',
-          label: '抖音解析提示',
-          bottomHelpMessage: '发送提示信息：“检测到抖音链接，开始解析”',
-          component: 'Switch',
-          required: false
-        },
-        {
-          field: 'douyin.commentsimg',
-          label: '评论图',
-          bottomHelpMessage: '发送抖音作品评论图',
-          component: 'Switch',
-          required: false
-        },
-        {
-          field: 'douyin.detailMusic',
-          label: '背景音乐',
-          bottomHelpMessage: '发送抖音背景音乐',
-          component: 'Switch',
-          required: false
+          field: 'douyin.douyinTip',
+          label: '抖音解析选项',
+          component: 'Select',
+          componentProps: {
+            mode: 'multiple',
+            allowCreate: false,
+            options: [
+              { label: '提示信息', value: '提示信息' },
+              { label: '背景音乐', value: '背景音乐' },
+              { label: '评论图', value: '评论图' },
+              { label: '视频', value: '视频' },
+              { label: '图集', value: '图集' }
+            ]
+          }
         },
         {
           field: 'douyin.numcomments',
@@ -380,18 +375,19 @@ export function supportGuoba () {
           required: false
         },
         {
-          field: 'bilibili.bilibilitip',
-          label: 'B站解析提示',
-          bottomHelpMessage: '发送提示信息：“检测到B站链接，开始解析”',
-          component: 'Switch',
-          required: false
-        },
-        {
-          field: 'bilibili.bilibilicommentsimg',
-          label: '评论图',
-          bottomHelpMessage: '发送哔哩哔哩作品评论图',
-          component: 'Switch',
-          required: false
+          field: 'bilibili.bilibiliTip',
+          label: 'B站解析选项',
+          component: 'Select',
+          componentProps: {
+            mode: 'multiple',
+            allowCreate: false,
+            options: [
+              { label: '提示信息', value: '提示信息' },
+              { label: '简介', value: '简介' },
+              { label: '评论图', value: '评论图' },
+              { label: '视频', value: '视频' }
+            ]
+          }
         },
         {
           field: 'bilibili.bilibilinumcomments',
@@ -539,7 +535,7 @@ export function supportGuoba () {
         }
       ],
       // 获取配置数据方法（用于前端填充显示数据）
-      getConfigData () {
+      getConfigData() {
         return {
           cookies: Config.cookies,
           app: Config.app,
@@ -551,7 +547,7 @@ export function supportGuoba () {
       },
 
       // 设置配置的方法（前端点确定后调用的方法）
-      async setConfigData (data, { Result }) {
+      async setConfigData(data, { Result }) {
         for (const key in data) Config.modify(...key.split('.'), data[key])
         return Result.ok({}, '保存成功辣ε(*´･ω･)з')
       }

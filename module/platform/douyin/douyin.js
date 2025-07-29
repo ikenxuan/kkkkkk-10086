@@ -11,7 +11,7 @@ let mp4size = ''
 let img
 
 export default class DouYin extends Base {
-  constructor(e = {}, iddata) {
+  constructor (e = {}, iddata) {
     super()
     /**
      * @type { import('node-karin').KarinMessage }
@@ -22,8 +22,8 @@ export default class DouYin extends Base {
     this.is_slides = false
   }
 
-  async RESOURCES(data) {
-    if (Config.douyin.douyintip) this.e.reply('检测到抖音链接，开始解析')
+  async RESOURCES (data) {
+    (Config.douyin.douyinTip).includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
         const VideoData = await getDouyinData('聚合解析', Config.cookies.douyin, {
@@ -42,7 +42,7 @@ export default class DouYin extends Base {
         /** 图集 */
         let imagenum = 0
         const image_res = []
-        if (this.is_mp4 === false) {
+        if (this.is_mp4 === false && (Config.bilibili.bilibiliTip).includes('图集')) {
           switch (true) {
             // 图集
             case this.is_slides === false && VideoData.aweme_detail.images !== null: {
@@ -148,7 +148,7 @@ export default class DouYin extends Base {
         }
 
         /** 背景音乐 */
-        if (VideoData.aweme_detail.music && Config.douyin.detailMusic) {
+        if (VideoData.aweme_detail.music && (Config.bilibili.bilibiliTip).includes('背景音乐')) {
           const music = VideoData.aweme_detail.music
           const music_url = music.play_url.uri // BGM link
           if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
@@ -196,12 +196,12 @@ export default class DouYin extends Base {
               break
           }
         }
-        
+
         /** 视频 */
         let FPS
         const video_res = []
         const sendvideofile = true
-        if (this.is_mp4) {
+        if (this.is_mp4 && (Config.bilibili.bilibiliTip).includes('视频')) {
           const video_data = []
           const videores = []
           // 视频地址特殊判断：play_addr_h264、play_addr、
@@ -270,6 +270,7 @@ export default class DouYin extends Base {
         sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, `tmp_${Date.now()}`)
         return true
       }
+
       case 'user_dynamic': {
         const UserVideoListData = await getDouyinData('用户主页视频列表数据', Config.cookies.douyin, {
           sec_uid: data.sec_uid,
@@ -421,7 +422,7 @@ export const douyinProcessVideos = (videos, filelimit) => {
  * @param {integer} delay
  * @returns
  */
-function Time(delay) {
+function Time (delay) {
   const currentDate = new Date()
   currentDate.setHours(currentDate.getHours() + delay)
 
@@ -444,7 +445,7 @@ function Time(delay) {
  * @param {Array} data.emoji_list[].emoji_url.url_list 表情URL列表
  * @returns {Array<{name: string, url: string}>} 处理后的表情数组,包含name和url属性
  */
-function Emoji(data) {
+function Emoji (data) {
   const ListArray = []
 
   for (const i of data.emoji_list) {

@@ -1,11 +1,12 @@
 # B站解析开关，单独开关，受「总开关」影响
 bilibilitool: true
 
-# B站解析提示，发送提示信息：“检测到B站链接，开始解析”
-bilibilitip: true
-
-# B站评论图，发送哔哩哔哩作品评论图
-bilibilicommentsimg: true
+# B站解析可选列表
+bilibiliTip:
+  - 提示信息
+  - 简介
+  - 评论图
+  - 视频
 
 # B站评论数量，设置接口返回的评论数量，范围1~无限条
 bilibilinumcomments: 5
