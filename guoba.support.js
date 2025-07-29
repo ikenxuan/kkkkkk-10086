@@ -385,7 +385,8 @@ export function supportGuoba() {
               { label: '提示信息', value: '提示信息' },
               { label: '简介', value: '简介' },
               { label: '评论图', value: '评论图' },
-              { label: '视频', value: '视频' }
+              { label: '视频', value: '视频' },
+              { label: '动态', value: '动态' },
             ]
           }
         },

@@ -169,6 +169,7 @@ export default class BiLiBiLi extends Base {
         break
       }
       case 'bilibilidynamic': {
+        if (!(Config.bilibili.bilibiliTip).includes('动态')) break
         switch (OBJECT.dynamicINFO.data.item.type) {
           /** 图文、纯图 */
           case 'DYNAMIC_TYPE_DRAW': {
