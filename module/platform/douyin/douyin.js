@@ -242,7 +242,7 @@ export default class DouYin extends Base {
           video_res.push(video_data)
         }
 
-        if ((Config.douyin.douyinTip).includes('提示信息')) {
+        if ((Config.douyin.douyinTip).includes('评论图')) {
           const EmojiData = await getDouyinData('Emoji数据')
           const list = Emoji(EmojiData)
           const commentsArray = await douyinComments(CommentsData, list)
