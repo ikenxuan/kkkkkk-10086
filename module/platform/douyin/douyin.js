@@ -32,7 +32,7 @@ export default class DouYin extends Base {
         })
         const CommentsData = await getDouyinData('评论数据', Config.cookies.douyin, {
           aweme_id: data.aweme_id,
-          number: Config.douyin.numcomment,
+          number: Config.douyin.numcomments,
           typeMode: 'strict'
         })
         this.is_slides = VideoData.aweme_detail.is_slides === true
