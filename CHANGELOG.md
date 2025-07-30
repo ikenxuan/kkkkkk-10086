@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.9.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.8.0...v1.9.0) (2025-07-30)
+
+
+### Features
+
+* **guoba:** 优化锅巴配置中的主题配置，修复FFmpeg带空格路径错误 ([9c9cea3](https://github.com/ikenxuan/kkkkkk-10086/commit/9c9cea363912e4a3af1cab9ec9770893c3797f84))
+* 可选解析内容，废弃原本配置，更新后请重新配置 ([f51b35e](https://github.com/ikenxuan/kkkkkk-10086/commit/f51b35e73b545e6424590168c7099f7e3990253c))
+* 添加bilibili动态的可选项，未测试，有bug请移步issue ([c0fc5bc](https://github.com/ikenxuan/kkkkkk-10086/commit/c0fc5bc71701c1f542e191482c18f02e43e2e23b))
+* 添加抖音是否发送背景音乐配置项 ([a3126ef](https://github.com/ikenxuan/kkkkkk-10086/commit/a3126ef08c378c5d755d6a3ce7dde59bb5fa3c17))
+
+
+### Bug Fixes
+
+* **bilibili:** 修复合并文件路径中OBJECT数据结构引用错误 ([dc4a358](https://github.com/ikenxuan/kkkkkk-10086/commit/dc4a35893c1569b7621d224358d3fa3b38151935))
+* **bilibili:** 修复默认清晰度显示问题 ([662c677](https://github.com/ikenxuan/kkkkkk-10086/commit/662c6770a1e8b7ba4206ea7520203e4233364269))
+* **bilibili:** 修正转发动态渲染方法调用错误 ([4acd48e](https://github.com/ikenxuan/kkkkkk-10086/commit/4acd48e985bc7c75f1a4ef73e4814613251cbee6))
+* **bilibili:** 添加生成B站动态卡片渐变样式功能缺失的函数 ([0e76428](https://github.com/ikenxuan/kkkkkk-10086/commit/0e76428d1c8c88f08bd88fb1ed5eb5c92bf26e1c))
+* **douyin:** 修复GetDouyinID调用缺少参数e的问题 ([78aa42a](https://github.com/ikenxuan/kkkkkk-10086/commit/78aa42af002059269855e2338ae6b647d6f22df6))
+* **douyin:** 修复Render方法调用错误 ([03e8548](https://github.com/ikenxuan/kkkkkk-10086/commit/03e854863ed0dc6142ffeee417ed8dfb95b8930d))
+* **douyin:** 修正 Networks 请求类型为 arrayBuffer 并为 getDouyinData 方法添加 cookies 参数 ([04018f3](https://github.com/ikenxuan/kkkkkk-10086/commit/04018f3ccb83ec1f4149db662302ddd6b284d368))
+* **douyin:** 修正文件扩展名前缺少点号的问题 ([9d044cc](https://github.com/ikenxuan/kkkkkk-10086/commit/9d044cc53934c81ab79898b043116d34eb9fa1f9))
+* **douyin:** 修正视频下载格式参数为字符串类型 ([c6275f6](https://github.com/ikenxuan/kkkkkk-10086/commit/c6275f6bc865f3aac3cefd4445b9c39c8d83638c))
+* **douyin:** 修正评论图片处理中的方法名和缓冲区转换问题 ([a0b45f0](https://github.com/ikenxuan/kkkkkk-10086/commit/a0b45f0a9963613b34e14aee283e2510c082c088))
+* **douyin:** 修正音乐播放URL引用变量名从data改为MusicData ([5d7568e](https://github.com/ikenxuan/kkkkkk-10086/commit/5d7568e85f889491a2c323ce6a8bf949ed6bfa10))
+* **douyin:** 在GetDouyinID调用中添加this.e参数 ([c472817](https://github.com/ikenxuan/kkkkkk-10086/commit/c4728179f6e196700a655f1bc3f13a78c30c8ca6))
+* **douyin:** 移除DownLoadVideo方法中多余的参数this.e ([84d04d4](https://github.com/ikenxuan/kkkkkk-10086/commit/84d04d41de02bb940ee6c22184b4cc15d5bdd91f))
+* **douyin:** 移除视频下载文件名中的.mp4后缀 ([804b4e2](https://github.com/ikenxuan/kkkkkk-10086/commit/804b4e20d24bb82759b1ea7892c96fa332fc6463))
+* **douyin:** 移除视频文件名中的标题以避免特殊字符问题 ([e330865](https://github.com/ikenxuan/kkkkkk-10086/commit/e33086502e5799a7341c2de2317296a11630cf2a))
+* 优化代码结构 ([09b168a](https://github.com/ikenxuan/kkkkkk-10086/commit/09b168ab3ff62e35072bd3cca3577ab41188d049))
+* 修复videoSize is not defined问题，修复B站Emoji数据无法获取问题 ([35e8baf](https://github.com/ikenxuan/kkkkkk-10086/commit/35e8baff287078cbbbf3a2e0749a9ce1dfc7fc15))
+* 修复加载失败 ([d499c27](https://github.com/ikenxuan/kkkkkk-10086/commit/d499c2740f328100af4b9e1f1a1aa7f28f63df8a))
+* 修复抖音评论图设置无效 ([69d55a2](https://github.com/ikenxuan/kkkkkk-10086/commit/69d55a29ad8173f845e7d77b09cf359107c28061))
+* 修复抖音评论图配置无效 ([264c407](https://github.com/ikenxuan/kkkkkk-10086/commit/264c40766287566e963705a84faed34f873f4526))
+* 修复文件大小限制检查使用错误配置项的问题 ([e3ec8c7](https://github.com/ikenxuan/kkkkkk-10086/commit/e3ec8c7bc4b37da8201ea0d1b5246b987aead685))
+
 ## [1.8.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.7.2...v1.8.0) (2025-05-27)
 
 
