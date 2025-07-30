@@ -21,7 +21,7 @@ export default class Bilidata extends Base {
         const SIGN = await checkuser(BASEURL)
         PARAM = await wbi_sign(bilibiliAPI.评论区明细({ number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid }), Config.cookies.bilibili)
         COMMENTSDATA = await getBilibiliData('评论数据', Config.cookies.bilibili, { number: Config.bilibili.bilibilinumcomments, type: 1, oid: INFODATA.data.aid })
-        EMOJIDATA = await getBilibiliData('emoji数据', Config.cookies.bilibili)
+        EMOJIDATA = await getBilibiliData('Emoji数据', Config.cookies.bilibili)
         return { INFODATA, DATA, COMMENTSDATA, EMOJIDATA, USER: SIGN, TYPE: 'bilibilivideo' }
       }
       case 'workonly': {
@@ -69,7 +69,7 @@ export default class Bilidata extends Base {
         PARAM = await wbi_sign(bilibiliAPI.评论区明细({ type: 1, oid: dynamicINFO_CARD.data.card.desc.rid, number: Config.bilibili.bilibilinumcomments }), Config.cookies.bilibili)
         this.headers.Referer = 'https://api.bilibili.com/'
         COMMENTSDATA = await getBilibiliData('评论数据', Config.cookies.bilibili, { type: mapping_table(dynamicINFO.data.item.type), oid: oid(dynamicINFO, dynamicINFO_CARD), number: Config.bilibili.bilibilinumcomments })
-        EMOJIDATA = await getBilibiliData('emoji数据')
+        EMOJIDATA = await getBilibiliData('Emoji数据')
         const USERDATA = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: dynamicINFO.data.item.modules.module_author.mid })
         return { dynamicINFO, dynamicINFO_CARD, COMMENTSDATA, EMOJIDATA, USERDATA, TYPE: 'bilibilidynamic' }
       }

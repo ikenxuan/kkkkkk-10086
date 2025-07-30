@@ -56,6 +56,8 @@ export default class BiLiBiLi extends Base {
             )
           )
         }
+
+        let videoSize
         if ((Config.bilibili.bilibiliTip).includes('评论图')) {
           const simplify = OBJECT.DATA.data.dash.video.filter((item, index, self) => {
             return self.findIndex((t) => {
@@ -64,7 +66,6 @@ export default class BiLiBiLi extends Base {
           })
           if (this.islogin) OBJECT.DATA.data.dash.video = simplify
           OBJECT = await this.processVideos(OBJECT)
-          let videoSize
           if (this.islogin) {
             videoSize = await this.getvideosize(OBJECT.DATA.data.dash.video[0].base_url, OBJECT.DATA.data.dash.audio[0].base_url, OBJECT.INFODATA.data.bvid)
           } else {
