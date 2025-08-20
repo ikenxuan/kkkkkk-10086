@@ -13,9 +13,6 @@ let img
 export default class DouYin extends Base {
   constructor (e = {}, iddata) {
     super()
-    /**
-     * @type { import('node-karin').KarinMessage }
-     */
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
@@ -35,24 +32,24 @@ export default class DouYin extends Base {
           number: Config.douyin.numcomments,
           typeMode: 'strict'
         })
-        this.is_slides = VideoData.aweme_detail.is_slides === true
+        this.is_slides = VideoData.data.aweme_detail.is_slides === true
         let g_video_url = ''
         let g_title
 
         /** 图集 */
         let imagenum = 0
         const image_res = []
-        if (this.is_mp4 === false && (Config.bilibili.bilibiliTip).includes('图集')) {
+        if (this.is_mp4 === false && (Config.douyin.douyinTip).includes('图集')) {
           switch (true) {
             // 图集
-            case this.is_slides === false && VideoData.aweme_detail.images !== null: {
+            case this.is_slides === false && VideoData.data.aweme_detail.images !== null: {
               const image_data = []
               const imageres = []
               let image_url = ''
-              for (let i = 0; i < VideoData.aweme_detail.images.length; i++) {
-                image_url = VideoData.aweme_detail.images[i].url_list[2] || VideoData.aweme_detail.images[i].url_list[1] // 图片地址
+              for (let i = 0; i < VideoData.data.aweme_detail.images.length; i++) {
+                image_url = VideoData.data.aweme_detail.images[i].url_list[2] || VideoData.data.aweme_detail.images[i].url_list[1] // 图片地址
 
-                const title = VideoData.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // 标题，去除特殊字符
+                const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ') // 标题，去除特殊字符
                 g_title = title
                 let imgresp
                 if (this.botadapter === 'QQBot') {
@@ -84,18 +81,18 @@ export default class DouYin extends Base {
               break
             }
             // 合辑
-            case VideoData.aweme_detail.is_slides === true && VideoData.aweme_detail.images !== null: {
+            case VideoData.data.aweme_detail.is_slides === true && VideoData.data.aweme_detail.images !== null: {
               const images = []
               const temp = []
               /** BGM */
               const liveimgbgm = await this.DownLoadFile(
-                VideoData.aweme_detail.music.play_url.uri,
+                VideoData.data.aweme_detail.music.play_url.uri,
                 `Douyin_tmp_A_${Date.now()}`,
                 this.headers,
                 '.mp3'
               )
               temp.push(liveimgbgm)
-              for (const item of VideoData.aweme_detail.images) {
+              for (const item of VideoData.data.aweme_detail.images) {
                 imagenum++
                 // 静态图片，clip_type为2
                 if (item.clip_type === 2) {
@@ -148,8 +145,8 @@ export default class DouYin extends Base {
         }
 
         /** 背景音乐 */
-        if (VideoData.aweme_detail.music && (Config.bilibili.bilibiliTip).includes('背景音乐')) {
-          const music = VideoData.aweme_detail.music
+        if (VideoData.data.aweme_detail.music && (Config.douyin.douyinTip).includes('背景音乐')) {
+          const music = VideoData.data.aweme_detail.music
           const music_url = music.play_url.uri // BGM link
           if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
             try {
@@ -201,50 +198,52 @@ export default class DouYin extends Base {
         let FPS
         const video_res = []
         const sendvideofile = true
-        if (this.is_mp4 && (Config.bilibili.bilibiliTip).includes('视频')) {
+        if (this.is_mp4 && (Config.douyin.douyinTip).includes('视频')) {
           const video_data = []
           const videores = []
           // 视频地址特殊判断：play_addr_h264、play_addr、
-          const video = VideoData.aweme_detail.video
+          const video = VideoData.data.aweme_detail.video
           FPS = video.bit_rate[0].FPS // FPS
           if (Config.douyin.autoResolution) {
             logger.debug(`开始排除不符合条件的视频分辨率；\n
               共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
-              视频ID：${logger.green(VideoData.aweme_detail.aweme_id)}\n
-              分享链接：${logger.green(VideoData.aweme_detail.share_url)}
+              视频ID：${logger.green(VideoData.data.aweme_detail.aweme_id)}\n
+              分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
-            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit)
+            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.app.filelimit)
             g_video_url = await new Networks({
               url: video.bit_rate[0].play_addr.url_list[2],
-              headers: this.headers
+              headers: this.headers,
+              Referer: video.bit_rate[0].play_addr.url_list[0]
             }).getLongLink()
           } else {
             g_video_url = await new Networks({
               url: video.play_addr_h264.url_list[2] ?? video.play_addr_h264.url_list[2],
-              headers: this.headers
+              headers: this.headers,
+              Referer: video.play_addr_h264.url_list[0] ?? video.play_addr_h264.url_list[0],
             }).getLongLink()
           }
           const cover = video.origin_cover.url_list[0] // video cover image
 
-          const title = VideoData.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
+          const title = VideoData.data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
           g_title = title
           mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
           videores.push(`标题：\n${title}`)
           videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
           videores.push(
-            `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+            `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
           )
           videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
           videores.push(segment.image(cover))
-          logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
+          logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
           const res = common.makeForwardMsg(this.e, videores, '视频基本信息')
           video_data.push(res)
           video_res.push(video_data)
         }
 
         if ((Config.douyin.douyinTip).includes('评论图')) {
-          const EmojiData = await getDouyinData('Emoji数据')
-          const list = Emoji(EmojiData)
+          const EmojiData = await etDouyinData('Emoji数据', { typeMode: 'strict' })
+          const list = Emoji(EmojiData.data)
           const commentsArray = await douyinComments(CommentsData, list)
           if (!commentsArray.jsonArray.length) {
             await this.e.reply('这个作品没有评论 ~')
@@ -255,8 +254,8 @@ export default class DouYin extends Base {
                 CommentsData: commentsArray,
                 CommentLength: String(commentsArray.jsonArray?.length ?? 0),
                 share_url: this.is_mp4
-                  ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                  : VideoData.aweme_detail.share_url,
+                  ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
+                  : VideoData.data.aweme_detail.share_url,
                 Title: g_title,
                 VideoSize: mp4size,
                 VideoFPS: FPS,
@@ -308,7 +307,7 @@ export default class DouYin extends Base {
           music_id: data.music_id,
           typeMode: 'strict'
         })
-        const sec_uid = MusicData.music_info.sec_uid
+        const sec_uid = MusicData.data.music_info.sec_uid
         const UserData = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid, typeMode: 'strict' })
         // if (userdata.status_code === 2) {
         //   const new_userdata = await getDouyinData('搜索数据', Config.cookies.douyin, { query: data.music_info.author })
@@ -317,40 +316,40 @@ export default class DouYin extends Base {
         //   }
         //   const search_data = new_userdata
         // }
-        if (!MusicData.music_info.play_url) {
+        if (!MusicData.data.music_info.play_url) {
           await this.e.reply('解析错误！该音乐抖音未提供下载链接，无法下载', { reply: true })
           return true
         }
         img = await Render.render('douyin/musicinfo',
           {
-            image_url: MusicData.music_info.cover_hd.url_list[0],
-            desc: MusicData.music_info.title,
-            music_id: MusicData.music_info.id,
+            image_url: MusicData.data.music_info.cover_hd.url_list[0],
+            desc: MusicData.data.music_info.title,
+            music_id: MusicData.data.music_info.id,
             create_time: Time(0),
             user_count: Common.count(MusicData.music_info.user_count),
-            avater_url: MusicData.music_info.avatar_large?.url_list[0] || UserData.user.avatar_larger.url_list[0],
-            fans: UserData.user.mplatform_followers_count || UserData.user.follower_count,
-            following_count: UserData.user.following_count,
-            total_favorited: UserData.user.total_favorited,
-            user_shortid: UserData.user.unique_id === '' ? UserData.user.short_id : UserData.user.unique_id,
-            share_url: MusicData.music_info.play_url.uri,
-            username: MusicData.music_info?.original_musician_display_name || MusicData.music_info.owner_nickname === '' ? MusicData.music_info.author : MusicData.music_info.owner_nickname
+            avater_url: MusicData.data.music_info.avatar_large?.url_list[0] || UserData.data.user.avatar_larger.url_list[0],
+            fans: UserData.data.user.mplatform_followers_count || UserData.user.follower_count,
+            following_count: UserData.data.user.following_count,
+            total_favorited: UserData.data.user.total_favorited,
+            user_shortid: UserData.data.user.unique_id === '' ? UserData.user.short_id : UserData.user.unique_id,
+            share_url: MusicData.data.music_info.play_url.uri,
+            username: MusicData.data.music_info?.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname
           }
         )
         await this.e.reply(
           this.mkMsg(
             [
               ...img,
-              `\n正在上传 ${MusicData.music_info.title}\n`,
-              `作曲: ${MusicData.music_info.original_musician_display_name || MusicData.music_info.owner_nickname === '' ? MusicData.music_info.author : MusicData.music_info.owner_nickname}\n`,
-              `music_id: ${MusicData.music_info.id}`
+              `\n正在上传 ${MusicData.data.music_info.title}\n`,
+              `作曲: ${MusicData.data.music_info.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname}\n`,
+              `music_id: ${MusicData.data.music_info.id}`
             ],
-            [{ text: '音乐文件', link: MusicData.music_info.play_url.uri }]
+            [{ text: '音乐文件', link: MusicData.data.music_info.play_url.uri }]
           )
         )
         if (this.botadapter === 'ICQQ') {
-          await this.e.reply(await UploadRecord(this.e, MusicData.music_info.play_url.uri, 0, false))
-        } else await this.e.reply(segment.record(MusicData.music_info.play_url.uri))
+          await this.e.reply(await UploadRecord(this.e, MusicData.data.music_info.play_url.uri, 0, false))
+        } else await this.e.reply(segment.record(MusicData.data.music_info.play_url.uri))
         return true
       }
       case 'live_room_detail': {
@@ -358,10 +357,10 @@ export default class DouYin extends Base {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
-        if (UserInfoData.user.live_status === 1) {
+        if (UserInfoData.data.user.live_status === 1) {
           // 直播中
-          const live_data = await getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.user.sec_uid, typeMode: 'strict' })
-          const room_data = JSON.parse(UserInfoData.user.room_data)
+          const live_data = await getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
+          const room_data = JSON.parse(UserInfoData.data.user.room_data)
           const img = await Render.render('douyin/live',
             {
               image_url: [{ image_src: live_data.data.data[0].cover?.url_list[0] }],
@@ -369,9 +368,9 @@ export default class DouYin extends Base {
               liveinf: `${live_data.data.partition_road_map.partition.title} | 房间号: ${room_data.owner.web_rid}`,
               在线观众: Common.count(Number(live_data.data.data[0].room_view_stats?.display_value)),
               总观看次数: Common.count(Number(live_data.data.data[0].stats?.total_user_str)),
-              username: UserInfoData.user.nickname,
-              avater_url: UserInfoData.user.avatar_larger.url_list[0],
-              fans: Common.count(UserInfoData.user.follower_count),
+              username: UserInfoData.data.user.nickname,
+              avater_url: UserInfoData.data.user.avatar_larger.url_list[0],
+              fans: Common.count(UserInfoData.data.user.follower_count),
               create_time: Common.convertTimestampToDateTime(new Date().getTime()),
               now_time: Common.convertTimestampToDateTime(new Date().getTime()),
               share_url: 'https://live.douyin.com/' + room_data.owner.web_rid,
