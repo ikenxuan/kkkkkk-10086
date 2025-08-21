@@ -1,3 +1,5 @@
+import { Common } from '../../utils/index.js'
+
 /**
  * 处理B站评论数据，提取并格式化评论信息
  * @param {Object} commentsData - 评论数据对象
