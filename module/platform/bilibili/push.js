@@ -378,7 +378,7 @@ export default class Bilibilipush extends Base {
 
     try {
       for (const item of Config.pushlist.bilibili) {
-        const dynamic_list = await new Bilidata('获取用户空间动态').GetData({ host_mid: item.host_mid })
+        const dynamic_list = await getBilibiliData('用户主页动态列表数据', Config.cookies.bilibili, { host_mid: data.host_mid, typeMode: 'strict' })
         const ALL_DBdata = await DB.FindAll('bilibili')
 
         // 将数据库中的 group_id 转换为 Set，便于后续检查是否存在
@@ -560,7 +560,7 @@ export default class Bilibilipush extends Base {
     if (abclist.length > 0) {
       for (let i = 0; i < abclist.length; i++) {
         // 从外部数据源获取用户备注信息
-        const resp = await new Bilidata('用户名片信息').GetData({ host_mid: abclist[i].host_mid })
+        const resp = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: data.host_mid, typeMode: 'strict' })
         const remark = resp.data.card.name
         // 在配置文件中找到对应的用户，并更新其备注信息
         const matchingItemIndex = config.bilibili.findIndex((item) => item.host_mid === abclist[i].host_mid)
