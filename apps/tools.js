@@ -155,7 +155,7 @@ export class Tools extends plugin {
       url = `https://www.bilibili.com/video/${ url }`
     }
     const iddata = await GetBilibiliID(url)
-    await new BiLiBiLi(e, data).RESOURCES(iddata)
+    await new BiLiBiLi(e, iddata).RESOURCES(iddata)
     user[this.e.user_id] = 'bilib'
     setTimeout(() => {
       delete user[this.e.user_id]
