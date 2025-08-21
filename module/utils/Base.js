@@ -23,9 +23,9 @@ export default class Base {
         kuaishou: Config.cookies.kuaishou
       },
       request: {
-        timeout: Config.request.timeout,
-        headers: { 'User-Agent': Config.request['User-Agent'] },
-        proxy: Config.request.proxy?.switch ? Config.request.proxy : false,
+        timeout: Config?.request?.timeout ?? 15000,
+        headers: { 'User-Agent': Config?.request?.['User-Agent'] ?? this.headers['User-Agent'] },
+        proxy: Config?.request?.proxy?.switch ? Config?.request?.proxy : false,
       }
     })
 
