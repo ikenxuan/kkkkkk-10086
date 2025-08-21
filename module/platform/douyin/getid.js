@@ -1,4 +1,4 @@
-import Networks from '../../utils/Networks.js'
+import { Networks } from '../../utils/Networks.js'
 
 /**
  * 解析抖音分享链接，返回作品ID对象

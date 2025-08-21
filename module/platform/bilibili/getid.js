@@ -1,4 +1,4 @@
-import Networks from '../../utils/Networks.js'
+import { Networks } from '../../utils/Networks.js'
 
 /**
  * return aweme_id
