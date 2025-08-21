@@ -33,7 +33,7 @@ export async function checkCk() {
   const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili)
   
   // 判断VIP状态：vipStatus为1表示是VIP用户
-  let isVIP = loginInfo.data.data.vipStatus === 1
+  let isVIP = loginInfo?.data?.data?.vipStatus === 1
   
   // 返回登录状态和VIP状态
   // 注意：无论是否是VIP，只要Cookie有效就返回已登录状态
