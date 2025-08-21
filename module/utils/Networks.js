@@ -7,7 +7,7 @@ export const baseHeaders = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0'
 }
-export default class Networks {
+export class Networks {
   /**
    * 构造网络请求对象
    * @param {string} data.url 请求的URL地址
