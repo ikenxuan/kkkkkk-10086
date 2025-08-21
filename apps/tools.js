@@ -1,4 +1,4 @@
-import { BiLiBiLi, Bilidata, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
+import { BiLiBiLi, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/platform/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
 import { Config, Pushlist, Common } from '../module/utils/index.js'
@@ -177,7 +177,7 @@ export class Tools extends plugin {
 
   async setpushbili (e) {
     if (e.isPrivate) return true
-    const data = await new Bilidata('用户名片信息').GetData({ host_mid: /^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1] })
+    const data = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: /^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1] })
     await e.reply(await new Bilibilipush(e).setting(data))
     return true
   }
