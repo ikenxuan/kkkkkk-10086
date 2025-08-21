@@ -32,11 +32,11 @@ if (Config.app.APIServer) {
     douyin: Config.cookies.douyin,
     bilibili: Config.cookies.bilibili
   })
-  client.startClient(Config.app.APIServer)
+  client.startClient(Config.app.APIServerPort)
   
   // 记录服务启动信息
   logger.mark('========== HTTP API 服务启动 ==========')
-  logger.mark(`服务地址: http://127.0.0.1:${Config.app.APIServer}`)
+  logger.mark(`服务地址: http://127.0.0.1:${Config.app.APIServerPort}`)
   logger.mark('----------------------------------------')
   logger.mark('已启用的 API 服务:')
   
