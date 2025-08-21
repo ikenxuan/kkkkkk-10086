@@ -1,7 +1,8 @@
-import { BiLiBiLi, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
 import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/platform/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
+import { BiLiBiLi, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
 import { Config, Pushlist, Common } from '../module/utils/index.js'
+import { getBilibiliData } from '@ikenxuan/amagi'
 
 export class Tools extends plugin {
   constructor () {
