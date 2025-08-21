@@ -1,6 +1,6 @@
 import { Config, Render, Version, Common } from '../module/utils/index.js'
+import { bilibiliLogin } from '../module/platform/bilibili/login.js'
 import { dylogin } from '../module/platform/douyin/login.js'
-import BiLogin from '../module/platform/bilibili/login.js'
 import path from 'path'
 import fs from 'fs'
 
@@ -202,7 +202,7 @@ export class kkkAdmin extends plugin {
   }
 
   async Blogin (e) {
-    await new BiLogin(e).Login()
+    await bilibiliLogin(e)
     return true
   }
 

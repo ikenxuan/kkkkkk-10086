@@ -1,68 +1,120 @@
-import { Config, Base, Sleep } from '../../utils/index.js'
-import Bilidata from './getdata.js'
-import QRCode from 'qrcode'
+import { getBilibiliData } from '@ikenxuan/amagi'
+import { Common, Config } from '../../utils/index.js'
+import * as QRCode from 'qrcode'
+import fs from 'node:fs'
 
-export default class BiLogin extends Base {
-  constructor (e = {}) {
-    super()
-    this.e = e
+
+/** B站登录 */
+/**
+ * 处理哔哩哔哩登录流程
+ * @param {Message} e - 消息对象
+ */
+export const bilibiliLogin = async (e) => {
+  /** 申请二维码 */
+  const qrcodeurl = await getBilibiliData('申请二维码', { typeMode: 'strict' }) // 获取二维码URL
+  const qrimg = await QRCode.toDataURL(qrcodeurl.data.data.url) // 将二维码URL转换为base64图片
+  const base64Data = qrimg ? qrimg.replace(/^data:image\/\w+;base64,/, '') : '' // 提取base64数据
+  const buffer = Buffer.from(base64Data, 'base64') // 将base64数据转换为Buffer
+  fs.writeFileSync(`${Common.tempDri.default}BilibiliLoginQrcode.png`, buffer) // 将二维码图片保存到临时目录
+
+  const qrcode_key = qrcodeurl.data.data.qrcode_key // 获取二维码的key
+  const messageIds = [] // 存储消息ID的数组
+
+  // 发送免责声明和二维码
+  const disclaimerMsg = await e.reply('免责声明:\n您将通过扫码完成获取哔哩哔哩网页端的用户登录凭证（ck），该ck将用于请求哔哩哔哩WEB API接口。\n本BOT不会上传任何有关你的信息到第三方，所配置的 ck 只会用于请求官方 API 接口。\n我方仅提供视频解析及相关哔哩哔哩内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~') // 发送免责声明
+  const qrcodeMsg = await e.reply([ // 发送二维码图片和提示文字
+    segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')),
+    segment.text('请在120秒内通过哔哩哔哩APP扫码进行登录')
+  ], { reply: true })
+
+  messageIds.push(disclaimerMsg.messageId, qrcodeMsg.messageId) // 将消息ID存入数组
+
+  /**
+   * 批量撤回消息
+   */
+  const recallMessages = async () => {
+    await Promise.all(messageIds.map(async (id) => {
+      try {
+        await e.bot.recallMsg(e.contact, id)
+      } catch { }
+    }))
   }
 
-  async Login () {
-    /** 申请二维码 */
-    const qrcodeurl = await new Bilidata('申请二维码').GetData()
-    const qrimg = await QRCode.toDataURL(qrcodeurl.data.url)
-    this.qrcode_key = qrcodeurl.data.qrcode_key
-    await this.e.reply(
-      '免责声明:\n您将通过扫码完成获取哔哩哔哩的ck用于请求B站API接口以获取数据。\n本Bot不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~',
-      { recallMsg: 180 }
-    )
-    await this.e.reply([ segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')), segment.at(this.e.user_id), '请扫码以完成获取' ], { recallMsg: 180 })
+  /**
+   * 处理登录成功
+   * @param responseData - 登录响应数据
+   */
+  const handleLoginSuccess = async (responseData) => {
+    Config.Modify('cookies', 'bilibili', Array.isArray(responseData.data.data.headers['set-cookie'])
+      ? responseData.data.data.headers['set-cookie']
+      : [responseData.data.data.headers['set-cookie']])
+    await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', { reply: true })
+    await recallMessages()
+  }
 
-    /** 判断二维码状态 */
-    // let Execution86038 = -1
-    let executed86090 = false
-    let completedCase0 = false
-    for (let i = 0; i < 33; i++) {
-      const qrcodestatusdata = await new Bilidata('判断二维码状态').GetData({ qrcode_key: this.qrcode_key })
-      switch (qrcodestatusdata.data.data.code) {
-        case 0:{
-        // console.log(qrcodestatusdata.data.data.refresh_token)
-          Config.modify('cookies', 'bilibili', formatCookies(qrcodestatusdata.headers['set-cookie']))
-          // Config.bilibilirefresh_token = qrcodestatusdata.data.data.refresh_token
-          this.e.reply('登录成功！相关信息已保存至cookies.yaml', true)
-          completedCase0 = true
-          break
-        }
-        case 86038:{
-          i === 17 && this.e.reply('二维码已失效', true)
-          break
-        }
-        case 86090:{
-          if (!executed86090) {
-            this.e.reply('二维码已扫码，未确认', true)
-            executed86090 = true
-          } else {
-            executed86090 = true
-          }
-          break
-        }
-        default:
-          break
-      }
-      if (completedCase0) break
-      await Sleep(5000)
+  /**
+   * 处理二维码已扫描但未确认
+   */
+  const handleQrScanned = async () => {
+    const scannedMsg = await e.reply('二维码已扫码，未确认', { reply: true })
+    messageIds.push(scannedMsg.messageId)
+
+    // 撤回原二维码消息
+    try {
+      await e.bot.recallMsg(e.contact, qrcodeMsg.messageId)
+    } catch { }
+
+    // 从消息ID列表中移除已撤回的消息
+    const index = messageIds.indexOf(qrcodeMsg.messageId)
+    if (index > -1) {
+      messageIds.splice(index, 1)
     }
   }
-}
 
-function formatCookies (cookies) {
-  return cookies.map(cookie => {
-    // 分割每个cookie字符串以获取名称和值
-    const [ nameValue, ...attributes ] = cookie.split(';').map(part => part.trim())
-    const [ name, value ] = nameValue.split('=')
+  /**
+   * 处理二维码失效
+   */
+  const handleQrExpired = async () => {
+    await e.reply('二维码已失效', { reply: true })
+    await recallMessages()
+  }
 
-    // 重新组合名称和值，忽略其他属性
-    return `${name}=${value}`
-  }).join('; ')
+  /** 轮询二维码状态 */
+  let hasScanned = false
+
+  while (true) {
+    try {
+      const qrcodeStatusData = await getBilibiliData('二维码状态', { qrcode_key, typeMode: 'strict' })
+      const statusCode = qrcodeStatusData.data.data.data.code
+
+      switch (statusCode) {
+        case 0: // 登录成功
+          await handleLoginSuccess(qrcodeStatusData)
+          return
+
+        case 86038: // 二维码失效
+          await handleQrExpired()
+          return
+
+        case 86090: // 二维码已扫描，未确认
+          if (!hasScanned) {
+            await handleQrScanned()
+            hasScanned = true
+          }
+          break
+
+        case 86101: // 未扫描
+        default:
+          // 继续轮询
+          break
+      }
+
+      await common.sleep(3000)
+    } catch (error) {
+      console.error('轮询二维码状态时发生错误:', error)
+      await e.reply('登录过程中发生错误，请重试', { reply: true })
+      await recallMessages()
+      return
+    }
+  }
 }
