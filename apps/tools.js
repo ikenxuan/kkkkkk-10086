@@ -135,7 +135,6 @@ export class Tools extends plugin {
   async next (e) {
     if (user[this.e.user_id] === 'bilib') {
       const regex = String(e.msg).match(/第(\d+)集/)
-      e.reply(`收到请求，第${regex[1]}集正在下载中`)
       const BILIBILIOBJECT = global.BILIBILIOBJECT
       BILIBILIOBJECT.Episode = regex[1]
       await new BiLiBiLi(e, BILIBILIOBJECT).RESOURCES(BILIBILIOBJECT, true)
@@ -154,9 +153,8 @@ export class Tools extends plugin {
     } else if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
       url = `https://www.bilibili.com/video/${ url }`
     }
-    const bvid = await GetBilibiliID(url)
-    const data = await new Bilidata(bvid.type).GetData(bvid)
-    await new BiLiBiLi(e, data).RESOURCES(data)
+    const iddata = await GetBilibiliID(url)
+    await new BiLiBiLi(e, data).RESOURCES(iddata)
     user[this.e.user_id] = 'bilib'
     setTimeout(() => {
       delete user[this.e.user_id]

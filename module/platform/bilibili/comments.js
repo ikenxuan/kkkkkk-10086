@@ -1,37 +1,37 @@
-export default async function bilicomments (OBJECT) {
+/**
+ * 处理B站评论数据，提取并格式化评论信息
+ * @param {Object} commentsData - 评论数据对象
+ * @param {number} commentsData.code - 返回码
+ * @param {Object} commentsData.data - 评论数据
+ * @param {Array} commentsData.data.replies - 评论列表
+ * @returns {Array|null} 处理后的评论数组，如果返回404则返回null
+ */
+export function bilibiliComments(commentsData) {
+  if (!commentsData) return []
   let jsonArray = []
-  for (let i = 0; i < OBJECT.COMMENTSDATA.data.replies.length; i++) {
-    const ctime = getRelativeTimeFromTimestamp(OBJECT.COMMENTSDATA.data.replies[i].ctime)
-    const emote = OBJECT.COMMENTSDATA.data.replies[i].content.emote
-    let message = OBJECT.COMMENTSDATA.data.replies[i].content.message
-    if(message && emote) message = emoteToUrl(message, emote)
-    const avatar = OBJECT.COMMENTSDATA.data.replies[i].member.avatar
-    const frame = OBJECT.COMMENTSDATA.data.replies[i].member.pendant.image
-    const uname = checkvip(OBJECT.COMMENTSDATA.data.replies[i].member)
-    const level = OBJECT.COMMENTSDATA.data.replies[i].member.level_info.current_level
-    const vipstatus = OBJECT.COMMENTSDATA.data.replies[i].member.vip.status
-    const like = OBJECT.COMMENTSDATA.data.replies[i].like
-    // const contentObject = OBJECT.COMMENTSDATA.data.replies[i].content
-    const replylength = OBJECT.COMMENTSDATA.data.replies[i].rcount
-    const location = OBJECT.COMMENTSDATA.data.replies[i].reply_control.location
+  if (commentsData.code === 404) {
+    return null
+  }
+  for (let i = 0; i < commentsData.data.replies.length; i++) {
+    const ctime = getRelativeTimeFromTimestamp(commentsData.data.replies[i].ctime)
+    const emote = commentsData.data.replies[i].content.emote
+    let message = commentsData.data.replies[i].content.message
+    if (message && emote) message = emoteToUrl(message, emote)
+    const avatar = commentsData.data.replies[i].member.avatar
+    const frame = commentsData.data.replies[i].member.pendant.image
+    const uname = checkvip(commentsData.data.replies[i].member)
+    const level = commentsData.data.replies[i].member.level_info.current_level
+    const vipstatus = commentsData.data.replies[i].member.vip.status
+    const like = commentsData.data.replies[i].like
+    const replylength = commentsData.data.replies[i].rcount
+    const location = commentsData.data.replies[i].reply_control?.location?.replace('IP属地：', '') ?? ''
     const img_src =
-      OBJECT.COMMENTSDATA.data.replies[i].content &&
-        OBJECT.COMMENTSDATA.data.replies[i].content.pictures &&
-        OBJECT.COMMENTSDATA.data.replies[i].content.pictures.length > 0
-        ? OBJECT.COMMENTSDATA.data.replies[i].content.pictures[0].img_src
+      commentsData.data.replies[i].content &&
+        commentsData.data.replies[i].content.pictures &&
+        commentsData.data.replies[i].content.pictures.length > 0
+        ? commentsData.data.replies[i].content.pictures[0].img_src
         : null
-    const members = OBJECT.COMMENTSDATA.data.replies[i].content.members
-    // let emojiurl = ''
-    // // 检查 contentObject 是否存在并且不为 null
-    // if (contentObject && typeof contentObject === 'object') {
-    //   // 检查 emote 属性是否存在并且是一个对象
-    //   if (contentObject.emote && typeof contentObject.emote === 'object') {
-    //     // const emoteKeys = Object.keys(contentObject.emote)
-    //     // const firstKey = emoteKeys[0] // 获取第一个键名
-    //     // emojiurl = firstKey ? contentObject.emote[firstKey].url : null
-    //     // console.log()
-    //   }
-    // }
+    const members = commentsData.data.replies[i].content.members
 
     const obj = {
       id: i + 1,
@@ -57,9 +57,9 @@ export default async function bilicomments (OBJECT) {
   jsonArray.sort((a, b) => b.like - a.like)
 
   /** 对评论点赞数过万整除 */
-  for (let i = 0; i < jsonArray.length; i++) {
-    if (jsonArray[i].like > 10000) {
-      jsonArray[i].like = (jsonArray[i].like / 10000).toFixed(1) + 'w'
+  for (const i of jsonArray) {
+    if (i.like > 10000) {
+      i.like = (i.like / 10000).toFixed(1) + 'w'
     }
   }
   jsonArray = space(jsonArray)
@@ -71,7 +71,7 @@ export default async function bilicomments (OBJECT) {
       for (const member of comment.members) {
         // 构建正则表达式，匹配被艾特的用户
         const regex = new RegExp(`@${member.uname}`, 'g')
-        originalText = originalText.replace(regex, `<span style="color: #0C6692;">@${member.uname}</span>`)
+        originalText = originalText.replace(regex, `<span style="color: ${Common.useDarkTheme() ? '#58B0D5' : '#006A9E'};">@${member.uname}</span>`)
       }
     }
 
@@ -173,26 +173,6 @@ function checkvip (member) {
     ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: bold;">${member.uname}</span>`
     : `<span style="color: #888">${member.uname}</span>`
 }
-
-/** 处理表情，返回[{text: 表情名字, url: 表情地址}] */
-/**
-function extractEmojisData (data) {
-  const emojisData = []
-
-  // 遍历每个包
-  data.forEach((packages) => {
-    // 遍历每个表情
-    packages.emote.forEach((emote) => {
-      try {
-        // new URL(emote.url)
-        emojisData.push({ text: emote.text, url: emote.url })
-      } catch { }
-    })
-  })
-
-  return emojisData
-}
-*/
 
 /** 返回创建时间 */
 function getRelativeTimeFromTimestamp (timestamp) {

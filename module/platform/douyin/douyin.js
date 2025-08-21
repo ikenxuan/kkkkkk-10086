@@ -1,6 +1,5 @@
 import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
-import { getDouyinData } from '@ikenxuan/amagi'
 import { markdown } from '@karinjs/md-html'
 import { douyinComments } from './index.js'
 import { join } from 'node:path'
@@ -23,11 +22,11 @@ export default class DouYin extends Base {
     (Config.douyin.douyinTip).includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
-        const VideoData = await getDouyinData('聚合解析', Config.cookies.douyin, {
+        const VideoData = await this.amagi.getDouyinData('聚合解析', Config.cookies.douyin, {
           aweme_id: data.aweme_id,
           typeMode: 'strict'
         })
-        const CommentsData = await getDouyinData('评论数据', Config.cookies.douyin, {
+        const CommentsData = await this.amagi.getDouyinData('评论数据', Config.cookies.douyin, {
           aweme_id: data.aweme_id,
           number: Config.douyin.numcomments,
           typeMode: 'strict'
@@ -242,7 +241,7 @@ export default class DouYin extends Base {
         }
 
         if ((Config.douyin.douyinTip).includes('评论图')) {
-          const EmojiData = await getDouyinData('Emoji数据', { typeMode: 'strict' })
+          const EmojiData = await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' })
           const list = Emoji(EmojiData.data)
           const commentsArray = await douyinComments(CommentsData, list)
           if (!commentsArray.jsonArray.length) {
@@ -271,7 +270,7 @@ export default class DouYin extends Base {
       }
 
       case 'user_dynamic': {
-        const UserVideoListData = await getDouyinData('用户主页视频列表数据', Config.cookies.douyin, {
+        const UserVideoListData = await this.amagi.getDouyinData('用户主页视频列表数据', Config.cookies.douyin, {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
@@ -303,12 +302,12 @@ export default class DouYin extends Base {
         return true
       }
       case 'music_work': {
-        const MusicData = await getDouyinData('音乐数据', Config.cookies.douyin, {
+        const MusicData = await this.amagi.getDouyinData('音乐数据', Config.cookies.douyin, {
           music_id: data.music_id,
           typeMode: 'strict'
         })
         const sec_uid = MusicData.data.music_info.sec_uid
-        const UserData = await getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid, typeMode: 'strict' })
+        const UserData = await this.amagi.getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid, typeMode: 'strict' })
         // if (userdata.status_code === 2) {
         //   const new_userdata = await getDouyinData('搜索数据', Config.cookies.douyin, { query: data.music_info.author })
         //   if (new_userdata.data[0].type === 4 && new_userdata.data[0].card_unique_name === 'user') {
@@ -326,12 +325,12 @@ export default class DouYin extends Base {
             desc: MusicData.data.music_info.title,
             music_id: MusicData.data.music_info.id,
             create_time: Time(0),
-            user_count: Common.count(MusicData.music_info.user_count),
+            user_count: Common.count(MusicData.data.music_info.user_count),
             avater_url: MusicData.data.music_info.avatar_large?.url_list[0] || UserData.data.user.avatar_larger.url_list[0],
             fans: UserData.data.user.mplatform_followers_count || UserData.user.follower_count,
             following_count: UserData.data.user.following_count,
             total_favorited: UserData.data.user.total_favorited,
-            user_shortid: UserData.data.user.unique_id === '' ? UserData.user.short_id : UserData.user.unique_id,
+            user_shortid: UserData.data.user.unique_id === '' ? UserData.data.user.short_id : UserData.data.user.unique_id,
             share_url: MusicData.data.music_info.play_url.uri,
             username: MusicData.data.music_info?.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname
           }
@@ -353,13 +352,13 @@ export default class DouYin extends Base {
         return true
       }
       case 'live_room_detail': {
-        const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin, {
+        const UserInfoData = await this.amagi.getDouyinData('用户主页数据', Config.cookies.douyin, {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
         if (UserInfoData.data.user.live_status === 1) {
           // 直播中
-          const live_data = await getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
+          const live_data = await this.amagi.getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
           const room_data = JSON.parse(UserInfoData.data.user.room_data)
           const img = await Render.render('douyin/live',
             {

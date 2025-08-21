@@ -1,7 +1,7 @@
 import { bilibiliAPI, getBilibiliData, wbi_sign, av2bv } from '@ikenxuan/amagi'
 import Config from '../../utils/Config.js'
 import Base from '../../utils/Base.js'
-import checkuser from './cookie.js'
+import checkuser from './genParams.js'
 export default class Bilidata extends Base {
   constructor (type) {
     super()

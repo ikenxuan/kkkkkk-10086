@@ -1,3 +1,4 @@
+import Client, { bilibiliErrorCodeMap } from '@ikenxuan/amagi'
 import Networks from './Networks.js'
 import Version from './Version.js'
 import Config from './Config.js'
@@ -15,6 +16,76 @@ export default class Base {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
     }
     this._path = process.cwd()?.replace(/\\/g, '/')
+    const client = Client({
+      cookies: {
+        douyin: Config.cookies.douyin,
+        bilibili: Config.cookies.bilibili,
+        kuaishou: Config.cookies.kuaishou
+      },
+      request: {
+        timeout: Config.request.timeout,
+        headers: { 'User-Agent': Config.request['User-Agent'] },
+        proxy: Config.request.proxy?.switch ? Config.request.proxy : false,
+      }
+    })
+
+    // 使用Proxy包装amagi客户端
+    this.amagi = new Proxy(client, {
+      get (target, prop) {
+        const method = target[prop]
+        if (typeof method === 'function') {
+          return async (...args) => {
+            const result = await Function.prototype.apply.call(method, target, args)
+
+            // 返回值检查逻辑
+            if (!result) {
+              logger.warn(`Amagi API调用 (${String(prop)}) 返回了空值`)
+              return result
+            }
+
+            // 检查抖音数据返回结构
+            if (prop === 'getDouyinData' && (result.code !== 200)) {
+              const err = result
+              const img = await Render('apiError/index', err.error)
+              // 如果e为空对象才执行发送给主人
+              if (Object.keys(e).length === 0) {
+                const botId = statBotId(Config.pushlist)
+                const list = config.master()
+                let master = list[0]
+                if (master === 'console') {
+                  master = list[1]
+                }
+                await karin.sendMaster(botId.douyin.botId, master, [segment.text('推送任务出错！请即时解决以消除警告'), img[0]])
+                throw new Error(err.data.amagiMessage)
+              }
+              await e.reply(img)
+              throw new Error(err.data.amagiMessage)
+            }
+
+            // 检查哔哩哔哩数据返回结构
+            if (prop === 'getBilibiliData' && result.code in bilibiliErrorCodeMap) {
+              const err = result
+              const img = await Render('apiError/index', err.error)
+              // 如果e为空对象才执行发送给主人
+              if (Object.keys(e).length === 0) {
+                const botId = statBotId(Config.pushlist)
+                const list = config.master()
+                let master = list[0]
+                if (master === 'console') {
+                  master = list[1]
+                }
+                await karin.sendMaster(botId.bilibili.botId, master, [segment.text('推送任务出错！请即时解决以消除警告'), img[0]])
+                throw new Error(err.data.amagiMessage)
+              }
+              await e.reply(img)
+              throw new Error(err.data.amagiMessage)
+            }
+            return result
+          }
+        }
+        return method
+      }
+    })
   }
 
   /** 检查是或否设置抖音ck */

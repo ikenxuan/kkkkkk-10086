@@ -5,59 +5,119 @@ import Networks from '../../utils/Networks.js'
  * @param {string} url 分享连接
  * @returns
  */
-export default async function GetBilibiliID (url) {
-  const longLink = await new Networks({ url }).getLongLink()
-  let result
+export default async function GetBilibiliID (url, log = true) {
+  try {
+    // 获取长链接
+    const longLink = await new Networks({
+      url,
+      headers: {
+        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)'
+      }
+    }).getLongLink()
 
-  switch (true) {
-    case /(video\/|video\-)([A-Za-z0-9]+)/.test(longLink): {
-      const bvideoMatch = longLink.match(/video\/([A-Za-z0-9]+)|bvid=([A-Za-z0-9]+)/)
-      result = {
-        type: 'bilibilivideo',
-        id_type: 'bvid',
-        id: bvideoMatch[1] || bvideoMatch[2],
-        P: '哔哩哔哩'
-      }
-      if (result.id.startsWith('av')) {
-        result.id_type = 'aid'
-        result.id = result.id.replace('av', '')
-      }
-      break
+    // 处理获取长链接失败的情况
+    if (!longLink || longLink === '') {
+      logger.error('获取B站长链接失败，请稍后再试')
+      return true
     }
-    case /play\/(\S+?)\??/.test(longLink): {
-      const playMatch = longLink.match(/play\/(\w+)/)
-      result = {
-        type: 'bangumivideo',
-        id: playMatch[1],
-        P: '哔哩哔哩'
-      }
-      break
+
+    if (longLink.includes('失败')) {
+      logger.error(longLink)
+      return true
     }
-    case /^https:\/\/t\.bilibili\.com\/(\d+)/.test(longLink) || /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.test(longLink): {
-      const tMatch = longLink.match(/^https:\/\/t\.bilibili\.com\/(\d+)/)
-      const opusMatch = longLink.match(/^https:\/\/www\.bilibili\.com\/opus\/(\d+)/)
-      const dynamic_id = tMatch || opusMatch
-      result = {
-        type: 'bilibilidynamic',
-        dynamic_id: dynamic_id[1],
-        P: '哔哩哔哩'
+
+    // 统一的URL模式匹配表
+    const urlPatterns = [
+      // 视频链接
+      [
+        'video',
+        (url) => /(video\/|video-)([A-Za-z0-9]+)/.test(url),
+        (url) => {
+          const bvideoMatch = /video\/([A-Za-z0-9]+)|bvid=([A-Za-z0-9]+)/.exec(url)
+          const pParam = new URL(url).searchParams.get('p')
+          const pValue = pParam ? parseInt(pParam, 10) : undefined
+          return {
+            type: 'one_video',
+            bvid: bvideoMatch ? bvideoMatch[1] || bvideoMatch[2] : undefined,
+            ...(pValue !== undefined && { p: pValue })
+          }
+        }
+      ],
+      // 活动视频链接
+      [
+        'festival',
+        (url) => /festival\/([A-Za-z0-9]+)/.test(url),
+        (url) => {
+          const festivalMatch = /festival\/([A-Za-z0-9]+)\?bvid=([A-Za-z0-9]+)/.exec(url)
+          return {
+            type: 'one_video',
+            id: festivalMatch ? festivalMatch[2] : undefined
+          }
+        }
+      ],
+      // 番剧链接
+      [
+        'bangumi',
+        (url) => /play\/(\S+?)\??/.test(url),
+        (url) => {
+          const playMatch = /play\/(\w+)/.exec(url)
+          const id = playMatch ? playMatch[1] : ''
+          let realid = ''
+          if (id.startsWith('ss')) realid = 'season_id'
+          else if (id.startsWith('ep')) realid = 'ep_id'
+          return {
+            type: 'bangumi_video_info',
+            isEpid: false,
+            realid
+          }
+        }
+      ],
+      // 动态链接
+      [
+        'dynamic',
+        (url) => /^https:\/\/t\.bilibili\.com\/(\d+)/.test(url) || /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.test(url),
+        (url) => {
+          const tMatch = /^https:\/\/t\.bilibili\.com\/(\d+)/.exec(url)
+          const opusMatch = /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.exec(url)
+          const dynamic_id = tMatch ?? opusMatch
+          return {
+            type: 'dynamic_info',
+            dynamic_id: dynamic_id ? dynamic_id[1] : dynamic_id
+          }
+        }
+      ],
+      // 直播间链接
+      [
+        'live',
+        (url) => url.includes('live.bilibili.com'),
+        (url) => {
+          const match = /https?:\/\/live\.bilibili\.com\/(\d+)/.exec(url)
+          return {
+            type: 'live_room_detail',
+            room_id: match ? match[1] : undefined
+          }
+        }
+      ]
+    ]
+
+    // 统一的链接处理逻辑
+    let result = {}
+    for (const [name, test, extract] of urlPatterns) {
+      if (test(longLink)) {
+        result = extract(longLink)
+        if (log) logger.info(`[B站链接] 类型: ${name}`, result)
+        break
       }
-      break
     }
-    case /live\.bilibili\.com/.test(longLink): {
-      const match = longLink.match(/https?:\/\/live\.bilibili\.com\/(\d+)/)
-      result = {
-        type: '直播live',
-        room_id: match[1],
-        P: '哔哩哔哩'
-      }
-      break
+
+    // 处理未匹配到任何模式的情况
+    if (Object.keys(result).length === 0 && log) {
+      logger.warn('[B站链接] 无法识别的链接:', longLink)
     }
-    default:
-      logger.warn('无法获取作品ID')
-      break
+
+    return result
+  } catch (error) {
+    logger.error(`[B站链接] 解析失败:`, error)
+    return true
   }
-
-  console.log(result)
-  return result
 }
