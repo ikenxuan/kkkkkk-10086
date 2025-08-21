@@ -1,4 +1,4 @@
-import { Base, Render, Config, Networks, mergeFile, Common } from '../../utils/index.js'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders } from '../../utils/index.js'
 import { bilibiliApiUrls, getBilibiliData } from '@ikenxuan/amagi'
 import common from '../../../../../lib/common/common.js'
 import { bilibiliComments, checkCk } from './index.js'
@@ -76,12 +76,12 @@ export default class BiLiBiLi extends Base {
           })
 
           if (replyContent.length > 0) {
-            await this.e.reply(this.mkMsg(replyContent), [
-                {
-                  text: "视频直链 ['流畅 360P']",
-                  link: nockData.data.durl[0].url
-                }
-              ])
+            await this.e.reply(this.mkMsg(replyContent, [
+              {
+                text: "视频直链 ['流畅 360P']",
+                link: nockData.data.durl[0].url
+              }
+            ]))
           }
         }
 
@@ -981,8 +981,20 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
  * @returns  返回视频和音频总大小(MB),保留2位小数
  */
 export const getvideosize = async (videourl, audiourl, bvid) => {
-  const videoheaders = await new Networks({ url: videourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
-  const audioheaders = await new Networks({ url: audiourl, headers: { ...this.headers, Referer: `https://api.bilibili.com/video/${bvid}` } }).getHeaders()
+  const videoheaders = await new Networks({ 
+    url: videourl, 
+    headers: { 
+      ...baseHeaders,
+      Referer: `https://api.bilibili.com/video/${bvid}`
+    }
+  }).getHeaders()
+  const audioheaders = await new Networks({ 
+    url: audiourl, 
+    headers: { 
+      ...baseHeaders,
+      Referer: `https://api.bilibili.com/video/${bvid}`
+    } 
+  }).getHeaders()
 
   const videoSize = videoheaders['content-range']?.match(/\/(\d+)/) ? parseInt(videoheaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
   const audioSize = audioheaders['content-range']?.match(/\/(\d+)/) ? parseInt(audioheaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0

@@ -3,13 +3,13 @@ import Version from './Version.js'
 import Render from './Render.js'
 import Config from './Config.js'
 import UploadRecord from './UploadRecord.js'
-import Networks from './Networks.js'
+import { Networks, baseHeaders } from './Networks.js'
 import Pushlist from './Pushlist.js'
 import DB from '../db/index.js'
 import { mergeFile } from './FFmpeg.js'
 import Common from './Common.js'
 
-export { Version, Render, Config, Base, UploadRecord, Networks, Pushlist, DB, Sleep, mergeFile, Common }
+export { Version, Render, Config, Base, UploadRecord, Networks, baseHeaders, Pushlist, DB, Sleep, mergeFile, Common }
 
 /**
  * 休眠函数
