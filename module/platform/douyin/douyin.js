@@ -22,11 +22,11 @@ export default class DouYin extends Base {
     (Config.douyin.douyinTip).includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
-        const VideoData = await this.amagi.getDouyinData('聚合解析', Config.cookies.douyin, {
+        const VideoData = await this.amagi.getDouyinData('聚合解析', {
           aweme_id: data.aweme_id,
           typeMode: 'strict'
         })
-        const CommentsData = await this.amagi.getDouyinData('评论数据', Config.cookies.douyin, {
+        const CommentsData = await this.amagi.getDouyinData('评论数据', {
           aweme_id: data.aweme_id,
           number: Config.douyin.numcomments,
           typeMode: 'strict'
@@ -270,7 +270,7 @@ export default class DouYin extends Base {
       }
 
       case 'user_dynamic': {
-        const UserVideoListData = await this.amagi.getDouyinData('用户主页视频列表数据', Config.cookies.douyin, {
+        const UserVideoListData = await this.amagi.getDouyinData('用户主页视频列表数据', {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
@@ -302,14 +302,14 @@ export default class DouYin extends Base {
         return true
       }
       case 'music_work': {
-        const MusicData = await this.amagi.getDouyinData('音乐数据', Config.cookies.douyin, {
+        const MusicData = await this.amagi.getDouyinData('音乐数据', {
           music_id: data.music_id,
           typeMode: 'strict'
         })
         const sec_uid = MusicData.data.music_info.sec_uid
-        const UserData = await this.amagi.getDouyinData('用户主页数据', Config.cookies.douyin, { sec_uid, typeMode: 'strict' })
+        const UserData = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' })
         // if (userdata.status_code === 2) {
-        //   const new_userdata = await getDouyinData('搜索数据', Config.cookies.douyin, { query: data.music_info.author })
+        //   const new_userdata = await getDouyinData('搜索数据', { query: data.music_info.author })
         //   if (new_userdata.data[0].type === 4 && new_userdata.data[0].card_unique_name === 'user') {
         //     userdata = { user: new_userdata.data[0].user_list[0].user_info }
         //   }
@@ -352,13 +352,13 @@ export default class DouYin extends Base {
         return true
       }
       case 'live_room_detail': {
-        const UserInfoData = await this.amagi.getDouyinData('用户主页数据', Config.cookies.douyin, {
+        const UserInfoData = await this.amagi.getDouyinData('用户主页数据', {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
         })
         if (UserInfoData.data.user.live_status === 1) {
           // 直播中
-          const live_data = await this.amagi.getDouyinData('直播间信息数据', Config.cookies.douyin, { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
+          const live_data = await this.amagi.getDouyinData('直播间信息数据', { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
           const room_data = JSON.parse(UserInfoData.data.user.room_data)
           const img = await Render.render('douyin/live',
             {
