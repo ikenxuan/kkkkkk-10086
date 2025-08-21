@@ -1,7 +1,6 @@
 import { Base, Config, Render, DB, Version, Common } from '../../utils/index.js'
 import { generateDecorationCard, cover, replacetext } from './bilibili.js'
 import { getBilibiliData } from '@ikenxuan/amagi'
-import Bilidata from './getdata.js'
 import YAML from 'yaml'
 import fs from 'fs'
 

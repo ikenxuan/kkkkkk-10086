@@ -1,5 +1,5 @@
 import { Config, Version } from './module/utils/index.js'
-import amagi from '@ikenxuan/amagi'
+import Client from '@ikenxuan/amagi'
 import fs from 'fs'
 
 let apps = {}
@@ -27,9 +27,31 @@ logger.info('kkkkkk-10086初始化~')
 logger.info('Created By ikenxuan')
 logger.info('---------------------------------')
 
-const client = new amagi({
-  douyin: Config.cookies.douyin,
-  bilibili: Config.cookies.bilibili
-})
-
-if (Config.app.APIServer) client.startClient(Config.app.APIServerPort)
+if (Config.app.APIServer) {
+  const client = new Client({
+    douyin: Config.cookies.douyin,
+    bilibili: Config.cookies.bilibili
+  })
+  client.startClient(Config.app.APIServer)
+  
+  // 记录服务启动信息
+  logger.mark('========== HTTP API 服务启动 ==========')
+  logger.mark(`服务地址: http://127.0.0.1:${Config.app.APIServer}`)
+  logger.mark('----------------------------------------')
+  logger.mark('已启用的 API 服务:')
+  
+  // 记录各平台API状态
+  if (Config.cookies.douyin) {
+    logger.mark('✓ 抖音 API: /api/douyin/...')
+  } else {
+    logger.mark('✗ 抖音 API: 未配置 Cookie')
+  }
+  
+  if (Config.cookies.bilibili) {
+    logger.mark('✓ B站 API: /api/bilibili/...')
+  } else {
+    logger.mark('✗ B站 API: 未配置 Cookie')
+  }
+  
+  logger.mark('========================================')
+}
