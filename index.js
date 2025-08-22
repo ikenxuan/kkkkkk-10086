@@ -28,30 +28,12 @@ logger.info('Created By ikenxuan')
 logger.info('---------------------------------')
 
 if (Config.app.APIServer) {
-  const client = new Client({
-    douyin: Config.cookies.douyin,
-    bilibili: Config.cookies.bilibili
+  const amagiServer = new Client({
+    cookies: {
+      bilibili: Config.cookies.bilibili,
+      douyin: Config.cookies.douyin,
+      kuaishou: Config.cookies.kuaishou
+    }
   })
-  client.startClient(Config.app.APIServerPort)
-  
-  // 记录服务启动信息
-  logger.mark('========== HTTP API 服务启动 ==========')
-  logger.mark(`服务地址: http://127.0.0.1:${Config.app.APIServerPort}`)
-  logger.mark('----------------------------------------')
-  logger.mark('已启用的 API 服务:')
-  
-  // 记录各平台API状态
-  if (Config.cookies.douyin) {
-    logger.mark('✓ 抖音 API: /api/douyin/...')
-  } else {
-    logger.mark('✗ 抖音 API: 未配置 Cookie')
-  }
-  
-  if (Config.cookies.bilibili) {
-    logger.mark('✓ B站 API: /api/bilibili/...')
-  } else {
-    logger.mark('✗ B站 API: 未配置 Cookie')
-  }
-  
-  logger.mark('========================================')
+  amagiServer.startServer(Config.app.APIServerPort)
 }
