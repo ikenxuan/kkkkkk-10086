@@ -411,6 +411,20 @@ export function supportGuoba() {
           }
         },
         {
+          field: 'bilibili.maxAutoVideoSize',
+          label: '自动画质模式下可接受的最大视频大小',
+          helpMessage: '必填项',
+          bottomHelpMessage: '请在此输入数字',
+          component: 'InputNumber',
+          required: true,
+          componentProps: {
+            placeholder: '范围：0 ~ 无限',
+            min: 0,
+            max: 9999,
+            addonAfter: 'MB'
+          }
+        },
+        {
           field: 'bilibili.bilibiliTip',
           label: 'B站解析选项',
           component: 'Select',

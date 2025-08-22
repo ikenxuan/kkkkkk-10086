@@ -45,7 +45,7 @@ export const bilibiliLogin = async (e) => {
    * @param responseData - 登录响应数据
    */
   const handleLoginSuccess = async (responseData) => {
-    Config.Modify('cookies', 'bilibili', Array.isArray(responseData.data.data.headers['set-cookie'])
+    Config.modify('cookies', 'bilibili', Array.isArray(responseData.data.data.headers['set-cookie'])
       ? responseData.data.data.headers['set-cookie']
       : [responseData.data.data.headers['set-cookie']])
     await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', { reply: true })

@@ -42,6 +42,9 @@ videopriority: false
 #  - 120: 4K 超清 (需大会员且支持4K)
 videoQuality: 0
 
+# 自动画质模式下可接受的最大视频大小（单位：MB），仅在 videoQuality 为 0 时生效
+maxAutoVideoSize: 50
+
 # 视频解析时简介显示的内容，可选值：'cover'(封面)、'title'(标题)、'author'(作者)、'stats'(视频统计信息)、'desc'(简介)，数组为空则不显示任何内容
 displayContent:
   - cover
