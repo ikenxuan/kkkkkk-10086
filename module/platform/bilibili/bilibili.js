@@ -82,8 +82,8 @@ export default class BiLiBiLi extends Base {
           if (replyContent.length > 0) {
             await this.e.reply(this.mkMsg(replyContent, [
               {
-                text: "视频直链 ['流畅 360P']",
-                link: nockData.data.durl[0].url
+                text: "视频链接",
+                link: 'https://b23.tv/' + infoData.data.data.bvid
               }
             ]))
           }
@@ -136,8 +136,8 @@ export default class BiLiBiLi extends Base {
             })
             await this.e.reply(this.mkMsg(img, [
               {
-                text: "视频直链 ['流畅 360P']",
-                link: nockData.data.durl[0].url
+                text: "视频链接",
+                link: 'https://b23.tv/' + infoData.data.data.bvid
               }
             ]))
           }

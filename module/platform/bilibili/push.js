@@ -286,7 +286,7 @@ export default class Bilibilipush extends Base {
               // 判断是否发送视频动态的视频
               if (send && Config.bilibili.senddynamicvideo) {
                 // 下载视频
-                video = await this.DownLoadVideo(noCKData.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
+                video = noCKData?.data.durl?.length > 0 && await this.DownLoadVideo(noCKData.data.durl[0].url, 'tmp_' + Date.now(), false, { uin, group_id })
                 if (video) await Bot[uin].pickGroup(group_id).sendMsg(segment.video(video.filepath))
               }
             } catch (error) {
