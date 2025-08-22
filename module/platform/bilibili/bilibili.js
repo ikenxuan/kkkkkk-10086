@@ -92,7 +92,7 @@ export default class BiLiBiLi extends Base {
         let videoSize = ''
         let correctList
 
-        if (this.islogin) {
+        if (this.islogin && Config.bilibili.videopriority === false) {
           /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
           const simplify = playUrlData.data.data.dash.video.filter((item, index, self) => {
             return self.findIndex((t) => {
