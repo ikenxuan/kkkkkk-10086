@@ -377,10 +377,9 @@ export function supportGuoba() {
         {
           field: 'bilibili.videoQuality',
           label: 'B站视频画质偏好设置',
-          component: 'Select',
+          bottomHelpMessage: 'B站视频画质偏好设置',
+          component: 'RadioGroup',
           componentProps: {
-            mode: 'multiple',
-            allowCreate: false,
             options: [
               { label: '自动根据大小选择', value: 0 },
               { label: '240P 极速 (仅MP4格式支持)', value: 6 },
