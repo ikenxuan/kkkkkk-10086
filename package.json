@@ -13,7 +13,7 @@
     "@ikenxuan/amagi": "^5.0.4",
     "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
-    "node-fetch": "^3.3.2",
+    "axios": "^1.11.0",
     "qrcode": "^1.5.4",
     "sequelize": "6.37.3",
     "sharp": "0.33.4",
