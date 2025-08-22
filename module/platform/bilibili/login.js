@@ -24,7 +24,7 @@ export const bilibiliLogin = async (e) => {
   const disclaimerMsg = await e.reply('免责声明:\n您将通过扫码完成获取哔哩哔哩网页端的用户登录凭证（ck），该ck将用于请求哔哩哔哩WEB API接口。\n本BOT不会上传任何有关你的信息到第三方，所配置的 ck 只会用于请求官方 API 接口。\n我方仅提供视频解析及相关哔哩哔哩内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~') // 发送免责声明
   const qrcodeMsg = await e.reply([ // 发送二维码图片和提示文字
     segment.image(qrimg.split(';')[1].replace('base64,', 'base64://')),
-    segment.text('请在120秒内通过哔哩哔哩APP扫码进行登录')
+    '请在120秒内通过哔哩哔哩APP扫码进行登录'
   ], { reply: true })
 
   messageIds.push(disclaimerMsg.messageId, qrcodeMsg.messageId) // 将消息ID存入数组
