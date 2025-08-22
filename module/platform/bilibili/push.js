@@ -392,9 +392,9 @@ export default class Bilibilipush extends Base {
         // 找出新添加的群组ID
         const newGroupIds = configGroupIdObjs.filter(groupIdObj => !dbGroupIds.has(groupIdObj.groupId))
 
-        if (dynamic_list.data.items.length > 0) {
+        if (dynamic_list.data.data.items.length > 0) {
           // 遍历接口返回的视频列表
-          for (const dynamic of dynamic_list.data.items) {
+          for (const dynamic of dynamic_list.data.data.items) {
             const now = new Date().getTime()
             const createTime = parseInt(dynamic.modules.module_author.pub_ts, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒

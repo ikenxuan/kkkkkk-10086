@@ -164,9 +164,9 @@ export default class DouYinpush extends Base {
         // 找出新添加的群组ID
         const newGroupIds = configGroupIdObjs.filter(groupIdObj => !dbGroupIds.has(groupIdObj.groupId))
 
-        if (videolist.aweme_list.length > 0) {
-          for (const aweme of videolist.aweme_list) {
-            aweme.user_info = userinfo
+        if (videolist.data.aweme_list.length > 0) {
+          for (const aweme of videolist.data.aweme_list) {
+            aweme.user_info = userinfo.data
             const now = new Date().getTime()
             const createTime = parseInt(aweme.create_time, 10) * 1000
             const timeDifference = (now - createTime) / 1000 // 时间差，单位秒
@@ -217,11 +217,11 @@ export default class DouYinpush extends Base {
               if (!willbepushlist[aweme.aweme_id]) {
                 willbepushlist[aweme.aweme_id] = {
                   remark: item.remark,
-                  sec_uid: userinfo.user.sec_uid,
+                  sec_uid: userinfo.data.user.sec_uid,
                   create_time: aweme.create_time,
                   group_id: newGroupIds.map(groupIdObj => `${groupIdObj.groupId}:${groupIdObj.robotId}`),
                   Detail_Data: aweme,
-                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + userinfo.user.avatar_larger.uri
+                  avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + userinfo.data.user.avatar_larger.uri
                 }
               }
             }
@@ -343,7 +343,7 @@ export default class DouYinpush extends Base {
       const group_id = this.e.group_id
       /** 处理抖音号 */
       let user_shortid
-      UserInfoData.user.unique_id == '' ? (user_shortid = UserInfoData.user.short_id) : (user_shortid = UserInfoData.user.unique_id)
+      UserInfoData.data.user.unique_id == '' ? (user_shortid = UserInfoData.data.user.short_id) : (user_shortid = UserInfoData.data.user.unique_id)
 
       // 初始化 group_id 对应的数组
       if (!config.douyin) {
@@ -372,8 +372,8 @@ export default class DouYinpush extends Base {
         if (has) {
           // 如果存在相同的 group_id，则删除它
           existingItem.group_id.splice(groupIndexToRemove, 1)
-          logger.info(`\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.user.sec_uid}`)
-          msg = `群：${group_id}\n删除成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+          logger.info(`\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
+          msg = `群：${group_id}\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`
 
           // 如果删除后 group_id 数组为空，则删除整个属性
           if (existingItem.group_id.length === 0) {
@@ -387,8 +387,8 @@ export default class DouYinpush extends Base {
           }
           // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
           existingItem.group_id.push(`${group_id}:${this.e.self_id}`)
-          msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
-          logger.info(`\n设置成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.user.sec_uid}`)
+          msg = `群：${group_id}\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`
+          logger.info(`\n设置成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
         }
       } else {
         const status = await DB.FindGroup('douyin', `${group_id}:${this.e.self_id}`)
@@ -396,8 +396,8 @@ export default class DouYinpush extends Base {
           await DB.CreateSheet('douyin', `${group_id}:${this.e.self_id}`, {}, this.e.self_id)
         }
         // 如果不存在相同的 sec_uid，则新增一个属性
-        config.douyin.push({ sec_uid, group_id: [`${group_id}:${this.e.self_id}`], remark: UserInfoData.user.nickname, short_id: user_shortid })
-        msg = `群：${group_id}\n添加成功！${UserInfoData.user.nickname}\n抖音号：${user_shortid}`
+        config.douyin.push({ sec_uid, group_id: [`${group_id}:${this.e.self_id}`], remark: UserInfoData.data.user.nickname, short_id: user_shortid })
+        msg = `群：${group_id}\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`
       }
 
       Config.modify('pushlist', 'douyin', config.douyin)

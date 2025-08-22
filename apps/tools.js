@@ -179,14 +179,14 @@ export class Tools extends plugin {
   async setpushbili (e) {
     if (e.isPrivate) return true
     const data = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: /^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1] })
-    await e.reply(await new Bilibilipush(e).setting(data))
+    await e.reply(await new Bilibilipush(e).setting(data?.data))
     return true
   }
 
   async setpushdouy (e) {
     if (e.isPrivate) return true
     const data = await new DouyinData('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
-    await e.reply(await new DouYinpush(e).setting(data))
+    await e.reply(await new DouYinpush(e).setting(data?.data))
     return true
   }
 }
