@@ -375,6 +375,27 @@ export function supportGuoba() {
           required: false
         },
         {
+          field: 'bilibili.videoQuality',
+          label: 'B站视频画质偏好设置',
+          component: 'Select',
+          componentProps: {
+            mode: 'multiple',
+            allowCreate: false,
+            options: [
+              { label: '自动根据大小选择', value: 0 },
+              { label: '240P 极速 (仅MP4格式支持)', value: 6 },
+              { label: '360P 流畅', value: 16 },
+              { label: '480P 清晰', value: 32 },
+              { label: '720P 高清 (WEB默认值)', value: 64 },
+              { label: '720P60 高帧率 (需登录)', value: 74 },
+              { label: '1080P 高清 (TV/APP默认值，需登录)', value: 80 },
+              { label: '1080P+ 高码率 (需大会员)', value: 112 },
+              { label: '1080P60 高帧率 (需大会员)', value: 116 },
+              { label: '4K 超清 (需大会员且支持4K)', value: 120 }
+            ]
+          }
+        },
+        {
           field: 'bilibili.bilibiliTip',
           label: 'B站解析选项',
           component: 'Select',
