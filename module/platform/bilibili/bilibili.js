@@ -115,7 +115,7 @@ export default class BiLiBiLi extends Base {
         }
         if ((Config.bilibili.bilibiliTip).includes('评论图')) {
           const commentsData = await this.amagi.getBilibiliData('评论数据', {
-            number: Config.bilibili.numcomment,
+            number: Config.bilibili.bilibilinumcomments,
             type: 1,
             oid: infoData.data.data.aid.toString(),
             typeMode: 'strict'
