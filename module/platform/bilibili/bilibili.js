@@ -163,6 +163,11 @@ export default class BiLiBiLi extends Base {
 
         const barray = []
         const msg = []
+
+        if(!videoInfo.data) {
+          logger.warn(videoInfo.message, `错误码: ${videoInfo.code}`)
+          return true
+        }
         for (let i = 0; i < videoInfo.data.result.episodes.length; i++) {
           const totalEpisodes = videoInfo.data.result.episodes.length
           const long_title = videoInfo.data.result.episodes[i].long_title
