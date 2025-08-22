@@ -16,7 +16,7 @@
     "axios": "^1.11.0",
     "qrcode": "^1.5.4",
     "sequelize": "6.37.3",
-    "sharp": "0.33.4",
+    "sharp": "^0.34.3",
     "simple-git": "^3.25.0",
     "sqlite3": "5.1.6",
     "heic-convert": "^2.1.0"
