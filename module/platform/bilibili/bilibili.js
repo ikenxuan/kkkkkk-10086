@@ -129,7 +129,7 @@ export default class BiLiBiLi extends Base {
               CommentsData: commentsdata,
               CommentLength: Config.bilibili.realCommentCount ? Common.count(infoData.data.data.stat.reply) : String(commentsdata.length),
               share_url: 'https://b23.tv/' + infoData.data.data.bvid,
-              Clarity: Config.bilibili.videopriority === true ? nockData.data.data.accept_description[0] : correctList.accept_description[0],
+              Clarity: Config.bilibili.videopriority === true ? nockData.data.data.accept_description[0] : correctList.selectedQuality,
               VideoSize: Config.bilibili.videopriority === true ? (nockData.data.data.durl[0]?.size / (1024 * 1024) || 0).toFixed(2) : videoSize,
               ImageLength: 0,
               shareurl: 'https://b23.tv/' + infoData.data.data.bvid
@@ -893,6 +893,7 @@ const oid = (dynamicINFO, dynamicInfoCard) => {
  * @returns {Object} 包含处理后的视频列表和清晰度描述的对象
  * @returns {string[]} returns.accept_description - 处理后的清晰度描述列表
  * @returns {Array} returns.videoList - 处理后的视频流信息对象列表
+ * @returns {number} returns.selectedQuality - 选中的视频画质值
  */
 export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl) => {
   // 如果不是自动选择模式，直接根据配置的清晰度选择视频
@@ -930,7 +931,8 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
 
     return {
       accept_description: qualityOptions.accept_description,
-      videoList
+      videoList,
+      selectedQuality: matchedQuality  // 添加选中的画质值
     }
   }
 
@@ -957,6 +959,8 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
     }
   })
 
+  let selectedQuality = null // 添加选中的画质值变量
+
   if (closestId !== null) {
     // 找到最接近但不超过文件大小限制的视频清晰度
     const closestQuality = qnd[Number(closestId)]
@@ -971,6 +975,7 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
       // 更新 OBJECT.DATA.data.dash.video 数组
       videoList = [video]
     }
+    selectedQuality = closestQuality // 设置选中的画质值
   } else {
     // 如果没有找到符合条件的视频，使用最低画质的视频对象
     const lastVideo = [...videoList].pop()
@@ -982,13 +987,14 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
     if (lastDescription) {
       qualityOptions.accept_description = [lastDescription]
     }
+    selectedQuality = lastDescription // 设置选中的画质值
   }
   return {
     accept_description: qualityOptions.accept_description,
-    videoList
+    videoList,
+    selectedQuality  // 添加选中的画质值到返回对象
   }
 }
-
 
 /**
  * [bilibili] 获取视频和音频的总大小
