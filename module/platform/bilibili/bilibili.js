@@ -61,7 +61,7 @@ export default class BiLiBiLi extends Base {
         const replyContent = []
 
         // 如果配置项不存在，则不显示任何内容
-        if ((Config.bilibili.bilibiliTip).includes('简介')) {
+        if ((Config.bilibili.bilibiliTip).includes('简介') && Config.bilibili.displayContent && Config.bilibili.displayContent.length > 0) {
           const contentMap = {
             cover: await segment.image(pic),
             title: `\n📺 标题: ${title}\n`,
@@ -74,7 +74,7 @@ export default class BiLiBiLi extends Base {
           const fixedOrder = ['cover', 'title', 'author', 'stats', 'desc']
 
           fixedOrder.forEach(item => {
-            if (contentMap[item]) {
+            if (Config.bilibili.displayContent.includes(item) && contentMap[item]) {
               replyContent.push(contentMap[item])
             }
           })

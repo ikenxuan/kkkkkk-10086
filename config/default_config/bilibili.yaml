@@ -41,3 +41,11 @@ videopriority: false
 #  - 116: 1080P60 高帧率 (需大会员)
 #  - 120: 4K 超清 (需大会员且支持4K)
 videoQuality: 0
+
+# 视频解析时简介显示的内容，可选值：'cover'(封面)、'title'(标题)、'author'(作者)、'stats'(视频统计信息)、'desc'(简介)，数组为空则不显示任何内容
+displayContent:
+  - cover
+  - title
+  - author
+  - stats
+  - desc

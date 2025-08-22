@@ -375,6 +375,22 @@ export function supportGuoba() {
           required: false
         },
         {
+          field: 'bilibili.displayContent',
+          label: 'B站简介显示选项',
+          component: 'Select',
+          componentProps: {
+            mode: 'multiple',
+            allowCreate: false,
+            options: [
+              { label: '封面', value: 'cover' },
+              { label: '标题', value: 'title' },
+              { label: '作者', value: 'author' },
+              { label: '视频统计信息', value: 'stats' },
+              { label: '简介', value: 'desc' }
+            ]
+          }
+        },
+        {
           field: 'bilibili.videoQuality',
           label: 'B站视频画质偏好设置',
           bottomHelpMessage: 'B站视频画质偏好设置',
