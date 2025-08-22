@@ -66,7 +66,7 @@ export default class Bilibilipush extends Base {
             'bilibili/dynamic/DYNAMIC_TYPE_DRAW',
             {
               image_url: cover(dycrad.item.pictures),
-              text: replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.text), data[dynamicId].Dynamic_Data.modules.module_dynamic.desc.rich_text_nodes),
+              text: replacetext(br(data[dynamicId].Dynamic_Data.modules.module_dynamic.major.opus.summary.text), data[dynamicId].Dynamic_Data.modules.module_dynamic.major.opus.summary.rich_text_nodes),
               dianzan: Common.count(data[dynamicId].Dynamic_Data.modules.module_stat.like.count),
               pinglun: Common.count(data[dynamicId].Dynamic_Data.modules.module_stat.comment.count),
               share: Common.count(data[dynamicId].Dynamic_Data.modules.module_stat.forward.count),
