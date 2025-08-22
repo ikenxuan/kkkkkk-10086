@@ -8,12 +8,7 @@ import { Networks } from '../../utils/Networks.js'
 export default async function GetBilibiliID (url, log = true) {
   try {
     // 获取长链接
-    const longLink = await new Networks({
-      url,
-      headers: {
-        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)'
-      }
-    }).getLongLink()
+    const longLink = await new Networks({ url }).getLongLink()
 
     // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {

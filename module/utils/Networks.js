@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
 export const baseHeaders = {
@@ -22,12 +22,11 @@ export class Networks {
    */
   constructor(data) {
     // 初始化请求头
-    this.headers = new Headers()
-    if (data.headers && Object.keys(data.headers).length > 0) {
-      for (const [key, value] of Object.entries(data.headers)) {
-        this.headers.append(key, value)
-      }
-    }
+    this.headers = data.headers
+      ? Object.fromEntries(
+        Object.entries(data.headers).map(([key, value]) => [key, String(value)])
+      )
+      : {}
     // 初始化请求参数
     this.url = data.url // 请求的URL地址
     this.type = data.type || 'json' // 返回的数据类型，默认为JSON
@@ -55,11 +54,18 @@ export class Networks {
    * 根据请求方法返回配置对象
    */
   get config() {
-    return {
-      headers: this.headers,
+    const config = {
+      url: this.url,
       method: this.method,
-      ...(this.method === 'POST' && { body: JSON.stringify(this.body) }) // 如果是POST请求，添加请求体
+      headers: this.headers,
+      responseType: this.type
     }
+
+    if (this.method === 'POST' && this.body) {
+      config.data = this.body
+    }
+
+    return config
   }
 
   /**
@@ -88,25 +94,48 @@ export class Networks {
    * 返回 axios 请求的结果
    */
   async returnResult() {
+    let response = {}
     try {
-      return await this.axiosInstance(this.config) // 使用axios发起请求
+      response = await this.axiosInstance(this.config) // 使用axios发起请求
     } catch (error) {
       logger.error('请求失败:', error)
-      throw error // 抛出错误，方便上层调用处理
     }
+    return response
   }
 
   /**
-   * 获取最终地址（跟随重定向）
+   * 获取重定向后的最终链接地址
+   * @param {string} url - 可选参数，要获取重定向链接的URL地址，如果不提供则使用实例中的this.url
+   * @returns {Promise<string>} 返回一个Promise，解析值为最终的重定向链接地址或错误信息
    */
-  async getLongLink() {
-    try {
-      const result = await this.returnResult()
-      return result.request.res.responseUrl // 返回最终的URL地址
-    } catch (error) {
-      logger.error('获取最终地址失败:', error)
-      return ''
-    }
+  async getLongLink (url = '') {
+      let errorMsg = `获取链接重定向失败: ${this.url || url}`  // 初始化错误信息
+      try {
+        // 使用HEAD方法请求URL，获取重定向信息
+        const response = await this.axiosInstance.head(this.url || url)
+        // 返回最终的重定向URL
+        return response.request.res.responseUrl
+      } catch (error) {
+        const axiosError = error
+        if (axiosError.response) {
+          // 如果是302重定向状态码
+          if (axiosError.response.status === 302) {
+            // 从响应头中获取重定向地址
+            const redirectUrl = axiosError.response.headers.location
+            logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
+            // 递归调用自身，获取重定向后的链接
+            return await this.getLongLink(redirectUrl)
+          } else if (axiosError.response.status === 403) { // 403 Forbidden
+            // 设置403错误的错误信息
+            errorMsg = `403 Forbidden 禁止访问！${this.url || url}`
+            logger.error(errorMsg)
+            return errorMsg
+          }
+        }
+        // 记录并返回错误信息
+        logger.error(errorMsg)
+        return errorMsg
+      }
   }
 
   /**
@@ -129,24 +158,24 @@ export class Networks {
 
   /**
    * 获取数据并处理为指定格式
-   * @param {Response} [new_fetch=''] 可选的自定义fetch对象
+   * @returns 返回处理后的数据或错误信息
    */
-  async getData(new_fetch = '') {
+  async getData() {
     try {
-      this.fetch = new_fetch || await this.returnResult() // 如果提供了自定义fetch对象则使用，否则发起新请求
-      // 处理非200系列响应状态码
-      if (!this.fetch.ok) {
-        if (this.fetch.status === 429) {
-          throw new Error('触发速率限制，无法访问网站！')
-        }
-        logger.warn(`请求失败，状态码: ${this.fetch.status}`)
-        return null
+      const result = await this.returnResult()
+      if (result.status === 504) {
+        return result
       }
-      this.isGetResult = true
-      return this.fetch.data // 返回响应数据
+      if (result.status === 429) {
+        logger.error('HTTP 响应状态码: 429')
+        throw new Error('ratelimit triggered, 触发 https://www.douyin.com/ 的速率限制！！！')
+      }
+      return result.data
     } catch (error) {
-      logger.error('获取数据失败:', error)
-      return null
+      if (error instanceof AxiosError) {
+        throw new Error(error.stack ?? error.message)
+      }
+      return false
     }
   }
 

@@ -50,7 +50,11 @@ export default class BiLiBiLi extends Base {
             avid: infoData.data.data.aid,
             cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid ?? infoData.data.data.cid) : infoData.data.data.cid
           }) + '&platform=html5',
-          headers: this.headers
+          headers: {
+            ...baseHeaders,
+            Referer: 'https://www.bilibili.com/',
+            Cookie: ''
+          }
         }).getData()
 
         // 构建回复内容数组
@@ -126,7 +130,7 @@ export default class BiLiBiLi extends Base {
               CommentLength: Config.bilibili.realCommentCount ? Common.count(infoData.data.data.stat.reply) : String(commentsdata.length),
               share_url: 'https://b23.tv/' + infoData.data.data.bvid,
               Clarity: Config.bilibili.videopriority === true ? nockData.data.data.accept_description[0] : '"流畅 360P"',
-              VeoSize: Config.bilibili.videopriority === true ? (nockData.data.data.durl[0]?.size / (1024 * 1024) || 0).toFixed(2) : videoSize,
+              VideoSize: Config.bilibili.videopriority === true ? (nockData.data.data.durl[0]?.size / (1024 * 1024) || 0).toFixed(2) : videoSize,
               ImageLength: 0,
               shareurl: 'https://b23.tv/' + infoData.data.data.bvid
             })
@@ -570,8 +574,16 @@ export default class BiLiBiLi extends Base {
 
       // 并行下载视频和音频
       const [bmp4, bmp3] = await Promise.all([
-        this.DownLoadFile(videoUrl, `Bil_V_${videoId}`, this.headers, '.mp4'),
-        this.DownLoadFile(audioUrl, `Bil_A_${videoId}`, this.headers, '.mp3')
+        this.DownLoadFile(videoUrl, `Bil_V_${videoId}`, {
+            ...baseHeaders,
+            Referer: 'https://www.bilibili.com/',
+            Cookie: ''
+          }, '.mp4'),
+        this.DownLoadFile(audioUrl, `Bil_A_${videoId}`, {
+            ...baseHeaders,
+            Referer: 'https://www.bilibili.com/',
+            Cookie: ''
+          }, '.mp3')
       ])
 
       if (bmp4.filepath && bmp3.filepath) {
@@ -985,14 +997,16 @@ export const getvideosize = async (videourl, audiourl, bvid) => {
     url: videourl, 
     headers: { 
       ...baseHeaders,
-      Referer: `https://api.bilibili.com/video/${bvid}`
+      Referer: `https://api.bilibili.com/video/${bvid}`,
+      Cookie: Config.cookies.bilibili
     }
   }).getHeaders()
   const audioheaders = await new Networks({ 
     url: audiourl, 
     headers: { 
       ...baseHeaders,
-      Referer: `https://api.bilibili.com/video/${bvid}`
+      Referer: `https://api.bilibili.com/video/${bvid}`,
+      Cookie: Config.cookies.bilibili
     } 
   }).getHeaders()
 
