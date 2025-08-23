@@ -128,7 +128,7 @@ export default class Bilibilipush extends Base {
               send_video = false
               logger.debug(`UP主：${INFODATA.data.owner.name} 的该动态类型为${logger.yellow('番剧或影视')}，默认跳过不下载，直达：${logger.green(INFODATA.data.redirect_url)}`)
             } else {
-              noCKData = (await getBilibiliData('单个视频下载信息数据', '', { avid: aid, cid: INFODATA.data.cid }))?.data
+              noCKData = (await getBilibiliData('单个视频下载信息数据', '', { avid: Number(aid), cid: INFODATA.data.cid }))?.data
             }
 
             img = await Render.render(

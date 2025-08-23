@@ -1,7 +1,7 @@
 import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders } from '../../utils/index.js'
 import { bilibiliApiUrls, getBilibiliData } from '@ikenxuan/amagi'
 import common from '../../../../../lib/common/common.js'
-import { bilibiliComments, checkCk } from './index.js'
+import { bilibiliComments, checkCk, genParams } from './index.js'
 import fs from 'fs'
 
 let img
@@ -144,16 +144,14 @@ export default class BiLiBiLi extends Base {
           }
         }
 
-        if ((Config.bilibili.bilibiliTip).includes('视频')) {
-          if ((Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) && !Config.upload.compress) {
-          await this.e.reply(`设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', { reply: true })
-          } else {
-            await this.getvideo(
-              Config.bilibili.videopriority === true
-                ? { playUrlData: nockData.data }
-                : { infoData: infoData.data, playUrlData: playUrlData.data
-              })
-          }
+        if ((Config.app.usefilelimit && Number(videoSize) > Number(Config.app.filelimit)) && (Config.bilibili.bilibiliTip).includes('视频')) {
+          await this.e.reply(`设定的最大上传大小为 ${Config.app.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', { reply: true })
+        } else {
+          await this.getvideo(
+            Config.bilibili.videopriority === true
+              ? { playUrlData: nockData.data }
+              : { infoData: infoData.data, playUrlData: playUrlData.data
+            })
         }
         break
       }
@@ -266,7 +264,7 @@ export default class BiLiBiLi extends Base {
         const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && await this.amagi.getBilibiliData('评论数据', {
           type: mapping_table(dynamicInfo.data.data.item.type),
           oid: oid(dynamicInfo.data, dynamicInfoCard.data),
-          number: Config.bilibili.numcomment,
+          number: Config.bilibili.bilibilinumcomments,
           typeMode: 'strict'
         })
         const dynamicCARD = JSON.parse(dynamicInfoCard.data.data.card.card)
@@ -276,11 +274,11 @@ export default class BiLiBiLi extends Base {
           /** 图文、纯图 */
           case DynamicType.DRAW: {
             const imgArray = []
-            for (const img of dynamicInfo.data.data.item.modules.module_dynamic.major?.draw?.items) {
-              imgArray.push(segment.image(img.src))
+            for (const img of dynamicInfo.data.data.item.modules.module_dynamic.major.opus.pics) {
+              img?.url && imgArray.push(segment.image(img.url))
             }
 
-            if (Config.bilibili.bilibilicommentsimg && commentsData) {
+            if ((Config.bilibili.bilibiliTip).includes('评论图') && commentsData) {
               const commentsdata = bilibiliComments(commentsData.data)
               img = await Render.render('bilibili/comment', {
                 Type: '动态',
@@ -299,19 +297,25 @@ export default class BiLiBiLi extends Base {
             const dynamicCARD = JSON.parse(dynamicInfoCard.data.data.card.card)
 
             if ('topic' in dynamicInfo.data.data.item.modules.module_dynamic && dynamicInfo.data.data.item.modules.module_dynamic.topic !== null) {
-              const name = dynamicInfo.data.data.item.modules.module_dynamic.topic.name
-              dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes.unshift({
+              const name = dynamicInfo.data.data.item.modules.module_dynamic.topic?.name
+              dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes.unshift({
                 orig_text: name,
                 jump_url: '',
                 text: name,
                 type: 'topic'
               })
-              dynamicInfo.data.data.item.modules.module_dynamic.desc.text = `${name}\n\n` + dynamicInfo.data.data.item.modules.module_dynamic.desc.text
+              dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text = `${name}\n\n` + dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text
             }
 
             await this.e.reply(await Render.render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
               image_url: cover(dynamicCARD.item.pictures),
-              text: replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.desc.text), dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes),
+              // TIP: 2025/08/20, 动态卡片数据中，图文动态的描述文本在 major.opus.summary 中
+              text: dynamicInfo.data.data.item.modules.module_dynamic.major
+                ? replacetext(
+                  br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.text ?? ''),
+                  dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.rich_text_nodes ?? []
+                )
+                : '',
               dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
               pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
               share: Common.count(dynamicInfo.data.data.item.modules.module_stat.forward.count),
@@ -332,7 +336,7 @@ export default class BiLiBiLi extends Base {
           }
           /** 纯文 */
           case DynamicType.WORD: {
-            const text = replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.desc.text), dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes)
+            const text = replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes)
 
             await this.e.reply(
               await Render.render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
@@ -366,7 +370,10 @@ export default class BiLiBiLi extends Base {
           }
           /** 转发动态 */
           case DynamicType.FORWARD: {
-            const text = replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.desc.text), dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes)
+            const text = replacetext(
+              br(dynamicInfo.data.data.item.modules.module_dynamic.desc.text),
+              dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes
+            )
             let data = {}
             switch (dynamicInfo.data.data.item.orig.type) {
               case DynamicType.AV: {
@@ -387,13 +394,13 @@ export default class BiLiBiLi extends Base {
                 break
               }
               case DynamicType.DRAW: {
-                const dynamicCARD = await getBilibiliData('动态卡片数据', Config.cookies.bilibili, { dynamic_id: dynamicInfo.data.data.item.orig.id_str })
-                const cardData = JSON.parse(dynamicCARD.data.card.card)
+                const dynamicCARD2 = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.orig.id_str, typeMode: 'strict' })
+                const cardData = JSON.parse(dynamicCARD2.data.data.card.card)
                 data = {
                   username: checkvip(dynamicInfo.data.data.item.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.desc.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.desc.rich_text_nodes),
+                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
                   image_url: cover(cardData.item.pictures),
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decorate),
                   frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
@@ -405,7 +412,7 @@ export default class BiLiBiLi extends Base {
                   username: checkvip(dynamicInfo.data.data.item.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.desc.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.desc.rich_text_nodes),
+                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decorate),
                   frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
                 }
@@ -522,9 +529,11 @@ export default class BiLiBiLi extends Base {
             await this.e.reply(img)
             break
           }
-          default:
-            await this.e.reply(`该动态类型「${dynamicInfo.data.data.item.type}」暂未支持解析`)
+          default: {
+            const unknownItem = dynamicInfo.data.data.item
+            this.e.reply(`该动态类型「${unknownItem.type}」暂未支持解析`)
             break
+          }
         }
         break
       }
@@ -757,7 +766,7 @@ export function replacetext (text, rich_text_nodes) {
       }
       case 'RICH_TEXT_NODE_TYPE_EMOJI': {
         const regex = new RegExp(tag.orig_text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
-        text = text.replace(regex, `<img src='${tag.emoji.icon_url}' style='height: 60px; margin: 0 0 -10px 0;'>`)
+        text = text.replace(regex, `<img src='${tag.emoji.icon_url}' style='height: 160px; margin: 0 0 -10px 0;'>`)
         break
       }
     }

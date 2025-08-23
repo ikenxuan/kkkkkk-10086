@@ -45,28 +45,23 @@ export default class DouYin extends Base {
               const image_data = []
               const imageres = []
               let image_url = ''
-              for (let i = 0; i < VideoData.data.aweme_detail.images.length; i++) {
-                image_url = VideoData.data.aweme_detail.images[i].url_list[2] || VideoData.data.aweme_detail.images[i].url_list[1] // 图片地址
+              // 使用可选链和空值合并操作符确保安全访问
+              const images = VideoData.data.aweme_detail.images ?? []
+              for (const [index, imageItem] of images.entries()) {
+                // 获取图片地址，优先使用第三个URL，其次使用第二个URL
+                image_url = imageItem.url_list[2] || imageItem.url_list[1]
 
-                const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ') // 标题，去除特殊字符
+                // 处理标题，去除特殊字符
+                const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
                 g_title = title
-                let imgresp
-                if (this.botadapter === 'QQBot') {
-                  let sharp
-                  try {
-                    ; ({ default: sharp } = await import('sharp'))
-                    imgresp = new Uint8Array(await new Networks({ url: image_url, type: 'arrayBuffer' }).getData())
-                    imgresp = await sharp(imgresp).toFormat('jpeg').toBuffer()
-                  } catch {
-                    logger.error('依赖: sharp 未正确安装，QQBot发送图集图片可能出现异常')
-                  }
-                }
-                imageres.push(segment.image(this.botadapter === 'QQBot' ? imgresp : image_url))
+
+                imageres.push(segment.image(image_url))
                 imagenum++
-                if (Config.app.rmmp4 === false) {
+
+                if (Config.app.removeCache === false) {
                   mkdirSync(`${Common.tempDri.images}${g_title}`)
-                  const path = `${Common.tempDri.images}${g_title}/${i + 1}.png`
-                  await new Networks({ url: image_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+                  const path = `${Common.tempDri.images}${g_title}/${index + 1}.png`
+                  await new Networks({ url: image_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
                 }
               }
               const res = common.makeForwardMsg(this.e, imageres, '解析完的图集图片')
@@ -91,7 +86,11 @@ export default class DouYin extends Base {
                 '.mp3'
               )
               temp.push(liveimgbgm)
-              for (const item of VideoData.data.aweme_detail.images) {
+              const images1 = VideoData.data.aweme_detail.images ?? []
+              if (!images1.length) {
+                logger.debug('未获取到合辑的图片数据')
+              }
+              for (const item of images1) {
                 imagenum++
                 // 静态图片，clip_type为2
                 if (item.clip_type === 2) {
@@ -443,7 +442,7 @@ function Time (delay) {
  * @param {Array} data.emoji_list[].emoji_url.url_list 表情URL列表
  * @returns {Array<{name: string, url: string}>} 处理后的表情数组,包含name和url属性
  */
-function Emoji (data) {
+export const Emoji = (data) => {
   const ListArray = []
 
   for (const i of data.emoji_list) {
