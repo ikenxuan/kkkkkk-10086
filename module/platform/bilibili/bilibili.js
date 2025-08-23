@@ -897,7 +897,7 @@ const oid = (dynamicINFO, dynamicInfoCard) => {
  */
 export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl) => {
   // 如果不是自动选择模式，直接根据配置的清晰度选择视频
-  if (qualityOptions.qn !== 0 || Config.bilibili.videoQuality !== 0) {
+  if (qualityOptions.qn !== 0 && Config.bilibili.videoQuality !== 0) {
     const targetQuality = qualityOptions.qn ?? Config.bilibili.videoQuality
 
     // 尝试找到完全匹配的清晰度
@@ -932,32 +932,61 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
     return {
       accept_description: qualityOptions.accept_description,
       videoList,
-      selectedQuality: matchedQuality  // 添加选中的画质值
+      selectedQuality: matchedQuality
     }
   }
 
   // 自动选择逻辑（videoQuality === 0）
   const results = {}
+  logger.info('开始获取视频大小...')
 
   for (const video of videoList) {
-    const size = await getvideosize(video.base_url, audioUrl, qualityOptions.bvid)
-    results[video.id] = size
+    try {
+      const size = await getvideosize(video.base_url, audioUrl, qualityOptions.bvid)
+      results[video.id] = size
+      logger.info(`视频ID ${video.id} (${qnd[video.id]}) 大小: ${size}`)
+    } catch (error) {
+      logger.error(`获取视频ID ${video.id} 大小时出错:`, error)
+      // 设置一个默认的大值，确保它不会被选中
+      results[video.id] = '999999MB'
+    }
   }
 
+  logger.info('所有视频大小结果:', results)
+
   // 将结果对象的值转换为数字，并找到最接近但不超过 qualityOptions.maxAutoVideoSize 或 Config.bilibili.maxAutoVideoSize 的值
-  const sizes = Object.values(results).map(size => parseFloat(size.replace('MB', '')))
+  const maxSize = qualityOptions?.maxAutoVideoSize ?? Config.bilibili.maxAutoVideoSize
+  logger.info('最大允许大小:', maxSize, 'MB')
+  
   let closestId = null
   let smallestDifference = Infinity
+  let largestUnderLimit = null // 新增：记录小于限制的最大视频ID
 
-  sizes.forEach((size, index) => {
-    if (size <= (qualityOptions?.maxAutoVideoSize ?? Config.bilibili.maxAutoVideoSize)) {
-      const difference = Math.abs(size - (qualityOptions?.maxAutoVideoSize ?? Config.bilibili.maxAutoVideoSize))
+  Object.entries(results).forEach(([id, sizeStr]) => {
+    const size = parseFloat(sizeStr.replace('MB', ''))
+    logger.info(`检查视频ID ${id} (${qnd[id]}), 大小: ${size}MB`)
+    
+    if (size <= maxSize) {
+      // 记录小于限制的最大视频ID
+      if (largestUnderLimit === null || size > parseFloat(results[largestUnderLimit].replace('MB', ''))) {
+        largestUnderLimit = id
+      }
+      
+      // 计算与最大限制的差值
+      const difference = maxSize - size
       if (difference < smallestDifference) {
         smallestDifference = difference
-        closestId = Object.keys(results)[index]
+        closestId = id
       }
     }
   })
+
+  // 如果没有找到最接近的，但有小于限制的视频，选择最大的那个
+  if (closestId === null && largestUnderLimit !== null) {
+    closestId = largestUnderLimit
+  }
+
+  logger.info('选中的视频ID:', closestId)
 
   let selectedQuality = null // 添加选中的画质值变量
 
@@ -989,6 +1018,8 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
     }
     selectedQuality = lastDescription // 设置选中的画质值
   }
+
+  logger.info('最终选中的画质:', selectedQuality)
   return {
     accept_description: qualityOptions.accept_description,
     videoList,

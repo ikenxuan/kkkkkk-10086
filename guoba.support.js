@@ -406,7 +406,8 @@ export function supportGuoba() {
               { label: '1080P 高清 (TV/APP默认值，需登录)', value: 80 },
               { label: '1080P+ 高码率 (需大会员)', value: 112 },
               { label: '1080P60 高帧率 (需大会员)', value: 116 },
-              { label: '4K 超清 (需大会员且支持4K)', value: 120 }
+              { label: '4K 超清 (需大会员且支持4K)', value: 120 },
+              { label: '8K 超高清 (需大会员且支持8K)', value: 127 }
             ]
           }
         },
