@@ -227,11 +227,11 @@ function br(data) {
 const heic2jpg = async (jsonArray) => {
   for (const item of jsonArray) {
     if (item.commentimage) {
-      const headers = await new Networks({ url: item.commentimage, type: 'arrayBuffer' }).getHeaders()
+      const headers = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).getHeaders()
       if (headers['content-type'] && headers['content-type'] === 'image/heic') {
-        const response = await new Networks({ url: item.commentimage, type: 'arrayBuffer' }).getData()
+        const response = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).returnResult()
         const jpegBuffer = await convert({
-          buffer: Buffer.from(response),
+          buffer: response.data,
           format: 'JPEG'
         })
         const base64Image = Buffer.from(jpegBuffer).toString('base64')
