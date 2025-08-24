@@ -1,4 +1,4 @@
-import { Common, Config, Networks } from '../../utils/index.js'
+import { Common, Config, Networks, baseHeaders } from '../../utils/index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
 import convert from 'heic-convert'
 
@@ -227,9 +227,21 @@ function br(data) {
 const heic2jpg = async (jsonArray) => {
   for (const item of jsonArray) {
     if (item.commentimage) {
-      const headers = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).getHeaders()
+      const headers = await new Networks({ url: item.commentimage, type: 'arraybuffer', 
+        headers: {
+          ...baseHeaders,
+          Referer: 'https://www.douyin.com/',
+          Cookie: ''
+        }
+      }).getHeaders()
       if (headers['content-type'] && headers['content-type'] === 'image/heic') {
-        const response = await new Networks({ url: item.commentimage, type: 'arraybuffer' }).returnResult()
+        const response = await new Networks({ url: item.commentimage, type: 'arraybuffer',
+          headers: { 
+            ...baseHeaders, 
+            Referer: 'https://www.douyin.com/', 
+            Cookie: '' 
+          }
+        }).returnResult()
         const jpegBuffer = await convert({
           buffer: response.data,
           format: 'JPEG'
