@@ -1,4 +1,4 @@
-import { Networks } from '../../utils/Networks.js'
+import { Networks, baseHeaders } from '../../utils/Networks.js'
 
 /**
  * 解析抖音分享链接，返回作品ID对象
@@ -9,7 +9,13 @@ import { Networks } from '../../utils/Networks.js'
 export default async function GetDouyinID (url, log = true) {
   try {
     // 获取长链接
-    const longLink = await new Networks({ url }).getLongLink()
+    const longLink = await new Networks({
+      headers: {
+        ...baseHeaders,
+        Referer: 'https://www.douyin.com/',
+        Cookies: ''
+      }
+    }).getLongLink(url)
 
     // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
