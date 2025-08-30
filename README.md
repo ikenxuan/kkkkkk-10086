@@ -7,10 +7,7 @@
 > 主开发已跑路到 [Karin](https://github.com/KarinJS/Karin) 了，使用开发效率更高和可维护性更健壮的强类型语言 TypeScript 重写插件逻（JavaScript 没类型和注释我写不下去了）。新仓库：https://github.com/ikenxuan/karin-plugin-kkk<br>
 > 云崽版（该仓库）可能将由社区开发者维护。
 
-Q: 什么时候回归？
-A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next？难评。）
-
-🦄 _**kkkkkk-10086 是一个 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件，提供对 Bot 的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
+🦄 _**kkk插件（yunzai） 是一个 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件，提供对 Bot 的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
 
 ![Nodejs](https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/-JavaScript-eed718?style=flat&logo=javascript&logoColor=ffffff)
@@ -28,7 +25,7 @@ A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next
 
 ## 贡献者 🌟
 
-> 🌟 星光闪烁，你们的智慧如同璀璨的夜空。感谢所有为 **kkkkkk-10086** 做出贡献的人！
+> 🌟 星光闪烁，你们的智慧如同璀璨的夜空。感谢所有为 **kkk插件（yunzai）** 做出贡献的人！
 
 [![贡献者](https://contributors-img.web.app/image?repo=ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/graphs/contributors)
 
@@ -37,8 +34,6 @@ A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next
 [![Star History Chart](https://api.star-history.com/svg?repos=ikenxuan/kkkkkk-10086&type=Date)](https://star-history.com/#ikenxuan/kkkkkk-10086&Date)
 
 ## 免责声明 ❗
-
-本项目提供的开源代码是出于学习进行开发。如果您认为该项目侵犯了您的知识产权或其他合法权益，请通过 **[QQ](https://qm.qq.com/q/k6Up32hdWE)** 向我们提供书面通知。我们将在收到有效通知后，尽快进行审查，并采取必要的措施。
 
 > [!CAUTION]
 >
@@ -66,9 +61,7 @@ A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next
 
 **接口文档与加密参数算法**
 
-- [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [NearHuiwen/TiktokDouyinCrawler](https://github.com/NearHuiwen/TiktokDouyinCrawler)
-- [B1gM8c/X-Bogus](https://github.com/B1gM8c/X-Bogus)
+- [ikenxuan/amagi](https://github.com/ikenxuan/amagi)
 
 **友情链接**
 
@@ -78,4 +71,3 @@ A: 等云崽有完整的类型声明、代码注释和文档吧。（Yunzai Next
 - ~~Lain-plugin ☞ [**GitHub**](https://github.com/Loli-Lain/Lain-plugin) | [**Gitee**](https://gitee.com/Zyy955/Lain-plugin)~~
 - icqq 协议 ☞ [**GitHub**](https://github.com/icqqjs/icqq)
 - Karin 框架 ☞ [**GitHub**](https://github.com/Karinjs/Karin) | [**文档**](https://karin.fun)
-- Yunzai NEXT [**GitHub**](https://github.com/yunzai-org/yunzaijs) | [**文档**](https://yunzaijs.com/docs/)
