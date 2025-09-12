@@ -10,16 +10,17 @@
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^5.1.1",
+    "@ikenxuan/amagi": "^5.2.0",
     "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
     "axios": "^1.11.0",
     "qrcode": "^1.5.4",
-    "sequelize": "6.37.3",
+    "sequelize": "^6.37.7",
     "sharp": "^0.34.3",
     "simple-git": "^3.25.0",
-    "sqlite3": "5.1.6",
-    "heic-convert": "^2.1.0"
+    "sqlite3": "^5.1.7",
+    "heic-convert": "^2.1.0",
+    "silk-wasm": "^3.7.1"
   },
   "devDependencies": {
     "eslint": "^9.11.1",

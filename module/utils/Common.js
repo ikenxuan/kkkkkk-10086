@@ -1,7 +1,7 @@
+import { Base, logger } from './index.js'
 import Version from './Version.js'
 import Config from './Config.js'
 import { join } from 'node:path'
-import Base from './Base.js'
 import fs from 'node:fs'
 
 /** 常用工具合集 */
@@ -21,37 +21,31 @@ class Tools {
 
   /**
    * 获取回复消息的内容
-   * @param {object} e 消息事件对象
+   * @param {*} e 消息事件对象
    * @returns {Promise<string>} 回复消息的文本内容
    */
   async getReplyMessage(e) {
-    const botAdapter = await new Base(e).botadapter
-    switch (botAdapter) {
-      case 'ICQQ': {
-        if (e.source) {
-          const source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
-          for (const v of source.message) {
-            if (v.type === 'text' || v.type === 'json') e.msg =  v?.text || v?.data
-          }
-        }
-        break
-      }
-      case 'LagrangeCore':
-      case 'Lagrange.OneBot':
-      case 'OneBotv11': {
-        const source = e.message.find(msg => msg.type === 'reply')
-        if (source) {
-          const replyMessage = (await e.bot?.sendApi?.('get_msg', { message_id: source.id }))?.data
-          if (replyMessage?.message) {
-            for (const val of replyMessage.message) {
-              if (val.type === 'text' || val.type === 'json') e.msg = val.data?.text || val.data?.data
-            }
-          }
-        }
-        break
+    const botAdapter = new Base(e).botadapter
+
+    // ICQQ适配器处理
+    if (botAdapter === 'ICQQ' && e.source) {
+      const history = await e.group.getChatHistory(e.source.seq, 1)
+      const message = history.pop()?.message
+      const textMsg = message?.find((/** @type {{ type: string; }} */ v) => v.type === 'text' || v.type === 'json')
+      if (textMsg) e.msg = textMsg.text || textMsg.data
+    }
+
+    // 其他适配器处理
+    if (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
+      const replyMsg = e.message.find((/** @type {{ type: string; }} */ msg) => msg.type === 'reply')
+      if (replyMsg) {
+        const replyData = await e.bot?.sendApi?.('get_msg', { message_id: replyMsg.id })
+        const message = replyData?.data?.message?.find((/** @type {{ type: string; }} */ v) => v.type === 'text' || v.type === 'json')
+        if (message) e.msg = message.data?.text || message.data?.data
       }
     }
-    return e.msg
+
+    return e.msg || ''
   }
 
   /**
@@ -60,35 +54,26 @@ class Tools {
    * @returns {number} 转换后的阿拉伯数字
    */
   chineseToArabic(chineseNumber) {
-    const chineseToArabicMap = {
-      零: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9
-    }
-    const units = {
-      十: 10, 百: 100, 千: 1000, 万: 10000, 亿: 100000000
-    }
-    let result = 0
-    let temp = 0
-    let unit = 1
+    const numbers = { 零: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 }
+    const units = { 十: 10, 百: 100, 千: 1000, 万: 10000, 亿: 100000000 }
+
+    let result = 0, temp = 0, unit = 1
 
     for (let i = chineseNumber.length - 1; i >= 0; i--) {
       const char = chineseNumber[i]
 
-      if (units[char] !== undefined) {
-        unit = units[char]
-        if (unit === 10000 || unit === 100000000) {
+      if (char && char in units) {
+        unit = /** @type {number} */ (units[/** @type {keyof typeof units} */ (char)])
+        if (unit >= 10000) {
           result += temp * unit
           temp = 0
         }
-      } else {
-        const num = chineseToArabicMap[char]
-        if (unit > 1) {
-          temp += num * unit
-        } else {
-          temp += num
-        }
+      } else if (char && char in numbers) {
+        temp += /** @type {number} */ (numbers[/** @type {keyof typeof numbers} */ (char)]) * (unit > 1 ? unit : 1)
         unit = 1
       }
     }
+
     return result + temp
   }
 
@@ -100,7 +85,7 @@ class Tools {
   formatCookies(cookies) {
     return cookies.map(cookie => {
       const [nameValue] = cookie.split(';').map(part => part.trim())
-      const [name, value] = nameValue.split('=')
+      const [name, value] = (nameValue || '').split('=')
       return `${name}=${value}`
     }).join('; ')
   }
@@ -142,7 +127,7 @@ class Tools {
    * count(999) // 返回 "999"
    * count(undefined) // 返回 "无法获取"
    */
-  count (count) {
+  count(count) {
     if (count > 10000) {
       return (count / 10000).toFixed(1) + '万'
     } else {
@@ -151,33 +136,37 @@ class Tools {
   }
 
   /**
+   * 递归创建文件夹
+   * @param {string} dirname 文件夹路径
+   * @returns {Promise<boolean>} 返回布尔值 是否创建成功
+   */
+  async mkdir(dirname) {
+    try {
+      await fs.promises.mkdir(dirname, { recursive: true })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * 删除文件
-   * @param {string} path 文件路径
+   * @param {string} dirname 文件路径
    * @param {boolean} force 是否强制删除
    * @returns {Promise<boolean>} 删除是否成功
    */
-  async removeFile(path, force = false) {
-    path = path.replace(/\\/g, '/')
-    if (Config.app.rmmp4) {
-      try {
-        await fs.promises.unlink(path)
-        logger.mark('缓存文件: ', path + ' 删除成功！')
-        return true
-      } catch (err) {
-        logger.error('缓存文件: ', path + ' 删除失败！', err)
-        return false
-      }
-    } else if (force) {
-      try {
-        await fs.promises.unlink(path)
-        logger.mark('缓存文件: ', path + ' 删除成功！')
-        return true
-      } catch (err) {
-        logger.error('缓存文件: ', path + ' 删除失败！', err)
-        return false
-      }
+  async removeFile(dirname, force = false) {
+    if (!Config.app.removeCache && !force) return true
+
+    const normalizedPath = dirname.replace(/\\/g, '/')
+    try {
+      await fs.promises.unlink(normalizedPath)
+      logger.mark(`缓存文件: ${normalizedPath} 删除成功！`)
+      return true
+    } catch (err) {
+      logger.error(`缓存文件: ${normalizedPath} 删除失败！`, err)
+      return false
     }
-    return true
   }
 
   /**
@@ -260,6 +249,19 @@ class Tools {
       return `${seconds}秒`
     }
   }
+
+  /**
+   * 休眠函数
+   * @param {number} ms 毫秒
+   * @example
+   * ```js
+   * await Common.sleep(1000)
+   * ```
+   */
+  async sleep(ms) {
+    new Promise(resolve => setTimeout(resolve, ms))
+  }
+
 }
 
 export default new Tools()

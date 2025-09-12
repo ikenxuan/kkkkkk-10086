@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { markdown } from '@karinjs/md-html'
 import { douyinComments } from './index.js'
@@ -6,20 +6,47 @@ import { join } from 'node:path'
 import QRCode from 'qrcode'
 import fs from 'fs'
 
+/**
+ * @typedef {Object} PlayAddress
+ * @property {number} data_size - 视频数据大小(字节)
+ * @property {string} file_cs - 文件校验信息
+ * @property {string} file_hash - 文件哈希值
+ * @property {number} height - 视频高度
+ * @property {string} uri - 视频URI
+ * @property {string} url_key - URL密钥
+ * @property {string[]} url_list - URL列表
+ * @property {number} width - 视频宽度
+ */
+
+/**
+ * @typedef {Object} dyVideo
+ * @property {number} FPS - 帧率
+ * @property {string} HDR_bit - HDR比特信息
+ * @property {string} HDR_type - HDR类型
+ * @property {number} bit_rate - 比特率
+ * @property {string} format - 视频格式
+ * @property {string} gear_name - 清晰度名称
+ * @property {number} is_bytevc1 - 是否使用bytevc1编码
+ * @property {number} is_h265 - 是否使用h265编码
+ * @property {PlayAddress} play_addr - 播放地址信息
+ * @property {number} quality_type - 清晰度类型
+ * @property {string} video_extra - 额外视频信息
+ */
+
 let mp4size = ''
 let img
 
-export default class DouYin extends Base {
-  constructor (e = {}, iddata) {
-    super()
+export class DouYin extends Base {
+  constructor(e, iddata) {
+    super(e)
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
     this.is_slides = false
   }
 
-  async RESOURCES (data) {
-    (Config.douyin.douyinTip).includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
+  async RESOURCES(data) {
+    Config.douyin.douyinTip?.includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
         const VideoData = await this.amagi.getDouyinData('聚合解析', {
@@ -38,7 +65,7 @@ export default class DouYin extends Base {
         /** 图集 */
         let imagenum = 0
         const image_res = []
-        if (this.is_mp4 === false && (Config.douyin.douyinTip).includes('图集')) {
+        if (this.is_mp4 === false && (Config.douyin.douyinTip)?.includes('图集')) {
           switch (true) {
             // 图集
             case this.is_slides === false && VideoData.data.aweme_detail.images !== null: {
@@ -59,7 +86,7 @@ export default class DouYin extends Base {
                 imagenum++
 
                 if (Config.app.removeCache === false) {
-                  mkdirSync(`${Common.tempDri.images}${g_title}`)
+                  Common.mkdir(`${Common.tempDri.images}${g_title}`)
                   const path = `${Common.tempDri.images}${g_title}/${index + 1}.png`
                   await new Networks({ url: image_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
                 }
@@ -239,14 +266,14 @@ export default class DouYin extends Base {
           video_res.push(video_data)
         }
 
-        if ((Config.douyin.douyinTip).includes('评论图')) {
+        if ((Config.douyin.douyinTip)?.includes('评论图')) {
           const EmojiData = await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' })
           const list = Emoji(EmojiData.data)
           const commentsArray = await douyinComments(CommentsData, list)
           if (!commentsArray.jsonArray.length) {
             await this.e.reply('这个作品没有评论 ~')
           } else {
-            const img = await Render.render('douyin/comment',
+            const img = await Render('douyin/comment',
               {
                 Type: this.is_mp4 ? '视频' : this.is_slides ? '合辑' : '图集',
                 CommentsData: commentsArray,
@@ -294,7 +321,7 @@ export default class DouYin extends Base {
         const matext = markdown(veoarray.join(''), {})
         const htmlpath = join(Version.pluginPath, 'template', 'douyin', 'html', 'user_worklist.html')
         fs.writeFileSync(htmlpath, matext, 'utf8')
-        const img = await Render.render('douyin/user_worklist')
+        const img = await Render('douyin/user_worklist')
         await this.e.reply(segment.image(img))
         const Element2 = await common.makeForwardMsg(this.e, forwardmsg, '用户主页视频列表')
         await this.e.reply(Element2)
@@ -318,7 +345,7 @@ export default class DouYin extends Base {
           await this.e.reply('解析错误！该音乐抖音未提供下载链接，无法下载', { reply: true })
           return true
         }
-        img = await Render.render('douyin/musicinfo',
+        img = await Render('douyin/musicinfo',
           {
             image_url: MusicData.data.music_info.cover_hd.url_list[0],
             desc: MusicData.data.music_info.title,
@@ -359,7 +386,7 @@ export default class DouYin extends Base {
           // 直播中
           const live_data = await this.amagi.getDouyinData('直播间信息数据', { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' })
           const room_data = JSON.parse(UserInfoData.data.user.room_data)
-          const img = await Render.render('douyin/live',
+          const img = await Render('douyin/live',
             {
               image_url: [{ image_src: live_data.data.data[0].cover?.url_list[0] }],
               text: live_data.data.data[0].title,
@@ -416,10 +443,10 @@ export const douyinProcessVideos = (videos, filelimit) => {
 
 /**
  * 传递整数，返回x小时后的时间
- * @param {integer} delay
- * @returns
+ * @param {number} delay - 延迟的小时数
+ * @returns {string} - 返回格式化后的时间字符串
  */
-function Time (delay) {
+function Time(delay) {
   const currentDate = new Date()
   currentDate.setHours(currentDate.getHours() + delay)
 
@@ -435,12 +462,16 @@ function Time (delay) {
 
 /**
  * 处理抖音表情数据
- * @param {Object} data 表情数据对象
- * @param {Array} data.emoji_list 表情列表
- * @param {string} data.emoji_list[].display_name 表情显示名称
- * @param {Object} data.emoji_list[].emoji_url 表情URL对象
- * @param {Array} data.emoji_list[].emoji_url.url_list 表情URL列表
- * @returns {Array<{name: string, url: string}>} 处理后的表情数组,包含name和url属性
+ * @typedef {Object} EmojiItem
+ * @property {string} display_name 表情显示名称
+ * @property {Object} emoji_url 表情URL对象
+ * @property {string[]} emoji_url.url_list 表情URL列表
+ * 
+ * @typedef {Object} EmojiData
+ * @property {EmojiItem[]} emoji_list 表情列表
+ * 
+ * @param {EmojiData} data 表情数据对象
+ * @returns {Array<{name: string, url: string | undefined}>} 处理后的表情数组,包含name和url属性
  */
 export const Emoji = (data) => {
   const ListArray = []

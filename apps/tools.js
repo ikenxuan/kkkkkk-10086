@@ -1,225 +1,172 @@
-import { DouYin, DouYinpush, DouyinData, GetDouyinID } from '../module/platform/douyin/index.js'
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
-import { BiLiBiLi, Bilibilipush, GetBilibiliID } from '../module/platform/bilibili/index.js'
-import { Config, Pushlist, Common } from '../module/utils/index.js'
-import { getBilibiliData } from '@ikenxuan/amagi'
+import { BiLiBiLi, GetBilibiliID } from '../module/platform/bilibili/index.js'
+import { DouYin, GetDouyinID } from '../module/platform/douyin/index.js'
+import { Config, Common, UploadRecord } from '../module/utils/index.js'
+import { getDouyinData } from '@ikenxuan/amagi'
 
-export class Tools extends plugin {
-  constructor () {
-    if (Config.bilibili.bilibilipush) {
-      task.push({
-        cron: Config.bilibili.bilibilipushcron,
-        name: '哔哩哔哩更新推送',
-        fnc: () => this.pushbili(),
-        log: Config.bilibili.bilibilipushlog
-      })
-    }
+// 用户状态存储对象
+const user = {}
 
-    if (Config.douyin.douyinpush) {
-      task.push({
-        cron: Config.douyin.douyinpushcron,
-        name: '抖音更新推送',
-        fnc: () => this.pushdouy(),
-        log: Config.douyin.douyinpushlog
-      })
-    }
+const PLATFORM_CONFIG = [
+  {
+    reg: /^.*((www|v|jx)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/,
+    handler: 'douyin',
+    enabled: Config.douyin?.douyintool
+  },
+  {
+    reg: /(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|BV[a-zA-Z0-9]{10}$)/,
+    handler: 'bilibili',
+    enabled: Config.bilibili?.bilibilitool
+  },
+  {
+    reg: /^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$/,
+    handler: 'kuaishou',
+    enabled: Config.kuaishou?.kuaishoutool
+  }
+]
 
+/**
+ * 动态生成插件规则
+ * @returns {Array} 返回启用的平台规则数组
+ */
+const generateRules = () => Config.app.videotool
+  ? PLATFORM_CONFIG
+    .filter(config => config.enabled)
+    .map(({ reg, handler }) => ({ reg, fnc: handler }))
+  : []
+
+export class kkkTools extends plugin {
+  constructor() {
     super({
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
       priority: Config.app.defaulttool ? -Infinity : Config.app.priority,
       rule: [
-        ...rule,
-        { reg: '^#设置抖音推送', fnc: 'setpushdouy', permission: Config.douyin.douyinpushGroup },
-        { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setpushbili', permission: Config.douyin.douyinpushGroup },
-        { reg: '^#抖音强制推送$', fnc: 'pushdouy', permission: 'master' },
-        { reg: '^#B站强制推送$', fnc: 'pushbili', permission: 'master' },
-        { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
-        { reg: '^#?第(\\d{1,3})集$', fnc: 'next' },
-        { reg: '^#?BGM', fnc: 'uploadRecord' },
-        { reg: '^#?(解析|kkk解析)', fnc: 'prefix' },
-        { reg:/^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
+        ...generateRules(), // 动态生成的平台规则
+        { reg: /^#?(解析|kkk解析)/, fnc: 'prefix' }, // 解析功能规则
+        { reg: /#?BGM(\d+)/, fnc: 'uploadRecord' }, // BGM上传功能规则
+        { reg: /^#?第(\d{1,3})集$/, fnc: 'next' } // 选集功能规则
       ]
     })
-    this.task = task
   }
 
-  async changeBotID (e) {
-    const newDouyinlist = Config.pushlist.douyin.map(item => {
-      // 操作每个 group_id
-      const modifiedGroupIds = item.group_id.map(groupId => {
-        const [group_id, uin] = groupId.split(':')
-        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
-      })
-      return {
-        ...item,
-        group_id: modifiedGroupIds
-      }
-    })
-    const newBilibililist = Config.pushlist.bilibili.map(item => {
-      // 操作每个 group_id
-      const modifiedGroupIds = item.group_id.map(groupId => {
-        const [group_id, uin] = groupId.split(':')
-        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
-      })
-      return {
-        ...item,
-        group_id: modifiedGroupIds
-      }
-    })
-    Config.modify('pushlist', 'douyin', newDouyinlist)
-    Config.modify('pushlist', 'bilibili', newBilibililist)
-    await e.reply('推送机器人已修改为' + e.msg.replace(/^#kkk设置推送机器人/, ''))
-    return true
-  }
-
-  async prefix (e) {
+  /**
+   * 统一处理不同平台的链接解析
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async prefix(e) {
     e.msg = await Common.getReplyMessage(e)
-
-    if (reg.douyin.test(e.msg)) {
-      return await this.douy(e)
-    } else if (reg.bilibili.test(e.msg)) {
-      return await this.bilib(e)
-    } else if (reg.kuaishou.test(e.msg)) {
-      return await this.kuais(e)
-    }
+    // 查找匹配的平台并直接调用处理函数
+    const config = PLATFORM_CONFIG.find(config => config.enabled && config.reg.test(e.msg))
+    if (config) await this[config.handler](e)
     return true
   }
 
-  async kuais (e) {
-    const Iddata = await GetKuaishouID(String(e.msg.replaceAll('\\', '')).match(/https:\/\/v\.kuaishou\.com\/\w+/g))
-    const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
-    await new KuaiShou(e, Iddata).Action(WorkData)
-    return true
-  }
-
-  async pushlist (e) {
-    // 根据消息内容判断显示哪个平台的推送列表
-    const platform = e.msg.includes('抖音') ? 'douyin' : 'bilibili'
-    const obj = {
-      [platform]: []
-    }
-    
-    const list = Config.pushlist[platform] || []
-    
-    // 遍历推送列表,只获取当前群的推送配置
-    for (const item of list) {
-      const key = platform === 'douyin' ? 'sec_uid' : 'host_mid'
-      // 检查group_id是否包含当前群号
-      if (item[key] && item.group_id.some(gid => gid.split(':')[0] === String(e.group_id))) {
-        obj[platform].push({
-          group_id: item.group_id.filter(gid => gid.split(':')[0] === String(e.group_id)),
-          remark: item.remark,
-          [key]: item[key]
-        })
-      }
-    }
-
-    const img = await Pushlist(e, obj, platform)
-    if (img) await e.reply(img)
-    return true
-  }
-
-  async pushdouy () {
-    if (String(this.e?.msg).match('强制')) await new DouYinpush(this.e, true).action()
-    else await new DouYinpush(this.e).action()
-    return true
-  }
-
-  async pushbili () {
-    if (String(this.e?.msg).match('强制')) await new Bilibilipush(this.e, true).action()
-    else await new Bilibilipush(this.e).action()
-    return true
-  }
-
-  async next (e) {
-    if (user[this.e.user_id] === 'bilib') {
-      const regex = String(e.msg).match(/第(\d+)集/)
-      const BILIBILIOBJECT = global.BILIBILIOBJECT
-      BILIBILIOBJECT.Episode = regex[1]
-      await new BiLiBiLi(e, BILIBILIOBJECT).RESOURCES(BILIBILIOBJECT, true)
-    }
-    return true
-  }
-
-  async bilib (e) {
-    const urlRex = /(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[A-Za-z\d._?%&+\-=\/#]*/g
-    const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g
-    let url = e.msg === undefined ? e.message.shift().data.replaceAll('\\', '') : e.msg.trim().replaceAll('\\', '')
-    if (url.includes('b23.tv')) {
-      url = bShortRex.exec(url)[0]
-    } else if (url.includes('www.bilibili.com') || url.includes('m.bilibili.com') || url.includes('bili2233.cn')) {
-      url = urlRex.exec(url)?.[0]
-    } else if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
-      url = `https://www.bilibili.com/video/${ url }`
-    }
-    const iddata = await GetBilibiliID(url)
-    await new BiLiBiLi(e, iddata).RESOURCES(iddata)
-    user[this.e.user_id] = 'bilib'
-    setTimeout(() => {
-      delete user[this.e.user_id]
-    }, 1000 * 60)
-    return true
-  }
-
-  async uploadRecord (e) {
-    const music_id = String(e.msg).match(/BGM(\d+)/)
-    await new DouYin(e).uploadRecord(music_id[1])
-    return true
-  }
-
-  async douy (e) {
-    const url = String(e.msg).match(/(http|https):\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
+  /**
+   * 处理抖音链接解析
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async douyin(e) {
+    const url = e.msg.match(/https?:\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
     const iddata = await GetDouyinID(url)
     await new DouYin(e, iddata).RESOURCES(iddata)
     return true
   }
 
-  async setpushbili (e) {
-    if (e.isPrivate) return true
-    const data = await getBilibiliData('用户主页数据', Config.cookies.bilibili, { host_mid: /^#设置[bB]站推送(?:UID:)?(\d+)$/.exec(e.msg)[1] })
-    await e.reply(await new Bilibilipush(e).setting(data?.data))
+  /**
+   * 处理B站链接解析
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async bilibili(e) {
+    let url = (e.msg || e.message[0].data).replaceAll('\\', '').trim()
+
+    // 处理不同类型的B站链接
+    if (url.includes('b23.tv')) {
+      url = url.match(/(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/)[0]
+    } else if (/bilibili\.com|bili2233\.cn/.test(url)) {
+      url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[A-Za-z\d._?%&+\-=\/#]*/)[0]
+    } else if (/^BV[1-9a-zA-Z]{10}$/.test(url)) {
+      url = `https://www.bilibili.com/video/${url}`
+    }
+
+    const iddata = await GetBilibiliID(url)
+    await new BiLiBiLi(e, iddata).RESOURCES(iddata)
+
+    // 记录用户操作状态，用于选集功能
+    user[e.user_id] = 'bilib'
+    setTimeout(() => delete user[e.user_id], 60000)
     return true
   }
 
-  async setpushdouy (e) {
-    if (e.isPrivate) return true
-    const data = await new DouyinData('Search').GetData({ query: e.msg.replace(/^#设置抖音推送/, '') })
-    await e.reply(await new DouYinpush(e).setting(data?.data))
+  /**
+   * 处理快手链接解析
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async kuaishou(e) {
+    const url = e.msg.replaceAll('\\', '').match(/https:\/\/v\.kuaishou\.com\/\w+/g)
+    const Iddata = await GetKuaishouID(url)
+    const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
+    await new KuaiShou(e, Iddata).Action(WorkData)
     return true
   }
-}
 
-const user = {}
-const task = []
-const rule = []
+  /**
+   * 处理BGM音频上传功能
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async uploadRecord(e) {
+    try {
+      // 获取音乐ID并验证
+      const musicIdMatch = e.msg.match(/BGM(\d+)/)
+      if (!musicIdMatch) {
+        await e.reply('未找到有效的音乐ID')
+        return false
+      }
 
-const reg = {
-  douyin: new RegExp('^.*((www|v|jx)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*'),
-  bilibili: new RegExp(/(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|BV[a-zA-Z0-9]{10}$)/),
-  kuaishou: new RegExp('^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$')
-}
+      // 获取音乐数据
+      const data = await getDouyinData('音乐数据', Config.cookies.douyin, {
+        music_id: musicIdMatch[1],
+        typeMode: 'strict'
+      })
 
-if (Config.app.videotool) {
-  if (Config.douyin.douyintool) {
-    rule.push({
-      reg: reg.douyin,
-      fnc: 'douy'
-    })
+      // 验证音乐数据
+      if (!data?.data?.music_info) {
+        await e.reply('获取音乐数据失败')
+        return false
+      }
+
+      // 提取音乐信息
+      const { title, play_url } = data.data.music_info
+      const music_url = play_url.uri
+      const musicInfo = `《${title}》\n${music_url}`
+
+      await e.reply(`正在上传: ${musicInfo}`)
+      await e.reply(await UploadRecord(e, music_url, 0, Config.douyin.sendHDrecord ? false : true))
+      return true
+    } catch (error) {
+      logger.error('上传音乐记录时发生错误:', error)
+      await e.reply('处理音乐时发生错误，请稍后重试')
+      return false
+    }
   }
 
-  if (Config.bilibili.bilibilitool) {
-    rule.push({
-      reg: reg.bilibili,
-      fnc: 'bilib'
-    })
-  }
-
-  if (Config.kuaishou.kuaishoutool) {
-    rule.push({
-      reg: reg.kuaishou,
-      fnc: 'kuais'
-    })
+  /**
+   * 处理B站番剧选集功能
+   * @param {any} e 事件对象
+   * @returns {Promise<boolean>} 处理结果
+   */
+  async next(e) {
+    if (user[e.user_id] === 'bilib') {
+      const episode = e.msg.match(/第(\d+)集/)[1]
+      global.BILIBILIOBJECT.Episode = episode
+      await new BiLiBiLi(e, global.BILIBILIOBJECT).RESOURCES(global.BILIBILIOBJECT, true)
+    }
+    return true
   }
 }

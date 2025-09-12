@@ -18,20 +18,23 @@ commentsimg: true
 # 发送抖音背景音乐
 detailMusic: true
 
-# 抖音推送，开启后需重启；使用[#设置抖音推送+抖音号]配置推送列表
-douyinpush: false
-
-# 抖音推送日志，打开或关闭定时任务日志
-douyinpushlog: true
-
-# 抖音推送设置权限，(all)所有人；(admin)群主和管理员；(owner)群主；(master)主人
-douyinpushGroup: master
-
-# 抖音推送表达式
-douyinpushcron: "*/10 * * * *"
-
 # 图集BGM是否使用高清语音发送，高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
 sendHDrecord: true
 
-# 抖音推送是否一同发送作品视频
-senddynamicwork: false
+# 根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载
+autoResolution: true
+
+# 抖音推送相关配置
+push: 
+  # 推送开关，开启后需重启；使用「#设置抖音推送 + 抖音号」配置推送列表
+  switch: true
+  # 谁可以设置推送，all为所有人，admin为管理员，master为主人，group.owner为群主，group.admin为群管理员。修改后需重启
+  permission: master
+  # 推送定时任务的cron表达式，默认为每十分钟推送一次
+  cron: '*/10 * * * *'
+  # 推送时是否一同解析该作品
+  parsedynamic: false
+  # 是否打印日志
+  log: true
+  # 分享链接二维码的类型，web为跳转到抖音网页，download为视频下载直链
+  shareType: 'web'

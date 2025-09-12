@@ -1,20 +1,28 @@
-import Base from './Base.js'
-import Version from './Version.js'
-import Render from './Render.js'
-import Config from './Config.js'
-import UploadRecord from './UploadRecord.js'
-import { Networks, baseHeaders } from './Networks.js'
-import Pushlist from './Pushlist.js'
-import DB from '../db/index.js'
-import { mergeFile } from './FFmpeg.js'
-import Common from './Common.js'
+// ==================== 全局对象 ====================
+/** @type {any} */
+const global = globalThis
 
-export { Version, Render, Config, Base, UploadRecord, Networks, baseHeaders, Pushlist, DB, Sleep, mergeFile, Common }
+/** @type {any} */
+export const logger = global?.logger
 
-/**
- * 休眠函数
- * @param ms 毫秒
- */
-function Sleep (ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
+/** @type {any} */
+export const segment = global?.segment
+
+/** @type {any} */
+export const Bot = global?.Bot
+
+// ==================== 核心功能模块 ====================
+export { default as Version } from './Version.js'
+export { Render } from './Render.js'
+export { default as Config } from './Config.js'
+export { default as UploadRecord } from './UploadRecord.js'
+export { default as Common } from './Common.js'
+
+// ==================== 网络相关模块 ====================
+export { Networks, baseHeaders } from './Networks.js'
+
+// ==================== 工具函数 ====================
+export { mergeFile } from './FFmpeg.js'
+
+// ==================== 基础类 ====================
+export * from './Base.js'

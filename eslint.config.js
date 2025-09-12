@@ -9,7 +9,7 @@ export default [{
   },
   files: ['app/**/*.js', 'module/**/*.js'],
   rules: {
-    ...neostandard.rules,
+    ...(/** @type {any} */ (neostandard)).rules,
     // 禁用驼峰命名命名规则，允许使用下划线命名法。
     'camelcase': ['off'],
     // 禁用等号严格比较规则，允许使用==和!=进行比较。

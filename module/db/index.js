@@ -1,152 +1,100 @@
-import { sequelize, DataTypes } from './base.js'
+import { BilibiliDBBase } from './bilibili.js'
+import { DouyinDBBase } from './douyin.js'
 
-sequelize.define(
-  'douyin',
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      comment: '主键ID'
-    },
-    group_id: {
-      type: DataTypes.STRING,
-      comment: '群组标识符'
-    },
-    data: {
-      type: DataTypes.STRING, // 存储为字符串，JSON 格式
-      defaultValue: '{}',
-      comment: '缓存数据'
-    }
-  },
-  {
-    timestamps: true
-  }
-)
+export * from './bilibili.js'
+export * from './douyin.js'
 
-sequelize.define(
-  'bilibili',
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      comment: '主键ID'
-    },
-    group_id: {
-      type: DataTypes.STRING,
-      comment: '群组标识符'
-    },
-    data: {
-      type: DataTypes.STRING, // 存储为字符串，JSON 格式
-      defaultValue: '{}',
-      comment: '缓存数据'
-    }
-  },
-  {
-    timestamps: true
-  }
-)
+/** 抖音数据库实例 */
+/** @type {DouyinDBBase | null} */
+let douyinDB = null
+let douyinInitializing = false
+
+/** 哔哩哔哩数据库实例 */
+/** @type {BilibiliDBBase | null} */
+let bilibiliDB = null
+let bilibiliInitializing = false
 
 /**
- * 创建一个新的群组记录，具有默认值的新条目
- * @param {string} ModelName 表单名称
- * @param {string} group_id 推送群唯一标识符
- * @param {string} data 数据对象
- * @returns {Promise<remake>}
+ * 获取或初始化 DouyinDB 实例（单例模式）
+ * @returns {Promise<DouyinDBBase | null>} DouyinDB实例
  */
-async function CreateSheet (ModelName, group_id, data = {}) {
-  const Model = sequelize.models[ModelName]
-  return (
-    await Model.create(
-      {
-        group_id: String(group_id),
-        data: JSON.stringify(data)
-      },
-      {
-        raw: true
-      }
-    )
-  ).dataValues
+export const getDouyinDB = async () => {
+  if (douyinDB) {
+    return douyinDB
+  }
+
+  if (douyinInitializing) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    console.assert(douyinDB !== undefined && douyinDB !== null, "douyinDB is null or undefined")
+    return douyinDB
+  }
+
+  douyinInitializing = true
+  try {
+    douyinDB = await new DouyinDBBase().init()
+    return douyinDB
+  } finally {
+    douyinInitializing = false
+  }
 }
 
 /**
- * 获取对应表单的所有群组原始数据
- * @param {string} ModelName 表单名称
- * @returns  获取对应表单的所有群组原始数据
+ * 获取或初始化 BilibiliDB 实例（单例模式）
+ * @returns {Promise<BilibiliDBBase | null>} BilibiliDB实例
  */
-async function FindAll (ModelName) {
-  const Model = sequelize.models[ModelName]
-  const groups = await Model.findAll({
-    raw: true
-  })
+export const getBilibiliDB = async () => {
+  if (bilibiliDB) {
+    return bilibiliDB
+  }
 
-  // 使用reduce方法将数组转换为对象
-  const result = groups.reduce((accumulator, group) => {
-    // 将group_id作为键名，data作为键值
-    accumulator[group.group_id] = JSON.parse(group.data)
-    return accumulator
-  }, {})
+  if (bilibiliInitializing) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    console.assert(bilibiliDB !== undefined && bilibiliDB !== null, "bilibiliDB is null or undefined")
+    return bilibiliDB
+  }
 
-  return result
+  bilibiliInitializing = true
+  try {
+    bilibiliDB = await new BilibiliDBBase().init()
+    return bilibiliDB
+  } finally {
+    bilibiliInitializing = false
+  }
 }
 
 /**
- * 查找指定群号的数据
- * @param {string} ModelName 表单名称
- * @param {string} Group_ID 群号
- * @returns {Promise} 包含指定群号数据的Promise对象
+ * 初始化所有数据库
+ * @returns {Promise<{douyinDB: DouyinDBBase | null, bilibiliDB: BilibiliDBBase | null}>} 初始化后的数据库实例
  */
-async function FindGroup (ModelName, Group_ID) {
-  const AllData = await FindAll(ModelName)
-  // 检查传入的 Group_ID 是否存在于 AllData 中
+export const initAllDatabases = async () => {
+  const [douyin, bilibili] = await Promise.all([
+    getDouyinDB(),
+    getBilibiliDB()
+  ])
 
-  if (AllData.hasOwnProperty(Group_ID)) {
-    // 直接返回找到的群号对应的对象
-    return AllData[Group_ID]
+  return { douyinDB: douyin, bilibiliDB: bilibili }
+}
+
+// 导出数据库实例（延迟初始化）
+export const douyinDBInstance = await getDouyinDB()
+export const bilibiliDBInstance = await getBilibiliDB()
+
+// 为了保持向后兼容性，保留原有的导出名称
+export { bilibiliDBInstance as bilibiliDB, douyinDBInstance as douyinDB }
+
+/**
+ * 清理旧的动态缓存记录
+ * @param {'douyin' | 'bilibili'} platform 指定数据库
+ * @param {number} days 保留最近几天的记录，默认为7天
+ * @returns {Promise<number>} 删除的记录数量
+ */
+export const cleanOldDynamicCache = async (platform, days = 7) => {
+  if (platform === 'douyin') {
+    const db = await getDouyinDB()
+    if (db) return await db.cleanOldAwemeCache(days)
   } else {
-    return null
+    const db = await getBilibiliDB()
+    if (db) return await db.cleanOldDynamicCache(days)
   }
+  return 0
 }
-
-/**
- * 更新指定群组的数据
- * @param {string} ModelName 表单名称
- * @param {number} Group_ID 推送群唯一标识符
- * @param {object} NewData 数据对象
- * @returns
- */
-async function UpdateGroupData (ModelName, Group_ID, NewData = {}) {
-  const Model = sequelize.models[ModelName]
-
-
-  const [ affectedRows, affectedRowsData ] = await Model.update(
-    {
-      data: JSON.stringify(NewData)
-    },
-    {
-      where: {
-        group_id: Group_ID
-      },
-      individualHooks: true
-    }
-  )
-
-  return affectedRowsData
-}
-
-const DB = {
-  /** 创建一个新的群组记录，具有默认值的新条目 */
-  CreateSheet,
-  /** 更新指定群组的数据 */
-  UpdateGroupData,
-  /** 获取对应表单的所有群组原始数据 */
-  FindAll,
-  /** 查找指定群号的数据 */
-  FindGroup
-}
-
-export default DB
-
-/** 每次调用都将强制同步已定义的模型 */
-await sequelize.sync({ alter: true })

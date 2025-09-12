@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { logger } from './index.js'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
@@ -12,6 +13,7 @@ export const baseHeaders = {
 export class Networks {
   /**
    * 构造网络请求对象
+   * @param {object} data 请求配置对象
    * @param {string} data.url 请求的URL地址
    * @param {object} [data.headers = {}] 请求头对象
    * @param {string} [data.type = 'json'] 返回的数据类型，支持 'json', 'text', 'arrayBuffer', 'blob'
@@ -19,6 +21,7 @@ export class Networks {
    * @param {*} [data.body = ''] POST请求时的请求体
    * @param {number} [data.timeout = 30000] 请求超时时间，单位为毫秒，默认30秒
    * @param {number} [data.maxRetries = 3] 最大重试次数
+   * @param {string} [data.filepath] 流下载时的文件路径
    */
   constructor(data) {
     // 初始化请求头
@@ -35,30 +38,30 @@ export class Networks {
     this.timeout = data.timeout || 30000 // 请求超时时间，默认30秒
     this.isGetResult = false // 是否已经获取到结果
     this.filepath = data.filepath // 流下载时的文件路径
-    this.redirect = 'follow' // 默认跟随重定向
     this.maxRetries = data.maxRetries || 3 // 最大重试次数，默认为3次
-
-    // 创建axios实例
-    this.axiosInstance = axios.create({
-      timeout: this.timeout,
-      headers: this.headers,
-      maxRedirects: 5,
-      validateStatus: (status) => {
-        return (status >= 200 && status < 300) || status === 406 || (status >= 500)
-      }
-    })
   }
 
   /**
    * 获取请求配置
    * 根据请求方法返回配置对象
+   * @returns {Object} axios请求配置对象
+   * @property {string} url - 请求URL
+   * @property {string} method - 请求方法
+   * @property {Object} headers - 请求头
+   * @property {'json'|'text'|'arrayBuffer'|'blob'|'stream'} responseType - 响应数据类型
    */
   get config() {
+    /** @type {any} */
     const config = {
       url: this.url,
       method: this.method,
       headers: this.headers,
-      responseType: this.type
+      responseType: this.type,
+      timeout: this.timeout,
+      maxRedirects: this.maxRetries,
+      validateStatus: (/** @type {number} */ status) => {
+        return (status >= 200 && status < 300) || status === 406 || (status >= 500)
+      }
     }
 
     if (this.method === 'POST' && this.body) {
@@ -91,12 +94,12 @@ export class Networks {
 
   /**
    * 基础请求方法
-   * 返回 axios 请求的结果
+   * @returns {Promise<*>} 返回 axios 请求的结果
    */
   async returnResult() {
     let response = {}
     try {
-      response = await this.axiosInstance(this.config) // 使用axios发起请求
+      response = await axios(this.config) // 直接使用axios发起请求
     } catch (error) {
       logger.error('请求失败:', error)
     }
@@ -108,34 +111,39 @@ export class Networks {
    * @param {string} url - 可选参数，要获取重定向链接的URL地址，如果不提供则使用实例中的this.url
    * @returns {Promise<string>} 返回一个Promise，解析值为最终的重定向链接地址或错误信息
    */
-  async getLongLink (url = '') {
-      let errorMsg = `获取链接重定向失败: ${this.url || url}`  // 初始化错误信息
-      try {
-        // 使用HEAD方法请求URL，获取重定向信息
-        const response = await this.axiosInstance.head(this.url || url)
-        // 返回最终的重定向URL
-        return response.request.res.responseUrl
-      } catch (error) {
-        const axiosError = error
-        if (axiosError.response) {
-          // 如果是302重定向状态码
-          if (axiosError.response.status === 302) {
-            // 从响应头中获取重定向地址
-            const redirectUrl = axiosError.response.headers.location
-            logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
-            // 递归调用自身，获取重定向后的链接
-            return await this.getLongLink(redirectUrl)
-          } else if (axiosError.response.status === 403) { // 403 Forbidden
-            // 设置403错误的错误信息
-            errorMsg = `403 Forbidden 禁止访问！${this.url || url}`
-            logger.error(errorMsg)
-            return errorMsg
-          }
+  async getLongLink(url = '') {
+    let errorMsg = `获取链接重定向失败: ${this.url || url}`  // 初始化错误信息
+    try {
+      // 使用HEAD方法请求URL，获取重定向信息
+      const response = await axios({
+        method: 'HEAD',
+        url: this.url || url,
+        headers: this.headers,
+        timeout: this.timeout
+      })
+      // 返回最终的重定向URL
+      return response.request.res.responseUrl
+    } catch (error) {
+      const axiosError = /** @type {AxiosError} */ (error)
+      if (axiosError.response) {
+        // 如果是302重定向状态码
+        if (axiosError.response.status === 302) {
+          // 从响应头中获取重定向地址
+          const redirectUrl = axiosError.response.headers.location
+          logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
+          // 递归调用自身，获取重定向后的链接
+          return await this.getLongLink(redirectUrl)
+        } else if (axiosError.response.status === 403) { // 403 Forbidden
+          // 设置403错误的错误信息
+          errorMsg = `403 Forbidden 禁止访问！${this.url || url}`
+          logger.error(errorMsg)
+          return errorMsg
         }
-        // 记录并返回错误信息
-        logger.error(errorMsg)
-        return errorMsg
       }
+      // 记录并返回错误信息
+      logger.error(errorMsg)
+      return errorMsg
+    }
   }
 
   /**
@@ -143,11 +151,13 @@ export class Networks {
    */
   async getLocation() {
     try {
-      const response = await this.axiosInstance({
+      const response = await axios({
         method: 'GET',
         url: this.url,
+        headers: this.headers,
+        timeout: this.timeout,
         maxRedirects: 0, // 不跟随重定向
-        validateStatus: (status) => status >= 300 && status < 400 // 仅处理3xx响应
+        validateStatus: (/** @type {number} */ status) => status >= 300 && status < 400 // 仅处理3xx响应
       })
       return response.headers.location // 返回Location头中的重定向地址
     } catch (error) {
@@ -186,14 +196,16 @@ export class Networks {
    */
   async getHeaders() {
     try {
-      const response = await this.axiosInstance({
-        ...this.config,
+      const response = await axios(/** @type {any} */({
         method: 'GET',
+        url: this.url,
         headers: {
-          ...this.config.headers,
+          ...this.headers,
           Range: 'bytes=0-0'
-        }
-      })
+        },
+        timeout: this.timeout,
+        responseType: this.type
+      }))
       return response.headers
     } catch (error) {
       logger.error(error)
@@ -207,10 +219,13 @@ export class Networks {
    */
   async getHeadersFull() {
     try {
-      const response = await this.axiosInstance({
-        ...this.config,
-        method: 'GET'
-      })
+      const response = await axios(/** @type {any} */({
+        method: 'GET',
+        url: this.url,
+        headers: this.headers,
+        timeout: this.timeout,
+        responseType: this.type
+      }))
       return response.headers
     } catch (error) {
       logger.error(error)
@@ -222,6 +237,7 @@ export class Networks {
    * 流下载方法
    * @param {Function} progressCallback 下载进度回调函数
    * @param {number} [retryCount = 0] 当前重试次数
+   * @returns {Promise<{filepath: string, totalBytes: number}>}
    */
   async downloadStream(progressCallback, retryCount = 0) {
     // 创建用于取消请求的控制器和超时定时器
@@ -231,10 +247,13 @@ export class Networks {
     try {
       // 发起网络请求，并附加中止信号
       const response = await axios({
-        ...this.config,
+        method: this.method,
         url: this.url,
+        headers: this.headers,
+        timeout: this.timeout,
         responseType: 'stream',
-        signal: controller.signal
+        signal: controller.signal,
+        data: this.method === 'POST' ? this.body : undefined
       })
 
       // 如果请求成功，清除超时定时器
@@ -255,6 +274,9 @@ export class Networks {
       let lastPrintedPercentage = -1 // 上一次打印的进度百分比
 
       // 创建用于写入文件的流
+      if (!this.filepath) {
+        throw new Error('文件路径未设置')
+      }
       const writer = fs.createWriteStream(this.filepath)
 
       // 打印下载进度的辅助函数
@@ -269,10 +291,18 @@ export class Networks {
 
       // 根据文件大小动态调整进度回调频率
       const interval = totalBytes < 10 * 1024 * 1024 ? 1000 : 500
-      const intervalId = setInterval(printProgress, interval)
+
+      // 使用setTimeout递归实现定时器
+      const scheduleProgressUpdate = () => {
+        printProgress()
+        intervalId = setTimeout(scheduleProgressUpdate, interval)
+      }
+
+      /** @type {NodeJS.Timeout} */
+      let intervalId = setTimeout(scheduleProgressUpdate, interval)
 
       // 监听数据事件，更新下载进度和哈希值
-      const onData = (chunk) => {
+      const onData = (/** @type {string | any[]} */ chunk) => {
         downloadedBytes += chunk.length // 累加已下载的字节数
       }
 
@@ -284,7 +314,7 @@ export class Networks {
         writer
       )
 
-      clearInterval(intervalId)
+      clearTimeout(intervalId)
       response.data.off('data', onData)
       writer.end()
 
@@ -293,11 +323,12 @@ export class Networks {
     } catch (error) {
       clearTimeout(timeoutId) // 请求失败，清除超时定时器
 
+      const err = /** @type {AxiosError} */ (error)
       // 如果错误是由于请求超时引起的
-      if (error.name === 'AbortError') {
+      if (err.name === 'AbortError') {
         logger.error(`请求在 ${this.timeout / 1000} 秒后超时`)
       } else {
-        logger.error('下载失败:', error.message)
+        logger.error('下载失败:', err.message)
       }
 
       // 如果未达到最大重试次数，则进行重试
@@ -307,7 +338,7 @@ export class Networks {
         await new Promise(resolve => setTimeout(resolve, delay)) // 添加重试前的延迟
         return this.downloadStream(progressCallback, retryCount + 1)
       } else {
-        throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${error.message}`)
+        throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${err.message}`)
       }
     }
   }

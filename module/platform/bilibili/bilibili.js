@@ -1,22 +1,18 @@
-import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders } from '../../utils/index.js'
-import { bilibiliApiUrls, getBilibiliData } from '@ikenxuan/amagi'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, logger, segment, downloadFile, uploadFile } from '../../utils/index.js'
+import { bilibiliApiUrls, getBilibiliData, DynamicType } from '@ikenxuan/amagi'
 import common from '../../../../../lib/common/common.js'
 import { bilibiliComments, checkCk, genParams } from './index.js'
 import fs from 'fs'
 
 let img
 
-const DynamicType = {
-  AV : 'DYNAMIC_TYPE_AV',
-  DRAW : 'DYNAMIC_TYPE_DRAW',
-  WORD : 'DYNAMIC_TYPE_WORD',
-  LIVE_RCMD : 'DYNAMIC_TYPE_LIVE_RCMD',
-  FORWARD : 'DYNAMIC_TYPE_FORWARD'
-}
-
-export default class BiLiBiLi extends Base {
-  constructor (e = {}, data) {
-    super()
+export class BiLiBiLi extends Base {
+  /**
+   * @param {*} e
+   * @param {*} data
+   */
+  constructor(e, data) {
+    super(e)
     this.e = e
     this.isVIP = false
     this.Type = data?.type
@@ -26,11 +22,11 @@ export default class BiLiBiLi extends Base {
     this.headers.Cookie === '' || null ? this.headers.Cookie = Config.cookies.bilibili : this.headers.Cookie
   }
 
-  async RESOURCES (iddata) {
+  async RESOURCES(iddata) {
     !iddata?.Episode && Config.bilibili.bilibiliTip.includes('提示信息') && await this.e.reply('检测到B站链接，开始解析')
     switch (this.Type) {
       case 'one_video': {
-         const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: iddata.bvid, typeMode: 'strict' })
+        const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: iddata.bvid, typeMode: 'strict' })
         const playUrlData = await this.amagi.getBilibiliData('单个视频下载信息数据', {
           avid: infoData.data.data.aid,
           cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid ?? infoData.data.data.cid) : infoData.data.data.cid,
@@ -125,7 +121,7 @@ export default class BiLiBiLi extends Base {
           if (!commentsdata?.length) {
             await this.e.reply('这个视频没有评论 ~')
           } else {
-            img = await Render.render('bilibili/comment', {
+            img = await Render('bilibili/comment', {
               Type: '视频',
               CommentsData: commentsdata,
               CommentLength: Config.bilibili.realCommentCount ? Common.count(infoData.data.data.stat.reply) : String(commentsdata.length),
@@ -150,8 +146,9 @@ export default class BiLiBiLi extends Base {
           await this.getvideo(
             Config.bilibili.videopriority === true
               ? { playUrlData: nockData.data }
-              : { infoData: infoData.data, playUrlData: playUrlData.data
-            })
+              : {
+                infoData: infoData.data, playUrlData: playUrlData.data
+              })
         }
         break
       }
@@ -163,7 +160,7 @@ export default class BiLiBiLi extends Base {
         const barray = []
         const msg = []
 
-        if(!videoInfo.data) {
+        if (!videoInfo.data) {
           logger.warn(videoInfo.message, `错误码: ${videoInfo.code}`)
           return true
         }
@@ -187,16 +184,16 @@ export default class BiLiBiLi extends Base {
             this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : ''
           ])
         }
-        img = await Render.render('bilibili/bangumi', {
+        img = await Render('bilibili/bangumi', {
           saveId: 'bangumi',
           bangumiData: barray,
           title: videoInfo.data.result.title
         })
         await this.e.reply(
           this.mkMsg(this.botadapter === 'QQBot' ? `# ${videoInfo.data.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数` : img, [
-              { text: '第1集', callback: '第1集' },
-              { text: '第2集', callback: '第2集' },
-              { text: '第?集', input: '第' }
+            { text: '第1集', callback: '第1集' },
+            { text: '第2集', callback: '第2集' },
+            { text: '第?集', input: '第' }
           ])
         )
         let Episode
@@ -258,7 +255,7 @@ export default class BiLiBiLi extends Base {
       }
       case 'dynamic_info': {
         if (!(Config.bilibili.bilibiliTip).includes('动态')) break
-        
+
         const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' })
         const dynamicInfoCard = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.id_str, typeMode: 'strict' })
         const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && await this.amagi.getBilibiliData('评论数据', {
@@ -280,7 +277,7 @@ export default class BiLiBiLi extends Base {
 
             if ((Config.bilibili.bilibiliTip).includes('评论图') && commentsData) {
               const commentsdata = bilibiliComments(commentsData.data)
-              img = await Render.render('bilibili/comment', {
+              img = await Render('bilibili/comment', {
                 Type: '动态',
                 CommentsData: commentsdata,
                 CommentLength: String(commentsdata?.length ?? 0),
@@ -307,7 +304,7 @@ export default class BiLiBiLi extends Base {
               dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text = `${name}\n\n` + dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text
             }
 
-            await this.e.reply(await Render.render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
+            await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
               image_url: cover(dynamicCARD.item.pictures),
               // TIP: 2025/08/20, 动态卡片数据中，图文动态的描述文本在 major.opus.summary 中
               text: dynamicInfo.data.data.item.modules.module_dynamic.major
@@ -339,7 +336,7 @@ export default class BiLiBiLi extends Base {
             const text = replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes)
 
             await this.e.reply(
-              await Render.render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
+              await Render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
                 text,
                 dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
                 pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
@@ -357,10 +354,10 @@ export default class BiLiBiLi extends Base {
               })
             )
             Config.bilibili.bilibilicommentsimg && commentsData && await this.e.reply(
-              await Render.render('bilibili/comment', {
+              await Render('bilibili/comment', {
                 Type: '动态',
                 CommentsData: bilibiliComments(commentsData.data),
-                CommentLength: String((bilibiliComments(commentsData.data)?.length) ? bilibiliComments(commentsData.data).length : 0),
+                CommentLength: String((bilibiliComments(commentsData.data)?.length) ? bilibiliComments(commentsData.data)?.length : 0),
                 share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
                 ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length ?? '动态中没有附带图片',
                 shareurl: '动态分享链接'
@@ -441,7 +438,7 @@ export default class BiLiBiLi extends Base {
               }
             }
             await this.e.reply(
-              await Render.render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
+              await Render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
                 text,
                 dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
                 pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
@@ -481,7 +478,7 @@ export default class BiLiBiLi extends Base {
                 })
               )
 
-              img = await Render.render('bilibili/dynamic/DYNAMIC_TYPE_AV',
+              img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
                 {
                   image_url: [{ image_src: INFODATA.data.data.pic }],
                   text: br(INFODATA.data.data.title),
@@ -511,7 +508,7 @@ export default class BiLiBiLi extends Base {
           /** 直播动态 */
           case DynamicType.LIVE_RCMD: {
             const userINFO = await getBilibiliData('用户主页数据', '', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' })
-            img = await Render.render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
+            img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
               {
                 image_url: [{ image_src: dynamicCARD.live_play_info.cover }],
                 text: br(dynamicCARD.live_play_info.title),
@@ -530,6 +527,7 @@ export default class BiLiBiLi extends Base {
             break
           }
           default: {
+            /** @type {any} */
             const unknownItem = dynamicInfo.data.data.item
             this.e.reply(`该动态类型「${unknownItem.type}」暂未支持解析`)
             break
@@ -554,7 +552,7 @@ export default class BiLiBiLi extends Base {
             username: userProfileData.data.data.card.name,
             avatar_url: userProfileData.data.data.card.face,
             frame: userProfileData.data.data.card.pendant.image,
-            fans: Count(userProfileData.data.data.card.fans),
+            fans: Common.count(userProfileData.data.data.card.fans),
             create_time: liveInfo.data.live_time === '-62170012800' ? '获取失败' : liveInfo.data.live_time,
             now_time: 114514,
             share_url: 'https://live.bilibili.com/' + liveInfo.data.room_id,
@@ -571,14 +569,15 @@ export default class BiLiBiLi extends Base {
 
   /**
    * 获取视频并处理的方法
-   * @param {Object} infoData - 视频信息数据
-   * @param {Object} playUrlData - 播放URL数据
+   * @param {Object} videoData - 视频数据对象
+   * @param {Object} [videoData.infoData] - 视频信息数据
+   * @param {Object} [videoData.playUrlData] - 播放URL数据
    */
   async getvideo({ infoData, playUrlData }) {
     /** 获取视频 => FFMPEG合成 */
     // 如果配置了视频优先，则设置为未登录状态
     if (Config.bilibili.videopriority === true) this.islogin = false
-  
+
     // 如果已登录
     if (this.islogin) {
       // 获取视频和音频的基础URL和ID
@@ -590,16 +589,16 @@ export default class BiLiBiLi extends Base {
 
       // 并行下载视频和音频
       const [bmp4, bmp3] = await Promise.all([
-        this.DownLoadFile(videoUrl, `Bil_V_${videoId}`, {
-            ...baseHeaders,
-            Referer: 'https://www.bilibili.com/',
-            Cookie: ''
-          }, '.mp4'),
-        this.DownLoadFile(audioUrl, `Bil_A_${videoId}`, {
-            ...baseHeaders,
-            Referer: 'https://www.bilibili.com/',
-            Cookie: ''
-          }, '.mp3')
+        downloadFile(videoUrl, `Bil_V_${videoId}`, {
+          ...baseHeaders,
+          Referer: 'https://www.bilibili.com/',
+          Cookie: ''
+        }, '.mp4'),
+        downloadFile(audioUrl, `Bil_A_${videoId}`, {
+          ...baseHeaders,
+          Referer: 'https://www.bilibili.com/',
+          Cookie: ''
+        }, '.mp3')
       ])
 
       if (bmp4.filepath && bmp3.filepath) {
@@ -624,11 +623,11 @@ export default class BiLiBiLi extends Base {
             const stats = fs.statSync(filePath)
             const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
             const uploadParams = { filepath: filePath, totalBytes: fileSizeInMB }
-          
+
             // 根据文件大小选择上传方式
             return fileSizeInMB > Config.app.filelimit
-              ? await this.upload_file(uploadParams, null, true)
-              : await this.upload_file(uploadParams, null)
+              ? await uploadFile(this, uploadParams, null, true)
+              : await uploadFile(this, uploadParams, null)
           }
         })
       }
@@ -636,7 +635,7 @@ export default class BiLiBiLi extends Base {
       /** 没登录（没配置ck）情况下直接发直链，传直链在DownLoadVideo()处理 */
       const hasValidUrl = playUrlData.data.durl?.length > 0
       if (hasValidUrl) {
-        await this.DownLoadVideo(
+        await downloadFile(
           playUrlData.data.durl[0].url,
           Config.app.rmmp4 ? 'tmp_' + Date.now() : this.downloadfilename
         )
@@ -741,7 +740,7 @@ export default class BiLiBiLi extends Base {
  * @param {Object[]} rich_text_nodes - 富文本节点数组
  * @returns {string} - 替换后的文本内容
  */
-export function replacetext (text, rich_text_nodes) {
+export function replacetext(text, rich_text_nodes) {
   for (const tag of rich_text_nodes) {
     // 对正则表达式中的特殊字符进行转义
     const escapedText = tag.orig_text.replace(/([.*+?^${}()|[\]\\])/g, '\\$1').replace(/\n/g, '\\n')
@@ -825,7 +824,7 @@ export const generateDecorationCard = (decorate) => {
  * @param {Object} member - 用户对象，包含用户信息和VIP状态
  * @returns {string} 返回一个带有样式的HTML span标签，显示用户名
  */
-function checkvip (member) {
+function checkvip(member) {
   // 如果用户是VIP状态（vipStatus为1），则返回带有VIP样式的span标签
   // 样式包括自定义昵称颜色（如果未设置则使用默认颜色#FB7299）和粗体
   // 如果不是VIP，则返回普通样式的span标签，颜色为灰色#606060
@@ -839,7 +838,7 @@ function checkvip (member) {
  * @param {string} data - 需要处理的文本数据
  * @returns {string} 处理后的文本，其中换行符被替换为<br>标签
  */
-function br (data) {
+function br(data) {
   return (data = data.replace(/\n/g, '<br>'))  // 使用正则表达式将所有换行符\n替换为<br>标签
 }
 
@@ -895,16 +894,15 @@ const oid = (dynamicINFO, dynamicInfoCard) => {
  * 检出符合大小的视频流信息对象
  * @param {Object} qualityOptions - 视频质量选项
  * @param {number} [qualityOptions.qn] - qn值，视频清晰度标识
- * @see {@link https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/videostream_url.md#qn视频清晰度标识}
  * @param {number} [qualityOptions.maxAutoVideoSize] - 可接受的最大视频文件大小，单位：MB
  * @param {string} qualityOptions.bvid - 视频BV号
  * @param {string[]} qualityOptions.accept_description - 视频流清晰度列表
- * @param {Array} videoList - 包含所有清晰度的视频流信息对象
+ * @param {Object[]} videoList - 包含所有清晰度的视频流信息对象
  * @param {string} audioUrl - 音频流地址
- * @returns {Object} 包含处理后的视频列表和清晰度描述的对象
- * @returns {string[]} returns.accept_description - 处理后的清晰度描述列表
- * @returns {Array} returns.videoList - 处理后的视频流信息对象列表
- * @returns {number} returns.selectedQuality - 选中的视频画质值
+ * @returns {Promise<{ accept_description: string[]; videoList: Object[]; selectedQuality: number }>} 包含处理后的视频列表和清晰度描述的对象
+ * @property {string[]} returns.accept_description - 处理后的清晰度描述列表
+ * @property {Object[]} returns.videoList - 处理后的视频流信息对象列表
+ * @property {number} returns.selectedQuality - 选中的视频画质值
  */
 export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl) => {
   // 如果不是自动选择模式，直接根据配置的清晰度选择视频
@@ -968,7 +966,7 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
   // 将结果对象的值转换为数字，并找到最接近但不超过 qualityOptions.maxAutoVideoSize 或 Config.bilibili.maxAutoVideoSize 的值
   const maxSize = qualityOptions?.maxAutoVideoSize ?? Config.bilibili.maxAutoVideoSize
   logger.info('最大允许大小:', maxSize, 'MB')
-  
+
   let closestId = null
   let smallestDifference = Infinity
   let largestUnderLimit = null // 新增：记录小于限制的最大视频ID
@@ -976,13 +974,13 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
   Object.entries(results).forEach(([id, sizeStr]) => {
     const size = parseFloat(sizeStr.replace('MB', ''))
     logger.info(`检查视频ID ${id} (${qnd[id]}), 大小: ${size}MB`)
-    
+
     if (size <= maxSize) {
       // 记录小于限制的最大视频ID
       if (largestUnderLimit === null || size > parseFloat(results[largestUnderLimit].replace('MB', ''))) {
         largestUnderLimit = id
       }
-      
+
       // 计算与最大限制的差值
       const difference = maxSize - size
       if (difference < smallestDifference) {
@@ -1040,27 +1038,27 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
 
 /**
  * [bilibili] 获取视频和音频的总大小
- * @param videourl - 视频流URL
- * @param audiourl - 音频流URL
- * @param bvid - 视频BV号
+ * @param {string} videourl - 视频流URL
+ * @param {string} audiourl - 音频流URL
+ * @param {string} bvid - 视频BV号
  * @returns  返回视频和音频总大小(MB),保留2位小数
  */
 export const getvideosize = async (videourl, audiourl, bvid) => {
-  const videoheaders = await new Networks({ 
-    url: videourl, 
-    headers: { 
+  const videoheaders = await new Networks({
+    url: videourl,
+    headers: {
       ...baseHeaders,
       Referer: `https://api.bilibili.com/video/${bvid}`,
       Cookie: Config.cookies.bilibili
     }
   }).getHeaders()
-  const audioheaders = await new Networks({ 
-    url: audiourl, 
-    headers: { 
+  const audioheaders = await new Networks({
+    url: audiourl,
+    headers: {
       ...baseHeaders,
       Referer: `https://api.bilibili.com/video/${bvid}`,
       Cookie: Config.cookies.bilibili
-    } 
+    }
   }).getHeaders()
 
   const videoSize = videoheaders['content-range']?.match(/\/(\d+)/) ? parseInt(videoheaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0

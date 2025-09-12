@@ -10,3 +10,6 @@ lib/*
 resources/template/version/html/index.html
 resources/template/douyin/html/user_worklist.html
 amagi/node_modules/*
+.vscode/
+test/
+.eslintrc
