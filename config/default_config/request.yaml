@@ -1,0 +1,22 @@
+# 请求超时时间，单位：毫秒
+timeout: 30000
+
+# 用户代理
+User-Agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+
+# 代理配置
+proxy:
+  # 是否启用代理
+  switch: false
+  # 代理服务器主机地址
+  host: ''
+  # 代理服务器端口
+  port: ''
+  # 代理协议类型(http/https)
+  protocol: 'http'
+  # 代理服务器认证信息
+  auth:
+    # 用户名
+    username: ''
+    # 密码
+    password: ''
