@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import fs from 'node:fs'
 
 export class kkkHelp extends plugin {
-  constructor () {
+  constructor() {
     super({
       name: 'kkk帮助',
       event: 'message',
@@ -22,7 +22,7 @@ export class kkkHelp extends plugin {
     })
   }
 
-  async version (e) {
+  async version(e) {
     const changelogs = fs.readFileSync(Version.pluginPath + '/CHANGELOG.md', 'utf8')
     const html = markdown(changelogs, {
       gitcss: Common.useDarkTheme() ? 'github-markdown-dark.css' : 'github-markdown-light.css'
@@ -30,13 +30,13 @@ export class kkkHelp extends plugin {
     fs.mkdirSync(join(Version.pluginPath, 'resources', 'template', 'version', 'html'), { recursive: true })
     const htmlPath = join(Version.pluginPath, 'resources', 'template', 'version', 'html', 'index.html')
     fs.writeFileSync(htmlPath, html)
-    const img = await Render.render('version/index')
+    const img = await Render('version/index')
     await e.reply(img)
     return true
   }
 
-  async help (e) {
-    const img = await Render.render('help/index')
+  async help(e) {
+    const img = await Render('help/index')
     await e.reply(img)
     return true
   }

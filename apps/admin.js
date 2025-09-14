@@ -196,7 +196,7 @@ export class kkkAdmin extends plugin {
       }
     }
 
-    const img = await Render.render('admin/index', { data })
+    const img = await Render('admin/index', { data })
     await e.reply(img)
     return true
   }
