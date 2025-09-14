@@ -94,10 +94,10 @@ export class DouYin extends Base {
               const imageres = []
               let image_url = ''
               // 使用可选链和空值合并操作符确保安全访问
-              const images = VideoData.data.aweme_detail.images ?? []
+              const images = VideoData.data.aweme_detail.images || []
               for (const [index, imageItem] of images.entries()) {
                 // 获取图片地址，优先使用第三个URL，其次使用第二个URL
-                image_url = imageItem.url_list[2] || imageItem.url_list[1] ?? ''
+                image_url = imageItem.url_list[2] || imageItem.url_list[1] || ''
 
                 // 处理标题，去除特殊字符
                 const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
@@ -135,7 +135,7 @@ export class DouYin extends Base {
                 }
               )
               temp.push(liveimgbgm)
-              const images1 = VideoData.data.aweme_detail.images ?? []
+              const images1 = VideoData.data.aweme_detail.images || []
               if (!images1.length) {
                 logger.debug('未获取到合辑的图片数据')
               }
@@ -226,7 +226,7 @@ export class DouYin extends Base {
               视频ID：${logger.green(VideoData.data.aweme_detail.aweme_id)}\n
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
-            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit ?? 100)
+            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit || 100)
             g_video_url = await new Networks({
               url: video.bit_rate[0].play_addr.url_list[2],
               headers: {
@@ -236,10 +236,10 @@ export class DouYin extends Base {
             }).getLongLink()
           } else {
             g_video_url = await new Networks({
-              url: video.play_addr_h264.url_list[2] ?? video.play_addr_h264.url_list[2],
+              url: video.play_addr_h264.url_list[2] || video.play_addr_h264.url_list[2],
               headers: {
                 ...this.headers,
-                Referer: video.play_addr_h264.url_list[0] ?? video.play_addr_h264.url_list[0]
+                Referer: video.play_addr_h264.url_list[0] || video.play_addr_h264.url_list[0]
               }
             }).getLongLink()
           }
@@ -272,7 +272,7 @@ export class DouYin extends Base {
               {
                 Type: this.is_mp4 ? '视频' : this.is_slides ? '合辑' : '图集',
                 CommentsData: commentsArray,
-                CommentLength: String(commentsArray.jsonArray?.length ?? 0),
+                CommentLength: String(commentsArray.jsonArray?.length || 0),
                 share_url: this.is_mp4
                   ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
                   : VideoData.data.aweme_detail.share_url,

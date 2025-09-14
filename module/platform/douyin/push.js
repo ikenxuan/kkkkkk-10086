@@ -146,7 +146,7 @@ export class DouYinpush extends Base {
 
       // 如果不跳过，获取抖音ID数据
       if (!skip) {
-        iddata = await getDouyinID(Detail_Data?.share_url ?? 'https://live.douyin.com/' + Detail_Data?.room_data?.owner?.web_rid, false)
+        iddata = await getDouyinID(Detail_Data?.share_url || 'https://live.douyin.com/' + Detail_Data?.room_data?.owner?.web_rid, false)
       }
 
       // 如果不跳过，处理动态内容
@@ -157,7 +157,7 @@ export class DouYinpush extends Base {
           img = await Render('douyin/live', {
             image_url: [{ image_src: Detail_Data.live_data?.data?.data?.data[0].cover?.url_list[0] || '' }],
             text: Detail_Data.live_data?.data?.data?.data[0].title || '',
-            liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title ?? Detail_Data.live_data?.data?.data?.data[0].title ?? ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
+            liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title || Detail_Data.live_data?.data?.data?.data[0].title || ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
             在线观众: Common.count(Detail_Data.live_data?.data?.data?.data[0].room_view_stats?.display_value),
             总观看次数: Common.count(Number(Detail_Data.live_data?.data?.data?.data[0].stats?.total_user_str)),
             username: Detail_Data.user_info.data.user.nickname,
@@ -180,7 +180,7 @@ export class DouYinpush extends Base {
             }
           }).getLocation()
           img = await Render('douyin/dynamic', {
-            image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover?.url_list[0] ?? Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
+            image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover?.url_list[0] || Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
             desc: this.desc(Detail_Data, Detail_Data.desc),
             dianzan: Common.count(Detail_Data.statistics.digg_count),
             pinglun: Common.count(Detail_Data.statistics.comment_count),
@@ -232,14 +232,14 @@ export class DouYinpush extends Base {
                     视频ID：${logger.green(Detail_Data.aweme_id)}\n
                     分享链接：${logger.green(Detail_Data.share_url)}
                     `)
-                  const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit ?? 100)
+                  const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
                   downloadUrl = await new Networks({
                     url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
                     headers: douyinBaseHeaders
                   }).getLongLink()
                 } else {
                   downloadUrl = await new Networks({
-                    url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] ?? Detail_Data.video.play_addr_h264.url_list[0] ?? Detail_Data.video.play_addr_h264.url_list[0],
+                    url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
                     headers: douyinBaseHeaders
                   }).getLongLink()
                 }
@@ -255,7 +255,7 @@ export class DouYinpush extends Base {
               const imageres = []
               let image_url
               for (const item of Detail_Data.images) {
-                image_url = item.url_list[2] ?? item.url_list[1] // 图片地址
+                image_url = item.url_list[2] || item.url_list[1] // 图片地址
                 imageres.push(segment.image(image_url))
               }
               const forwardMsg = Bot[botId].makeForwardMsg(imageres)
@@ -382,7 +382,7 @@ export class DouYinpush extends Base {
         } else if (liveStatus?.living) {
           // 如果之前在直播，现在已经关播，需要更新状态
           await douyinDB?.updateLiveStatus(sec_uid, false)
-          logger.info(`用户 ${item.remark ?? sec_uid} 已关播，更新直播状态`)
+          logger.info(`用户 ${item.remark || sec_uid} 已关播，更新直播状态`)
         }
       }
     } catch (error) {
@@ -435,7 +435,7 @@ export class DouYinpush extends Base {
       UserInfoData.data.user.unique_id === '' ? (user_shortid = UserInfoData.data.user.short_id) : (user_shortid = UserInfoData.data.user.unique_id)
 
       // 初始化 douyin 数组
-      config.douyin ??= []
+      config.douyin ||= []
 
       // 查找是否存在相同的 sec_uid
       const existingItem = config.douyin.find((item) => item.sec_uid === sec_uid)
@@ -565,7 +565,7 @@ export class DouYinpush extends Base {
     if (!this.e.msg.includes('全部')) {
       // 获取当前群组订阅的所有抖音用户
       const subscriptions = await douyinDB?.getGroupSubscriptions(currentGroupId)
-      const subscribedUids = subscriptions?.map(sub => sub.sec_uid) ?? []
+      const subscribedUids = subscriptions?.map(sub => sub.sec_uid) || []
 
       // 创建一个新的推送列表，只包含当前群组订阅的用户的作品
       /** @type {WillBePushList} */
@@ -622,7 +622,7 @@ export class DouYinpush extends Base {
         const remark = userinfo.data.user.nickname
 
         // 在配置文件中找到对应的用户，并更新其备注信息
-        const matchingItemIndex = config.douyin?.findIndex((item) => item.sec_uid === i.sec_uid) ?? 0
+        const matchingItemIndex = config.douyin?.findIndex((item) => item.sec_uid === i.sec_uid) || 0
         if (matchingItemIndex !== -1 && config.douyin && config.douyin[matchingItemIndex]) {
           config.douyin[matchingItemIndex].remark = remark
         }
@@ -675,5 +675,5 @@ const skipDynamic = async (PushItem) => {
 
   logger.debug(`检查作品是否需要过滤：${PushItem.Detail_Data.share_url}`)
   const shouldFilter = await douyinDB?.shouldFilter(PushItem, tags)
-  return shouldFilter ?? true
+  return shouldFilter || true
 }

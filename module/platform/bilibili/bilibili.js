@@ -45,8 +45,8 @@ export class Bilibili extends Base {
     this.downloadfilename = ''
     this.headers = this.headers || {};
     // 使用可选链和空值合并运算符
-    this.headers.Referer ??= 'https://www.bilibili.com/'
-    this.headers.Cookie ??= Config.cookies.bilibili || ''
+    this.headers.Referer ||= 'https://www.bilibili.com/'
+    this.headers.Cookie ||= Config.cookies.bilibili || ''
   }
 
   /**
@@ -62,7 +62,7 @@ export class Bilibili extends Base {
         const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: iddata.bvid, typeMode: 'strict' })
         const playUrlData = await this.amagi.getBilibiliData('单个视频下载信息数据', {
           avid: infoData.data.data.aid,
-          cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid ?? infoData.data.data.cid) : infoData.data.data.cid,
+          cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid,
           typeMode: 'strict'
         })
         // const playUrl = bilibiliApiUrls.视频流信息({ avid: infoData.data.aid, cid: infoData.data.cid })
@@ -77,7 +77,7 @@ export class Bilibili extends Base {
         const nockData = await new Networks({
           url: bilibiliApiUrls.视频流信息({
             avid: infoData.data.data.aid,
-            cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid ?? infoData.data.data.cid) : infoData.data.data.cid
+            cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid
           }) + '&platform=html5',
           headers: {
             ...baseHeaders,
@@ -93,7 +93,7 @@ export class Bilibili extends Base {
         const replyContent = []
 
         // 如果配置项不存在，则不显示任何内容
-        if ((Config.bilibili?.bilibiliTip ?? []).includes('简介') && (Config.bilibili?.displayContent ?? []).length > 0) {
+        if ((Config.bilibili?.bilibiliTip || []).includes('简介') && (Config.bilibili?.displayContent || []).length > 0) {
           /**
            * @type {Object.<string, import('../../utils/Render.js').ImageData|string>}
            */
@@ -109,7 +109,7 @@ export class Bilibili extends Base {
           const fixedOrder = ['cover', 'title', 'author', 'stats', 'desc']
 
           fixedOrder.forEach(item => {
-            if ((Config.bilibili?.displayContent ?? []).includes(item) && contentMap[item]) {
+            if ((Config.bilibili?.displayContent || []).includes(item) && contentMap[item]) {
               replyContent.push(contentMap[item])
             }
           })
@@ -150,7 +150,7 @@ export class Bilibili extends Base {
         } else {
           videoSize = (playUrlData.data.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
-        if ((Config.bilibili?.bilibiliTip ?? []).includes('评论图')) {
+        if ((Config.bilibili?.bilibiliTip || []).includes('评论图')) {
           const commentsData = await this.amagi.getBilibiliData('评论数据', {
             number: Config.bilibili.bilibilinumcomments,
             type: 1,
@@ -180,7 +180,7 @@ export class Bilibili extends Base {
           }
         }
 
-        if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && (Config.bilibili?.bilibiliTip ?? []).includes('视频')) {
+        if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && (Config.bilibili?.bilibiliTip || []).includes('视频')) {
           await this.e.reply(`设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', { reply: true })
         } else {
           await this.getvideo(
@@ -207,11 +207,11 @@ export class Bilibili extends Base {
         for (let i = 0; i < videoInfo.data.result.episodes.length; i++) {
           const totalEpisodes = videoInfo.data.result.episodes.length
           /** @type {string} */
-          const long_title = videoInfo.data.result.episodes[i]?.long_title ?? ''
+          const long_title = videoInfo.data.result.episodes[i]?.long_title || ''
           /** @type {string} */
-          const badge = videoInfo.data.result.episodes[i]?.badge ?? ''
+          const badge = videoInfo.data.result.episodes[i]?.badge || ''
           /** @type {string} */
-          const short_link = videoInfo.data.result.episodes[i]?.short_link ?? ''
+          const short_link = videoInfo.data.result.episodes[i]?.short_link || ''
           barray.push({
             id: i + 1,
             totalEpisodes,
@@ -246,7 +246,7 @@ export class Bilibili extends Base {
           if (/^[一二三四五六七八九十百千万]+$/.test(Episode)) {
             Episode = Common.chineseToArabic(Episode).toString()
           }
-          this.downloadfilename = videoInfo.data.result.episodes[Number(Episode) - 1]?.share_copy?.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ') ?? ''
+          this.downloadfilename = videoInfo.data.result.episodes[Number(Episode) - 1]?.share_copy?.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ') || ''
           this.e.reply(`收到请求，第${Episode}集\n${this.downloadfilename}\n正在下载中`)
         } else {
           logger.debug(Episode)
@@ -254,8 +254,8 @@ export class Bilibili extends Base {
           return true
         }
         const bangumidataBASEURL = bilibiliApiUrls.番剧视频流信息({
-          cid: videoInfo.data.result.episodes[Number(Episode) - 1]?.cid ?? 0,
-          ep_id: videoInfo.data.result.episodes[Number(Episode) - 1]?.ep_id.toString() ?? ''
+          cid: videoInfo.data.result.episodes[Number(Episode) - 1]?.cid || 0,
+          ep_id: videoInfo.data.result.episodes[Number(Episode) - 1]?.ep_id.toString() || ''
         })
         const Params = await genParams(bangumidataBASEURL)
         if (!this.islogin) await this.e.reply('B站ck未配置或已失效，无法获取视频流，可尝试【#B站登录】以配置新ck')
@@ -297,7 +297,7 @@ export class Bilibili extends Base {
         break
       }
       case 'dynamic_info': {
-        if (!(Config.bilibili?.bilibiliTip ?? []).includes('动态')) break
+        if (!(Config.bilibili?.bilibiliTip || []).includes('动态')) break
         const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' })
         const dynamicInfoCard = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.id_str, typeMode: 'strict' })
         const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && await this.amagi.getBilibiliData('评论数据', {
@@ -317,14 +317,14 @@ export class Bilibili extends Base {
               img?.url && imgArray.push(segment.image(img.url))
             }
 
-            if ((Config.bilibili?.bilibiliTip ?? []).includes('评论图') && commentsData) {
+            if ((Config.bilibili?.bilibiliTip || []).includes('评论图') && commentsData) {
               const commentsdata = bilibiliComments(commentsData.data)
               img = await Render('bilibili/comment', {
                 Type: '动态',
                 CommentsData: commentsdata,
-                CommentLength: String(commentsdata?.length ?? 0),
+                CommentLength: String(commentsdata?.length || 0),
                 share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length ?? '动态中没有附带图片',
+                ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接'
               })
               if (imgArray.length === 1) await this.e.reply(imgArray[0])
@@ -350,8 +350,8 @@ export class Bilibili extends Base {
               // TIP: 2025/08/20, 动态卡片数据中，图文动态的描述文本在 major.opus.summary 中
               text: dynamicInfo.data.data.item.modules.module_dynamic.major
                 ? replacetext(
-                  br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.text ?? ''),
-                  dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.rich_text_nodes ?? []
+                  br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.text || ''),
+                  dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.rich_text_nodes || []
                 )
                 : '',
               dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
@@ -406,7 +406,7 @@ export class Bilibili extends Base {
                 avatar_url: dynamicInfo.data.data.item.modules.module_author.face,
                 frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
                 share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                username: checkvip(dynamicInfo.data.data.card ?? userProfileData.data.data.card),
+                username: checkvip(dynamicInfo.data.data.card || userProfileData.data.data.card),
                 fans: Common.count(dynamicInfo.data.data.follower),
                 user_shortid: dynamicInfo.data.data.item.modules.module_author.mid,
                 total_favorited: Common.count(userProfileData.data.data.like_num),
@@ -420,7 +420,7 @@ export class Bilibili extends Base {
                 CommentsData: bilibiliComments(commentsData.data),
                 CommentLength: String((bilibiliComments(commentsData.data)?.length) ? bilibiliComments(commentsData.data)?.length : 0),
                 share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length ?? '动态中没有附带图片',
+                ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接'
               })
             )
@@ -532,9 +532,9 @@ export class Bilibili extends Base {
                 await Render('bilibili/comment', {
                   Type: '动态',
                   CommentsData: bilibiliComments(commentsData.data),
-                  CommentLength: String((bilibiliComments(commentsData.data)?.length ?? 0)),
+                  CommentLength: String((bilibiliComments(commentsData.data)?.length || 0)),
                   share_url: 'https://www.bilibili.com/video/' + bvid,
-                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length ?? '动态中没有附带图片',
+                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                   shareurl: '动态分享链接'
                 })
               )
@@ -690,7 +690,7 @@ export class Bilibili extends Base {
             const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
 
             // 根据文件大小选择上传方式
-            return fileSizeInMB > (Config.upload?.filelimit ?? 100)
+            return fileSizeInMB > (Config.upload?.filelimit || 100)
               ? await uploadFile(this.e, { filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '', { useGroupFile: true })
               : await uploadFile(this.e, { filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '')
           }
@@ -888,7 +888,7 @@ export const generateDecorationCard = (decorate) => {
  */
 function checkvip(member) {
   return member.vip.status === 1
-    ? `<span style="color: ${member.vip.nickname_color ?? '#FB7299'}; font-weight: 700;">${member.name}</span>`
+    ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: 700;">${member.name}</span>`
     : `<span style="color: ${Common.useDarkTheme() ? '#e9e9e9' : '#313131'}; font-weight: 700;">${member.name}</span>`
 }
 
@@ -974,7 +974,7 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
   // 如果不是自动选择模式，直接根据配置的清晰度选择视频
   if (qualityOptions.qn !== 0 && Config.bilibili.videoQuality !== 0) {
     /** @type {number} */
-    const targetQuality = qualityOptions.qn ?? Config.bilibili.videoQuality ?? 80
+    const targetQuality = qualityOptions.qn || Config.bilibili.videoQuality || 80
 
     // 尝试找到完全匹配的清晰度
     let matchedVideo = videoList.find(video => video?.id === targetQuality)
@@ -1033,7 +1033,7 @@ export const bilibiliProcessVideos = async (qualityOptions, videoList, audioUrl)
   logger.info('所有视频大小结果:', results)
 
   // 将结果对象的值转换为数字，并找到最接近但不超过 qualityOptions.maxAutoVideoSize 或 Config.bilibili.maxAutoVideoSize 的值
-  const maxSize = qualityOptions?.maxAutoVideoSize ?? Config.bilibili.maxAutoVideoSize ?? 100
+  const maxSize = qualityOptions?.maxAutoVideoSize || Config.bilibili.maxAutoVideoSize || 100
   logger.info('最大允许大小:', maxSize, 'MB')
 
   /** @type {number | null} */
