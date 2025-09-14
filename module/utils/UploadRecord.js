@@ -46,12 +46,12 @@ const errors = {
  */
 async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brief = '') {
   const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
-  const result = await getPttBuffer(record_url, bot.config?.ffmpeg_path, transcoding)
+  const result = await getPttBuffer(record_url, bot?.config?.ffmpeg_path, transcoding)
   if (!result.buffer) return false
 
   // 如果没有上传高清语音功能，直接返回转换后的音频
   if (!bot?.sendUni) {
-    const silkBuffer = await audioTrans(record_url, bot.config?.ffmpeg_path)
+    const silkBuffer = await audioTrans(record_url, bot?.config?.ffmpeg_path)
     if (!silkBuffer) return false
     return {
       type: 'record',
