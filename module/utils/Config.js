@@ -64,6 +64,7 @@ import YAML from 'yaml'
  * @property {boolean} [BilibiliConfig.bilibilitool] B站解析开关
  * @property {string[]} [BilibiliConfig.bilibiliTip] B站解析可选列表
  * @property {number} [BilibiliConfig.bilibilinumcomments] B站评论数量
+ * @property {boolean} [BilibiliConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [BilibiliConfig.videopriority] 解析视频是否优先保内容
  * @property {number} [BilibiliConfig.videoQuality] 视频画质偏好设置
  * @property {number} [BilibiliConfig.maxAutoVideoSize] 自动画质模式下可接受的最大视频大小
@@ -90,7 +91,7 @@ import YAML from 'yaml'
  * @property {number} host_mid - B站用户的UID，必填
  * @property {string[]} group_id - 推送群号和机器人账号，多个则使用逗号隔开，必填。如：群号1:机器人账号1
  * @property {string} [remark] - 博主或UP主的名字信息，可不填
- * @property {'blacklist'|'whitelist'} [filterMode] - 黑名单：命中不推送；白名单：命中才推送
+ * @property {'blacklist'|'whitelist'} [filterMode='blacklist'] - 黑名单：命中不推送；白名单：命中才推送
  * @property {string[]} [Keywords] - 指定关键词
  * @property {string[]} [Tags] - 指定标签
  */

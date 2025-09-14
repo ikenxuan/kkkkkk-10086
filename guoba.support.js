@@ -105,14 +105,14 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'app.usefilelimit',
+          field: 'upload.usefilelimit',
           label: '使用视频文件上传限制',
           bottomHelpMessage: '开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）',
           component: 'Switch',
           required: false
         },
         {
-          field: 'app.filelimit',
+          field: 'upload.filelimit',
           label: '视频文件大小限制',
           bottomHelpMessage: '解析的视频文件大于该数值则不会上传 单位: MB（B站番剧无影响）',
           component: 'InputNumber',
@@ -133,7 +133,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'app.rmmp4',
+          field: 'app.removecache',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
           bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
@@ -245,7 +245,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'douyin.douyinpush',
+          field: 'douyin.push.switch',
           label: '抖音推送',
           bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]',
           component: 'Switch',
@@ -305,12 +305,56 @@ export function supportGuoba() {
                 bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
                 component: 'Input',
                 required: false
+              },
+              {
+                field: 'filterMode',
+                label: '过滤模式',
+                bottomHelpMessage: '黑名单：命中不推送；白名单：命中才推送',
+                component: 'RadioGroup',
+                componentProps: {
+                  options: [
+                    { label: '黑名单', value: 'blacklist' },
+                    { label: '白名单', value: 'whitelist' }
+                  ]
+                }
+              },
+              {
+                field: 'Keywords',
+                label: '指定关键词',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
+                component: 'Select',
+                componentProps: {
+                  mode: 'multiple',
+                  allowCreate: true,
+                  options: [
+                    { label: '广告', value: '广告' },
+                    { label: '抽奖', value: '抽奖' },
+                    { label: '活动', value: '活动' },
+                    { label: '转发', value: '转发' }
+                  ]
+                }
+              },
+              {
+                field: 'Tags',
+                label: '指定标签',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
+                component: 'Select',
+                componentProps: {
+                  mode: 'multiple',
+                  allowCreate: true,
+                  options: [
+                    { label: '互动抽奖', value: '互动抽奖' },
+                    { label: '城巴佬', value: '城巴佬' },
+                    { label: '问卷调查', value: '问卷调查' },
+                    { label: '转发动态', value: '转发动态' }
+                  ]
+                }
               }
             ]
           }
         },
         {
-          field: 'douyin.douyinpushcron',
+          field: 'douyin.push.cron',
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
@@ -321,7 +365,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'douyin.douyinpushGroup',
+          field: 'douyin.push.permission',
           label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: '抖音推送添加权限',
@@ -334,7 +378,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'douyin.douyinpushlog',
+          field: 'douyin.push.log',
           label: '定时任务日志',
           helpMessage: '抖音推送日志，修改后重启生效',
           bottomHelpMessage: '打开或关闭定时任务日志',
@@ -349,7 +393,7 @@ export function supportGuoba() {
           required: false
         },
         {
-          field: 'douyin.senddynamicwork',
+          field: 'douyin.push.parsedynamic',
           label: '一同发送作品视频',
           bottomHelpMessage: '和推送图一同将新作品内容发送出去（图集暂未支持）',
           component: 'Switch',
@@ -456,7 +500,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'bilibili.bilibilipush',
+          field: 'bilibili.push.switch',
           label: '哔哩哔哩推送',
           bottomHelpMessage: '开启后需使用[#设置B站推送+用户UID]',
           component: 'Switch',
@@ -495,12 +539,56 @@ export function supportGuoba() {
                 bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
                 component: 'Input',
                 required: false
+              },
+              {
+                field: 'filterMode',
+                label: '过滤模式',
+                bottomHelpMessage: '黑名单：命中不推送；白名单：命中才推送',
+                component: 'RadioGroup',
+                componentProps: {
+                  options: [
+                    { label: '黑名单', value: 'blacklist' },
+                    { label: '白名单', value: 'whitelist' }
+                  ]
+                }
+              },
+              {
+                field: 'Keywords',
+                label: '指定关键词',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
+                component: 'Select',
+                componentProps: {
+                  mode: 'multiple',
+                  allowCreate: true,
+                  options: [
+                    { label: '广告', value: '广告' },
+                    { label: '抽奖', value: '抽奖' },
+                    { label: '活动', value: '活动' },
+                    { label: '转发', value: '转发' }
+                  ]
+                }
+              },
+              {
+                field: 'Tags',
+                label: '指定标签',
+                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
+                component: 'Select',
+                componentProps: {
+                  mode: 'multiple',
+                  allowCreate: true,
+                  options: [
+                    { label: '互动抽奖', value: '互动抽奖' },
+                    { label: '城巴佬', value: '城巴佬' },
+                    { label: '问卷调查', value: '问卷调查' },
+                    { label: '转发动态', value: '转发动态' }
+                  ]
+                }
               }
             ]
           }
         },
         {
-          field: 'bilibili.bilibilipushcron',
+          field: 'bilibili.push.cron',
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
@@ -511,7 +599,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'bilibili.bilibilipushGroup',
+          field: 'bilibili.push.permission',
           label: '设置推送权限',
           component: 'RadioGroup',
           bottomHelpMessage: 'B站推送添加权限',
@@ -524,15 +612,15 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'bilibili.bilibilipushlog',
+          field: 'bilibili.push.log',
           label: '定时任务日志',
-          helpMessage: '抖音推送日志，修改后重启生效',
+          helpMessage: 'B站推送日志，修改后重启生效',
           bottomHelpMessage: '打开或关闭定时任务日志',
           component: 'Switch',
           required: false
         },
         {
-          field: 'bilibili.senddynamicvideo',
+          field: 'bilibili.push.parsedynamic',
           label: '发送动态的视频',
           helpMessage: '该UP的最新动态可能是视频，可选是否与推送图片一同发送',
           component: 'Switch',

@@ -5,7 +5,7 @@ import path from 'path'
 import fs from 'fs'
 
 const APPType = {
-  缓存删除: 'rmmp4',
+  缓存删除: 'removeCache',
   视频解析: 'videotool',
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
@@ -71,7 +71,7 @@ const FileWitch = {
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
 export class kkkAdmin extends plugin {
-  constructor () {
+  constructor() {
     super({
       name: 'kkkkkk-10086-设置',
       event: 'message',
@@ -125,7 +125,7 @@ export class kkkAdmin extends plugin {
       ]
     })
     this.task = []
-    if (Config.app.rmmp4) {
+    if (Config.app.removeCache) {
       this.task.push({
         cron: '0 0 4 * * *',
         name: '[kkkkkk-10086] 视频缓存自动删除',
@@ -135,14 +135,14 @@ export class kkkAdmin extends plugin {
     }
   }
 
-  async deltemp () {
+  async deltemp() {
     removeAllFiles(Common.tempDri.video)
-      .then(() => this.reply(Common.tempDri.video + '所有文件已删除'))
+      .then(() => logger.warn(Common.tempDri.video + '所有文件已删除'))
       .catch((err) => logger.error('删除文件时出错:', err))
   }
 
   /** 修改开关设置 */
-  async ConfigSwitch (e) {
+  async ConfigSwitch(e) {
     // 解析消息
     const regRet = SwitchCfgReg.exec(e.msg)
     const key = regRet[1]
@@ -157,7 +157,7 @@ export class kkkAdmin extends plugin {
   }
 
   // 修改数字设置
-  async ConfigNumber (e) {
+  async ConfigNumber(e) {
     const regRet = e.msg.match(NumberCfgReg)
     const type = NumberCfgType[regRet[1]]
     const number = checkNumberValue(regRet[2], type.limit)
@@ -177,7 +177,7 @@ export class kkkAdmin extends plugin {
   }
 
   // 渲染发送图片
-  async index_Settings (e) {
+  async index_Settings(e) {
     const data = {}
     let _cfg = Config.All()
     _cfg = (function () {
@@ -201,50 +201,50 @@ export class kkkAdmin extends plugin {
     return true
   }
 
-  async Blogin (e) {
+  async Blogin(e) {
     await bilibiliLogin(e)
     return true
   }
 
-  async dylogin (e) {
+  async dylogin(e) {
     await dylogin(e)
     return true
   }
 
-  async setdyck () {
+  async setdyck() {
     this.setContext('savedyck')
     await this.reply('请发在120秒内送抖音ck\n教程：https://ikenxuan.github.io/kkkkkk-10086/docs/intro/other#%E9%85%8D%E7%BD%AE%E4%B8%8D%E5%90%8C%E5%B9%B3%E5%8F%B0%E7%9A%84-cookies\n', true)
     return true
   }
 
-  async savedyck () {
+  async savedyck() {
     Config.modify('cookies', 'douyin', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savedyck')
     return true
   }
 
-  async setbilick () {
+  async setbilick() {
     this.setContext('savebilick')
     await this.reply('请发在120秒内送B站ck\n教程：https://ikenxuan.github.io/kkkkkk-10086/docs/intro/other#%E9%85%8D%E7%BD%AE%E4%B8%8D%E5%90%8C%E5%B9%B3%E5%8F%B0%E7%9A%84-cookies\n')
     return true
   }
 
-  async savebilick () {
+  async savebilick() {
     Config.modify('cookies', 'bilibili', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('savebilick')
     return true
   }
 
-  async setksck () {
+  async setksck() {
     this.setContext('saveksck')
     const img = `${Version}/plugins/kkkkkk-10086/resources/image/pic1.png`
     await this.reply(['请发送快手ck\n', '教程：https://docs.qq.com/doc/DRExRWUh1a3l4bnlI\n', segment.image(img)])
     return true
   }
 
-  async saveksck () {
+  async saveksck() {
     Config.modify('cookies', 'kuaishou', String(this.e.msg))
     this.reply('设置成功！')
     this.finish('saveksck')
@@ -267,7 +267,7 @@ const getStatus = function (rote) {
   }
 }
 
-function checkNumberValue (value, limit) {
+function checkNumberValue(value, limit) {
   // 检查是否存在限制条件
   if (!limit) {
     return value
@@ -292,7 +292,7 @@ function checkNumberValue (value, limit) {
   return parseFloat(value)
 }
 
-async function removeAllFiles (dir) {
+async function removeAllFiles(dir) {
   const files = await fs.promises.readdir(dir)
   for (const file of files) {
     const filePath = path.join(dir, file)

@@ -26,25 +26,35 @@ class Tools {
    */
   async getReplyMessage(e) {
     const botAdapter = new Base(e).botadapter
-
+    // TRSS-Yunzai 处理
+    if (Version.BotName === 'TRSS-Yunzai' && e.reply_id) {
+      const replyMsg = await e.getReply()
+      if (replyMsg) {
+        const sourceArray = Array.isArray(replyMsg) ? replyMsg : [replyMsg]
+        e.msg = sourceArray
+          .flatMap(item => item.message)
+          .filter(msg => ['text', 'json'].includes(msg?.type))
+          .map(i => i?.text || i?.data)
+          .join('')
+      }
+    }
     // ICQQ适配器处理
     if (botAdapter === 'ICQQ' && e.source) {
       const history = await e.group.getChatHistory(e.source.seq, 1)
       const message = history.pop()?.message
-      const textMsg = message?.find((/** @type {{ type: string; }} */ v) => v.type === 'text' || v.type === 'json')
+      const textMsg = message?.find((/** @type {{ type: string; }} */ v) => ['text', 'json'].includes(v?.type))
       if (textMsg) e.msg = textMsg.text || textMsg.data
     }
 
-    // 其他适配器处理
-    if (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
+    // Miao-Yunzai OneBotv11 处理
+    if (Version.BotName === 'Miao-Yunzai' && ['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
       const replyMsg = e.message.find((/** @type {{ type: string; }} */ msg) => msg.type === 'reply')
       if (replyMsg) {
         const replyData = await e.bot?.sendApi?.('get_msg', { message_id: replyMsg.id })
-        const message = replyData?.data?.message?.find((/** @type {{ type: string; }} */ v) => v.type === 'text' || v.type === 'json')
+        const message = replyData?.data?.message?.find((/** @type {{ type: string; }} */ v) => ['text', 'json'].includes(v?.type))
         if (message) e.msg = message.data?.text || message.data?.data
       }
     }
-
     return e.msg || ''
   }
 

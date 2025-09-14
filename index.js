@@ -33,9 +33,9 @@ files.forEach((fileName, index) => {
 })
 export { apps }
 
-Common.mkdir(join(Version.pluginPath, 'data'))
-Common.mkdir(Common.tempDri.images)
-Common.mkdir(Common.tempDri.video)
+await Common.mkdir(join(Version.pluginPath, 'data'))
+await Common.mkdir(Common.tempDri.images)
+await Common.mkdir(Common.tempDri.video)
 
 
 logger.info('---------- ₍˄·͈༝·͈˄*₎◞ ̑̑ -----------')

@@ -1,6 +1,6 @@
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
-import { BiLiBiLi, GetBilibiliID } from '../module/platform/bilibili/index.js'
-import { DouYin, GetDouyinID } from '../module/platform/douyin/index.js'
+import { Bilibili, getBilibiliID } from '../module/platform/bilibili/index.js'
+import { DouYin, getDouyinID } from '../module/platform/douyin/index.js'
 import { Config, Common, UploadRecord } from '../module/utils/index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
 
@@ -19,7 +19,7 @@ const PLATFORM_CONFIG = [
     enabled: Config.bilibili?.bilibilitool
   },
   {
-    reg: /^((.*)快手(.*)快手(.*)|(.*)v.kuaishou(.*))$/,
+    reg: /^((.*)快手(.*)快手(.*)|(.*)v\.kuaishou(.*)|(.*)kuaishou\.com\/f\/[a-zA-Z0-9]+.*)$/,
     handler: 'kuaishou',
     enabled: Config.kuaishou?.kuaishoutool
   }
@@ -71,7 +71,7 @@ export class kkkTools extends plugin {
    */
   async douyin(e) {
     const url = e.msg.match(/https?:\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
-    const iddata = await GetDouyinID(url)
+    const iddata = await getDouyinID(url)
     await new DouYin(e, iddata).RESOURCES(iddata)
     return true
   }
@@ -93,8 +93,8 @@ export class kkkTools extends plugin {
       url = `https://www.bilibili.com/video/${url}`
     }
 
-    const iddata = await GetBilibiliID(url)
-    await new BiLiBiLi(e, iddata).RESOURCES(iddata)
+    const iddata = await getBilibiliID(url)
+    await new Bilibili(e, iddata).RESOURCES(iddata)
 
     // 记录用户操作状态，用于选集功能
     user[e.user_id] = 'bilib'
@@ -108,7 +108,7 @@ export class kkkTools extends plugin {
    * @returns {Promise<boolean>} 处理结果
    */
   async kuaishou(e) {
-    const url = e.msg.replaceAll('\\', '').match(/https:\/\/v\.kuaishou\.com\/\w+/g)
+    const url = e.msg.replaceAll('\\', '').match(/(https:\/\/v\.kuaishou\.com\/\w+|https:\/\/www\.kuaishou\.com\/f\/[a-zA-Z0-9]+)/g)
     const Iddata = await GetKuaishouID(url)
     const WorkData = await new KuaishouData(Iddata.type).GetData({ photoId: Iddata.id })
     await new KuaiShou(e, Iddata).Action(WorkData)
@@ -165,7 +165,7 @@ export class kkkTools extends plugin {
     if (user[e.user_id] === 'bilib') {
       const episode = e.msg.match(/第(\d+)集/)[1]
       global.BILIBILIOBJECT.Episode = episode
-      await new BiLiBiLi(e, global.BILIBILIOBJECT).RESOURCES(global.BILIBILIOBJECT, true)
+      await new Bilibili(e, global.BILIBILIOBJECT).RESOURCES(global.BILIBILIOBJECT, true)
     }
     return true
   }

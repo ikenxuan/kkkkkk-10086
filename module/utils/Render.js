@@ -10,7 +10,7 @@ import { join } from 'node:path'
  * @param {number} pct 缩放百分比
  * @returns {string} 返回CSS样式字符串
  */
-function scale(pct = 1) {
+const scale = (pct = 1) => {
   const scale = Math.min(2, Math.max(0.5, Number(Config.app.renderScale) / 100))
   pct = pct * scale
   return `style=transform:scale(${pct})`
@@ -95,11 +95,17 @@ const checkCommitIdAndUpdateStatus = async () => {
 }
 
 /**
+ * @typedef {Object} ImageData
+ * @property {string} type - 图片类型，固定为'image'
+ * @property {string} data - 图片数据，base64格式
+ */
+
+/**
  * 渲染HTML模板为图片
  * @param {string} path html模板路径
- * @param {Object.<string, *>} params 模板参数
+ * @param {Object.<string, *>} [params] 模板参数 [可选]
  * @property {number} [params.scale] 模板缩放比例
- * @returns {Promise<Buffer>} 返回渲染后的图片Buffer
+ * @returns {Promise<Array<ImageData>>} 返回渲染后的图片对象数组或false
  */
 export const Render = async (path, params) => {
   const basePaths = {

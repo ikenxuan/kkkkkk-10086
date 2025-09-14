@@ -15,37 +15,37 @@ export class kkkPush extends plugin {
         { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setbiliPush', permission: Config.douyin.douyinpushGroup },
         { reg: /#(抖音|B站)(全部)?强制推送/, fnc: 'forcePush', permission: 'master' },
         { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
-        { reg:/^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
+        { reg: /^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
       ]
     })
-    
+
     this.task = [
-      ...(Config.bilibili.bilibilipush ? [{
+      ...(Config.bilibili.push.switch ? [{
         cron: Config.bilibili.bilibilipushcron,
         name: '哔哩哔哩更新推送',
         fnc: () => this.bilibiliPush(),
-        log: Config.bilibili.bilibilipushlog
+        log: Config.bilibili.push.log
       }] : []),
-      ...(Config.douyin.douyinpush ? [{
+      ...(Config.douyin.push.switch ? [{
         cron: Config.douyin.douyinpushcron,
         name: '抖音更新推送',
         fnc: () => this.douyinPush(),
-        log: Config.douyin.douyinpushlog
+        log: Config.douyin.push.log
       }] : [])
     ]
   }
 
-  async douyinPush () {
+  async douyinPush() {
     await new DouYinpush().action()
     return true
   }
-  
-  async bilibiliPush () {
+
+  async bilibiliPush() {
     await new Bilibilipush().action()
     return true
   }
 
-  async forcePush (e) {
+  async forcePush(e) {
     if (e.msg.includes('抖音')) {
       await new DouYinpush().action()
       return true
@@ -56,14 +56,14 @@ export class kkkPush extends plugin {
     return true
   }
 
-  async setdyPush (e) {
+  async setdyPush(e) {
     if (e.isPrivate) return true
     const data = await getDouyinData('搜索数据', Config.cookies.douyin, { query: e.msg.replace(/^#设置抖音推送/, ''), typeMode: 'strict' })
     await new DouYinpush(e).setting(data.data)
     return true
   }
 
-  async setbiliPush (e) {
+  async setbiliPush(e) {
     if (e.isPrivate) return true
     if (!Config.cookies.bilibili) {
       await e.reply('\n请先配置B站Cookie', { at: true })
@@ -77,7 +77,7 @@ export class kkkPush extends plugin {
     return true
   }
 
-  async pushlist (e) {
+  async pushlist(e) {
     // 根据消息内容判断显示哪个平台的推送列表
     const platform = e.msg.includes('抖音') ? 'douyin' : 'bilibili'
     if (platform === 'douyin') {
@@ -88,30 +88,24 @@ export class kkkPush extends plugin {
     return true
   }
 
-  async changeBotID (e) {
-    const newDouyinlist = Config.pushlist.douyin.map(item => {
-      const modifiedGroupIds = item.group_id.map(groupId => {
-        const [ group_id ] = groupId.split(':')
-        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
+  async changeBotID(e) {
+    const command = /^#kkk设置推送机器人/
+    const newBotId = e.msg.replace(command, '')
+
+    // 更改推送列表机器人ID
+    const updateGroupIds = (list) => list.map(item => ({
+      ...item,
+      group_id: item.group_id.map(groupId => {
+        const [group_id] = groupId.split(':')
+        return `${group_id}:${newBotId}`
       })
-      return {
-        ...item,
-        group_id: modifiedGroupIds
-      }
-    })
-    const newBilibililist = Config.pushlist.bilibili.map(item => {
-      const modifiedGroupIds = item.group_id.map(groupId => {
-        const [ group_id ] = groupId.split(':')
-        return `${group_id}:${e.msg.replace(/^#kkk设置推送机器人/, '')}`
-      })
-      return {
-        ...item,
-        group_id: modifiedGroupIds
-      }
-    })
-    Config.modify('pushlist', 'douyin', newDouyinlist)
-    Config.modify('pushlist', 'bilibili', newBilibililist)
-    await e.reply('推送机器人已修改为' + e.msg.replace(/^#kkk设置推送机器人/, ''))
+    }))
+
+    // 更新配置
+    Config.modify('pushlist', 'douyin', updateGroupIds(Config.pushlist.douyin))
+    Config.modify('pushlist', 'bilibili', updateGroupIds(Config.pushlist.bilibili))
+
+    await e.reply(`推送机器人已修改为${newBotId}`)
     return true
   }
 

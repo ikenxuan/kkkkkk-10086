@@ -3,6 +3,7 @@ import { logger } from './index.js'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
+/** @type {import('axios').AxiosRequestConfig['headers']} */
 export const baseHeaders = {
   Accept: '*/*',
   'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
@@ -15,8 +16,8 @@ export class Networks {
    * 构造网络请求对象
    * @param {object} data 请求配置对象
    * @param {string} data.url 请求的URL地址
-   * @param {object} [data.headers = {}] 请求头对象
-   * @param {string} [data.type = 'json'] 返回的数据类型，支持 'json', 'text', 'arrayBuffer', 'blob'
+   * @param {import('axios').AxiosRequestConfig['headers']} [data.headers = {}] 请求头对象
+   * @param {import('axios').ResponseType} [data.type = 'json'] 返回的数据类型，支持 'arraybuffer' | 'blob' | 'document' | 'json' | 'text' | 'stream' | 'formdata'
    * @param {string} [data.method = 'GET'] 请求方法，支持 'GET' 和 'POST'
    * @param {*} [data.body = ''] POST请求时的请求体
    * @param {number} [data.timeout = 30000] 请求超时时间，单位为毫秒，默认30秒
@@ -44,14 +45,10 @@ export class Networks {
   /**
    * 获取请求配置
    * 根据请求方法返回配置对象
-   * @returns {Object} axios请求配置对象
-   * @property {string} url - 请求URL
-   * @property {string} method - 请求方法
-   * @property {Object} headers - 请求头
-   * @property {'json'|'text'|'arrayBuffer'|'blob'|'stream'} responseType - 响应数据类型
+   * @returns {import('axios').AxiosRequestConfig} axios请求配置对象
    */
   get config() {
-    /** @type {any} */
+    /** @type {import('axios').AxiosRequestConfig} */
     const config = {
       url: this.url,
       method: this.method,
@@ -74,30 +71,29 @@ export class Networks {
   /**
    * 发起网络请求并返回结果
    * 捕获请求中的异常并记录日志
+   * @returns {Promise<import('axios').AxiosResponse | boolean>} 返回 axios 请求的结果
    */
   async getfetch() {
     try {
       const result = await this.returnResult()
-      // 如果返回状态码不是200系列，记录警告日志
-      if (!result.ok) {
-        if (result.status === 504) return result
-        logger.warn(`请求失败，状态码: ${result.status}`)
-        return null
+      if (result.status === 504) {
+        return result
       }
-      this.isGetResult = true // 标记为已获取到结果
+      this.isGetResult = true
       return result
     } catch (error) {
       logger.error('获取失败:', error)
-      return null
+      return false
     }
   }
 
   /**
    * 基础请求方法
-   * @returns {Promise<*>} 返回 axios 请求的结果
+   * @returns {Promise<import('axios').AxiosResponse>} 返回 axios 请求的结果
    */
   async returnResult() {
-    let response = {}
+    /** @type {import('axios').AxiosResponse | any} */
+    let response
     try {
       response = await axios(this.config) // 直接使用axios发起请求
     } catch (error) {
@@ -148,14 +144,13 @@ export class Networks {
 
   /**
    * 获取首个302重定向地址
+   * @returns {Promise<import('axios').AxiosResponse['headers']['location']>}
    */
   async getLocation() {
     try {
       const response = await axios({
         method: 'GET',
         url: this.url,
-        headers: this.headers,
-        timeout: this.timeout,
         maxRedirects: 0, // 不跟随重定向
         validateStatus: (/** @type {number} */ status) => status >= 300 && status < 400 // 仅处理3xx响应
       })
@@ -168,7 +163,7 @@ export class Networks {
 
   /**
    * 获取数据并处理为指定格式
-   * @returns 返回处理后的数据或错误信息
+   * @returns {Promise<import('axios').AxiosResponse['data'] | boolean>} 返回处理后的数据或错误信息
    */
   async getData() {
     try {
@@ -192,20 +187,18 @@ export class Networks {
   /**
    * 获取响应头信息（仅首个字节）
    * 适用于获取视频流的完整大小
-   * @returns 返回响应头信息
+   * @returns {Promise<import('axios').AxiosResponse['headers']>} 返回响应头信息
    */
   async getHeaders() {
     try {
-      const response = await axios(/** @type {any} */({
+      const response = await axios({
+        ...this.config,
         method: 'GET',
-        url: this.url,
         headers: {
           ...this.headers,
           Range: 'bytes=0-0'
-        },
-        timeout: this.timeout,
-        responseType: this.type
-      }))
+        }
+      })
       return response.headers
     } catch (error) {
       logger.error(error)
@@ -215,17 +208,14 @@ export class Networks {
 
   /**
    * 获取响应头信息（完整）
-   * @returns
+   * @returns {Promise<import('axios').AxiosResponse['headers']>} 返回响应头信息
    */
   async getHeadersFull() {
     try {
-      const response = await axios(/** @type {any} */({
-        method: 'GET',
-        url: this.url,
-        headers: this.headers,
-        timeout: this.timeout,
-        responseType: this.type
-      }))
+      const response = await axios({
+        ...this.config,
+        method: 'GET'
+      })
       return response.headers
     } catch (error) {
       logger.error(error)
@@ -234,10 +224,10 @@ export class Networks {
   }
 
   /**
-   * 流下载方法
-   * @param {Function} progressCallback 下载进度回调函数
-   * @param {number} [retryCount = 0] 当前重试次数
-   * @returns {Promise<{filepath: string, totalBytes: number}>}
+   * 异步下载流方法
+   * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback - 下载进度回调函数，接收已下载字节数和总字节数作为参数
+   * @param {number} [retryCount = 0] - 当前重试次数，默认为0
+   * @returns {Promise<{filepath: string, totalBytes: number}>} 返回一个Promise，解析为包含文件路径和总字节数的对象
    */
   async downloadStream(progressCallback, retryCount = 0) {
     // 创建用于取消请求的控制器和超时定时器
@@ -247,13 +237,10 @@ export class Networks {
     try {
       // 发起网络请求，并附加中止信号
       const response = await axios({
-        method: this.method,
+        ...this.config,
         url: this.url,
-        headers: this.headers,
-        timeout: this.timeout,
         responseType: 'stream',
-        signal: controller.signal,
-        data: this.method === 'POST' ? this.body : undefined
+        signal: controller.signal
       })
 
       // 如果请求成功，清除超时定时器

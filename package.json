@@ -10,7 +10,7 @@
     "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^5.2.0",
+    "@ikenxuan/amagi": "5.3.0",
     "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
     "axios": "^1.11.0",

@@ -1,10 +1,11 @@
 import { Networks, logger } from '../../utils/index.js'
 
 /**
- * @typedef {object} BilibiliId
- * @property {BilibiliDataTypes[keyof BilibiliDataTypes]} type
- * @property {any} [x]
+ * @typedef {Object.<string, any>} BilibiliId
+ * @property {BilibiliDataTypes[keyof BilibiliDataTypes]} type - B站数据类型
+ * @property {string} [Episode] - 集数（可选）
  */
+
 
 /**
  * @typedef {object} BilibiliDataTypes
@@ -33,7 +34,7 @@ import { Networks, logger } from '../../utils/index.js'
  * @param {boolean} [log=true] 是否记录日志
  * @returns {Promise<BilibiliId>}
  */
-export const GetBilibiliID = async (url, log = true) => {
+export const getBilibiliID = async (url, log = true) => {
   /** @type {BilibiliId} */
   let result = { type: 'undefined' }
   let longLink = ''

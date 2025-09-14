@@ -20,11 +20,6 @@ import { getDouyinID, douyinProcessVideos } from './index.js'
  */
 
 /**
- * 抖音数据类型
- * @typedef {import('./getid.js').DouyinIdData} DouyinIdData
- */
-
-/**
  * 作品详情信息
  * @typedef {Object.<string, any>} DetailData
  * @property {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').DyUserInfo>} user_info - 博主主页信息
@@ -142,8 +137,11 @@ export class DouYinpush extends Base {
       const Detail_Data = pushItem.Detail_Data
       // 检查是否跳过该动态
       const skip = await skipDynamic(pushItem)
+      /**
+       * @type {import('../../utils/Render.js').ImageData[]}
+       */
       let img = []
-      /** @type {DouyinIdData} */
+      /** @type {import('./getid.js').DouyinIdData} 抖音数据类型 */
       let iddata = { is_mp4: true, type: 'one_work' }
 
       // 如果不跳过，获取抖音ID数据
@@ -156,8 +154,8 @@ export class DouYinpush extends Base {
         // 处理直播推送
         if (pushItem.living && 'room_data' in pushItem.Detail_Data && Detail_Data.live_data) {
           // 处理直播推送
-          img = /** @type {*} */ (await Render('douyin/live', {
-            image_url: Detail_Data.live_data?.data?.data?.data[0].cover?.url_list[0] || '',
+          img = await Render('douyin/live', {
+            image_url: [{ image_src: Detail_Data.live_data?.data?.data?.data[0].cover?.url_list[0] || '' }],
             text: Detail_Data.live_data?.data?.data?.data[0].title || '',
             liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title ?? Detail_Data.live_data?.data?.data?.data[0].title ?? ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
             在线观众: Common.count(Detail_Data.live_data?.data?.data?.data[0].room_view_stats?.display_value),
@@ -169,7 +167,7 @@ export class DouYinpush extends Base {
             now_time: Common.convertTimestampToDateTime(Date.now() / 1000),
             share_url: 'https://live.douyin.com/' + Detail_Data.room_data.owner.web_rid,
             dynamicTYPE: '直播动态推送'
-          }))
+          })
         } else {
           // 处理普通作品推送
           const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
@@ -181,7 +179,7 @@ export class DouYinpush extends Base {
               Connection: 'keep-alive'
             }
           }).getLocation()
-          img = /** @type {*} */ (await Render('douyin/dynamic', {
+          img = await Render('douyin/dynamic', {
             image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover?.url_list[0] ?? Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
             desc: this.desc(Detail_Data, Detail_Data.desc),
             dianzan: Common.count(Detail_Data.statistics.digg_count),
@@ -196,7 +194,7 @@ export class DouYinpush extends Base {
             粉丝: Common.count(Detail_Data.user_info.data.user.follower_count),
             获赞: Common.count(Detail_Data.user_info.data.user.total_favorited),
             关注: Common.count(Detail_Data.user_info.data.user.following_count)
-          }))
+          })
         }
       }
 

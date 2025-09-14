@@ -17,10 +17,9 @@ import { Networks, logger } from '../../utils/index.js'
  */
 
 /**
- * @typedef {object} DouyinIdData
+ * @typedef {Object.<string, any>} DouyinIdData
  * @property {DouyinDataTypes[keyof DouyinDataTypes]} type
  * @property {boolean} [is_mp4] - 该作品是否为视频
- * @property {any} [key]
  */
 
 /**

@@ -38,7 +38,7 @@ import fs from 'fs'
  * @property {string} video_url 视频链接
  * @property {title} title 文件名
  * @property {string} [filetype] 下载文件类型，默认为'.mp4'
- * @property {Object} [headers] 自定义请求头，将使用该请求头下载文件
+ * @property {import('axios').AxiosRequestConfig['headers']} [headers] 自定义请求头，将使用该请求头下载文件
  */
 
 /**
@@ -58,6 +58,8 @@ import fs from 'fs'
 /**
  * 表示HTTP请求方法的请求头类型
  * @typedef {Object} MethodsHeaders
+ * @remarks
+ * 这是一个部分类型，将HTTP方法映射到对应的AxiosHeaders类型
  * @property {import('axios').AxiosHeaders} [get] GET方法请求头
  * @property {import('axios').AxiosHeaders} [post] POST方法请求头
  * @property {import('axios').AxiosHeaders} [put] PUT方法请求头
@@ -72,15 +74,21 @@ import fs from 'fs'
  * 下载文件配置选项
  * @typedef {Object} downLoadFileOptions
  * @property {string} title 文件名
- * @property {import('axios').RawAxiosRequestHeaders & MethodsHeaders | import('axios').AxiosHeaders} [headers] 用于下载文件的请求头
+ * @property {import('axios').RawAxiosRequestHeaders & import('./index.js').MethodsHeaders | import('axios').AxiosHeaders} [headers] 用于下载文件的请求头
+ * @default {}
  */
 
 export class Base {
+  /** @type {import('axios').AxiosRequestConfig['headers']} */
+  headers
+  /** @type {ReturnType<typeof Client>} */
+  amagi
   /**
    * @param {*} e 消息对象
    */
   constructor(e) {
     this.e = e
+    /** @type {import('axios').AxiosRequestConfig['headers']} */
     this.headers = baseHeaders
     const client = Client({
       cookies: {
@@ -90,7 +98,7 @@ export class Base {
       },
       request: {
         timeout: Config.request?.timeout ?? 15000,
-        headers: { 'User-Agent': Config.request?.['User-Agent'] ?? this.headers['User-Agent'] },
+        headers: { 'User-Agent': Config.request?.['User-Agent'] ?? this.headers?.['User-Agent'] },
         proxy: Config.request?.proxy?.switch ? {
           host: Config.request.proxy.host,
           port: parseInt(Config.request.proxy.port),
@@ -214,7 +222,7 @@ export class Base {
 
   /**
    *
-   * @param {Array<any>|String} msg 消息
+   * @param {Array<any>|string} msg 消息
    * @param {Array<any>} btns 按钮数组
    * @returns
    */
@@ -489,7 +497,7 @@ export const downloadFile = async (videoUrl, opt) => {
     headers: opt.headers ?? baseHeaders,
     filepath: Common.tempDri.video + opt.title,
     timeout: 30000
-  }).downloadStream((/** @type {number} */ downloadedBytes, /** @type {number} */ totalBytes) => {
+  }).downloadStream((downloadedBytes, totalBytes) => {
     // 定义进度条长度及生成进度条字符串的函数
     const barLength = 45
     const generateProgressBar = (/** @type {number} */ progressPercentage) => {

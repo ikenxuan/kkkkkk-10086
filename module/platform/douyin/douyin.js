@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment, downloadFile, downloadVideo, uploadFile, baseHeaders } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { markdown } from '@karinjs/md-html'
 import { douyinComments } from './index.js'
@@ -37,6 +37,22 @@ let mp4size = ''
 let img
 
 export class DouYin extends Base {
+  /** @type {import('./getid.js').DouyinDataTypes[keyof import('./getid.js').DouyinDataTypes]} */
+  type
+  /** @type {boolean | undefined} */
+  is_mp4
+  /** @type {boolean} */
+  is_slides
+  /**
+   * @typedef {Object} ExtendedDouyinIdData
+   * @property {import('./getid.js').DouyinDataTypes[keyof import('./getid.js').DouyinDataTypes]} type
+   * @property {boolean | undefined} is_mp4
+   */
+
+  /**
+   * @param {*} e 
+   * @param {import('./getid.js').DouyinIdData & ExtendedDouyinIdData} iddata
+   */
   constructor(e, iddata) {
     super(e)
     this.e = e
@@ -45,7 +61,12 @@ export class DouYin extends Base {
     this.is_slides = false
   }
 
+  /**
+   * @param {import('./getid.js').DouyinIdData} data 抖音数据
+   * @returns {Promise<*>}
+   */
   async RESOURCES(data) {
+    if (this.type === 'undefined') return true
     Config.douyin.douyinTip?.includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
     switch (this.type) {
       case 'one_work': {
@@ -76,7 +97,7 @@ export class DouYin extends Base {
               const images = VideoData.data.aweme_detail.images ?? []
               for (const [index, imageItem] of images.entries()) {
                 // 获取图片地址，优先使用第三个URL，其次使用第二个URL
-                image_url = imageItem.url_list[2] || imageItem.url_list[1]
+                image_url = imageItem.url_list[2] || imageItem.url_list[1] ?? ''
 
                 // 处理标题，去除特殊字符
                 const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
@@ -88,7 +109,7 @@ export class DouYin extends Base {
                 if (Config.app.removeCache === false) {
                   Common.mkdir(`${Common.tempDri.images}${g_title}`)
                   const path = `${Common.tempDri.images}${g_title}/${index + 1}.png`
-                  await new Networks({ url: image_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+                  await new Networks({ url: image_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, data))
                 }
               }
               const res = common.makeForwardMsg(this.e, imageres, '解析完的图集图片')
@@ -106,11 +127,12 @@ export class DouYin extends Base {
               const images = []
               const temp = []
               /** BGM */
-              const liveimgbgm = await this.DownLoadFile(
+              const liveimgbgm = await downloadFile(
                 VideoData.data.aweme_detail.music.play_url.uri,
-                `Douyin_tmp_A_${Date.now()}`,
-                this.headers,
-                '.mp3'
+                {
+                  title: `Douyin_tmp_A_${Date.now()}.mp3`,
+                  headers: this.headers
+                }
               )
               temp.push(liveimgbgm)
               const images1 = VideoData.data.aweme_detail.images ?? []
@@ -125,11 +147,12 @@ export class DouYin extends Base {
                   continue
                 }
                 /** 动图 */
-                const liveimg = await this.DownLoadFile(
+                const liveimg = await downloadFile(
                   `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
-                  `Douyin_tmp_V_${Date.now()}`,
-                  this.headers,
-                  '.mp4'
+                  {
+                    title: `Douyin_tmp_V_${Date.now()}.mp4`,
+                    headers: this.headers
+                  }
                 )
 
                 if (liveimg.filepath) {
@@ -138,7 +161,7 @@ export class DouYin extends Base {
                     path: liveimg.filepath,
                     path2: liveimgbgm.filepath,
                     resultPath: resolvefilepath,
-                    callback: async (success, resultPath) => {
+                    callback: async (/** @type {boolean} */ success, /** @type {string} */ resultPath) => {
                       if (success) {
                         const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
                         fs.renameSync(resultPath, filePath)
@@ -170,52 +193,20 @@ export class DouYin extends Base {
         }
 
         /** 背景音乐 */
-        if (VideoData.data.aweme_detail.music && (Config.douyin.douyinTip).includes('背景音乐')) {
+        if (VideoData.data.aweme_detail.music && (Config.douyin.douyinTip)?.includes('背景音乐')) {
           const music = VideoData.data.aweme_detail.music
           const music_url = music.play_url.uri // BGM link
-          if (this.is_mp4 === false && Config.app.rmmp4 === false && music_url !== undefined) {
+          if (this.is_mp4 === false && Config.app.removeCache === false && music_url !== undefined) {
             try {
               const path = Common.tempDri.images + `${g_title}/BGM.mp3`
-              await new Networks({ url: music_url, type: 'arrayBuffer' }).getData().then((data) => fs.promises.writeFile(path, Buffer.from(data)))
+              await new Networks({ url: music_url, type: 'arraybuffer' }).getData().then((data) => fs.promises.writeFile(path, data))
             } catch (error) {
               logger.error(error)
             }
           }
           const haspath = music_url && this.is_mp4 === false && music_url !== undefined
-          switch (this.botname) {
-            case 'Miao-Yunzai':
-            case 'yunzai': {
-              if (haspath && this.botadapter === 'ICQQ') {
-                if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                else await this.e.reply(segment.record(music_url))
-              } else if (haspath && this.botadapter !== 'ICQQ') {
-                await this.e.reply(segment.record(music_url))
-              }
-              break
-            }
-            case 'TRSS-Yunzai': {
-              switch (this.botadapter) {
-                case 'QQBot':
-                case 'OneBotv11':
-                case 'LagrangeCore':
-                case 'KOOKBot': {
-                  if (haspath) {
-                    await this.e.reply(segment.record(music_url))
-                  }
-                  break
-                }
-                case 'ICQQ': {
-                  if (haspath) {
-                    if (Config.douyin.sendHDrecord) await this.e.reply(await UploadRecord(this.e, music_url, 0, false))
-                    else this.e.reply(segment.record(music_url))
-                  }
-                  break
-                }
-              }
-              break
-            }
-            default:
-              break
+          if (haspath) {
+            await this.e.reply(await UploadRecord(this.e, music_url, 0, Config.douyin.sendHDrecord ? false : true))
           }
         }
 
@@ -223,7 +214,7 @@ export class DouYin extends Base {
         let FPS
         const video_res = []
         const sendvideofile = true
-        if (this.is_mp4 && (Config.douyin.douyinTip).includes('视频')) {
+        if (this.is_mp4 && (Config.douyin.douyinTip)?.includes('视频')) {
           const video_data = []
           const videores = []
           // 视频地址特殊判断：play_addr_h264、play_addr、
@@ -235,17 +226,21 @@ export class DouYin extends Base {
               视频ID：${logger.green(VideoData.data.aweme_detail.aweme_id)}\n
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
-            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.app.filelimit)
+            video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit ?? 100)
             g_video_url = await new Networks({
               url: video.bit_rate[0].play_addr.url_list[2],
-              headers: this.headers,
-              Referer: video.bit_rate[0].play_addr.url_list[0]
+              headers: {
+                ...this.headers,
+                Referer: video.bit_rate[0].play_addr.url_list[0]
+              }
             }).getLongLink()
           } else {
             g_video_url = await new Networks({
               url: video.play_addr_h264.url_list[2] ?? video.play_addr_h264.url_list[2],
-              headers: this.headers,
-              Referer: video.play_addr_h264.url_list[0] ?? video.play_addr_h264.url_list[0],
+              headers: {
+                ...this.headers,
+                Referer: video.play_addr_h264.url_list[0] ?? video.play_addr_h264.url_list[0]
+              }
             }).getLongLink()
           }
           const cover = video.origin_cover.url_list[0] // video cover image
@@ -270,7 +265,7 @@ export class DouYin extends Base {
           const EmojiData = await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' })
           const list = Emoji(EmojiData.data)
           const commentsArray = await douyinComments(CommentsData, list)
-          if (!commentsArray.jsonArray.length) {
+          if (!commentsArray?.jsonArray?.length) {
             await this.e.reply('这个作品没有评论 ~')
           } else {
             const img = await Render('douyin/comment',
@@ -291,11 +286,28 @@ export class DouYin extends Base {
           }
         }
         /** 发送视频 */
-        sendvideofile && this.is_mp4 && await this.DownLoadVideo(g_video_url, `tmp_${Date.now()}`)
+        (Config.douyin.douyinTip)?.includes('视频') && sendvideofile && this.is_mp4 && await downloadVideo(
+          this.e,
+          {
+            video_url: g_video_url,
+            title: {
+              timestampTitle: `tmp_${Date.now()}.mp4`,
+              originTitle: `${g_title}.mp4`
+            },
+            headers: {
+              ...baseHeaders,
+              Referer: g_video_url
+            }
+          },
+          {
+            message_id: this.e.message_id
+          }
+        )
         return true
       }
 
       case 'user_dynamic': {
+        /** @type {*} */
         const UserVideoListData = await this.amagi.getDouyinData('用户主页视频列表数据', {
           sec_uid: data.sec_uid,
           typeMode: 'strict'
@@ -353,7 +365,7 @@ export class DouYin extends Base {
             create_time: Time(0),
             user_count: Common.count(MusicData.data.music_info.user_count),
             avater_url: MusicData.data.music_info.avatar_large?.url_list[0] || UserData.data.user.avatar_larger.url_list[0],
-            fans: UserData.data.user.mplatform_followers_count || UserData.user.follower_count,
+            fans: UserData.data.user.mplatform_followers_count || UserData.data.user.follower_count,
             following_count: UserData.data.user.following_count,
             total_favorited: UserData.data.user.total_favorited,
             user_shortid: UserData.data.user.unique_id === '' ? UserData.data.user.short_id : UserData.data.user.unique_id,
@@ -372,9 +384,7 @@ export class DouYin extends Base {
             [{ text: '音乐文件', link: MusicData.data.music_info.play_url.uri }]
           )
         )
-        if (this.botadapter === 'ICQQ') {
-          await this.e.reply(await UploadRecord(this.e, MusicData.data.music_info.play_url.uri, 0, false))
-        } else await this.e.reply(segment.record(MusicData.data.music_info.play_url.uri))
+        await this.e.reply(await UploadRecord(this.e, MusicData.data.music_info.play_url.uri, 0, Config.douyin.sendHDrecord ? false : true))
         return true
       }
       case 'live_room_detail': {
@@ -462,15 +472,7 @@ function Time(delay) {
 
 /**
  * 处理抖音表情数据
- * @typedef {Object} EmojiItem
- * @property {string} display_name 表情显示名称
- * @property {Object} emoji_url 表情URL对象
- * @property {string[]} emoji_url.url_list 表情URL列表
- * 
- * @typedef {Object} EmojiData
- * @property {EmojiItem[]} emoji_list 表情列表
- * 
- * @param {EmojiData} data 表情数据对象
+ * @param {import('@ikenxuan/amagi').DyEmojiList} data 表情数据对象
  * @returns {Array<{name: string, url: string | undefined}>} 处理后的表情数组,包含name和url属性
  */
 export const Emoji = (data) => {
