@@ -62,9 +62,9 @@ export const getBilibiliID = async (url, log = true) => {
       // 视频链接
       [
         'video',
-        (url) => /(video\/|video-)([A-Za-z0-9]+)/.test(url),
+        (url) => /video[\/-]([A-Za-z0-9]+)\/?/.test(url),
         (url) => {
-          const bvideoMatch = /video\/([A-Za-z0-9]+)|bvid=([A-Za-z0-9]+)/.exec(url)
+          const bvideoMatch = /video[\/-]([A-Za-z0-9]+)\/?|bvid=([A-Za-z0-9]+)/.exec(url)
           const pParam = new URL(url).searchParams.get('p')
           const pValue = pParam ? parseInt(pParam, 10) : undefined
           return {
@@ -132,8 +132,6 @@ export const getBilibiliID = async (url, log = true) => {
     ]
 
     // 统一的链接处理逻辑
-    /** @type {BilibiliId} */
-    let result = { type: 'undefined' }
     for (const [name, test, extract] of urlPatterns) {
       if (test(longLink)) {
         result = extract(longLink)

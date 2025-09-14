@@ -46,8 +46,8 @@ class Tools {
       if (textMsg) e.msg = textMsg.text || textMsg.data
     }
 
-    // Miao-Yunzai OneBotv11 处理
-    if (Version.BotName === 'Miao-Yunzai' && ['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
+    // OneBotv11 处理
+    if (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
       const replyMsg = e.message.find((/** @type {{ type: string; }} */ msg) => msg.type === 'reply')
       if (replyMsg) {
         const replyData = await e.bot?.sendApi?.('get_msg', { message_id: replyMsg.id })

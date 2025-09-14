@@ -106,7 +106,9 @@ const pluginName = basename(pluginPath)
 // cSpell:ignore Miao Yunzai TRSS
 const getBotName = () => {
   try {
-    const { Bot } = require('./index.js')
+    /** @type {globalThis & {Bot?: {uin: any[]}}} */
+    const globalWithBot = global
+    const { Bot } = globalWithBot
     if (Array.isArray(Bot?.uin)) {
       return 'TRSS-Yunzai'
     }

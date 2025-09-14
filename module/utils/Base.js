@@ -160,30 +160,29 @@ export class Base {
    * @returns {string} 返回适配器名称，如 'ICQQ', 'LagrangeCore', 'QQBot', 'OneBotv11' 等
    */
   get botadapter() {
-    if (!this?.e?.bot) return 'ICQQ'
     // 定义不同机器人版本对应的适配器检查规则
     const adapters = {
       // Miao-Yunzai 版本的适配器检查规则
       'Miao-Yunzai': {
-        'ICQQ': () => this.e.bot?.sendUni,  // 检查是否有 sendUni 方法
-        'LagrangeCore': () => this.e.bot?.adapter === 'LagrangeCore',
-        'QQBot': () => this.e.bot?.adapter === 'QQBot',
-        'OneBotv11': () => this.e.bot?.adapter === 'OneBotv11'
+        'ICQQ': () => this.e?.bot?.sendUni,  // 检查是否有 sendUni 方法
+        'LagrangeCore': () => this.e?.bot?.adapter === 'LagrangeCore',
+        'QQBot': () => this.e?.bot?.adapter === 'QQBot',
+        'OneBotv11': () => this.e?.bot?.adapter === 'OneBotv11'
       },
       // TRSS-Yunzai 版本的适配器检查规则
       'TRSS-Yunzai': {
-        'ICQQ': () => this.e.bot?.adapter?.name === 'ICQQ',
-        'QQBot': () => this.e.bot?.adapter?.name === 'QQBot',
-        'OneBotv11': () => this.e.bot?.adapter?.name === 'OneBotv11',
-        'LagrangeCore': () => this.e.bot?.adapter?.name === 'Lagrange',
-        'KOOKBot': () => this.e.bot?.adapter?.name === 'KOOKBot'
+        'ICQQ': () => this.e?.bot?.adapter?.name === 'ICQQ',
+        'QQBot': () => this.e?.bot?.adapter?.name === 'QQBot',
+        'OneBotv11': () => this.e?.bot?.adapter?.name === 'OneBotv11',
+        'LagrangeCore': () => this.e?.bot?.adapter?.name === 'Lagrange',
+        'KOOKBot': () => this.e?.bot?.adapter?.name === 'KOOKBot'
       }
     }
 
     // 特殊处理 TRSS-Yunzai 的 OneBotv11 情况
-    if (Version.BotName === 'TRSS-Yunzai' && this.e.bot?.adapter?.name === 'OneBotv11') {
+    if (Version.BotName === 'TRSS-Yunzai' && this?.e?.bot?.adapter?.name === 'OneBotv11') {
       // 判断是否为 Lagrange.OneBot 版本
-      return this?.e?.bot?.version?.app_name === 'Lagrange.OneBot' ? 'Lagrange.OneBot' : 'OneBotv11'
+      return this.e?.bot?.version?.app_name === 'Lagrange.OneBot' ? 'Lagrange.OneBot' : 'OneBotv11'
     }
 
     // 查找匹配的适配器，优先使用对应版本的适配器检查规则，如果没有则使用 Miao-Yunzai 的规则

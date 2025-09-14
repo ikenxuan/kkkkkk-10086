@@ -682,7 +682,8 @@ export function supportGuoba() {
           douyin: Config.douyin,
           bilibili: Config.bilibili,
           pushlist: Config.pushlist,
-          kuaishou: Config.kuaishou
+          kuaishou: Config.kuaishou,
+          upload: Config.upload
         }
       },
 
