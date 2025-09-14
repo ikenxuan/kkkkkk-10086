@@ -131,7 +131,10 @@ export class DouYin extends Base {
                 VideoData.data.aweme_detail.music.play_url.uri,
                 {
                   title: `Douyin_tmp_A_${Date.now()}.mp3`,
-                  headers: this.headers
+                  headers: {
+                    ...this.headers,
+                    Cookie: ''
+                  }
                 }
               )
               temp.push(liveimgbgm)
@@ -151,7 +154,10 @@ export class DouYin extends Base {
                   `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
                   {
                     title: `Douyin_tmp_V_${Date.now()}.mp4`,
-                    headers: this.headers
+                    headers: {
+                      ...this.headers,
+                      Cookie: ''
+                    }
                   }
                 )
 
@@ -296,7 +302,8 @@ export class DouYin extends Base {
             },
             headers: {
               ...baseHeaders,
-              Referer: g_video_url
+              Referer: g_video_url,
+              Cookies: ''
             }
           },
           {

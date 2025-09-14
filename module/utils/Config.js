@@ -172,7 +172,11 @@ class Config {
 
   /** @type {Record<string, any>} 文件监听器对象 */
   watcher = { config: {}, defSet: {} }
-
+  constructor() {
+    this.config = {}
+    this.watcher = { config: {}, defSet: {} }
+    this.initCfg()
+  }
   /**
    * 初始化配置系统
    * - 创建配置目录（如果不存在）

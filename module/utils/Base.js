@@ -513,8 +513,10 @@ export const downloadFile = async (videoUrl, opt) => {
 
     // 计算动态 RGB 颜色
     const red = Math.floor(255 - (255 * progressPercentage) / 100) // 红色分量随进度减少
-    const coloredPercentage = logger.chalk.rgb(red, 255, 0)(`${progressPercentage.toFixed(1)}%`)
-    const coloredProgressBar = logger.chalk.rgb(red, 255, 0)(generateProgressBar(progressPercentage))
+    const green = Math.floor((255 * progressPercentage) / 100) // 绿色分量随进度增加
+    const hexColor = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
+    const coloredPercentage = logger.hex(hexColor)(`${progressPercentage.toFixed(1)}%`)
+    const coloredProgressBar = logger.hex(hexColor)(generateProgressBar(progressPercentage))
 
     // 计算下载速度（MB/s）
     const elapsedTime = (Date.now() - startTime) / 1000
