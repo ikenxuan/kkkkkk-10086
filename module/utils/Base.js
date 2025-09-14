@@ -160,6 +160,7 @@ export class Base {
    * @returns {string} 返回适配器名称，如 'ICQQ', 'LagrangeCore', 'QQBot', 'OneBotv11' 等
    */
   get botadapter() {
+    if (!this?.e?.bot) return 'ICQQ'
     // 定义不同机器人版本对应的适配器检查规则
     const adapters = {
       // Miao-Yunzai 版本的适配器检查规则
@@ -182,7 +183,7 @@ export class Base {
     // 特殊处理 TRSS-Yunzai 的 OneBotv11 情况
     if (Version.BotName === 'TRSS-Yunzai' && this.e.bot?.adapter?.name === 'OneBotv11') {
       // 判断是否为 Lagrange.OneBot 版本
-      return this.e.bot?.version?.app_name === 'Lagrange.OneBot' ? 'Lagrange.OneBot' : 'OneBotv11'
+      return this?.e?.bot?.version?.app_name === 'Lagrange.OneBot' ? 'Lagrange.OneBot' : 'OneBotv11'
     }
 
     // 查找匹配的适配器，优先使用对应版本的适配器检查规则，如果没有则使用 Miao-Yunzai 的规则

@@ -53,7 +53,7 @@ export class Bilibilipush extends Base {
    */
   constructor(e, force = false) {
     super(e)
-    if (this.e.bot?.adapter?.name === 'QQBot') {
+    if (this.botadapter === 'QQBot') {
       e.reply('不支持QQBot，请使用其他适配器')
       return
     }
