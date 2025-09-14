@@ -517,7 +517,10 @@ export const downloadFile = async (videoUrl, opt) => {
     const hexColor = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
 
     // 根据不同的机器人框架选择不同的着色方法
-    const colorMethod = Version.BotName === 'TRSS-Yunzai' ? logger.hex : logger.chalk.hex
+    const colorMethod = Version.BotName === 'TRSS-Yunzai'
+      ? (/** @type {any} */ color) => logger.hex(color)
+      : (/** @type {any} */ color) => logger.chalk.hex(color)
+
     const coloredPercentage = colorMethod(hexColor)(`${progressPercentage.toFixed(1)}%`)
     const coloredProgressBar = colorMethod(hexColor)(generateProgressBar(progressPercentage))
 
