@@ -541,7 +541,7 @@ export const downloadFile = async (videoUrl, opt) => {
     const totalSizeMB = (totalBytes / 1048576).toFixed(1)
 
     // 打印下载进度、速度和剩余时间
-    console.log(
+    logger.info(
       `⬇️  ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
     )
   }, 3)
