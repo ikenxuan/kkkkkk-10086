@@ -423,75 +423,79 @@ export class DouYinpush extends Base {
     const botId = this.e.self_id
 
     try {
-      let index = 0
-      while (data.data?.[index]?.card_unique_name !== 'user') {
-        index++
+      // 使用数组find方法快速定位用户信息卡片，避免循环遍历导致的性能问题
+      const userCard = data.data?.find(item => item.card_unique_name === 'user')
+      if (!userCard) {
+        throw new Error('未找到用户信息')
       }
-      const sec_uid = data.data?.[index]?.user_list[0].user_info.sec_uid
-      const UserInfoData = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' })
+      const sec_uid = userCard.user_list?.[0]?.user_info?.sec_uid
+      if (!sec_uid) {
+        throw new Error('无法获取用户sec_uid')
+      }
 
-      /** 处理抖音号 */
-      let user_shortid
-      UserInfoData.data.user.unique_id === '' ? (user_shortid = UserInfoData.data.user.short_id) : (user_shortid = UserInfoData.data.user.unique_id)
+      // 并行获取用户数据和检查订阅状态，减少等待时间
+      const [UserInfoData, isSubscribed] = await Promise.all([
+        this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }),
+        douyinDB?.isSubscribed(sec_uid, groupId)
+      ])
 
-      // 初始化 douyin 数组
-      config.douyin ||= []
+      if (!UserInfoData?.data?.user) {
+        throw new Error('获取用户信息失败')
+      }
 
-      // 查找是否存在相同的 sec_uid
+      // 处理抖音号：优先使用unique_id，如果为空则使用short_id
+      const user_shortid = UserInfoData.data.user.unique_id || UserInfoData.data.user.short_id
+      if (!user_shortid) {
+        throw new Error('无法获取用户抖音号')
+      }
+
+      // 初始化 douyin 数组：确保配置中存在douyin数组
+      config.douyin = config.douyin || []
+
+      // 查找用户配置：检查是否已存在该用户的订阅配置
       const existingItem = config.douyin.find((item) => item.sec_uid === sec_uid)
 
-      // 检查数据库中是否已订阅
-      const isSubscribed = await douyinDB?.isSubscribed(sec_uid, groupId)
-
       if (existingItem) {
-        // 如果已经存在相同的 sec_uid，则检查是否存在相同的 group_id
-        let has = false
-        let groupIndexToRemove = -1 // 用于记录要删除的 group_id 对象的索引
-        for (let index = 0; index < existingItem.group_id.length; index++) {
-          // 分割每个对象的 id 属性，并获取第一部分
-          const item = existingItem.group_id[index]
+        // 使用findIndex快速定位群组配置，提高查找效率
+        const groupIndex = existingItem.group_id.findIndex(item => {
           const existingGroupId = item?.split(':')[0]
+          return existingGroupId === String(groupId)
+        })
 
-          // 检查分割后的第一部分是否与提供的 group_id 相同
-          if (existingGroupId === String(groupId)) {
-            has = true
-            groupIndexToRemove = index
-            break // 找到匹配项后退出循环
-          }
-        }
+        if (groupIndex >= 0) {
+          // 删除订阅：移除群组配置并更新数据库
+          existingItem.group_id.splice(groupIndex, 1)
 
-        if (has) {
-          // 如果存在相同的 group_id，则删除它
-          existingItem.group_id.splice(groupIndexToRemove, 1)
+          // 并行执行数据库操作和消息发送，提高响应速度
+          await Promise.all([
+            isSubscribed ? douyinDB?.unsubscribeDouyinUser(groupId, sec_uid) : Promise.resolve(),
+            this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+          ])
 
-          // 同时从数据库中取消订阅
-          if (isSubscribed) {
-            await douyinDB?.unsubscribeDouyinUser(groupId, sec_uid)
-          }
-
-          logger.info(`\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
-          await this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-
-          // 如果删除后 group_id 数组为空，则删除整个属性
+          // 清理空配置：如果用户没有群组订阅了，删除整个用户配置
           if (existingItem.group_id.length === 0) {
             const index = config.douyin.indexOf(existingItem)
             config.douyin.splice(index, 1)
           }
         } else {
-          // 否则，将新的 group_id 添加到该 sec_uid 对应的数组中
+          // 添加订阅：向现有用户配置添加新群组
           existingItem.group_id.push(`${groupId}:${botId}`)
 
-          // 同时在数据库中添加订阅
-          if (!isSubscribed) {
-            await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
+          // 并行执行数据库操作和消息发送，减少总等待时间
+          const operations = [
+            !isSubscribed ? douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname) : Promise.resolve(),
+            this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+          ]
+
+          // 检查推送状态：如果推送未开启，发送提示消息
+          if (Config.douyin.push && Config.douyin.push.switch === false) {
+            operations.push(this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送'))
           }
 
-          await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-          if (Config.douyin.push && Config.douyin.push.switch === false) await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
-          logger.info(`\n设置成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
+          await Promise.all(operations)
         }
       } else {
-        // 如果不存在相同的 sec_uid，则新增一个属性
+        // 新增用户：创建新的用户订阅配置
         config.douyin.push({
           switch: true,
           sec_uid,
@@ -500,21 +504,28 @@ export class DouYinpush extends Base {
           short_id: user_shortid
         })
 
-        // 同时在数据库中添加订阅
-        if (!isSubscribed) {
-          await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
+        // 并行执行数据库操作和消息发送，提高处理效率
+        const operations = [
+          !isSubscribed ? douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname) : Promise.resolve(),
+          this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+        ]
+
+        // 检查推送状态：如果推送未开启，发送提示消息
+        if (Config.douyin.push && Config.douyin.push.switch === false) {
+          operations.push(this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送'))
         }
 
-        await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-        if (Config.douyin.push && Config.douyin.push.switch === false) await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
-        logger.info(`\n设置成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
+        await Promise.all(operations)
       }
 
-      // 保存配置到文件
-      Config.modify('pushlist', 'douyin', /** @type {any} */(config.douyin))
+      // 并行执行配置保存和界面渲染，减少用户等待时间
+      await Promise.all([
+        config.douyin ? Config.modify('pushlist', 'douyin', config.douyin) : Promise.resolve(),
+        this.renderPushList()
+      ])
 
-      await this.renderPushList()
     } catch (error) {
+      // 错误处理：记录错误日志并通知用户
       logger.error(error)
       await this.e.reply('设置失败，请查看日志')
     }

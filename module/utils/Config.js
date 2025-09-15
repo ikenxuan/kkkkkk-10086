@@ -498,7 +498,7 @@ class Config {
    * 修改配置文件中的指定项
    * @param {string} name - 配置文件名 ['cookies' | 'app' | 'douyin' | 'bilibili' | 'pushlist']
    * @param {string} key - 要修改的配置项键名
-   * @param {string | number} value - 要设置的新值
+   * @param {*} value - 要设置的新值
    * @param {'config' | 'default_config'} [type='config'] - 配置类型，默认为用户配置
    * @returns {void}
    * 
