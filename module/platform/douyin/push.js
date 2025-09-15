@@ -418,10 +418,9 @@ export class DouYinpush extends Base {
    * @returns {Promise<void>} 操作成功或失败的消息字符串。
    */
   async setting(data) {
-    const groupInfo = await this.e.bot.getGroupInfo('groupId' in this.e && this.e.groupId ? this.e.groupId : '')
     const config = Config.pushlist // 读取配置文件
-    const groupId = 'groupId' in this.e && this.e.groupId ? this.e.groupId : ''
-    const botId = this.e.selfId
+    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
+    const botId = this.e.self_id
 
     try {
       let index = 0
@@ -471,7 +470,7 @@ export class DouYinpush extends Base {
           }
 
           logger.info(`\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
-          await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+          await this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
 
           // 如果删除后 group_id 数组为空，则删除整个属性
           if (existingItem.group_id.length === 0) {
@@ -487,7 +486,7 @@ export class DouYinpush extends Base {
             await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
           }
 
-          await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+          await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
           if (Config.douyin.push && Config.douyin.push.switch === false) await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
           logger.info(`\n设置成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
         }
@@ -506,7 +505,7 @@ export class DouYinpush extends Base {
           await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
         }
 
-        await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
         if (Config.douyin.push && Config.douyin.push.switch === false) await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
         logger.info(`\n设置成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}\nsec_uid${UserInfoData.data.user.sec_uid}`)
       }
@@ -524,13 +523,13 @@ export class DouYinpush extends Base {
   /** 渲染推送列表图片 */
   async renderPushList() {
     await this.syncConfigToDatabase()
-    const groupInfo = await this.e.bot.getGroupInfo('groupId' in this.e && this.e.groupId ? this.e.groupId : '')
+    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
 
     // 获取当前群组的所有订阅
-    const subscriptions = await douyinDB?.getGroupSubscriptions(groupInfo.groupId)
+    const subscriptions = await douyinDB?.getGroupSubscriptions(groupId)
 
     if (!subscriptions || subscriptions.length === 0) {
-      await this.e.reply(`当前群：${groupInfo.groupName}(${groupInfo.groupId})\n没有设置任何抖音博主推送！\n可使用「#设置抖音推送 + 抖音号」进行设置`)
+      await this.e.reply(`当前群：${this.e.group_name}(${groupId})\n没有设置任何抖音博主推送！\n可使用「#设置抖音推送 + 抖音号」进行设置`)
       return
     }
 

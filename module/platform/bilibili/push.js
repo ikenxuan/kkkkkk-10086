@@ -617,11 +617,10 @@ export class Bilibilipush extends Base {
    * @returns {Promise<void>}
    */
   async setting(data) {
-    const groupInfo = await this.e.bot.getGroupInfo('groupId' in this.e && this.e.groupId ? this.e.groupId : '')
     const host_mid = Number(data.data.card.mid)
     const config = Config.pushlist // 读取配置文件
-    const groupId = 'groupId' in this.e && this.e.groupId ? this.e.groupId : ''
-    const botId = this.e.selfId
+    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
+    const botId = this.e.self_id
 
     // 初始化或确保 bilibilipushlist 数组存在
     if (!config.bilibili) {
@@ -660,7 +659,7 @@ export class Bilibilipush extends Base {
         }
 
         logger.info(`\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
-        await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
 
         // 如果删除后 group_id 数组为空，则删除整个属性
         if (existingItem.group_id.length === 0) {
@@ -679,7 +678,7 @@ export class Bilibilipush extends Base {
         // 将新的 group_id 添加到该 host_mid 对应的数组中
         existingItem.group_id.push(`${groupId}:${botId}`)
 
-        await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
         if (Config.bilibili?.push?.switch === false) await this.e.reply('请发送「#kkk设置B站推送开启」以进行推送')
 
         logger.info(`\n设置成功！${data.data.card.name}\nUID：${host_mid}`)
@@ -701,7 +700,7 @@ export class Bilibilipush extends Base {
         remark: data.data.card.name
       })
 
-      await this.e.reply(`群：${groupInfo.groupName}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
+      await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
       if (Config.bilibili?.push?.switch === false) await this.e.reply('请发送「#kkk设置B站推送开启」以进行推送')
     }
 
@@ -796,13 +795,11 @@ export class Bilibilipush extends Base {
   /** 渲染推送列表图片 */
   async renderPushList() {
     await this.syncConfigToDatabase()
-    const groupInfo = await this.e.bot.getGroupInfo('groupId' in this.e && this.e.groupId ? this.e.groupId : '')
-
     // 获取当前群组的所有订阅
-    const subscriptions = await bilibiliDB?.getGroupSubscriptions(groupInfo.groupId)
+    const subscriptions = await bilibiliDB?.getGroupSubscriptions(this.e.group_id)
 
     if (!subscriptions || subscriptions.length === 0) {
-      await this.e.reply(`当前群：${groupInfo.groupName}(${groupInfo.groupId})\n没有设置任何B站UP推送！\n可使用「#设置B站推送 + UP主UID」进行设置`)
+      await this.e.reply(`当前群：${this.e.group_name}(${this.e.group_id})\n没有设置任何B站UP推送！\n可使用「#设置B站推送 + UP主UID」进行设置`)
       return
     }
 

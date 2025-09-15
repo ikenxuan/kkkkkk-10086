@@ -7,7 +7,8 @@
   "author": "ikenxuan",
   "license": "GPL-3.0-only",
   "scripts": {
-    "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
+    "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix",
+    "postinstall": "node -e \"if (!require('fs').existsSync('node_modules/sqlite3/build')) process.exit(1)\" || npm rebuild @karinjs/sqlite3-cjs"
   },
   "dependencies": {
     "@ikenxuan/amagi": "5.3.0",
@@ -16,6 +17,7 @@
     "axios": "^1.11.0",
     "qrcode": "^1.5.4",
     "sequelize": "^6.37.7",
+    "sqlite3": "npm:@karinjs/sqlite3-cjs",
     "sharp": "^0.34.3",
     "simple-git": "^3.25.0",
     "heic-convert": "^2.1.0",
