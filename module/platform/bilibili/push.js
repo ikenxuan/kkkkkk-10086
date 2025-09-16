@@ -415,14 +415,14 @@ export class Bilibilipush extends Base {
                     playUrlData.data?.data?.dash?.video[0].base_url,
                     {
                       title: `Bil_V_${infoData.data.data.bvid}.mp4`,
-                      headers: /** @type {any} */ (bilibiliBaseHeaders)
+                      headers: bilibiliBaseHeaders
                     }
                   )
                   const mp3File = await downloadFile(
                     playUrlData.data?.data?.dash?.audio[0].base_url,
                     {
                       title: `Bil_A_${infoData.data.data.bvid}.mp3`,
-                      headers: /** @type {any} */ (bilibiliBaseHeaders)
+                      headers: bilibiliBaseHeaders
                     }
                   )
 
@@ -642,11 +642,11 @@ export class Bilibilipush extends Base {
         // 删除订阅
         existingItem.group_id.splice(groupIndex, 1)
 
-        // 并行执行数据库操作和消息发送
-        await Promise.all([
-          isSubscribed ? bilibiliDB?.unsubscribeBilibiliUser(groupId, host_mid) : Promise.resolve(),
-          this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
-        ])
+        // 顺序执行数据库操作和消息发送
+        if (isSubscribed) {
+          await bilibiliDB?.unsubscribeBilibiliUser(groupId, host_mid)
+        }
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
 
         // 如果删除后 group_id 数组为空，则删除整个属性
         if (existingItem.group_id.length === 0) {
@@ -654,33 +654,26 @@ export class Bilibilipush extends Base {
           config.bilibili.splice(index, 1)
         }
       } else {
-        // 并行执行数据库操作和消息发送
-        const operations = [
-          bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name),
-          this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
-        ]
+        // 顺序执行数据库操作和消息发送
+        await bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name)
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
 
         // 检查推送状态
         if (Config.bilibili?.push?.switch === false) {
-          operations.push(this.e.reply('请发送「#kkk设置B站推送开启」以进行推送'))
+          await this.e.reply('请发送「#kkk设置B站推送开启」以进行推送')
         }
 
-        await Promise.all(operations)
         existingItem.group_id.push(`${groupId}:${botId}`)
       }
     } else {
-      // 并行执行数据库操作和消息发送
-      const operations = [
-        bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name),
-        this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
-      ]
+      // 顺序执行数据库操作和消息发送
+      await bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name)
+      await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
 
       // 检查推送状态
       if (Config.bilibili?.push?.switch === false) {
-        operations.push(this.e.reply('请发送「#kkk设置B站推送开启」以进行推送'))
+        await this.e.reply('请发送「#kkk设置B站推送开启」以进行推送')
       }
-
-      await Promise.all(operations)
 
       // 不存在相同的 host_mid，新增一个配置项
       config.bilibili.push({
@@ -691,11 +684,11 @@ export class Bilibilipush extends Base {
       })
     }
 
-    // 并行执行配置保存和渲染操作
-    await Promise.all([
-      config.bilibili ? Config.modify('pushlist', 'bilibili', config.bilibili) : Promise.resolve(),
-      this.renderPushList()
-    ])
+    // 顺序执行配置保存和渲染操作
+    if (config.bilibili) {
+      Config.modify('pushlist', 'bilibili', config.bilibili)
+    }
+    await this.renderPushList()
   }
 
   /**

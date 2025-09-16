@@ -21,13 +21,13 @@ export class kkkPush extends plugin {
 
     this.task = [
       ...(Config.bilibili.push.switch ? [{
-        cron: Config.bilibili.bilibilipushcron,
+        cron: Config.bilibili.push.cron,
         name: '哔哩哔哩更新推送',
         fnc: () => this.bilibiliPush(),
         log: Config.bilibili.push.log
       }] : []),
       ...(Config.douyin.push.switch ? [{
-        cron: Config.douyin.douyinpushcron,
+        cron: Config.douyin.push.cron,
         name: '抖音更新推送',
         fnc: () => this.douyinPush(),
         log: Config.douyin.push.log

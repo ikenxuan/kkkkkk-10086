@@ -433,11 +433,9 @@ export class DouYinpush extends Base {
         throw new Error('无法获取用户sec_uid')
       }
 
-      // 并行获取用户数据和检查订阅状态，减少等待时间
-      const [UserInfoData, isSubscribed] = await Promise.all([
-        this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }),
-        douyinDB?.isSubscribed(sec_uid, groupId)
-      ])
+      // 顺序获取用户数据和检查订阅状态
+      const UserInfoData = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' })
+      const isSubscribed = await douyinDB?.isSubscribed(sec_uid, groupId)
 
       if (!UserInfoData?.data?.user) {
         throw new Error('获取用户信息失败')
@@ -466,11 +464,11 @@ export class DouYinpush extends Base {
           // 删除订阅：移除群组配置并更新数据库
           existingItem.group_id.splice(groupIndex, 1)
 
-          // 并行执行数据库操作和消息发送，提高响应速度
-          await Promise.all([
-            isSubscribed ? douyinDB?.unsubscribeDouyinUser(groupId, sec_uid) : Promise.resolve(),
-            this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-          ])
+          // 顺序执行数据库操作和消息发送
+          if (isSubscribed) {
+            await douyinDB?.unsubscribeDouyinUser(groupId, sec_uid)
+          }
+          await this.e.reply(`群：${this.e.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
 
           // 清理空配置：如果用户没有群组订阅了，删除整个用户配置
           if (existingItem.group_id.length === 0) {
@@ -481,18 +479,16 @@ export class DouYinpush extends Base {
           // 添加订阅：向现有用户配置添加新群组
           existingItem.group_id.push(`${groupId}:${botId}`)
 
-          // 并行执行数据库操作和消息发送，减少总等待时间
-          const operations = [
-            !isSubscribed ? douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname) : Promise.resolve(),
-            this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-          ]
+          // 顺序执行数据库操作和消息发送
+          if (!isSubscribed) {
+            await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
+          }
+          await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
 
           // 检查推送状态：如果推送未开启，发送提示消息
           if (Config.douyin.push && Config.douyin.push.switch === false) {
-            operations.push(this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送'))
+            await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
           }
-
-          await Promise.all(operations)
         }
       } else {
         // 新增用户：创建新的用户订阅配置
@@ -504,25 +500,23 @@ export class DouYinpush extends Base {
           short_id: user_shortid
         })
 
-        // 并行执行数据库操作和消息发送，提高处理效率
-        const operations = [
-          !isSubscribed ? douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname) : Promise.resolve(),
-          this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-        ]
+        // 顺序执行数据库操作和消息发送
+        if (!isSubscribed) {
+          await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
+        }
+        await this.e.reply(`群：${this.e.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
 
         // 检查推送状态：如果推送未开启，发送提示消息
         if (Config.douyin.push && Config.douyin.push.switch === false) {
-          operations.push(this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送'))
+          await this.e.reply('请发送「#kkk设置抖音推送开启」以进行推送')
         }
-
-        await Promise.all(operations)
       }
 
-      // 并行执行配置保存和界面渲染，减少用户等待时间
-      await Promise.all([
-        config.douyin ? Config.modify('pushlist', 'douyin', config.douyin) : Promise.resolve(),
-        this.renderPushList()
-      ])
+      // 顺序执行配置保存和界面渲染
+      if (config.douyin) {
+        Config.modify('pushlist', 'douyin', config.douyin)
+      }
+      await this.renderPushList()
 
     } catch (error) {
       // 错误处理：记录错误日志并通知用户
