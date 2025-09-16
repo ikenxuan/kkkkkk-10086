@@ -316,7 +316,10 @@ export class BilibiliDBBase {
         )
         // 重新查询
         group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
-        group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+        if (!group) {
+          // 如果查询仍然为空，创建新对象
+          group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+        }
       } catch (/** @type {*} */ error) {
         if (error.code === 'SQLITE_CONSTRAINT') {
           // 可能是并发插入导致的冲突，重新查询
