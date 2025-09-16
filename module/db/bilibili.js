@@ -296,47 +296,21 @@ export class BilibiliDBBase {
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
 
-    const now = new Date().toLocaleString('zh-CN')
-
-    // 尝试插入，如果已存在则忽略
-    await this.#runQuery(
-      'INSERT OR IGNORE INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-      [groupId, botId, now, now]
-    )
-
-    // 查询记录，无论是否存在
     let group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
 
-    // 如果查询不到记录，可能是插入失败，尝试直接插入
     if (!group) {
-      try {
-        await this.#runQuery(
-          'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-          [groupId, botId, now, now]
-        )
-        // 重新查询
-        group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
-        if (!group) {
-          // 如果查询仍然为空，创建新对象
-          group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
-        }
-      } catch (/** @type {*} */ error) {
-        if (error.code === 'SQLITE_CONSTRAINT') {
-          // 可能是并发插入导致的冲突，重新查询
-          group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
-          if (group) {
-            return group
-          }
-          // 如果仍然没有找到，重新抛出错误
-          throw new Error(`无法创建群组记录: ${error.message}`)
-        } else {
-          // 其他错误，重新抛出
-          logger.error(`创建群组记录失败: ${error.message}`)
-          throw new Error(`无法创建群组记录: ${error.message}`)
-        }
-      }
+      const now = new Date().toLocaleString('zh-CN')
+      await this.#runQuery(
+        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+        [groupId, botId, now, now]
+      )
+      // 直接返回新创建的对象
+      return { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
     }
 
+    // 只有查询到现有记录时才需要转换Date对象
+    group.createdAt = new Date(group.createdAt)
+    group.updatedAt = new Date(group.updatedAt)
     return group
   }
 
