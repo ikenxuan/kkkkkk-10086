@@ -319,8 +319,19 @@ export class DouyinDBBase {
         group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
         group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
       } catch (/** @type {*} */ error) {
-        logger.error(`创建群组记录失败: ${error.message}`)
-        throw new Error(`无法创建群组记录: ${error.message}`)
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
+          if (group) {
+            return group
+          }
+          // 如果仍然没有找到，重新抛出错误
+          throw new Error(`无法创建群组记录: ${error.message}`)
+        } else {
+          // 其他错误，重新抛出
+          logger.error(`创建群组记录失败: ${error.message}`)
+          throw new Error(`无法创建群组记录: ${error.message}`)
+        }
       }
     }
 
