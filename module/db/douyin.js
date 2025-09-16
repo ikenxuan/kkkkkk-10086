@@ -301,12 +301,30 @@ export class DouyinDBBase {
 
     if (!group) {
       const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, botId, now, now]
-      )
-      // 直接返回新创建的对象
-      return { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+      try {
+        await this.#runQuery(
+          'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+          [groupId, botId, now, now]
+        )
+        // 直接返回新创建的对象
+        return { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
+          if (group) {
+            // 确保返回的Date对象
+            group.createdAt = new Date(group.createdAt)
+            group.updatedAt = new Date(group.updatedAt)
+            return group
+          }
+          // 如果仍然没有找到，重新抛出错误
+          throw error
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
+      }
     }
 
     // 只有查询到现有记录时才需要转换Date对象

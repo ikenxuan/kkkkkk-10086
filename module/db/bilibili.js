@@ -288,11 +288,11 @@ export class BilibiliDBBase {
   }
 
   /**
-   * 获取或创建群组记录
-   * @param {string} groupId - 群组ID
-   * @param {string} botId - 机器人ID
-   * @returns {Promise<Group>}
-   */
+ * 获取或创建群组记录
+ * @param {string} groupId - 群组ID
+ * @param {string} botId - 机器人ID
+ * @returns {Promise<Group>}
+ */
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
 
@@ -300,12 +300,26 @@ export class BilibiliDBBase {
 
     if (!group) {
       const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, botId, now, now]
-      )
-      // 直接返回新创建的对象
-      return { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+      try {
+        await this.#runQuery(
+          'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+          [groupId, botId, now, now]
+        )
+        // 直接返回新创建的对象
+        return { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
+          if (!group) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
+      }
     }
 
     // 只有查询到现有记录时才需要转换Date对象
