@@ -63,6 +63,7 @@ import sqlite3 from 'sqlite3'
  * @property {number} id - 过滤词ID
  * @property {number} host_mid - B站用户UID
  * @property {string} word - 过滤词
+ * @property {number} bilibiliUserHostMid - B站用户UID（外键）
  * @property {Date} createdAt - 创建时间
  * @property {Date} updatedAt - 更新时间
  */
@@ -73,6 +74,7 @@ import sqlite3 from 'sqlite3'
  * @property {number} id - 过滤标签ID
  * @property {number} host_mid - B站用户UID
  * @property {string} tag - 过滤标签
+ * @property {number} bilibiliUserHostMid - B站用户UID（外键）
  * @property {Date} createdAt - 创建时间
  * @property {Date} updatedAt - 更新时间
  */
@@ -182,7 +184,8 @@ export class BilibiliDBBase {
         word TEXT NOT NULL,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
-        FOREIGN KEY (host_mid) REFERENCES BilibiliUsers(host_mid),
+        bilibiliUserHostMid INTEGER,
+        FOREIGN KEY (bilibiliUserHostMid) REFERENCES BilibiliUsers(host_mid),
         UNIQUE(host_mid, word)
       )`,
 
@@ -193,7 +196,8 @@ export class BilibiliDBBase {
         tag TEXT NOT NULL,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
-        FOREIGN KEY (host_mid) REFERENCES BilibiliUsers(host_mid),
+        bilibiliUserHostMid INTEGER,
+        FOREIGN KEY (bilibiliUserHostMid) REFERENCES BilibiliUsers(host_mid),
         UNIQUE(host_mid, tag)
       )`
     ]
@@ -292,20 +296,20 @@ export class BilibiliDBBase {
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
 
+    const now = new Date().toLocaleString('zh-CN')
+
+    // 尝试插入，如果已存在则忽略
+    await this.#runQuery(
+      'INSERT OR IGNORE INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+      [groupId, botId, now, now]
+    )
+
+    // 查询记录，无论是否存在
     let group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
 
-    if (!group) {
-      const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, botId, now, now]
-      )
-      group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
-    } else {
-      // 确保返回的Date对象
-      group.createdAt = new Date(group.createdAt)
-      group.updatedAt = new Date(group.updatedAt)
-    }
+    // 确保返回的Date对象
+    group.createdAt = new Date(group.createdAt)
+    group.updatedAt = new Date(group.updatedAt)
 
     return group
   }
@@ -350,24 +354,42 @@ export class BilibiliDBBase {
    * @returns {Promise<GroupUserSubscription>}
    */
   async subscribeBilibiliUser(groupId, botId, host_mid, remark = '') {
-    await this.getOrCreateGroup(groupId, botId)
-    await this.getOrCreateBilibiliUser(host_mid, remark)
+    try {
+      await this.getOrCreateGroup(groupId, botId)
+      await this.getOrCreateBilibiliUser(host_mid, remark)
 
-    let subscription = await this.#getQuery(
-      'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
-      [groupId, host_mid]
-    )
-
-    if (!subscription) {
-      const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO GroupUserSubscriptions (groupId, host_mid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, host_mid, now, now]
+      let subscription = await this.#getQuery(
+        'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
+        [groupId, host_mid]
       )
-      subscription = { groupId, host_mid, createdAt: now, updatedAt: now }
-    }
 
-    return subscription
+      if (!subscription) {
+        const now = new Date().toLocaleString('zh-CN')
+        await this.#runQuery(
+          'INSERT INTO GroupUserSubscriptions (groupId, host_mid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+          [groupId, host_mid, now, now]
+        )
+        subscription = { groupId, host_mid, createdAt: now, updatedAt: now }
+      }
+
+      return subscription
+    } catch (/** @type {*} */ error) {
+      if (error.code === 'SQLITE_CONSTRAINT') {
+        // 可能是并发插入导致的冲突，重新查询
+        const subscription = await this.#getQuery(
+          'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
+          [groupId, host_mid]
+        )
+        if (subscription) {
+          return subscription
+        }
+        // 如果仍然没有找到，重新抛出错误
+        throw error
+      } else {
+        // 其他错误，重新抛出
+        throw error
+      }
+    }
   }
 
   /**
@@ -407,18 +429,35 @@ export class BilibiliDBBase {
 
     if (!cache) {
       const now = new Date().toLocaleString('zh-CN')
-      const result = await this.#runQuery(
-        'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [dynamic_id, host_mid, groupId, dynamic_type, now, now]
-      )
-      cache = {
-        id: result.lastID,
-        dynamic_id,
-        host_mid,
-        groupId,
-        dynamic_type,
-        createdAt: now,
-        updatedAt: now
+      try {
+        const result = await this.#runQuery(
+          'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+          [dynamic_id, host_mid, groupId, dynamic_type, now, now]
+        )
+        cache = {
+          id: result.lastID,
+          dynamic_id,
+          host_mid,
+          groupId,
+          dynamic_type,
+          createdAt: now,
+          updatedAt: now
+        }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          cache = await this.#getQuery(
+            'SELECT * FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?',
+            [dynamic_id, host_mid, groupId]
+          )
+          if (!cache) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
       }
     }
 
@@ -652,16 +691,34 @@ export class BilibiliDBBase {
 
     if (!filterWord) {
       const now = new Date().toLocaleString('zh-CN')
-      const result = await this.#runQuery(
-        'INSERT INTO FilterWords (host_mid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [host_mid, word, now, now]
-      )
-      filterWord = {
-        id: result.lastID,
-        host_mid,
-        word,
-        createdAt: now,
-        updatedAt: now
+      try {
+        const result = await this.#runQuery(
+          'INSERT INTO FilterWords (host_mid, word, bilibiliUserHostMid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+          [host_mid, word, host_mid, now, now]
+        )
+        filterWord = {
+          id: result.lastID,
+          host_mid,
+          word,
+          bilibiliUserHostMid: host_mid,
+          createdAt: now,
+          updatedAt: now
+        }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          filterWord = await this.#getQuery(
+            'SELECT * FROM FilterWords WHERE host_mid = ? AND word = ?',
+            [host_mid, word]
+          )
+          if (!filterWord) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
       }
     }
 
@@ -698,16 +755,34 @@ export class BilibiliDBBase {
 
     if (!filterTag) {
       const now = new Date().toLocaleString('zh-CN')
-      const result = await this.#runQuery(
-        'INSERT INTO FilterTags (host_mid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [host_mid, tag, now, now]
-      )
-      filterTag = {
-        id: result.lastID,
-        host_mid,
-        tag,
-        createdAt: now,
-        updatedAt: now
+      try {
+        const result = await this.#runQuery(
+          'INSERT INTO FilterTags (host_mid, tag, bilibiliUserHostMid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+          [host_mid, tag, host_mid, now, now]
+        )
+        filterTag = {
+          id: result.lastID,
+          host_mid,
+          tag,
+          bilibiliUserHostMid: host_mid,
+          createdAt: now,
+          updatedAt: now
+        }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          filterTag = await this.#getQuery(
+            'SELECT * FROM FilterTags WHERE host_mid = ? AND tag = ?',
+            [host_mid, tag]
+          )
+          if (!filterTag) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
       }
     }
 

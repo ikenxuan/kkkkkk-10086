@@ -9,6 +9,7 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 机器人接口 - 存储机器人信息
  * @typedef {Object} Bot
  * @property {string} id - 机器人ID
  * @property {Date} createdAt - 创建时间
@@ -16,6 +17,7 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 群组接口 - 存储群组信息
  * @typedef {Object} Group
  * @property {string} id - 群组ID
  * @property {string} botId - 所属机器人ID
@@ -24,6 +26,7 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 抖音用户接口 - 存储抖音用户信息
  * @typedef {Object} DouyinUser
  * @property {string} sec_uid - 抖音用户sec_uid
  * @property {string} [short_id] - 抖音号
@@ -35,6 +38,7 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 群组用户订阅关系接口 - 存储群组订阅的抖音用户关系
  * @typedef {Object} GroupUserSubscription
  * @property {string} groupId - 群组ID
  * @property {string} sec_uid - 抖音用户sec_uid
@@ -43,6 +47,7 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 抖音缓存接口 - 存储抖音作品缓存
  * @typedef {Object} AwemeCache
  * @property {number} id - 缓存ID
  * @property {string} aweme_id - 作品ID
@@ -53,19 +58,23 @@ import sqlite3 from 'sqlite3'
  */
 
 /**
+ * 过滤词接口 - 存储过滤词
  * @typedef {Object} FilterWord
  * @property {number} id - 过滤词ID
  * @property {string} sec_uid - 抖音用户sec_uid
  * @property {string} word - 过滤词
+ * @property {string} douyinUserSecUid - 抖音用户sec_uid（外键）
  * @property {Date} createdAt - 创建时间
  * @property {Date} updatedAt - 更新时间
  */
 
 /**
+ * 过滤标签接口 - 存储过滤标签
  * @typedef {Object} FilterTag
  * @property {number} id - 过滤标签ID
  * @property {string} sec_uid - 抖音用户sec_uid
  * @property {string} tag - 过滤标签
+ * @property {string} douyinUserSecUid - 抖音用户sec_uid（外键）
  * @property {Date} createdAt - 创建时间
  * @property {Date} updatedAt - 更新时间
  */
@@ -176,7 +185,8 @@ export class DouyinDBBase {
         word TEXT NOT NULL,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
-        FOREIGN KEY (sec_uid) REFERENCES DouyinUsers(sec_uid),
+        douyinUserSecUid TEXT,
+        FOREIGN KEY (douyinUserSecUid) REFERENCES DouyinUsers(sec_uid),
         UNIQUE(sec_uid, word)
       )`,
 
@@ -187,7 +197,8 @@ export class DouyinDBBase {
         tag TEXT NOT NULL,
         createdAt DATETIME NOT NULL,
         updatedAt DATETIME NOT NULL,
-        FOREIGN KEY (sec_uid) REFERENCES DouyinUsers(sec_uid),
+        douyinUserSecUid TEXT,
+        FOREIGN KEY (douyinUserSecUid) REFERENCES DouyinUsers(sec_uid),
         UNIQUE(sec_uid, tag)
       )`
     ]
@@ -286,20 +297,20 @@ export class DouyinDBBase {
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
 
+    const now = new Date().toLocaleString('zh-CN')
+
+    // 尝试插入，如果已存在则忽略
+    await this.#runQuery(
+      'INSERT OR IGNORE INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+      [groupId, botId, now, now]
+    )
+
+    // 查询记录，无论是否存在
     let group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
 
-    if (!group) {
-      const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, botId, now, now]
-      )
-      group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
-    } else {
-      // 确保返回的Date对象
-      group.createdAt = new Date(group.createdAt)
-      group.updatedAt = new Date(group.updatedAt)
-    }
+    // 确保返回的Date对象
+    group.createdAt = new Date(group.createdAt)
+    group.updatedAt = new Date(group.updatedAt)
 
     return group
   }
@@ -348,24 +359,42 @@ export class DouyinDBBase {
    * @returns {Promise<GroupUserSubscription>}
    */
   async subscribeDouyinUser(groupId, botId, sec_uid, short_id = '', remark = '') {
-    await this.getOrCreateGroup(groupId, botId)
-    await this.getOrCreateDouyinUser(sec_uid, short_id, remark)
+    try {
+      await this.getOrCreateGroup(groupId, botId);
+      await this.getOrCreateDouyinUser(sec_uid, short_id, remark);
 
-    let subscription = await this.#getQuery(
-      'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
-      [groupId, sec_uid]
-    )
+      let subscription = await this.#getQuery(
+        'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
+        [groupId, sec_uid]
+      );
 
-    if (!subscription) {
-      const now = new Date().toLocaleString('zh-CN')
-      await this.#runQuery(
-        'INSERT INTO GroupUserSubscriptions (groupId, sec_uid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [groupId, sec_uid, now, now]
-      )
-      subscription = { groupId, sec_uid, createdAt: now, updatedAt: now }
+      if (!subscription) {
+        const now = new Date().toLocaleString('zh-CN');
+        await this.#runQuery(
+          'INSERT INTO GroupUserSubscriptions (groupId, sec_uid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
+          [groupId, sec_uid, now, now]
+        );
+        subscription = { groupId, sec_uid, createdAt: now, updatedAt: now };
+      }
+
+      return subscription;
+    } catch (/** @type {*} */ error) {
+      if (error.code === 'SQLITE_CONSTRAINT') {
+        // 可能是并发插入导致的冲突，重新查询
+        const subscription = await this.#getQuery(
+          'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
+          [groupId, sec_uid]
+        );
+        if (subscription) {
+          return subscription;
+        }
+        // 如果仍然没有找到，重新抛出错误
+        throw error;
+      } else {
+        // 其他错误，重新抛出
+        throw error;
+      }
     }
-
-    return subscription
   }
 
   /**
@@ -684,16 +713,34 @@ export class DouyinDBBase {
 
     if (!filterWord) {
       const now = new Date().toLocaleString('zh-CN')
-      const result = await this.#runQuery(
-        'INSERT INTO FilterWords (sec_uid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [sec_uid, word, now, now]
-      )
-      filterWord = {
-        id: result.lastID,
-        sec_uid,
-        word,
-        createdAt: now,
-        updatedAt: now
+      try {
+        const result = await this.#runQuery(
+          'INSERT INTO FilterWords (sec_uid, word, douyinUserSecUid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+          [sec_uid, word, sec_uid, now, now]
+        )
+        filterWord = {
+          id: result.lastID,
+          sec_uid,
+          word,
+          douyinUserSecUid: sec_uid,
+          createdAt: now,
+          updatedAt: now
+        }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          filterWord = await this.#getQuery(
+            'SELECT * FROM FilterWords WHERE sec_uid = ? AND word = ?',
+            [sec_uid, word]
+          );
+          if (!filterWord) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
       }
     }
 
@@ -730,16 +777,34 @@ export class DouyinDBBase {
 
     if (!filterTag) {
       const now = new Date().toLocaleString('zh-CN')
-      const result = await this.#runQuery(
-        'INSERT INTO FilterTags (sec_uid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        [sec_uid, tag, now, now]
-      )
-      filterTag = {
-        id: result.lastID,
-        sec_uid,
-        tag,
-        createdAt: now,
-        updatedAt: now
+      try {
+        const result = await this.#runQuery(
+          'INSERT INTO FilterTags (sec_uid, tag, douyinUserSecUid, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+          [sec_uid, tag, sec_uid, now, now]
+        );
+        filterTag = {
+          id: result.lastID,
+          sec_uid,
+          tag,
+          douyinUserSecUid: sec_uid,
+          createdAt: now,
+          updatedAt: now
+        }
+      } catch (/** @type {*} */ error) {
+        if (error.code === 'SQLITE_CONSTRAINT') {
+          // 可能是并发插入导致的冲突，重新查询
+          filterTag = await this.#getQuery(
+            'SELECT * FROM FilterTags WHERE sec_uid = ? AND tag = ?',
+            [sec_uid, tag]
+          )
+          if (!filterTag) {
+            // 如果仍然没有找到，重新抛出错误
+            throw error
+          }
+        } else {
+          // 其他错误，重新抛出
+          throw error
+        }
       }
     }
 
