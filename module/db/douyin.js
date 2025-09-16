@@ -317,20 +317,12 @@ export class DouyinDBBase {
         )
         // 重新查询
         group = await this.#getQuery('SELECT * FROM Groups WHERE id = ? AND botId = ?', [groupId, botId])
+        group = { id: groupId, botId, createdAt: new Date(now), updatedAt: new Date(now) }
       } catch (/** @type {*} */ error) {
         logger.error(`创建群组记录失败: ${error.message}`)
         throw new Error(`无法创建群组记录: ${error.message}`)
       }
     }
-
-    // 如果仍然没有找到记录，抛出错误
-    if (!group) {
-      throw new Error(`无法创建或获取群组记录: ${groupId}`)
-    }
-
-    // 确保返回的Date对象
-    group.createdAt = new Date(group.createdAt)
-    group.updatedAt = new Date(group.updatedAt)
 
     return group
   }
