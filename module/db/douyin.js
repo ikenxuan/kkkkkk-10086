@@ -208,14 +208,24 @@ export class DouyinDBBase {
    */
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
-    let group = await this.getQuery("SELECT * FROM Groups WHERE id = ? AND botId = ?", [groupId, botId])
+    let group = await this.getQuery("SELECT * FROM Groups WHERE id = ?", [groupId])
     if (!group) {
+      // 如果群组不存在，创建新群组
       const now = (/* @__PURE__ */ new Date()).toLocaleString()
       await this.runQuery(
         "INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
         [groupId, botId, now, now]
       )
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
+    } else if (group.botId !== botId) {
+      // 如果群组已存在但机器人ID不同，更新机器人ID
+      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      await this.runQuery(
+        "UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?",
+        [botId, now, groupId]
+      )
+      group.botId = botId
+      group.updatedAt = now
     }
     return group
   }
