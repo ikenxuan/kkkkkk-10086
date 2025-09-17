@@ -619,7 +619,7 @@ export class Bilibilipush extends Base {
   async setting(data) {
     const host_mid = Number(data.data.card.mid)
     const config = Config.pushlist // 读取配置文件
-    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
+    const groupId = this.e.group_id
     const botId = this.e.self_id
 
     // 初始化或确保 bilibilipushlist 数组存在

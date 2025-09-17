@@ -419,7 +419,7 @@ export class DouYinpush extends Base {
    */
   async setting(data) {
     const config = Config.pushlist // 读取配置文件
-    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
+    const groupId = this.e.group_id
     const botId = this.e.self_id
     // 使用数组find方法快速定位用户信息卡片，避免循环遍历导致的性能问题
     const userCard = data.data?.find(item => item.card_unique_name === 'user')
