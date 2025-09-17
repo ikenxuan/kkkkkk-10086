@@ -520,7 +520,7 @@ export class DouYinpush extends Base {
   /** 渲染推送列表图片 */
   async renderPushList() {
     await this.syncConfigToDatabase()
-    const groupId = 'group_id' in this.e && this.e.group_id ? this.e.group_id : ''
+    const groupId = this.e.group_id
 
     // 获取当前群组的所有订阅
     const subscriptions = await douyinDB?.getGroupSubscriptions(groupId)

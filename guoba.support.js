@@ -1,4 +1,5 @@
-import { Config } from './module/utils/index.js'
+import { Config, logger } from './module/utils/index.js'
+
 // 支持锅巴
 export function supportGuoba() {
   return {
@@ -687,10 +688,36 @@ export function supportGuoba() {
         }
       },
 
-      // 设置配置的方法（前端点确定后调用的方法）
+      /**
+       * 保存配置数据方法（用于前端提交保存）
+       * @param {*} data 
+       * @param {*} param1 
+       * @returns 
+       */
       async setConfigData(data, { Result }) {
-        for (const key in data) Config.modify(...key.split('.'), data[key])
-        return Result.ok({}, '保存成功辣ε(*´･ω･)з')
+        try {
+          for (const key in data) {
+            const parts = key.split('.')
+
+            // 检查是否为需要特殊处理的情况
+            // 1. bilibili.push.xxx 或 douyin.push.xxx 格式
+            // 2. 四层嵌套结构（有三个点分隔符，即长度为4）
+            if ((key.startsWith('bilibili.push.') || key.startsWith('douyin.push.')) || parts.length === 4) {
+              if (parts.length > 0) {
+                const filename = parts[0]
+                const nestedKey = parts.slice(1).join('.')
+                filename && nestedKey && Config.modify(filename, nestedKey, data[key])
+              }
+            } else {
+              // 其他配置保持原来的处理方式
+              Config.modify(...key.split('.'), data[key])
+            }
+          }
+          return Result.ok({}, '保存成功辣(๑•̀ㅂ•́)و✧')
+        } catch (error) {
+          logger.error('设置配置数据失败:', error)
+          return Result.error('保存失败辣(ಥ_ಥ)', error)
+        }
       }
     }
   }
