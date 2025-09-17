@@ -29,7 +29,15 @@ export default class YamlReader {
    * @param {any} value - 新的参数值
    */
   set(key, value) {
-    this.document.set(key, value)
+    // 检查键名是否包含点号
+    if (key.includes('.')) {
+      // 将带点号的键名转换为路径数组
+      const path = key.split('.')
+      this.document.setIn(path, value)
+    } else {
+      // 对于不带点号的键名，直接设置
+      this.document.set(key, value)
+    }
     this.write()
   }
 
@@ -38,7 +46,12 @@ export default class YamlReader {
    * @param {string} key - 要删除的参数键名
    */
   rm(key) {
-    this.document.delete(key)
+    if (key.includes('.')) {
+      const path = key.split('.')
+      this.document.deleteIn(path)
+    } else {
+      this.document.delete(key)
+    }
     this.write()
   }
 
