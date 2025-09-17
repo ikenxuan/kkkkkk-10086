@@ -123,7 +123,7 @@ class Tools {
       const fileSizeInMB = fileSizeInBytes / (1024 * 1024)
       return fileSizeInMB
     } catch (error) {
-      console.error('获取文件大小时发生错误:', error)
+      logger.error('获取文件大小时发生错误:', error)
       throw error
     }
   }

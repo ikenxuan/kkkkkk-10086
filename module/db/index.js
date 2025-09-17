@@ -1,9 +1,8 @@
 import { BilibiliDBBase } from './bilibili.js'
 import { DouyinDBBase } from './douyin.js'
 
-// export * from './bilibili.js'
-// export * from './douyin.js'
-export { BilibiliDBBase, DouyinDBBase }
+export * from './bilibili.js'
+export * from './douyin.js'
 
 /** 抖音数据库实例 @type {DouyinDBBase | null} */
 let douyinDB = null
@@ -75,11 +74,8 @@ export const initAllDatabases = async () => {
 }
 
 // 导出数据库实例（延迟初始化）
-export const douyinDBInstance = await getDouyinDB()
-export const bilibiliDBInstance = await getBilibiliDB()
-
-// 为了保持向后兼容性，保留原有的导出名称
-export { bilibiliDBInstance as bilibiliDB, douyinDBInstance as douyinDB }
+const douyinDBInstance = await getDouyinDB()
+const bilibiliDBInstance = await getBilibiliDB()
 
 /**
  * 清理旧的动态缓存记录
@@ -97,3 +93,6 @@ export const cleanOldDynamicCache = async (platform, days = 7) => {
   }
   return 0
 }
+
+// 为了保持向后兼容性，保留原有的导出名称
+export { bilibiliDBInstance as bilibiliDB, douyinDBInstance as douyinDB }
