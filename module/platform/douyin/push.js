@@ -174,7 +174,7 @@ export class DouYinpush extends Base {
           const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
             url: Detail_Data.share_url,
             headers: {
-              ...this.headers,
+              ...douyinBaseHeaders,
               Referer: 'https://www.douyin.com',
               Cookie: ''
             }
@@ -252,7 +252,12 @@ export class DouYinpush extends Base {
                 // 下载视频
                 await downloadVideo(this.e, {
                   video_url: downloadUrl,
-                  title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` }
+                  title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` },
+                  headers: {
+                    ...douyinBaseHeaders,
+                    Referer: downloadUrl,
+                    Cookie: ''
+                  }
                 }, { active: true, activeOption: { uin: botId, group_id: groupId } })
               } catch (error) {
                 logger.error(error)
