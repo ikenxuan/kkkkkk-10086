@@ -255,6 +255,14 @@ export function supportGuoba() {
           required: false
         },
         {
+          component: 'Divider',
+          label: '抖音视频推送配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
           field: 'douyin.push.switch',
           label: '抖音推送',
           bottomHelpMessage: '开启后需使用[#设置抖音推送+抖音号]',
@@ -338,33 +346,25 @@ export function supportGuoba() {
               {
                 field: 'Keywords',
                 label: '指定关键词',
-                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
-                component: 'Select',
+                bottomHelpMessage: '需开启「过滤模式」，黑名单：命中不推送；白名单：命中才推送',
+                component: 'GTags',
                 componentProps: {
-                  mode: 'multiple',
+                  placeholder: '请输入关键词: 如：广告',
                   allowCreate: true,
-                  options: [
-                    { label: '广告', value: '广告' },
-                    { label: '抽奖', value: '抽奖' },
-                    { label: '活动', value: '活动' },
-                    { label: '转发', value: '转发' }
-                  ]
+                  allowAdd: true,
+                  allowDel: true
                 }
               },
               {
                 field: 'Tags',
                 label: '指定标签',
-                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
-                component: 'Select',
+                bottomHelpMessage: '需开启「过滤模式」，黑名单：命中不推送；白名单：命中才推送',
+                component: 'GTags',
                 componentProps: {
-                  mode: 'multiple',
+                  placeholder: '请输入标签: 如：互动抽奖',
                   allowCreate: true,
-                  options: [
-                    { label: '互动抽奖', value: '互动抽奖' },
-                    { label: '城巴佬', value: '城巴佬' },
-                    { label: '问卷调查', value: '问卷调查' },
-                    { label: '转发动态', value: '转发动态' }
-                  ]
+                  allowAdd: true,
+                  allowDel: true
                 }
               }
             ]
@@ -375,7 +375,7 @@ export function supportGuoba() {
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
-          component: "EasyCron",
+          component: 'EasyCron',
           required: false,
           componentProps: {
             placeholder: '已内置默认每10分钟推送一次 */10 * * * *'
@@ -410,6 +410,19 @@ export function supportGuoba() {
           required: false
         },
         {
+          field: 'douyin.push.shareType',
+          label: '分享链接二维码的类型',
+          bottomHelpMessage: 'web为跳转到抖音网页，download为视频下载直链',
+          component: 'RadioGroup',
+          required: false,
+          componentProps: {
+            options: [
+              { label: '跳转到抖音网页', value: 'web' },
+              { label: '视频下载直链', value: 'download' }
+            ]
+          }
+        },
+        {
           label: '哔哩哔哩',
           component: 'SOFT_GROUP_BEGIN',
         },
@@ -429,6 +442,24 @@ export function supportGuoba() {
           required: false
         },
         {
+          field: 'bilibili.bilibiliTip',
+          label: 'B站解析选项',
+          helpMessage: '必填项，选择要解析的内容',
+          component: 'Select',
+          required: true,
+          componentProps: {
+            mode: 'multiple',
+            allowCreate: false,
+            options: [
+              { label: '提示信息', value: '提示信息' },
+              { label: '简介', value: '简介' },
+              { label: '评论图', value: '评论图' },
+              { label: '视频', value: '视频' },
+              { label: '动态', value: '动态' },
+            ]
+          }
+        },
+        {
           field: 'bilibili.displayContent',
           label: 'B站简介显示选项',
           component: 'Select',
@@ -445,30 +476,16 @@ export function supportGuoba() {
           }
         },
         {
+          field: 'bilibili.videopriority',
+          label: '内容优先',
+          helpMessage: '解析视频是否优先保内容，打开为优先保证上传将使用最低分辨率，关闭为优先保清晰度将使用最高分辨率',
+          component: 'Switch',
+          required: false
+        },
+        {
           field: 'bilibili.videoQuality',
           label: 'B站视频画质偏好设置',
           bottomHelpMessage: 'B站视频画质偏好设置',
-          component: 'RadioGroup',
-          componentProps: {
-            options: [
-              { label: '自动根据大小选择', value: 0 },
-              { label: '240P 极速 (仅MP4格式支持)', value: 6 },
-              { label: '360P 流畅', value: 16 },
-              { label: '480P 清晰', value: 32 },
-              { label: '720P 高清 (WEB默认值)', value: 64 },
-              { label: '720P60 高帧率 (需登录)', value: 74 },
-              { label: '1080P 高清 (TV/APP默认值，需登录)', value: 80 },
-              { label: '1080P+ 高码率 (需大会员)', value: 112 },
-              { label: '1080P60 高帧率 (需大会员)', value: 116 },
-              { label: '4K 超清 (需大会员且支持4K)', value: 120 },
-              { label: '8K 超高清 (需大会员且支持8K)', value: 127 }
-            ]
-          }
-        },
-        {
-          field: 'bilibili.push.pushVideoQuality',
-          label: '推送视频画质偏好设置',
-          bottomHelpMessage: '推送视频画质偏好设置',
           component: 'RadioGroup',
           componentProps: {
             options: [
@@ -501,36 +518,6 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'bilibili.push.pushMaxAutoVideoSize',
-          label: '推送视频自动最大画质',
-          helpMessage: '必填项',
-          bottomHelpMessage: '请在此输入数字',
-          component: 'InputNumber',
-          required: true,
-          componentProps: {
-            placeholder: '范围：0 ~ 无限',
-            min: 0,
-            max: 9999,
-            addonAfter: 'MB'
-          }
-        },
-        {
-          field: 'bilibili.bilibiliTip',
-          label: 'B站解析选项',
-          component: 'Select',
-          componentProps: {
-            mode: 'multiple',
-            allowCreate: false,
-            options: [
-              { label: '提示信息', value: '提示信息' },
-              { label: '简介', value: '简介' },
-              { label: '评论图', value: '评论图' },
-              { label: '视频', value: '视频' },
-              { label: '动态', value: '动态' },
-            ]
-          }
-        },
-        {
           field: 'bilibili.bilibilinumcomments',
           label: '评论解析数量',
           helpMessage: '必填项',
@@ -550,6 +537,14 @@ export function supportGuoba() {
           bottomHelpMessage: '评论图是否显示真实评论数量，关闭则显示解析到的评论数量',
           component: 'Switch',
           required: false
+        },
+        {
+          component: 'Divider',
+          label: '哔哩哔哩视频推送配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
         },
         {
           field: 'bilibili.push.switch',
@@ -614,33 +609,25 @@ export function supportGuoba() {
               {
                 field: 'Keywords',
                 label: '指定关键词',
-                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
-                component: 'Select',
+                bottomHelpMessage: '需开启「过滤模式」，黑名单：命中不推送；白名单：命中才推送',
+                component: 'GTags',
                 componentProps: {
-                  mode: 'multiple',
+                  placeholder: '请输入关键词: 如：广告',
                   allowCreate: true,
-                  options: [
-                    { label: '广告', value: '广告' },
-                    { label: '抽奖', value: '抽奖' },
-                    { label: '活动', value: '活动' },
-                    { label: '转发', value: '转发' }
-                  ]
+                  allowAdd: true,
+                  allowDel: true
                 }
               },
               {
                 field: 'Tags',
                 label: '指定标签',
-                bottomHelpMessage: '可不填，推送过程中会自动获取并写入',
-                component: 'Select',
+                bottomHelpMessage: '需开启「过滤模式」，黑名单：命中不推送；白名单：命中才推送',
+                component: 'GTags',
                 componentProps: {
-                  mode: 'multiple',
+                  placeholder: '请输入标签: 如：互动抽奖',
                   allowCreate: true,
-                  options: [
-                    { label: '互动抽奖', value: '互动抽奖' },
-                    { label: '城巴佬', value: '城巴佬' },
-                    { label: '问卷调查', value: '问卷调查' },
-                    { label: '转发动态', value: '转发动态' }
-                  ]
+                  allowAdd: true,
+                  allowDel: true
                 }
               }
             ]
@@ -651,7 +638,7 @@ export function supportGuoba() {
           label: 'Cron表达式',
           helpMessage: '修改后重启生效',
           bottomHelpMessage: '定时任务推送时间，如果想改成5分钟一次用后面的表达式 */5 * * * *',
-          component: "EasyCron",
+          component: 'EasyCron',
           required: false,
           componentProps: {
             placeholder: '已内置默认每10分钟推送一次 */10 * * * *'
@@ -686,11 +673,39 @@ export function supportGuoba() {
           required: false
         },
         {
-          field: 'bilibili.videopriority',
-          label: '内容优先',
-          helpMessage: '解析视频是否优先保内容，打开为优先保证上传将使用最低分辨率，关闭为优先保清晰度将使用最高分辨率',
-          component: 'Switch',
-          required: false
+          field: 'bilibili.push.pushVideoQuality',
+          label: '推送视频画质偏好设置',
+          bottomHelpMessage: '推送视频画质偏好设置',
+          component: 'RadioGroup',
+          componentProps: {
+            options: [
+              { label: '自动根据大小选择', value: 0 },
+              { label: '240P 极速 (仅MP4格式支持)', value: 6 },
+              { label: '360P 流畅', value: 16 },
+              { label: '480P 清晰', value: 32 },
+              { label: '720P 高清 (WEB默认值)', value: 64 },
+              { label: '720P60 高帧率 (需登录)', value: 74 },
+              { label: '1080P 高清 (TV/APP默认值，需登录)', value: 80 },
+              { label: '1080P+ 高码率 (需大会员)', value: 112 },
+              { label: '1080P60 高帧率 (需大会员)', value: 116 },
+              { label: '4K 超清 (需大会员且支持4K)', value: 120 },
+              { label: '8K 超高清 (需大会员且支持8K)', value: 127 }
+            ]
+          }
+        },
+        {
+          field: 'bilibili.push.pushMaxAutoVideoSize',
+          label: '推送视频自动最大画质',
+          helpMessage: '必填项',
+          bottomHelpMessage: '请在此输入数字',
+          component: 'InputNumber',
+          required: true,
+          componentProps: {
+            placeholder: '范围：0 ~ 无限',
+            min: 0,
+            max: 9999,
+            addonAfter: 'MB'
+          }
         },
         {
           label: '快手配置',
@@ -907,7 +922,7 @@ export function supportGuoba() {
         {
           field: 'request.proxy.auth.username',
           label: '代理服务器用户名',
-          bottomHelpMessage: '代理服务器认证信息用户名',
+          bottomHelpMessage: '没有用户名可以为空',
           required: false,
           component: 'Input',
           componentProps: {
@@ -917,7 +932,7 @@ export function supportGuoba() {
         {
           field: 'request.proxy.auth.password',
           label: '代理服务器密码',
-          bottomHelpMessage: '代理服务器认证信息密码',
+          bottomHelpMessage: '没有密码可以为空',
           required: false,
           component: 'InputPassword',
           componentProps: {
@@ -953,7 +968,6 @@ export function supportGuoba() {
             // 统一处理所有配置键，不管嵌套层级
             if (parts.length >= 1) {
               const filename = parts[0]
-
               if (filename) {
                 if (parts.length > 1) {
                   // 有嵌套键的情况

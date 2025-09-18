@@ -33,7 +33,7 @@ import YAML from 'yaml'
  * @property {string} [cron] 推送定时任务的cron表达式
  * @property {boolean} [parsedynamic] 推送时是否一同解析该作品
  * @property {boolean} [log] 是否打印日志
- * @property {string} [shareType] 分享链接二维码的类型
+ * @property {'web'|'download'} [shareType] 分享链接二维码的类型
  */
 
 /**
