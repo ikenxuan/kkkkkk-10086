@@ -36,7 +36,7 @@ export class kkkHelp extends plugin {
   }
 
   async help(e) {
-    const img = await Render('help/index')
+    const img = await Render('other/help')
     await e.reply(img)
     return true
   }

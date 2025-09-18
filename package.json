@@ -11,6 +11,7 @@
     "postinstall": "node -e \"if (!require('fs').existsSync('node_modules/sqlite3/build')) process.exit(1)\" || npm rebuild @karinjs/sqlite3-cjs"
   },
   "dependencies": {
+    "karin-plugin-kkk": "file:../../../karin-plugin-kkk/packages/core",
     "@ikenxuan/amagi": "5.3.0",
     "@karinjs/md-html": "^1.2.1",
     "child_process": "^1.0.2",
