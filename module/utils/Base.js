@@ -144,7 +144,7 @@ export class Base {
                 await sendMasterMessage('bilibili', img)
                 throw new Error(err.data.amagiMessage)
               }
-              await e.reply(segment.image(img))
+              await e.reply(img)
               throw new Error(err.data.amagiMessage)
             }
             return result
@@ -331,12 +331,12 @@ export const statBotId = (pushList) => {
  */
 const sendMasterMessage = async (platform, img) => {
   if (Version.BotName === 'TRSS-Yunzai') {
-    Bot.sendMasterMsg(['推送任务出错！请即时解决以消除警告', segment.image(img)])
+    Bot.sendMasterMsg(['推送任务出错！请即时解决以消除警告', img])
   } else {
     const botId = statBotId(Config.pushlist)
     const masterList = cfg.masterQQ
     for (const masterQQ of masterList) {
-      await Bot[botId[platform].botId].pickFriend(masterQQ).sendMsg(['推送任务出错！请即时解决以消除警告', segment.image(img)])
+      await Bot[botId[platform].botId].pickFriend(masterQQ).sendMsg(['推送任务出错！请即时解决以消除警告', img])
     }
   }
 }

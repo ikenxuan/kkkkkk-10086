@@ -114,7 +114,8 @@ export const Render = async (path, params) => {
     admin: 'admin/html',
     kuaishou: 'kuaishou/html',
     help: 'help/html',
-    version: 'version/html'
+    version: 'version/html',
+    apiError: 'apiError/html'
   }
   const platform = Object.keys(basePaths).find(key => path.startsWith(key))
   if (platform) {
