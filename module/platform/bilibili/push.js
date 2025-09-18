@@ -884,5 +884,5 @@ const skipDynamic = async (PushItem) => {
 
   logger.debug(`检查动态是否需要过滤：https://t.bilibili.com/${PushItem.Dynamic_Data.id_str}`)
   const shouldFilter = await bilibiliDB?.shouldFilter(PushItem, tags)
-  return shouldFilter || true
+  return shouldFilter || false
 }
