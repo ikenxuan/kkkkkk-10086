@@ -174,10 +174,9 @@ export class DouYinpush extends Base {
           const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
             url: Detail_Data.share_url,
             headers: {
-              'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
-              Accept: '*/*',
-              'Accept-Encoding': 'gzip, deflate, br',
-              Connection: 'keep-alive'
+              ...this.headers,
+              Referer: 'https://www.douyin.com',
+              Cookie: ''
             }
           }).getLocation()
           img = await Render('douyin/dynamic', {
@@ -236,12 +235,18 @@ export class DouYinpush extends Base {
                   const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
                   downloadUrl = await new Networks({
                     url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
-                    headers: douyinBaseHeaders
+                    headers: {
+                      ...douyinBaseHeaders,
+                      Cookie: ''
+                    }
                   }).getLongLink()
                 } else {
                   downloadUrl = await new Networks({
                     url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
-                    headers: douyinBaseHeaders
+                    headers: {
+                      ...douyinBaseHeaders,
+                      Cookie: ''
+                    }
                   }).getLongLink()
                 }
                 // 下载视频

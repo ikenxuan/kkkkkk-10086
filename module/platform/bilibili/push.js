@@ -404,7 +404,7 @@ export class Bilibilipush extends Base {
                     await Bot[botId].pickGroup(groupId).sendMsg(
                       [
                         `设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n视频太大了，还是去B站看吧~`,
-                        segment.reply(status.messageId)
+                        segment.reply(status.message_id)
                       ]
                     )
                     break
@@ -483,7 +483,7 @@ export class Bilibilipush extends Base {
           }
         }
 
-        if (skip || (status && status?.messageId)) {
+        if (skip || (status && status?.message_id)) {
           // 使用新的数据库API添加动态缓存
           await bilibiliDB?.addDynamicCache(
             dynamicId,
