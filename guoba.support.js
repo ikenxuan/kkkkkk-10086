@@ -843,7 +843,7 @@ export function supportGuoba() {
           component: 'InputNumber',
           required: false,
           componentProps: {
-            placeholder: '范围：5 ~ 114514',
+            placeholder: '范围：5000 ~ 9999999',
             min: 5000,
             max: 9999999,
             addonAfter: 'ms'
@@ -888,11 +888,8 @@ export function supportGuoba() {
           field: 'request.proxy.port',
           label: '代理端口',
           bottomHelpMessage: '代理服务器端口',
-          component: 'Input',
-          required: false,
-          componentProps: {
-            placeholder: '代理端口：8888'
-          }
+          component: 'InputNumber',
+          required: false
         },
         {
           field: 'request.proxy.protocol',
