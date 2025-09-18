@@ -24,7 +24,7 @@ export default class YamlReader {
 
   /**
    * 解析YAML文件并返回Document对象，保留注释。
-   * @returns {import('yaml').Document} 包含YAML数据和注释的Document对象
+   * @returns {*} 包含YAML数据和注释的Document对象
    */
   parseDocument() {
     try {

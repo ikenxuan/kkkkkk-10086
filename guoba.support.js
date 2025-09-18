@@ -114,7 +114,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'app.removecache',
+          field: 'app.removeCache',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
           bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
@@ -908,7 +908,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'request.proxy.auth.user.name',
+          field: 'request.proxy.auth.username',
           label: '代理服务器用户名',
           bottomHelpMessage: '代理服务器认证信息用户名',
           required: false,
@@ -918,7 +918,7 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'request.proxy.auth.user.password',
+          field: 'request.proxy.auth.password',
           label: '代理服务器密码',
           bottomHelpMessage: '代理服务器认证信息密码',
           required: false,
