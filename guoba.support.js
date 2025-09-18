@@ -922,7 +922,7 @@ export function supportGuoba() {
           label: '代理服务器密码',
           bottomHelpMessage: '代理服务器认证信息密码',
           required: false,
-          component: 'Input',
+          component: 'InputPassword',
           componentProps: {
             placeholder: '代理服务器密码'
           }
