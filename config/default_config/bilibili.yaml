@@ -65,6 +65,7 @@ push:
   #  - 112: 1080P+ 高码率 (需大会员)
   #  - 116: 1080P60 高帧率 (需大会员)
   #  - 120: 4K 超清 (需大会员且支持4K)
+  #  - 127: 8K 超高清 (需大会员且支持8K)
   pushVideoQuality: 0
   # 推送时遇到视频动态时解析的视频体积上限，自动画质模式下可接受的最大视频大小（单位：MB），仅在 「pushVideoQuality」 为 0 且「parsedynamic」为 true时生效
   pushMaxAutoVideoSize: 50

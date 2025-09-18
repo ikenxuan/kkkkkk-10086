@@ -41,6 +41,7 @@ import YAML from 'yaml'
  * @property {boolean} [DouyinConfig.douyintool] 抖音解析开关
  * @property {string[]} [DouyinConfig.douyinTip] 抖音解析可选列表
  * @property {number} [DouyinConfig.numcomments] 抖音评论数量
+ * @property {boolean} [DouyinConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [DouyinConfig.commentsimg] 发送抖音作品评论图开关
  * @property {boolean} [DouyinConfig.detailMusic] 发送抖音背景音乐开关
  * @property {boolean} [DouyinConfig.sendHDrecord] 图集BGM是否使用高清语音发送

@@ -600,6 +600,7 @@ export class DouYinpush extends Base {
    */
   async checkremark() {
     // 读取配置文件内容
+    /** @type {import('../../utils/Config.js').PushlistConfig} */
     const config = Config.pushlist
     /** @type {{ sec_uid: string }[]} */
     const updateList = []
@@ -631,7 +632,7 @@ export class DouYinpush extends Base {
       }
 
       // 将更新后的配置文件内容写回文件
-      Config.modify('pushlist', 'douyin', /** @type {any} */(config.douyin))
+      Config.modify('pushlist', 'douyin', config.douyin)
     }
 
     return false

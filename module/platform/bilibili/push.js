@@ -697,6 +697,7 @@ export class Bilibilipush extends Base {
    */
   async checkremark() {
     // 读取配置文件内容
+    /** @type {import('../../utils/Config.js').PushlistConfig} */
     const config = Config.pushlist
     const abclist = []
     if (!Config.pushlist.bilibili || Config.pushlist.bilibili.length === 0) return true
@@ -725,7 +726,7 @@ export class Bilibilipush extends Base {
       }
       // 将更新后的配置文件内容写回文件
       if (config.bilibili) {
-        Config.modify('pushlist', 'bilibili', /** @type {any} */(config.bilibili))
+        Config.modify('pushlist', 'bilibili', config.bilibili)
       }
     }
     return true

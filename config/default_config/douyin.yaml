@@ -12,11 +12,8 @@ douyinTip:
 # 抖音评论数量，范围1~无限条
 numcomments: 5
 
-# 发送抖音作品评论图
-commentsimg: true
-
-# 发送抖音背景音乐
-detailMusic: true
+# 评论图是否显示真实评论数量，关闭则显示解析到的评论数量
+realCommentCount: false
 
 # 图集BGM是否使用高清语音发送，高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
 sendHDrecord: true

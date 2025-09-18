@@ -106,26 +106,6 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'upload.usefilelimit',
-          label: '使用视频文件上传限制',
-          bottomHelpMessage: '开启后会根据解析的视频文件大小判断是否需要上传（B站番剧无影响）',
-          component: 'Switch',
-          required: false
-        },
-        {
-          field: 'upload.filelimit',
-          label: '视频文件大小限制',
-          bottomHelpMessage: '解析的视频文件大于该数值则不会上传 单位: MB（B站番剧无影响）',
-          component: 'InputNumber',
-          required: false,
-          componentProps: {
-            placeholder: '范围：5 ~ 114514',
-            min: 5,
-            max: 114514,
-            addonAfter: 'MB'
-          }
-        },
-        {
           component: 'Divider',
           label: '其他配置',
           componentProps: {
@@ -138,6 +118,14 @@ export function supportGuoba() {
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
           bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'app.sendforwardmsg',
+          label: '发送合并转发消息',
+          helpMessage: '意义不明，但对作者有用',
+          bottomHelpMessage: '发送合并转发消息，可能多用于抖音解析',
           component: 'Switch',
           required: false
         },
@@ -244,6 +232,27 @@ export function supportGuoba() {
             max: 9999,
             addonAfter: '条'
           }
+        },
+        {
+          field: 'douyin.realCommentCount',
+          label: '显示真实评论数量',
+          bottomHelpMessage: '评论图是否显示真实评论数量，关闭则显示解析到的评论数量',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'douyin.sendHDrecord',
+          label: 'BGM使用高清语音',
+          bottomHelpMessage: '高清语音「ios/PC」系统均无法播放，自行衡量开关',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'douyin.autoResolution',
+          label: '自动解析分辨率',
+          bottomHelpMessage: '根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载',
+          component: 'Switch',
+          required: false
         },
         {
           field: 'douyin.push.switch',
@@ -394,13 +403,6 @@ export function supportGuoba() {
           required: false
         },
         {
-          field: 'douyin.sendHDrecord',
-          label: 'BGM使用高清语音',
-          bottomHelpMessage: '高清语音「ios/PC」系统均无法播放，自行衡量开关',
-          component: 'Switch',
-          required: false
-        },
-        {
           field: 'douyin.push.parsedynamic',
           label: '一同发送作品视频',
           bottomHelpMessage: '和推送图一同将新作品内容发送出去（图集暂未支持）',
@@ -464,8 +466,43 @@ export function supportGuoba() {
           }
         },
         {
+          field: 'bilibili.push.pushVideoQuality',
+          label: '推送视频画质偏好设置',
+          bottomHelpMessage: '推送视频画质偏好设置',
+          component: 'RadioGroup',
+          componentProps: {
+            options: [
+              { label: '自动根据大小选择', value: 0 },
+              { label: '240P 极速 (仅MP4格式支持)', value: 6 },
+              { label: '360P 流畅', value: 16 },
+              { label: '480P 清晰', value: 32 },
+              { label: '720P 高清 (WEB默认值)', value: 64 },
+              { label: '720P60 高帧率 (需登录)', value: 74 },
+              { label: '1080P 高清 (TV/APP默认值，需登录)', value: 80 },
+              { label: '1080P+ 高码率 (需大会员)', value: 112 },
+              { label: '1080P60 高帧率 (需大会员)', value: 116 },
+              { label: '4K 超清 (需大会员且支持4K)', value: 120 },
+              { label: '8K 超高清 (需大会员且支持8K)', value: 127 }
+            ]
+          }
+        },
+        {
           field: 'bilibili.maxAutoVideoSize',
           label: '自动画质最大视频大小',
+          helpMessage: '必填项',
+          bottomHelpMessage: '请在此输入数字',
+          component: 'InputNumber',
+          required: true,
+          componentProps: {
+            placeholder: '范围：0 ~ 无限',
+            min: 0,
+            max: 9999,
+            addonAfter: 'MB'
+          }
+        },
+        {
+          field: 'bilibili.push.pushMaxAutoVideoSize',
+          label: '推送视频自动最大画质',
           helpMessage: '必填项',
           bottomHelpMessage: '请在此输入数字',
           component: 'InputNumber',
@@ -506,6 +543,13 @@ export function supportGuoba() {
             max: 9999,
             addonAfter: '条'
           }
+        },
+        {
+          field: 'bilibili.realCommentCount',
+          label: '显示真实评论数量',
+          bottomHelpMessage: '评论图是否显示真实评论数量，关闭则显示解析到的评论数量',
+          component: 'Switch',
+          required: false
         },
         {
           field: 'bilibili.push.switch',
@@ -636,7 +680,7 @@ export function supportGuoba() {
         },
         {
           field: 'bilibili.push.parsedynamic',
-          label: '发送动态的视频',
+          label: '是否解析动态',
           helpMessage: '该UP的最新动态可能是视频，可选是否与推送图片一同发送',
           component: 'Switch',
           required: false
@@ -687,6 +731,201 @@ export function supportGuoba() {
             max: 30,
             addonAfter: '条'
           }
+        },
+        {
+          label: '上传配置',
+          component: 'SOFT_GROUP_BEGIN',
+        },
+        {
+          component: 'Divider',
+          label: '上传配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
+          field: 'upload.sendbase64',
+          label: '转换base64发送',
+          bottomHelpMessage: '开启后会发送视频经本插件转换为base64格式后再发送',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'upload.usefilelimit',
+          label: '使用视频上传拦截',
+          bottomHelpMessage: '视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'upload.filelimit',
+          label: '视频上传拦截阈值',
+          bottomHelpMessage: '视频拦截阈值（填数字），视频文件大于该数值则不会上传 单位: MB，「视频文件上传限制」开启后才会生效',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5,
+            max: 114514,
+            addonAfter: 'MB'
+          }
+        },
+        {
+          field: 'upload.compress',
+          label: '使用视频压缩',
+          bottomHelpMessage: '压缩视频，开启后会将视频文件压缩后再上传，适合上传大文件',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'upload.compresstrigger',
+          label: '压缩视频触发阈值',
+          bottomHelpMessage: '触发视频压缩的阈值，单位：MB。当文件大小超过该值时，才会压缩视频，「使用压缩视频」开启后才会生效',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5,
+            max: 114514,
+            addonAfter: 'MB'
+          }
+        },
+        {
+          field: 'upload.compressvalue',
+          label: '压缩后的视频大小',
+          bottomHelpMessage: '压缩后的值，若视频文件大小大于「压缩视频触发阈值」的值，则会进行压缩至该值（±5%），「使用压缩视频」开启后才会生效',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5,
+            max: 114514,
+            addonAfter: 'MB'
+          }
+        },
+        {
+          field: 'upload.usegroupfile',
+          label: '使用文件上传',
+          bottomHelpMessage: '使用文件上传，开启后会将视频文件上传到群文件中，私聊也行',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'upload.groupfilevalue',
+          label: '群文件上传阈值',
+          bottomHelpMessage: '当文件大小超过该值时将使用群文件上传，单位：MB，「使用文件上传」开启后才会生效',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5,
+            max: 114514,
+            addonAfter: 'MB'
+          }
+        },
+        {
+          label: '请求配置',
+          component: 'SOFT_GROUP_BEGIN',
+        },
+        {
+          component: 'Divider',
+          label: '请求配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
+          field: 'request.timeout',
+          label: '请求超时时间',
+          bottomHelpMessage: '请求超时时间，单位：毫秒',
+          component: 'InputNumber',
+          required: false,
+          componentProps: {
+            placeholder: '范围：5 ~ 114514',
+            min: 5000,
+            max: 9999999,
+            addonAfter: 'ms'
+          }
+        },
+        {
+          field: 'request.User-Agent',
+          label: '请求User-Agent',
+          bottomHelpMessage: '请求User-Agent',
+          component: 'Input',
+          required: false,
+          componentProps: {
+            placeholder: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+          }
+        },
+        {
+          component: 'Divider',
+          label: '代理配置',
+          componentProps: {
+            orientation: 'left',
+            plain: true
+          }
+        },
+        {
+          field: 'request.proxy.switch',
+          label: '使用代理',
+          bottomHelpMessage: '使用代理，开启后会使用代理服务器进行请求',
+          component: 'Switch',
+          required: false
+        },
+        {
+          field: 'request.proxy.host',
+          label: '代理主机',
+          bottomHelpMessage: '代理服务器主机地址',
+          component: 'Input',
+          required: false,
+          componentProps: {
+            placeholder: '代理主机地址：127.0.0.1'
+          }
+        },
+        {
+          field: 'request.proxy.port',
+          label: '代理端口',
+          bottomHelpMessage: '代理服务器端口',
+          component: 'Input',
+          required: false,
+          componentProps: {
+            placeholder: '代理端口：8888'
+          }
+        },
+        {
+          field: 'request.proxy.protocol',
+          label: '代理协议',
+          bottomHelpMessage: '代理服务器协议类型(http/https)',
+          required: false,
+          component: 'RadioGroup',
+          componentProps: {
+            options: [
+              { label: 'http', value: 'http' },
+              { label: 'https', value: 'https' }
+            ]
+          }
+        },
+        {
+          field: 'request.proxy.auth.user.name',
+          label: '代理服务器用户名',
+          bottomHelpMessage: '代理服务器认证信息用户名',
+          required: false,
+          component: 'Input',
+          componentProps: {
+            placeholder: '代理服务器用户名'
+          }
+        },
+        {
+          field: 'request.proxy.auth.user.password',
+          label: '代理服务器密码',
+          bottomHelpMessage: '代理服务器认证信息密码',
+          required: false,
+          component: 'Input',
+          componentProps: {
+            placeholder: '代理服务器密码'
+          }
         }
       ],
       // 获取配置数据方法（用于前端填充显示数据）
@@ -698,7 +937,8 @@ export function supportGuoba() {
           bilibili: Config.bilibili,
           pushlist: Config.pushlist,
           kuaishou: Config.kuaishou,
-          upload: Config.upload
+          upload: Config.upload,
+          request: Config.request
         }
       },
 
@@ -713,24 +953,26 @@ export function supportGuoba() {
           for (const key in data) {
             const parts = key.split('.')
 
-            // 检查是否为需要特殊处理的情况
-            // 1. bilibili.push.xxx 或 douyin.push.xxx 格式
-            // 2. 四层嵌套结构（有三个点分隔符，即长度为4）
-            if ((key.startsWith('bilibili.push.') || key.startsWith('douyin.push.')) || parts.length === 4) {
-              if (parts.length > 0) {
-                const filename = parts[0]
-                const nestedKey = parts.slice(1).join('.')
-                filename && nestedKey && Config.modify(filename, nestedKey, data[key])
+            // 统一处理所有配置键，不管嵌套层级
+            if (parts.length >= 1) {
+              const filename = parts[0]
+
+              if (filename) {
+                if (parts.length > 1) {
+                  // 有嵌套键的情况
+                  const nestedKey = parts.slice(1).join('.')
+                  Config.modify(filename, nestedKey, data[key])
+                } else {
+                  // 没有嵌套键的情况，默认处理
+                  Config.modify(...key.split('.'), data[key])
+                }
               }
-            } else {
-              // 其他配置保持原来的处理方式
-              Config.modify(...key.split('.'), data[key])
             }
           }
           return Result.ok({}, '保存成功辣(๑•̀ㅂ•́)و✧')
         } catch (error) {
           logger.error('设置配置数据失败:', error)
-          return Result.error('保存失败辣(ಥ_ಥ)', error)
+          return Result.error('保存失败辣(╥ω╥)', error)
         }
       }
     }
