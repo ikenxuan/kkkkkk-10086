@@ -206,7 +206,10 @@ export function supportGuoba() {
         {
           field: 'douyin.douyinTip',
           label: '抖音解析选项',
+          helpMessage: '必填项',
+          bottomHelpMessage: '必填项，选择要解析的内容',
           component: 'Select',
+          required: true,
           componentProps: {
             mode: 'multiple',
             allowCreate: false,
@@ -444,7 +447,8 @@ export function supportGuoba() {
         {
           field: 'bilibili.bilibiliTip',
           label: 'B站解析选项',
-          helpMessage: '必填项，选择要解析的内容',
+          helpMessage: '必填项',
+          bottomHelpMessage: '必填项，选择要解析的内容',
           component: 'Select',
           required: true,
           componentProps: {
@@ -477,8 +481,8 @@ export function supportGuoba() {
         },
         {
           field: 'bilibili.videopriority',
-          label: '内容优先',
-          helpMessage: '解析视频是否优先保内容，打开为优先保证上传将使用最低分辨率，关闭为优先保清晰度将使用最高分辨率',
+          label: '优先保内容',
+          bottomHelpMessage: '解析视频是否优先保内容，true为优先保证上传将使用最低分辨率，false则使用自定义画质偏好',
           component: 'Switch',
           required: false
         },
