@@ -269,6 +269,13 @@ export function supportGuoba() {
                 }
               },
               {
+                field: 'switch',
+                label: '是否启用',
+                bottomHelpMessage: '是否启用该推送',
+                component: 'Switch',
+                required: false
+              },
+              {
                 field: 'sec_uid',
                 label: '用户uid',
                 helpMessage: '如原神的：\nMS4wLjABAAAAw6_Jq4rDqlUKujFUvw0mjwTE8Y4uYuqJoKIQWO43oBYTd5_FlhU3qZ-PbOS7MP35',
@@ -458,7 +465,7 @@ export function supportGuoba() {
         },
         {
           field: 'bilibili.maxAutoVideoSize',
-          label: '自动画质模式下可接受的最大视频大小',
+          label: '自动画质最大视频大小',
           helpMessage: '必填项',
           bottomHelpMessage: '请在此输入数字',
           component: 'InputNumber',
@@ -515,6 +522,13 @@ export function supportGuoba() {
           componentProps: {
             multiple: true,
             schemas: [
+              {
+                field: 'switch',
+                label: '是否启用',
+                bottomHelpMessage: '是否启用该推送',
+                component: 'Switch',
+                required: false
+              },
               {
                 field: 'host_mid',
                 label: '用户UID',

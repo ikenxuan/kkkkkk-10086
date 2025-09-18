@@ -207,7 +207,7 @@ export class DouYinpush extends Base {
           const { groupId, botId } = target
           let status = { message_id: '' }
           // 发送消息
-          status = await Bot[botId].pickGroup(groupId).sendMsg(segment.image(img))
+          status = await Bot[botId].pickGroup(groupId).sendMsg(img)
 
           // 如果是直播推送，更新直播状态
           if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
