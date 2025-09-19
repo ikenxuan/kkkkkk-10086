@@ -780,7 +780,7 @@ export function supportGuoba() {
         {
           field: 'upload.filelimit',
           label: '视频上传拦截阈值',
-          bottomHelpMessage: '视频拦截阈值（填数字），视频文件大于该数值则不会上传 单位: MB，「视频文件上传限制」开启后才会生效',
+          bottomHelpMessage: '视频拦截阈值（填数字），视频文件大于该数值则不会上传 单位: MB，「使用视频上传拦截」开启后才会生效',
           component: 'InputNumber',
           required: false,
           componentProps: {
@@ -792,7 +792,7 @@ export function supportGuoba() {
         },
         {
           field: 'upload.compress',
-          label: '使用视频压缩',
+          label: '使用压缩视频',
           bottomHelpMessage: '压缩视频，开启后会将视频文件压缩后再上传，适合上传大文件',
           component: 'Switch',
           required: false
