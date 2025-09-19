@@ -66,11 +66,6 @@ export class DouYinpush extends Base {
       e.reply('不支持QQBot，请使用其他适配器')
       return
     }
-    this.headers = {
-      ...this.headers,
-      Referer: 'https://www.douyin.com',
-      Cookie: Config.cookies.douyin
-    }
     this.force = force
   }
 
@@ -269,7 +264,7 @@ export class DouYinpush extends Base {
                 image_url = item.url_list[2] || item.url_list[1] // 图片地址
                 imageres.push(segment.image(image_url))
               }
-              const forwardMsg = Bot[botId].makeForwardMsg(imageres)
+              const forwardMsg = Bot.makeForwardMsg(imageres)
               await Bot[botId].pickFriend(botId).sendMsg(forwardMsg)
             }
           }

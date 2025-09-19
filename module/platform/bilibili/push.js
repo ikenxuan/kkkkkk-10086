@@ -472,10 +472,13 @@ export class Bilibilipush extends Base {
               }
               case 'DYNAMIC_TYPE_DRAW': {
                 const imgArray = []
-                for (const img of dynamicItem.Dynamic_Data.modules.module_dynamic.major && dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items) {
-                  imgArray.push(segment.image(img.src))
+                const drawItems = dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items
+                if (drawItems && Array.isArray(drawItems)) {
+                  for (const img of drawItems) {
+                    imgArray.push(segment.image(img.src))
+                  }
                 }
-                const forwardMsg = Bot[botId].makeForwardMsg(imgArray)
+                const forwardMsg = Bot.makeForwardMsg(imgArray)
                 await Bot[botId].pickFriend(botId).sendMsg(forwardMsg)
                 break
               }
