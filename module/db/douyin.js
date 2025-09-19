@@ -1,6 +1,7 @@
 import { logger, Config, Version } from '../utils/index.js'
-import { join } from 'node:path'
 import sqlite3 from 'sqlite3'
+import path from 'node:path'
+import fs from 'node:fs'
 
 /**
  * 抖音推送数据类型
@@ -15,7 +16,7 @@ export class DouyinDBBase {
   /** @type {string} */
   dbPath
   constructor() {
-    this.dbPath = join(Version.pluginPath, 'data', 'douyin.db')
+    this.dbPath = path.join(Version.pluginPath, 'data', 'douyin.db')
   }
 
   /**
@@ -25,7 +26,10 @@ export class DouyinDBBase {
     try {
       logger.debug(logger.green("--------------------------[DouyinDB] 开始初始化数据库--------------------------"))
       logger.debug("[DouyinDB] 正在连接数据库...")
+      // 创建数据库连接
+      await fs.promises.mkdir(path.dirname(this.dbPath), { recursive: true })
       this.db = new sqlite3.Database(this.dbPath)
+      // 创建表结构
       await this.createTables()
       logger.debug("[DouyinDB] 数据库模型同步成功")
       logger.debug("[DouyinDB] 正在同步配置订阅...")

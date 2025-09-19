@@ -1,7 +1,17 @@
 import { Config, Version, logger, Common } from './module/utils/index.js'
 import Client from '@ikenxuan/amagi'
-import { join } from 'path'
 import fs from 'fs'
+
+// 定义需要创建的目录
+const dirs = [
+  Common.tempDri.images,
+  Common.tempDri.video
+]
+
+// 并行创建所有目录
+Promise.all(dirs.map(dir => Common.mkdir(dir)))
+  .then(() => logger.green('所有目录创建成功'))
+  .catch(e => logger.error('创建目录失败', e))
 
 /** @type {Record<string, any>} */
 let apps = {}
@@ -33,10 +43,8 @@ files.forEach((fileName, index) => {
 })
 export { apps }
 
-await Common.mkdir(join(Version.pluginPath, 'data'))
-await Common.mkdir(Common.tempDri.images)
-await Common.mkdir(Common.tempDri.video)
 
+logger.green('目录初始化完成')
 
 logger.info('---------- ₍˄·͈༝·͈˄*₎◞ ̑̑ -----------')
 logger.info('kkkkkk-10086初始化~')
