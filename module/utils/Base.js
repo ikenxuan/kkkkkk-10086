@@ -379,7 +379,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
     logger.debug(`压缩完成: ${file.totalBytes.toFixed(1)}MB → ${newFileSize.toFixed(1)}MB`)
 
     // 发送压缩结果消息
-    const resultMsg = [`压缩完成: ${newFileSize.toFixed(1)}MB，耗时: ${compressTime}秒`, segment.reply(msg1.messageId)]
+    const resultMsg = [`压缩完成: ${newFileSize.toFixed(1)}MB，耗时: ${compressTime}秒`, segment.reply(msg1.message_id)]
     if (isActiveMessage && options?.activeOption) {
       await Bot[options.activeOption.uin].pickGroup(options.activeOption.group_id).sendMsg(resultMsg)
     } else {
@@ -430,7 +430,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
       const status = isActiveMessage
         ? await target.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
-      return !!status?.messageId
+      return !!status?.message_id
     }
   } catch (error) {
     if (options && options.active === false) {
