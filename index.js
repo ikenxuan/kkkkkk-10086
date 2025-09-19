@@ -43,9 +43,6 @@ files.forEach((fileName, index) => {
 })
 export { apps }
 
-
-logger.green('目录初始化完成')
-
 logger.info('---------- ₍˄·͈༝·͈˄*₎◞ ̑̑ -----------')
 logger.info('kkkkkk-10086初始化~')
 logger.info('Created By ikenxuan')

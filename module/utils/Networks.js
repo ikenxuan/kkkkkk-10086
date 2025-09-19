@@ -151,13 +151,19 @@ export class Networks {
       const response = await axios({
         method: 'GET',
         url: this.url,
-        maxRedirects: 0, // 不跟随重定向
-        validateStatus: (/** @type {number} */ status) => status >= 300 && status < 400 // 仅处理3xx响应
+        maxRedirects: 0 // 不跟随重定向
       })
-      return response.headers.location // 返回Location头中的重定向地址
+
+      // 检查是否是重定向响应
+      if (response.status >= 300 && response.status < 400 && response.headers.location) {
+        return response.headers.location
+      }
+
+      // 如果不是重定向响应，返回原始URL
+      return this.url
     } catch (error) {
       logger.error('获取重定向地址失败:', error)
-      return ''
+      return this.url // 出错时返回原始URL
     }
   }
 
