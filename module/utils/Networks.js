@@ -346,10 +346,7 @@ export class Networks {
         responseType: 'stream',
         signal: controller.signal,
         maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false
-        })
+        maxBodyLength: Infinity
       })
 
       // 如果请求成功，清除超时定时器
@@ -473,7 +470,7 @@ export class Networks {
           url: this.url,
           responseType: 'stream',
           headers: {
-            ...this.headers,
+            ...this.config.headers,
             Range: `bytes=${start}-${end}`
           }
         })
