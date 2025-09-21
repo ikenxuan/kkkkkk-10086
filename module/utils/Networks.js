@@ -26,6 +26,7 @@ export class Networks {
   axiosInstance
   /** @type {import('axios').AxiosProxyConfig | false} */
   proxy
+
   /**
    * 创建网络请求实例
    * @param {object} data 请求配置对象
@@ -72,11 +73,13 @@ export class Networks {
     // 创建连接池
     const socketOptions = {
       keepAlive: true,
-      keepAliveMsecs: 30000
+      keepAliveMsecs: 30000,
+      maxSockets: 50,
+      maxFreeSockets: 20,
+      timeout: 60000
     }
 
     this.httpAgent = new http.Agent(socketOptions)
-
     this.httpsAgent = new https.Agent({
       ...socketOptions,
       rejectUnauthorized: false
@@ -115,37 +118,54 @@ export class Networks {
   }
 
   /**
+   * 判断错误是否可重试
+   * @param {AxiosError} error 错误对象
+   * @returns {boolean} 是否可重试
+   */
+  isRetryableError(error) {
+    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED']
+    return (
+      error.code != null && retryableCodes.includes(error.code) ||
+      error.response != null && [502, 503, 504].includes(error.response.status)
+    )
+  }
+
+  /**
    * 错误处理方法
    * @param {AxiosError} error 错误对象
    * @returns {Error} 处理后的错误对象
    */
   handleError(error) {
     if (error.response) {
-      switch (error.response.status) {
+      const status = error.response.status
+      const statusText = error.response.statusText || ''
+      const url = error.config?.url || this.url
+
+      switch (status) {
         case 429:
-          return new Error('请求过于频繁，请稍后重试')
+          return new Error(`请求过于频繁 (${status}): ${url}`)
         case 403:
-          return new Error('访问被禁止，请检查权限')
+          return new Error(`访问被禁止 (${status}): ${url}`)
         case 404:
-          return new Error('请求的资源不存在')
+          return new Error(`请求的资源不存在 (${status}): ${url}`)
         case 502:
         case 503:
         case 504:
-          return new Error('服务器暂时不可用，请稍后重试')
+          return new Error(`服务器暂时不可用 (${status}): ${url}`)
         default:
-          return new Error(`请求失败: ${error.response.status}`)
+          return new Error(`请求失败 (${status}): ${url} - ${statusText}`)
       }
     } else if (error.request) {
       if (error.code === 'ECONNRESET') {
-        return new Error('连接被重置')
+        return new Error(`连接被重置: ${this.url}`)
       } else if (error.code === 'ETIMEDOUT') {
-        return new Error('请求超时')
+        return new Error(`请求超时: ${this.url}`)
       } else if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-        return new Error('SSL证书验证失败，但请求已继续')
+        return new Error(`SSL证书验证失败，但请求已继续: ${this.url}`)
       }
-      return new Error('网络连接错误')
+      return new Error(`网络连接错误: ${this.url}`)
     }
-    return new Error('请求配置错误: ' + error.message)
+    return new Error(`请求配置错误: ${error.message}`)
   }
 
   /**
@@ -210,9 +230,15 @@ export class Networks {
   /**
    * 获取重定向后的最终链接地址
    * @param {string} [url = ''] 可选参数，要获取重定向链接的URL地址
+   * @param {number} [redirectCount = 0] 重定向计数器
    * @returns {Promise<string>} 返回最终的重定向链接地址或错误信息
    */
-  async getLongLink(url = '') {
+  async getLongLink(url = '', redirectCount = 0) {
+    // 限制最多10次重定向，防止循环重定向
+    if (redirectCount > 10) {
+      throw new Error('重定向次数过多，可能存在循环重定向')
+    }
+
     let errorMsg = `获取链接重定向失败: ${this.url || url}`
     try {
       const response = await this.axiosInstance({
@@ -230,7 +256,7 @@ export class Networks {
         if (axiosError.response.status === 302) {
           const redirectUrl = axiosError.response.headers.location
           logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
-          return await this.getLongLink(redirectUrl)
+          return await this.getLongLink(redirectUrl, redirectCount + 1)
         } else if (axiosError.response.status === 403) {
           errorMsg = `403 Forbidden 禁止访问！${this.url || url}`
           logger.error(errorMsg)
@@ -345,8 +371,8 @@ export class Networks {
         url: this.url,
         responseType: 'stream',
         signal: controller.signal,
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
+        maxContentLength: Number.MAX_SAFE_INTEGER,
+        maxBodyLength: Number.MAX_SAFE_INTEGER
       })
 
       // 如果请求成功，清除超时定时器
@@ -358,8 +384,8 @@ export class Networks {
       }
 
       const totalBytes = parseInt(response.headers['content-length'] || '0', 10)
-      if (isNaN(totalBytes)) {
-        throw new Error('无效的 content-length 头')
+      if (isNaN(totalBytes) || totalBytes <= 0) {
+        throw new Error('无效的文件大小')
       }
 
       if (!this.filepath) {
@@ -376,7 +402,7 @@ export class Networks {
         let lastPrintedPercentage = -1
         /** @type {NodeJS.Timeout | null} */
         let progressInterval = null
-        const minUpdateInterval = 100 // 最小更新间隔(ms)
+        const minUpdateInterval = 500 // 最小更新间隔(ms)
         let lastUpdateTime = 0
 
         // 使用 setInterval 更新进度
@@ -456,7 +482,22 @@ export class Networks {
 
       // 更新进度的函数
       const updateProgress = () => {
-        const progressPercentage = Math.floor((totalDownloadedBytes / totalBytes) * 100)
+        // 验证文件大小
+        if (!isFinite(totalBytes) || totalBytes <= 0) {
+          logger.warn('无效的文件大小，跳过进度更新')
+          return
+        }
+
+        // 验证下载字节数
+        if (!isFinite(totalDownloadedBytes) || totalDownloadedBytes < 0) {
+          logger.warn('无效的下载字节数，跳过进度更新')
+          return
+        }
+
+        // 确保进度不超过100%
+        const progress = Math.min(totalDownloadedBytes / totalBytes, 1)
+        const progressPercentage = Math.floor(progress * 100)
+
         if (progressPercentage !== lastPrintedPercentage) {
           progressCallback(totalDownloadedBytes, totalBytes)
           lastPrintedPercentage = progressPercentage
@@ -546,7 +587,7 @@ export class Networks {
         // 检查目录是否存在
         if (!fs.existsSync(dir)) return
 
-        // 使用推荐的 fs.rm 方法删除目录
+        // 删除临时目录
         fs.rm(dir, { recursive: true, force: true }, (err) => {
           if (err) {
             if (retries > 0) {
@@ -577,7 +618,8 @@ export class Networks {
 
       const err = this.handleError(/** @type {AxiosError} */(error))
 
-      if (retryCount < this.maxRetries) {
+      // 只对可重试的错误进行重试
+      if (retryCount < this.maxRetries && this.isRetryableError(/** @type {AxiosError} */(error))) {
         const delay = Math.min(Math.pow(2, retryCount) * 1000, 1000)
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
         await new Promise(resolve => setTimeout(resolve, delay))
