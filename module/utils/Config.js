@@ -39,7 +39,7 @@ import YAML from 'yaml'
 /**
  * @typedef {Object} DouyinConfig
  * @property {boolean} [DouyinConfig.douyintool] 抖音解析开关
- * @property {string[]} [DouyinConfig.douyinTip] 抖音解析可选列表
+ * @property {('提示信息'|'评论图'|'视频'|'背景音乐'|'图集')[]} [DouyinConfig.douyinTip] 抖音解析可选列表 - 可选值：提示信息、评论图、视频、背景音乐、图集
  * @property {number} [DouyinConfig.numcomments] 抖音评论数量
  * @property {boolean} [DouyinConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [DouyinConfig.commentsimg] 发送抖音作品评论图开关
@@ -63,7 +63,7 @@ import YAML from 'yaml'
 /**
  * @typedef {Object} BilibiliConfig
  * @property {boolean} [BilibiliConfig.bilibilitool] B站解析开关
- * @property {string[]} [BilibiliConfig.bilibiliTip] B站解析可选列表
+ * @property {('提示信息'|'简介'|'评论图'|'视频')[]} [BilibiliConfig.bilibiliTip] B站解析可选列表 - 可选值：提示信息、简介、评论图
  * @property {number} [BilibiliConfig.bilibilinumcomments] B站评论数量
  * @property {boolean} [BilibiliConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [BilibiliConfig.videopriority] 解析视频是否优先保内容

@@ -117,7 +117,7 @@ export function supportGuoba() {
           field: 'app.removeCache',
           label: '删除视频缓存',
           helpMessage: '意义不明，但对作者有用',
-          bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录/resources/kkkdownload，若要关闭请随时留意硬盘容量',
+          bottomHelpMessage: '自动删除下载到本地的视频缓存。保存目录云崽下的temp/kkkkkk-10086/kkkdownload，若要关闭请随时留意硬盘容量',
           component: 'Switch',
           required: false
         },
