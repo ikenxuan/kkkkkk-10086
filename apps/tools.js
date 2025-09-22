@@ -142,7 +142,7 @@ export class kkkTools extends plugin {
 
       // 验证音乐数据
       if (!data?.data?.music_info) {
-        await e.reply('获取音乐数据失败')
+        await e.reply('获取音乐数据失败，可能是音乐ID错误或网络问题')
         return false
       }
 

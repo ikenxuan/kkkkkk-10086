@@ -14,38 +14,64 @@
 import { exec as execCmd } from 'child_process'
 import { logger, Bot, Common } from './index.js'
 
+/**
+ * @typedef {Object} FFmpegClientOptions
+ * @property {Object} VideoAudioOptions
+ * @property {string} VideoAudioOptions.path
+ * @property {string} VideoAudioOptions.path2
+ * @property {string} VideoAudioOptions.resultPath
+ * @property {(success: boolean, resultPath: string) => (boolean|Promise<boolean>)} VideoAudioOptions.callback
+ * @property {Object} Video3AudioOptions
+ * @property {string} Video3AudioOptions.path
+ * @property {string} Video3AudioOptions.path2
+ * @property {string} Video3AudioOptions.resultPath
+ * @property {(success: boolean, resultPath: string) => (boolean|Promise<boolean>)} Video3AudioOptions.callback
+ * @property {Object} getVideoSizeOptions
+ * @property {string} getVideoSizeOptions.path
+ * @property {Object} compressVideoOptions
+ * @property {string} compressVideoOptions.path
+ * @property {number} compressVideoOptions.targetBitrate
+ * @property {number} [compressVideoOptions.maxRate]
+ * @property {number} [compressVideoOptions.bufSize]
+ * @property {number} [compressVideoOptions.crf]
+ * @property {string} compressVideoOptions.resultPath
+ */
+
+/**
+ * @typedef {'二合一（视频 + 音频）' | '视频*3 + 音频' | '获取指定视频文件时长' | '压缩视频'} OperationType
+ */
+
+/**
+ * @typedef {'二合一（视频 + 音频）'} VideoAudioOperation
+ * @typedef {'视频*3 + 音频'} Video3AudioOperation
+ * @typedef {'获取指定视频文件时长'} GetVideoSizeOperation
+ * @typedef {'压缩视频'} CompressVideoOperation
+ */
+
+/**
+ * @typedef {Object} FFHandlerOptions
+ * @property {FFmpegClientOptions['VideoAudioOptions']} VideoAudioOperation
+ * @property {FFmpegClientOptions['Video3AudioOptions']} Video3AudioOperation
+ * @property {FFmpegClientOptions['getVideoSizeOptions']} 获取指定视频文件时长
+ * @property {FFmpegClientOptions['compressVideoOptions']} 压缩视频
+ */
+
+/**
+ * @template {OperationType} T
+ * @typedef {T extends '二合一（视频 + 音频）' ? {status: boolean, error: Error|null, stdout: string, stderr: string} : T extends '视频*3 + 音频' ? {status: boolean, error: Error|null, stdout: string, stderr: string} : T extends '获取指定视频文件时长' ? number : T extends '压缩视频' ? string : never} MergeFileResult
+ */
+
 class FFmpeg {
   /**
-   * @param {string} type 处理类型
-   * - '二合一（视频 + 音频）': fffmpegClientOptions['VideoAudioOptions'] 合并视频和音频
-   *   - path {string} 文件1绝对路径
-   *   - path2 {string} 文件2绝对路径
-   *   - resultPath {string} 合并完成后存放的绝对路径
-   *   - callback {Function} 处理结果的回调函数
-   *
-   * - '视频*3 + 音频': fffmpegClientOptions['Video3AudioOptions'] 视频循环3次并合并音频
-   *   - path {string} 文件1绝对路径
-   *   - path2 {string} 文件2绝对路径
-   *   - resultPath {string} 合并完成后存放的绝对路径
-   *   - callback {Function} 处理结果的回调函数
-   *
-   * - '获取指定视频文件时长': fffmpegClientOptions['getVideoSizeOptions'] 获取视频时长
-   *   - path {string} 视频文件路径
-   *
-   * - '压缩视频': fffmpegClientOptions['compressVideoOptions'] 压缩视频文件
-   *   - path {string} 文件绝对路径
-   *   - targetBitrate {number} 目标比特率
-   *   - maxRate {number} 最大码率，默认为 targetBitrate * 1.5
-   *   - bufSize {number} 缓冲区大小，默认为 targetBitrate * 2
-   *   - crf {number} 恒定码率因子，默认为 30
-   *   - resultPath {string} 合并完成后存放的绝对路径
+   * @param {OperationType} type 处理类型
    */
-  constructor (type) {
+  constructor(type) {
     this.type = type
   }
 
   /**
    * @description 使用FFmpeg处理视频文件
+   * @template {OperationType} T
    * @param {Object} opt 配置选项
    * @param {string} opt.path 输入视频文件路径
    * @param {string} [opt.path2] 第二个输入文件路径(用于合成)
@@ -55,10 +81,10 @@ class FFmpeg {
    * @param {number} [opt.maxRate] 最大比特率(kb/s)
    * @param {number} [opt.bufSize] 缓冲大小(kb)
    * @param {number} [opt.crf] CRF值(压缩质量,0-51)
-   * @returns {Promise<Object|number|string>} 处理结果
+   * @returns {Promise<MergeFileResult<T>|number>} 处理结果
    * @cspell:ignore ffprobe amix aout libx noprint nokey
    */
-  async FFmpeg (opt) {
+  async FFmpeg(opt) {
     // 检查ffmpeg和ffprobe是否可用
     if (!await checkFFmpegAvailable()) {
       throw new Error('FFmpeg工具未安装或不可用')
@@ -71,7 +97,7 @@ class FFmpeg {
           result.status ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
           if (opt.callback) await opt.callback(result.status, opt.resultPath)
         }
-        return result
+        return /** @type {MergeFileResult<T>} */ (result)
       }
       case '视频*3 + 音频': {
         const result = await ffmpeg(`-y -stream_loop 2 -i "${opt.path}" -i "${opt.path2}" -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest "${opt.resultPath}"`)
@@ -79,7 +105,7 @@ class FFmpeg {
           result.status ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
           if (opt.callback) await opt.callback(result.status, opt.resultPath)
         }
-        return result
+        return /** @type {MergeFileResult<T>} */ (result)
       }
       case '获取指定视频文件时长': {
         const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${opt.path}"`)
@@ -102,7 +128,7 @@ class FFmpeg {
             logger.error(result)
           }
         }
-        return opt.resultPath
+        return /** @type {MergeFileResult<T>} */ (opt.resultPath)
       }
       default:
         throw new Error(`不支持的处理类型: ${this.type}`)
@@ -141,7 +167,7 @@ const checkFFmpegAvailable = async () => {
  * @param {boolean} [options.booleanResult=false] - 是否只返回执行状态
  * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
  * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<boolean|Object>} 返回执行结果或状态对象
+ * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
  * @property {boolean} status - 命令是否执行成功
  * @property {Error|null} error - 错误信息（如果有）
  * @property {string} stdout - 标准输出
@@ -155,7 +181,7 @@ const checkFFmpegAvailable = async () => {
  * // 获取视频信息
  * const info = await ffmpeg('-i input.mp4', { log: true });
  */
-const ffmpeg = async (cmd, options) => {
+export const ffmpeg = async (cmd, options) => {
   // 移除命令前缀并添加完整路径
   cmd = cmd.replace(/^ffmpeg/, '').trim()
   cmd = `${getFFmpegPath()} ${cmd}`
@@ -170,7 +196,7 @@ const ffmpeg = async (cmd, options) => {
  * @param {boolean} [options.booleanResult=false] - 是否只返回执行状态
  * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
  * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<boolean|Object>} 返回执行结果或状态对象
+ * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
  * @property {boolean} status - 命令是否执行成功
  * @property {Error|null} error - 错误信息（如果有）
  * @property {string} stdout - 标准输出
@@ -184,7 +210,7 @@ const ffmpeg = async (cmd, options) => {
  * // 获取视频详细信息
  * const details = await ffprobe('-i input.mp4 -show_format -show_streams', { log: true });
  */
-const ffprobe = async (cmd, options) => {
+export const ffprobe = async (cmd, options) => {
   // 移除命令前缀并添加完整路径
   cmd = cmd.replace(/^ffprobe/, '').trim()
   cmd = `${getFFprobePath()} ${cmd}`
@@ -193,7 +219,8 @@ const ffprobe = async (cmd, options) => {
 
 /**
  * @description 使用 FFmpeg 对文件进行处理
- * @param {string} type - 处理方法类型
+ * @template {OperationType} T
+ * @param {OperationType} type - 处理方法类型
  * @param {Object} options - 处理选项参数
  * @param {string} options.path 输入视频文件路径
  * @param {string} [options.path2] 第二个输入文件路径(用于合成)
@@ -203,7 +230,7 @@ const ffprobe = async (cmd, options) => {
  * @param {number} [options.maxRate] 最大比特率(kb/s)
  * @param {number} [options.bufSize] 缓冲大小(kb)
  * @param {number} [options.crf] CRF值(压缩质量,0-51)
- * @returns {Promise<Object|number|string>} 处理结果
+ * @returns {Promise<MergeFileResult<T>|number>} 处理结果
  * 
  * @example
  * // 合并视频文件
@@ -225,7 +252,7 @@ export const mergeFile = async (type, options) => {
  * @param {boolean} [options.booleanResult=false] - 是否只返回布尔值表示命令是否成功执行
  * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
  * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<boolean|Object>} 返回执行结果或状态对象
+ * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
  * @property {boolean} status - 命令是否执行成功
  * @property {Error|null} error - 错误信息（如果有）
  * @property {string} stdout - 标准输出
@@ -302,7 +329,7 @@ const exec = (cmd, options) => {
  * @description 将错误对象转换为可序列化的格式
  * 这个函数主要用于错误信息的日志记录和调试，将 Error 对象转换为普通对象以便于 JSON 序列化
  * @param {Error|undefined} [error] - 要处理的错误对象，可以是 undefined
- * @returns {Object} 格式化后的错误信息对象
+ * @returns {{name: string|undefined, message: string|undefined, stack: string|undefined}} 格式化后的错误信息对象
  * @property {string} [name] - 错误名称（如 'Error', 'TypeError' 等）
  * @property {string} [message] - 错误描述信息
  * @property {string} [stack] - 错误堆栈跟踪信息

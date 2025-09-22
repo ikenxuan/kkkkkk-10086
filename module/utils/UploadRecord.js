@@ -1,6 +1,7 @@
-import { Bot } from '../utils/index.js'
+import { ffmpeg, ffprobe } from './FFmpeg.js'
+import { Networks } from './Networks.js'
+import { Bot, logger } from './index.js'
 import querystring from 'querystring'
-import { exec } from 'child_process'
 import fetch from 'node-fetch'
 import crypto from 'crypto'
 import fs from 'fs'
@@ -46,180 +47,198 @@ const errors = {
  */
 async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brief = '') {
   const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
-  const result = await getPttBuffer(record_url, bot?.config?.ffmpeg_path, transcoding)
-  if (!result.buffer) return false
 
-  // 如果没有上传高清语音功能，直接返回转换后的音频
-  if (!bot?.sendUni) {
-    const silkBuffer = await audioTrans(record_url, bot?.config?.ffmpeg_path)
-    if (!silkBuffer) return false
+  // 首先准备音频文件（下载、转换等）
+  let filePath
+  let cleanupFile = false
+  try {
+    filePath = await prepareAudioFile(record_url)
+    cleanupFile = !filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
+
+    // 如果没有上传高清语音功能，直接返回转换后的音频
+    if (!bot?.sendUni) {
+      const silkBuffer = await audioTrans(filePath)
+      if (!silkBuffer) return false
+      return {
+        type: 'record',
+        file: `base64://${silkBuffer.toString('base64')}`
+      }
+    }
+
+    // 然后获取音频buffer和时长
+    const result = await getPttBuffer(filePath, transcoding)
+    if (!result.buffer) return false
+
+    const buf = result.buffer
+    if (seconds === 0 && result.time) seconds = result.time.seconds
+    const hash = md5(buf)
+    let codec = 0
+    try {
+      const { isSilk } = await import('silk-wasm')
+      codec = isSilk(buf) ? (transcoding ? 1 : 0) : 0
+    } catch {
+      codec = buf.subarray(0, 7).toString().includes('SILK') ? (transcoding ? 1 : 0) : 0
+    }
+
+    const body = core.pb.encode({
+      1: 3, 2: 3,
+      5: {
+        1: bot.uin, 2: bot.uin, 3: 0, 4: hash, 5: buf.length, 6: hash,
+        7: 5, 8: 9, 9: 4, 10: bot.apk?.version || '9.0.50', 11: 0,
+        12: 1, 13: 1, 14: codec, 15: 1
+      }
+    })
+
+    const payload = await bot.sendUni('PttStore.GroupPttUp', body)
+    const rsp = core.pb.decode(payload)[5]
+    if (rsp[2]) errors.drop(rsp[2], rsp[3])
+
+    const ip = rsp[5]?.[0] || rsp[5]
+    const port = rsp[6]?.[0] || rsp[6]
+    const params = {
+      ver: 4679,
+      ukey: rsp[7].toHex(),
+      filekey: rsp[11].toHex(),
+      filesize: buf.length,
+      bmd5: hash.toString('hex'),
+      mType: 'pttDu',
+      voice_encodec: codec
+    }
+
+    await fetch(`http://${int32ip2str(ip)}:${port}/?${querystring.stringify(params)}`, {
+      method: 'POST',
+      headers: {
+        'User-Agent': `QQ/${bot.apk.version} CFNetwork/1126`,
+        'Net-Type': 'Wifi'
+      },
+      body: buf
+    })
+
+    const fid = rsp[11].toBuffer()
+    const b = core.pb.encode({
+      1: 4, 2: bot.uin, 3: fid, 4: hash,
+      5: hash.toString('hex') + '.amr', 6: seconds, 11: 1,
+      18: fid, 19: seconds, 29: codec,
+      30: { 1: 0, 5: 0, 6: 'sss', 7: 0, 8: brief }
+    })
+
     return {
       type: 'record',
-      file: `base64://${silkBuffer.toString('base64')}`
+      file: 'protobuf://' + Buffer.from(b).toString('base64')
     }
-  }
-
-  const buf = result.buffer
-  if (seconds === 0 && result.time) seconds = result.time.seconds
-  const hash = md5(buf)
-  let codec = 0
-  try {
-    const { isSilk } = await import('silk-wasm')
-    codec = isSilk(buf) ? (transcoding ? 1 : 0) : 0
-  } catch {
-    codec = buf.subarray(0, 7).toString().includes('SILK') ? (transcoding ? 1 : 0) : 0
-  }
-
-  const body = core.pb.encode({
-    1: 3, 2: 3,
-    5: {
-      1: bot.uin, 2: bot.uin, 3: 0, 4: hash, 5: buf.length, 6: hash,
-      7: 5, 8: 9, 9: 4, 10: bot.apk?.version || '9.0.50', 11: 0,
-      12: 1, 13: 1, 14: codec, 15: 1
+  } catch (error) {
+    console.error('上传语音失败:', error)
+    return false
+  } finally {
+    // 清理临时文件
+    if (cleanupFile && filePath && fs.existsSync(filePath)) {
+      fs.unlink(filePath, () => { })
     }
-  })
-
-  const payload = await bot.sendUni('PttStore.GroupPttUp', body)
-  const rsp = core.pb.decode(payload)[5]
-  if (rsp[2]) errors.drop(rsp[2], rsp[3])
-
-  const ip = rsp[5]?.[0] || rsp[5]
-  const port = rsp[6]?.[0] || rsp[6]
-  const params = {
-    ver: 4679,
-    ukey: rsp[7].toHex(),
-    filekey: rsp[11].toHex(),
-    filesize: buf.length,
-    bmd5: hash.toString('hex'),
-    mType: 'pttDu',
-    voice_encodec: codec
-  }
-
-  await fetch(`http://${int32ip2str(ip)}:${port}/?${querystring.stringify(params)}`, {
-    method: 'POST',
-    headers: {
-      'User-Agent': `QQ/${bot.apk.version} CFNetwork/1126`,
-      'Net-Type': 'Wifi'
-    },
-    body: buf
-  })
-
-  const fid = rsp[11].toBuffer()
-  const b = core.pb.encode({
-    1: 4, 2: bot.uin, 3: fid, 4: hash,
-    5: hash.toString('hex') + '.amr', 6: seconds, 11: 1,
-    18: fid, 19: seconds, 29: codec,
-    30: { 1: 0, 5: 0, 6: 'sss', 7: 0, 8: brief }
-  })
-
-  return {
-    type: 'record',
-    file: 'protobuf://' + Buffer.from(b).toString('base64')
   }
 }
 
 /**
+ * 下载并准备音频文件
+ * @param {any} file 音频文件路径、URL、Buffer或base64数据
+ * @returns {Promise<string>} 返回本地文件路径
+ */
+async function prepareAudioFile(file) {
+  let filePath = `${TMP_DIR}/${uuid()}`
+
+  try {
+    // 检查 file 是否为 Buffer 实例或 base64 编码的数据
+    if (Buffer.isBuffer(file) || file.startsWith('base64://')) {
+      const base64Data = file.startsWith('base64://') ? file.substring('base64://'.length) : file.toString('base64')
+      const buffer = Buffer.from(base64Data, 'base64')
+      await fs.promises.writeFile(filePath, new Uint8Array(buffer))
+    }
+    // 如果 file 是一个 URL
+    else if (file.startsWith('http://') || file.startsWith('https://')) {
+      // 使用 Networks 下载文件
+      const network = new Networks({
+        url: file,
+        filepath: filePath,
+        headers: { 'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)' },
+        timeout: 30000
+      })
+
+      try {
+        await network.downloadStream((downloaded, total) => {
+          if (total > 0) {
+            const percentage = Math.floor((downloaded / total) * 100)
+            logger.info(`下载音频文件进度: ${percentage}% (${downloaded}/${total} bytes)`)
+          }
+        })
+      } catch (error) {
+        throw new Error(`下载音频文件失败: ${error}`)
+      } finally {
+        network.cleanup()
+      }
+    }
+    // 如果 file 是一个本地文件 URI 或者是一个存在的本地文件路径
+    else if (file.startsWith('file://') || await fs.promises.access(file).then(() => true).catch(() => false)) {
+      // 移除 file:// 前缀
+      let localFile = file.replace(/^file:\/\/\//, '')
+      // Windows 系统可能需要移除前导斜杠
+      if (IS_WIN && localFile.startsWith('/')) localFile = localFile.slice(1)
+      filePath = localFile
+    }
+    // 如果 file 不是有效的文件路径
+    else {
+      throw new Error('提供的路径不是有效的文件、URL 或 base64 数据。')
+    }
+  } catch (error) {
+    // 清理临时文件
+    if (filePath !== file && fs.existsSync(filePath)) {
+      fs.unlink(filePath, () => { })
+    }
+    throw new Error('准备音频文件失败: ' + error)
+  }
+
+  return filePath
+}
+
+/**
  * 获取PTT音频缓冲区
- * @param {any} file 音频文件路径或Buffer
- * @param {string} ffmpeg FFmpeg路径
+ * @param {string} filePath 音频文件路径（必须是已存在的本地文件）
  * @param {boolean} transcoding 是否转码
  * @returns {Promise<{buffer: Buffer, time: any}>} 返回音频缓冲区和时长信息
  */
-async function getPttBuffer(file, ffmpeg = 'ffmpeg', transcoding = true) {
+async function getPttBuffer(filePath, transcoding = true) {
   /** @type {Buffer} */
   let buffer = Buffer.alloc(0)
   let time
 
-  if (file instanceof Buffer || file.startsWith('base64://')) {
-    let buf = file instanceof Buffer ? file : Buffer.from(file.slice(9), 'base64')
-    const head = buf.subarray(0, 7).toString()
-    const tmpfile = `${TMP_DIR}/${uuid()}`
+  try {
+    // 读取文件前7个字节用于检测音频格式
+    const head = await read7Bytes(filePath)
 
-    await fs.promises.writeFile(tmpfile, new Uint8Array(buf))
-    const result = await getAudioTime(tmpfile, ffmpeg)
+    // 获取音频时长信息
+    const result = await getAudioTime(filePath)
     if (result.code === 1) time = result.data
+
+    // 读取文件buffer
+    const fileBuffer = await fs.promises.readFile(filePath)
 
     try {
       const { isSilk } = await import('silk-wasm')
-      if (isSilk(buf) || head.includes('AMR') || !transcoding) {
-        buffer = result.buffer ?? buf
-      } else {
-        const transResult = await audioTrans(tmpfile, ffmpeg)
-        buffer = transResult || buf
-      }
-    } catch {
-      // 降级到原有检测方式
-      if (head.includes('SILK') || head.includes('AMR') || !transcoding) {
-        buffer = result.buffer ?? buf
-      } else {
-        const transResult = await audioTrans(tmpfile, ffmpeg)
-        buffer = transResult || buf
-      }
-    }
-    fs.unlink(tmpfile, () => { })
-  }
-  else if (file.startsWith('http://') || file.startsWith('https://')) {
-    try {
-      const response = await fetch(file, {
-        headers: { 'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 12; MI 9 Build/SKQ1.211230.001)' }
-      })
-      const buf = Buffer.from(await response.arrayBuffer())
-      const tmpfile = `${TMP_DIR}/${uuid()}`
-
-      await fs.promises.writeFile(tmpfile, new Uint8Array(buf))
-      const head = await read7Bytes(tmpfile)
-      const result = await getAudioTime(tmpfile, ffmpeg)
-      if (result.code === 1) time = result.data
-
-      try {
-        const { isSilk } = await import('silk-wasm')
-        if (isSilk(buf) || head.toString().includes('AMR') || !transcoding) {
-          buffer = result.buffer ?? buf
-        } else {
-          const transResult = await audioTrans(tmpfile, ffmpeg)
-          buffer = transResult || buf
-        }
-      } catch {
-        // 降级到原有检测方式
-        if (head.toString().includes('SILK') || head.toString().includes('AMR') || !transcoding) {
-          buffer = result.buffer ?? buf
-        } else {
-          const transResult = await audioTrans(tmpfile, ffmpeg)
-          buffer = transResult || buf
-        }
-      }
-
-      fs.unlink(tmpfile, () => { })
-    } catch (err) {
-      console.error('Failed to fetch audio:', err)
-    }
-  }
-  else {
-    file = String(file).replace(/^file:\/{2}/, '')
-    if (IS_WIN && file.startsWith('/')) file = file.slice(1)
-
-    const head = await read7Bytes(file)
-    const result = await getAudioTime(file, ffmpeg)
-    if (result.code === 1) time = result.data
-
-    try {
-      const { isSilk } = await import('silk-wasm')
-      const fileBuffer = await fs.promises.readFile(file)
       if (isSilk(fileBuffer) || head.toString().includes('AMR') || !transcoding) {
         buffer = result.buffer ?? fileBuffer
       } else {
-        const transResult = await audioTrans(file, ffmpeg)
+        const transResult = await audioTrans(filePath)
         buffer = transResult || fileBuffer
       }
     } catch {
       // 降级到原有检测方式
       if (head.toString().includes('SILK') || head.toString().includes('AMR') || !transcoding) {
-        buffer = result.buffer ?? await fs.promises.readFile(file)
+        buffer = result.buffer ?? fileBuffer
       } else {
-        const transResult = await audioTrans(file, ffmpeg)
-        buffer = transResult || await fs.promises.readFile(file)
+        const transResult = await audioTrans(filePath)
+        buffer = transResult || fileBuffer
       }
     }
+  } catch (error) {
+    logger.error('获取音频buffer失败:', error)
   }
 
   return { buffer, time }
@@ -228,10 +247,9 @@ async function getPttBuffer(file, ffmpeg = 'ffmpeg', transcoding = true) {
 /**
  * 获取音频时长信息
  * @param {string} file 音频文件路径
- * @param {string} ffmpeg FFmpeg路径
  * @returns {Promise<{code: number, buffer?: Buffer, data?: any}>} 返回音频时长和相关信息
  */
-async function getAudioTime(file, ffmpeg = 'ffmpeg') {
+async function getAudioTime(file) {
   try {
     // 先尝试使用 silk-wasm 获取 SILK 音频时长
     const { isSilk, getDuration, isWav, getWavFileInfo } = await import('silk-wasm')
@@ -260,51 +278,54 @@ async function getAudioTime(file, ffmpeg = 'ffmpeg') {
   }
 
   // 降级到 FFmpeg 方式
-  return new Promise(resolve => {
+  try {
     const fileInfo = fs.statSync(file)
     const isLarge = fileInfo.size >= 10485760
-    const cmd = isLarge
-      ? `${ffmpeg} -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`
-      : `${ffmpeg} -i "${file}"`
 
-    exec(cmd, async (error, stdout, /** @type {string} */ stderr) => {
-      try {
-        let buffer = undefined
-        if (isLarge) {
-          buffer = fs.readFileSync(`${file}.mp3`)
-          fs.unlinkSync(`${file}.mp3`)
+    if (isLarge) {
+      // 大文件处理：先转换再获取时长
+      const result = await ffmpeg(`-y -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`)
+      if (result && typeof result === 'object' && 'status' in result && result.status) {
+        const buffer = fs.readFileSync(`${file}.mp3`)
+        fs.unlinkSync(`${file}.mp3`)
+
+        // 使用 ffprobe 获取转换后文件的时长
+        const probeResult = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}.mp3"`)
+        if (probeResult && typeof probeResult === 'object' && 'status' in probeResult && probeResult.status && probeResult.stdout) {
+          const duration = parseFloat(probeResult.stdout.trim())
+          const time = new Date(duration * 1000).toISOString().slice(11, 19)
+          return {
+            code: 1,
+            buffer,
+            data: { time, seconds: Math.floor(duration), exec_text: probeResult.stderr }
+          }
         }
-
-        const time = stderr.split('Duration:')[1]?.split(',')[0]?.trim()
-        const arr = time?.split(':')
-        if (!arr || !time || !time.length) return resolve({ code: -1 })
-
-        arr.reverse()
-        let seconds = 0, multiplier = 1
-        for (const val of arr) {
-          if (parseInt(val) > 0) seconds += parseInt(val) * multiplier
-          multiplier *= 60
-        }
-
-        resolve({
-          code: 1,
-          buffer,
-          data: { time, seconds, exec_text: stderr }
-        })
-      } catch {
-        resolve({ code: -1 })
       }
-    })
-  })
+    } else {
+      // 小文件直接使用 ffprobe 获取时长
+      const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`)
+      if (result && typeof result === 'object' && 'status' in result && result.status && result.stdout) {
+        const duration = parseFloat(result.stdout.trim())
+        const time = new Date(duration * 1000).toISOString().slice(11, 19)
+        return {
+          code: 1,
+          data: { time, seconds: Math.floor(duration), exec_text: result.stderr }
+        }
+      }
+    }
+
+    return { code: -1 }
+  } catch {
+    return { code: -1 }
+  }
 }
 
 /**
  * 音频转码为SILK格式
  * @param {string} file 音频文件路径
- * @param {string} ffmpeg FFmpeg路径
  * @returns {Promise<Buffer|false>} 返回转码后的SILK音频数据
  */
-async function audioTrans(file, ffmpeg = 'ffmpeg') {
+async function audioTrans(file) {
   try {
     const { encode, isSilk, isWav, getWavFileInfo } = await import('silk-wasm')
     const fileBuffer = await fs.promises.readFile(file)
@@ -329,46 +350,47 @@ async function audioTrans(file, ffmpeg = 'ffmpeg') {
     // 其他格式或不支持的采样率，使用 FFmpeg 转换
     const tmpfile = `${TMP_DIR}/${uuid()}.pcm`
 
-    return new Promise(resolve => {
-      exec(`${ffmpeg} -y -i "${file}" -f s16le -ar 24000 -ac 1 -fs 31457280 "${tmpfile}"`, async () => {
-        try {
-          const pcmData = await fs.promises.readFile(tmpfile)
-          const silkData = await encode(pcmData, 24000)
-          resolve(Buffer.from(silkData.data))
-        } catch {
-          resolve(await audioTransFallback(file, ffmpeg))
-        } finally {
-          fs.unlink(tmpfile, () => { })
-        }
-      })
-    })
+    try {
+      const result = await ffmpeg(`-y -i "${file}" -f s16le -ar 24000 -ac 1 "${tmpfile}"`)
+      if (result && typeof result === 'object' && 'status' in result && result.status) {
+        const pcmData = await fs.promises.readFile(tmpfile)
+        const silkData = await encode(pcmData, 24000)
+        return Buffer.from(silkData.data)
+      } else {
+        return await audioTransFallback(file)
+      }
+    } catch {
+      return await audioTransFallback(file)
+    } finally {
+      fs.unlink(tmpfile, () => { })
+    }
   } catch {
     // 如果 silk-wasm 不可用，降级到原有方式
-    return audioTransFallback(file, ffmpeg)
+    return audioTransFallback(file)
   }
 }
 
 /**
  * 音频转码降级处理（转为AMR格式）
  * @param {string} file 音频文件路径
- * @param {string} ffmpeg FFmpeg路径
  * @returns {Promise<Buffer|false>} 返回转码后的AMR音频数据
  */
-async function audioTransFallback(file, ffmpeg = 'ffmpeg') {
+async function audioTransFallback(file) {
   const tmpfile = `${TMP_DIR}/${uuid()}`
 
-  return new Promise(resolve => {
-    exec(`${ffmpeg} -y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`, async () => {
-      try {
-        const amr = await fs.promises.readFile(tmpfile)
-        resolve(amr)
-      } catch {
-        resolve(false)
-      } finally {
-        fs.unlink(tmpfile, () => { })
-      }
-    })
-  })
+  try {
+    const result = await ffmpeg(`-y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`)
+    if (result && typeof result === 'object' && 'status' in result && result.status) {
+      const amr = await fs.promises.readFile(tmpfile)
+      return amr
+    } else {
+      return false
+    }
+  } catch {
+    return false
+  } finally {
+    fs.unlink(tmpfile, () => { })
+  }
 }
 
 /**
