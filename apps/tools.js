@@ -1,7 +1,7 @@
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
 import { Bilibili, getBilibiliID } from '../module/platform/bilibili/index.js'
 import { DouYin, getDouyinID } from '../module/platform/douyin/index.js'
-import { Config, Common, UploadRecord } from '../module/utils/index.js'
+import { Config, Common, UploadRecord, logger } from '../module/utils/index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
 
 // 用户状态存储对象
@@ -14,7 +14,7 @@ const PLATFORM_CONFIG = [
     enabled: Config.douyin?.douyintool
   },
   {
-    reg: /(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|BV[a-zA-Z0-9]{10}$)/,
+    reg: /(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|BV[a-zA-Z0-9]{10,}$)/,
     handler: 'bilibili',
     enabled: Config.bilibili?.bilibilitool
   },
@@ -82,15 +82,20 @@ export class kkkTools extends plugin {
    * @returns {Promise<boolean>} 处理结果
    */
   async bilibili(e) {
-    let url = (e.msg || e.message[0].data).replaceAll('\\', '').trim()
+    let url = (e.msg || (e.message?.[0]?.data || '')).replaceAll('\\', '').trim()
 
     // 处理不同类型的B站链接
     if (url.includes('b23.tv')) {
-      url = url.match(/(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/)[0]
+      url = url.match(/(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/)?.[0] || url
     } else if (/bilibili\.com|bili2233\.cn/.test(url)) {
-      url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[A-Za-z\d._?%&+\-=\/#]*/)[0]
+      url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[A-Za-z\d._?%&+\-=\/#]*/)?.[0] || url
     } else if (/^BV[1-9a-zA-Z]{10}$/.test(url)) {
       url = `https://www.bilibili.com/video/${url}`
+    }
+
+    if (!url) {
+      logger.warn(`未能在消息中找到有效的B站分享链接或BV号: ${url}`)
+      return true
     }
 
     const iddata = await getBilibiliID(url)
