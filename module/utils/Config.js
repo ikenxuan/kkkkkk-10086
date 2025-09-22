@@ -63,7 +63,7 @@ import YAML from 'yaml'
 /**
  * @typedef {Object} BilibiliConfig
  * @property {boolean} [BilibiliConfig.bilibilitool] B站解析开关
- * @property {('提示信息'|'简介'|'评论图'|'视频')[]} [BilibiliConfig.bilibiliTip] B站解析可选列表 - 可选值：提示信息、简介、评论图
+ * @property {('提示信息'|'简介'|'评论图'|'视频'|'动态')[]} [BilibiliConfig.bilibiliTip] B站解析可选列表 - 可选值：提示信息、简介、评论图、视频、动态
  * @property {number} [BilibiliConfig.bilibilinumcomments] B站评论数量
  * @property {boolean} [BilibiliConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [BilibiliConfig.videopriority] 解析视频是否优先保内容

@@ -459,7 +459,7 @@ export class Bilibili extends Base {
                   create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
                   text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
-                  image_url: cover(cardData.item.pictures),
+                  image_url: cardData.item.pictures && cover(cardData.item.pictures),
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decoration_card),
                   frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
                 }

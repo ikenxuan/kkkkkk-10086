@@ -7,6 +7,7 @@ bilibiliTip:
   - 简介
   - 评论图
   - 视频
+  - 动态
 
 # B站评论数量，设置接口返回的评论数量，范围1~无限条
 bilibilinumcomments: 5

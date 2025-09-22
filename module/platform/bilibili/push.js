@@ -834,22 +834,14 @@ function checkvip(member) {
 
 /**
  * 处理并提取表情数据，返回一个包含表情名称和URL的对象数组。
- * @param {Array<any>} data - 表情数据的数组，每个元素包含一个表情包的信息
+ * @param {any[]} data - 表情数据的数组，每个元素包含一个表情包的信息
  * @returns {Array<{text: string, url: string}>} 返回一个对象数组，每个对象包含text(表情名称)和url(表情图片地址)属性
  */
-function extractEmojisData(data) {
-  /** @type {Array<{text: string, url: string}>} */
-  const emojisData = []
-
-  // 遍历data数组中的每个表情包
-  data.forEach((packages) => {
-    // 遍历每个表情包中的每个表情
-    packages.emote.forEach((/** @type {any} */ emote) => {
-      emojisData.push({ text: emote.text, url: emote.url })
-    })
-  })
-
-  return emojisData
+const extractEmojisData = (data) => {
+  return Array.isArray(data)
+    ? data.flatMap(p => p?.emote || []).filter(e => e?.text && e?.url)
+      .map(e => ({ text: String(e.text), url: String(e.url) }))
+    : []
 }
 
 /**
