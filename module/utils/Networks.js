@@ -123,9 +123,11 @@ export class Networks {
    * @returns {boolean} 是否可重试
    */
   isRetryableError(error) {
-    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED']
+    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED', 'ABORT_ERR']
     return (
       error.code != null && retryableCodes.includes(error.code) ||
+      error.name === 'AbortError' ||
+      error.message?.includes('aborted') ||
       error.response != null && [502, 503, 504].includes(error.response.status)
     )
   }
@@ -362,7 +364,9 @@ export class Networks {
    */
   async downloadStream(progressCallback, retryCount = 0) {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    // 动态调整超时时间：首次请求30秒，重试时延长
+    const timeoutDuration = retryCount === 0 ? 30000 : Math.min(30000 + (retryCount * 10000), 120000)
+    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     let resources = new Set()
 
     try {
@@ -384,12 +388,94 @@ export class Networks {
       }
 
       const totalBytes = parseInt(response.headers['content-length'] || '0', 10)
-      if (isNaN(totalBytes) || totalBytes <= 0) {
-        throw new Error('无效的文件大小')
-      }
 
       if (!this.filepath) {
         throw new Error('文件路径未设置')
+      }
+
+      // 智能选择下载策略
+      if (isNaN(totalBytes) || totalBytes <= 0) {
+        // 处理无文件大小信息的情况 - 使用流式下载
+        const writer = fs.createWriteStream(this.filepath, {
+          highWaterMark: 1024 * 1024
+        })
+
+        let downloadedBytes = 0
+        let lastPrintedPercentage = -1
+        let lastUpdateTime = 0
+        const minUpdateInterval = 500
+        let startTime = Date.now()
+        /** @type {NodeJS.Timeout|null} */
+        let progressInterval = null
+
+        // 使用 setInterval 更新进度
+        progressInterval = /** @type {NodeJS.Timeout} */ (setInterval(() => {
+          const now = Date.now()
+          if (now - lastUpdateTime >= minUpdateInterval) {
+            // 计算下载速度
+            const elapsedSeconds = (now - startTime) / 1000
+            const downloadSpeed = elapsedSeconds > 0 ? (downloadedBytes / elapsedSeconds) : 0
+
+            // 对于未知大小，使用基于时间和速度的估算
+            let estimatedTotal = totalBytes
+            if (estimatedTotal <= 0 && downloadSpeed > 0) {
+              // 如果下载了超过1MB数据，基于下载速度估算总大小
+              if (downloadedBytes > 1024 * 1024) {
+                // 假设平均下载时间，估算总大小
+                estimatedTotal = Math.max(downloadedBytes * 3, downloadedBytes + 10 * 1024 * 1024)
+              } else {
+                estimatedTotal = downloadedBytes + 1 // 避免除零
+              }
+            }
+
+            const progress = estimatedTotal > 0 ? Math.min(downloadedBytes / estimatedTotal, 0.99) : 0
+            const progressPercentage = Math.floor(progress * 100)
+
+            if (progressPercentage !== lastPrintedPercentage) {
+              progressCallback(downloadedBytes, estimatedTotal)
+              lastPrintedPercentage = progressPercentage
+              lastUpdateTime = now
+            }
+          }
+        }, 100))
+
+        const transform = new Transform({
+          transform(chunk, encoding, callback) {
+            downloadedBytes += chunk.length
+            this.push(chunk)
+            callback()
+          },
+          highWaterMark: 1024 * 1024
+        })
+
+        resources.add(response.data)
+        resources.add(transform)
+        resources.add(writer)
+
+        try {
+          await pipeline(
+            response.data,
+            transform,
+            writer
+          )
+
+          // 下载完成后，使用实际下载大小作为总大小
+          progressCallback(downloadedBytes, downloadedBytes)
+
+        } finally {
+          if (progressInterval) {
+            clearInterval(progressInterval)
+            progressInterval = null
+          }
+          resources.forEach(resource => {
+            if (resource.destroy) {
+              resource.destroy()
+            }
+          })
+          resources.clear()
+        }
+
+        return { filepath: this.filepath, totalBytes: downloadedBytes }
       }
 
       // 对于小文件，使用单线程下载
