@@ -445,11 +445,15 @@ export class Networks {
               }
             }
 
-            const progress = estimatedTotal > 0 ? Math.min(downloadedBytes / estimatedTotal, 0.99) : 0
+            // 验证参数
+            const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+            const validEstimatedTotal = isFinite(estimatedTotal) && estimatedTotal > 0 ? estimatedTotal : validDownloadedBytes + 1
+
+            const progress = validEstimatedTotal > 0 ? Math.min(validDownloadedBytes / validEstimatedTotal, 0.99) : 0
             const progressPercentage = Math.floor(progress * 100)
 
             if (progressPercentage !== lastPrintedPercentage) {
-              progressCallback(downloadedBytes, estimatedTotal)
+              progressCallback(validDownloadedBytes, validEstimatedTotal)
               lastPrintedPercentage = progressPercentage
               lastUpdateTime = now
             }
@@ -477,7 +481,8 @@ export class Networks {
           )
 
           // 下载完成后，使用实际下载大小作为总大小
-          progressCallback(downloadedBytes, downloadedBytes)
+          const finalDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+          progressCallback(finalDownloadedBytes, finalDownloadedBytes)
 
         } finally {
           if (progressInterval) {
@@ -513,9 +518,13 @@ export class Networks {
           const now = Date.now()
           // 只在达到最小更新间隔时才更新进度
           if (now - lastUpdateTime >= minUpdateInterval) {
-            const progressPercentage = Math.floor((downloadedBytes / totalBytes) * 100)
+            // 验证参数，防止除零错误
+            const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+            const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
+
+            const progressPercentage = Math.floor((validDownloadedBytes / validTotalBytes) * 100)
             if (progressPercentage !== lastPrintedPercentage) {
-              progressCallback(downloadedBytes, totalBytes)
+              progressCallback(validDownloadedBytes, validTotalBytes)
               lastPrintedPercentage = progressPercentage
               lastUpdateTime = now
             }

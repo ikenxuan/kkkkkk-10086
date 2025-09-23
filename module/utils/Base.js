@@ -501,6 +501,14 @@ export const downloadFile = async (videoUrl, opt) => {
     // 定义进度条长度及生成进度条字符串的函数
     const barLength = 45
     const generateProgressBar = (/** @type {number} */ progressPercentage) => {
+      // 验证progressPercentage是否为有效数字
+      if (!isFinite(progressPercentage) || progressPercentage < 0 || isNaN(progressPercentage)) {
+        progressPercentage = 0
+      }
+
+      // 限制进度在0-100之间
+      progressPercentage = Math.max(0, Math.min(100, progressPercentage))
+
       const filledLength = Math.floor((progressPercentage / 100) * barLength)
       let progress = ''
       progress += '\u2588'.repeat(filledLength)
@@ -508,8 +516,12 @@ export const downloadFile = async (videoUrl, opt) => {
       return `[${progress}]`
     }
 
+    // 验证参数有效性
+    const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+    const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
+
     // 计算当前下载进度百分比
-    const progressPercentage = (downloadedBytes / totalBytes) * 100
+    const progressPercentage = (validDownloadedBytes / validTotalBytes) * 100
 
     // 计算动态 RGB 颜色
     const red = Math.floor(255 - (255 * progressPercentage) / 100) // 红色分量随进度减少
@@ -526,23 +538,23 @@ export const downloadFile = async (videoUrl, opt) => {
 
     // 计算下载速度（MB/s）
     const elapsedTime = (Date.now() - startTime) / 1000
-    const speed = downloadedBytes / elapsedTime
+    const speed = validDownloadedBytes / elapsedTime
     const formattedSpeed = (speed / 1048576).toFixed(1) + ' MB/s'
 
     // 计算剩余时间
-    const remainingBytes = totalBytes - downloadedBytes // 剩余字节数
+    const remainingBytes = validTotalBytes - validDownloadedBytes // 剩余字节数
     const remainingTime = remainingBytes / speed // 剩余时间（秒）
     const formattedRemainingTime = remainingTime > 60
       ? `${Math.floor(remainingTime / 60)}min ${Math.floor(remainingTime % 60)}s`
       : `${remainingTime.toFixed(0)}s`
 
     // 计算已下载和总下载的文件大小（MB）
-    const downloadedSizeMB = (downloadedBytes / 1048576).toFixed(1)
-    const totalSizeMB = (totalBytes / 1048576).toFixed(1)
+    const downloadedSizeMB = (validDownloadedBytes / 1048576).toFixed(1)
+    const totalSizeMB = (validTotalBytes / 1048576).toFixed(1)
 
     // 打印下载进度、速度和剩余时间
     logger.info(
-      `⬇️  ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
+      `⬇️ ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
     )
   }, 3)
 
