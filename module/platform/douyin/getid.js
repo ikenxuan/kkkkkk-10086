@@ -1,4 +1,5 @@
-import { Networks, logger } from '../../utils/index.js'
+import { logger, baseHeaders } from '../../utils/index.js'
+import axios from 'axios'
 
 /**
  * @typedef {object} DouyinDataTypes
@@ -34,7 +35,14 @@ export const getDouyinID = async (url, log = true) => {
   let longLink = ''
   try {
     // 获取长链接
-    longLink = await new Networks({ url }).getLongLink()
+    const resp = await axios.get(url, {
+      headers: {
+        ...baseHeaders,
+        'Host': 'v.douyin.com',
+        'Connection': 'keep-alive'
+      }
+    })
+    longLink = resp.request.res.responseUrl
 
     // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
