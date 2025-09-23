@@ -370,13 +370,29 @@ export class Networks {
     let resources = new Set()
 
     try {
+      // 重试时创建新连接
+      if (retryCount > 0) {
+        this.httpAgent = new http.Agent({
+          keepAlive: true,
+          keepAliveMsecs: 30000,
+          maxSockets: 50,
+          maxFreeSockets: 20,
+          timeout: timeoutDuration
+        })
+        this.httpsAgent = new https.Agent({
+          ...this.httpAgent,
+          rejectUnauthorized: false
+        })
+      }
       const response = await this.axiosInstance({
         ...this.config,
         url: this.url,
         responseType: 'stream',
         signal: controller.signal,
         maxContentLength: Number.MAX_SAFE_INTEGER,
-        maxBodyLength: Number.MAX_SAFE_INTEGER
+        maxBodyLength: Number.MAX_SAFE_INTEGER,
+        httpAgent: this.httpAgent,
+        httpsAgent: this.httpsAgent
       })
 
       // 如果请求成功，清除超时定时器
