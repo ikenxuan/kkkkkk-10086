@@ -386,7 +386,8 @@ export class DouYin extends Base {
               ...img,
               `\n正在上传 ${MusicData.data.music_info.title}\n`,
               `作曲: ${MusicData.data.music_info.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname}\n`,
-              `music_id: ${MusicData.data.music_info.id}`
+              `music_id: ${MusicData.data.music_info.id}`,
+              `重定向id: ${data.music_id}`
             ],
             [{ text: '音乐文件', link: MusicData.data.music_info.play_url.uri }]
           )
