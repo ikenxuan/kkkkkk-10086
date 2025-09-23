@@ -372,15 +372,16 @@ export class Networks {
     try {
       // 重试时创建新连接
       if (retryCount > 0) {
-        this.httpAgent = new http.Agent({
+        const retryOptions = {
           keepAlive: true,
           keepAliveMsecs: 30000,
           maxSockets: 50,
           maxFreeSockets: 20,
           timeout: timeoutDuration
-        })
+        }
+        this.httpAgent = new http.Agent(retryOptions)
         this.httpsAgent = new https.Agent({
-          ...this.httpAgent,
+          ...retryOptions,
           rejectUnauthorized: false
         })
       }
