@@ -530,23 +530,28 @@ export const downloadFile = async (videoUrl, opt) => {
 
     // 根据不同的机器人框架选择不同的着色方法
     const colorMethod = Version.BotName === 'TRSS-Yunzai'
-      ? (/** @type {any} */ color) => logger.hex(color)
-      : (/** @type {any} */ color) => logger.chalk.hex(color)
+      ? (/** @type {string} */ color) => logger.hex(color)
+      : (/** @type {string} */ color) => logger.chalk.hex(color)
 
     const coloredPercentage = colorMethod(hexColor)(`${progressPercentage.toFixed(1)}%`)
     const coloredProgressBar = colorMethod(hexColor)(generateProgressBar(progressPercentage))
 
     // 计算下载速度（MB/s）
     const elapsedTime = (Date.now() - startTime) / 1000
-    const speed = validDownloadedBytes / elapsedTime
-    const formattedSpeed = (speed / 1048576).toFixed(1) + ' MB/s'
+    let speed = elapsedTime > 0 ? validDownloadedBytes / elapsedTime : 0
+    const formattedSpeed = speed > 0 ? (speed / 1048576).toFixed(1) + ' MB/s' : '0.0 MB/s'
 
     // 计算剩余时间
-    const remainingBytes = validTotalBytes - validDownloadedBytes // 剩余字节数
-    const remainingTime = remainingBytes / speed // 剩余时间（秒）
-    const formattedRemainingTime = remainingTime > 60
-      ? `${Math.floor(remainingTime / 60)}min ${Math.floor(remainingTime % 60)}s`
-      : `${remainingTime.toFixed(0)}s`
+    let formattedRemainingTime = '计算中...'
+    if (speed > 0) {
+      const remainingBytes = validTotalBytes - validDownloadedBytes // 剩余字节数
+      const remainingTime = remainingBytes / speed // 剩余时间（秒）
+      formattedRemainingTime = remainingTime > 60
+        ? `${Math.floor(remainingTime / 60)}min ${Math.floor(remainingTime % 60)}s`
+        : `${Math.floor(remainingTime)}s`
+    } else if (validDownloadedBytes === 0) {
+      formattedRemainingTime = '等待中...'
+    }
 
     // 计算已下载和总下载的文件大小（MB）
     const downloadedSizeMB = (validDownloadedBytes / 1048576).toFixed(1)

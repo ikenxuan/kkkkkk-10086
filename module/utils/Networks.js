@@ -123,13 +123,33 @@ export class Networks {
    * @returns {boolean} 是否可重试
    */
   isRetryableError(error) {
-    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED', 'ABORT_ERR']
-    return (
-      error.code != null && retryableCodes.includes(error.code) ||
+    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED', 'ABORT_ERR', 'ERR_BAD_RESPONSE']
+
+    // 对连接重置错误增加特殊处理
+    if (error.code === 'ECONNRESET') {
+      logger.warn(`检测到连接重置错误，将进行重试: ${this.url}`)
+      return true
+    }
+
+    // 检查是否是中止错误（包括stream aborted）
+    const isAbortedError = (
       error.name === 'AbortError' ||
       error.message?.includes('aborted') ||
-      error.response != null && [502, 503, 504].includes(error.response.status)
+      error.code === 'ERR_BAD_RESPONSE' && error.message?.includes('stream has been aborted')
     )
+
+    // 检查网络连接错误
+    const isNetworkError = (
+      error.code != null && retryableCodes.includes(error.code) ||
+      error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' // SSL证书问题也可以重试
+    )
+
+    // 检查服务器错误
+    const isServerError = (
+      error.response != null && [502, 503, 504, 408].includes(error.response.status)
+    )
+
+    return isAbortedError || isNetworkError || isServerError
   }
 
   /**
@@ -138,6 +158,15 @@ export class Networks {
    * @returns {Error} 处理后的错误对象
    */
   handleError(error) {
+    // 特殊处理中止错误
+    if (error.code === 'ERR_BAD_RESPONSE' && error.message?.includes('aborted')) {
+      return new Error(`网络连接被中止，可能是超时或网络不稳定: ${this.url}`)
+    }
+
+    if (error.name === 'AbortError') {
+      return new Error(`请求被中止，可能是网络超时: ${this.url}`)
+    }
+
     if (error.response) {
       const status = error.response.status
       const statusText = error.response.statusText || ''
@@ -150,6 +179,8 @@ export class Networks {
           return new Error(`访问被禁止 (${status}): ${url}`)
         case 404:
           return new Error(`请求的资源不存在 (${status}): ${url}`)
+        case 408:
+          return new Error(`请求超时 (${status}): ${url}`)
         case 502:
         case 503:
         case 504:
@@ -164,6 +195,10 @@ export class Networks {
         return new Error(`请求超时: ${this.url}`)
       } else if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
         return new Error(`SSL证书验证失败，但请求已继续: ${this.url}`)
+      } else if (error.code === 'ENOTFOUND') {
+        return new Error(`DNS解析失败: ${this.url}`)
+      } else if (error.code === 'ECONNREFUSED') {
+        return new Error(`连接被拒绝: ${this.url}`)
       }
       return new Error(`网络连接错误: ${this.url}`)
     }
@@ -364,20 +399,23 @@ export class Networks {
    */
   async downloadStream(progressCallback, retryCount = 0) {
     const controller = new AbortController()
-    // 动态调整超时时间：首次请求30秒，重试时延长
-    const timeoutDuration = retryCount === 0 ? 30000 : Math.min(30000 + (retryCount * 10000), 120000)
+    // 动态调整超时时间：首次请求60秒，重试时延长到180秒
+    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + (retryCount * 30000), 180000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     let resources = new Set()
 
     try {
-      // 重试时创建新连接
+      // 重试时创建新连接，增加容错性
       if (retryCount > 0) {
         const retryOptions = {
           keepAlive: true,
           keepAliveMsecs: 30000,
           maxSockets: 50,
           maxFreeSockets: 20,
-          timeout: timeoutDuration
+          timeout: timeoutDuration,
+          rejectUnauthorized: false,
+          // 禁用Nagle算法，提高小文件传输效率
+          noDelay: true
         }
         this.httpAgent = new http.Agent(retryOptions)
         this.httpsAgent = new https.Agent({
@@ -385,6 +423,7 @@ export class Networks {
           rejectUnauthorized: false
         })
       }
+
       const response = await this.axiosInstance({
         ...this.config,
         url: this.url,
@@ -393,7 +432,19 @@ export class Networks {
         maxContentLength: Number.MAX_SAFE_INTEGER,
         maxBodyLength: Number.MAX_SAFE_INTEGER,
         httpAgent: this.httpAgent,
-        httpsAgent: this.httpsAgent
+        httpsAgent: this.httpsAgent,
+        // 增加额外的容错配置
+        timeout: timeoutDuration,
+        // 允许更多的重定向
+        maxRedirects: 10,
+        // 增加请求头，模拟浏览器行为
+        headers: {
+          ...this.headers,
+          'Accept': '*/*',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive',
+          'Cache-Control': 'no-cache'
+        }
       })
 
       // 如果请求成功，清除超时定时器
@@ -410,6 +461,89 @@ export class Networks {
         throw new Error('文件路径未设置')
       }
 
+      // 验证参数的辅助函数
+      const validateProgressParams = (/** @type {number} */ downloadedBytes, /** @type {number} */ totalBytes) => {
+        const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+        const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
+        return { validDownloadedBytes, validTotalBytes }
+      }
+
+      // 创建Transform流的辅助函数
+      const createTransformStream = (/** @type {number} */ bytesTracker) => {
+        return new Transform({
+          transform(chunk, encoding, callback) {
+            bytesTracker += chunk.length
+            this.push(chunk)
+            callback()
+          },
+          highWaterMark: 1024 * 1024
+        })
+      }
+
+      // 管理资源的辅助函数
+      const manageResources = (/** @type {any[]} */ streams, progressInterval = null) => {
+        streams.forEach(stream => resources.add(stream))
+        return {
+          cleanup: () => {
+            if (progressInterval) {
+              clearInterval(progressInterval)
+            }
+            resources.forEach(resource => {
+              if (resource.destroy) {
+                resource.destroy()
+              }
+            })
+            resources.clear()
+          }
+        }
+      }
+
+      // 处理流管道的辅助函数
+      const handleStreamPipeline = async (/** @type {any} */ source, /** @type {Transform} */ transform, /** @type {fs.WriteStream} */ writer, onComplete = () => { }) => {
+        const resourceManager = manageResources([source, transform, writer])
+        try {
+          await pipeline(source, transform, writer)
+          onComplete()
+        } finally {
+          resourceManager.cleanup()
+        }
+      }
+
+      // 设置进度更新的辅助函数
+      const setupProgressUpdater = (/** @type {number} */ bytesTracker, /** @type {number} */ totalSize, minUpdateInterval = 500) => {
+        let lastPrintedPercentage = -1
+        let lastUpdateTime = 0
+
+        const updateFn = () => {
+          const now = Date.now()
+          if (now - lastUpdateTime >= minUpdateInterval) {
+            const { validDownloadedBytes, validTotalBytes } = validateProgressParams(bytesTracker, totalSize)
+
+            // 对于未知大小的文件，使用基于时间和速度的估算
+            let estimatedTotal = validTotalBytes
+            if (totalSize <= 0 && bytesTracker > 1024 * 1024) {
+              estimatedTotal = Math.max(bytesTracker * 3, bytesTracker + 10 * 1024 * 1024)
+            }
+
+            const progress = Math.min(bytesTracker / estimatedTotal, 0.99)
+            const progressPercentage = Math.floor(progress * 100)
+
+            if (progressPercentage !== lastPrintedPercentage) {
+              progressCallback(validDownloadedBytes, estimatedTotal)
+              lastPrintedPercentage = progressPercentage
+              lastUpdateTime = now
+            }
+          }
+        }
+
+        const interval = /** @type {NodeJS.Timeout} */ (setInterval(updateFn, 100))
+
+        return {
+          interval,
+          cleanup: () => clearInterval(interval)
+        }
+      }
+
       // 智能选择下载策略
       if (isNaN(totalBytes) || totalBytes <= 0) {
         // 处理无文件大小信息的情况 - 使用流式下载
@@ -418,84 +552,15 @@ export class Networks {
         })
 
         let downloadedBytes = 0
-        let lastPrintedPercentage = -1
-        let lastUpdateTime = 0
-        const minUpdateInterval = 500
-        let startTime = Date.now()
-        /** @type {NodeJS.Timeout|null} */
-        let progressInterval = null
+        const progressUpdater = setupProgressUpdater(downloadedBytes, totalBytes)
+        const transform = createTransformStream(downloadedBytes)
 
-        // 使用 setInterval 更新进度
-        progressInterval = /** @type {NodeJS.Timeout} */ (setInterval(() => {
-          const now = Date.now()
-          if (now - lastUpdateTime >= minUpdateInterval) {
-            // 计算下载速度
-            const elapsedSeconds = (now - startTime) / 1000
-            const downloadSpeed = elapsedSeconds > 0 ? (downloadedBytes / elapsedSeconds) : 0
-
-            // 对于未知大小，使用基于时间和速度的估算
-            let estimatedTotal = totalBytes
-            if (estimatedTotal <= 0 && downloadSpeed > 0) {
-              // 如果下载了超过1MB数据，基于下载速度估算总大小
-              if (downloadedBytes > 1024 * 1024) {
-                // 假设平均下载时间，估算总大小
-                estimatedTotal = Math.max(downloadedBytes * 3, downloadedBytes + 10 * 1024 * 1024)
-              } else {
-                estimatedTotal = downloadedBytes + 1 // 避免除零
-              }
-            }
-
-            // 验证参数
-            const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
-            const validEstimatedTotal = isFinite(estimatedTotal) && estimatedTotal > 0 ? estimatedTotal : validDownloadedBytes + 1
-
-            const progress = validEstimatedTotal > 0 ? Math.min(validDownloadedBytes / validEstimatedTotal, 0.99) : 0
-            const progressPercentage = Math.floor(progress * 100)
-
-            if (progressPercentage !== lastPrintedPercentage) {
-              progressCallback(validDownloadedBytes, validEstimatedTotal)
-              lastPrintedPercentage = progressPercentage
-              lastUpdateTime = now
-            }
-          }
-        }, 100))
-
-        const transform = new Transform({
-          transform(chunk, encoding, callback) {
-            downloadedBytes += chunk.length
-            this.push(chunk)
-            callback()
-          },
-          highWaterMark: 1024 * 1024
-        })
-
-        resources.add(response.data)
-        resources.add(transform)
-        resources.add(writer)
-
-        try {
-          await pipeline(
-            response.data,
-            transform,
-            writer
-          )
-
+        await handleStreamPipeline(response.data, transform, writer, () => {
           // 下载完成后，使用实际下载大小作为总大小
-          const finalDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
+          const finalDownloadedBytes = validateProgressParams(downloadedBytes, 0).validDownloadedBytes
           progressCallback(finalDownloadedBytes, finalDownloadedBytes)
-
-        } finally {
-          if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-          }
-          resources.forEach(resource => {
-            if (resource.destroy) {
-              resource.destroy()
-            }
-          })
-          resources.clear()
-        }
+          progressUpdater.cleanup()
+        })
 
         return { filepath: this.filepath, totalBytes: downloadedBytes }
       }
@@ -508,64 +573,32 @@ export class Networks {
 
         let downloadedBytes = 0
         let lastPrintedPercentage = -1
-        /** @type {NodeJS.Timeout | null} */
-        let progressInterval = null
         const minUpdateInterval = 500 // 最小更新间隔(ms)
         let lastUpdateTime = 0
 
-        // 使用 setInterval 更新进度
-        progressInterval = /** @type {NodeJS.Timeout} */(setInterval(() => {
+        // 小文件专用的进度更新器
+        const progressInterval = /** @type {NodeJS.Timeout} */ (setInterval(() => {
           const now = Date.now()
-          // 只在达到最小更新间隔时才更新进度
           if (now - lastUpdateTime >= minUpdateInterval) {
-            // 验证参数，防止除零错误
-            const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
-            const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
-
+            const { validDownloadedBytes, validTotalBytes } = validateProgressParams(downloadedBytes, totalBytes)
             const progressPercentage = Math.floor((validDownloadedBytes / validTotalBytes) * 100)
+
             if (progressPercentage !== lastPrintedPercentage) {
               progressCallback(validDownloadedBytes, validTotalBytes)
               lastPrintedPercentage = progressPercentage
               lastUpdateTime = now
             }
-            if (downloadedBytes >= totalBytes && progressInterval) {
+
+            if (downloadedBytes >= totalBytes) {
               clearInterval(progressInterval)
-              progressInterval = null
             }
           }
-        }, 50)) // 更频繁地检查，但只在达到最小更新间隔时才实际更新
+        }, 50))
 
-        const transform = new Transform({
-          transform(chunk, encoding, callback) {
-            downloadedBytes += chunk.length
-            this.push(chunk)
-            callback()
-          },
-          highWaterMark: 1024 * 1024
+        const transform = createTransformStream(downloadedBytes)
+        await handleStreamPipeline(response.data, transform, writer, () => {
+          clearInterval(progressInterval)
         })
-
-        resources.add(response.data)
-        resources.add(transform)
-        resources.add(writer)
-
-        try {
-          await pipeline(
-            response.data,
-            transform,
-            writer
-          )
-        } finally {
-          if (progressInterval) {
-            clearInterval(progressInterval)
-            progressInterval = null
-          }
-          resources.forEach(resource => {
-            if (resource.destroy) {
-              resource.destroy()
-            }
-          })
-          resources.clear()
-        }
 
         return { filepath: this.filepath, totalBytes }
       }
@@ -653,7 +686,6 @@ export class Networks {
         return { chunkPath, size: end - start + 1 }
       }
 
-      // 分批并发下载
       const chunkResults = []
       for (let i = 0; i < chunks; i += concurrentDownloads) {
         const batchPromises = []
@@ -695,7 +727,7 @@ export class Networks {
       finalWriter.end()
 
       // 清理临时目录
-      const cleanupTempDir = (/** @type {string} */ dir, retries = 3) => {
+      const cleanupTempDir = (/** @type {fs.PathLike} */ dir, retries = 3) => {
         // 检查目录是否存在
         if (!fs.existsSync(dir)) return
 
@@ -728,10 +760,25 @@ export class Networks {
       })
       resources.clear()
 
-      const err = this.handleError(/** @type {AxiosError} */(error))
+      const axiosError = /** @type {AxiosError} */(error)
+
+      // 特殊处理中止错误
+      if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
+        logger.error(`下载被中止，可能是网络超时: ${this.url}`)
+
+        // 对于中止错误，总是允许重试，不受重试次数限制
+        if (retryCount < this.maxRetries + 2) { // 给中止错误更多重试机会
+          const delay = Math.min(Math.pow(2, retryCount) * 2000, 5000) // 更长的延迟
+          logger.warn(`网络连接问题，正在重试... (${retryCount + 1}/${this.maxRetries + 2})，将在 ${delay / 1000} 秒后重试`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return this.downloadStream(progressCallback, retryCount + 1)
+        }
+      }
+
+      const err = this.handleError(axiosError)
 
       // 只对可重试的错误进行重试
-      if (retryCount < this.maxRetries && this.isRetryableError(/** @type {AxiosError} */(error))) {
+      if (retryCount < this.maxRetries && this.isRetryableError(axiosError)) {
         const delay = Math.min(Math.pow(2, retryCount) * 1000, 1000)
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
         await new Promise(resolve => setTimeout(resolve, delay))
