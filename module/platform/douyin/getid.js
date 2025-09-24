@@ -36,11 +36,7 @@ export const getDouyinID = async (url, log = true) => {
   try {
     // 获取长链接
     const resp = await axios.get(url, {
-      headers: {
-        ...baseHeaders,
-        'Host': 'v.douyin.com',
-        'Connection': 'keep-alive'
-      }
+      headers: baseHeaders
     })
     longLink = resp.request.res.responseUrl
 

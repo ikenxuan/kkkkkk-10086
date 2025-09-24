@@ -8,14 +8,46 @@ import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
 /**
+ * User-Agent 列表及权重配置
+ * @type {{ua: string, weight: number}[]}
+ */
+const userAgents = [
+  { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1', weight: 43.03 },
+  { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3', weight: 21.05 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3', weight: 17.34 },
+  { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3', weight: 3.72 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Trailer/93.3.8652.5', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.', weight: 1.24 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.1958', weight: 1.24 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.', weight: 1.24 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.3', weight: 1.24 }
+]
+
+/**
+ * 根据权重随机获取 User-Agent
+ * @returns {string} 随机的 User-Agent 字符串
+ */
+const getRandomUserAgent = () => {
+  const validAgents = userAgents.filter(a => a?.ua && typeof a.weight === 'number' && a.weight > 0)
+  if (!validAgents.length) return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0'
+
+  const totalWeight = validAgents.reduce((sum, a) => sum + a.weight, 0)
+  let random = Math.random() * totalWeight
+
+  return validAgents.find(a => (random -= a.weight) <= 0)?.ua || validAgents.at(-1)?.ua || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0'
+}
+
+/**
  * 基础请求头配置
  * @type {import('axios').AxiosRequestConfig['headers']}
  */
 export const baseHeaders = {
   Accept: '*/*',
   'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0'
+  'User-Agent': getRandomUserAgent()
 }
 
 /**
@@ -74,16 +106,25 @@ export class Networks {
     const socketOptions = {
       keepAlive: true,
       keepAliveMsecs: 30000,
-      maxSockets: 50,
-      maxFreeSockets: 20,
-      timeout: 60000
+      maxSockets: 20,
+      maxFreeSockets: 10,
+      timeout: 120000,
+      /** @type {"fifo" | "lifo"} */
+      scheduling: 'fifo',
+      rejectUnauthorized: false
     }
 
     this.httpAgent = new http.Agent(socketOptions)
-    this.httpsAgent = new https.Agent({
-      ...socketOptions,
-      rejectUnauthorized: false
-    })
+    this.httpsAgent = new https.Agent(socketOptions)
+
+    // 添加熔断机制属性
+    this.circuitFailureCount = 0
+    this.circuitLastFailureTime = 0
+    this.circuitFailureThreshold = 3  // 连续失败3次触发熔断
+    this.circuitTimeoutDuration = 60000  // 熔断后等待60秒
+    this.circuitState = 'CLOSED'  // 熔断器状态：CLOSED, OPEN, HALF_OPEN
+    this.circuitSuccessThreshold = 2  // 半开状态需要连续成功2次才能恢复
+    this.circuitSuccessCount = 0  // 半开状态成功计数
 
     // 创建axios实例
     this.axiosInstance = axios.create({
@@ -150,6 +191,88 @@ export class Networks {
     )
 
     return isAbortedError || isNetworkError || isServerError
+  }
+
+  /**
+   * 检查熔断器状态
+   * @returns {boolean} 是否允许请求
+   */
+  checkCircuitBreaker() {
+    const now = Date.now()
+
+    // 如果熔断器是关闭状态，允许请求
+    if (this.circuitState === 'CLOSED') {
+      return true
+    }
+
+    // 如果熔断器是开启状态，检查是否超时
+    if (this.circuitState === 'OPEN') {
+      if (now - this.circuitLastFailureTime > this.circuitTimeoutDuration) {
+        // 超时后进入半开状态
+        this.circuitState = 'HALF_OPEN'
+        this.circuitSuccessCount = 0
+        logger.info(`熔断器超时恢复，进入半开状态: ${this.url}`)
+        return true
+      }
+      // 未超时，拒绝请求
+      const waitTime = Math.ceil((this.circuitTimeoutDuration - (now - this.circuitLastFailureTime)) / 1000)
+      throw new Error(`熔断器开启，请等待 ${waitTime} 秒后重试 (连续失败 ${this.circuitFailureCount} 次)`)
+    }
+
+    // 半开状态，允许请求但需要谨慎处理
+    return true
+  }
+
+  /**
+   * 记录成功请求
+   */
+  recordSuccess() {
+    if (this.circuitState === 'HALF_OPEN') {
+      this.circuitSuccessCount++
+      if (this.circuitSuccessCount >= this.circuitSuccessThreshold) {
+        // 半开状态连续成功，恢复到关闭状态
+        this.circuitState = 'CLOSED'
+        this.circuitFailureCount = 0
+        this.circuitSuccessCount = 0
+        logger.info(`熔断器恢复正常: ${this.url}`)
+      }
+    } else if (this.circuitState === 'CLOSED') {
+      // 关闭状态下的成功，重置失败计数
+      this.circuitFailureCount = 0
+    }
+  }
+
+  /**
+   * 记录失败请求
+   * @param {AxiosError} error 错误对象
+   */
+  recordFailure(error) {
+    const now = Date.now()
+
+    // 根据错误类型调整失败权重
+    let failureWeight = 1
+    if (error.code === 'ECONNRESET') {
+      failureWeight = 2  // 连接重置错误权重更高
+    } else if (error.response?.status && error.response.status >= 500) {
+      failureWeight = 0.5  // 服务器错误权重较低
+    }
+
+    this.circuitFailureCount += failureWeight
+    this.circuitLastFailureTime = now
+
+    // 如果是半开状态，失败后立即重新开启熔断器
+    if (this.circuitState === 'HALF_OPEN') {
+      this.circuitState = 'OPEN'
+      this.circuitSuccessCount = 0
+      logger.warn(`半开状态请求失败，重新开启熔断器: ${this.url} (错误: ${error.message})`)
+      return
+    }
+
+    // 检查是否需要开启熔断器
+    if (this.circuitFailureCount >= this.circuitFailureThreshold) {
+      this.circuitState = 'OPEN'
+      logger.warn(`熔断器开启: ${this.url} (连续失败 ${this.circuitFailureCount.toFixed(1)} 次)`)
+    }
   }
 
   /**
@@ -398,32 +521,20 @@ export class Networks {
    * @throws {Error} 下载失败时抛出错误
    */
   async downloadStream(progressCallback, retryCount = 0) {
+    // 检查熔断器状态
+    try {
+      this.checkCircuitBreaker()
+    } catch (circuitError) {
+      logger.warn((/** @type {Error} */ (circuitError)).message)
+      throw circuitError
+    }
     const controller = new AbortController()
-    // 动态调整超时时间：首次请求60秒，重试时延长到180秒
-    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + (retryCount * 30000), 180000)
+    // 动态调整超时时间：首次请求120秒，重试时延长到300秒
+    const timeoutDuration = retryCount === 0 ? 120000 : Math.min(120000 + (retryCount * 60000), 300000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     let resources = new Set()
 
     try {
-      // 重试时创建新连接，增加容错性
-      if (retryCount > 0) {
-        const retryOptions = {
-          keepAlive: true,
-          keepAliveMsecs: 30000,
-          maxSockets: 50,
-          maxFreeSockets: 20,
-          timeout: timeoutDuration,
-          rejectUnauthorized: false,
-          // 禁用Nagle算法，提高小文件传输效率
-          noDelay: true
-        }
-        this.httpAgent = new http.Agent(retryOptions)
-        this.httpsAgent = new https.Agent({
-          ...retryOptions,
-          rejectUnauthorized: false
-        })
-      }
-
       const response = await this.axiosInstance({
         ...this.config,
         url: this.url,
@@ -431,8 +542,6 @@ export class Networks {
         signal: controller.signal,
         maxContentLength: Number.MAX_SAFE_INTEGER,
         maxBodyLength: Number.MAX_SAFE_INTEGER,
-        httpAgent: this.httpAgent,
-        httpsAgent: this.httpsAgent,
         // 增加额外的容错配置
         timeout: timeoutDuration,
         // 允许更多的重定向
@@ -440,10 +549,10 @@ export class Networks {
         // 增加请求头，模拟浏览器行为
         headers: {
           ...this.headers,
-          'Accept': '*/*',
           'Accept-Encoding': 'gzip, deflate, br',
           'Connection': 'keep-alive',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       })
 
@@ -605,14 +714,14 @@ export class Networks {
 
       // 对于大文件，使用分片并发下载
       // 根据文件大小动态调整分片大小和并发数
-      const chunkSize = totalBytes > 50 * 1024 * 1024
-        ? 10 * 1024 * 1024 // 大于50MB的文件使用10MB分片
-        : 5 * 1024 * 1024  // 其他文件使用5MB分片
+      const chunkSize = totalBytes > 100 * 1024 * 1024
+        ? 8 * 1024 * 1024 // 大于100MB的文件使用8MB分片
+        : totalBytes > 50 * 1024 * 1024
+          ? 6 * 1024 * 1024 // 大于50MB的文件使用6MB分片
+          : 4 * 1024 * 1024  // 其他文件使用4MB分片
 
-      const concurrentDownloads = totalBytes > 50 * 1024 * 1024
-        ? 5 // 大文件使用更多并发
-        : 3 // 小文件使用较少并发
-
+      // 根据重试次数和文件大小智能调整并发数
+      const concurrentDownloads = retryCount > 0 ? 1 : Math.min(2, Math.floor(totalBytes / (20 * 1024 * 1024))) // 大于20MB的文件最多2个并发，其他文件最多1个并发
       const chunks = Math.ceil(totalBytes / chunkSize)
 
       // 创建临时目录
@@ -747,12 +856,12 @@ export class Networks {
       // 异步清理临时目录，不等待完成
       cleanupTempDir(tempDir)
 
+      // 记录成功
+      this.recordSuccess()
+
       return { filepath: this.filepath, totalBytes }
     } catch (error) {
       clearTimeout(timeoutId)
-      // 清理连接池
-      this.cleanup()
-
       resources.forEach(resource => {
         if (resource.destroy) {
           resource.destroy()
@@ -762,13 +871,16 @@ export class Networks {
 
       const axiosError = /** @type {AxiosError} */(error)
 
+      // 记录失败
+      this.recordFailure(axiosError)
+
       // 特殊处理中止错误
       if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
         logger.error(`下载被中止，可能是网络超时: ${this.url}`)
 
         // 对于中止错误，总是允许重试，不受重试次数限制
         if (retryCount < this.maxRetries + 2) { // 给中止错误更多重试机会
-          const delay = Math.min(Math.pow(2, retryCount) * 2000, 5000) // 更长的延迟
+          const delay = Math.min(Math.pow(2, retryCount) * 3000, 10000) // 更长的延迟
           logger.warn(`网络连接问题，正在重试... (${retryCount + 1}/${this.maxRetries + 2})，将在 ${delay / 1000} 秒后重试`)
           await new Promise(resolve => setTimeout(resolve, delay))
           return this.downloadStream(progressCallback, retryCount + 1)
@@ -779,7 +891,7 @@ export class Networks {
 
       // 只对可重试的错误进行重试
       if (retryCount < this.maxRetries && this.isRetryableError(axiosError)) {
-        const delay = Math.min(Math.pow(2, retryCount) * 1000, 1000)
+        const delay = Math.min(Math.pow(2, retryCount) * 2000, 8000)
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.downloadStream(progressCallback, retryCount + 1)
