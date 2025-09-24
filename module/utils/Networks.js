@@ -341,9 +341,6 @@ export class Networks {
       responseType: this.type,
       timeout: this.timeout,
       maxRedirects: this.maxRetries,
-      validateStatus: (/** @type {number} */ status) => {
-        return (status >= 200 && status < 300) || status === 406 || (status >= 500)
-      },
       httpAgent: this.httpAgent,
       httpsAgent: this.httpsAgent,
       proxy: this.proxy
