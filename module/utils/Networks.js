@@ -117,15 +117,6 @@ export class Networks {
     this.httpAgent = new http.Agent(socketOptions)
     this.httpsAgent = new https.Agent(socketOptions)
 
-    // 添加熔断机制属性
-    this.circuitFailureCount = 0
-    this.circuitLastFailureTime = 0
-    this.circuitFailureThreshold = 3  // 连续失败3次触发熔断
-    this.circuitTimeoutDuration = 60000  // 熔断后等待60秒
-    this.circuitState = 'CLOSED'  // 熔断器状态：CLOSED, OPEN, HALF_OPEN
-    this.circuitSuccessThreshold = 2  // 半开状态需要连续成功2次才能恢复
-    this.circuitSuccessCount = 0  // 半开状态成功计数
-
     // 创建axios实例
     this.axiosInstance = axios.create({
       timeout: this.timeout,
@@ -156,123 +147,6 @@ export class Networks {
    */
   [Symbol.dispose]() {
     this.cleanup()
-  }
-
-  /**
-   * 判断错误是否可重试
-   * @param {AxiosError} error 错误对象
-   * @returns {boolean} 是否可重试
-   */
-  isRetryableError(error) {
-    const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'ECONNREFUSED', 'ABORT_ERR', 'ERR_BAD_RESPONSE']
-
-    // 对连接重置错误增加特殊处理
-    if (error.code === 'ECONNRESET') {
-      logger.warn(`检测到连接重置错误，将进行重试: ${this.url}`)
-      return true
-    }
-
-    // 检查是否是中止错误（包括stream aborted）
-    const isAbortedError = (
-      error.name === 'AbortError' ||
-      error.message?.includes('aborted') ||
-      error.code === 'ERR_BAD_RESPONSE' && error.message?.includes('stream has been aborted')
-    )
-
-    // 检查网络连接错误
-    const isNetworkError = (
-      error.code != null && retryableCodes.includes(error.code) ||
-      error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' // SSL证书问题也可以重试
-    )
-
-    // 检查服务器错误
-    const isServerError = (
-      error.response != null && [502, 503, 504, 408].includes(error.response.status)
-    )
-
-    return isAbortedError || isNetworkError || isServerError
-  }
-
-  /**
-   * 检查熔断器状态
-   * @returns {boolean} 是否允许请求
-   */
-  checkCircuitBreaker() {
-    const now = Date.now()
-
-    // 如果熔断器是关闭状态，允许请求
-    if (this.circuitState === 'CLOSED') {
-      return true
-    }
-
-    // 如果熔断器是开启状态，检查是否超时
-    if (this.circuitState === 'OPEN') {
-      if (now - this.circuitLastFailureTime > this.circuitTimeoutDuration) {
-        // 超时后进入半开状态
-        this.circuitState = 'HALF_OPEN'
-        this.circuitSuccessCount = 0
-        logger.info(`熔断器超时恢复，进入半开状态: ${this.url}`)
-        return true
-      }
-      // 未超时，拒绝请求
-      const waitTime = Math.ceil((this.circuitTimeoutDuration - (now - this.circuitLastFailureTime)) / 1000)
-      throw new Error(`熔断器开启，请等待 ${waitTime} 秒后重试 (连续失败 ${this.circuitFailureCount} 次)`)
-    }
-
-    // 半开状态，允许请求但需要谨慎处理
-    return true
-  }
-
-  /**
-   * 记录成功请求
-   */
-  recordSuccess() {
-    if (this.circuitState === 'HALF_OPEN') {
-      this.circuitSuccessCount++
-      if (this.circuitSuccessCount >= this.circuitSuccessThreshold) {
-        // 半开状态连续成功，恢复到关闭状态
-        this.circuitState = 'CLOSED'
-        this.circuitFailureCount = 0
-        this.circuitSuccessCount = 0
-        logger.info(`熔断器恢复正常: ${this.url}`)
-      }
-    } else if (this.circuitState === 'CLOSED') {
-      // 关闭状态下的成功，重置失败计数
-      this.circuitFailureCount = 0
-    }
-  }
-
-  /**
-   * 记录失败请求
-   * @param {AxiosError} error 错误对象
-   */
-  recordFailure(error) {
-    const now = Date.now()
-
-    // 根据错误类型调整失败权重
-    let failureWeight = 1
-    if (error.code === 'ECONNRESET') {
-      failureWeight = 2  // 连接重置错误权重更高
-    } else if (error.response?.status && error.response.status >= 500) {
-      failureWeight = 0.5  // 服务器错误权重较低
-    }
-
-    this.circuitFailureCount += failureWeight
-    this.circuitLastFailureTime = now
-
-    // 如果是半开状态，失败后立即重新开启熔断器
-    if (this.circuitState === 'HALF_OPEN') {
-      this.circuitState = 'OPEN'
-      this.circuitSuccessCount = 0
-      logger.warn(`半开状态请求失败，重新开启熔断器: ${this.url} (错误: ${error.message})`)
-      return
-    }
-
-    // 检查是否需要开启熔断器
-    if (this.circuitFailureCount >= this.circuitFailureThreshold) {
-      this.circuitState = 'OPEN'
-      logger.warn(`熔断器开启: ${this.url} (连续失败 ${this.circuitFailureCount.toFixed(1)} 次)`)
-    }
   }
 
   /**
@@ -527,21 +401,14 @@ export class Networks {
    * @throws {Error} 下载失败时抛出错误
    */
   async downloadStream(progressCallback, retryCount = 0) {
-    // 检查熔断器状态
-    try {
-      this.checkCircuitBreaker()
-    } catch (circuitError) {
-      logger.warn((/** @type {Error} */ (circuitError)).message)
-      throw circuitError
-    }
     const controller = new AbortController()
-    // 动态调整超时时间：首次请求120秒，重试时延长到300秒
-    const timeoutDuration = retryCount === 0 ? 120000 : Math.min(120000 + (retryCount * 60000), 300000)
+    // 动态调整超时时间：首次请求60秒，重试时延长到180秒
+    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + (retryCount * 60000), 180000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     let resources = new Set()
 
     try {
-      const response = await this.axiosInstance({
+      const response = await axios({
         ...this.config,
         url: this.url,
         responseType: 'stream',
@@ -719,15 +586,13 @@ export class Networks {
       }
 
       // 对于大文件，使用分片并发下载
-      // 根据文件大小动态调整分片大小和并发数
-      const chunkSize = totalBytes > 100 * 1024 * 1024
-        ? 8 * 1024 * 1024 // 大于100MB的文件使用8MB分片
-        : totalBytes > 50 * 1024 * 1024
-          ? 6 * 1024 * 1024 // 大于50MB的文件使用6MB分片
-          : 4 * 1024 * 1024  // 其他文件使用4MB分片
+      // 大于50MB的文件：10个分片 0-50MB的文件：5MB分片
+      const chunkSize = totalBytes > 50 * 1024 * 1024 ? Math.ceil(totalBytes / 10) : 5 * 1024 * 1024
 
-      // 根据重试次数和文件大小智能调整并发数
-      const concurrentDownloads = retryCount > 0 ? 1 : Math.min(2, Math.floor(totalBytes / (20 * 1024 * 1024))) // 大于20MB的文件最多2个并发，其他文件最多1个并发
+      // 优化：根据文件大小和系统性能动态调整并发数
+      const concurrentDownloads = retryCount > 0
+        ? 1 // 重试时使用单线程
+        : Math.min(4, Math.ceil(totalBytes / (10 * 1024 * 1024))) // 动态计算并发数，最多4个并发
       const chunks = Math.ceil(totalBytes / chunkSize)
 
       // 创建临时目录
@@ -766,10 +631,11 @@ export class Networks {
 
       // 并发下载函数
       const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index) => {
-        const chunkResponse = await this.axiosInstance({
+        const chunkResponse = await axios({
           ...this.config,
           url: this.url,
           responseType: 'stream',
+          timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
           headers: {
             ...this.config.headers,
             Range: `bytes=${start}-${end}`
@@ -816,7 +682,7 @@ export class Networks {
 
       // 合并分块
       const finalWriter = fs.createWriteStream(this.filepath, {
-        highWaterMark: 10 * 1024 * 1024
+        highWaterMark: 20 * 1024 * 1024
       })
       resources.add(finalWriter)
 
@@ -862,9 +728,6 @@ export class Networks {
       // 异步清理临时目录，不等待完成
       cleanupTempDir(tempDir)
 
-      // 记录成功
-      this.recordSuccess()
-
       return { filepath: this.filepath, totalBytes }
     } catch (error) {
       clearTimeout(timeoutId)
@@ -876,9 +739,6 @@ export class Networks {
       resources.clear()
 
       const axiosError = /** @type {AxiosError} */(error)
-
-      // 记录失败
-      this.recordFailure(axiosError)
 
       // 特殊处理中止错误
       if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
@@ -895,8 +755,8 @@ export class Networks {
 
       const err = this.handleError(axiosError)
 
-      // 只对可重试的错误进行重试
-      if (retryCount < this.maxRetries && this.isRetryableError(axiosError)) {
+      // 进行重试
+      if (retryCount < this.maxRetries) {
         const delay = Math.min(Math.pow(2, retryCount) * 2000, 8000)
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
         await new Promise(resolve => setTimeout(resolve, delay))
