@@ -282,7 +282,7 @@ export class Networks {
 
     let errorMsg = `获取链接重定向失败: ${currentUrl}`
     try {
-      const response = await this.axiosInstance.head(currentUrl)
+      const response = await this.axiosInstance.get(currentUrl, this.config)
       // 如果服务器返回的重定向URL与当前URL相同，也视为循环重定向
       const finalUrl = response.request.res.responseUrl
       if (finalUrl === currentUrl) {
@@ -315,10 +315,9 @@ export class Networks {
    */
   async getLocation() {
     try {
-      const response = await this.axiosInstance({
-        method: 'GET',
-        url: this.url,
-        maxRedirects: 0,
+      const response = await this.axiosInstance.get(this.url, {
+        ...this.config,
+        maxRedirects: 0, // 禁止自动重定向
         validateStatus: (status) => status >= 300 && status < 400 // 仅处理3xx响应
       })
 
@@ -327,7 +326,11 @@ export class Networks {
       }
       return this.url
     } catch (error) {
-      logger.error('获取重定向地址失败:', this.handleError(/** @type {AxiosError} */(error)))
+      const axiosError = /** @type {AxiosError} */ (error)
+      if (axiosError.response && axiosError.response.status === 302 && axiosError.response.headers.location) {
+        return axiosError.response.headers.location
+      }
+      logger.error('获取重定向地址失败:', this.handleError(axiosError))
       return this.url
     }
   }

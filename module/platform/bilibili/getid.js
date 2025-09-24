@@ -1,4 +1,4 @@
-import { Networks, logger } from '../../utils/index.js'
+import { logger, baseHeaders, Networks } from '../../utils/index.js'
 
 /**
  * @typedef {Object.<string, any>} BilibiliId
@@ -40,7 +40,15 @@ export const getBilibiliID = async (url, log = true) => {
   let longLink = ''
   try {
     // 获取长链接
-    longLink = await new Networks({ url }).getLongLink()
+    longLink = await new Networks({
+      url,
+      headers: {
+        ...baseHeaders,
+        Referer: '',
+        Cookie: '',
+        Host: ''
+      }
+    }).getLongLink()
 
     // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
