@@ -391,34 +391,44 @@ export class Networks {
    * 获取重定向后的最终链接地址
    * @param {string} [url = ''] 可选参数，要获取重定向链接的URL地址
    * @param {number} [redirectCount = 0] 重定向计数器
+   * @param {Set<string>} [visitedUrls = new Set()] 已访问的URL集合
    * @returns {Promise<string>} 返回最终的重定向链接地址或错误信息
    */
-  async getLongLink(url = '', redirectCount = 0) {
+  async getLongLink(url = '', redirectCount = 0, visitedUrls = new Set()) {
     // 限制最多10次重定向，防止循环重定向
     if (redirectCount > 10) {
       throw new Error('重定向次数过多，可能存在循环重定向')
     }
 
-    let errorMsg = `获取链接重定向失败: ${this.url || url}`
+    // 使用传入的url参数，如果没有则使用this.url作为初始URL
+    const currentUrl = url || this.url
+    // 检查是否已经访问过这个URL
+    if (visitedUrls.has(currentUrl)) {
+      logger.warn(`检测到循环重定向，停止在: ${currentUrl}`)
+      return currentUrl
+    }
+    visitedUrls.add(currentUrl)
+
+    let errorMsg = `获取链接重定向失败: ${currentUrl}`
     try {
-      const response = await this.axiosInstance({
-        method: 'HEAD',
-        url: this.url || url,
-        headers: this.headers,
-        timeout: this.timeout,
-        httpAgent: this.httpAgent,
-        httpsAgent: this.httpsAgent
-      })
-      return response.request.res.responseUrl
+      const response = await this.axiosInstance.head(currentUrl)
+      // 如果服务器返回的重定向URL与当前URL相同，也视为循环重定向
+      const finalUrl = response.request.res.responseUrl
+      if (finalUrl === currentUrl) {
+        logger.warn(`检测到服务器返回相同的重定向URL，停止在: ${currentUrl}`)
+        return currentUrl
+      }
+      return finalUrl
     } catch (error) {
       const axiosError = /** @type {AxiosError} */ (error)
       if (axiosError.response) {
         if (axiosError.response.status === 302) {
           const redirectUrl = axiosError.response.headers.location
           logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
-          return await this.getLongLink(redirectUrl, redirectCount + 1)
+          // 递归调用时只传递新的重定向URL，不再包含this.url
+          return await this.getLongLink(redirectUrl, redirectCount + 1, visitedUrls)
         } else if (axiosError.response.status === 403) {
-          errorMsg = `403 Forbidden 禁止访问！${this.url || url}`
+          errorMsg = `403 Forbidden 禁止访问！${currentUrl}`
           logger.error(errorMsg)
           return errorMsg
         }
@@ -438,8 +448,7 @@ export class Networks {
         method: 'GET',
         url: this.url,
         maxRedirects: 0,
-        httpAgent: this.httpAgent,
-        httpsAgent: this.httpsAgent
+        validateStatus: (status) => status >= 300 && status < 400 // 仅处理3xx响应
       })
 
       if (response.status >= 300 && response.status < 400 && response.headers.location) {
