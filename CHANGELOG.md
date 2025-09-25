@@ -1,5 +1,56 @@
 # Changelog
 
+## [1.10.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.9.0...v1.10.0) (2025-09-25)
+
+
+### Features
+
+* **guoba:** 添加upload配置项支持 ([5382155](https://github.com/ikenxuan/kkkkkk-10086/commit/5382155ee1b1654cc0df83b8551741544a55dacf))
+* **Networks:** 增强下载功能并改进错误重试逻辑 ([b78a809](https://github.com/ikenxuan/kkkkkk-10086/commit/b78a8098268880bf958e71339d4db9c4c7140975))
+* **utils:** 添加apiError路径并优化图片消息发送 ([255c91a](https://github.com/ikenxuan/kkkkkk-10086/commit/255c91a7ff9e0e3099884a803ac0b1662db124ca))
+* **YamlReader:** 支持带点号的键名路径操作 ([88b86d0](https://github.com/ikenxuan/kkkkkk-10086/commit/88b86d031687d655fc5200d8149855be8577ade6))
+* **配置:** 优化抖音和B站推送配置并添加分享类型选项 ([0ff3bf8](https://github.com/ikenxuan/kkkkkk-10086/commit/0ff3bf87896d554a3f751a3b0bff33c826bfa24e))
+
+
+### Bug Fixes
+
+* **bilibili:** 修复B站链接和BV号处理逻辑 ([e507584](https://github.com/ikenxuan/kkkkkk-10086/commit/e507584ce890dfb758bdc7e3a59d21c313b0c024))
+* **bilibili:** 修复动态卡片图片未定义时的处理 ([482a31e](https://github.com/ikenxuan/kkkkkk-10086/commit/482a31e6a43404f0b76343a8899e744323ac14eb))
+* **bilibili:** 修正视频链接正则匹配模式 ([5382155](https://github.com/ikenxuan/kkkkkk-10086/commit/5382155ee1b1654cc0df83b8551741544a55dacf))
+* **bilibili:** 添加动态解析选项并优化表情数据处理 ([448d0f7](https://github.com/ikenxuan/kkkkkk-10086/commit/448d0f7a88b6c0e29052c801b9f5520e5d8a7a08))
+* **db:** 修复并发插入时群组数据可能丢失的问题 ([fa7397d](https://github.com/ikenxuan/kkkkkk-10086/commit/fa7397d5d80943ab3efc8cd5f029dc6e4d362f19))
+* **db:** 修复群组查询并添加机器人ID更新逻辑 ([902f6e8](https://github.com/ikenxuan/kkkkkk-10086/commit/902f6e8f31f01acf826a4f45cedb454a6d4b6697))
+* **db:** 修复群组记录查询失败时自动创建记录的问题 ([a3c12e0](https://github.com/ikenxuan/kkkkkk-10086/commit/a3c12e0c4e76e59e65417c659cb716b2e6d0fda5))
+* **db:** 处理并发创建群组记录时的SQLITE_CONSTRAINT错误 ([5587b5c](https://github.com/ikenxuan/kkkkkk-10086/commit/5587b5c483061bb81af9759a087c1b1f3c557512))
+* **db:** 处理群组创建时的并发冲突问题 ([46119b0](https://github.com/ikenxuan/kkkkkk-10086/commit/46119b06d6d187ad79dfc15efea0709d2649a20b))
+* **douyin:** 修复视频下载请求头错误并更新分享链接请求头 ([e87e283](https://github.com/ikenxuan/kkkkkk-10086/commit/e87e28376557d4373a981c13a212cabe693c30f6))
+* **douyin:** 修正图片消息发送方式并添加推送开关选项 ([5ef9e61](https://github.com/ikenxuan/kkkkkk-10086/commit/5ef9e61280314fc2a9ea53dc67639808307d9101))
+* **douyin:** 在音乐信息中添加重定向id字段 ([e66c87c](https://github.com/ikenxuan/kkkkkk-10086/commit/e66c87c2b2c0a0a07449b6f7a1ebf45e0c7f43b0))
+* **Networks:** 修复循环重定向检测并优化重定向逻辑 ([dbf02d9](https://github.com/ikenxuan/kkkkkk-10086/commit/dbf02d9919fac2308031dd366ed7e5a9afa40b8e))
+* **Networks:** 修改重定向次数过多时的处理逻辑 ([ceeddc0](https://github.com/ikenxuan/kkkkkk-10086/commit/ceeddc0c2d129826b9c344d76cc17ad8d1ede8a9))
+* **Networks:** 增强网络请求功能与错误处理 ([073dfd4](https://github.com/ikenxuan/kkkkkk-10086/commit/073dfd4394fb6780b56f51f821273baebe6783d3))
+* **Networks:** 移除validateStatus以使用默认状态码验证 ([9d861e3](https://github.com/ikenxuan/kkkkkk-10086/commit/9d861e3060fc75b049d452248387cec43ca2dbc4))
+* **Networks:** 移除重复的httpsAgent ([52a3a49](https://github.com/ikenxuan/kkkkkk-10086/commit/52a3a49431fccd4ef89d2b23e1827d56cf7b65da))
+* **network:** 加入没用的熔断机制并优化网络请求配置 ([e6f54f2](https://github.com/ikenxuan/kkkkkk-10086/commit/e6f54f21ee6e8f3dd211b228c0cd0a032b443985))
+* **platform:** 修正消息ID字段名并优化抖音请求头 ([5e0cf1e](https://github.com/ikenxuan/kkkkkk-10086/commit/5e0cf1e5f610b441710a32fe68a46da6a2e2b6f3))
+* **tools:** 改进音乐数据获取失败的错误提示信息 ([482a31e](https://github.com/ikenxuan/kkkkkk-10086/commit/482a31e6a43404f0b76343a8899e744323ac14eb))
+* **utils:** 修复下载文件进度条颜色方法调用问题 ([8450ee4](https://github.com/ikenxuan/kkkkkk-10086/commit/8450ee4bf435a46c75856f9061d3baed2968a078))
+* **utils:** 修复下载文件进度条颜色方法调用问题 ([6f3c7bf](https://github.com/ikenxuan/kkkkkk-10086/commit/6f3c7bf9a01be1cd28ceabc6c51614dd75ab37ef))
+* **utils:** 修复下载文件进度条颜色方法调用问题 ([a18f69e](https://github.com/ikenxuan/kkkkkk-10086/commit/a18f69e67604f3349cb43f22c60b0aefff14b390))
+* **utils:** 根据机器人框架选择不同的着色方法 ([b97f1d1](https://github.com/ikenxuan/kkkkkk-10086/commit/b97f1d1a37c3bd892b58e62cc25e2d3f2a70176c))
+* **下载:** 添加参数验证防止进度计算错误 ([41527b0](https://github.com/ikenxuan/kkkkkk-10086/commit/41527b0493e4b2d5f3feb48ac2cb0104b44d66bb))
+* 修复QQBot适配器检测逻辑并添加错误提示 ([8546978](https://github.com/ikenxuan/kkkkkk-10086/commit/854697880c2fdf75ea4e4c519a5e1a55ae1f2d87))
+* 修复上传语音时未检查bot.config存在导致的潜在错误 ([49ab7e9](https://github.com/ikenxuan/kkkkkk-10086/commit/49ab7e93cd4a5c5a49cea71f80f8d4e6ac271fb8))
+* 修复配置保存逻辑并简化群组ID获取 ([085e01f](https://github.com/ikenxuan/kkkkkk-10086/commit/085e01f7ce8709da98591dc39233319051d3cf62))
+* 修复配置初始化问题并优化下载进度显示 ([bf207f0](https://github.com/ikenxuan/kkkkkk-10086/commit/bf207f0ecb4f60f8f959c503cac14b2c9e878f99))
+* 修正动态过滤逻辑默认返回值错误 ([8a5137b](https://github.com/ikenxuan/kkkkkk-10086/commit/8a5137bf4318019159dae760320230acfbf8f7eb))
+* 修正消息ID字段名从messageId到message_id ([42b3d7c](https://github.com/ikenxuan/kkkkkk-10086/commit/42b3d7ce5c7695e44750c1b20139ff12245fc06c))
+* 将代理密码输入框组件改为InputPassword类型 ([461ddd3](https://github.com/ikenxuan/kkkkkk-10086/commit/461ddd31b14cbe9fcebf34ee243dcc36e3cba211))
+* **网络:** 改进下载错误处理和重试逻辑 ([98b04eb](https://github.com/ikenxuan/kkkkkk-10086/commit/98b04ebf6a5966627d02fc1561097a77200bd572))
+* **网络请求:** 在重试时创建新的HTTP/HTTPS代理连接 ([7a341e9](https://github.com/ikenxuan/kkkkkk-10086/commit/7a341e9f9fc3bb68367665f59289f2b6eded4f67))
+* 调整输入范围和修改代理端口组件类型 ([f758438](https://github.com/ikenxuan/kkkkkk-10086/commit/f758438df8da53a1500f6974aedefce04ae3bdbd))
+* **配置表单:** 完善抖音和B站解析选项的表单配置 ([395593a](https://github.com/ikenxuan/kkkkkk-10086/commit/395593adbf59ad91f06f05a5b49b6b1fa760922e))
+
 ## [1.9.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.8.0...v1.9.0) (2025-09-14)
 
 
