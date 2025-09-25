@@ -133,6 +133,7 @@ export class DouYin extends Base {
                   title: `Douyin_tmp_A_${Date.now()}.mp3`,
                   headers: {
                     ...this.headers,
+                    Referer: '',
                     Cookie: ''
                   }
                 }
@@ -156,6 +157,7 @@ export class DouYin extends Base {
                     title: `Douyin_tmp_V_${Date.now()}.mp4`,
                     headers: {
                       ...this.headers,
+                      Referer: '',
                       Cookie: ''
                     }
                   }

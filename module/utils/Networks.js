@@ -297,7 +297,7 @@ export class Networks {
         } else if (axiosError.response.status === 403) {
           errorMsg = `403 Forbidden 禁止访问！${currentUrl}`
           logger.error(errorMsg)
-          return errorMsg
+          return currentUrl
         }
       }
       logger.error(this.handleError(axiosError))
@@ -389,18 +389,60 @@ export class Networks {
   }
 
   /**
-   * 异步下载流方法
-   * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback - 下载进度回调函数
-   * @param {number} [retryCount = 0] - 当前重试次数
-   * @returns {Promise<{filepath: string, totalBytes: number}>} 返回包含文件路径和总字节数的对象
-   * @throws {Error} 下载失败时抛出错误
+   * 流式下载文件，支持进度回调、自动重试、分片并发、断点恢复（重试时）
+   * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback
+   * @param {number} [retryCount=0] 内部重试计数，调用方无需传入
+   * @returns {Promise<{filepath:string,totalBytes:number}>} 本地路径与最终字节数
+   * @throws {Error} 超过最大重试次数或不可恢复错误
    */
   async downloadStream(progressCallback, retryCount = 0) {
-    const controller = new AbortController()
-    // 动态调整超时时间：首次请求60秒，重试时延长到180秒
-    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + (retryCount * 60000), 180000)
+    const startTime = Date.now()               // 用于未知大小时的速度估算
+    const controller = new AbortController()   // 可取消请求
+    // 超时随重试次数递增：首次 60 s，上限 180 s
+    const timeoutDuration = retryCount === 0
+      ? 60000
+      : Math.min(60000 + retryCount * 60000, 180000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
-    let resources = new Set()
+    const resources = new Set()                // 跟踪所有可销毁资源
+
+    /** 创建节流进度更新器；当 totalSize<=0 时动态估算总大小 */
+    const createProgressUpdater = (/** @type {number} */ totalSize, minInterval = 1000) => {
+      let lastUpdateTime = 0
+      let lastPercentage = -1
+
+      return (/** @type {number} */ downloadedBytes) => {
+        const now = Date.now()
+        if (now - lastUpdateTime < minInterval) return   // 节流
+
+        const validDown = Math.max(0, isFinite(downloadedBytes) ? downloadedBytes : 0)
+        const validTotal = totalSize > 0 ? totalSize : validDown + 1
+
+        let estimatedTotal = validTotal
+        // 已下载 ≥512 KB 且未拿到 Content-Length 时，按速度估算剩余
+        if (totalSize <= 0 && validDown > 512 * 1024) {
+          const elapsed = (Date.now() - startTime) / 1000 || 1
+          const speed = validDown / elapsed               // bytes/s
+          const remaining = Math.min(speed * 30, 100 * 1024 * 1024) // 上限 100 MB
+          estimatedTotal = Math.max(validDown * 1.5, validDown + remaining)
+        }
+
+        const progress = Math.min(validDown / estimatedTotal, 0.99)
+        const percentage = Math.floor(progress * 100)
+
+        if (percentage !== lastPercentage) {          // 防重复
+          progressCallback(validDown, estimatedTotal)
+          lastPercentage = percentage
+          lastUpdateTime = now
+        }
+      }
+    }
+
+    /** 统一释放资源：取消超时、销毁流、清空集合 */
+    const cleanupResources = () => {
+      clearTimeout(timeoutId)
+      resources.forEach(r => r.destroy?.())
+      resources.clear()
+    }
 
     try {
       const response = await axios({
@@ -410,357 +452,167 @@ export class Networks {
         signal: controller.signal,
         maxContentLength: Number.MAX_SAFE_INTEGER,
         maxBodyLength: Number.MAX_SAFE_INTEGER,
-        // 增加额外的容错配置
         timeout: timeoutDuration,
-        // 允许更多的重定向
         maxRedirects: 10,
-        // 增加请求头，模拟浏览器行为
         headers: {
           ...this.headers,
           'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          Pragma: 'no-cache'
         }
       })
 
-      // 如果请求成功，清除超时定时器
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId)   // 请求头响应成功则取消超时器
 
-      // 检查响应状态，如果请求失败则抛出错误
-      if (!(response.status >= 200 && response.status < 300)) {
+      if (!(response.status >= 200 && response.status < 300))
         throw new Error(`无法获取 ${this.url}。状态: ${response.status} ${response.statusText}`)
-      }
 
       const totalBytes = parseInt(response.headers['content-length'] || '0', 10)
+      if (!this.filepath) throw new Error('文件路径未设置')
 
-      if (!this.filepath) {
-        throw new Error('文件路径未设置')
-      }
-
-      // 验证参数的辅助函数
-      const validateProgressParams = (/** @type {number} */ downloadedBytes, /** @type {number} */ totalBytes) => {
-        const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
-        const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
-        return { validDownloadedBytes, validTotalBytes }
-      }
-
-      // 创建Transform流的辅助函数
-      const createTransformStream = (/** @type {number} */ bytesTracker) => {
-        return new Transform({
-          transform(chunk, encoding, callback) {
-            bytesTracker += chunk.length
-            this.push(chunk)
-            callback()
-          },
-          highWaterMark: 1024 * 1024
-        })
-      }
-
-      // 管理资源的辅助函数
-      const manageResources = (/** @type {any[]} */ streams, progressInterval = null) => {
-        streams.forEach(stream => resources.add(stream))
-        return {
-          cleanup: () => {
-            if (progressInterval) {
-              clearInterval(progressInterval)
-            }
-            resources.forEach(resource => {
-              if (resource.destroy) {
-                resource.destroy()
-              }
-            })
-            resources.clear()
-          }
-        }
-      }
-
-      // 处理流管道的辅助函数
-      const handleStreamPipeline = async (/** @type {any} */ source, /** @type {Transform} */ transform, /** @type {fs.WriteStream} */ writer, onComplete = () => { }) => {
-        const resourceManager = manageResources([source, transform, writer])
-        try {
-          await pipeline(source, transform, writer)
-          onComplete()
-        } finally {
-          resourceManager.cleanup()
-        }
-      }
-
-      // 设置进度更新的辅助函数
-      const setupProgressUpdater = (/** @type {number} */ bytesTracker, /** @type {number} */ totalSize, minUpdateInterval = 500) => {
-        let lastPrintedPercentage = -1
-        let lastUpdateTime = 0
-
-        const updateFn = () => {
-          const now = Date.now()
-          if (now - lastUpdateTime >= minUpdateInterval) {
-            const { validDownloadedBytes, validTotalBytes } = validateProgressParams(bytesTracker, totalSize)
-
-            // 对于未知大小的文件，使用基于时间和速度的估算
-            let estimatedTotal = validTotalBytes
-            if (totalSize <= 0 && bytesTracker > 1024 * 1024) {
-              estimatedTotal = Math.max(bytesTracker * 3, bytesTracker + 10 * 1024 * 1024)
-            }
-
-            const progress = Math.min(bytesTracker / estimatedTotal, 0.99)
-            const progressPercentage = Math.floor(progress * 100)
-
-            if (progressPercentage !== lastPrintedPercentage) {
-              progressCallback(validDownloadedBytes, estimatedTotal)
-              lastPrintedPercentage = progressPercentage
-              lastUpdateTime = now
-            }
-          }
-        }
-
-        const interval = /** @type {NodeJS.Timeout} */ (setInterval(updateFn, 100))
-
-        return {
-          interval,
-          cleanup: () => clearInterval(interval)
-        }
-      }
-
-      // 智能选择下载策略
-      if (isNaN(totalBytes) || totalBytes <= 0) {
-        // 处理无文件大小信息的情况 - 使用流式下载
-        const writer = fs.createWriteStream(this.filepath, {
-          highWaterMark: 1024 * 1024
-        })
-
+      /**
+       * 通用流处理：将 source → transform（计数）→ writer 并报告进度
+       * @returns 最终写入字节数
+       */
+      const processStream = async (/** @type {any} */ source, /** @type {fs.WriteStream} */ writer, /** @type {{ (downloadedBytes: number): void; (downloadedBytes: number): void; (arg0: number): void; }} */ onProgress) => {
         let downloadedBytes = 0
-        const progressUpdater = setupProgressUpdater(downloadedBytes, totalBytes)
-        const transform = createTransformStream(downloadedBytes)
-
-        await handleStreamPipeline(response.data, transform, writer, () => {
-          // 下载完成后，使用实际下载大小作为总大小
-          const finalDownloadedBytes = validateProgressParams(downloadedBytes, 0).validDownloadedBytes
-          progressCallback(finalDownloadedBytes, finalDownloadedBytes)
-          progressUpdater.cleanup()
+        const transform = new Transform({
+          highWaterMark: 1024 * 1024,
+          transform(chunk, enc, cb) {
+            downloadedBytes += chunk.length
+            onProgress(downloadedBytes)
+            cb(null, chunk)
+          }
         })
 
+        resources.add(source)
+        resources.add(transform)
+        resources.add(writer)
+        await pipeline(source, transform, writer)
+        return downloadedBytes
+      }
+
+      // 1. 服务器未返回 Content-Length：单线程直存
+      if (isNaN(totalBytes) || totalBytes <= 0) {
+        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024 })
+        const updateProgress = createProgressUpdater(0)
+        const downloadedBytes = await processStream(response.data, writer, updateProgress)
+        progressCallback(downloadedBytes, downloadedBytes) // 最终 100%
         return { filepath: this.filepath, totalBytes: downloadedBytes }
       }
 
-      // 对于小文件，使用单线程下载
-      if (totalBytes < 10 * 1024 * 1024) { // 小于10MB
-        const writer = fs.createWriteStream(this.filepath, {
-          highWaterMark: 1024 * 1024
-        })
-
-        let downloadedBytes = 0
-        let lastPrintedPercentage = -1
-        const minUpdateInterval = 500 // 最小更新间隔(ms)
-        let lastUpdateTime = 0
-
-        // 小文件专用的进度更新器
-        const progressInterval = /** @type {NodeJS.Timeout} */ (setInterval(() => {
-          const now = Date.now()
-          if (now - lastUpdateTime >= minUpdateInterval) {
-            const { validDownloadedBytes, validTotalBytes } = validateProgressParams(downloadedBytes, totalBytes)
-            const progressPercentage = Math.floor((validDownloadedBytes / validTotalBytes) * 100)
-
-            if (progressPercentage !== lastPrintedPercentage) {
-              progressCallback(validDownloadedBytes, validTotalBytes)
-              lastPrintedPercentage = progressPercentage
-              lastUpdateTime = now
-            }
-
-            if (downloadedBytes >= totalBytes) {
-              clearInterval(progressInterval)
-            }
-          }
-        }, 50))
-
-        const transform = createTransformStream(downloadedBytes)
-        await handleStreamPipeline(response.data, transform, writer, () => {
-          clearInterval(progressInterval)
-        })
-
+      // 2. 小文件 (<10 MB)：单线程，带确定性进度
+      if (totalBytes < 10 * 1024 * 1024) {
+        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024 })
+        const updateProgress = createProgressUpdater(totalBytes)
+        await processStream(response.data, writer, updateProgress)
         return { filepath: this.filepath, totalBytes }
       }
 
-      // 对于大文件，使用分片并发下载
-      // 大于50MB的文件：10个分片 0-50MB的文件：5MB分片
-      const chunkSize = totalBytes > 50 * 1024 * 1024 ? Math.ceil(totalBytes / 10) : 5 * 1024 * 1024
-
-      // 优化：根据文件大小和系统性能动态调整并发数
-      const concurrentDownloads = retryCount > 0
-        ? 1 // 重试时使用单线程
-        : Math.min(4, Math.ceil(totalBytes / (10 * 1024 * 1024))) // 动态计算并发数，最多4个并发
-      const chunks = Math.ceil(totalBytes / chunkSize)
-
-      // 创建临时目录
+      // 3. 大文件：分片并发下载 → 临时目录 → 合并
+      const chunkSize = totalBytes > 50 * 1024 * 1024
+        ? Math.ceil(totalBytes / 10)          // >50 MB 分 10 片
+        : 5 * 1024 * 1024                     // 否则每片 5 MB
+      const concurrent = retryCount > 0 ? 1   // 重试时退避单线程
+        : Math.min(4, Math.ceil(totalBytes / (10 * 1024 * 1024)))
+      const chunksCount = Math.ceil(totalBytes / chunkSize)
       const tempDir = `${this.filepath}.tmp`
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true })
-      }
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
 
-      // 跟踪总下载进度
-      let totalDownloadedBytes = 0
-      let lastPrintedPercentage = -1
+      let totalDown = 0
+      const updateProgress = createProgressUpdater(totalBytes)
 
-      // 更新进度的函数
-      const updateProgress = () => {
-        // 验证文件大小
-        if (!isFinite(totalBytes) || totalBytes <= 0) {
-          logger.warn('无效的文件大小，跳过进度更新')
-          return
-        }
-
-        // 验证下载字节数
-        if (!isFinite(totalDownloadedBytes) || totalDownloadedBytes < 0) {
-          logger.warn('无效的下载字节数，跳过进度更新')
-          return
-        }
-
-        // 确保进度不超过100%
-        const progress = Math.min(totalDownloadedBytes / totalBytes, 1)
-        const progressPercentage = Math.floor(progress * 100)
-
-        if (progressPercentage !== lastPrintedPercentage) {
-          progressCallback(totalDownloadedBytes, totalBytes)
-          lastPrintedPercentage = progressPercentage
-        }
-      }
-
-      // 并发下载函数
+      /** 下载指定 Range 分片并写临时文件 */
       const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index) => {
-        const chunkResponse = await axios({
+        const chunkRes = await axios({
           ...this.config,
           url: this.url,
           responseType: 'stream',
           timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
-          headers: {
-            ...this.config.headers,
-            Range: `bytes=${start}-${end}`
-          }
+          headers: { ...this.config.headers, Range: `bytes=${start}-${end}` }
         })
 
         const chunkPath = `${tempDir}/chunk_${index}`
-        const chunkWriter = fs.createWriteStream(chunkPath, {
-          highWaterMark: 1024 * 1024
+        const writer = fs.createWriteStream(chunkPath, { highWaterMark: 1024 * 1024 })
+
+        let chunkDown = 0
+        const transform = new Transform({
+          highWaterMark: 1024 * 1024,
+          transform(chunk, enc, cb) {
+            chunkDown += chunk.length
+            totalDown += chunk.length
+            updateProgress(totalDown)
+            cb(null, chunk)
+          }
         })
 
-        let chunkDownloadedBytes = 0
-        const chunkTransform = new Transform({
-          transform(chunk, encoding, callback) {
-            chunkDownloadedBytes += chunk.length
-            totalDownloadedBytes += chunk.length
-            updateProgress()
-            this.push(chunk)
-            callback()
-          },
-          highWaterMark: 1024 * 1024
-        })
-
-        resources.add(chunkResponse.data)
-        resources.add(chunkTransform)
-        resources.add(chunkWriter)
-
-        await pipeline(chunkResponse.data, chunkTransform, chunkWriter)
+        resources.add(chunkRes.data)
+        resources.add(transform)
+        resources.add(writer)
+        await pipeline(chunkRes.data, transform, writer)
         return { chunkPath, size: end - start + 1 }
       }
 
+      // 分批并发下载
       const chunkResults = []
-      for (let i = 0; i < chunks; i += concurrentDownloads) {
-        const batchPromises = []
-        for (let j = 0; j < concurrentDownloads && i + j < chunks; j++) {
+      for (let i = 0; i < chunksCount; i += concurrent) {
+        const batch = []
+        for (let j = 0; j < concurrent && i + j < chunksCount; j++) {
           const start = (i + j) * chunkSize
           const end = Math.min((i + j + 1) * chunkSize - 1, totalBytes - 1)
-          batchPromises.push(downloadChunk(start, end, i + j))
+          batch.push(downloadChunk(start, end, i + j))
         }
-
-        const batchResults = await Promise.all(batchPromises)
-        chunkResults.push(...batchResults)
+        chunkResults.push(...await Promise.all(batch))
       }
 
-      // 合并分块
-      const finalWriter = fs.createWriteStream(this.filepath, {
-        highWaterMark: 20 * 1024 * 1024
-      })
+      // 顺序合并 → 目标文件
+      const finalWriter = fs.createWriteStream(this.filepath, { highWaterMark: 20 * 1024 * 1024 })
       resources.add(finalWriter)
 
-      // 使用流式处理合并分块，减少内存使用
       for (const { chunkPath } of chunkResults) {
-        const chunkReader = fs.createReadStream(chunkPath, {
-          highWaterMark: 1024 * 1024
-        })
-
+        const reader = fs.createReadStream(chunkPath, { highWaterMark: 1024 * 1024 })
         await new Promise((resolve, reject) => {
-          chunkReader.pipe(finalWriter, { end: false })
-          chunkReader.on('end', () => {
-            // 异步删除临时文件，不等待完成
-            fs.unlink(chunkPath, (err) => {
-              if (err) logger.warn(`删除临时文件失败: ${chunkPath}`, err)
-            })
-            resolve('处理完成')
-          })
-          chunkReader.on('error', reject)
+          reader.pipe(finalWriter, { end: false })
+          reader.on('end', () => resolve('处理成功'))
+          reader.on('error', reject)
         })
+        fs.unlink(chunkPath, () => { }) // 异步删除临时片
       }
-
       finalWriter.end()
 
-      // 清理临时目录
-      const cleanupTempDir = (/** @type {fs.PathLike} */ dir, retries = 3) => {
-        // 检查目录是否存在
-        if (!fs.existsSync(dir)) return
-
-        // 删除临时目录
-        fs.rm(dir, { recursive: true, force: true }, (err) => {
-          if (err) {
-            if (retries > 0) {
-              logger.warn(`清理临时目录失败，重试中... (${retries}次剩余)`)
-              setTimeout(() => cleanupTempDir(dir, retries - 1), 1000)
-            } else {
-              logger.error(`清理临时目录失败: ${dir}`, err)
-            }
-          }
-        })
-      }
-
-      // 异步清理临时目录，不等待完成
-      cleanupTempDir(tempDir)
-
+      // 异步清理临时目录
+      fs.rm(tempDir, { recursive: true, force: true }, () => { })
       return { filepath: this.filepath, totalBytes }
     } catch (error) {
-      clearTimeout(timeoutId)
-      resources.forEach(resource => {
-        if (resource.destroy) {
-          resource.destroy()
-        }
-      })
-      resources.clear()
+      cleanupResources()
 
       const axiosError = /** @type {AxiosError} */(error)
 
-      // 特殊处理中止错误
+      // 对“aborted”特殊重试（网络瞬断）
       if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
         logger.error(`下载被中止，可能是网络超时: ${this.url}`)
-
-        // 对于中止错误，总是允许重试，不受重试次数限制
-        if (retryCount < this.maxRetries + 2) { // 给中止错误更多重试机会
-          const delay = Math.min(Math.pow(2, retryCount) * 3000, 10000) // 更长的延迟
+        if (retryCount < this.maxRetries + 2) {
+          const delay = Math.min(2 ** retryCount * 3000, 10000)
           logger.warn(`网络连接问题，正在重试... (${retryCount + 1}/${this.maxRetries + 2})，将在 ${delay / 1000} 秒后重试`)
-          await new Promise(resolve => setTimeout(resolve, delay))
+          await new Promise(r => setTimeout(r, delay))
           return this.downloadStream(progressCallback, retryCount + 1)
         }
       }
 
       const err = this.handleError(axiosError)
 
-      // 进行重试
+      // 常规重试
       if (retryCount < this.maxRetries) {
-        const delay = Math.min(Math.pow(2, retryCount) * 2000, 8000)
+        const delay = Math.min(2 ** retryCount * 2000, 8000)
         logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
-        await new Promise(resolve => setTimeout(resolve, delay))
+        await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1)
       }
+
       throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${err.message}`)
     } finally {
-      // 清理连接池
-      this.cleanup()
+      this.cleanup() // 销毁连接池
     }
   }
 }
