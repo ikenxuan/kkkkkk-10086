@@ -155,50 +155,46 @@ export class Networks {
    * @returns {Error} 处理后的错误对象
    */
   handleError(error) {
+    const url = error.config?.url || this.url
+
+    // 统一错误映射
+    /** @type {Object.<string, string>} */
+    const errors = {
+      'ERR_INVALID_URL': `无效的URL格式: ${url}`,
+      'ECONNRESET': `连接被重置: ${url}`,
+      'ETIMEDOUT': `请求超时: ${url}`,
+      'ENOTFOUND': `DNS解析失败: ${url}`,
+      'ECONNREFUSED': `连接被拒绝: ${url}`,
+      'UNABLE_TO_VERIFY_LEAF_SIGNATURE': `SSL证书验证失败，但请求已继续: ${url}`,
+      'AbortError': `请求被中止，可能是网络超时: ${url}`
+    }
+
+    // HTTP状态码映射
+    /** @type {Object.<number, string>} */
+    const httpStatus = {
+      429: '请求过于频繁', 403: '访问被禁止', 404: '请求的资源不存在',
+      408: '请求超时', 502: '服务器暂时不可用', 503: '服务器暂时不可用', 504: '服务器暂时不可用'
+    }
+
+    // 检查错误码
+    if (error.code && errors[error.code]) return new Error(errors[error.code])
+    if (error.name && errors[error.name]) return new Error(errors[error.name])
+
     // 特殊处理中止错误
     if (error.code === 'ERR_BAD_RESPONSE' && error.message?.includes('aborted')) {
-      return new Error(`网络连接被中止，可能是超时或网络不稳定: ${this.url}`)
+      return new Error(`网络连接被中止，可能是超时或网络不稳定: ${url}`)
     }
 
-    if (error.name === 'AbortError') {
-      return new Error(`请求被中止，可能是网络超时: ${this.url}`)
-    }
-
+    // HTTP响应错误
     if (error.response) {
-      const status = error.response.status
-      const statusText = error.response.statusText || ''
-      const url = error.config?.url || this.url
-
-      switch (status) {
-        case 429:
-          return new Error(`请求过于频繁 (${status}): ${url}`)
-        case 403:
-          return new Error(`访问被禁止 (${status}): ${url}`)
-        case 404:
-          return new Error(`请求的资源不存在 (${status}): ${url}`)
-        case 408:
-          return new Error(`请求超时 (${status}): ${url}`)
-        case 502:
-        case 503:
-        case 504:
-          return new Error(`服务器暂时不可用 (${status}): ${url}`)
-        default:
-          return new Error(`请求失败 (${status}): ${url} - ${statusText}`)
-      }
-    } else if (error.request) {
-      if (error.code === 'ECONNRESET') {
-        return new Error(`连接被重置: ${this.url}`)
-      } else if (error.code === 'ETIMEDOUT') {
-        return new Error(`请求超时: ${this.url}`)
-      } else if (error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-        return new Error(`SSL证书验证失败，但请求已继续: ${this.url}`)
-      } else if (error.code === 'ENOTFOUND') {
-        return new Error(`DNS解析失败: ${this.url}`)
-      } else if (error.code === 'ECONNREFUSED') {
-        return new Error(`连接被拒绝: ${this.url}`)
-      }
-      return new Error(`网络连接错误: ${this.url}`)
+      const { status, statusText = '' } = error.response
+      const msg = httpStatus[status] || '请求失败'
+      return new Error(`${msg} (${status}): ${url}${statusText ? ` - ${statusText}` : ''}`)
     }
+
+    // 网络请求错误
+    if (error.request) return new Error(`网络连接错误: ${url}`)
+
     return new Error(`请求配置错误: ${error.message}`)
   }
 
@@ -305,7 +301,7 @@ export class Networks {
         }
       }
       logger.error(this.handleError(axiosError))
-      return errorMsg
+      return currentUrl // 返回原始URL，因为发生了错误
     }
   }
 
@@ -364,9 +360,8 @@ export class Networks {
    */
   async getHeaders() {
     try {
-      const response = await this.axiosInstance({
+      const response = await this.axiosInstance.get(this.url, {
         ...this.config,
-        method: 'GET',
         headers: {
           ...this.headers,
           Range: 'bytes=0-0'
@@ -385,10 +380,7 @@ export class Networks {
    */
   async getHeadersFull() {
     try {
-      const response = await this.axiosInstance({
-        ...this.config,
-        method: 'GET'
-      })
+      const response = await this.axiosInstance.get(this.url, this.config)
       return response.headers
     } catch (error) {
       logger.error(this.handleError(/** @type {AxiosError} */(error)))
