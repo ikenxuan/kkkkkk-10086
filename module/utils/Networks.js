@@ -262,13 +262,9 @@ export class Networks {
    * @returns {Promise<string>} 返回最终的重定向链接地址或错误信息
    */
   async getLongLink(url = '', redirectCount = 0, visitedUrls = new Set()) {
-    // 限制最多10次重定向，防止循环重定向
-    if (redirectCount > 10) {
-      throw new Error('重定向次数过多，可能存在循环重定向')
-    }
-
     // 使用传入的url参数，如果没有则使用this.url作为初始URL
     const currentUrl = url || this.url
+    if (redirectCount > 10) return currentUrl // 防止无限重定向
     // 检查是否已经访问过这个URL
     if (visitedUrls.has(currentUrl)) {
       logger.warn(`检测到循环重定向，停止在: ${currentUrl}`)
