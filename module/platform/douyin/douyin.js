@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment, downloadFile, downloadVideo, uploadFile, baseHeaders } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment, downloadFile, downloadVideo, baseHeaders } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { markdown } from '@karinjs/md-html'
 import { douyinComments } from './index.js'
@@ -133,7 +133,7 @@ export class DouYin extends Base {
                   title: `Douyin_tmp_A_${Date.now()}.mp3`,
                   headers: {
                     ...this.headers,
-                    Referer: '',
+                    Referer: 'https://www.douyin.com/',
                     Cookie: ''
                   }
                 }
@@ -157,7 +157,7 @@ export class DouYin extends Base {
                     title: `Douyin_tmp_V_${Date.now()}.mp4`,
                     headers: {
                       ...this.headers,
-                      Referer: '',
+                      Referer: 'https://www.douyin.com/',
                       Cookie: ''
                     }
                   }
