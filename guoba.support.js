@@ -1,4 +1,4 @@
-import { Config, logger } from './module/utils/index.js'
+import Config from './module/utils/Config.js'
 
 // 支持锅巴
 export function supportGuoba() {
