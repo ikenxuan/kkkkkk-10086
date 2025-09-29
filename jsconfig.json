@@ -1,0 +1,95 @@
+{
+  "compilerOptions": {
+    // 指定 ECMAScript 目标版本
+    "target": "ESNext",
+    
+    // 指定模块系统
+    // ESNext 表示使用最新的 ES 模块标准，支持 Node.js 22 的 ESM 特性
+    "module": "ESNext",
+    
+    // 指定模块解析策略
+    // "bundler" 表示使用打包工具的解析方式，支持现代打包工具（如 webpack、vite）的解析规则
+    "moduleResolution": "bundler",
+    
+    // JavaScript 项目核心配置
+    // 启用 JavaScript 文件的类型检查，允许在 JS 文件中使用 JSDoc 类型注解
+    "checkJs": true,
+    
+    // 装饰器支持配置
+    // 启用实验性的装饰器支持，允许在 JavaScript 中使用装饰器语法
+    "experimentalDecorators": true,
+    
+    // 为装饰器生成元数据
+    // 对于使用反射和依赖注入的框架（如 TypeORM）是必需的
+    "emitDecoratorMetadata": true,
+    
+    // 设置基础目录，用于解析非相对模块名
+    // "." 表示当前目录作为基础路径，影响模块解析
+    "baseUrl": ".",
+    
+    // 设置路径映射，允许使用别名引用模块
+    // "@/utils" 会被映射到 "./module/utils"，简化导入路径
+    "paths": {
+      "@/*": ["./module/*"]
+    },
+    
+    // 允许导入 JSON 模块
+    // 可以将 JSON 文件作为模块导入，支持配置文件等场景
+    "resolveJsonModule": true,
+    
+    // 启用 ES 模块的互操作性
+    // 确保 CommonJS 和 ES 模块之间的无缝切换，提供更好的兼容性
+    "esModuleInterop": true,
+    
+    // 强制文件名大小写一致
+    // 防止因大小写不一致导致的模块解析问题，特别是在跨平台开发时
+    "forceConsistentCasingInFileNames": true,
+    
+    // 启用所有严格类型检查选项
+    // 帮助捕获更多潜在错误，提高代码质量
+    "strict": true,
+    
+    // 禁止隐式的 any 类型
+    // 强制为所有未指定类型的变量提供明确的类型，提高类型安全性
+    "noImplicitAny": true,
+    
+    // 禁止函数中没有返回值的隐式返回
+    // 确保所有代码路径都有明确的返回值，避免未定义行为
+    "noImplicitReturns": true,
+    
+    // 禁止 switch 语句中的贯穿（fallthrough）情况
+    // 防止忘记 break 导致的逻辑错误，提高代码可靠性
+    "noFallthroughCasesInSwitch": true,
+    
+    // 禁止对索引访问的隐式 any 类型
+    // obj[key] 将被推断为更严格的类型，防止运行时错误
+    "noUncheckedIndexedAccess": true,
+    
+    // 允许直接导入 TypeScript 文件
+    // Node.js 22 支持直接导入 TS 文件，便于开发时使用类型定义
+    "allowImportingTsExtensions": true
+  },
+  
+  // 指定要包含在编译中的文件和目录
+  "include": [
+    "app/**/*",     // 包含 app 目录下的所有文件
+    "module/**/*",   // 包含 module 目录下的所有文件
+    "*.js",         // 包含所有 JavaScript 文件
+    "*.json",       // 包含所有 JSON 配置文件
+    "*.mjs"         // 包含所有 ES 模块文件
+  ],
+  
+  // 指定要从编译中排除的文件和目录
+  "exclude": [
+    "node_modules",  // 排除 node_modules 目录，避免检查第三方代码
+    "dist",         // 排除 dist 目录，通常存放编译后的文件
+    "build",        // 排除 build 目录，通常存放构建产物
+    "**/*.d.ts",    // 排除所有 TypeScript 声明文件
+    "coverage",     // 排除测试覆盖率报告目录
+    "*.test.js",    // 排除测试文件
+    "*.spec.js"     // 排除测试文件
+  ],
+  "types": [
+    "@kaguyajs/trss-yunzai-types"
+  ]
+}
