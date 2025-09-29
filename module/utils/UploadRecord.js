@@ -123,7 +123,7 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
     cleanupFile = !filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
 
     // 如果没有上传高清语音功能，直接返回转换后的音频
-    if (!bot?.sendUni && botAdapter !== 'ICQQ') {
+    if (!bot?.sendUni) {
       const silkBuffer = await audioTrans(filePath)
       if (!silkBuffer) return segment.record(record_url) // 转换失败，返回原始地址
       return segment.record(`base64://${silkBuffer.toString('base64')}`)
