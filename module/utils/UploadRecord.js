@@ -113,7 +113,7 @@ errors.drop = function (code, message) {
  * @returns {Promise<any>} 返回语音消息对象
  */
 async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brief = '') {
-  const bot = Array.isArray(Bot.uin) ? Bot[e.self_id].sdk : Bot
+  const bot = e.bot
 
   // 首先准备音频文件（下载、转换等）
   let filePath
@@ -123,18 +123,15 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
     cleanupFile = !filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
 
     // 如果没有上传高清语音功能，直接返回转换后的音频
-    if (!bot?.sendUni) {
+    if (!bot?.sendUni && botAdapter !== 'ICQQ') {
       const silkBuffer = await audioTrans(filePath)
-      if (!silkBuffer) return false
-      return {
-        type: 'record',
-        file: `base64://${silkBuffer.toString('base64')}`
-      }
+      if (!silkBuffer) return segment.record(record_url) // 转换失败，返回原始地址
+      return segment.record(`base64://${silkBuffer.toString('base64')}`)
     }
 
     // 然后获取音频buffer和时长
     const result = await getPttBuffer(filePath, transcoding)
-    if (!result.buffer) return false
+    if (!result.buffer) return segment.record(record_url) // 获取buffer失败，返回原始地址
 
     const buf = result.buffer
     if (seconds === 0 && result.time) seconds = result.time.seconds
