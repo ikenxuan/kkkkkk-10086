@@ -678,5 +678,5 @@ const skipDynamic = async (PushItem) => {
 
   logger.debug(`检查作品是否需要过滤：${PushItem.Detail_Data.share_url}`)
   const shouldFilter = await douyinDB?.shouldFilter(PushItem, tags)
-  return shouldFilter || false
+  return /** @type {boolean} */ (shouldFilter)
 }
