@@ -1,5 +1,6 @@
-import { Networks, baseHeaders, logger, segment, Bot, mergeFile } from './index.js'
 import Client, { bilibiliErrorCodeMap } from '@ikenxuan/amagi'
+import { Networks, baseHeaders } from './Networks.js'
+import { mergeFile } from './FFmpeg.js'
 import cfg from '../../../../lib/config/config.js'
 import { Render } from './Render.js'
 import Version from './Version.js'
@@ -97,14 +98,14 @@ export class Base {
         kuaishou: Config.cookies.kuaishou
       },
       request: {
-        timeout: Config.request?.timeout ?? 15000,
-        headers: { 'User-Agent': Config.request?.['User-Agent'] ?? this.headers?.['User-Agent'] },
+        timeout: Config.request?.timeout || 15000,
+        headers: { 'User-Agent': Config.request?.['User-Agent'] || this.headers?.['User-Agent'] },
         proxy: Config.request?.proxy?.switch ? {
           host: Config.request.proxy.host,
           port: parseInt(Config.request.proxy.port),
           protocol: Config.request.proxy.protocol,
           auth: Config.request.proxy.auth
-        } : false,
+        } : false
       }
     })
 
@@ -586,5 +587,3 @@ const processFilename = (filename, maxLength = 50) => {
 
   return processedName + '...' + extension
 }
-
-

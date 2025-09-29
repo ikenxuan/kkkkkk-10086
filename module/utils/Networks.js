@@ -3,7 +3,6 @@ import http from 'node:http'
 import https from 'node:https'
 import Config from './Config.js'
 import { Transform } from 'stream'
-import { logger } from './index.js'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
@@ -121,7 +120,7 @@ export class Networks {
     this.axiosInstance = axios.create({
       timeout: this.timeout,
       headers: this.headers,
-      maxRedirects: 5,
+      maxRedirects: this.maxRetries,
       validateStatus: (status) => {
         return (status >= 200 && status < 300) || status === 406 || (status >= 500)
       }
@@ -245,12 +244,18 @@ export class Networks {
    * @returns {Promise<import('axios').AxiosResponse>} 返回axios响应对象
    * @throws {Error} 请求失败时抛出错误
    */
-  async returnResult() {
+  async returnResult(retryCount = 0) {
     try {
       return await this.axiosInstance(this.config)
     } catch (error) {
-      logger.error('请求失败:', this.handleError(/** @type {AxiosError} */(error)))
-      throw error
+      const axiosError = /** @type {AxiosError} */ (error)
+      if (retryCount < this.maxRetries && axiosError.code === 'ECONNRESET') {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.returnResult(retryCount + 1)
+      }
+      logger.error('请求失败:', this.handleError(axiosError))
+      throw axiosError
     }
   }
 

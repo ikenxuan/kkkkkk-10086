@@ -1,4 +1,4 @@
-import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, logger, segment, downloadFile, uploadFile, downloadVideo } from '../../utils/index.js'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo } from '../../utils/index.js'
 import { bilibiliApiUrls, getBilibiliData, DynamicType, AdditionalType } from '@ikenxuan/amagi'
 import common from '../../../../../lib/common/common.js'
 import { bilibiliComments, checkCk, genParams } from './index.js'
@@ -95,7 +95,7 @@ export class Bilibili extends Base {
         // 如果配置项不存在，则不显示任何内容
         if ((Config.bilibili?.bilibiliTip || []).includes('简介') && (Config.bilibili?.displayContent || []).length > 0) {
           /**
-           * @type {Object.<string, import('../../utils/Render.js').ImageData|string>}
+           * @type {Object.<string, any>}
            */
           const contentMap = {
             cover: await segment.image(pic),

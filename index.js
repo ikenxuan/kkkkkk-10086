@@ -1,6 +1,12 @@
-import { Config, Version, logger, Common } from './module/utils/index.js'
-import Client from '@ikenxuan/amagi'
 import fs from 'fs'
+import Client from '@ikenxuan/amagi'
+import Config from './module/utils/Config.js'
+import Common from './module/utils/Common.js'
+import Version from './module/utils/Version.js'
+
+// 初始化数据库
+const { initAllDatabases } = await import('./module/db/index.js')
+await initAllDatabases()
 
 // 定义需要创建的目录
 const dirs = [
@@ -10,11 +16,14 @@ const dirs = [
 
 // 并行创建所有目录
 Promise.all(dirs.map(dir => Common.mkdir(dir)))
-  .then(() => logger.green('所有目录创建成功'))
+  .then(() => logger.info('所有目录创建成功'))
   .catch(e => logger.error('创建目录失败', e))
 
+// 确保Config完全初始化后再加载apps
 /** @type {Record<string, any>} */
 let apps = {}
+
+// 加载apps
 const files = fs.readdirSync(`${Version.pluginPath}/apps`).filter(file => file.endsWith('.js'))
 /** @type {Promise<any>[]} */
 let ret = []
@@ -41,6 +50,7 @@ files.forEach((fileName, index) => {
     apps[name] = result.value[firstKey]
   }
 })
+
 export { apps }
 
 logger.info('---------- ₍˄·͈༝·͈˄*₎◞ ̑̑ -----------')

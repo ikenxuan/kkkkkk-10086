@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Networks, Render, Config, Common, logger, Bot, segment, downloadVideo } from '../../utils/index.js'
+import { Base, baseHeaders, Networks, Render, Config, Common, downloadVideo } from '../../utils/index.js'
 import { cleanOldDynamicCache, douyinDB } from '../../db/index.js'
 import { getDouyinID, douyinProcessVideos } from './index.js'
 

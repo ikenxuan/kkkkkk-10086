@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, logger, segment, downloadFile, downloadVideo, baseHeaders } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, downloadFile, downloadVideo, baseHeaders } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { markdown } from '@karinjs/md-html'
 import { douyinComments } from './index.js'
@@ -269,6 +269,26 @@ export class DouYin extends Base {
           video_res.push(video_data)
         }
 
+        /** 发送视频 */
+        (Config.douyin.douyinTip)?.includes('视频') && sendvideofile && this.is_mp4 && await downloadVideo(
+          this.e,
+          {
+            video_url: g_video_url,
+            title: {
+              timestampTitle: `tmp_${Date.now()}.mp4`,
+              originTitle: `${g_title}.mp4`
+            },
+            headers: {
+              ...baseHeaders,
+              Referer: g_video_url,
+              Cookies: ''
+            }
+          },
+          {
+            message_id: this.e.message_id
+          }
+        )
+
         if ((Config.douyin.douyinTip)?.includes('评论图')) {
           const EmojiData = await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' })
           const list = Emoji(EmojiData.data)
@@ -293,25 +313,6 @@ export class DouYin extends Base {
             await this.e.reply(img)
           }
         }
-        /** 发送视频 */
-        (Config.douyin.douyinTip)?.includes('视频') && sendvideofile && this.is_mp4 && await downloadVideo(
-          this.e,
-          {
-            video_url: g_video_url,
-            title: {
-              timestampTitle: `tmp_${Date.now()}.mp4`,
-              originTitle: `${g_title}.mp4`
-            },
-            headers: {
-              ...baseHeaders,
-              Referer: g_video_url,
-              Cookies: ''
-            }
-          },
-          {
-            message_id: this.e.message_id
-          }
-        )
         return true
       }
 
@@ -389,7 +390,7 @@ export class DouYin extends Base {
               `\n正在上传 ${MusicData.data.music_info.title}\n`,
               `作曲: ${MusicData.data.music_info.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname}\n`,
               `music_id: ${MusicData.data.music_info.id}`,
-              `重定向id: ${data.music_id}`
+              `BGM_Id: ${data.music_id}`
             ],
             [{ text: '音乐文件', link: MusicData.data.music_info.play_url.uri }]
           )

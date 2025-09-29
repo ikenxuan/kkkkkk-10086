@@ -1,4 +1,5 @@
-import { logger, Config, Version } from '../utils/index.js'
+import Version from '../utils/Version.js'
+import Config from '../utils/Config.js'
 import sqlite3 from 'sqlite3'
 import path from 'node:path'
 import fs from 'node:fs'

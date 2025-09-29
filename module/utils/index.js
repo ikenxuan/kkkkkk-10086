@@ -1,16 +1,3 @@
-// ==================== 全局对象 ====================
-/** @type {any} */
-const global = globalThis
-
-/** @type {any} */
-export const logger = global?.logger
-
-/** @type {any} */
-export const segment = global?.segment
-
-/** @type {any} */
-export const Bot = global?.Bot
-
 // ==================== 核心功能模块 ====================
 export { default as Version } from './Version.js'
 export { Render } from './Render.js'

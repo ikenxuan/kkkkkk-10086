@@ -1,7 +1,7 @@
-import { Base, logger } from './index.js'
 import Version from './Version.js'
 import Config from './Config.js'
 import { join } from 'node:path'
+import { Base } from './Base.js'
 import fs from 'node:fs'
 
 /** 常用工具合集 */

@@ -1,7 +1,7 @@
 import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
 import { Bilibili, getBilibiliID } from '../module/platform/bilibili/index.js'
 import { DouYin, getDouyinID } from '../module/platform/douyin/index.js'
-import { Config, Common, UploadRecord, logger } from '../module/utils/index.js'
+import { Config, Common, UploadRecord } from '../module/utils/index.js'
 import { getDouyinData } from '@ikenxuan/amagi'
 
 // 用户状态存储对象

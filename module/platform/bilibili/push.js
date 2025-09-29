@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Common, Config, downloadFile, logger, mergeFile, Render, segment, uploadFile, Bot } from '../../utils/index.js'
+import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile } from '../../utils/index.js'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getvideosize, replacetext } from './bilibili.js'
 import { DynamicType, getBilibiliData, MajorType } from '@ikenxuan/amagi'
 import { bilibiliDB, cleanOldDynamicCache } from '../../db/index.js'

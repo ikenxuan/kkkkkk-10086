@@ -1,6 +1,5 @@
 import fs from 'fs'
 import YAML from 'yaml'
-import { logger } from './index.js'
 
 /**
  * YamlReader类提供了对YAML文件的动态读写功能

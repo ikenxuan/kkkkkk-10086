@@ -189,14 +189,24 @@ async function handling_at(data) {
   for (const item of data) {
     if (item.is_At_user_id !== null && Array.isArray(item.is_At_user_id)) {
       for (const secUid of item.is_At_user_id) {
-        const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin || '', { sec_uid: secUid, typeMode: 'strict' })
-        if (UserInfoData.data.user.sec_uid === secUid) {
-          /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
-          const regex = new RegExp(`@${UserInfoData.data.user.nickname?.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}`, 'g')
+        // 添加参数验证
+        if (!secUid) {
+          logger.warn('发现空的sec_uid，跳过此用户')
+          continue
+        }
+        try {
+          const UserInfoData = await getDouyinData('用户主页数据', Config.cookies.douyin || '', { sec_uid: secUid, typeMode: 'strict' })
+          if (UserInfoData.data.user.sec_uid === secUid) {
+            /** 这里评论只要生成了艾特，如果艾特的人改了昵称，评论也不会变，所以可能会出现有些艾特没有正确上颜色，因为接口没有提供历史昵称 */
+            const regex = new RegExp(`@${UserInfoData.data.user.nickname?.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}`, 'g')
 
-          item.text = item.text.replace(regex, (/** @type {any} */ match) => {
-            return `<span class="${Common.useDarkTheme() ? 'dark-mode handling_at' : 'handling_at'}">${match}</span>`
-          })
+            item.text = item.text.replace(regex, (/** @type {any} */ match) => {
+              return `<span class="${Common.useDarkTheme() ? 'dark-mode handling_at' : 'handling_at'}">${match}</span>`
+            })
+          }
+        } catch (error) {
+          logger.warn(`获取sec_uid为${secUid}的用户信息失败`, error)
+          continue
         }
       }
     }

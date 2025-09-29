@@ -1,6 +1,5 @@
 import { ffmpeg, ffprobe } from './FFmpeg.js'
 import { Networks } from './Networks.js'
-import { Bot, logger } from './index.js'
 import querystring from 'querystring'
 import fetch from 'node-fetch'
 import crypto from 'crypto'

@@ -1,5 +1,5 @@
 import puppeteer from '../../../../lib/puppeteer/puppeteer.js'
-import { Config, Common, logger } from './index.js'
+import { Config, Common } from './index.js'
 import { execSync } from 'child_process'
 import Version from './Version.js'
 import simpleGit from 'simple-git'

@@ -12,7 +12,7 @@
  * 
  */
 import { exec as execCmd } from 'child_process'
-import { logger, Bot, Common } from './index.js'
+import Common from './Common.js'
 
 /**
  * @typedef {Object} FFmpegClientOptions
@@ -136,9 +136,9 @@ class FFmpeg {
   }
 }
 
-// 延迟获取 FFmpeg 可执行文件路径，优先级：Bot配置 > 环境变量 > 默认值
-const getFFmpegPath = () => Bot?.config?.ffmpeg_path || process.env.FFMPEG_PATH || 'ffmpeg'
-const getFFprobePath = () => Bot?.config?.ffprobe_path || process.env.FFPROBE_PATH || 'ffprobe'
+// 延迟获取 FFmpeg 可执行文件路径，优先级：环境变量 > 默认值
+const getFFmpegPath = () => process.env.FFMPEG_PATH || 'ffmpeg'
+const getFFprobePath = () => process.env.FFPROBE_PATH || 'ffprobe'
 
 /**
  * @description 检查ffmpeg工具是否可用

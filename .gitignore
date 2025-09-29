@@ -5,7 +5,6 @@ data/*
 yarn.lock/*
 package-lock.json
 !.gitignore
-jsconfig.json
 lib/*
 resources/template/version/html/index.html
 resources/template/douyin/html/user_worklist.html

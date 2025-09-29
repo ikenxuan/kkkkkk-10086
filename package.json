@@ -26,6 +26,7 @@
   "devDependencies": {
     "eslint": "^9.11.1",
     "globals": "^15.9.0",
-    "neostandard": "^0.11.6"
+    "neostandard": "^0.11.6",
+    "@kaguyajs/trss-yunzai-types": "latest"
   }
 }

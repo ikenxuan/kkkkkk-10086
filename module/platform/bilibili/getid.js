@@ -1,4 +1,4 @@
-import { logger, baseHeaders, Networks } from '../../utils/index.js'
+import { baseHeaders, Networks } from '../../utils/index.js'
 
 /**
  * @typedef {Object.<string, any>} BilibiliId
