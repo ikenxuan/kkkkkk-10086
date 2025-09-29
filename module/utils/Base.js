@@ -337,7 +337,7 @@ const sendMasterMessage = async (platform, img) => {
     const botId = statBotId(Config.pushlist)
     const masterList = cfg.masterQQ
     for (const masterQQ of masterList) {
-      await Bot[botId[platform].botId].pickFriend(masterQQ).sendMsg(['推送任务出错！请即时解决以消除警告', img])
+      await Bot[botId[platform].botId]?.pickFriend(masterQQ)?.sendMsg(['推送任务出错！请即时解决以消除警告', img])
     }
   }
 }
@@ -362,7 +362,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
     // 发送压缩提示消息
     const compressMsg = `视频大小 (${file.totalBytes} MB) 触发压缩条件，正在压缩至${Config.upload.compressvalue} MB...`
     const msg1 = isActiveMessage && options?.activeOption
-      ? await Bot[options.activeOption.uin].pickGroup(options.activeOption.group_id).sendMsg(compressMsg)
+      ? await Bot[options.activeOption.uin]?.pickGroup(options.activeOption.group_id)?.sendMsg(compressMsg)
       : await e.reply(compressMsg)
 
     const startTime = Date.now()
@@ -382,7 +382,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
     // 发送压缩结果消息
     const resultMsg = [`压缩完成: ${newFileSize.toFixed(1)}MB，耗时: ${compressTime}秒`, segment.reply(msg1.message_id)]
     if (isActiveMessage && options?.activeOption) {
-      await Bot[options.activeOption.uin].pickGroup(options.activeOption.group_id).sendMsg(resultMsg)
+      await Bot[options.activeOption.uin]?.pickGroup(options.activeOption.group_id)?.sendMsg(resultMsg)
     } else {
       await e.reply(resultMsg)
     }
@@ -417,7 +417,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
     logger.mark(`${msgType}消息: ${newFileSize.toFixed(1)}MB 通过${uploadType}上传`)
 
     const target = isActiveMessage && options?.activeOption?.uin
-      ? Bot[options.activeOption.uin].pickGroup(options.activeOption.group_id)
+      ? Bot[options.activeOption.uin]?.pickGroup(options.activeOption.group_id)
       : e.isGroup ? e.group : e.friend
 
     if (useGroupFile) {
@@ -429,7 +429,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
       return true
     } else {
       const status = isActiveMessage
-        ? await target.sendMsg(segment.video(File) || videoUrl)
+        ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
       return !!status?.message_id
     }
@@ -461,7 +461,7 @@ export const downloadVideo = async (e, downloadOpt, uploadOpt) => {
   if (Config.upload.usefilelimit && Config.upload.filelimit && fileSize > Config.upload.filelimit) {
     const message = `视频：「${downloadOpt.title.originTitle ?? 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.upload.filelimit} MB），已取消上传`
     if (uploadOpt?.active && uploadOpt?.activeOption) {
-      await Bot[uploadOpt.activeOption.uin].pickGroup(uploadOpt.activeOption.group_id).sendMsg(message)
+      await Bot[uploadOpt.activeOption.uin]?.pickGroup(uploadOpt.activeOption.group_id)?.sendMsg(message)
     } else {
       await e.reply(message)
     }

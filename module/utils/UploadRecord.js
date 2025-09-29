@@ -192,7 +192,7 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
     }
   } catch (error) {
     logger.error('上传语音失败:', error)
-    return false
+    return segment.record(record_url)
   } finally {
     // 清理临时文件
     if (cleanupFile && filePath && fs.existsSync(filePath)) {

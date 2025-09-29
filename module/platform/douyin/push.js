@@ -134,7 +134,7 @@ export class DouYinpush extends Base {
       // 检查是否跳过该动态
       const skip = await skipDynamic(pushItem)
       /**
-       * @type {import('../../utils/Render.js').ImageData[]}
+       * @type {import('@kaguyajs/trss-yunzai-types').segment[]}
        */
       let img = []
       /** @type {import('./getid.js').DouyinIdData} 抖音数据类型 */
@@ -151,8 +151,8 @@ export class DouYinpush extends Base {
         if (pushItem.living && 'room_data' in pushItem.Detail_Data && Detail_Data.live_data) {
           // 处理直播推送
           img = await Render('douyin/live', {
-            image_url: [{ image_src: Detail_Data.live_data?.data?.data?.data[0].cover?.url_list[0] || '' }],
-            text: Detail_Data.live_data?.data?.data?.data[0].title || '',
+            image_url: [{ image_src: Detail_Data?.live_data?.data?.data?.data[0]?.cover?.url_list[0] || '' }],
+            text: Detail_Data?.live_data?.data?.data?.data[0]?.title || '',
             liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title || Detail_Data.live_data?.data?.data?.data[0].title || ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
             在线观众: Common.count(Detail_Data.live_data?.data?.data?.data[0].room_view_stats?.display_value),
             总观看次数: Common.count(Number(Detail_Data.live_data?.data?.data?.data[0].stats?.total_user_str)),
@@ -200,8 +200,10 @@ export class DouYinpush extends Base {
 
           const { groupId, botId } = target
           let status = { message_id: '' }
-          // 发送消息
-          status = await Bot[botId].pickGroup(groupId).sendMsg(img)
+          // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+          status = Bot[botId]?.pickGroup
+            ? await Bot[botId].pickGroup(groupId).sendMsg(img)
+            : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
 
           // 如果是直播推送，更新直播状态
           if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
@@ -265,7 +267,10 @@ export class DouYinpush extends Base {
                 imageres.push(segment.image(image_url))
               }
               const forwardMsg = Bot.makeForwardMsg(imageres)
-              await Bot[botId].pickFriend(botId).sendMsg(forwardMsg)
+              // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+              Bot[botId]?.pickGroup
+                ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
+                : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
             }
           }
         } catch (error) {

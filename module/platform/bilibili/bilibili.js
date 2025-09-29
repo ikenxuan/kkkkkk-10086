@@ -599,24 +599,24 @@ export class Bilibili extends Base {
       case 'live_room_detail': {
         const liveInfo = await this.amagi.getBilibiliData('直播间信息', { room_id: iddata.room_id, typeMode: 'strict' })
         const roomInitInfo = await this.amagi.getBilibiliData('直播间初始化信息', { room_id: iddata.room_id, typeMode: 'strict' })
-        const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: roomInitInfo.data.uid, typeMode: 'strict' })
+        const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: roomInitInfo.data.data.uid, typeMode: 'strict' })
 
-        if (roomInitInfo.data.live_status === 0) {
-          await this.e.reply(`${userProfileData.data.data.card.name} 未开播，正在休息中~`)
+        if (roomInitInfo.data.data.live_status === 0) {
+          await this.e.reply(`「${userProfileData.data.data.card.name}」\n未开播，正在休息中~`)
           return true
         }
         const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
           {
-            image_url: [{ image_src: liveInfo.data.user_cover }],
-            text: br(liveInfo.data.title),
-            liveinf: br(`${liveInfo.data.area_name} | 房间号: ${liveInfo.data.room_id}`),
+            image_url: [{ image_src: liveInfo.data.data.user_cover }],
+            text: br(liveInfo.data.data.title),
+            liveinf: br(`${liveInfo.data.data.area_name} | 房间号: ${liveInfo.data.data.room_id}`),
             username: userProfileData.data.data.card.name,
             avatar_url: userProfileData.data.data.card.face,
             frame: userProfileData.data.data.card.pendant.image,
             fans: Common.count(userProfileData.data.data.card.fans),
-            create_time: liveInfo.data.live_time === '-62170012800' ? '获取失败' : liveInfo.data.live_time,
-            now_time: 114514,
-            share_url: 'https://live.bilibili.com/' + liveInfo.data.room_id,
+            create_time: liveInfo.data.data.live_time === '-62170012800' ? '获取失败' : liveInfo.data.data.live_time,
+            now_time: Common.getCurrentTime(),
+            share_url: 'https://live.bilibili.com/' + liveInfo.data.data.room_id,
             dynamicTYPE: '直播'
           }
         )

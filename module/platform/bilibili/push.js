@@ -121,7 +121,7 @@ export class Bilibilipush extends Base {
       let skip = await skipDynamic(dynamicItem)
       let send_video = true
       /**
-       * @type {import('../../utils/Render.js').ImageData[]}
+       * @type {import('@kaguyajs/trss-yunzai-types').segment[]}
        */
       let img = []
       const dynamicCARDINFO = await this.amagi?.getBilibiliData('动态卡片数据', { dynamic_id: dynamicId, typeMode: 'strict' })
@@ -365,7 +365,10 @@ export class Bilibilipush extends Base {
         let status = null
         if (!skip) {
           const { groupId, botId } = target
-          status = await Bot[botId].pickGroup(groupId).sendMsg(img)
+          // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+          status = Bot[botId]?.pickGroup
+            ? await Bot[botId].pickGroup(groupId).sendMsg(img)
+            : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
           if (Config.bilibili?.push?.parsedynamic) {
             switch (dynamicItem.dynamic_type) {
               case 'DYNAMIC_TYPE_AV': {
@@ -401,7 +404,7 @@ export class Bilibilipush extends Base {
                     dynamicCARDINFO.data.data.card?.desc?.bvid || ''
                   )
                   if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
-                    await Bot[botId].pickGroup(groupId).sendMsg(
+                    await Bot[botId]?.pickGroup(groupId)?.sendMsg(
                       [
                         `设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n视频太大了，还是去B站看吧~`,
                         segment.reply(status.message_id)
@@ -472,14 +475,18 @@ export class Bilibilipush extends Base {
               }
               case 'DYNAMIC_TYPE_DRAW': {
                 const imgArray = []
-                const drawItems = dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items
-                if (drawItems && Array.isArray(drawItems)) {
-                  for (const img of drawItems) {
-                    imgArray.push(segment.image(img.src))
-                  }
+                for (const img2 of
+                  dynamicItem.Dynamic_Data.modules.module_dynamic?.major &&
+                  dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items ||
+                  dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.opus.pics
+                ) {
+                  imgArray.push(segment.image(img2.src ?? img2.url))
                 }
                 const forwardMsg = Bot.makeForwardMsg(imgArray)
-                await Bot[botId].pickFriend(botId).sendMsg(forwardMsg)
+                // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+                Bot[botId]?.pickGroup
+                  ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
+                  : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
                 break
               }
             }

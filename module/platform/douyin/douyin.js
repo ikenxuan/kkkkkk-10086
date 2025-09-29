@@ -300,7 +300,7 @@ export class DouYin extends Base {
               {
                 Type: this.is_mp4 ? '视频' : this.is_slides ? '合辑' : '图集',
                 CommentsData: commentsArray,
-                CommentLength: Config.douyin.realCommentCount ? Common.count(VideoData.data.aweme_detail.statistics.comment_count) : String(commentsArray.jsonArray?.length ?? 0),
+                CommentLength: Config.douyin.realCommentCount ? VideoData.data.aweme_detail.statistics.comment_count : commentsArray.jsonArray?.length ?? 0,
                 share_url: this.is_mp4
                   ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
                   : VideoData.data.aweme_detail.share_url,
@@ -389,7 +389,7 @@ export class DouYin extends Base {
               ...img,
               `\n正在上传 ${MusicData.data.music_info.title}\n`,
               `作曲: ${MusicData.data.music_info.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname}\n`,
-              `music_id: ${MusicData.data.music_info.id}`,
+              `music_id: ${MusicData.data.music_info.id}\n`,
               `BGM_Id: ${data.music_id}`
             ],
             [{ text: '音乐文件', link: MusicData.data.music_info.play_url.uri }]
@@ -425,7 +425,7 @@ export class DouYin extends Base {
           )
           await this.e.reply(img)
         } else {
-          this.e.reply('当前博主未开播 ~')
+          await this.e.reply(`「${UserInfoData.data.user.nickname}」\n未开播，正在休息中~`)
         }
         return true
       }
