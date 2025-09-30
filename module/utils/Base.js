@@ -428,6 +428,8 @@ export const uploadFile = async (e, file, videoUrl, options) => {
           : target.sendMsg?.(segment.file(File)))
       return true
     } else {
+      // ICQQ适配器单独处理视频上传
+      if (botAdapter === 'ICQQ') return await uploadVideo(e, file, options)
       const status = isActiveMessage
         ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
@@ -479,7 +481,7 @@ export const downloadVideo = async (e, downloadOpt, uploadOpt) => {
 
   // 视频大小判断
   const botAdapter = new Base(e).botadapter
-  const useGroupFile = res.totalBytes > (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11'].includes(botAdapter) ? 99 : 75)
+  const useGroupFile = res.totalBytes > (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11', 'ICQQ'].includes(botAdapter) ? 102 : 75)
   // 上传视频
   return await uploadFile(e, res, downloadOpt.video_url, { ...uploadOpt, useGroupFile })
 }
@@ -560,7 +562,7 @@ export const downloadFile = async (videoUrl, opt) => {
 
     // 打印下载进度、速度和剩余时间
     logger.info(
-      `⬇️ ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
+      `⬇️  ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
     )
   }, 3)
 
@@ -586,4 +588,48 @@ const processFilename = (filename, maxLength = 50) => {
   const processedName = nameWithoutExt.substring(0, maxLength).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
 
   return processedName + '...' + extension
+}
+
+/**
+ * ICQQ适配器专属视频上传函数
+ * @param {*} e 消息事件
+ * @param {fileInfo} fileInfo 文件信息对象
+ * @param {uploadFileOptions} [uploadOpt] 上传选项
+ * @returns {Promise<boolean>} 返回上传成功的视频消息段
+ */
+const uploadVideo = async (e, fileInfo, uploadOpt) => {
+  try {
+    // 确定上传目标
+    const target = uploadOpt?.active && uploadOpt?.activeOption
+      ? Bot[uploadOpt.activeOption.uin]?.pickGroup(uploadOpt.activeOption.group_id)
+      : e.isGroup ? e.group : e.friend
+
+    // 根据文件大小决定预上传次数
+    const uploadTimes = fileInfo.totalBytes > 50 ? 3 : (fileInfo.totalBytes > 27 ? 2 : 1)
+
+    // 执行多次预上传
+    let result
+    for (let i = 0; i < uploadTimes; i++) {
+      result = await target.uploadVideo({
+        type: 'video',
+        file: fileInfo.filepath
+      })
+    }
+
+    // 检查返回格式
+    if (!result.file?.startsWith('protobuf://')) {
+      logger.warn('视频预上传失败：使用正常消息发送')
+      result = segment.video(fileInfo.filepath)
+    }
+
+    // 发送视频消息
+    const status = uploadOpt?.active && uploadOpt?.activeOption
+      ? await Bot[uploadOpt.activeOption.uin]?.pickGroup(uploadOpt.activeOption.group_id)?.sendMsg(result)
+      : await e.reply(result)
+
+    return !!status?.message_id
+  } catch (error) {
+    logger.error('视频预上传失败:', error)
+    return true
+  }
 }
