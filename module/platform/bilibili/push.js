@@ -291,7 +291,7 @@ export class Bilibilipush extends Base {
                   create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
                   text: replacetext(br(dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.text), dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
-                  image_url: cardData.item.pictures && cover(cardData.item.pictures),
+                  image_url: cardData.item.pictures ? cover(cardData.item.pictures) : [],
                   decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
                   frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
                 }
