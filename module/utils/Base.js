@@ -429,7 +429,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
       return true
     } else {
       // ICQQ适配器单独处理视频上传
-      if (botAdapter === 'ICQQ') return await uploadVideo(e, file, options)
+      if (botAdapter === 'ICQQ') return await uploadVideo(e, file, File, options)
       const status = isActiveMessage
         ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
@@ -594,10 +594,11 @@ const processFilename = (filename, maxLength = 50) => {
  * ICQQ适配器专属视频上传函数
  * @param {*} e 消息事件
  * @param {fileInfo} fileInfo 文件信息对象
+ * @param {string} file 文件路径
  * @param {uploadFileOptions} [uploadOpt] 上传选项
  * @returns {Promise<boolean>} 返回上传成功的视频消息段
  */
-const uploadVideo = async (e, fileInfo, uploadOpt) => {
+const uploadVideo = async (e, fileInfo, file, uploadOpt) => {
   try {
     // 确定上传目标
     const target = uploadOpt?.active && uploadOpt?.activeOption
@@ -612,14 +613,14 @@ const uploadVideo = async (e, fileInfo, uploadOpt) => {
     for (let i = 0; i < uploadTimes; i++) {
       result = await target.uploadVideo({
         type: 'video',
-        file: fileInfo.filepath
+        file
       })
     }
 
     // 检查返回格式
     if (!result.file?.startsWith('protobuf://')) {
       logger.warn('视频预上传失败：使用正常消息发送')
-      result = segment.video(fileInfo.filepath)
+      result = segment.video(file)
     }
 
     // 发送视频消息
