@@ -493,15 +493,14 @@ export class Bilibilipush extends Base {
           }
         }
 
-        if (skip || (status && status?.message_id)) {
-          // 使用新的数据库API添加动态缓存
-          await bilibiliDB?.addDynamicCache(
-            dynamicId,
-            dynamicItem.host_mid,
-            target.groupId,
-            dynamicItem.dynamic_type
-          )
-        }
+        // 无论推送是否成功，都添加动态缓存以防止重复推送
+        // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的动态
+        await bilibiliDB?.addDynamicCache(
+          dynamicId,
+          dynamicItem.host_mid,
+          target.groupId,
+          dynamicItem.dynamic_type
+        )
       }
     }
   }
