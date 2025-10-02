@@ -429,7 +429,11 @@ export const uploadFile = async (e, file, videoUrl, options) => {
       return true
     } else {
       // ICQQ适配器单独处理视频上传
-      if (botAdapter === 'ICQQ' && target?.uploadVideo) return await uploadVideo(e, file, File, options)
+      if (botAdapter === 'ICQQ' && target?.uploadVideo) {
+        const videoMsg = await uploadVideo(e, file, File, options)
+        const status = await e.reply(videoMsg)
+        return !!status?.message_id
+      }
       const status = isActiveMessage
         ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
@@ -534,7 +538,7 @@ export const downloadFile = async (videoUrl, opt) => {
     // 根据不同的机器人框架选择不同的着色方法
     const colorMethod = Version.BotName === 'TRSS-Yunzai'
       ? (/** @type {string} */ color) => logger.hex(color)
-      : (/** @type {string} */ color) => logger.chalk.hex(color)
+      : (/** @type {string} */ color) => /** @type {typeof Chalk} **/(logger.chalk.hex(color))
 
     const coloredPercentage = colorMethod(hexColor)(`${progressPercentage.toFixed(1)}%`)
     const coloredProgressBar = colorMethod(hexColor)(generateProgressBar(progressPercentage))
