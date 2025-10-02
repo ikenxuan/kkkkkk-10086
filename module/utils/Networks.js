@@ -423,9 +423,7 @@ export class Networks {
     const startTime = Date.now()               // 用于未知大小时的速度估算
     const controller = new AbortController()   // 可取消请求
     // 超时随重试次数递增：首次 60 s，上限 180 s
-    const timeoutDuration = retryCount === 0
-      ? 60000
-      : Math.min(60000 + retryCount * 60000, 180000)
+    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + retryCount * 60000, 180000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     const resources = new Set()                // 跟踪所有可销毁资源
 
@@ -445,27 +443,35 @@ export class Networks {
 
         // 获取头信息
         let totalSize = 0
+        let isSizeValid = false
         try {
           const headers = await this.getHeaders()
           supportRange = headers['accept-ranges'] === 'bytes'
 
           // 尝试从content-length获取
-          if (headers['content-length']) totalSize = parseInt(headers['content-length'], 10)
+          if (headers['content-length']) {
+            totalSize = parseInt(headers['content-length'], 10)
+            // 检查文件大小是否有效（大于0且合理）
+            isSizeValid = totalSize > 0
+          }
 
           // 尝试从content-range获取（如果响应是部分内容）
-          if (!totalSize && headers['content-range']) {
+          if (!isSizeValid && headers['content-range']) {
             const rangeMatch = headers['content-range'].match(/\/(.+)$/)
-            if (rangeMatch && rangeMatch[1]) totalSize = parseInt(rangeMatch[1], 10)
+            if (rangeMatch && rangeMatch[1]) {
+              totalSize = parseInt(rangeMatch[1], 10)
+              isSizeValid = totalSize > 0
+            }
           }
         } catch (headerError) {
           logger.warn('获取头信息失败:', headerError)
         }
 
-        // 如果文件已存在且大小匹配，直接返回
+        // 如果文件已完整存在，直接返回
         if (existingFileSize > 0 && existingFileSize === totalSize) {
           logger.info(`文件已完整存在: ${this.filepath}`)
           progressCallback(totalSize, totalSize)
-          return { skipDownload: true, totalBytes: totalSize }
+          return { skipDownload: true, totalBytes: totalSize, isSizeValid: true }
         }
 
         // 如果支持断点续传且文件部分存在
@@ -474,11 +480,45 @@ export class Networks {
           logger.info(`检测到可断点续传，从字节 ${resumeFromByte} 继续下载`)
         }
 
-        return { skipDownload: false, totalBytes: totalSize }
+        // 返回结果，包含大小有效性标志，确保totalBytes至少为1
+        return {
+          skipDownload: false,
+          totalBytes: Math.max(1, isSizeValid ? totalSize : 1),
+          isSizeValid
+        }
       } catch (error) {
         logger.warn('断点续传检查失败，将重新开始下载:', error)
-        return { skipDownload: false, totalBytes: 0 }
+        return { skipDownload: false, totalBytes: 1, isSizeValid: false }
       }
+    }
+
+    /**
+     * 下载完成后处理实际文件大小（优化版）
+     * @param {number} reportedSize - 报告的大小
+     * @param {boolean} isSizeValid - 初始大小是否有效
+     */
+    const handleFinalFileSize = (reportedSize, isSizeValid) => {
+      // 首先检查reportedSize是否有效（不是数字、小于等于0或无限大）
+      const isValidReportedSize = !isNaN(reportedSize) && isFinite(reportedSize) && reportedSize > 0
+      // 1. 如果reportedSize无效，直接尝试获取实际文件大小
+      // 2. 即使isSizeValid为true，但如果reportedSize明显不合理，也优先使用实际文件大小
+      if (!isValidReportedSize || (isSizeValid && reportedSize <= 1024)) { // 小于1KB的有效大小也视为可疑
+        try {
+          // 直接获取实际文件大小
+          const actualSize = fs.statSync(this.filepath).size
+          // 确保实际大小至少为1
+          const safeActualSize = Math.max(1, actualSize)
+          progressCallback(safeActualSize, safeActualSize)
+          return { filepath: this.filepath, totalBytes: safeActualSize }
+        } catch (statError) {
+          logger.warn('获取实际文件大小失败，将使用备用大小:', statError)
+        }
+      }
+      // 如果到这里，说明reportedSize有效或获取实际大小失败
+      // 确保返回的大小至少为1
+      const safeReportedSize = Math.max(1, isValidReportedSize ? reportedSize : 1)
+      progressCallback(safeReportedSize, safeReportedSize)
+      return { filepath: this.filepath, totalBytes: safeReportedSize }
     }
 
     /** 创建节流进度更新器；当 totalSize<=0 时动态估算总大小 */
@@ -559,6 +599,7 @@ export class Networks {
       const resumeCheck = await checkResumeSupport()
       if (resumeCheck.skipDownload) return { filepath: this.filepath, totalBytes: resumeCheck.totalBytes }
       const totalBytes = resumeCheck.totalBytes
+      const isSizeValid = resumeCheck.isSizeValid
 
       /** @type {import('axios').AxiosRequestConfig['headers']} */
       const requestHeaders = this.getRetryHeaders(retryCount, this.headers) || this.headers
@@ -620,9 +661,7 @@ export class Networks {
         const updateProgress = createProgressUpdater(0)
         const downloadedBytes = await processStream(response.data, writer, updateProgress)
         const finalSize = downloadedBytes + resumeFromByte
-        // 下载完成后更新为100%
-        progressCallback(finalSize, finalSize)
-        return { filepath: this.filepath, totalBytes: finalSize }
+        return handleFinalFileSize(finalSize, isSizeValid)
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
@@ -635,7 +674,7 @@ export class Networks {
         })
         const updateProgress = createProgressUpdater(totalBytes)
         await processStream(response.data, writer, updateProgress)
-        return { filepath: this.filepath, totalBytes }
+        return handleFinalFileSize(totalBytes, isSizeValid)
       }
 
       // 3. 大文件：分片并发下载 → 临时目录 → 合并
@@ -713,7 +752,7 @@ export class Networks {
 
       // 异步清理临时目录
       fs.rm(tempDir, { recursive: true, force: true }, () => { })
-      return { filepath: this.filepath, totalBytes }
+      return handleFinalFileSize(totalBytes, isSizeValid)
     } catch (error) {
       cleanupResources()
 
