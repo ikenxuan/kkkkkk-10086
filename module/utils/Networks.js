@@ -444,9 +444,22 @@ export class Networks {
         }
 
         // 获取头信息
-        const headers = await this.getHeaders()
-        supportRange = headers['accept-ranges'] === 'bytes'
-        const totalSize = parseInt(headers['content-length'] || '0', 10)
+        let totalSize = 0
+        try {
+          const headers = await this.getHeaders()
+          supportRange = headers['accept-ranges'] === 'bytes'
+
+          // 尝试从content-length获取
+          if (headers['content-length']) totalSize = parseInt(headers['content-length'], 10)
+
+          // 尝试从content-range获取（如果响应是部分内容）
+          if (!totalSize && headers['content-range']) {
+            const rangeMatch = headers['content-range'].match(/\/(.+)$/)
+            if (rangeMatch && rangeMatch[1]) totalSize = parseInt(rangeMatch[1], 10)
+          }
+        } catch (headerError) {
+          logger.warn('获取头信息失败:', headerError)
+        }
 
         // 如果文件已存在且大小匹配，直接返回
         if (existingFileSize > 0 && existingFileSize === totalSize) {
@@ -472,31 +485,62 @@ export class Networks {
     const createProgressUpdater = (/** @type {number} */ totalSize, minInterval = 1000) => {
       let lastUpdateTime = 0
       let lastPercentage = -1
+      let maxDownloadedBytes = 0 // 跟踪最大下载字节数，防止进度回退
+      /** @type {number[]} */
+      const sizeEstimates = [] // 存储多个估算值以提高稳定性
 
       return (/** @type {number} */ downloadedBytes) => {
         const now = Date.now()
         if (now - lastUpdateTime < minInterval) return   // 节流
 
         const validDown = Math.max(0, isFinite(downloadedBytes) ? downloadedBytes : 0)
-        const validTotal = totalSize > 0 ? totalSize : validDown + 1
         const totalDownloaded = validDown + resumeFromByte
 
-        let estimatedTotal = validTotal
-        // 已下载 ≥512 KB 且未拿到 Content-Length 时，按速度估算剩余
-        if (totalSize <= 0 && validDown > 512 * 1024) {
-          const elapsed = (Date.now() - startTime) / 1000 || 1
-          const speed = validDown / elapsed               // bytes/s
-          const remaining = Math.min(speed * 30, 100 * 1024 * 1024) // 上限 100 MB
-          estimatedTotal = Math.max(validDown * 1.5, validDown + remaining)
+        // 更新最大下载字节数
+        maxDownloadedBytes = Math.max(maxDownloadedBytes, totalDownloaded)
+
+        // 计算进度的核心逻辑
+        let progress = 0
+        let displayTotal = totalSize
+
+        if (totalSize > 0) {
+          // 已知总大小时的进度计算
+          progress = Math.min(maxDownloadedBytes / totalSize, 1)
+        } else {
+          // 未知总大小时的智能估算
+          if (maxDownloadedBytes > 0) {
+            const elapsed = Math.max(1, (Date.now() - startTime) / 1000) // 避免除以0
+            const avgSpeed = maxDownloadedBytes / elapsed // 平均下载速度
+
+            // 动态调整估算逻辑：基于已下载大小和速度计算
+            const estimatedRemaining = Math.min(
+              avgSpeed * 20, // 基于速度估算剩余时间的上限（20秒）
+              maxDownloadedBytes * 5 // 基于已下载大小的上限（5倍）
+            )
+
+            // 存储估算值并计算平均值以增加稳定性
+            sizeEstimates.push(maxDownloadedBytes + estimatedRemaining)
+            if (sizeEstimates.length > 5) {
+              sizeEstimates.shift() // 只保留最近的5个估算值
+            }
+
+            // 计算估算总大小的平均值
+            displayTotal = Math.max(
+              maxDownloadedBytes * 1.1, // 至少比已下载大10%
+              sizeEstimates.reduce((sum, val) => sum + val, 0) / sizeEstimates.length
+            )
+
+            // 进度不超过95%，直到下载完成
+            progress = Math.min(maxDownloadedBytes / displayTotal, 0.95)
+          }
         }
 
-        // 确保进度不超过100%，并且当estimatedTotal为0时设置合理的默认值
-        const safeEstimatedTotal = Math.max(estimatedTotal, 1)
-        const progress = Math.min(totalDownloaded / safeEstimatedTotal, 0.99)
+        // 计算百分比并确保不重复更新
         const percentage = Math.floor(progress * 100)
-
-        if (percentage !== lastPercentage) {          // 防重复
-          progressCallback(totalDownloaded, estimatedTotal)
+        if (percentage !== lastPercentage) {
+          // 确保displayTotal有效
+          const safeDisplayTotal = Math.max(displayTotal, maxDownloadedBytes || 1)
+          progressCallback(maxDownloadedBytes, safeDisplayTotal)
           lastPercentage = percentage
           lastUpdateTime = now
         }
@@ -572,15 +616,13 @@ export class Networks {
       // 1. 服务器未返回 Content-Length：单线程直存
       if (isNaN(totalBytes) || totalBytes <= 0) {
         const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
-        const writer = fs.createWriteStream(this.filepath, {
-          highWaterMark: 1024 * 1024,
-          flags: flags,
-          start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined
-        })
+        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined })
         const updateProgress = createProgressUpdater(0)
         const downloadedBytes = await processStream(response.data, writer, updateProgress)
-        progressCallback(downloadedBytes + resumeFromByte, downloadedBytes + resumeFromByte) // 最终 100%
-        return { filepath: this.filepath, totalBytes: downloadedBytes + resumeFromByte }
+        const finalSize = downloadedBytes + resumeFromByte
+        // 下载完成后更新为100%
+        progressCallback(finalSize, finalSize)
+        return { filepath: this.filepath, totalBytes: finalSize }
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
