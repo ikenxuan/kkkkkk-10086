@@ -490,7 +490,9 @@ export class Networks {
           estimatedTotal = Math.max(validDown * 1.5, validDown + remaining)
         }
 
-        const progress = Math.min(totalDownloaded / estimatedTotal, 0.99)
+        // 确保进度不超过100%，并且当estimatedTotal为0时设置合理的默认值
+        const safeEstimatedTotal = Math.max(estimatedTotal, 1)
+        const progress = Math.min(totalDownloaded / safeEstimatedTotal, 0.99)
         const percentage = Math.floor(progress * 100)
 
         if (percentage !== lastPercentage) {          // 防重复
