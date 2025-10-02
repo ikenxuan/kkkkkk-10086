@@ -286,11 +286,12 @@ export class Bilibilipush extends Base {
               case DynamicType.DRAW: {
                 const dynamicCARD = await getBilibiliData('动态卡片数据', Config.cookies.bilibili || '', { dynamic_id: dynamicItem.Dynamic_Data.orig.id_str, typeMode: 'strict' })
                 const cardData = JSON.parse(dynamicCARD.data.data.card.card)
+                const summary = dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary
                 param = {
                   username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.text), dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
+                  text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
                   image_url: cardData.item.pictures ? cover(cardData.item.pictures) : [],
                   decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
                   frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
@@ -298,11 +299,12 @@ export class Bilibilipush extends Base {
                 break
               }
               case DynamicType.WORD: {
+                const summary = dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary
                 param = {
                   username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.text), dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
+                  text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
                   decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
                   frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
                 }

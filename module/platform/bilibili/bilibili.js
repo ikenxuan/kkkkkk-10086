@@ -342,7 +342,10 @@ export class Bilibili extends Base {
                 text: name,
                 type: 'topic'
               })
-              dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text = `${name}\n\n` + dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text
+              const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
+              if (summary) {
+                summary.text = `${name}\n\n` + (summary.text || '')
+              }
             }
 
             await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
@@ -374,7 +377,8 @@ export class Bilibili extends Base {
           }
           /** 纯文 */
           case DynamicType.WORD: {
-            const text = replacetext(br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes)
+            const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
+            const text = replacetext(br(summary?.text || ''), summary?.rich_text_nodes || [])
 
             if (dynamicInfo.data.data.item.modules.module_dynamic.additional) {
               switch (dynamicInfo.data.data.item.modules.module_dynamic.additional.type) {
@@ -454,11 +458,12 @@ export class Bilibili extends Base {
               case DynamicType.DRAW: {
                 const dynamicCARD2 = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.orig.id_str, typeMode: 'strict' })
                 const cardData = JSON.parse(dynamicCARD2.data.data.card.card)
+                const summary = dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary
                 data = {
                   username: checkvip(dynamicInfo.data.data.item.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
+                  text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
                   image_url: cardData.item.pictures ? cover(cardData.item.pictures) : [],
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decoration_card),
                   frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
@@ -466,11 +471,12 @@ export class Bilibili extends Base {
                 break
               }
               case DynamicType.WORD: {
+                const summary = dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary
                 data = {
                   username: checkvip(dynamicInfo.data.data.item.orig.modules.module_author),
                   create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                   avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
-                  text: replacetext(br(dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.text), dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes),
+                  text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decoration_card),
                   frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
                 }
