@@ -413,7 +413,7 @@ export class Networks {
   }
 
   /**
-   * 流式下载文件，支持进度回调、自动重试、分片并发、断点恢复（重试时）
+   * 流式下载文件，支持进度回调、自动重试、分片并发、断点续传、断点恢复（重试时）
    * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback
    * @param {number} [retryCount=0] 内部重试计数，调用方无需传入
    * @returns {Promise<{filepath:string,totalBytes:number}>} 本地路径与最终字节数
@@ -443,16 +443,10 @@ export class Networks {
           logger.info(`检测到已存在部分文件，大小: ${existingFileSize} 字节`)
         }
 
-        // 检查服务器是否支持Range请求
-        const headResponse = await axios({
-          ...this.config,
-          url: this.url,
-          method: 'HEAD',
-          timeout: 10000
-        })
-
-        supportRange = headResponse.headers['accept-ranges'] === 'bytes'
-        const totalSize = parseInt(headResponse.headers['content-length'] || '0', 10)
+        // 获取头信息
+        const headers = await this.getHeaders()
+        supportRange = headers['accept-ranges'] === 'bytes'
+        const totalSize = parseInt(headers['content-length'] || '0', 10)
 
         // 如果文件已存在且大小匹配，直接返回
         if (existingFileSize > 0 && existingFileSize === totalSize) {
@@ -680,7 +674,6 @@ export class Networks {
       cleanupResources()
 
       const axiosError = /** @type {AxiosError} */(error)
-
       // 对“aborted”特殊重试（网络瞬断）
       if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
         logger.error(`下载被中止，可能是网络超时: ${this.url}`)
@@ -691,9 +684,7 @@ export class Networks {
           return this.downloadStream(progressCallback, retryCount + 1)
         }
       }
-
       const err = this.handleError(axiosError)
-
       // 常规重试
       if (retryCount < this.maxRetries) {
         const delay = Math.min(2 ** retryCount * 2000, 8000)
