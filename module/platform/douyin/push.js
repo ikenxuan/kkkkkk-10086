@@ -196,82 +196,84 @@ export class DouYinpush extends Base {
       // 遍历目标群组，并发送消息
       for (const target of pushItem.targets) {
         try {
-          if (skip) continue
-
           const { groupId, botId } = target
           let status = { message_id: '' }
-          // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-          status = Bot[botId]?.pickGroup
-            ? await Bot[botId].pickGroup(groupId).sendMsg(img)
-            : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+          
+          if (!skip) {
+            // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+            status = Bot[botId]?.pickGroup
+              ? await Bot[botId].pickGroup(groupId).sendMsg(img)
+              : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
 
-          // 如果是直播推送，更新直播状态
-          if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
-            await douyinDB?.updateLiveStatus(pushItem.sec_uid, true)
-          }
-
-          // 添加作品缓存
-          if (!pushItem.living && status.message_id) {
-            await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, groupId)
-          }
-
-          // 是否一同解析该新作品？
-          if (Config.douyin?.push?.parsedynamic && status.message_id) {
-            // 如果新作品是视频
-            if (iddata.is_mp4) {
-              try {
-                /** 默认视频下载地址 */
-                let downloadUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
-                // 根据配置文件自动选择分辨率
-                if (Config.douyin.autoResolution) {
-                  logger.debug(`开始排除不符合条件的视频分辨率；\n
-                    共拥有${logger.yellow(Detail_Data.video.bit_rate.length)}个视频源\n
-                    视频ID：${logger.green(Detail_Data.aweme_id)}\n
-                    分享链接：${logger.green(Detail_Data.share_url)}
-                    `)
-                  const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
-                  downloadUrl = await new Networks({
-                    url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
-                    headers: {
-                      ...douyinBaseHeaders,
-                      Cookie: ''
-                    }
-                  }).getLongLink()
-                } else {
-                  downloadUrl = await new Networks({
-                    url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
-                    headers: {
-                      ...douyinBaseHeaders,
-                      Cookie: ''
-                    }
-                  }).getLongLink()
-                }
-                // 下载视频
-                await downloadVideo(this.e, {
-                  video_url: downloadUrl,
-                  title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` },
-                  headers: {
-                    ...douyinBaseHeaders,
-                    Referer: downloadUrl,
-                    Cookie: ''
-                  }
-                }, { active: true, activeOption: { uin: botId, group_id: groupId } })
-              } catch (error) {
-                logger.error(error)
-              }
-            } else if (!iddata.is_mp4 && iddata.type === 'one_work') { // 如果新作品是图集
-              const imageres = []
-              let image_url
-              for (const item of Detail_Data.images) {
-                image_url = item.url_list[2] || item.url_list[1] // 图片地址
-                imageres.push(segment.image(image_url))
-              }
-              const forwardMsg = Bot.makeForwardMsg(imageres)
-              // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-              Bot[botId]?.pickGroup
-                ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
-                : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+            // 如果是直播推送，更新直播状态
+            if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
+              await douyinDB?.updateLiveStatus(pushItem.sec_uid, true)
             }
+
+            // 是否一同解析该新作品？
+            if (Config.douyin?.push?.parsedynamic && status.message_id) {
+              // 如果新作品是视频
+              if (iddata.is_mp4) {
+                try {
+                  /** 默认视频下载地址 */
+                  let downloadUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
+                  // 根据配置文件自动选择分辨率
+                  if (Config.douyin.autoResolution) {
+                    logger.debug(`开始排除不符合条件的视频分辨率；\n
+                      共拥有${logger.yellow(Detail_Data.video.bit_rate.length)}个视频源\n
+                      视频ID：${logger.green(Detail_Data.aweme_id)}\n
+                      分享链接：${logger.green(Detail_Data.share_url)}
+                      `)
+                    const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
+                    downloadUrl = await new Networks({
+                      url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
+                      headers: {
+                        ...douyinBaseHeaders,
+                        Cookie: ''
+                      }
+                    }).getLongLink()
+                  } else {
+                    downloadUrl = await new Networks({
+                      url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
+                      headers: {
+                        ...douyinBaseHeaders,
+                        Cookie: ''
+                      }
+                    }).getLongLink()
+                  }
+                  // 下载视频
+                  await downloadVideo(this.e, {
+                    video_url: downloadUrl,
+                    title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` },
+                    headers: {
+                      ...douyinBaseHeaders,
+                      Referer: downloadUrl,
+                      Cookie: ''
+                    }
+                  }, { active: true, activeOption: { uin: botId, group_id: groupId } })
+                } catch (error) {
+                  logger.error(error)
+                }
+              } else if (!iddata.is_mp4 && iddata.type === 'one_work') { // 如果新作品是图集
+                const imageres = []
+                let image_url
+                for (const item of Detail_Data.images) {
+                  image_url = item.url_list[2] || item.url_list[1] // 图片地址
+                  imageres.push(segment.image(image_url))
+                }
+                const forwardMsg = Bot.makeForwardMsg(imageres)
+                // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+                Bot[botId]?.pickGroup
+                  ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
+                  : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+              }
+            }
+          }
+
+          // 无论推送是否成功，都添加作品缓存以防止重复推送（直播除外）
+          // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的作品
+          if (!pushItem.living) {
+            await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, groupId)
           }
         } catch (error) {
           logger.error(error)
