@@ -11,18 +11,14 @@ import { pipeline } from 'stream/promises'
  * @type {{ua: string, weight: number}[]}
  */
 const userAgents = [
-  { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1', weight: 43.03 },
-  { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3', weight: 21.05 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3', weight: 17.34 },
-  { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3', weight: 3.72 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Trailer/93.3.8652.5', weight: 2.48 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.', weight: 2.48 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.', weight: 2.48 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.', weight: 2.48 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.', weight: 1.24 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.1958', weight: 1.24 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.', weight: 1.24 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.3', weight: 1.24 }
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', weight: 17.34 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.3124.85', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; Xbox; Xbox One) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edge/44.18363.8131', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0', weight: 2.48 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0', weight: 1.24 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/118.0.0.0', weight: 1.24 },
+  { ua: 'Mozilla/5.0 (Windows NT 10.0; WOW64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/118.0.0.0', weight: 1.24 },
 ]
 
 /**
@@ -68,7 +64,7 @@ export class Networks {
    * @param {*} [data.body = ''] POST请求时的请求体
    * @param {number} [data.timeout = 60000] 请求超时时间，默认60秒
    * @param {number} [data.maxRetries = 3] 最大重试次数
-   * @param {string} [data.filepath] 流下载时的文件路径
+   * @param {string|fs.PathLike|*} [data.filepath] 流下载时的文件路径
    * @param {object} [data.proxy] 代理配置
    */
   constructor(data) {
@@ -105,8 +101,8 @@ export class Networks {
     const socketOptions = {
       keepAlive: true,
       keepAliveMsecs: 30000,
-      maxSockets: 20,
-      maxFreeSockets: 10,
+      maxSockets: 50,
+      maxFreeSockets: 20,
       timeout: 120000,
       /** @type {"fifo" | "lifo"} */
       scheduling: 'fifo',
@@ -198,6 +194,29 @@ export class Networks {
   }
 
   /**
+   * 处理重试时的请求头配置
+   * @param {number} retryCount 当前重试次数
+   * @param {import('axios').AxiosRequestConfig['headers']} [baseHeaders] 基础请求头
+   * @returns {import('axios').AxiosRequestConfig['headers']} 处理后的请求头
+   */
+  getRetryHeaders(retryCount, baseHeaders) {
+    /** @type {import('axios').AxiosRequestConfig['headers']} */
+    const headers = { ...baseHeaders }
+    // 重试时的特殊配置
+    if (retryCount > 0) {
+      headers['Cache-Control'] = 'close'
+      headers.Pragma = 'no-cache'
+      // 重试次数大于1时更换User-Agent
+      if (retryCount > 1) {
+        const newUserAgent = getRandomUserAgent()
+        headers['User-Agent'] = newUserAgent
+        logger.info(`更换User-Agent进行重试: ${newUserAgent.substring(0, 50)}...`)
+      }
+    }
+    return headers
+  }
+
+  /**
    * 获取请求配置
    * @returns {import('axios').AxiosRequestConfig} axios请求配置对象
    */
@@ -246,7 +265,11 @@ export class Networks {
    */
   async returnResult(retryCount = 0) {
     try {
-      return await this.axiosInstance(this.config)
+      // 应用重试请求头配置
+      const config = retryCount > 0
+        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
+        : this.config
+      return await this.axiosInstance(config)
     } catch (error) {
       const axiosError = /** @type {AxiosError} */ (error)
       if (retryCount < this.maxRetries && axiosError.code === 'ECONNRESET') {
@@ -406,6 +429,51 @@ export class Networks {
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     const resources = new Set()                // 跟踪所有可销毁资源
 
+    // 断点续传相关变量
+    let existingFileSize = 0
+    let supportRange = false
+    let resumeFromByte = 0
+
+    /** 检查是否支持断点续传 */
+    const checkResumeSupport = async () => {
+      try {
+        // 检查目标文件是否存在
+        if (fs.existsSync(this.filepath)) {
+          existingFileSize = fs.statSync(this.filepath).size
+          logger.info(`检测到已存在部分文件，大小: ${existingFileSize} 字节`)
+        }
+
+        // 检查服务器是否支持Range请求
+        const headResponse = await axios({
+          ...this.config,
+          url: this.url,
+          method: 'HEAD',
+          timeout: 10000
+        })
+
+        supportRange = headResponse.headers['accept-ranges'] === 'bytes'
+        const totalSize = parseInt(headResponse.headers['content-length'] || '0', 10)
+
+        // 如果文件已存在且大小匹配，直接返回
+        if (existingFileSize > 0 && existingFileSize === totalSize) {
+          logger.info(`文件已完整存在: ${this.filepath}`)
+          progressCallback(totalSize, totalSize)
+          return { skipDownload: true, totalBytes: totalSize }
+        }
+
+        // 如果支持断点续传且文件部分存在
+        if (supportRange && existingFileSize > 0 && existingFileSize < totalSize) {
+          resumeFromByte = existingFileSize
+          logger.info(`检测到可断点续传，从字节 ${resumeFromByte} 继续下载`)
+        }
+
+        return { skipDownload: false, totalBytes: totalSize }
+      } catch (error) {
+        logger.warn('断点续传检查失败，将重新开始下载:', error)
+        return { skipDownload: false, totalBytes: 0 }
+      }
+    }
+
     /** 创建节流进度更新器；当 totalSize<=0 时动态估算总大小 */
     const createProgressUpdater = (/** @type {number} */ totalSize, minInterval = 1000) => {
       let lastUpdateTime = 0
@@ -417,6 +485,7 @@ export class Networks {
 
         const validDown = Math.max(0, isFinite(downloadedBytes) ? downloadedBytes : 0)
         const validTotal = totalSize > 0 ? totalSize : validDown + 1
+        const totalDownloaded = validDown + resumeFromByte
 
         let estimatedTotal = validTotal
         // 已下载 ≥512 KB 且未拿到 Content-Length 时，按速度估算剩余
@@ -427,11 +496,11 @@ export class Networks {
           estimatedTotal = Math.max(validDown * 1.5, validDown + remaining)
         }
 
-        const progress = Math.min(validDown / estimatedTotal, 0.99)
+        const progress = Math.min(totalDownloaded / estimatedTotal, 0.99)
         const percentage = Math.floor(progress * 100)
 
         if (percentage !== lastPercentage) {          // 防重复
-          progressCallback(validDown, estimatedTotal)
+          progressCallback(totalDownloaded, estimatedTotal)
           lastPercentage = percentage
           lastUpdateTime = now
         }
@@ -446,6 +515,17 @@ export class Networks {
     }
 
     try {
+      // 断点续传检查
+      const resumeCheck = await checkResumeSupport()
+      if (resumeCheck.skipDownload) return { filepath: this.filepath, totalBytes: resumeCheck.totalBytes }
+      const totalBytes = resumeCheck.totalBytes
+
+      /** @type {import('axios').AxiosRequestConfig['headers']} */
+      const requestHeaders = this.getRetryHeaders(retryCount, this.headers) || this.headers
+
+      // 如果支持断点续传，添加Range头
+      if (supportRange && resumeFromByte > 0) requestHeaders['Range'] = `bytes=${resumeFromByte}-`
+
       const response = await axios({
         ...this.config,
         url: this.url,
@@ -456,20 +536,19 @@ export class Networks {
         timeout: timeoutDuration,
         maxRedirects: 10,
         headers: {
-          ...this.headers,
+          ...requestHeaders,
           'Accept-Encoding': 'gzip, deflate, br',
-          Connection: 'keep-alive',
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache'
+          Connection: retryCount > 0 ? 'close' : 'keep-alive'
         }
       })
 
       clearTimeout(timeoutId)   // 请求头响应成功则取消超时器
 
-      if (!(response.status >= 200 && response.status < 300))
+      // 处理206 Partial Content状态码（断点续传时）
+      if (!(response.status >= 200 && response.status < 300) && response.status !== 206) {
         throw new Error(`无法获取 ${this.url}。状态: ${response.status} ${response.statusText}`)
+      }
 
-      const totalBytes = parseInt(response.headers['content-length'] || '0', 10)
       if (!this.filepath) throw new Error('文件路径未设置')
 
       /**
@@ -496,22 +575,33 @@ export class Networks {
 
       // 1. 服务器未返回 Content-Length：单线程直存
       if (isNaN(totalBytes) || totalBytes <= 0) {
-        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024 })
+        const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
+        const writer = fs.createWriteStream(this.filepath, {
+          highWaterMark: 1024 * 1024,
+          flags: flags,
+          start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined
+        })
         const updateProgress = createProgressUpdater(0)
         const downloadedBytes = await processStream(response.data, writer, updateProgress)
-        progressCallback(downloadedBytes, downloadedBytes) // 最终 100%
-        return { filepath: this.filepath, totalBytes: downloadedBytes }
+        progressCallback(downloadedBytes + resumeFromByte, downloadedBytes + resumeFromByte) // 最终 100%
+        return { filepath: this.filepath, totalBytes: downloadedBytes + resumeFromByte }
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
       if (totalBytes < 10 * 1024 * 1024) {
-        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024 })
+        const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
+        const writer = fs.createWriteStream(this.filepath, {
+          highWaterMark: 1024 * 1024,
+          flags: flags,
+          start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined
+        })
         const updateProgress = createProgressUpdater(totalBytes)
         await processStream(response.data, writer, updateProgress)
         return { filepath: this.filepath, totalBytes }
       }
 
       // 3. 大文件：分片并发下载 → 临时目录 → 合并
+      // 注意：大文件分片下载的断点续传需要更复杂的实现，这里保持原逻辑
       const chunkSize = totalBytes > 50 * 1024 * 1024
         ? Math.ceil(totalBytes / 10)          // >50 MB 分 10 片
         : 5 * 1024 * 1024                     // 否则每片 5 MB
@@ -526,12 +616,13 @@ export class Networks {
 
       /** 下载指定 Range 分片并写临时文件 */
       const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index) => {
+        const chunkHeaders = this.getRetryHeaders(retryCount, this.config.headers || {})
         const chunkRes = await axios({
           ...this.config,
           url: this.url,
           responseType: 'stream',
           timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
-          headers: { ...this.config.headers, Range: `bytes=${start}-${end}` }
+          headers: { ...chunkHeaders, Range: `bytes=${start}-${end}`, Connection: retryCount > 0 ? 'close' : 'keep-alive' }
         })
 
         const chunkPath = `${tempDir}/chunk_${index}`

@@ -871,7 +871,7 @@ export function supportGuoba() {
         {
           field: 'request.User-Agent',
           label: '请求User-Agent',
-          bottomHelpMessage: '请求User-Agent',
+          bottomHelpMessage: '专门用于核心库amagi请求的User-Agent(Networks模块不使用该User-Agent)',
           component: 'Input',
           required: false,
           componentProps: {
