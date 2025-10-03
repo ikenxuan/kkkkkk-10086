@@ -62,7 +62,7 @@ export class Networks {
    * @param {import('axios').ResponseType} [data.type = 'json'] 返回的数据类型
    * @param {string} [data.method = 'GET'] 请求方法
    * @param {*} [data.body = ''] POST请求时的请求体
-   * @param {number} [data.timeout = 60000] 请求超时时间，默认60秒
+   * @param {number} [data.timeout = 30000] 请求超时时间，默认30秒
    * @param {number} [data.maxRetries = 3] 最大重试次数
    * @param {string|fs.PathLike|*} [data.filepath] 流下载时的文件路径
    * @param {object} [data.proxy] 代理配置
@@ -87,7 +87,7 @@ export class Networks {
     this.type = data.type || 'json'
     this.method = data.method || 'GET'
     this.body = data.body || ''
-    this.timeout = data.timeout || 60000
+    this.timeout = data.timeout || 30000
     this.filepath = data.filepath
     this.maxRetries = data.maxRetries || 3
     this.proxy = Config.request?.proxy?.switch ? {
@@ -423,7 +423,7 @@ export class Networks {
     const startTime = Date.now()               // 用于未知大小时的速度估算
     const controller = new AbortController()   // 可取消请求
     // 超时随重试次数递增：首次 60 s，上限 180 s
-    const timeoutDuration = retryCount === 0 ? 60000 : Math.min(60000 + retryCount * 60000, 180000)
+    const timeoutDuration = retryCount === 0 ? 30000 : Math.min(30000 + retryCount * 30000, 60000)
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration)
     const resources = new Set()                // 跟踪所有可销毁资源
 
