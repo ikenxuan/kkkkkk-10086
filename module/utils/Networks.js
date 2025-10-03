@@ -445,7 +445,7 @@ export class Networks {
         let totalSize = 0
         let isSizeValid = false
         try {
-          const headers = await this.getHeaders()
+          const headers = await this.getHeadersFull()
           supportRange = headers['accept-ranges'] === 'bytes'
 
           // 尝试从content-length获取
@@ -493,7 +493,7 @@ export class Networks {
     }
 
     /**
-     * 下载完成后处理实际文件大小（优化版）
+     * 下载完成后处理实际文件大小
      * @param {number} reportedSize - 报告的大小
      * @param {boolean} isSizeValid - 初始大小是否有效
      */

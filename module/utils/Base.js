@@ -564,7 +564,7 @@ export const downloadFile = async (videoUrl, opt) => {
     logger.info(
       `⬇️  ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
     )
-  }, 3)
+  })
 
   return { filepath, totalBytes }
 }
