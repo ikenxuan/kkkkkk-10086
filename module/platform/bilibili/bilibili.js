@@ -300,7 +300,7 @@ export class Bilibili extends Base {
         if (!(Config.bilibili?.bilibiliTip || []).includes('动态')) break
         const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' })
         const dynamicInfoCard = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.id_str, typeMode: 'strict' })
-        const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && await this.amagi.getBilibiliData('评论数据', {
+        const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && Config.bilibili.bilibilinumcomments > 0 && await this.amagi.getBilibiliData('评论数据', {
           type: mapping_table(dynamicInfo.data.data.item.type),
           oid: oid(dynamicInfo.data, dynamicInfoCard.data),
           number: Config.bilibili.bilibilinumcomments,
