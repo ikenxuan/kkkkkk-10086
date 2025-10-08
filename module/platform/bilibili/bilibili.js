@@ -300,7 +300,7 @@ export class Bilibili extends Base {
         if (!(Config.bilibili?.bilibiliTip || []).includes('动态')) break
         const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' })
         const dynamicInfoCard = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.id_str, typeMode: 'strict' })
-        const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && Config.bilibili.bilibilinumcomments > 0 && await this.amagi.getBilibiliData('评论数据', {
+        const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && Config.bilibili.bilibilinumcomments && Config.bilibili?.bilibilinumcomments > 0 && await this.amagi.getBilibiliData('评论数据', {
           type: mapping_table(dynamicInfo.data.data.item.type),
           oid: oid(dynamicInfo.data, dynamicInfoCard.data),
           number: Config.bilibili.bilibilinumcomments,
@@ -317,6 +317,9 @@ export class Bilibili extends Base {
               img?.url && imgArray.push(segment.image(img.url))
             }
 
+            if (imgArray.length === 1) await this.e.reply(imgArray[0])
+            if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray, '动态图片'))
+
             if ((Config.bilibili?.bilibiliTip || []).includes('评论图') && commentsData) {
               const commentsdata = bilibiliComments(commentsData.data)
               img = await Render('bilibili/comment', {
@@ -327,8 +330,6 @@ export class Bilibili extends Base {
                 ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
                 shareurl: '动态分享链接'
               })
-              if (imgArray.length === 1) await this.e.reply(imgArray[0])
-              if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray, '动态评论'))
               await this.e.reply(img)
             }
 
