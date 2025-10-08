@@ -429,7 +429,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
       return true
     } else {
       // ICQQ适配器单独处理视频上传
-      if (botAdapter === 'ICQQ' && target?.uploadVideo) await uploadVideo(e, file, File, options)
+      if (botAdapter === 'ICQQ' && target?.uploadVideo) return await uploadVideo(e, file, File, options)
       const status = isActiveMessage
         ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
@@ -615,7 +615,7 @@ const uploadVideo = async (e, fileInfo, file, uploadOpt) => {
 
     // 发送视频消息
     const status = uploadOpt?.active && uploadOpt?.activeOption
-      ? await Bot[uploadOpt.activeOption.uin]?.pickGroup(uploadOpt.activeOption.group_id)?.sendMsg(segment.video(file))
+      ? await target?.sendMsg(segment.video(file))
       : await e.reply(segment.video(file))
 
     return !!status?.message_id
