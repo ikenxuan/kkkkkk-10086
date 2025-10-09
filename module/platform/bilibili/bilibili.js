@@ -148,7 +148,7 @@ export class Bilibili extends Base {
           /** 获取第一个视频流的大小 */
           videoSize = await getvideosize(correctList.videoList[0]?.base_url || '', playUrlData.data.data.dash.audio[0].base_url, infoData.data.data.bvid)
         } else {
-          videoSize = (nockData.data.data.durl[0].size / (1024 * 1024)).toFixed(2)
+          videoSize = (nockData.data.durl[0].size / (1024 * 1024)).toFixed(2)
         }
         if ((Config.bilibili?.bilibiliTip || []).includes('评论图')) {
           const commentsData = await this.amagi.getBilibiliData('评论数据', {
