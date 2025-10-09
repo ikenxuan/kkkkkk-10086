@@ -1,6 +1,7 @@
 import { Base, baseHeaders, Networks, Render, Config, Common, downloadVideo } from '../../utils/index.js'
 import { cleanOldDynamicCache, douyinDB } from '../../db/index.js'
 import { getDouyinID, douyinProcessVideos } from './index.js'
+import common from '../../../../../lib/common/common.js'
 
 /**
  * @typedef {import('@ikenxuan/amagi').ApiResponse} ApiResponse
@@ -262,7 +263,7 @@ export class DouYinpush extends Base {
                   image_url = item.url_list[2] || item.url_list[1] // 图片地址
                   imageres.push(segment.image(image_url))
                 }
-                const forwardMsg = Bot?.[botId]?.pickGroup(groupId)?.makeForwardMsg(imageres) || Bot?.makeForwardMsg(imageres)
+                const forwardMsg = common?.makeForwardMsg(Bot?.[botId], imageres, '作品图集')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                 Bot?.[botId]?.pickGroup
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)

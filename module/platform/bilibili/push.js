@@ -2,6 +2,7 @@ import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, upl
 import { bilibiliProcessVideos, cover, generateDecorationCard, getvideosize, replacetext } from './bilibili.js'
 import { DynamicType, getBilibiliData, MajorType } from '@ikenxuan/amagi'
 import { bilibiliDB, cleanOldDynamicCache } from '../../db/index.js'
+import common from '../../../../../lib/common/common.js'
 import fs from 'node:fs'
 
 /**
@@ -483,7 +484,7 @@ export class Bilibilipush extends Base {
                 ) {
                   imgArray.push(segment.image(img2.src ?? img2.url))
                 }
-                const forwardMsg = Bot?.[botId]?.pickGroup(groupId)?.makeForwardMsg(imgArray) || Bot?.makeForwardMsg(imgArray)
+                const forwardMsg = common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图集')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                 Bot?.[botId]?.pickGroup
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
