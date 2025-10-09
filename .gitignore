@@ -4,6 +4,7 @@ config/config/*
 data/*
 yarn.lock/*
 package-lock.json
+pnpm-lock.yaml
 !.gitignore
 lib/*
 resources/template/version/html/index.html

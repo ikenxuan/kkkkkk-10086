@@ -134,7 +134,7 @@ export class DouYinpush extends Base {
       // 检查是否跳过该动态
       const skip = await skipDynamic(pushItem)
       /**
-       * @type {import('@kaguyajs/trss-yunzai-types').segment[]}
+       * @type {import('@kaguyajs/trss-yunzai-types').icqq.segment[]}
        */
       let img = []
       /** @type {import('./getid.js').DouyinIdData} 抖音数据类型 */
@@ -198,10 +198,10 @@ export class DouYinpush extends Base {
         try {
           const { groupId, botId } = target
           let status = { message_id: '' }
-          
+
           if (!skip) {
             // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-            status = Bot[botId]?.pickGroup
+            status = Bot?.[botId]?.pickGroup
               ? await Bot[botId].pickGroup(groupId).sendMsg(img)
               : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
 
@@ -255,15 +255,16 @@ export class DouYinpush extends Base {
                   logger.error(error)
                 }
               } else if (!iddata.is_mp4 && iddata.type === 'one_work') { // 如果新作品是图集
+                /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
                 const imageres = []
                 let image_url
                 for (const item of Detail_Data.images) {
                   image_url = item.url_list[2] || item.url_list[1] // 图片地址
                   imageres.push(segment.image(image_url))
                 }
-                const forwardMsg = Bot.makeForwardMsg(imageres)
+                const forwardMsg = Bot?.[botId]?.pickGroup(groupId)?.makeForwardMsg(imageres) || Bot?.makeForwardMsg(imageres)
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                Bot[botId]?.pickGroup
+                Bot?.[botId]?.pickGroup
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
                   : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
               }
