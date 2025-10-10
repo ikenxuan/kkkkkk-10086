@@ -74,14 +74,14 @@ export class Bilibili extends Base {
 
         this.downloadfilename = title.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
 
-        const nockData = await new Networks({
+        const nockData = !this.islogin && Config.bilibili.videopriority && await new Networks({
           url: bilibiliApiUrls.视频流信息({
             avid: infoData.data.data.aid,
             cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid
           }) + '&platform=html5',
           headers: {
             ...baseHeaders,
-            Referer: 'https://www.bilibili.com/',
+            Referer: `https://www.bilibili.com/video/${infoData.data.data.bvid}`,
             Cookie: ''
           }
         }).getData()

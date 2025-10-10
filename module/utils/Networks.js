@@ -271,14 +271,13 @@ export class Networks {
         : this.config
       return await this.axiosInstance(config)
     } catch (error) {
-      const axiosError = /** @type {AxiosError} */ (error)
-      if (retryCount < this.maxRetries && axiosError.code === 'ECONNRESET') {
+      if (retryCount < this.maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.returnResult(retryCount + 1)
       }
-      logger.error('请求失败:', this.handleError(axiosError))
-      throw axiosError
+      logger.error('请求失败:', this.handleError(/** @type {AxiosError} */(error)))
+      throw error
     }
   }
 
@@ -302,7 +301,10 @@ export class Networks {
 
     let errorMsg = `获取链接重定向失败: ${currentUrl}`
     try {
-      const response = await this.axiosInstance.get(currentUrl, this.config)
+      const config = redirectCount > 0
+        ? { ...this.config, headers: this.getRetryHeaders(redirectCount, this.config.headers || this.headers) }
+        : this.config
+      const response = await this.axiosInstance.get(currentUrl, config)
       // 如果服务器返回的重定向URL与当前URL相同，也视为循环重定向
       const finalUrl = response.request.res.responseUrl
       if (finalUrl === currentUrl) {
