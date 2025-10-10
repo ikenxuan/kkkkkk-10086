@@ -566,7 +566,7 @@ export class Bilibilipush extends Base {
               // 确保 willbepushlist[dynamic.id_str] 是一个对象
               if (!willbepushlist[dynamic.id_str]) {
                 willbepushlist[dynamic.id_str] = {
-                  remark: item.remark || '',
+                  remark: item?.remark || dynamic.modules.module_author.name,
                   host_mid: item.host_mid,
                   create_time: dynamic.modules.module_author.pub_ts,
                   targets,

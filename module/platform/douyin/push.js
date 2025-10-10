@@ -352,7 +352,7 @@ export class DouYinpush extends Base {
 
             if (shouldPush) {
               willbepushlist[aweme.aweme_id] = {
-                remark: item.remark,
+                remark: item?.remark || aweme.author.nickname,
                 sec_uid,
                 create_time: aweme.create_time * 1000,
                 targets,

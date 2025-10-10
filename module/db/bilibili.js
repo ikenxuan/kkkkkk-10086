@@ -195,7 +195,7 @@ export class BilibiliDBBase {
   async getOrCreateBot(botId) {
     let bot = await this.getQuery("SELECT * FROM Bots WHERE id = ?", [botId])
     if (!bot) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "INSERT INTO Bots (id, createdAt, updatedAt) VALUES (?, ?, ?)",
         [botId, now, now]
@@ -216,7 +216,7 @@ export class BilibiliDBBase {
     let group = await this.getQuery("SELECT * FROM Groups WHERE id = ?", [groupId])
     if (!group) {
       // 如果群组不存在，创建新群组
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
         [groupId, botId, now, now]
@@ -224,7 +224,7 @@ export class BilibiliDBBase {
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
     } else if (group.botId !== botId) {
       // 如果群组已存在但机器人ID不同，更新机器人ID
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?",
         [botId, now, groupId]
@@ -244,7 +244,7 @@ export class BilibiliDBBase {
   async getOrCreateBilibiliUser(host_mid, remark = "") {
     let user = await this.getQuery("SELECT * FROM BilibiliUsers WHERE host_mid = ?", [host_mid])
     if (!user) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "INSERT INTO BilibiliUsers (host_mid, remark, filterMode, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [host_mid, remark, "blacklist", now, now]
@@ -258,7 +258,7 @@ export class BilibiliDBBase {
       }
     } else {
       if (remark && user.remark !== remark) {
-        const now = (/* @__PURE__ */ new Date()).toLocaleString()
+        const now = (/* @__PURE__ */ new Date()).toISOString()
         await this.runQuery(
           "UPDATE BilibiliUsers SET remark = ?, updatedAt = ? WHERE host_mid = ?",
           [remark, now, host_mid]
@@ -286,7 +286,7 @@ export class BilibiliDBBase {
       [groupId, host_mid]
     )
     if (!subscription) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "INSERT INTO GroupUserSubscriptions (groupId, host_mid, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
         [groupId, host_mid, now, now]
@@ -815,12 +815,10 @@ export class BilibiliDBBase {
    * @returns {Promise<number>} 删除的记录数量
    */
   async cleanOldDynamicCache(days = 7) {
-    const cutoffDate = /* @__PURE__ */ new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - days)
-    const cutoffDateStr = cutoffDate.toLocaleString()
+    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
     const result = await this.runQuery(
-      "DELETE FROM DynamicCaches WHERE createdAt < ?",
-      [cutoffDateStr]
+      "DELETE FROM DynamicCaches WHERE datetime(createdAt) < datetime(?)",
+      [cutoffDate.toISOString()]
     )
     return result.changes ?? 0
   }
