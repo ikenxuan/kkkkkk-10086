@@ -524,6 +524,7 @@ class Cfg {
       if (name === 'pushlist' && type === 'config') {
         try {
           await this.syncPushlistToDatabase()
+          await this.syncConfigToDatabase()
         } catch (error) {
           logger.error('[Config] 文件监听同步数据库失败:', error)
         }
@@ -562,13 +563,6 @@ class Cfg {
     new YamlReader(path).set(key, value)
     // 清除对应的配置缓存
     delete this.config[`${type}.${name}`]
-
-    // 如果修改的是pushlist配置，异步同步到数据库（不阻塞主流程）
-    if (name === 'pushlist' && type === 'config') {
-      this.syncSpecificConfigToDatabase(key).catch(error => {
-        logger.error('[Config] 配置修改后同步数据库失败:', error)
-      })
-    }
   }
 
   /**
@@ -592,33 +586,6 @@ class Cfg {
       logger.info('[Config] pushlist配置已同步到数据库')
     } catch (error) {
       logger.error('[Config] 同步pushlist配置到数据库失败:', error)
-      throw error
-    }
-  }
-
-  /**
-   * 根据key同步特定配置到数据库
-   * @param {string} key - 配置键名
-   * @returns {Promise<void>}
-   */
-  async syncSpecificConfigToDatabase(key) {
-    try {
-      // 根据key前缀判断平台
-      if (key.startsWith('douyin')) {
-        const pushlistConfig = this.getDefOrConfig('pushlist')
-        if (pushlistConfig.douyin && Array.isArray(pushlistConfig.douyin)) {
-          await this.syncDouyinPushToDatabase(pushlistConfig.douyin)
-        }
-      } else if (key.startsWith('bilibili')) {
-        const pushlistConfig = this.getDefOrConfig('pushlist')
-        if (pushlistConfig.bilibili && Array.isArray(pushlistConfig.bilibili)) {
-          await this.syncBilibiliPushToDatabase(pushlistConfig.bilibili)
-        }
-      }
-
-      logger.debug(`[Config] 特定配置 ${key} 已同步到数据库`)
-    } catch (error) {
-      logger.error(`[Config] 同步特定配置 ${key} 到数据库失败:`, error)
       throw error
     }
   }
@@ -653,17 +620,31 @@ class Cfg {
         const configWords = item.Keywords || []
         const configTags = item.Tags || []
 
-        // 同步过滤词
+        // 同步过滤词 - 添加配置中存在但数据库中不存在的词
         for (const word of configWords) {
           if (!existingWords?.includes(word)) {
             await douyinDB?.addFilterWord(id, word)
           }
         }
 
-        // 同步过滤标签
+        // 同步过滤标签 - 添加配置中存在但数据库中不存在的标签
         for (const tag of configTags) {
           if (!existingTags?.includes(tag)) {
             await douyinDB?.addFilterTag(id, tag)
+          }
+        }
+
+        // 同步过滤词 - 移除配置中不存在但数据库中存在的词
+        for (const word of existingWords || []) {
+          if (!configWords.includes(word)) {
+            await douyinDB?.removeFilterWord(id, word)
+          }
+        }
+
+        // 同步过滤标签 - 移除配置中不存在但数据库中存在的标签
+        for (const tag of existingTags || []) {
+          if (!configTags.includes(tag)) {
+            await douyinDB?.removeFilterTag(id, tag)
           }
         }
 
@@ -707,17 +688,31 @@ class Cfg {
         const configWords = item.Keywords || []
         const configTags = item.Tags || []
 
-        // 同步过滤词
+        // 同步过滤词 - 添加配置中存在但数据库中不存在的词
         for (const word of configWords) {
           if (!existingWords?.includes(word)) {
             await bilibiliDB?.addFilterWord(id, word)
           }
         }
 
-        // 同步过滤标签
+        // 同步过滤标签 - 添加配置中存在但数据库中不存在的标签
         for (const tag of configTags) {
           if (!existingTags?.includes(tag)) {
             await bilibiliDB?.addFilterTag(id, tag)
+          }
+        }
+
+        // 同步过滤词 - 移除配置中不存在但数据库中存在的词
+        for (const word of existingWords || []) {
+          if (!configWords.includes(word)) {
+            await bilibiliDB?.removeFilterWord(id, word)
+          }
+        }
+
+        // 同步过滤标签 - 移除配置中不存在但数据库中存在的标签
+        for (const tag of existingTags || []) {
+          if (!configTags.includes(tag)) {
+            await bilibiliDB?.removeFilterTag(id, tag)
           }
         }
 
@@ -768,10 +763,36 @@ class Cfg {
     }
   }
 
+  /**
+   * 同步配置到数据库
+   * 这个方法应该在所有模块都初始化完成后调用
+   */
+  async syncConfigToDatabase() {
+    try {
+      const pushCfg = this.getYaml('config', 'pushlist')
+      const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
+      const douyinDB = await getDouyinDB()
+      const bilibiliDB = await getBilibiliDB()
+
+      // 同步配置到数据库
+      if (pushCfg.bilibili) {
+        await bilibiliDB?.syncConfigSubscriptions(pushCfg.bilibili)
+      }
+
+      if (pushCfg.douyin) {
+        await douyinDB?.syncConfigSubscriptions(pushCfg.douyin)
+      }
+
+      logger.debug('[BilibiliDB] + [DouyinDB] 配置已同步到数据库')
+    } catch (error) {
+      logger.error('同步配置到数据库失败:', error)
+    }
+  }
+
 }
 
 /**
- * @typedef {ConfigType & Pick<Cfg, 'All' | 'modify' | 'syncConfigWithDatabase' | 'initCfg'>} Config$
+ * @typedef {ConfigType & Pick<Cfg, 'All' | 'modify' | 'syncConfigToDatabase' | 'initCfg'>} Config$
  */
 
 /**
