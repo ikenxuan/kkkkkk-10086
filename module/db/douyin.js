@@ -307,7 +307,7 @@ export class DouyinDBBase {
       [groupId, sec_uid]
     )
     if (!subscription) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
         "INSERT INTO GroupUserSubscriptions (groupId, sec_uid, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
         [groupId, sec_uid, now, now]
@@ -348,7 +348,7 @@ export class DouyinDBBase {
       [aweme_id, sec_uid, groupId]
     )
     if (!cache) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [aweme_id, sec_uid, groupId, now, now]
@@ -472,7 +472,7 @@ export class DouyinDBBase {
   async updateLiveStatus(sec_uid, living) {
     const user = await this.getDouyinUser(sec_uid)
     if (!user) return false
-    const now = (/* @__PURE__ */ new Date()).toLocaleString()
+    const now = (/* @__PURE__ */ new Date()).toISOString()
     const result = await this.runQuery(
       "UPDATE DouyinUsers SET living = ?, updatedAt = ? WHERE sec_uid = ?",
       [living ? 1 : 0, now, sec_uid]
@@ -577,7 +577,7 @@ export class DouyinDBBase {
    */
   async updateFilterMode(sec_uid, filterMode) {
     const user = await this.getOrCreateDouyinUser(sec_uid)
-    const now = (/* @__PURE__ */ new Date()).toLocaleString()
+    const now = (/* @__PURE__ */ new Date()).toISOString()
     await this.runQuery(
       "UPDATE DouyinUsers SET filterMode = ?, updatedAt = ? WHERE sec_uid = ?",
       [filterMode, now, sec_uid]
@@ -598,7 +598,7 @@ export class DouyinDBBase {
       [sec_uid, word]
     )
     if (!filterWord) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO FilterWords (sec_uid, douyinUserSecUid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [sec_uid, sec_uid, word, now, now]
@@ -642,7 +642,7 @@ export class DouyinDBBase {
       [sec_uid, tag]
     )
     if (!filterTag) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO FilterTags (sec_uid, douyinUserSecUid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [sec_uid, sec_uid, tag, now, now]

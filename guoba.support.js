@@ -576,7 +576,7 @@ export function supportGuoba() {
                 field: 'host_mid',
                 label: '用户UID',
                 bottomHelpMessage: '比如如原神的：\n401742377',
-                component: 'Input',
+                component: 'InputNumber',
                 required: true
               },
               {

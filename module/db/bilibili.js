@@ -335,7 +335,7 @@ export class BilibiliDBBase {
       [dynamic_id, host_mid, groupId]
     )
     if (!cache) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)",
         [dynamic_id, host_mid, groupId, dynamic_type, now, now]
@@ -545,7 +545,7 @@ export class BilibiliDBBase {
    */
   async updateFilterMode(host_mid, filterMode) {
     const user = await this.getOrCreateBilibiliUser(host_mid)
-    const now = (/* @__PURE__ */ new Date()).toLocaleString()
+    const now = (/* @__PURE__ */ new Date()).toISOString()
     await this.runQuery(
       "UPDATE BilibiliUsers SET filterMode = ?, updatedAt = ? WHERE host_mid = ?",
       [filterMode, now, host_mid]
@@ -572,7 +572,7 @@ export class BilibiliDBBase {
       [host_mid, word]
     )
     if (!filterWord) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO FilterWords (host_mid, bilibiliUserHostMid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [host_mid, host_mid, word, now, now]
@@ -622,7 +622,7 @@ export class BilibiliDBBase {
       [host_mid, tag]
     )
     if (!filterTag) {
-      const now = (/* @__PURE__ */ new Date()).toLocaleString()
+      const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
         "INSERT INTO FilterTags (host_mid, bilibiliUserHostMid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
         [host_mid, host_mid, tag, now, now]
