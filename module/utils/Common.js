@@ -1,6 +1,6 @@
+import { join, sep } from 'node:path'
 import Version from './Version.js'
 import Config from './Config.js'
-import { join } from 'node:path'
 import { Base } from './Base.js'
 import fs from 'node:fs'
 
@@ -13,9 +13,9 @@ class Tools {
       /** 插件缓存目录 */
       default: defaultPath,
       /** 视频缓存文件 */
-      video: join(defaultPath, 'kkkdownload', 'video') + '/',
+      video: join(defaultPath, 'kkkdownload', 'video') + sep,
       /** 图片缓存文件 */
-      images: join(defaultPath, 'kkkdownload', 'images') + '/'
+      images: join(defaultPath, 'kkkdownload', 'images') + sep
     }
   }
 
