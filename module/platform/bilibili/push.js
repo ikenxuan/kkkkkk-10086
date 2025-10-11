@@ -107,6 +107,7 @@ export class Bilibilipush extends Base {
   /**
    * 异步获取数据并根据动态类型处理和发送动态信息。
    * @param {WillBePushList} data - 包含动态相关信息的对象
+   * @returns {Promise<boolean>} - 返回处理结果，成功返回true，失败返回false
    */
   async getdata(data) {
     for (const dynamicId in data) {
@@ -511,6 +512,7 @@ export class Bilibilipush extends Base {
         )
       }
     }
+    return true
   }
 
   /**

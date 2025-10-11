@@ -288,7 +288,6 @@ export class DouYinpush extends Base {
         }
       }
     }
-
     return true
   }
 
