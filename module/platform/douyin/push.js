@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Networks, Render, Config, Common, downloadVideo } from '../../utils/index.js'
+import { Base, baseHeaders, Networks, Render, Config, Common, downloadVideo, Version } from '../../utils/index.js'
 import { cleanOldDynamicCache, douyinDB } from '../../db/index.js'
 import { getDouyinID, douyinProcessVideos } from './index.js'
 import common from '../../../../../lib/common/common.js'
@@ -263,7 +263,7 @@ export class DouYinpush extends Base {
                   image_url = item.url_list[2] || item.url_list[1] // 图片地址
                   imageres.push(segment.image(image_url))
                 }
-                const forwardMsg = common?.makeForwardMsg(Bot?.[botId], imageres, '作品图集')
+                const forwardMsg = Version.BotName === 'Miao-Yunzai' ? Bot.makeForwardMsg(imageres) : common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                 Bot?.[botId]?.pickGroup
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)

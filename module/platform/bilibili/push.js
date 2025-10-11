@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile } from '../../utils/index.js'
+import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version } from '../../utils/index.js'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getvideosize, replacetext } from './bilibili.js'
 import { DynamicType, getBilibiliData, MajorType } from '@ikenxuan/amagi'
 import { bilibiliDB, cleanOldDynamicCache } from '../../db/index.js'
@@ -484,7 +484,7 @@ export class Bilibilipush extends Base {
                 ) {
                   imgArray.push(segment.image(img2.src ?? img2.url))
                 }
-                const forwardMsg = common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图集')
+                const forwardMsg = Version.BotName === 'Miao-Yunzai' ? Bot?.makeForwardMsg(imgArray) : common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                 Bot?.[botId]?.pickGroup
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
