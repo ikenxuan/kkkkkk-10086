@@ -13,7 +13,7 @@ export class kkkPush extends plugin {
       rule: [
         { reg: /^#设置抖音推送/, fnc: 'setdyPush', permission: Config.douyin.douyinpushGroup },
         { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setbiliPush', permission: Config.douyin.douyinpushGroup },
-        { reg: /#(抖音|[bB]站)(全部)?强制推送/, fnc: 'forcePush', permission: 'master' },
+        { reg: /^#(抖音|[bB]站)(全部)?强制推送/, fnc: 'forcePush', permission: 'master' },
         { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
         { reg: /^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
       ]
@@ -62,13 +62,10 @@ export class kkkPush extends plugin {
    * @returns {Promise<boolean>} 返回一个Promise，解析为true表示操作成功
    */
   async forcePush(e) {
-    // 检查消息中是否包含"抖音"
     if (e.msg.includes('抖音')) {
-      // 创建抖音推送实例并执行操作
       await new DouYinpush().action()
       return true
-    } else if (e.msg.includes('B站')) {
-      // 创建B站推送实例并执行操作
+    } else if (/[bB]站/.test(e.msg)) {
       await new Bilibilipush().action()
       return true
     }
