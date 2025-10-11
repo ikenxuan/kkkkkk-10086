@@ -263,9 +263,15 @@ export class DouYinpush extends Base {
                   image_url = item.url_list[2] || item.url_list[1] // 图片地址
                   imageres.push(segment.image(image_url))
                 }
-                const forwardMsg = Version.BotName === 'Miao-Yunzai' ? Bot.makeForwardMsg(imageres) : common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
+                if (!imageres.length) return false
+                const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
+                  Bot?.makeForwardMsg(imageres.map(img => ({
+                    user_id: 2854196310,
+                    message: img
+                  }))) :
+                  common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                Bot?.[botId]?.pickGroup
+                Bot?.[botId]?.pickGroup && forwardMsg
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
                   : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
               }

@@ -484,9 +484,15 @@ export class Bilibilipush extends Base {
                 ) {
                   imgArray.push(segment.image(img2.src ?? img2.url))
                 }
-                const forwardMsg = Version.BotName === 'Miao-Yunzai' ? Bot?.makeForwardMsg(imgArray) : common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
+                if (!imgArray.length) return false
+                const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
+                  Bot?.makeForwardMsg(imgArray.map(img => ({
+                    user_id: 2854196310,
+                    message: img
+                  }))) :
+                  common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
                 // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                Bot?.[botId]?.pickGroup
+                Bot?.[botId]?.pickGroup && forwardMsg
                   ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
                   : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
                 break
