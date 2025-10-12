@@ -524,9 +524,10 @@ class Cfg {
       if (name === 'pushlist' && type === 'config') {
         try {
           await this.syncPushlistToDatabase()
-          await this.syncConfigToDatabase()
         } catch (error) {
           logger.error('[Config] 文件监听同步数据库失败:', error)
+        } finally {
+          await this.syncConfigToDatabase() // 同步配置到数据库
         }
       }
     })

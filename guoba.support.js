@@ -988,8 +988,6 @@ export function supportGuoba() {
         } catch (error) {
           logger.error('设置配置数据失败:', error)
           return Result.error('保存失败辣(╥ω╥)', error)
-        } finally {
-          await Config.syncConfigToDatabase() // 同步配置到数据库
         }
       }
     }
