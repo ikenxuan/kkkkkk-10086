@@ -11,8 +11,8 @@ export class kkkPush extends plugin {
       event: 'message',
       priority: Config.app.defaulttool ? -Infinity : Config.app.priority,
       rule: [
-        { reg: /^#设置抖音推送/, fnc: 'setdyPush', permission: Config.douyin.douyinpushGroup },
-        { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setbiliPush', permission: Config.douyin.douyinpushGroup },
+        { reg: /^#设置抖音推送/, fnc: 'setdyPush', permission: Config.douyin.push.permission },
+        { reg: /^#设置[bB]站推送(?:[Uu][Ii][Dd]:)?(\d+)$/, fnc: 'setbiliPush', permission: Config.bilibili.push.permission },
         { reg: /^#(抖音|[bB]站)(全部)?强制推送/, fnc: 'forcePush', permission: 'master' },
         { reg: /^#(抖音|[bB]站)推送列表$/, fnc: 'pushlist' },
         { reg: /^#kkk设置推送机器人/, fnc: 'changeBotID', permission: 'master' }
