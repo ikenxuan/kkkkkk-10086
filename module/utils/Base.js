@@ -130,10 +130,10 @@ export class Base {
               const img = await Render('apiError/index', err.error)
               if (Object.keys(e).length === 0) {
                 await sendMasterMessage('douyin', img)
-                throw new Error(err.data.amagiMessage)
+                throw new Error(err.message)
               }
               await e.reply(img)
-              throw new Error(err.data.amagiMessage)
+              throw new Error(err.message)
             }
 
             // 检查哔哩哔哩数据返回结构
@@ -143,10 +143,10 @@ export class Base {
               const img = await Render('apiError/index', err.error)
               if (Object.keys(e).length === 0) {
                 await sendMasterMessage('bilibili', img)
-                throw new Error(err.data.amagiMessage)
+                throw new Error(err.message)
               }
               await e.reply(img)
-              throw new Error(err.data.amagiMessage)
+              throw new Error(err.message)
             }
             return result
           }
@@ -428,8 +428,6 @@ export const uploadFile = async (e, file, videoUrl, options) => {
           : target.sendMsg?.(segment.file(File)))
       return true
     } else {
-      // ICQQ适配器单独处理视频上传
-      if (botAdapter === 'ICQQ' && target?.uploadVideo) return await uploadVideo(e, file, File, options)
       const status = isActiveMessage
         ? await target?.sendMsg(segment.video(File) || videoUrl)
         : await e.reply(segment.video(File) || videoUrl)
@@ -588,39 +586,4 @@ const processFilename = (filename, maxLength = 50) => {
   const processedName = nameWithoutExt.substring(0, maxLength).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
 
   return processedName + '...' + extension
-}
-
-/**
- * ICQQ适配器专属视频上传函数
- * @param {*} e 消息事件
- * @param {fileInfo} fileInfo 文件信息对象
- * @param {string} file 文件路径
- * @param {uploadFileOptions} [uploadOpt] 上传选项
- * @returns {Promise<boolean>} 返回上传成功的视频消息段
- */
-const uploadVideo = async (e, fileInfo, file, uploadOpt) => {
-  try {
-    // 确定上传目标
-    const target = uploadOpt?.active && uploadOpt?.activeOption
-      ? Bot?.[uploadOpt.activeOption.uin]?.pickGroup(uploadOpt.activeOption.group_id)
-      : e.isGroup ? e.group : e.friend
-
-    // 根据文件大小决定预上传次数
-    const uploadTimes = fileInfo.totalBytes > 50 ? 3 : (fileInfo.totalBytes > 27 ? 2 : 1)
-
-    // 执行多次预上传
-    for (let i = 0; i < uploadTimes; i++) {
-      await target?.uploadVideo(segment.video(file))
-    }
-
-    // 发送视频消息
-    const status = uploadOpt?.active && uploadOpt?.activeOption
-      ? await target?.sendMsg(segment.video(file))
-      : await e.reply(segment.video(file))
-
-    return !!status?.message_id
-  } catch (error) {
-    logger.error('视频预上传失败:', error)
-    return true
-  }
 }
