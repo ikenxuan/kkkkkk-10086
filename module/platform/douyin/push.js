@@ -116,177 +116,182 @@ export class DouYinpush extends Base {
    * @returns {Promise<boolean>} - 返回处理结果，成功返回true
    */
   async getdata(data) {
-    // 检查数据是否为空，为空则直接返回true
-    if (Object.keys(data).length === 0) return true
+    try {
+      // 检查数据是否为空，为空则直接返回true
+      if (Object.keys(data).length === 0) return true
 
-    // 遍历每个动态数据
-    for (const awemeId in data) {
-      const pushItem = data[awemeId]
-      if (!pushItem) continue
-      // 记录开始处理动态的日志信息
-      logger.mark(`
+      // 遍历每个动态数据
+      for (const awemeId in data) {
+        const pushItem = data[awemeId]
+        if (!pushItem) continue
+        // 记录开始处理动态的日志信息
+        logger.mark(`
         ${logger.blue('开始处理并渲染抖音动态图片')}
         ${logger.blue('博主')}: ${logger.green(pushItem.remark)} 
         ${logger.cyan('作品id')}：${logger.yellow(awemeId)}
         ${logger.cyan('访问地址')}：${logger.green('https://www.douyin.com/video/' + awemeId)}`)
 
-      // 获取当前动态项
-      const Detail_Data = pushItem.Detail_Data
-      // 检查是否跳过该动态
-      const skip = await skipDynamic(pushItem)
-      /**
-       * @type {import('@kaguyajs/trss-yunzai-types').icqq.segment[]}
-       */
-      let img = []
-      /** @type {import('./getid.js').DouyinIdData} 抖音数据类型 */
-      let iddata = { is_mp4: true, type: 'one_work' }
+        // 获取当前动态项
+        const Detail_Data = pushItem.Detail_Data
+        // 检查是否跳过该动态
+        const skip = await skipDynamic(pushItem)
+        /**
+         * @type {import('@kaguyajs/trss-yunzai-types').icqq.segment[]}
+         */
+        let img = []
+        /** @type {import('./getid.js').DouyinIdData} 抖音数据类型 */
+        let iddata = { is_mp4: true, type: 'one_work' }
 
-      // 如果不跳过，获取抖音ID数据
-      if (!skip) {
-        iddata = await getDouyinID(Detail_Data?.share_url || 'https://live.douyin.com/' + Detail_Data?.room_data?.owner?.web_rid, false)
-      }
-
-      // 如果不跳过，处理动态内容
-      if (!skip) {
-        // 处理直播推送
-        if (pushItem.living && 'room_data' in pushItem.Detail_Data && Detail_Data.live_data) {
-          // 处理直播推送
-          img = await Render('douyin/live', {
-            image_url: [{ image_src: Detail_Data?.live_data?.data?.data?.data[0]?.cover?.url_list[0] || '' }],
-            text: Detail_Data?.live_data?.data?.data?.data[0]?.title || '',
-            liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title || Detail_Data.live_data?.data?.data?.data[0].title || ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
-            在线观众: Common.count(Detail_Data.live_data?.data?.data?.data[0].room_view_stats?.display_value),
-            总观看次数: Common.count(Number(Detail_Data.live_data?.data?.data?.data[0].stats?.total_user_str)),
-            username: Detail_Data.user_info.data.user.nickname,
-            avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.data.user.avatar_larger.uri,
-            fans: Common.count(Detail_Data.user_info.data.user.follower_count),
-            create_time: Common.convertTimestampToDateTime(Date.now() / 1000),
-            now_time: Common.convertTimestampToDateTime(Date.now() / 1000),
-            share_url: 'https://live.douyin.com/' + Detail_Data.room_data.owner.web_rid,
-            dynamicTYPE: '直播动态推送'
-          })
-        } else {
-          // 处理普通作品推送
-          const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
-            url: Detail_Data.share_url,
-            headers: {
-              ...douyinBaseHeaders,
-              Referer: 'https://www.douyin.com',
-              Cookie: ''
-            }
-          }).getLocation()
-          img = await Render('douyin/dynamic', {
-            image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover?.url_list[0] || Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
-            desc: this.desc(Detail_Data, Detail_Data.desc),
-            dianzan: Common.count(Detail_Data.statistics.digg_count),
-            pinglun: Common.count(Detail_Data.statistics.comment_count),
-            share: Common.count(Detail_Data.statistics.share_count),
-            shouchang: Common.count(Detail_Data.statistics.collect_count),
-            create_time: Common.convertTimestampToDateTime(pushItem.create_time / 1000),
-            avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.data.user.avatar_larger.uri,
-            share_url: Config.douyin?.push?.shareType === 'web' ? realUrl : `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`,
-            username: Detail_Data.author.nickname,
-            抖音号: Detail_Data.user_info.data.user.unique_id === '' ? Detail_Data.user_info.data.user.short_id : Detail_Data.user_info.data.user.unique_id,
-            粉丝: Common.count(Detail_Data.user_info.data.user.follower_count),
-            获赞: Common.count(Detail_Data.user_info.data.user.total_favorited),
-            关注: Common.count(Detail_Data.user_info.data.user.following_count)
-          })
+        // 如果不跳过，获取抖音ID数据
+        if (!skip) {
+          iddata = await getDouyinID(Detail_Data?.share_url || 'https://live.douyin.com/' + Detail_Data?.room_data?.owner?.web_rid, false)
         }
-      }
 
-      // 遍历目标群组，并发送消息
-      for (const target of pushItem.targets) {
-        try {
-          const { groupId, botId } = target
-          let status = { message_id: '' }
+        // 如果不跳过，处理动态内容
+        if (!skip) {
+          // 处理直播推送
+          if (pushItem.living && 'room_data' in pushItem.Detail_Data && Detail_Data.live_data) {
+            // 处理直播推送
+            img = await Render('douyin/live', {
+              image_url: [{ image_src: Detail_Data?.live_data?.data?.data?.data[0]?.cover?.url_list[0] || '' }],
+              text: Detail_Data?.live_data?.data?.data?.data[0]?.title || '',
+              liveinf: `${Detail_Data.live_data?.data?.data?.partition_road_map?.partition?.title || Detail_Data.live_data?.data?.data?.data[0].title || ''} | 房间号: ${Detail_Data?.room_data?.owner?.web_rid || ''}`,
+              在线观众: Common.count(Detail_Data.live_data?.data?.data?.data[0].room_view_stats?.display_value),
+              总观看次数: Common.count(Number(Detail_Data.live_data?.data?.data?.data[0].stats?.total_user_str)),
+              username: Detail_Data.user_info.data.user.nickname,
+              avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.data.user.avatar_larger.uri,
+              fans: Common.count(Detail_Data.user_info.data.user.follower_count),
+              create_time: Common.convertTimestampToDateTime(Date.now() / 1000),
+              now_time: Common.convertTimestampToDateTime(Date.now() / 1000),
+              share_url: 'https://live.douyin.com/' + Detail_Data.room_data.owner.web_rid,
+              dynamicTYPE: '直播动态推送'
+            })
+          } else {
+            // 处理普通作品推送
+            const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
+              url: Detail_Data.share_url,
+              headers: {
+                ...douyinBaseHeaders,
+                Referer: 'https://www.douyin.com',
+                Cookie: ''
+              }
+            }).getLocation()
+            img = await Render('douyin/dynamic', {
+              image_url: iddata.is_mp4 ? Detail_Data.video.animated_cover?.url_list[0] || Detail_Data.video.cover.url_list[0] : Detail_Data.images[0].url_list[0],
+              desc: this.desc(Detail_Data, Detail_Data.desc),
+              dianzan: Common.count(Detail_Data.statistics.digg_count),
+              pinglun: Common.count(Detail_Data.statistics.comment_count),
+              share: Common.count(Detail_Data.statistics.share_count),
+              shouchang: Common.count(Detail_Data.statistics.collect_count),
+              create_time: Common.convertTimestampToDateTime(pushItem.create_time / 1000),
+              avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + Detail_Data.user_info.data.user.avatar_larger.uri,
+              share_url: Config.douyin?.push?.shareType === 'web' ? realUrl : `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`,
+              username: Detail_Data.author.nickname,
+              抖音号: Detail_Data.user_info.data.user.unique_id === '' ? Detail_Data.user_info.data.user.short_id : Detail_Data.user_info.data.user.unique_id,
+              粉丝: Common.count(Detail_Data.user_info.data.user.follower_count),
+              获赞: Common.count(Detail_Data.user_info.data.user.total_favorited),
+              关注: Common.count(Detail_Data.user_info.data.user.following_count)
+            })
+          }
+        }
 
-          if (!skip) {
-            // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-            status = Bot?.[botId]?.pickGroup
-              ? await Bot[botId].pickGroup(groupId).sendMsg(img)
-              : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+        // 遍历目标群组，并发送消息
+        for (const target of pushItem.targets) {
+          try {
+            const { groupId, botId } = target
+            let status = { message_id: '' }
 
-            // 如果是直播推送，更新直播状态
-            if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
-              await douyinDB?.updateLiveStatus(pushItem.sec_uid, true)
-            }
+            if (!skip) {
+              // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+              status = Bot?.[botId]?.pickGroup
+                ? img && await Bot[botId].pickGroup(groupId).sendMsg(img)
+                : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
 
-            // 是否一同解析该新作品？
-            if (Config.douyin?.push?.parsedynamic && status.message_id) {
-              // 如果新作品是视频
-              if (iddata.is_mp4) {
-                try {
-                  /** 默认视频下载地址 */
-                  let downloadUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
-                  // 根据配置文件自动选择分辨率
-                  if (Config.douyin.autoResolution) {
-                    logger.debug(`开始排除不符合条件的视频分辨率；\n
+              // 如果是直播推送，更新直播状态
+              if (pushItem.living && 'room_data' in pushItem.Detail_Data && status.message_id) {
+                await douyinDB?.updateLiveStatus(pushItem.sec_uid, true)
+              }
+
+              // 是否一同解析该新作品？
+              if (Config.douyin?.push?.parsedynamic && status.message_id) {
+                // 如果新作品是视频
+                if (iddata.is_mp4) {
+                  try {
+                    /** 默认视频下载地址 */
+                    let downloadUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${Detail_Data.video.play_addr.uri}&ratio=1080p&line=0`
+                    // 根据配置文件自动选择分辨率
+                    if (Config.douyin.autoResolution) {
+                      logger.debug(`开始排除不符合条件的视频分辨率；\n
                       共拥有${logger.yellow(Detail_Data.video.bit_rate.length)}个视频源\n
                       视频ID：${logger.green(Detail_Data.aweme_id)}\n
                       分享链接：${logger.green(Detail_Data.share_url)}
                       `)
-                    const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
-                    downloadUrl = await new Networks({
-                      url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
-                      headers: {
-                        ...douyinBaseHeaders,
-                        Cookie: ''
-                      }
-                    }).getLongLink()
-                  } else {
-                    downloadUrl = await new Networks({
-                      url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
-                      headers: {
-                        ...douyinBaseHeaders,
-                        Cookie: ''
-                      }
-                    }).getLongLink()
-                  }
-                  // 下载视频
-                  await downloadVideo(this.e, {
-                    video_url: downloadUrl,
-                    title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` },
-                    headers: {
-                      ...douyinBaseHeaders,
-                      Referer: downloadUrl,
-                      Cookie: ''
+                      const videoObj = douyinProcessVideos(Detail_Data.video.bit_rate, Config.upload.filelimit || 100)
+                      downloadUrl = await new Networks({
+                        url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
+                        headers: {
+                          ...douyinBaseHeaders,
+                          Cookie: ''
+                        }
+                      }).getLongLink()
+                    } else {
+                      downloadUrl = await new Networks({
+                        url: Detail_Data.video.bit_rate[0].play_addr.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0] || Detail_Data.video.play_addr_h264.url_list[0],
+                        headers: {
+                          ...douyinBaseHeaders,
+                          Cookie: ''
+                        }
+                      }).getLongLink()
                     }
-                  }, { active: true, activeOption: { uin: botId, group_id: groupId } })
-                } catch (error) {
-                  logger.error(error)
+                    // 下载视频
+                    await downloadVideo(this.e, {
+                      video_url: downloadUrl,
+                      title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${Detail_Data.desc}.mp4` },
+                      headers: {
+                        ...douyinBaseHeaders,
+                        Referer: downloadUrl,
+                        Cookie: ''
+                      }
+                    }, { active: true, activeOption: { uin: botId, group_id: groupId } })
+                  } catch (error) {
+                    logger.error(error)
+                  }
+                } else if (!iddata.is_mp4 && iddata.type === 'one_work') { // 如果新作品是图集
+                  /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
+                  const imageres = []
+                  let image_url
+                  for (const item of Detail_Data.images) {
+                    image_url = item.url_list[2] || item.url_list[1] // 图片地址
+                    imageres.push(segment.image(image_url))
+                  }
+                  if (!imageres.length) return false
+                  const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
+                    Bot?.makeForwardMsg(imageres.map(img => ({
+                      user_id: 2854196310,
+                      message: img
+                    }))) :
+                    common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
+                  // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+                  Bot?.[botId]?.pickGroup && forwardMsg
+                    ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
+                    : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
                 }
-              } else if (!iddata.is_mp4 && iddata.type === 'one_work') { // 如果新作品是图集
-                /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
-                const imageres = []
-                let image_url
-                for (const item of Detail_Data.images) {
-                  image_url = item.url_list[2] || item.url_list[1] // 图片地址
-                  imageres.push(segment.image(image_url))
-                }
-                if (!imageres.length) return false
-                const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
-                  Bot?.makeForwardMsg(imageres.map(img => ({
-                    user_id: 2854196310,
-                    message: img
-                  }))) :
-                  common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
-                // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                Bot?.[botId]?.pickGroup && forwardMsg
-                  ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
-                  : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
               }
             }
-          }
 
-          // 无论推送是否成功，都添加作品缓存以防止重复推送（直播除外）
-          // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的作品
-          if (!pushItem.living) {
-            await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, groupId)
+            // 无论推送是否成功，都添加作品缓存以防止重复推送（直播除外）
+            // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的作品
+            if (!pushItem.living) {
+              await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, groupId)
+            }
+          } catch (error) {
+            logger.error(error)
           }
-        } catch (error) {
-          logger.error(error)
         }
       }
+    } catch (e) {
+      logger.error('获取抖音动态列表失败', e)
+      return false
     }
     return true
   }

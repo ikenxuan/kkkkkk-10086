@@ -57,10 +57,15 @@ export class kkkTools extends plugin {
    * @returns {Promise<boolean>} 处理结果
    */
   async prefix(e) {
-    e.msg = await Common.getReplyMessage(e)
-    // 查找匹配的平台并直接调用处理函数
-    const config = PLATFORM_CONFIG.find(config => config.enabled && config.reg.test(e.msg))
-    if (config) await this[config.handler](e)
+    try {
+      e.msg = await Common.getReplyMessage(e)
+      // 查找匹配的平台并直接调用处理函数
+      const config = PLATFORM_CONFIG.find(config => config.enabled && config.reg.test(e.msg))
+      if (config) await this[config.handler](e)
+    } catch (e) {
+      logger.error('kkk解析链接失败', e)
+      return false
+    }
     return true
   }
 
