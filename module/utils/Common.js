@@ -40,7 +40,7 @@ class Tools {
     }
     // ICQQ适配器处理
     if (botAdapter === 'ICQQ' && e.source) {
-      const history = await (e.group || e.friend)?.getChatHistory(e.isGroup ? e.source.seq : 0, 1)
+      const history = await (e.group || e.friend)?.getChatHistory(e.isGroup ? e.source.seq : e.source.time, 1)
       const message = history.pop()?.message
       const textMsg = message?.find((/** @type {{ type: string; }} */ v) => ['text', 'json'].includes(v?.type))
       if (textMsg) e.msg = textMsg.text || textMsg.data

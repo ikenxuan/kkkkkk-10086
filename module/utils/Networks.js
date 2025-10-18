@@ -384,17 +384,30 @@ export class Networks {
    * 获取响应头信息（仅首个字节）
    * @returns {Promise<import('axios').AxiosResponse['headers']>} 返回响应头信息
    */
-  async getHeaders() {
+  async getHeaders(retryCount = 0) {
     try {
+      const config = retryCount > 0
+        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
+        : this.config
+
       const response = await this.axiosInstance.get(this.url, {
-        ...this.config,
+        ...config,
         headers: {
-          ...this.headers,
-          Range: 'bytes=0-0'
+          ...config.headers,
+          Range: 'bytes=0-0',
+          Accept: '*/*',
+          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br'
         }
       })
       return response.headers
     } catch (error) {
+      if (retryCount < this.maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
+        logger.warn(`获取Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.getHeaders(retryCount + 1)
+      }
       logger.error(this.handleError(/** @type {AxiosError} */(error)))
       throw error
     }
@@ -404,11 +417,21 @@ export class Networks {
    * 获取响应头信息（完整）
    * @returns {Promise<import('axios').AxiosResponse['headers']>} 返回响应头信息
    */
-  async getHeadersFull() {
+  async getHeadersFull(retryCount = 0) {
     try {
-      const response = await this.axiosInstance.get(this.url, this.config)
+      const config = retryCount > 0
+        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
+        : this.config
+
+      const response = await this.axiosInstance.get(this.url, config)
       return response.headers
     } catch (error) {
+      if (retryCount < this.maxRetries) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
+        logger.warn(`获取完整Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.getHeadersFull(retryCount + 1)
+      }
       logger.error(this.handleError(/** @type {AxiosError} */(error)))
       throw error
     }
