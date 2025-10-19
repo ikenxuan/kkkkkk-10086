@@ -200,10 +200,9 @@ export class DouYinpush extends Base {
           try {
             const { groupId, botId } = target
             let status = { message_id: '' }
-
             if (!skip) {
               // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-              status = Bot?.[botId]?.pickGroup
+              status = Bot?.[botId]?.pickGroup(groupId)
                 ? img && await Bot[botId].pickGroup(groupId).sendMsg(img)
                 : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
 
@@ -272,20 +271,18 @@ export class DouYinpush extends Base {
                     }))) :
                     common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
                   // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                  Bot?.[botId]?.pickGroup && forwardMsg
+                  Bot?.[botId]?.pickGroup(groupId) && forwardMsg
                     ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
                     : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
                 }
               }
             }
-
-            // 无论推送是否成功，都添加作品缓存以防止重复推送（直播除外）
-            // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的作品
-            if (!pushItem.living) {
-              await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, groupId)
-            }
           } catch (error) {
             logger.error(error)
+          } finally {
+            // 无论推送是否成功，都添加作品缓存以防止重复推送（直播除外）
+            // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的作品
+            if (!pushItem.living) await douyinDB?.addAwemeCache(awemeId, pushItem.sec_uid, target.groupId)
           }
         }
       }

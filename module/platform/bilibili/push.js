@@ -365,152 +365,156 @@ export class Bilibilipush extends Base {
 
         // 遍历 targets 数组，并发送消息
         for (const target of dynamicItem.targets) {
-          let status
-          if (!skip) {
-            const { groupId, botId } = target
-            // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-            status = Bot?.[botId]?.pickGroup
-              ? img && await Bot[botId].pickGroup(groupId).sendMsg(img)
-              : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
-            if (Config.bilibili?.push?.parsedynamic) {
-              switch (dynamicItem.dynamic_type) {
-                case 'DYNAMIC_TYPE_AV': {
-                  if (send_video) {
-                    /** @type {*} */
-                    let correctList
-                    let videoSize = ''
-                    const playUrlData = await this.amagi.getBilibiliData('单个视频下载信息数据', {
-                      avid: dycrad.aid,
-                      cid: dycrad.cid,
-                      typeMode: 'strict'
-                    })
-                    /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
-                    const simplify = playUrlData.data.data.dash.video.filter((/** @type {{id: number}} */item, /** @type {number} */index, /** @type {{id: number}[]} */self) => {
-                      return self.findIndex((/** @type {{id: number}} */ t) => {
-                        return t.id === item.id
-                      }) === index
-                    })
-                    /** 替换原始的视频信息对象 */
-                    playUrlData.data.data.dash.video = simplify
-                    correctList = await bilibiliProcessVideos({
-                      accept_description: playUrlData.data.data.accept_description,
-                      bvid: dynamicCARDINFO.data.data.card.desc.bvid,
-                      qn: Config.bilibili.push.pushVideoQuality,
-                      maxAutoVideoSize: Config.bilibili.push.pushMaxAutoVideoSize
-                    }, simplify, playUrlData.data.data.dash.audio[0].base_url)
-                    playUrlData.data.data.dash.video = correctList.videoList
-                    playUrlData.data.data.accept_description = correctList.accept_description
-                    /** 获取第一个视频流的大小 */
-                    videoSize = await getvideosize(
-                      correctList.videoList?.[0]?.base_url || '',
-                      playUrlData.data.data.dash.audio?.[0]?.base_url || '',
-                      dynamicCARDINFO.data.data.card?.desc?.bvid || ''
-                    )
-                    if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
-                      await Bot?.[botId]?.pickGroup(groupId)?.sendMsg(
-                        [
-                          `设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n视频太大了，还是去B站看吧~`,
-                          segment.reply(status.message_id)
-                        ]
-                      )
-                      break
-                    }
-                    logger.mark(`当前处于自动推送状态，解析到的视频大小为 ${logger.yellow(Number(videoSize))} MB`)
-                    const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: dynamicCARDINFO.data.data.card.desc.bvid, typeMode: 'strict' })
-                    const mp4File = await downloadFile(
-                      playUrlData.data?.data?.dash?.video[0].base_url,
-                      {
-                        title: `Bil_V_${infoData.data.data.bvid}.mp4`,
-                        headers: bilibiliBaseHeaders
-                      }
-                    )
-                    const mp3File = await downloadFile(
-                      playUrlData.data?.data?.dash?.audio[0].base_url,
-                      {
-                        title: `Bil_A_${infoData.data.data.bvid}.mp3`,
-                        headers: bilibiliBaseHeaders
-                      }
-                    )
-
-                    if (mp4File.filepath && mp3File.filepath) {
-                      await mergeFile('二合一（视频 + 音频）', {
-                        path: mp4File.filepath,
-                        path2: mp3File.filepath,
-                        resultPath: Common.tempDri.video + `Bil_Result_${infoData.data.data.bvid}.mp4`,
-                        callback: async (/** @type {boolean} */ success, /** @type {string} */ resultPath) => {
-                          if (success) {
-                            const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
-                            fs.renameSync(resultPath, filePath)
-                            logger.mark(`视频文件重命名完成: ${resultPath.split('/').pop()} -> ${filePath.split('/').pop()}`)
-                            logger.mark('正在尝试删除缓存文件')
-                            await Common.removeFile(mp4File.filepath, true)
-                            await Common.removeFile(mp3File.filepath, true)
-
-                            const stats = fs.statSync(filePath)
-                            const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
-                            if (fileSizeInMB > (Config.upload?.groupfilevalue || 100)) {
-                              // 使用文件上传
-                              return await uploadFile(
-                                this.e,
-                                { filepath: filePath, totalBytes: fileSizeInMB, originTitle: `${infoData.data.data.desc.substring(0, 50).replace(/[\\/:\\*\\?"<>\\|\r\n\s]/g, ' ')}` },
-                                '',
-                                { useGroupFile: true, active: true, activeOption: { group_id: groupId, uin: botId } }
-                              )
-                            } else {
-                              /** 因为本地合成，没有视频直链 */
-                              return await uploadFile(
-                                this.e,
-                                { filepath: filePath, totalBytes: fileSizeInMB },
-                                '',
-                                { active: true, activeOption: { group_id: groupId, uin: botId } }
-                              )
-                            }
-                          } else {
-                            await Common.removeFile(mp4File.filepath, true)
-                            await Common.removeFile(mp3File.filepath, true)
-                            return true
-                          }
-                        }
+          try {
+            let status
+            if (!skip) {
+              const { groupId, botId } = target
+              // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+              status = Bot?.[botId]?.pickGroup(groupId)
+                ? img && await Bot[botId].pickGroup(groupId).sendMsg(img)
+                : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+              if (Config.bilibili?.push?.parsedynamic) {
+                switch (dynamicItem.dynamic_type) {
+                  case 'DYNAMIC_TYPE_AV': {
+                    if (send_video) {
+                      /** @type {*} */
+                      let correctList
+                      let videoSize = ''
+                      const playUrlData = await this.amagi.getBilibiliData('单个视频下载信息数据', {
+                        avid: dycrad.aid,
+                        cid: dycrad.cid,
+                        typeMode: 'strict'
                       })
+                      /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
+                      const simplify = playUrlData.data.data.dash.video.filter((/** @type {{id: number}} */item, /** @type {number} */index, /** @type {{id: number}[]} */self) => {
+                        return self.findIndex((/** @type {{id: number}} */ t) => {
+                          return t.id === item.id
+                        }) === index
+                      })
+                      /** 替换原始的视频信息对象 */
+                      playUrlData.data.data.dash.video = simplify
+                      correctList = await bilibiliProcessVideos({
+                        accept_description: playUrlData.data.data.accept_description,
+                        bvid: dynamicCARDINFO.data.data.card.desc.bvid,
+                        qn: Config.bilibili.push.pushVideoQuality,
+                        maxAutoVideoSize: Config.bilibili.push.pushMaxAutoVideoSize
+                      }, simplify, playUrlData.data.data.dash.audio[0].base_url)
+                      playUrlData.data.data.dash.video = correctList.videoList
+                      playUrlData.data.data.accept_description = correctList.accept_description
+                      /** 获取第一个视频流的大小 */
+                      videoSize = await getvideosize(
+                        correctList.videoList?.[0]?.base_url || '',
+                        playUrlData.data.data.dash.audio?.[0]?.base_url || '',
+                        dynamicCARDINFO.data.data.card?.desc?.bvid || ''
+                      )
+                      if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
+                        Bot?.[botId]?.pickGroup(groupId) && await Bot?.[botId]?.pickGroup(groupId)?.sendMsg(
+                          [
+                            `设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n视频太大了，还是去B站看吧~`,
+                            segment.reply(status.message_id)
+                          ]
+                        )
+                        break
+                      }
+                      logger.mark(`当前处于自动推送状态，解析到的视频大小为 ${logger.yellow(Number(videoSize))} MB`)
+                      const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: dynamicCARDINFO.data.data.card.desc.bvid, typeMode: 'strict' })
+                      const mp4File = await downloadFile(
+                        playUrlData.data?.data?.dash?.video[0].base_url,
+                        {
+                          title: `Bil_V_${infoData.data.data.bvid}.mp4`,
+                          headers: bilibiliBaseHeaders
+                        }
+                      )
+                      const mp3File = await downloadFile(
+                        playUrlData.data?.data?.dash?.audio[0].base_url,
+                        {
+                          title: `Bil_A_${infoData.data.data.bvid}.mp3`,
+                          headers: bilibiliBaseHeaders
+                        }
+                      )
+
+                      if (mp4File.filepath && mp3File.filepath) {
+                        await mergeFile('二合一（视频 + 音频）', {
+                          path: mp4File.filepath,
+                          path2: mp3File.filepath,
+                          resultPath: Common.tempDri.video + `Bil_Result_${infoData.data.data.bvid}.mp4`,
+                          callback: async (/** @type {boolean} */ success, /** @type {string} */ resultPath) => {
+                            if (success) {
+                              const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
+                              fs.renameSync(resultPath, filePath)
+                              logger.mark(`视频文件重命名完成: ${resultPath.split('/').pop()} -> ${filePath.split('/').pop()}`)
+                              logger.mark('正在尝试删除缓存文件')
+                              await Common.removeFile(mp4File.filepath, true)
+                              await Common.removeFile(mp3File.filepath, true)
+
+                              const stats = fs.statSync(filePath)
+                              const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
+                              if (fileSizeInMB > (Config.upload?.groupfilevalue || 100)) {
+                                // 使用文件上传
+                                return await uploadFile(
+                                  this.e,
+                                  { filepath: filePath, totalBytes: fileSizeInMB, originTitle: `${infoData.data.data.desc.substring(0, 50).replace(/[\\/:\\*\\?"<>\\|\r\n\s]/g, ' ')}` },
+                                  '',
+                                  { useGroupFile: true, active: true, activeOption: { group_id: groupId, uin: botId } }
+                                )
+                              } else {
+                                /** 因为本地合成，没有视频直链 */
+                                return await uploadFile(
+                                  this.e,
+                                  { filepath: filePath, totalBytes: fileSizeInMB },
+                                  '',
+                                  { active: true, activeOption: { group_id: groupId, uin: botId } }
+                                )
+                              }
+                            } else {
+                              await Common.removeFile(mp4File.filepath, true)
+                              await Common.removeFile(mp3File.filepath, true)
+                              return true
+                            }
+                          }
+                        })
+                      }
                     }
+                    break
                   }
-                  break
-                }
-                case 'DYNAMIC_TYPE_DRAW': {
-                  /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
-                  const imgArray = []
-                  for (const img2 of
-                    dynamicItem.Dynamic_Data.modules.module_dynamic?.major &&
-                    dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items ||
-                    dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.opus.pics
-                  ) {
-                    imgArray.push(segment.image(img2.src ?? img2.url))
+                  case 'DYNAMIC_TYPE_DRAW': {
+                    /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
+                    const imgArray = []
+                    for (const img2 of
+                      dynamicItem.Dynamic_Data.modules.module_dynamic?.major &&
+                      dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.draw?.items ||
+                      dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.opus.pics
+                    ) {
+                      imgArray.push(segment.image(img2.src ?? img2.url))
+                    }
+                    if (!imgArray.length) return false
+                    const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
+                      Bot?.makeForwardMsg(imgArray.map(img => ({
+                        user_id: 2854196310,
+                        message: img
+                      }))) :
+                      common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
+                    // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+                    Bot?.[botId]?.pickGroup(groupId) && forwardMsg
+                      ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
+                      : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
+                    break
                   }
-                  if (!imgArray.length) return false
-                  const forwardMsg = Version.BotName === 'Miao-Yunzai' ?
-                    Bot?.makeForwardMsg(imgArray.map(img => ({
-                      user_id: 2854196310,
-                      message: img
-                    }))) :
-                    common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
-                  // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                  Bot?.[botId]?.pickGroup && forwardMsg
-                    ? await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg)
-                    : (logger.warn(`bot${botId}不存在或群${groupId}不存在`), { message_id: '1' })
-                  break
                 }
               }
             }
+          } catch (e) {
+            logger.error(e)
+          } finally {
+            // 无论推送是否成功，都添加动态缓存以防止重复推送
+            // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的动态
+            await bilibiliDB?.addDynamicCache(
+              dynamicId,
+              dynamicItem.host_mid,
+              target.groupId,
+              dynamicItem.dynamic_type
+            )
           }
-
-          // 无论推送是否成功，都添加动态缓存以防止重复推送
-          // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的动态
-          await bilibiliDB?.addDynamicCache(
-            dynamicId,
-            dynamicItem.host_mid,
-            target.groupId,
-            dynamicItem.dynamic_type
-          )
         }
       }
     } catch (e) {

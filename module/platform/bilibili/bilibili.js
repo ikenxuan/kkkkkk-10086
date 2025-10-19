@@ -167,8 +167,8 @@ export class Bilibili extends Base {
                 CommentsData: commentsdata,
                 CommentLength: Config.bilibili.realCommentCount ? Common.count(infoData.data.data.stat.reply) : String(commentsdata.length),
                 share_url: 'https://b23.tv/' + infoData.data.data.bvid,
-                Clarity: Config.bilibili.videopriority === true ? nockData.data.accept_description[0] : correctList?.selectedQuality,
-                VideoSize: Config.bilibili.videopriority === true ? (nockData.data.durl[0]?.size / (1024 * 1024) || 0).toFixed(2) : videoSize,
+                Clarity: Config.bilibili.videopriority === true || !this.islogin ? nockData.data.accept_description[0] : correctList?.selectedQuality,
+                VideoSize: Config.bilibili.videopriority === true || !this.islogin ? (nockData.data.durl[0]?.size / (1024 * 1024) || 0).toFixed(2) : videoSize,
                 ImageLength: 0,
                 shareurl: 'https://b23.tv/' + infoData.data.data.bvid
               })
