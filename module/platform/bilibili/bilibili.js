@@ -158,10 +158,8 @@ export class Bilibili extends Base {
               oid: infoData.data.data.aid.toString(),
               typeMode: 'strict'
             })
-            const commentsdata = bilibiliComments(commentsData.data)
-            if (!commentsdata?.length) {
-              await this.e.reply('这个视频没有评论 ~')
-            } else {
+            const commentsdata = Config.bilibili.bilibilinumcomments && Config.bilibili?.bilibilinumcomments > 0 && bilibiliComments(commentsData.data)
+            if (commentsdata?.length) {
               img = await Render('bilibili/comment', {
                 Type: '视频',
                 CommentsData: commentsdata,

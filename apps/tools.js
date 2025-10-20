@@ -9,7 +9,7 @@ const user = {}
 
 const PLATFORM_CONFIG = [
   {
-    reg: /^.*((www|v|jx|m)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/,
+    reg: /^.*((www|v|jx|jingxuan|m)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/,
     handler: 'douyin',
     enabled: Config.douyin?.douyintool
   },
@@ -75,9 +75,16 @@ export class kkkTools extends plugin {
    * @returns {Promise<boolean>} 处理结果
    */
   async douyin(e) {
-    const url = e.msg.match(/https?:\/\/.*\.(douyin|iesdouyin)\.com\/[^ ]+/g)
-    const iddata = await getDouyinID(url)
-    await new DouYin(e, iddata).RESOURCES(iddata)
+    // 直接使用PLATFORM_CONFIG中的抖音正则表达式来提取URL
+    const douyinConfig = PLATFORM_CONFIG.find(config => config.handler === 'douyin')
+    if (douyinConfig) {
+      // 使用正则表达式从消息中提取出完整的URL
+      const urlMatch = e.msg.match(douyinConfig.reg)
+      if (urlMatch && urlMatch[0]) {
+        const iddata = await getDouyinID(urlMatch[0])
+        await new DouYin(e, iddata).RESOURCES(iddata)
+      }
+    }
     return true
   }
 
