@@ -9,7 +9,7 @@ const user = {}
 
 const PLATFORM_CONFIG = [
   {
-    reg: /^.*((www|v|jx|jingxuan|m)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/,
+    reg: /.*((www|v|jx|jingxuan|m)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/,
     handler: 'douyin',
     enabled: Config.douyin?.douyintool
   },
