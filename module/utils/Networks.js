@@ -568,7 +568,8 @@ export class Networks {
         if (totalSize > 0) {
           // 已知大小：按百分比更新
           const percentage = Math.floor((currentDownloaded / totalSize) * 100)
-          if (percentage !== lastPercentage && now - lastUpdateTime >= minInterval) {
+          const timeSinceLastUpdate = now - lastUpdateTime
+          if ((percentage !== lastPercentage && timeSinceLastUpdate >= minInterval) || timeSinceLastUpdate >= minInterval * 2) {
             progressCallback(currentDownloaded, totalSize, isLiveStream)
             lastPercentage = percentage
             lastUpdateTime = now
@@ -576,7 +577,8 @@ export class Networks {
         } else {
           // 未知大小：每次增长超过512KB或时间间隔达到时更新
           const bytesGrowth = currentDownloaded - lastReportedBytes
-          if (bytesGrowth >= 512 * 1024 || now - lastUpdateTime >= minInterval || lastReportedBytes === 0) {
+          const timeSinceLastUpdate = now - lastUpdateTime
+          if (bytesGrowth >= 512 * 1024 || timeSinceLastUpdate >= minInterval || lastReportedBytes === 0) {
             // 直播流传递最大限制，普通文件传递 -1
             const displayTotal = isLiveStream ? liveStreamMaxSize : -1
             progressCallback(currentDownloaded, displayTotal, isLiveStream)
@@ -663,9 +665,12 @@ export class Networks {
 
       // 1. 服务器未返回 Content-Length：单线程直存
       if (isNaN(totalBytes) || totalBytes <= 0) {
+        // 尝试从响应头获取实际大小
+        const actualSize = response.headers['content-length'] ? parseInt(response.headers['content-length'], 10) : 0
         const flags = supportRange && resumeFromByte > 0 && !isLiveStream ? 'a' : 'w'
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 && !isLiveStream ? resumeFromByte : undefined })
-        const updateProgress = createProgressUpdater(-1)
+        // 如果响应头有大小则使用，否则传递 -1 表示未知
+        const updateProgress = createProgressUpdater(actualSize > 0 ? actualSize + resumeFromByte : -1)
         let downloadedBytes = 0
         try {
           downloadedBytes = await processStream(response.data, writer, updateProgress)
@@ -677,7 +682,7 @@ export class Networks {
           }
         }
         const finalSize = downloadedBytes + resumeFromByte
-        return await handleFinalFileSize(finalSize, isSizeValid)
+        return await handleFinalFileSize(finalSize, actualSize > 0)
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
@@ -709,7 +714,7 @@ export class Networks {
         }
       }
 
-      let totalDown = 0
+      let totalDown = resumeFromByte
       const updateProgress = createProgressUpdater(totalBytes)
 
       /** 下载指定 Range 分片并写临时文件 */
@@ -732,7 +737,7 @@ export class Networks {
           transform(chunk, enc, cb) {
             chunkDown += chunk.length
             totalDown += chunk.length
-            updateProgress(totalDown)
+            updateProgress(totalDown - resumeFromByte)
             cb(null, chunk)
           }
         })

@@ -508,20 +508,28 @@ export const downloadFile = async (videoUrl, opt) => {
     const elapsed = Math.max(0.1, (Date.now() - startTime) / 1000)
     const downloaded = Math.max(0, downloadedBytes || 0)
     const speedNum = downloaded / elapsed / 1048576
-    const speed = speedNum.toFixed(1)
+    const speed = speedNum >= 0.1 ? speedNum.toFixed(1) : speedNum.toFixed(2)
     const dlMB = (downloaded / 1048576).toFixed(1)
     const color = Version.BotName === 'TRSS-Yunzai' ? (/** @type {string} */ c) => logger.hex(c) : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
     const barLen = 45
 
-    if (totalBytes < 0) {
+    if (totalBytes <= 0) {
       // 未知大小：显示动态滚动进度条
-      const anim = '░'.repeat(Math.floor(elapsed * 2) % barLen) + '███' + '░'.repeat(Math.max(0, barLen - Math.floor(elapsed * 2) % barLen - 3))
+      const animPos = Math.floor(elapsed * 3) % (barLen + 6)
+      const startPos = Math.max(0, animPos - 3)
+      const endPos = Math.min(barLen, animPos + 3)
+      let anim = '░'.repeat(barLen)
+      for (let i = startPos; i < endPos; i++) {
+        if (i >= 0 && i < barLen) {
+          anim = anim.substring(0, i) + '█' + anim.substring(i + 1)
+        }
+      }
       logger.info(`⬇️  ${opt.title} [${anim}] ${color('#00BFFF')(dlMB)} MB | ${speed} MB/s 下载中...\r`)
     } else {
       // 已知大小：显示百分比进度条
-      const pct = Math.min(100, downloaded / totalBytes * 100)
+      const pct = Math.min(100, Math.max(0, downloaded / totalBytes * 100))
       const fill = Math.floor(pct / 100 * barLen)
-      const bar = `[${'█'.repeat(fill)}${'░'.repeat(barLen - fill)}]`
+      const bar = `[${'█'.repeat(Math.max(0, fill))}${'░'.repeat(Math.max(0, barLen - fill))}]`
       const totalMB = (totalBytes / 1048576).toFixed(1)
       
       if (isLiveStream) {
@@ -531,8 +539,9 @@ export const downloadFile = async (videoUrl, opt) => {
         // 普通文件：红→绿渐变进度条
         const hex = `#${Math.floor(255 - 255 * pct / 100).toString(16).padStart(2, '0')}${Math.floor(255 * pct / 100).toString(16).padStart(2, '0')}00`
         // 计算剩余时间，防止速度过快/过慢导致异常
-        const remain = speedNum > 0.01 ? Math.max(0, (totalBytes - downloaded) / (downloaded / elapsed)) : 0
-        const time = remain > 60 ? `${Math.floor(remain / 60)}min ${Math.floor(remain % 60)}s` : remain > 0 ? `${Math.floor(remain)}s` : '0s'
+        const remainingBytes = Math.max(0, totalBytes - downloaded)
+        const remain = speedNum > 0.01 && remainingBytes > 0 ? remainingBytes / (speedNum * 1048576) : 0
+        const time = remain > 3600 ? `${Math.floor(remain / 3600)}h ${Math.floor((remain % 3600) / 60)}min` : remain > 60 ? `${Math.floor(remain / 60)}min ${Math.floor(remain % 60)}s` : remain > 0 ? `${Math.floor(remain)}s` : '0s'
         logger.info(`⬇️  ${opt.title} ${color(hex)(bar)} ${color(hex)(pct.toFixed(1) + '%')} ${dlMB}/${totalMB} MB | ${speed} MB/s 剩余: ${time}\r`)
       }
     }
