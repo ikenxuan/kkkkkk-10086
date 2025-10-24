@@ -99,33 +99,39 @@ export class Networks {
     } : false
 
     // 创建连接池
+    /** @type {'fifo'} */
+    const scheduling = 'fifo'
     const socketOptions = {
       keepAlive: true,
       keepAliveMsecs: 30000,
       maxSockets: 50,
       maxFreeSockets: 20,
       timeout: 120000,
-      /** @type {"fifo" | "lifo"} */
-      scheduling: 'fifo',
+      scheduling
+    }
+    const httpsOptions = {
+      ...socketOptions,
       rejectUnauthorized: false,
-      secureProtocol: 'TLSv1_2_method',
       ciphers: [
+        'TLS_AES_128_GCM_SHA256',
+        'TLS_AES_256_GCM_SHA384',
+        'TLS_CHACHA20_POLY1305_SHA256',
         'ECDHE-RSA-AES128-GCM-SHA256',
         'ECDHE-RSA-AES256-GCM-SHA384',
-        'ECDHE-RSA-AES128-SHA256',
-        'ECDHE-RSA-AES256-SHA384',
-        'AES128-GCM-SHA256',
-        'AES256-GCM-SHA384',
-        'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA'
+        'ECDHE-ECDSA-AES128-GCM-SHA256',
+        'ECDHE-ECDSA-AES256-GCM-SHA384'
       ].join(':'),
+      honorCipherOrder: true,
       secureOptions: constants.SSL_OP_NO_SSLv2 |
         constants.SSL_OP_NO_SSLv3 |
         constants.SSL_OP_NO_TLSv1 |
-        constants.SSL_OP_NO_TLSv1_1
+        constants.SSL_OP_NO_TLSv1_1 |
+        constants.SSL_OP_NO_COMPRESSION
     }
-    this.socketOptions = socketOptions
+    this.baseSocketOptions = socketOptions
+    this.httpsSocketOptions = httpsOptions
     this.httpAgent = new http.Agent(socketOptions)
-    this.httpsAgent = new https.Agent(socketOptions)
+    this.httpsAgent = new https.Agent(httpsOptions)
 
     // 创建axios实例
     this.axiosInstance = axios.create({
@@ -138,12 +144,18 @@ export class Networks {
     })
   }
 
+  /** 重建连接池 */
+  rebuildAgents() {
+    this.cleanup()
+    this.httpAgent = new http.Agent(this.baseSocketOptions)
+    this.httpsAgent = new https.Agent(this.httpsSocketOptions)
+  }
+
   /**
    * 清理资源
    * @returns {void}
    */
   cleanup() {
-    // 清理连接池
     if (this.httpAgent) {
       this.httpAgent.destroy()
     }
@@ -224,16 +236,17 @@ export class Networks {
   getRetryHeaders(retryCount, baseHeaders) {
     /** @type {import('axios').AxiosRequestConfig['headers']} */
     const headers = { ...baseHeaders }
-    // 重试时的特殊配置
+    headers['User-Agent'] = getRandomUserAgent()
     if (retryCount > 0) {
-      headers['Cache-Control'] = 'close'
+      headers['Cache-Control'] = 'no-cache'
       headers.Pragma = 'no-cache'
-      // 重试次数大于1时更换User-Agent
-      if (retryCount > 1) {
-        const newUserAgent = getRandomUserAgent()
-        headers['User-Agent'] = newUserAgent
-        logger.info(`更换User-Agent进行重试: ${newUserAgent.substring(0, 50)}...`)
-      }
+      headers.Connection = 'close'
+      headers['sec-ch-ua'] = '"Not A(Brand";v="8", "Chromium";v="134"'
+      headers['sec-ch-ua-mobile'] = '?0'
+      headers['sec-ch-ua-platform'] = '"Windows"'
+      headers['sec-fetch-dest'] = 'empty'
+      headers['sec-fetch-mode'] = 'cors'
+      headers['sec-fetch-site'] = 'same-site'
     }
     return headers
   }
@@ -269,11 +282,7 @@ export class Networks {
    */
   async getfetch() {
     try {
-      const result = await this.returnResult()
-      if (result.status === 504) {
-        return result
-      }
-      return result
+      return await this.returnResult()
     } catch (error) {
       logger.error('获取失败:', this.handleError(/** @type {AxiosError} */(error)))
       return false
@@ -287,18 +296,26 @@ export class Networks {
    */
   async returnResult(retryCount = 0) {
     try {
-      // 应用重试请求头配置
-      const config = retryCount > 0
-        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
-        : this.config
+      const config = { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
       return await this.axiosInstance(config)
     } catch (error) {
+      const axiosError = /** @type {AxiosError} */(error)
+      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 2) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000)
+        logger.warn(`遇到403错误，${delay}ms后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.returnResult(retryCount + 1)
+      }
+      if (axiosError.code === 'ESOCKETTIMEDOUT' || axiosError.code === 'ECONNRESET') {
+        logger.warn(`连接池问题(${axiosError.code})，重建连接池后重试`)
+        this.rebuildAgents()
+      }
       if (retryCount < this.maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.returnResult(retryCount + 1)
       }
-      logger.error('请求失败:', this.handleError(/** @type {AxiosError} */(error)))
+      logger.error('请求失败:', this.handleError(axiosError))
       throw error
     }
   }
@@ -311,23 +328,17 @@ export class Networks {
    * @returns {Promise<string>} 返回最终的重定向链接地址或错误信息
    */
   async getLongLink(url = '', redirectCount = 0, visitedUrls = new Set()) {
-    // 使用传入的url参数，如果没有则使用this.url作为初始URL
     const currentUrl = url || this.url
-    if (redirectCount > 10) return currentUrl // 防止无限重定向
-    // 检查是否已经访问过这个URL
+    if (redirectCount > 10) return currentUrl
     if (visitedUrls.has(currentUrl)) {
       logger.warn(`检测到循环重定向，停止在: ${currentUrl}`)
       return currentUrl
     }
     visitedUrls.add(currentUrl)
 
-    let errorMsg = `获取链接重定向失败: ${currentUrl}`
     try {
-      const config = redirectCount > 0
-        ? { ...this.config, headers: this.getRetryHeaders(redirectCount, this.config.headers || this.headers) }
-        : this.config
+      const config = { ...this.config, headers: this.getRetryHeaders(redirectCount, this.config.headers || this.headers) }
       const response = await this.axiosInstance.get(currentUrl, config)
-      // 如果服务器返回的重定向URL与当前URL相同，也视为循环重定向
       const finalUrl = response.request.res.responseUrl
       if (finalUrl === currentUrl) {
         logger.warn(`检测到服务器返回相同的重定向URL，停止在: ${currentUrl}`)
@@ -340,16 +351,15 @@ export class Networks {
         if (axiosError.response.status === 302) {
           const redirectUrl = axiosError.response.headers.location
           logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
-          // 递归调用时只传递新的重定向URL，不再包含this.url
           return await this.getLongLink(redirectUrl, redirectCount + 1, visitedUrls)
-        } else if (axiosError.response.status === 403) {
-          errorMsg = `403 Forbidden 禁止访问！${currentUrl}`
-          logger.error(errorMsg)
-          return currentUrl
+        } else if (axiosError.response.status === 403 && redirectCount < 3) {
+          logger.warn(`遇到403错误，尝试重试 (${redirectCount + 1}/3)`)
+          await new Promise(r => setTimeout(r, 1000 * (redirectCount + 1)))
+          return await this.getLongLink(currentUrl, redirectCount + 1, visitedUrls)
         }
       }
       logger.error(this.handleError(axiosError))
-      return currentUrl // 返回原始URL，因为发生了错误
+      return currentUrl
     }
   }
 
@@ -386,19 +396,15 @@ export class Networks {
   async getData() {
     try {
       const result = await this.returnResult()
-      if (result.status === 504) {
-        return result
-      }
       if (result.status === 429) {
-        logger.error('HTTP 响应状态码: 429')
-        throw new Error('ratelimit triggered, 触发 https://www.douyin.com/ 的速率限制！！！')
+        throw new Error('ratelimit triggered, 触发速率限制')
       }
       return result.data
     } catch (error) {
       if (error instanceof AxiosError) {
         throw new Error(error.stack || error.message)
       }
-      return false
+      throw error
     }
   }
 
@@ -408,10 +414,7 @@ export class Networks {
    */
   async getHeaders(retryCount = 0) {
     try {
-      const config = retryCount > 0
-        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
-        : this.config
-
+      const config = { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
       const response = await this.axiosInstance.get(this.url, {
         ...config,
         headers: {
@@ -424,13 +427,20 @@ export class Networks {
       })
       return response.headers
     } catch (error) {
+      const axiosError = /** @type {AxiosError} */(error)
+      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 2) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000)
+        logger.warn(`获取Headers遇到403，${delay}ms后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.getHeaders(retryCount + 1)
+      }
       if (retryCount < this.maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
         logger.warn(`获取Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeaders(retryCount + 1)
       }
-      logger.error(this.handleError(/** @type {AxiosError} */(error)))
+      logger.error(this.handleError(axiosError))
       throw error
     }
   }
@@ -441,20 +451,24 @@ export class Networks {
    */
   async getHeadersFull(retryCount = 0) {
     try {
-      const config = retryCount > 0
-        ? { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
-        : this.config
-
+      const config = { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
       const response = await this.axiosInstance.get(this.url, config)
       return response.headers
     } catch (error) {
+      const axiosError = /** @type {AxiosError} */(error)
+      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 2) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000)
+        logger.warn(`获取完整Headers遇到403，${delay}ms后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.getHeadersFull(retryCount + 1)
+      }
       if (retryCount < this.maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
         logger.warn(`获取完整Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeadersFull(retryCount + 1)
       }
-      logger.error(this.handleError(/** @type {AxiosError} */(error)))
+      logger.error(this.handleError(axiosError))
       throw error
     }
   }
@@ -479,10 +493,12 @@ export class Networks {
     /** 检查是否支持断点续传 */
     const checkResumeSupport = async () => {
       try {
-        if (fs.existsSync(this.filepath)) {
-          existingFileSize = fs.statSync(this.filepath).size
+          try {
+          await fs.promises.access(this.filepath)
+          const stats = await fs.promises.stat(this.filepath)
+          existingFileSize = stats.size
           logger.info(`检测到已存在部分文件，大小: ${existingFileSize} 字节`)
-        }
+        } catch { }
         let totalSize = 0, isSizeValid = false
         try {
           const headers = await this.getHeadersFull()
@@ -526,12 +542,12 @@ export class Networks {
      * @param {number} reportedSize - 报告的大小
      * @param {boolean} isSizeValid - 初始大小是否有效
      */
-    const handleFinalFileSize = (reportedSize, isSizeValid) => {
+    const handleFinalFileSize = async (reportedSize, isSizeValid) => {
       const isValidReportedSize = !isNaN(reportedSize) && isFinite(reportedSize) && reportedSize > 0
       if (!isValidReportedSize || (isSizeValid && reportedSize <= 1024)) {
         try {
-          const actualSize = fs.statSync(this.filepath).size
-          const safeActualSize = Math.max(1, actualSize)
+          const stats = await fs.promises.stat(this.filepath)
+          const safeActualSize = Math.max(1, stats.size)
           progressCallback(safeActualSize, safeActualSize)
           return { filepath: this.filepath, totalBytes: safeActualSize }
         } catch (statError) {
@@ -588,19 +604,22 @@ export class Networks {
       const requestHeaders = this.getRetryHeaders(retryCount, this.headers) || this.headers
       if (supportRange && resumeFromByte > 0 && !isLiveStream) requestHeaders['Range'] = `bytes=${resumeFromByte}-`
       const response = await axios({
-        ...this.config,
-        adapter: 'fetch',
         url: this.url,
+        method: 'GET',
         responseType: 'stream',
         signal: controller.signal,
-        maxContentLength: Number.MAX_SAFE_INTEGER,
-        maxBodyLength: Number.MAX_SAFE_INTEGER,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
         timeout: timeoutDuration,
         maxRedirects: 10,
+        httpAgent: this.httpAgent,
+        httpsAgent: this.httpsAgent,
+        decompress: true,
         headers: {
           ...requestHeaders,
           'Accept-Encoding': 'gzip, deflate, br',
-          Connection: retryCount > 0 ? 'close' : 'keep-alive'
+          Connection: retryCount > 0 ? 'close' : 'keep-alive',
+          Referer: this.url.split('?')[0]
         }
       })
       clearTimeout(timeoutId)
@@ -656,7 +675,7 @@ export class Networks {
           }
         }
         const finalSize = downloadedBytes + resumeFromByte
-        return handleFinalFileSize(finalSize, isSizeValid)
+        return await handleFinalFileSize(finalSize, isSizeValid)
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
@@ -665,7 +684,7 @@ export class Networks {
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined })
         const updateProgress = createProgressUpdater(totalBytes)
         await processStream(response.data, writer, updateProgress)
-        return handleFinalFileSize(totalBytes, isSizeValid)
+        return await handleFinalFileSize(totalBytes, isSizeValid)
       }
 
       // 3. 大文件：分片并发下载 → 临时目录 → 合并
@@ -675,14 +694,17 @@ export class Networks {
       const tempDir = `${this.filepath}.tmp`
 
       try {
-        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
+        await fs.promises.mkdir(tempDir, { recursive: true })
       } catch (mkdirError) {
-        logger.error('创建临时目录失败:', mkdirError)
-        const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
-        const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined })
-        const updateProgress = createProgressUpdater(totalBytes)
-        await processStream(response.data, writer, updateProgress)
-        return handleFinalFileSize(totalBytes, isSizeValid)
+        const err = /** @type {NodeJS.ErrnoException} */(mkdirError)
+        if (err.code !== 'EEXIST') {
+          logger.error('创建临时目录失败:', mkdirError)
+          const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
+          const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined })
+          const updateProgress = createProgressUpdater(totalBytes)
+          await processStream(response.data, writer, updateProgress)
+          return await handleFinalFileSize(totalBytes, isSizeValid)
+        }
       }
 
       let totalDown = 0
@@ -692,11 +714,12 @@ export class Networks {
       const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index) => {
         const chunkHeaders = this.getRetryHeaders(retryCount, this.config.headers || {})
         const chunkRes = await axios({
-          ...this.config,
-          adapter: 'fetch',
           url: this.url,
+          method: 'GET',
           responseType: 'stream',
           timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
+          httpAgent: this.httpAgent,
+          httpsAgent: this.httpsAgent,
           headers: { ...chunkHeaders, Range: `bytes=${start}-${end}`, Connection: retryCount > 0 ? 'close' : 'keep-alive' }
         })
         const chunkPath = `${tempDir}/chunk_${index}`
@@ -737,9 +760,7 @@ export class Networks {
         }
       } catch (batchError) {
         logger.warn('分片下载失败，尝试清理临时文件', batchError)
-        try {
-          fs.rm(tempDir, { recursive: true, force: true }, () => { })
-        } catch (cleanupError) { }
+        fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => { })
         throw batchError
       }
 
@@ -753,7 +774,7 @@ export class Networks {
             reader.on('end', () => resolve('处理成功'))
             reader.pipe(finalWriter, { end: false })
           })
-          fs.unlink(chunkPath, () => { })
+          fs.promises.unlink(chunkPath).catch(() => { })
         }
         await new Promise((resolve, reject) => {
           finalWriter.on('finish', () => resolve('处理成功'))
@@ -763,30 +784,48 @@ export class Networks {
       } finally {
         resources.delete(finalWriter)
       }
-      fs.rm(tempDir, { recursive: true, force: true }, () => { })
-      return handleFinalFileSize(totalBytes, isSizeValid)
+      fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => { })
+      return await handleFinalFileSize(totalBytes, isSizeValid)
     } catch (error) {
       cleanupResources()
       const axiosError = /** @type {AxiosError} */(error)
+      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 3 && !isLiveStream) {
+        const delay = Math.min(2 ** retryCount * 2000, 6000)
+        logger.warn(`下载遇到403错误，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 3})`)
+        await new Promise(r => setTimeout(r, delay))
+        return this.downloadStream(progressCallback, retryCount + 1, options)
+      }
       if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
-        logger.error(`下载被中止，可能是网络超时: ${this.url}`)
         if (retryCount < this.maxRetries + 2 && !isLiveStream) {
           const delay = Math.min(2 ** retryCount * 3000, 10000)
-          logger.warn(`网络连接问题，正在重试... (${retryCount + 1}/${this.maxRetries + 2})，将在 ${delay / 1000} 秒后重试`)
+          logger.warn(`下载被中止，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
           await new Promise(r => setTimeout(r, delay))
           return this.downloadStream(progressCallback, retryCount + 1, options)
         }
       }
-      const err = this.handleError(axiosError)
+      if (axiosError.code === 'EPROTO' || axiosError.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+        if (retryCount < this.maxRetries + 1 && !isLiveStream) {
+          const delay = Math.min(2 ** retryCount * 2000, 8000)
+          logger.warn(`SSL错误(${axiosError.code})，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 1})`)
+          this.rebuildAgents()
+          await new Promise(r => setTimeout(r, delay))
+          return this.downloadStream(progressCallback, retryCount + 1, options)
+        }
+      }
+      if (axiosError.code === 'ESOCKETTIMEDOUT' || axiosError.code === 'ECONNRESET') {
+        logger.warn(`连接池问题(${axiosError.code})，重建连接池`)
+        this.rebuildAgents()
+      }
       if (retryCount < this.maxRetries && !isLiveStream) {
         const delay = Math.min(2 ** retryCount * 2000, 8000)
-        logger.warn(`正在重试下载... (${retryCount + 1}/${this.maxRetries})，将在 ${delay / 1000} 秒后重试`)
+        logger.warn(`下载失败，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1, options)
       }
-      throw new Error(`在 ${this.maxRetries} 次尝试后下载失败: ${err.message}`)
+      const err = this.handleError(axiosError)
+      throw new Error(`${this.maxRetries}次重试后下载失败: ${err.message}`)
     } finally {
-      this.cleanup()
+      cleanupResources()
     }
   }
 
