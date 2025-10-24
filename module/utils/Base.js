@@ -501,13 +501,9 @@ export const downloadFile = async (videoUrl, opt) => {
   }).downloadStream((downloadedBytes, totalBytes) => {
     const barLength = 45
     const validDownloadedBytes = Math.max(0, downloadedBytes || 0)
-    const isUnknownSize = !totalBytes || totalBytes <= 0
+    const isLiveStream = totalBytes > 0 && totalBytes < 100 * 1024 * 1024 // 直播流一般小于100MB
+    const isUnknownSize = totalBytes < 0 // -1 表示未知大小
     
-    const generateProgressBar = (/** @type {number} */ percentage) => {
-      const filled = Math.floor(Math.max(0, Math.min(100, percentage)) / 100 * barLength)
-      return `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
-    }
-
     const elapsedTime = Math.max(0.1, (Date.now() - startTime) / 1000)
     const speed = validDownloadedBytes / elapsedTime
     const downloadedMB = (validDownloadedBytes / 1048576).toFixed(1)
@@ -518,16 +514,28 @@ export const downloadFile = async (videoUrl, opt) => {
       : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
 
     if (isUnknownSize) {
-      // 未知大小：显示动态进度条（循环动画）
+      // 未知大小：不显示进度条，只显示已下载大小和速度
       const animFrame = Math.floor(elapsedTime * 2) % barLength
       const animBar = '░'.repeat(animFrame) + '█'.repeat(3) + '░'.repeat(Math.max(0, barLength - animFrame - 3))
       const color = '#00BFFF'
       logger.info(
         `⬇️  ${opt.title} [${animBar}] ${colorMethod(color)(downloadedMB)} MB | ${speedMB} MB/s 下载中...\r`
       )
+    } else if (isLiveStream && totalBytes > 0) {
+      // 直播流：显示进度条和百分比
+      const percentage = Math.min(100, (validDownloadedBytes / totalBytes) * 100)
+      const filled = Math.floor(percentage / 100 * barLength)
+      const bar = `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
+      const color = '#FFA500'
+      const totalMB = (totalBytes / 1048576).toFixed(1)
+      logger.info(
+        `⬇️  ${opt.title} ${colorMethod(color)(bar)} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 直播流\r`
+      )
     } else {
       // 已知大小：显示百分比进度
       const percentage = Math.min(100, (validDownloadedBytes / totalBytes) * 100)
+      const filled = Math.floor(percentage / 100 * barLength)
+      const bar = `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
       const red = Math.floor(255 - 255 * percentage / 100)
       const green = Math.floor(255 * percentage / 100)
       const color = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
@@ -537,7 +545,7 @@ export const downloadFile = async (videoUrl, opt) => {
       const remainTime = remaining > 60 ? `${Math.floor(remaining / 60)}min ${Math.floor(remaining % 60)}s` : `${Math.floor(remaining)}s`
       
       logger.info(
-        `⬇️  ${opt.title} ${colorMethod(color)(generateProgressBar(percentage))} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 剩余: ${remainTime}\r`
+        `⬇️  ${opt.title} ${colorMethod(color)(bar)} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 剩余: ${remainTime}\r`
       )
     }
   })
