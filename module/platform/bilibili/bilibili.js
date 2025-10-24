@@ -75,14 +75,16 @@ export class Bilibili extends Base {
 
           this.downloadfilename = title.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
 
+          const videoStreamUrl = !this.islogin && bilibiliApiUrls.视频流信息({
+            avid: infoData.data.data.aid,
+            cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid
+          })
+          const Params = !this.islogin && await genParams(videoStreamUrl || '')
           const nockData = !this.islogin && await new Networks({
-            url: bilibiliApiUrls.视频流信息({
-              avid: infoData.data.data.aid,
-              cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid
-            }) + '&platform=html5',
+            url: `${videoStreamUrl}${Params}`,
             headers: {
               ...baseHeaders,
-              Referer: `https://www.bilibili.com/video/${infoData.data.data.bvid}`,
+              Referer: 'https://www.bilibili.com',
               Cookie: ''
             }
           }).getData()

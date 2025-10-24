@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import Config from './Config.js'
-import crypto from 'node:crypto'
+import constants from 'node:constants'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 import { Transform, Readable } from 'node:stream'
@@ -108,11 +108,22 @@ export class Networks {
       /** @type {"fifo" | "lifo"} */
       scheduling: 'fifo',
       rejectUnauthorized: false,
-      secureProtocol: 'TLS_method',
-      ciphers: 'ALL:@SECLEVEL=0',
-      secureOptions: crypto.constants.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION || 0
+      secureProtocol: 'TLSv1_2_method',
+      ciphers: [
+        'ECDHE-RSA-AES128-GCM-SHA256',
+        'ECDHE-RSA-AES256-GCM-SHA384',
+        'ECDHE-RSA-AES128-SHA256',
+        'ECDHE-RSA-AES256-SHA384',
+        'AES128-GCM-SHA256',
+        'AES256-GCM-SHA384',
+        'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!SRP:!CAMELLIA'
+      ].join(':'),
+      secureOptions: constants.SSL_OP_NO_SSLv2 |
+        constants.SSL_OP_NO_SSLv3 |
+        constants.SSL_OP_NO_TLSv1 |
+        constants.SSL_OP_NO_TLSv1_1
     }
-
+    this.socketOptions = socketOptions
     this.httpAgent = new http.Agent(socketOptions)
     this.httpsAgent = new https.Agent(socketOptions)
 
@@ -165,7 +176,14 @@ export class Networks {
       'ENOTFOUND': `DNS解析失败: ${url}`,
       'ECONNREFUSED': `连接被拒绝: ${url}`,
       'UNABLE_TO_VERIFY_LEAF_SIGNATURE': `SSL证书验证失败，但请求已继续: ${url}`,
-      'AbortError': `请求被中止，可能是网络超时: ${url}`
+      'AbortError': `请求被中止，可能是网络超时: ${url}`,
+      'EPROTO': `SSL/TLS握手失败，可能是协议不兼容: ${url}`,
+      'ECONNABORTED': `连接被中止: ${url}`,
+      'ESOCKETTIMEDOUT': `套接字超时，可能需要重建连接池: ${url}`,
+      'EHOSTUNREACH': `主机不可达: ${url}`,
+      'ENETUNREACH': `网络不可达: ${url}`,
+      'EAI_AGAIN': `DNS查询临时失败: ${url}`,
+      'EPIPE': `管道破裂，连接异常关闭: ${url}`
     }
 
     // HTTP状态码映射
