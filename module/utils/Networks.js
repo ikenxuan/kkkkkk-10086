@@ -475,7 +475,7 @@ export class Networks {
 
   /**
    * 下载文件流
-   * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback
+   * @param {(downloadedBytes: number, totalBytes: number, isLiveStream: boolean) => void} progressCallback
    * @param {number} retryCount
    * @param {{ isLiveStream?: boolean, liveStreamMaxSize?: number }} options - 额外选项
    * @property {boolean} options.isLiveStream - 是否为直播流
@@ -523,7 +523,7 @@ export class Networks {
         }
         if (existingFileSize > 0 && existingFileSize === totalSize) {
           logger.info(`文件已完整存在: ${this.filepath}`)
-          progressCallback(totalSize, totalSize)
+          progressCallback(totalSize, totalSize, isLiveStream)
           return { skipDownload: true, totalBytes: totalSize, isSizeValid: true }
         }
         if (supportRange && existingFileSize > 0 && (totalSize === 0 || existingFileSize < totalSize)) {
@@ -548,14 +548,14 @@ export class Networks {
         try {
           const stats = await fs.promises.stat(this.filepath)
           const safeActualSize = Math.max(1, stats.size)
-          progressCallback(safeActualSize, safeActualSize)
+          progressCallback(safeActualSize, safeActualSize, isLiveStream)
           return { filepath: this.filepath, totalBytes: safeActualSize }
         } catch (statError) {
           logger.warn('获取实际文件大小失败，将使用备用大小:', statError)
         }
       }
       const safeReportedSize = Math.max(1, isValidReportedSize ? reportedSize : 1)
-      progressCallback(safeReportedSize, safeReportedSize)
+      progressCallback(safeReportedSize, safeReportedSize, isLiveStream)
       return { filepath: this.filepath, totalBytes: safeReportedSize }
     }
 
@@ -566,9 +566,10 @@ export class Networks {
         const now = Date.now()
         const currentDownloaded = downloadedBytes + resumeFromByte
         if (totalSize > 0) {
+          // 已知大小：按百分比更新
           const percentage = Math.floor((currentDownloaded / totalSize) * 100)
           if (percentage !== lastPercentage && now - lastUpdateTime >= minInterval) {
-            progressCallback(currentDownloaded, totalSize)
+            progressCallback(currentDownloaded, totalSize, isLiveStream)
             lastPercentage = percentage
             lastUpdateTime = now
           }
@@ -576,9 +577,9 @@ export class Networks {
           // 未知大小：每次增长超过512KB或时间间隔达到时更新
           const bytesGrowth = currentDownloaded - lastReportedBytes
           if (bytesGrowth >= 512 * 1024 || now - lastUpdateTime >= minInterval) {
-            // 直播流传递最大限制，普通文件传递 -1 表示未知
+            // 直播流传递最大限制，普通文件传递 -1
             const displayTotal = isLiveStream ? liveStreamMaxSize : -1
-            progressCallback(currentDownloaded, displayTotal)
+            progressCallback(currentDownloaded, displayTotal, isLiveStream)
             lastReportedBytes = currentDownloaded
             lastUpdateTime = now
           }
@@ -664,7 +665,7 @@ export class Networks {
       if (isNaN(totalBytes) || totalBytes <= 0) {
         const flags = supportRange && resumeFromByte > 0 && !isLiveStream ? 'a' : 'w'
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 && !isLiveStream ? resumeFromByte : undefined })
-        const updateProgress = createProgressUpdater(0)
+        const updateProgress = createProgressUpdater(-1)
         let downloadedBytes = 0
         try {
           downloadedBytes = await processStream(response.data, writer, updateProgress)

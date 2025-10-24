@@ -40,6 +40,8 @@ import fs from 'fs'
  * @property {title} title 文件名
  * @property {string} [filetype] 下载文件类型，默认为'.mp4'
  * @property {import('axios').AxiosRequestConfig['headers']} [headers] 自定义请求头，将使用该请求头下载文件
+ * @property {boolean} [isLiveStream] 是否为直播流
+ * @property {number} [liveStreamMaxSize] 直播流最大下载大小(字节)
  */
 
 /**
@@ -76,6 +78,8 @@ import fs from 'fs'
  * @typedef {Object} downLoadFileOptions
  * @property {string} title 文件名
  * @property {import('axios').RawAxiosRequestHeaders & import('./index.js').MethodsHeaders | import('axios').AxiosHeaders} [headers] 用于下载文件的请求头
+ * @property {boolean} [isLiveStream] 是否为直播流
+ * @property {number} [liveStreamMaxSize] 直播流最大下载大小(字节)
  * @default {}
  */
 
@@ -471,7 +475,9 @@ export const downloadVideo = async (e, downloadOpt, uploadOpt) => {
   // 下载文件
   let res = await downloadFile(downloadOpt.video_url, {
     title: Config.app.removeCache ? (downloadOpt.title.timestampTitle || 'temp') : processFilename(downloadOpt.title.originTitle || 'video', 50),
-    headers: downloadOpt.headers || /** @type {any} */ (baseHeaders)
+    headers: downloadOpt.headers || /** @type {any} */ (baseHeaders),
+    isLiveStream: downloadOpt.isLiveStream,
+    liveStreamMaxSize: downloadOpt.liveStreamMaxSize
   })
 
   res = { ...res, ...downloadOpt.title }
@@ -487,23 +493,20 @@ export const downloadVideo = async (e, downloadOpt, uploadOpt) => {
 /**
  * 异步下载文件的函数
  * @param {string} videoUrl 下载地址
- * @param {downLoadFileOptions} opt 配置选项，包括标题、请求头等
+ * @param {downLoadFileOptions} opt 配置选项，包括标题、请求头、直播流选项等
  * @returns {Promise<fileInfo>} 返回一个包含文件路径和总字节数的对象
  */
 export const downloadFile = async (videoUrl, opt) => {
   const startTime = Date.now()
-
   const { filepath, totalBytes } = await new Networks({
     url: videoUrl,
     headers: opt.headers ?? baseHeaders,
     filepath: Common.tempDri.video + opt.title,
     timeout: 30000
-  }).downloadStream((downloadedBytes, totalBytes) => {
+  }).downloadStream((downloadedBytes, totalBytes, isLiveStream) => {
     const barLength = 45
     const validDownloadedBytes = Math.max(0, downloadedBytes || 0)
-    const isLiveStream = totalBytes > 0 && totalBytes < 100 * 1024 * 1024 // 直播流一般小于100MB
     const isUnknownSize = totalBytes < 0 // -1 表示未知大小
-    
     const elapsedTime = Math.max(0.1, (Date.now() - startTime) / 1000)
     const speed = validDownloadedBytes / elapsedTime
     const downloadedMB = (validDownloadedBytes / 1048576).toFixed(1)
@@ -539,15 +542,16 @@ export const downloadFile = async (videoUrl, opt) => {
       const red = Math.floor(255 - 255 * percentage / 100)
       const green = Math.floor(255 * percentage / 100)
       const color = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
-      
       const totalMB = (totalBytes / 1048576).toFixed(1)
       const remaining = speed > 0 ? (totalBytes - validDownloadedBytes) / speed : 0
       const remainTime = remaining > 60 ? `${Math.floor(remaining / 60)}min ${Math.floor(remaining % 60)}s` : `${Math.floor(remaining)}s`
-      
       logger.info(
         `⬇️  ${opt.title} ${colorMethod(color)(bar)} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 剩余: ${remainTime}\r`
       )
     }
+  }, 0, {
+    isLiveStream: opt.isLiveStream,
+    liveStreamMaxSize: opt.liveStreamMaxSize
   })
 
   return { filepath, totalBytes }
