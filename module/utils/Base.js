@@ -504,50 +504,37 @@ export const downloadFile = async (videoUrl, opt) => {
     filepath: Common.tempDri.video + opt.title,
     timeout: 30000
   }).downloadStream((downloadedBytes, totalBytes, isLiveStream) => {
-    const barLength = 45
-    const validDownloadedBytes = Math.max(0, downloadedBytes || 0)
-    const isUnknownSize = totalBytes < 0 // -1 表示未知大小
-    const elapsedTime = Math.max(0.1, (Date.now() - startTime) / 1000)
-    const speed = validDownloadedBytes / elapsedTime
-    const downloadedMB = (validDownloadedBytes / 1048576).toFixed(1)
-    const speedMB = (speed / 1048576).toFixed(1)
+    // 计算基础数据
+    const elapsed = Math.max(0.1, (Date.now() - startTime) / 1000)
+    const downloaded = Math.max(0, downloadedBytes || 0)
+    const speedNum = downloaded / elapsed / 1048576
+    const speed = speedNum.toFixed(1)
+    const dlMB = (downloaded / 1048576).toFixed(1)
+    const color = Version.BotName === 'TRSS-Yunzai' ? (/** @type {string} */ c) => logger.hex(c) : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
+    const barLen = 45
 
-    const colorMethod = Version.BotName === 'TRSS-Yunzai'
-      ? (/** @type {string} */ c) => logger.hex(c)
-      : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
-
-    if (isUnknownSize) {
-      // 未知大小：不显示进度条，只显示已下载大小和速度
-      const animFrame = Math.floor(elapsedTime * 2) % barLength
-      const animBar = '░'.repeat(animFrame) + '█'.repeat(3) + '░'.repeat(Math.max(0, barLength - animFrame - 3))
-      const color = '#00BFFF'
-      logger.info(
-        `⬇️  ${opt.title} [${animBar}] ${colorMethod(color)(downloadedMB)} MB | ${speedMB} MB/s 下载中...\r`
-      )
-    } else if (isLiveStream && totalBytes > 0) {
-      // 直播流：显示进度条和百分比
-      const percentage = Math.min(100, (validDownloadedBytes / totalBytes) * 100)
-      const filled = Math.floor(percentage / 100 * barLength)
-      const bar = `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
-      const color = '#FFA500'
-      const totalMB = (totalBytes / 1048576).toFixed(1)
-      logger.info(
-        `⬇️  ${opt.title} ${colorMethod(color)(bar)} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 直播流\r`
-      )
+    if (totalBytes < 0) {
+      // 未知大小：显示动态滚动进度条
+      const anim = '░'.repeat(Math.floor(elapsed * 2) % barLen) + '███' + '░'.repeat(Math.max(0, barLen - Math.floor(elapsed * 2) % barLen - 3))
+      logger.info(`⬇️  ${opt.title} [${anim}] ${color('#00BFFF')(dlMB)} MB | ${speed} MB/s 下载中...\r`)
     } else {
-      // 已知大小：显示百分比进度
-      const percentage = Math.min(100, (validDownloadedBytes / totalBytes) * 100)
-      const filled = Math.floor(percentage / 100 * barLength)
-      const bar = `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
-      const red = Math.floor(255 - 255 * percentage / 100)
-      const green = Math.floor(255 * percentage / 100)
-      const color = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
+      // 已知大小：显示百分比进度条
+      const pct = Math.min(100, downloaded / totalBytes * 100)
+      const fill = Math.floor(pct / 100 * barLen)
+      const bar = `[${'█'.repeat(fill)}${'░'.repeat(barLen - fill)}]`
       const totalMB = (totalBytes / 1048576).toFixed(1)
-      const remaining = speed > 0 ? (totalBytes - validDownloadedBytes) / speed : 0
-      const remainTime = remaining > 60 ? `${Math.floor(remaining / 60)}min ${Math.floor(remaining % 60)}s` : `${Math.floor(remaining)}s`
-      logger.info(
-        `⬇️  ${opt.title} ${colorMethod(color)(bar)} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 剩余: ${remainTime}\r`
-      )
+      
+      if (isLiveStream) {
+        // 直播流：橙色进度条
+        logger.info(`⬇️  ${opt.title} ${color('#FFA500')(bar)} ${color('#FFA500')(pct.toFixed(1) + '%')} ${dlMB}/${totalMB} MB | ${speed} MB/s 直播流\r`)
+      } else {
+        // 普通文件：红→绿渐变进度条
+        const hex = `#${Math.floor(255 - 255 * pct / 100).toString(16).padStart(2, '0')}${Math.floor(255 * pct / 100).toString(16).padStart(2, '0')}00`
+        // 计算剩余时间，防止速度过快/过慢导致异常
+        const remain = speedNum > 0.01 ? Math.max(0, (totalBytes - downloaded) / (downloaded / elapsed)) : 0
+        const time = remain > 60 ? `${Math.floor(remain / 60)}min ${Math.floor(remain % 60)}s` : remain > 0 ? `${Math.floor(remain)}s` : '0s'
+        logger.info(`⬇️  ${opt.title} ${color(hex)(bar)} ${color(hex)(pct.toFixed(1) + '%')} ${dlMB}/${totalMB} MB | ${speed} MB/s 剩余: ${time}\r`)
+      }
     }
   }, 0, {
     isLiveStream: opt.isLiveStream,

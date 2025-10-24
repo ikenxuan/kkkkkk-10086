@@ -576,7 +576,7 @@ export class Networks {
         } else {
           // 未知大小：每次增长超过512KB或时间间隔达到时更新
           const bytesGrowth = currentDownloaded - lastReportedBytes
-          if (bytesGrowth >= 512 * 1024 || now - lastUpdateTime >= minInterval) {
+          if (bytesGrowth >= 512 * 1024 || now - lastUpdateTime >= minInterval || lastReportedBytes === 0) {
             // 直播流传递最大限制，普通文件传递 -1
             const displayTotal = isLiveStream ? liveStreamMaxSize : -1
             progressCallback(currentDownloaded, displayTotal, isLiveStream)
