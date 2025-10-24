@@ -499,69 +499,47 @@ export const downloadFile = async (videoUrl, opt) => {
     filepath: Common.tempDri.video + opt.title,
     timeout: 30000
   }).downloadStream((downloadedBytes, totalBytes) => {
-    // 定义进度条长度及生成进度条字符串的函数
     const barLength = 45
-    const generateProgressBar = (/** @type {number} */ progressPercentage) => {
-      // 验证progressPercentage是否为有效数字
-      if (!isFinite(progressPercentage) || progressPercentage < 0 || isNaN(progressPercentage)) {
-        progressPercentage = 0
-      }
-
-      // 限制进度在0-100之间
-      progressPercentage = Math.max(0, Math.min(100, progressPercentage))
-
-      const filledLength = Math.floor((progressPercentage / 100) * barLength)
-      let progress = ''
-      progress += '\u2588'.repeat(filledLength)
-      progress += '\u2591'.repeat(Math.max(0, barLength - filledLength - 1))
-      return `[${progress}]`
+    const validDownloadedBytes = Math.max(0, downloadedBytes || 0)
+    const isUnknownSize = !totalBytes || totalBytes <= 0
+    
+    const generateProgressBar = (/** @type {number} */ percentage) => {
+      const filled = Math.floor(Math.max(0, Math.min(100, percentage)) / 100 * barLength)
+      return `[${'█'.repeat(filled)}${'░'.repeat(barLength - filled)}]`
     }
 
-    // 验证参数有效性
-    const validDownloadedBytes = isFinite(downloadedBytes) && downloadedBytes >= 0 ? downloadedBytes : 0
-    const validTotalBytes = isFinite(totalBytes) && totalBytes > 0 ? totalBytes : validDownloadedBytes + 1
+    const elapsedTime = Math.max(0.1, (Date.now() - startTime) / 1000)
+    const speed = validDownloadedBytes / elapsedTime
+    const downloadedMB = (validDownloadedBytes / 1048576).toFixed(1)
+    const speedMB = (speed / 1048576).toFixed(1)
 
-    // 计算当前下载进度百分比
-    const progressPercentage = (validDownloadedBytes / validTotalBytes) * 100
-
-    // 计算动态 RGB 颜色
-    const red = Math.floor(255 - (255 * progressPercentage) / 100) // 红色分量随进度减少
-    const green = Math.floor((255 * progressPercentage) / 100) // 绿色分量随进度增加
-    const hexColor = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
-
-    // 根据不同的机器人框架选择不同的着色方法
     const colorMethod = Version.BotName === 'TRSS-Yunzai'
-      ? (/** @type {string} */ color) => logger.hex(color)
-      : (/** @type {string} */ color) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(color)
+      ? (/** @type {string} */ c) => logger.hex(c)
+      : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
 
-    const coloredPercentage = colorMethod(hexColor)(`${progressPercentage.toFixed(1)}%`)
-    const coloredProgressBar = colorMethod(hexColor)(generateProgressBar(progressPercentage))
-
-    // 计算下载速度（MB/s）
-    const elapsedTime = (Date.now() - startTime) / 1000
-    let speed = elapsedTime > 0 ? validDownloadedBytes / elapsedTime : 0
-    const formattedSpeed = speed > 0 ? (speed / 1048576).toFixed(1) + ' MB/s' : '0.0 MB/s'
-
-    // 计算剩余时间
-    let formattedRemainingTime = '计算中...'
-    if (speed > 0) {
-      const remainingBytes = validTotalBytes - validDownloadedBytes // 剩余字节数
-      const remainingTime = remainingBytes / speed // 剩余时间（秒）
-      formattedRemainingTime = remainingTime > 60
-        ? `${Math.floor(remainingTime / 60)}min ${Math.floor(remainingTime % 60)}s`
-        : `${Math.floor(remainingTime)}s`
-    } else if (validDownloadedBytes === 0) {
-      formattedRemainingTime = '等待中...'
+    if (isUnknownSize) {
+      // 未知大小：显示动态进度条（循环动画）
+      const animFrame = Math.floor(elapsedTime * 2) % barLength
+      const animBar = '░'.repeat(animFrame) + '█'.repeat(3) + '░'.repeat(Math.max(0, barLength - animFrame - 3))
+      const color = '#00BFFF'
+      logger.info(
+        `⬇️  ${opt.title} [${animBar}] ${colorMethod(color)(downloadedMB)} MB | ${speedMB} MB/s 下载中...\r`
+      )
+    } else {
+      // 已知大小：显示百分比进度
+      const percentage = Math.min(100, (validDownloadedBytes / totalBytes) * 100)
+      const red = Math.floor(255 - 255 * percentage / 100)
+      const green = Math.floor(255 * percentage / 100)
+      const color = `#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}00`
+      
+      const totalMB = (totalBytes / 1048576).toFixed(1)
+      const remaining = speed > 0 ? (totalBytes - validDownloadedBytes) / speed : 0
+      const remainTime = remaining > 60 ? `${Math.floor(remaining / 60)}min ${Math.floor(remaining % 60)}s` : `${Math.floor(remaining)}s`
+      
+      logger.info(
+        `⬇️  ${opt.title} ${colorMethod(color)(generateProgressBar(percentage))} ${colorMethod(color)(percentage.toFixed(1) + '%')} ${downloadedMB}/${totalMB} MB | ${speedMB} MB/s 剩余: ${remainTime}\r`
+      )
     }
-
-    // 计算已下载和总下载的文件大小（MB）
-    const downloadedSizeMB = (validDownloadedBytes / 1048576).toFixed(1)
-    const totalSizeMB = (validTotalBytes / 1048576).toFixed(1)
-
-    // 打印下载进度、速度和剩余时间
-    logger.info(
-      `⬇️  ${opt.title} ${coloredProgressBar} ${coloredPercentage} ${downloadedSizeMB}/${totalSizeMB} MB | ${formattedSpeed} 剩余: ${formattedRemainingTime}\r`
-    )
   })
 
   return { filepath, totalBytes }

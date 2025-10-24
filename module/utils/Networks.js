@@ -477,9 +477,9 @@ export class Networks {
    * 下载文件流
    * @param {(downloadedBytes: number, totalBytes: number) => void} progressCallback
    * @param {number} retryCount
-   * @param {Object} options - 额外选项
-   * @param {boolean} options.isLiveStream - 是否为直播流
-   * @param {number} options.liveStreamMaxSize - 直播流最大下载大小(字节)
+   * @param {{ isLiveStream?: boolean, liveStreamMaxSize?: number }} options - 额外选项
+   * @property {boolean} options.isLiveStream - 是否为直播流
+   * @property {number} options.liveStreamMaxSize - 直播流最大下载大小(字节)
    * @returns {Promise<import('axios').AxiosResponse['data'] | boolean>} 返回响应数据或false
    */
   async downloadStream(progressCallback, retryCount = 0, options = { isLiveStream: false, liveStreamMaxSize: 10 * 1024 * 1024 }) {
@@ -493,7 +493,7 @@ export class Networks {
     /** 检查是否支持断点续传 */
     const checkResumeSupport = async () => {
       try {
-          try {
+        try {
           await fs.promises.access(this.filepath)
           const stats = await fs.promises.stat(this.filepath)
           existingFileSize = stats.size
@@ -559,28 +559,28 @@ export class Networks {
       return { filepath: this.filepath, totalBytes: safeReportedSize }
     }
 
-    /** 创建节流进度更新器；当 totalSize<=0 时动态估算总大小 */
-    const createProgressUpdater = (/** @type {number} */ totalSize, minInterval = 1000) => {
-      let lastUpdateTime = 0, lastPercentage = -1, maxDownloadedBytes = 0
+    /** 创建节流进度更新器 */
+    const createProgressUpdater = (/** @type {number} */ totalSize, minInterval = 500) => {
+      let lastUpdateTime = 0, lastPercentage = -1, lastReportedBytes = 0
       return (/** @type {number} */ downloadedBytes) => {
         const now = Date.now()
-        if (now - lastUpdateTime < minInterval) return
-        const validDown = Math.max(0, isFinite(downloadedBytes) ? downloadedBytes : 0)
-        const totalDownloaded = validDown + resumeFromByte
-        maxDownloadedBytes = Math.max(maxDownloadedBytes, totalDownloaded)
-        let progress = 0, displayTotal = totalSize
+        const currentDownloaded = downloadedBytes + resumeFromByte
         if (totalSize > 0) {
-          progress = Math.min(maxDownloadedBytes / totalSize, 1)
+          const percentage = Math.floor((currentDownloaded / totalSize) * 100)
+          if (percentage !== lastPercentage && now - lastUpdateTime >= minInterval) {
+            progressCallback(currentDownloaded, totalSize)
+            lastPercentage = percentage
+            lastUpdateTime = now
+          }
         } else {
-          displayTotal = Math.max(maxDownloadedBytes * 1.1, maxDownloadedBytes + 1)
-          progress = Math.min(maxDownloadedBytes / displayTotal, 0.95)
-        }
-        const percentage = Math.floor(progress * 100)
-        if (percentage !== lastPercentage) {
-          const safeDisplayTotal = Math.max(displayTotal, maxDownloadedBytes || 1)
-          progressCallback(maxDownloadedBytes, safeDisplayTotal)
-          lastPercentage = percentage
-          lastUpdateTime = now
+          // 未知大小：每次增长超过512KB或时间间隔达到时更新
+          const bytesGrowth = currentDownloaded - lastReportedBytes
+          if (bytesGrowth >= 512 * 1024 || now - lastUpdateTime >= minInterval) {
+            const displayTotal = isLiveStream ? liveStreamMaxSize : 0
+            progressCallback(currentDownloaded, displayTotal)
+            lastReportedBytes = currentDownloaded
+            lastUpdateTime = now
+          }
         }
       }
     }
