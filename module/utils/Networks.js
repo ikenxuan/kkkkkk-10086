@@ -103,11 +103,14 @@ export class Networks {
     const scheduling = 'fifo'
     const socketOptions = {
       keepAlive: true,
-      keepAliveMsecs: 30000,
-      maxSockets: 50,
-      maxFreeSockets: 20,
-      timeout: 120000,
-      scheduling
+      keepAliveMsecs: 15000,
+      maxSockets: 30,
+      maxFreeSockets: 10,
+      timeout: 60000,
+      scheduling,
+      // 添加更多网络优化选项
+      noDelay: true,
+      keepAliveInitialDelay: 0
     }
     const httpsOptions = {
       ...socketOptions,
@@ -119,14 +122,19 @@ export class Networks {
         'ECDHE-RSA-AES128-GCM-SHA256',
         'ECDHE-RSA-AES256-GCM-SHA384',
         'ECDHE-ECDSA-AES128-GCM-SHA256',
-        'ECDHE-ECDSA-AES256-GCM-SHA384'
+        'ECDHE-ECDSA-AES256-GCM-SHA384',
+        'DHE-RSA-AES128-GCM-SHA256',
+        'DHE-RSA-AES256-GCM-SHA384'
       ].join(':'),
       honorCipherOrder: true,
       secureOptions: constants.SSL_OP_NO_SSLv2 |
         constants.SSL_OP_NO_SSLv3 |
         constants.SSL_OP_NO_TLSv1 |
         constants.SSL_OP_NO_TLSv1_1 |
-        constants.SSL_OP_NO_COMPRESSION
+        constants.SSL_OP_NO_COMPRESSION,
+      // 添加更多SSL选项
+      sessionTimeout: 300,
+      handshakeTimeout: 30000
     }
     this.baseSocketOptions = socketOptions
     this.httpsSocketOptions = httpsOptions
@@ -149,6 +157,7 @@ export class Networks {
     this.cleanup()
     this.httpAgent = new http.Agent(this.baseSocketOptions)
     this.httpsAgent = new https.Agent(this.httpsSocketOptions)
+    logger.info('连接池已重建')
   }
 
   /**
@@ -241,12 +250,24 @@ export class Networks {
       headers['Cache-Control'] = 'no-cache'
       headers.Pragma = 'no-cache'
       headers.Connection = 'close'
-      headers['sec-ch-ua'] = '"Not A(Brand";v="8", "Chromium";v="134"'
-      headers['sec-ch-ua-mobile'] = '?0'
+      const randomHeaders = [
+        { 'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="134"', 'sec-ch-ua-mobile': '?0' },
+        { 'sec-ch-ua': '"Chromium";v="134", "Not A(Brand";v="99"', 'sec-ch-ua-mobile': '?0' },
+        { 'sec-ch-ua': '"Google Chrome";v="134", "Chromium";v="134"', 'sec-ch-ua-mobile': '?0' }
+      ]
+      const randomHeader = randomHeaders[Math.floor(Math.random() * randomHeaders.length)]
+      Object.assign(headers, randomHeader)
+
       headers['sec-ch-ua-platform'] = '"Windows"'
       headers['sec-fetch-dest'] = 'empty'
       headers['sec-fetch-mode'] = 'cors'
       headers['sec-fetch-site'] = 'same-site'
+
+      if (retryCount > 1) {
+        headers['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
+        headers['Accept-Encoding'] = 'gzip, deflate, br'
+        delete headers['Range'] // 临时移除Range头部
+      }
     }
     return headers
   }
@@ -626,7 +647,9 @@ export class Networks {
           ...requestHeaders,
           'Accept-Encoding': 'gzip, deflate, br',
           Connection: retryCount > 0 ? 'close' : 'keep-alive',
-          Referer: this.url.split('?')[0]
+          Referer: this.url.split('?')[0],
+          'Upgrade-Insecure-Requests': '1',
+          'DNT': '1'
         }
       })
       clearTimeout(timeoutId)
@@ -718,39 +741,71 @@ export class Networks {
       const updateProgress = createProgressUpdater(totalBytes)
 
       /** 下载指定 Range 分片并写临时文件 */
-      const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index) => {
-        const chunkHeaders = this.getRetryHeaders(retryCount, this.config.headers || {})
-        const chunkRes = await axios({
-          url: this.url,
-          method: 'GET',
-          responseType: 'stream',
-          timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
-          httpAgent: this.httpAgent,
-          httpsAgent: this.httpsAgent,
-          headers: { ...chunkHeaders, Range: `bytes=${start}-${end}`, Connection: retryCount > 0 ? 'close' : 'keep-alive' }
-        })
-        const chunkPath = `${tempDir}/chunk_${index}`
-        const writer = fs.createWriteStream(chunkPath, { highWaterMark: 1024 * 1024 })
-        let chunkDown = 0
-        const transform = new Transform({
-          highWaterMark: 1024 * 1024,
-          transform(chunk, enc, cb) {
-            chunkDown += chunk.length
-            totalDown += chunk.length
-            updateProgress(totalDown - resumeFromByte)
-            cb(null, chunk)
-          }
-        })
-        resources.add(chunkRes.data)
-        resources.add(transform)
-        resources.add(writer)
+      const downloadChunk = async (/** @type {number} */ start, /** @type {number} */ end, /** @type {number} */ index, chunkRetryCount = 0) => {
         try {
-          await pipeline(chunkRes.data, transform, writer)
-          return { chunkPath, size: end - start + 1 }
-        } finally {
-          resources.delete(chunkRes.data)
-          resources.delete(transform)
-          resources.delete(writer)
+          const chunkHeaders = this.getRetryHeaders(retryCount + chunkRetryCount, this.config.headers || {})
+
+          // 分片下载时的特殊处理
+          /** @type {import('axios').AxiosRequestConfig['headers']} */
+          const chunkRequestHeaders = { ...chunkHeaders }
+          chunkRequestHeaders['Range'] = `bytes=${start}-${end}`
+          chunkRequestHeaders['Connection'] = (retryCount > 0 || chunkRetryCount > 0) ? 'close' : 'keep-alive'
+
+          // 为分片请求添加随机延迟以避免被限制
+          if (retryCount > 0 || chunkRetryCount > 0) {
+            await new Promise(r => setTimeout(r, Math.random() * 1000 + chunkRetryCount * 500))
+          }
+
+          const chunkRes = await axios({
+            url: this.url,
+            method: 'GET',
+            responseType: 'stream',
+            timeout: Math.min(60000 + (chunkSize / (1024 * 1024)) * 5000, 120000),
+            httpAgent: this.httpAgent,
+            httpsAgent: this.httpsAgent,
+            headers: chunkRequestHeaders
+          })
+
+          const chunkPath = `${tempDir}/chunk_${index}`
+          const writer = fs.createWriteStream(chunkPath, { highWaterMark: 1024 * 1024 })
+          let chunkDown = 0
+          const transform = new Transform({
+            highWaterMark: 1024 * 1024,
+            transform(chunk, enc, cb) {
+              chunkDown += chunk.length
+              totalDown += chunk.length
+              updateProgress(totalDown - resumeFromByte)
+              cb(null, chunk)
+            }
+          })
+          resources.add(chunkRes.data)
+          resources.add(transform)
+          resources.add(writer)
+          try {
+            await pipeline(chunkRes.data, transform, writer)
+            return { chunkPath, size: end - start + 1 }
+          } finally {
+            resources.delete(chunkRes.data)
+            resources.delete(transform)
+            resources.delete(writer)
+          }
+        } catch (chunkError) {
+          const chunkAxiosError = /** @type {AxiosError} */(chunkError)
+
+          // 分片下载的重试逻辑
+          if (chunkRetryCount < 3) {
+            if (chunkAxiosError.response?.status === 403 ||
+              chunkAxiosError.code === 'ECONNRESET' ||
+              chunkAxiosError.code === 'ESOCKETTIMEDOUT') {
+              const chunkDelay = Math.min(1000 * (chunkRetryCount + 1), 3000)
+              logger.warn(`分片${index}下载失败，${chunkDelay}ms后重试 (${chunkRetryCount + 1}/3)`)
+              await new Promise(r => setTimeout(r, chunkDelay))
+              return downloadChunk(start, end, index, chunkRetryCount + 1)
+            }
+          }
+
+          logger.error(`分片${index}下载失败:`, chunkError instanceof Error ? chunkError.message : String(chunkError))
+          throw chunkError
         }
       }
 
@@ -796,34 +851,39 @@ export class Networks {
     } catch (error) {
       cleanupResources()
       const axiosError = /** @type {AxiosError} */(error)
-      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 3 && !isLiveStream) {
-        const delay = Math.min(2 ** retryCount * 2000, 6000)
-        logger.warn(`下载遇到403错误，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 3})`)
+      if (isLiveStream) {
+        const err = this.handleError(axiosError)
+        throw new Error(`直播流下载失败: ${err.message}`)
+      }
+      // 定义重试配置
+      const retryConfigs = {
+        403: { maxRetries: this.maxRetries + 5, delay: () => Math.min(2000 + retryCount * 1500, 8000), rebuild: retryCount > 1 },
+        'ERR_BAD_RESPONSE': { maxRetries: this.maxRetries + 3, delay: () => Math.min(3000 + retryCount * 2000, 12000), rebuild: true },
+        'EPROTO': { maxRetries: this.maxRetries + 1, delay: () => Math.min(2 ** retryCount * 2000, 8000), rebuild: true },
+        'UNABLE_TO_VERIFY_LEAF_SIGNATURE': { maxRetries: this.maxRetries + 1, delay: () => Math.min(2 ** retryCount * 2000, 8000), rebuild: true },
+        'ECONNRESET': { maxRetries: this.maxRetries + 2, delay: () => Math.min(2000 + retryCount * 1000, 6000), rebuild: true }
+      }
+      const errorKey = axiosError.response?.status === 403 ? 403 :
+        (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message?.includes('aborted')) ? 'ERR_BAD_RESPONSE' :
+          axiosError.code
+      const config = errorKey && errorKey in retryConfigs ? retryConfigs[/** @type {keyof typeof retryConfigs} */(errorKey)] : undefined
+      if (config && retryCount < config.maxRetries) {
+        const delay = config.delay()
+        const errorMsg = errorKey === 403 ? '403错误' : errorKey === 'ERR_BAD_RESPONSE' ? '下载被中止' :
+          errorKey === 'ECONNRESET' ? '连接重置' : `${errorKey}错误`
+        logger.warn(`${errorMsg}，${delay / 1000}秒后重试 (${retryCount + 1}/${config.maxRetries})`)
+
+        if (config.rebuild) this.rebuildAgents()
         await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1, options)
       }
-      if (axiosError.code === 'ERR_BAD_RESPONSE' && axiosError.message.includes('aborted')) {
-        if (retryCount < this.maxRetries + 2 && !isLiveStream) {
-          const delay = Math.min(2 ** retryCount * 3000, 10000)
-          logger.warn(`下载被中止，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
-          await new Promise(r => setTimeout(r, delay))
-          return this.downloadStream(progressCallback, retryCount + 1, options)
-        }
-      }
-      if (axiosError.code === 'EPROTO' || axiosError.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
-        if (retryCount < this.maxRetries + 1 && !isLiveStream) {
-          const delay = Math.min(2 ** retryCount * 2000, 8000)
-          logger.warn(`SSL错误(${axiosError.code})，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries + 1})`)
-          this.rebuildAgents()
-          await new Promise(r => setTimeout(r, delay))
-          return this.downloadStream(progressCallback, retryCount + 1, options)
-        }
-      }
+      // 连接池问题处理
       if (axiosError.code === 'ESOCKETTIMEDOUT' || axiosError.code === 'ECONNRESET') {
         logger.warn(`连接池问题(${axiosError.code})，重建连接池`)
         this.rebuildAgents()
       }
-      if (retryCount < this.maxRetries && !isLiveStream) {
+      // 通用重试
+      if (retryCount < this.maxRetries) {
         const delay = Math.min(2 ** retryCount * 2000, 8000)
         logger.warn(`下载失败，${delay / 1000}秒后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
