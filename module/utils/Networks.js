@@ -350,7 +350,7 @@ export class Networks {
    */
   async getLongLink(url = '', redirectCount = 0, visitedUrls = new Set()) {
     const currentUrl = url || this.url
-    if (redirectCount > 10) return currentUrl
+    if (redirectCount > 5) return currentUrl
     if (visitedUrls.has(currentUrl)) {
       logger.warn(`检测到循环重定向，停止在: ${currentUrl}`)
       return currentUrl
@@ -358,7 +358,11 @@ export class Networks {
     visitedUrls.add(currentUrl)
 
     try {
-      const config = { ...this.config, headers: this.getRetryHeaders(redirectCount, this.config.headers || this.headers) }
+      const config = {
+        ...this.config,
+        timeout: 8000,
+        headers: this.getRetryHeaders(redirectCount, this.config.headers || this.headers)
+      }
       const response = await this.axiosInstance.get(currentUrl, config)
       const finalUrl = response.request.res.responseUrl
       if (finalUrl === currentUrl) {
@@ -373,9 +377,9 @@ export class Networks {
           const redirectUrl = axiosError.response.headers.location
           logger.info(`检测到302重定向，目标地址: ${redirectUrl}`)
           return await this.getLongLink(redirectUrl, redirectCount + 1, visitedUrls)
-        } else if (axiosError.response.status === 403 && redirectCount < 3) {
-          logger.warn(`遇到403错误，尝试重试 (${redirectCount + 1}/3)`)
-          await new Promise(r => setTimeout(r, 1000 * (redirectCount + 1)))
+        } else if (axiosError.response.status === 403 && redirectCount < 2) {
+          logger.warn(`遇到403错误，尝试重试 (${redirectCount + 1}/2)`)
+          await new Promise(r => setTimeout(r, 500))
           return await this.getLongLink(currentUrl, redirectCount + 1, visitedUrls)
         }
       }
@@ -392,6 +396,7 @@ export class Networks {
     try {
       const response = await this.axiosInstance.get(this.url, {
         ...this.config,
+        timeout: 5000,
         maxRedirects: 0, // 禁止自动重定向
         validateStatus: (status) => status >= 300 && status < 400 // 仅处理3xx响应
       })
@@ -435,7 +440,7 @@ export class Networks {
    */
   async getHeaders(retryCount = 0) {
     try {
-      const config = { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
+      const config = { ...this.config, timeout: 6000, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
       const response = await this.axiosInstance.get(this.url, {
         ...config,
         headers: {
@@ -449,15 +454,15 @@ export class Networks {
       return response.headers
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
-      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 2) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000)
-        logger.warn(`获取Headers遇到403，${delay}ms后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
+      if (axiosError.response?.status === 403 && retryCount < 2) {
+        const delay = Math.min(1000 * (retryCount + 1), 2000)
+        logger.warn(`获取Headers遇到403，${delay}ms后重试 (${retryCount + 1}/2)`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeaders(retryCount + 1)
       }
-      if (retryCount < this.maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
-        logger.warn(`获取Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
+      if (retryCount < 2) {
+        const delay = Math.min(1000 * (retryCount + 1), 3000)
+        logger.warn(`获取Headers失败，正在重试... (${retryCount + 1}/2)`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeaders(retryCount + 1)
       }
@@ -472,20 +477,20 @@ export class Networks {
    */
   async getHeadersFull(retryCount = 0) {
     try {
-      const config = { ...this.config, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
+      const config = { ...this.config, timeout: 8000, headers: this.getRetryHeaders(retryCount, this.config.headers || this.headers) }
       const response = await this.axiosInstance.get(this.url, config)
       return response.headers
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
-      if (axiosError.response?.status === 403 && retryCount < this.maxRetries + 2) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000)
-        logger.warn(`获取完整Headers遇到403，${delay}ms后重试 (${retryCount + 1}/${this.maxRetries + 2})`)
+      if (axiosError.response?.status === 403 && retryCount < 2) {
+        const delay = Math.min(1000 * (retryCount + 1), 2000)
+        logger.warn(`获取完整Headers遇到403，${delay}ms后重试 (${retryCount + 1}/2)`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeadersFull(retryCount + 1)
       }
-      if (retryCount < this.maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000)
-        logger.warn(`获取完整Headers失败，正在重试... (${retryCount + 1}/${this.maxRetries})`)
+      if (retryCount < 2) {
+        const delay = Math.min(1000 * (retryCount + 1), 3000)
+        logger.warn(`获取完整Headers失败，正在重试... (${retryCount + 1}/2)`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.getHeadersFull(retryCount + 1)
       }
