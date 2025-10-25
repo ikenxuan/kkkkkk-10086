@@ -512,18 +512,13 @@ export const downloadFile = async (videoUrl, opt) => {
     const dlMB = (downloaded / 1048576).toFixed(1)
     const color = Version.BotName === 'TRSS-Yunzai' ? (/** @type {string} */ c) => logger.hex(c) : (/** @type {string} */ c) => /** @type {import('chalk').Chalk} */(logger)?.chalk?.hex(c)
     const barLen = 45
+    const isValidTotal = typeof totalBytes === 'number' && !isNaN(totalBytes) && isFinite(totalBytes) && totalBytes > 1 && totalBytes !== -1
 
-    if (totalBytes <= 0) {
-      // 未知大小：显示动态滚动进度条
-      const animPos = Math.floor(elapsed * 3) % (barLen + 6)
-      const startPos = Math.max(0, animPos - 3)
-      const endPos = Math.min(barLen, animPos + 3)
-      let anim = '░'.repeat(barLen)
-      for (let i = startPos; i < endPos; i++) {
-        if (i >= 0 && i < barLen) {
-          anim = anim.substring(0, i) + '█' + anim.substring(i + 1)
-        }
-      }
+    if (!isValidTotal) {
+      // 未知大小：显示脉冲式进度条
+      const pulse = Math.sin(elapsed * 2) * 0.5 + 0.5
+      const fillCount = Math.floor(pulse * barLen * 0.6) + Math.floor(barLen * 0.2)
+      const anim = '█'.repeat(fillCount) + '░'.repeat(barLen - fillCount)
       logger.info(`⬇️  ${opt.title} [${anim}] ${color('#00BFFF')(dlMB)} MB | ${speed} MB/s 下载中...\r`)
     } else {
       // 已知大小：显示百分比进度条
@@ -531,7 +526,6 @@ export const downloadFile = async (videoUrl, opt) => {
       const fill = Math.floor(pct / 100 * barLen)
       const bar = `[${'█'.repeat(Math.max(0, fill))}${'░'.repeat(Math.max(0, barLen - fill))}]`
       const totalMB = (totalBytes / 1048576).toFixed(1)
-      
       if (isLiveStream) {
         // 直播流：橙色进度条
         logger.info(`⬇️  ${opt.title} ${color('#FFA500')(bar)} ${color('#FFA500')(pct.toFixed(1) + '%')} ${dlMB}/${totalMB} MB | ${speed} MB/s 直播流\r`)

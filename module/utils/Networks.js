@@ -530,10 +530,10 @@ export class Networks {
           resumeFromByte = existingFileSize
           logger.info(`检测到可断点续传，从字节 ${resumeFromByte} 继续下载`)
         }
-        return { skipDownload: false, totalBytes: isSizeValid ? totalSize : 0, isSizeValid }
+        return { skipDownload: false, totalBytes: (isSizeValid || totalSize > 1) ? totalSize : -1, isSizeValid }
       } catch (error) {
         logger.warn('断点续传检查失败，将重新开始下载:', error)
-        return { skipDownload: false, totalBytes: 0, isSizeValid: false }
+        return { skipDownload: false, totalBytes: -1, isSizeValid: false }
       }
     }
 
@@ -565,23 +565,26 @@ export class Networks {
       return (/** @type {number} */ downloadedBytes) => {
         const now = Date.now()
         const currentDownloaded = downloadedBytes + resumeFromByte
-        if (totalSize > 0) {
+
+        const displayTotal = (!isLiveStream && (totalSize <= 1 || isNaN(totalSize) || !isFinite(totalSize))) ? -1 : totalSize
+
+        if (displayTotal > 1 && !isLiveStream) {
           // 已知大小：按百分比更新
-          const percentage = Math.floor((currentDownloaded / totalSize) * 100)
+          const percentage = Math.floor((currentDownloaded / displayTotal) * 100)
           const timeSinceLastUpdate = now - lastUpdateTime
           if ((percentage !== lastPercentage && timeSinceLastUpdate >= minInterval) || timeSinceLastUpdate >= minInterval * 2) {
-            progressCallback(currentDownloaded, totalSize, isLiveStream)
+            progressCallback(currentDownloaded, displayTotal, isLiveStream)
             lastPercentage = percentage
             lastUpdateTime = now
           }
         } else {
-          // 未知大小：每次增长超过512KB或时间间隔达到时更新
+          // 未知大小或直播流：每次增长超过512KB或时间间隔达到时更新
           const bytesGrowth = currentDownloaded - lastReportedBytes
           const timeSinceLastUpdate = now - lastUpdateTime
           if (bytesGrowth >= 512 * 1024 || timeSinceLastUpdate >= minInterval || lastReportedBytes === 0) {
-            // 直播流传递最大限制，普通文件传递 -1
-            const displayTotal = isLiveStream ? liveStreamMaxSize : -1
-            progressCallback(currentDownloaded, displayTotal, isLiveStream)
+            // 确保传递正确的displayTotal值，未知大小使用-1
+            const safeDisplayTotal = isLiveStream ? liveStreamMaxSize : -1
+            progressCallback(currentDownloaded, safeDisplayTotal, isLiveStream)
             lastReportedBytes = currentDownloaded
             lastUpdateTime = now
           }
@@ -664,13 +667,10 @@ export class Networks {
       }
 
       // 1. 服务器未返回 Content-Length：单线程直存
-      if (isNaN(totalBytes) || totalBytes <= 0) {
-        // 尝试从响应头获取实际大小
-        const actualSize = response.headers['content-length'] ? parseInt(response.headers['content-length'], 10) : 0
+      if (isNaN(totalBytes) || totalBytes <= 1) {
         const flags = supportRange && resumeFromByte > 0 && !isLiveStream ? 'a' : 'w'
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 && !isLiveStream ? resumeFromByte : undefined })
-        // 如果响应头有大小则使用，否则传递 -1 表示未知
-        const updateProgress = createProgressUpdater(actualSize > 0 ? actualSize + resumeFromByte : -1)
+        const updateProgress = createProgressUpdater(isLiveStream ? liveStreamMaxSize : -1)
         let downloadedBytes = 0
         try {
           downloadedBytes = await processStream(response.data, writer, updateProgress)
@@ -682,11 +682,11 @@ export class Networks {
           }
         }
         const finalSize = downloadedBytes + resumeFromByte
-        return await handleFinalFileSize(finalSize, actualSize > 0)
+        return await handleFinalFileSize(finalSize, false)
       }
 
       // 2. 小文件 (<10 MB)：单线程，带确定性进度
-      if (totalBytes < 10 * 1024 * 1024) {
+      if (totalBytes > 1 && totalBytes < 10 * 1024 * 1024) {
         const flags = supportRange && resumeFromByte > 0 ? 'a' : 'w'
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 ? resumeFromByte : undefined })
         const updateProgress = createProgressUpdater(totalBytes)
