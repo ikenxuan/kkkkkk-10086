@@ -519,21 +519,22 @@ export class Networks {
     /** 检查是否支持断点续传 */
     const checkResumeSupport = async () => {
       try {
+        let fileExists = false
         try {
           await fs.promises.access(this.filepath)
           const stats = await fs.promises.stat(this.filepath)
           existingFileSize = stats.size
-          logger.info(`检测到已存在部分文件，大小: ${existingFileSize} 字节`)
+          fileExists = existingFileSize > 0
+          if (fileExists) logger.info(`检测到已存在部分文件，大小: ${existingFileSize} 字节`)
         } catch { }
+        if (isLiveStream) return { skipDownload: false, totalBytes: 0, isSizeValid: false }
+        // 只有文件已存在时才获取Headers检查断点续传
+        if (!fileExists) return { skipDownload: false, totalBytes: -1, isSizeValid: false }
         let totalSize = 0, isSizeValid = false
         try {
-          const headers = await this.getHeadersFull()
+          const headers = await this.getHeaders()
           supportRange = headers['accept-ranges'] === 'bytes' || headers['accept-ranges'] === '*'
-          if (headers['content-length']) {
-            totalSize = parseInt(headers['content-length'], 10)
-            isSizeValid = totalSize > 0
-          }
-          if (!isSizeValid && headers['content-range']) {
+          if (headers['content-range']) {
             const rangeMatch = headers['content-range'].match(/\/(\d+)$/)
             if (rangeMatch && rangeMatch[1]) {
               totalSize = parseInt(rangeMatch[1], 10)
@@ -541,24 +542,20 @@ export class Networks {
             }
           }
         } catch (headerError) {
-          logger.warn('获取头信息失败:', headerError)
+          return { skipDownload: false, totalBytes: -1, isSizeValid: false }
         }
-        if (isLiveStream) {
-          logger.info('直播流下载模式，不支持断点续传')
-          return { skipDownload: false, totalBytes: 0, isSizeValid: false }
-        }
-        if (existingFileSize > 0 && existingFileSize === totalSize) {
+
+        if (existingFileSize === totalSize) {
           logger.info(`文件已完整存在: ${this.filepath}`)
           progressCallback(totalSize, totalSize, isLiveStream)
           return { skipDownload: true, totalBytes: totalSize, isSizeValid: true }
         }
-        if (supportRange && existingFileSize > 0 && (totalSize === 0 || existingFileSize < totalSize)) {
+        if (supportRange && existingFileSize < totalSize) {
           resumeFromByte = existingFileSize
           logger.info(`检测到可断点续传，从字节 ${resumeFromByte} 继续下载`)
         }
         return { skipDownload: false, totalBytes: (isSizeValid || totalSize > 1) ? totalSize : -1, isSizeValid }
       } catch (error) {
-        logger.warn('断点续传检查失败，将重新开始下载:', error)
         return { skipDownload: false, totalBytes: -1, isSizeValid: false }
       }
     }
@@ -633,7 +630,7 @@ export class Networks {
     try {
       const resumeCheck = await checkResumeSupport()
       if (resumeCheck.skipDownload) return { filepath: this.filepath, totalBytes: resumeCheck.totalBytes }
-      const totalBytes = resumeCheck.totalBytes, isSizeValid = resumeCheck.isSizeValid
+      let totalBytes = resumeCheck.totalBytes, isSizeValid = resumeCheck.isSizeValid
       const requestHeaders = this.getRetryHeaders(retryCount, this.headers) || this.headers
       if (supportRange && resumeFromByte > 0 && !isLiveStream) requestHeaders['Range'] = `bytes=${resumeFromByte}-`
       const response = await axios({
@@ -663,6 +660,13 @@ export class Networks {
         throw new Error(`无法获取 ${this.url}。状态: ${response.status} ${response.statusText}`)
       }
       if (!this.filepath) throw new Error('文件路径未设置')
+      
+      // 从响应头获取文件大小（新下载）
+      if (totalBytes <= 1 && response.headers['content-length']) {
+        totalBytes = parseInt(response.headers['content-length'], 10)
+        isSizeValid = totalBytes > 0
+        supportRange = response.headers['accept-ranges'] === 'bytes' || response.headers['accept-ranges'] === '*'
+      }
 
       /**
        * 通用流处理：将 source → transform（计数）→ writer 并报告进度
@@ -695,8 +699,8 @@ export class Networks {
         return downloadedBytes
       }
 
-      // 1. 服务器未返回 Content-Length：单线程直存
-      if (isNaN(totalBytes) || totalBytes <= 1) {
+      // 1. 服务器未返回 Content-Length 或未知大小：单线程直存
+      if (isNaN(totalBytes) || totalBytes <= 1 || !isSizeValid) {
         const flags = supportRange && resumeFromByte > 0 && !isLiveStream ? 'a' : 'w'
         const writer = fs.createWriteStream(this.filepath, { highWaterMark: 1024 * 1024, flags: flags, start: supportRange && resumeFromByte > 0 && !isLiveStream ? resumeFromByte : undefined })
         const updateProgress = createProgressUpdater(isLiveStream ? liveStreamMaxSize : -1)
