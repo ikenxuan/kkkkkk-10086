@@ -667,14 +667,14 @@ export class Bilibili extends Base {
           title: `Bil_V_${videoId}.mp4`,
           headers: {
             Referer: this.headers.Referer,
-            Cookie: this.headers.Cookie
+            Cookie: ''
           }
         }),
         downloadFile(audioUrl, {
           title: `Bil_A_${videoId}.mp3`,
           headers: {
             Referer: this.headers.Referer,
-            Cookie: this.headers.Cookie
+            Cookie: ''
           }
         })
       ])

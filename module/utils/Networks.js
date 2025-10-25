@@ -652,9 +652,10 @@ export class Networks {
           ...requestHeaders,
           'Accept-Encoding': 'gzip, deflate, br',
           Connection: retryCount > 0 ? 'close' : 'keep-alive',
-          Referer: this.url.split('?')[0],
+          Referer: requestHeaders.Referer || this.url.split('?')[0],
           'Upgrade-Insecure-Requests': '1',
-          'DNT': '1'
+          'DNT': '1',
+          Origin: this.url.includes('bilivideo.cn') ? 'https://www.bilibili.com' : undefined
         }
       })
       clearTimeout(timeoutId)
@@ -755,6 +756,8 @@ export class Networks {
           const chunkRequestHeaders = { ...chunkHeaders }
           chunkRequestHeaders['Range'] = `bytes=${start}-${end}`
           chunkRequestHeaders['Connection'] = (retryCount > 0 || chunkRetryCount > 0) ? 'close' : 'keep-alive'
+
+          if (this.url.includes('bilivideo.cn') && !chunkRequestHeaders['Origin']) chunkRequestHeaders['Origin'] = 'https://www.bilibili.com'
 
           // 为分片请求添加随机延迟以避免被限制
           if (retryCount > 0 || chunkRetryCount > 0) {
