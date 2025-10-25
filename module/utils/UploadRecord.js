@@ -120,7 +120,6 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
   let cleanupFile = false
   try {
     filePath = await prepareAudioFile(record_url)
-    cleanupFile = !filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
 
     // 如果没有上传高清语音功能，直接返回转换后的音频
     if (!bot?.sendUni) {
@@ -132,24 +131,24 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
     // 然后获取音频buffer和时长
     const result = await getPttBuffer(filePath, transcoding)
     if (!result.buffer) return segment.record(record_url) // 获取buffer失败，返回原始地址
-
-    const buf = result.buffer
+    if (transcoding) await fs.promises.writeFile(filePath, result.buffer) // 将buffer写入临时文件
+    const recordSize = (await fs.promises.stat(filePath)).size
     if (seconds === 0 && result.time) seconds = result.time.seconds
-    const hash = md5(buf)
+    const hash = md5(result.buffer)
     let codec = 0
     try {
       const { isSilk } = await import('silk-wasm')
-      codec = isSilk(buf) ? (transcoding ? 1 : 0) : 0
+      codec = isSilk(result.buffer) ? (transcoding ? 1 : 0) : 0
     } catch {
-      codec = buf.subarray(0, 7).toString().includes('SILK') ? (transcoding ? 1 : 0) : 0
+      codec = result.buffer.subarray(0, 7).toString().includes('SILK') ? (transcoding ? 1 : 0) : 0
     }
 
     const body = core.pb.encode({
       1: 3, 2: 3,
       5: {
-        1: bot.uin, 2: bot.uin, 3: 0, 4: hash, 5: buf.length, 6: hash,
+        1: bot.uin, 2: bot.uin, 3: 0, 4: hash, 5: recordSize > 10485759 ? 10485759 : recordSize, 6: hash,
         7: 5, 8: 9, 9: 4, 10: bot.apk?.version || '9.0.50', 11: 0,
-        12: 1, 13: 1, 14: codec, 15: 1
+        12: seconds && seconds < 300 ? seconds : 299, 13: 1, 14: codec, 15: 1
       }
     })
 
@@ -163,7 +162,7 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
       ver: 4679,
       ukey: rsp[7].toHex(),
       filekey: rsp[11].toHex(),
-      filesize: buf.length,
+      filesize: recordSize,
       bmd5: hash.toString('hex'),
       mType: 'pttDu',
       voice_encodec: codec
@@ -175,17 +174,18 @@ async function UploadRecord(e, record_url, seconds = 0, transcoding = true, brie
         'User-Agent': `QQ/${bot.apk.version} CFNetwork/1126`,
         'Net-Type': 'Wifi'
       },
-      body: buf
+      body: result.buffer
     })
 
     const fid = rsp[11].toBuffer()
     const b = core.pb.encode({
       1: 4, 2: bot.uin, 3: fid, 4: hash,
-      5: hash.toString('hex') + '.amr', 6: seconds, 11: 1,
-      18: fid, 19: seconds, 29: codec,
-      30: { 1: 0, 5: 0, 6: 'sss', 7: 0, 8: brief }
+      5: hash.toString('hex') + '.amr', 6: recordSize > 10485759 ? 10485759 : recordSize, 11: 1,
+      18: fid, 19: seconds && seconds < 300 ? seconds : 299, 29: codec,
+      30: { 1: 0, 5: 0, 6: 'sss', 7: 0, 8: brief, 9: 0 }
     })
 
+    cleanupFile = filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
     return {
       type: 'record',
       file: 'protobuf://' + Buffer.from(b).toString('base64')
@@ -245,7 +245,7 @@ async function prepareAudioFile(file) {
       let localFile = file.replace(/^file:\/\/\//, '')
       // Windows 系统可能需要移除前导斜杠
       if (IS_WIN && localFile.startsWith('/')) localFile = localFile.slice(1)
-      filePath = localFile
+      await fs.promises.copyFile(localFile, filePath)
     }
     // 如果 file 不是有效的文件路径
     else {
