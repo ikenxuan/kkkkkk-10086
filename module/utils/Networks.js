@@ -144,7 +144,6 @@ export class Networks {
     // 创建axios实例
     this.axiosInstance = axios.create({
       timeout: this.timeout,
-      headers: this.headers,
       maxRedirects: this.maxRetries,
       validateStatus: (status) => {
         return (status >= 200 && status < 300) || status === 406 || (status >= 500)

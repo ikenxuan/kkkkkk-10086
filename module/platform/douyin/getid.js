@@ -36,12 +36,7 @@ export const getDouyinID = async (url, log = true) => {
     // 获取长链接
     longLink = await new Networks({
       url,
-      headers: {
-        ...baseHeaders,
-        Referer: '',
-        Cookie: '',
-        Host: ''
-      }
+      headers: baseHeaders
     }).getLongLink()
 
     // 处理获取长链接失败的情况
