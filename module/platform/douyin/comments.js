@@ -261,7 +261,7 @@ const heic2jpg = async (jsonArray) => {
             Referer: 'https://www.douyin.com/',
             Cookie: ''
           }
-        }).returnResult()
+        }).request()
 
         const jpegBuffer = await convert({
           buffer: response.data,
