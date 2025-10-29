@@ -102,8 +102,6 @@ export class Networks {
     })
   }
 
-
-
   /**
    * 获取请求配置
    * @param {number} retryCount 重试次数
@@ -267,6 +265,20 @@ export class Networks {
 
     try {
       let totalBytes = -1
+      // 重试时销毁旧连接池并创建新agent
+      let agent
+      if (retryCount > 0) {
+        // 销毁旧连接池
+        this.httpsAgent.destroy()
+        this.httpAgent.destroy()
+        // 重新创建连接池
+        const agentOpts = { keepAlive: false, timeout: 60000 }
+        agent = this.url.startsWith('https:')
+          ? new https.Agent({ ...agentOpts, rejectUnauthorized: false })
+          : new http.Agent(agentOpts)
+      } else {
+        agent = this.url.startsWith('https:') ? this.httpsAgent : this.httpAgent
+      }
       // 发起下载请求
       /** @type {import('axios').AxiosRequestConfig} */
       const downloadConfig = {
@@ -280,17 +292,19 @@ export class Networks {
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
         headers: {
-          ...this.getConfig(retryCount).headers,
+          'User-Agent': this.userAgent,
+          'Accept': '*/*',
           'Accept-Encoding': 'identity',
-          'Connection': 'keep-alive'
+          'Connection': retryCount > 0 ? 'close' : 'keep-alive',
+          ...this.headers
         }
       }
 
       // 根据URL协议选择agent
       if (this.url.startsWith('https:')) {
-        downloadConfig.httpsAgent = this.httpsAgent
+        downloadConfig.httpsAgent = agent
       } else if (this.url.startsWith('http:')) {
-        downloadConfig.httpAgent = this.httpAgent
+        downloadConfig.httpAgent = agent
       }
 
       const response = await axios(downloadConfig)
@@ -366,8 +380,9 @@ export class Networks {
       // 重试逻辑
       if (retryCount < this.maxRetries) {
         const is403or429 = axiosError.response?.status === 403 || axiosError.response?.status === 429
-        const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.code === 'ETIMEDOUT'
-        const delay = is403or429 ? 3000 + Math.random() * 2000 : isTimeout ? 2000 : 1500 * (retryCount + 1)
+        const isReset = axiosError.code === 'ECONNRESET' || axiosError.code === 'ECONNABORTED'
+        const isTimeout = axiosError.code === 'ETIMEDOUT'
+        const delay = is403or429 ? 3000 + Math.random() * 2000 : isReset ? 2000 + retryCount * 1000 : isTimeout ? 2000 : 1500 * (retryCount + 1)
         logger.warn(`下载失败(${axiosError.code || axiosError.message})，${Math.round(delay)}ms后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1, options)
