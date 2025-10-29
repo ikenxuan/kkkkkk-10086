@@ -1,4 +1,5 @@
 import { baseHeaders, Networks } from '../../utils/index.js'
+import fetch from 'node-fetch'
 
 /**
  * @typedef {object} DouyinDataTypes
@@ -45,9 +46,9 @@ export const getDouyinID = async (url, log = true) => {
       return { type: 'undefined' }
     }
 
-    if (longLink.includes('失败')) {
-      logger.error(longLink)
-      return { type: 'undefined' }
+    if (longLink === url) {
+      const response = await fetch(longLink, { redirect: 'follow' })
+      if (response.url && response.url !== url) longLink = response.url
     }
 
     /** 

@@ -1,4 +1,6 @@
 import { baseHeaders, Networks } from '../../utils/index.js'
+import { av2bv } from './genParams.js'
+import fetch from 'node-fetch'
 
 /**
  * @typedef {Object.<string, any>} BilibiliId
@@ -51,9 +53,9 @@ export const getBilibiliID = async (url, log = true) => {
       return { type: 'undefined' }
     }
 
-    if (longLink.includes('失败')) {
-      logger.error(longLink)
-      return { type: 'undefined' }
+    if (longLink === url) {
+      const response = await fetch(longLink, { redirect: 'follow' })
+      if (response.url && response.url !== url) longLink = response.url
     }
 
     /** 
@@ -70,9 +72,11 @@ export const getBilibiliID = async (url, log = true) => {
           const bvideoMatch = /video[\/-]([A-Za-z0-9]+)\/?|bvid=([A-Za-z0-9]+)/.exec(url)
           const pParam = new URL(url).searchParams.get('p')
           const pValue = pParam ? parseInt(pParam, 10) : undefined
+          let bvid = bvideoMatch ? bvideoMatch[1] || bvideoMatch[2] : undefined
+          if (bvid && !bvid.startsWith('BV')) bvid = av2bv(bvid.replace('av', ''))
           return {
             type: 'one_video',
-            bvid: bvideoMatch ? bvideoMatch[1] || bvideoMatch[2] : undefined,
+            bvid,
             ...(pValue !== undefined && { p: pValue })
           }
         }

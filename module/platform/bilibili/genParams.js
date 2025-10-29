@@ -63,3 +63,36 @@ export async function checkCk() {
     isVIP
   }
 }
+
+/**
+ * 将 B 站视频的 avid(AV号) 转换为 bvid(BV号)
+ * @param {number|string} aid - 视频的 avid，可以是数字或字符串形式的数字
+ * @returns {string} 返回转换后的 bvid，格式为 "BV1" 开头的字符串
+ */
+export function av2bv(aid) {
+  const XOR_CODE = 23442827791579n
+  const MAX_AID = 1n << 51n
+  const BASE = 58n
+  const data = 'FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf'
+  /** @type {string[]} */
+  const bytes = ['B', 'V', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+  let bvIndex = bytes.length - 1
+  let tmp = (MAX_AID | BigInt(aid)) ^ XOR_CODE
+  while (tmp > 0) {
+    const charIndex = Number(tmp % BigInt(BASE))
+    bytes[bvIndex] = data[charIndex] ?? ''
+    tmp = tmp / BASE
+    bvIndex -= 1
+  }
+  const temp3 = bytes[3] || ''
+  const temp9 = bytes[9] || ''
+  bytes[3] = temp9
+  bytes[9] = temp3
+
+  const temp4 = bytes[4] || ''
+  const temp7 = bytes[7] || ''
+  bytes[4] = temp7
+  bytes[7] = temp4
+
+  return bytes.join('')
+}

@@ -204,6 +204,8 @@ export class Networks {
       })
       return response.request.res.responseUrl || targetUrl
     } catch (error) {
+      const axiosError = /** @type {AxiosError} */(error)
+      logger.error(`获取重定向链接失败: ${axiosError.message}`)
       return targetUrl
     }
   }
@@ -223,6 +225,7 @@ export class Networks {
       return response.headers.location || this.url
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
+      logger.error(`获取首个302重定向地址失败: ${axiosError.message}`)
       return axiosError.response?.headers.location || this.url
     }
   }
@@ -317,18 +320,18 @@ export class Networks {
         highWaterMark: 32 * 1024 * 1024,
         transform(chunk, _enc, cb) {
           downloadedBytes += chunk.length
-          
+
           if (isLiveStream && downloadedBytes >= liveStreamMaxSize) {
             controller.abort()
             return cb(null, chunk)
           }
-          
+
           const now = Date.now()
           if (now - lastUpdate > 3000) {
             progressCallback(downloadedBytes, isLiveStream ? liveStreamMaxSize : (totalBytes > 0 ? totalBytes : -1), isLiveStream)
             lastUpdate = now
           }
-          
+
           cb(null, chunk)
         }
       })
