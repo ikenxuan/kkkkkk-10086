@@ -130,17 +130,25 @@ export class Networks {
       headers.Connection = 'close'
     }
 
-    return {
+    /** @type {import('axios').AxiosRequestConfig} */
+    const config = {
       url: this.url,
       method: this.method,
       headers,
       responseType: this.type,
       timeout: this.timeout,
-      httpAgent: this.httpAgent,
-      httpsAgent: this.httpsAgent,
       proxy: this.proxy,
       data: this.method === 'POST' ? this.body : undefined
     }
+
+    // 根据URL协议自动选择agent
+    if (this.url.startsWith('https:')) {
+      config.httpsAgent = this.httpsAgent
+    } else if (this.url.startsWith('http:')) {
+      config.httpAgent = this.httpAgent
+    }
+
+    return config
   }
 
   /**
@@ -263,20 +271,31 @@ export class Networks {
     try {
       let totalBytes = -1
       // 发起下载请求
-      const response = await axios({
+      /** @type {import('axios').AxiosRequestConfig} */
+      const downloadConfig = {
         url: this.url,
         method: 'GET',
         responseType: 'stream',
         signal: controller.signal,
         timeout,
         maxRedirects: 5,
-        httpAgent: this.httpAgent,
-        httpsAgent: this.httpsAgent,
+        decompress: false,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
         headers: {
           ...this.getConfig(retryCount).headers,
-          'Accept-Encoding': 'gzip, deflate, br'
+          'Accept-Encoding': 'identity'
         }
-      })
+      }
+
+      // 根据URL协议选择agent
+      if (this.url.startsWith('https:')) {
+        downloadConfig.httpsAgent = this.httpsAgent
+      } else if (this.url.startsWith('http:')) {
+        downloadConfig.httpAgent = this.httpAgent
+      }
+
+      const response = await axios(downloadConfig)
 
       clearTimeout(timeoutId)
 
@@ -289,33 +308,31 @@ export class Networks {
         totalBytes = parseInt(response.headers['content-length']) || -1
       }
 
-      // 创建写入流
-      const writer = fs.createWriteStream(this.filepath, { highWaterMark: 2 * 1024 * 1024 })
+      // 极限优化：32MB缓冲 + 最少计算
+      const writer = fs.createWriteStream(this.filepath, { highWaterMark: 32 * 1024 * 1024 })
       let downloadedBytes = 0
       let lastUpdate = 0
 
-      // 创建转换流用于进度跟踪
       const transform = new Transform({
-        highWaterMark: 2 * 1024 * 1024,
+        highWaterMark: 32 * 1024 * 1024,
         transform(chunk, _enc, cb) {
           downloadedBytes += chunk.length
+          
+          if (isLiveStream && downloadedBytes >= liveStreamMaxSize) {
+            controller.abort()
+            return cb(null, chunk)
+          }
+          
           const now = Date.now()
-          // 节流更新进度
-          if (now - lastUpdate > 500 || downloadedBytes === chunk.length) {
-            const displayTotal = isLiveStream ? liveStreamMaxSize : (totalBytes > 0 ? totalBytes : -1)
-            progressCallback(downloadedBytes, displayTotal, isLiveStream)
+          if (now - lastUpdate > 3000) {
+            progressCallback(downloadedBytes, isLiveStream ? liveStreamMaxSize : (totalBytes > 0 ? totalBytes : -1), isLiveStream)
             lastUpdate = now
           }
-          // 直播流大小限制
-          if (isLiveStream && downloadedBytes >= liveStreamMaxSize) {
-            logger.info(`直播流已达到最大限制 ${liveStreamMaxSize} 字节`)
-            controller.abort()
-          }
+          
           cb(null, chunk)
         }
       })
 
-      // 执行下载
       await pipeline(response.data, transform, writer)
 
       // 最终进度更新
