@@ -68,7 +68,7 @@ export class Networks {
     this.body = data.body || ''
     this.timeout = data.timeout || 30000
     this.filepath = data.filepath
-    this.maxRetries = data.maxRetries || 2
+    this.maxRetries = data.maxRetries || 3
     this.userAgent = getRandomUserAgent()
     this.proxy = Config.request?.proxy?.switch ? {
       host: Config.request.proxy.host,
@@ -82,9 +82,9 @@ export class Networks {
     const agentOptions = {
       keepAlive: true,
       keepAliveMsecs: 1000,
-      maxSockets: 100,
-      maxFreeSockets: 10,
-      timeout: 30000,
+      maxSockets: 64,
+      maxFreeSockets: 32,
+      timeout: this.timeout,
       scheduling
     }
 
@@ -116,12 +116,6 @@ export class Networks {
       Accept: '*/*',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
       'Accept-Encoding': 'gzip, deflate, br',
-      'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="134"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"Windows"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-site',
       ...this.headers
     }
 
@@ -185,7 +179,7 @@ export class Networks {
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
         return this.request(retryCount + 1)
       }
-      throw error
+      throw axiosError.message
     }
   }
 
@@ -199,8 +193,8 @@ export class Networks {
     try {
       const response = await this.axiosInstance.get(targetUrl, {
         ...this.getConfig(),
-        timeout: 3000,
-        maxRedirects: 3
+        timeout: 5000,
+        maxRedirects: 5
       })
       return response.request.res.responseUrl || targetUrl
     } catch (error) {
@@ -280,14 +274,15 @@ export class Networks {
         method: 'GET',
         responseType: 'stream',
         signal: controller.signal,
-        timeout,
+        timeout: 0,
         maxRedirects: 5,
         decompress: false,
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
         headers: {
           ...this.getConfig(retryCount).headers,
-          'Accept-Encoding': 'identity'
+          'Accept-Encoding': 'identity',
+          'Connection': 'keep-alive'
         }
       }
 
@@ -311,32 +306,48 @@ export class Networks {
         totalBytes = parseInt(response.headers['content-length']) || -1
       }
 
-      // 极限优化：32MB缓冲 + 最少计算
-      const writer = fs.createWriteStream(this.filepath, { highWaterMark: 32 * 1024 * 1024 })
+      // 根据文件大小动态调整缓冲区
+      const bufferSize = totalBytes > 50 * 1024 * 1024 ? 32 * 1024 * 1024 : 16 * 1024 * 1024
+      const writer = fs.createWriteStream(this.filepath, { highWaterMark: bufferSize })
       let downloadedBytes = 0
       let lastUpdate = 0
+      let lastChunkTime = Date.now()
+      /** @type {NodeJS.Timeout | undefined} */
+      let stuckCheckInterval
 
       const transform = new Transform({
-        highWaterMark: 32 * 1024 * 1024,
+        highWaterMark: bufferSize,
         transform(chunk, _enc, cb) {
           downloadedBytes += chunk.length
-
+          lastChunkTime = Date.now()
           if (isLiveStream && downloadedBytes >= liveStreamMaxSize) {
             controller.abort()
             return cb(null, chunk)
           }
-
           const now = Date.now()
-          if (now - lastUpdate > 3000) {
+          if (now - lastUpdate > 2000) {
             progressCallback(downloadedBytes, isLiveStream ? liveStreamMaxSize : (totalBytes > 0 ? totalBytes : -1), isLiveStream)
             lastUpdate = now
           }
-
           cb(null, chunk)
         }
       })
 
-      await pipeline(response.data, transform, writer)
+      // 检测下载卡死
+      stuckCheckInterval = setInterval(() => {
+        if (Date.now() - lastChunkTime > 30000) {
+          controller.abort()
+          clearInterval(stuckCheckInterval)
+        }
+      }, 5000)
+
+      try {
+        await pipeline(response.data, transform, writer)
+        clearInterval(stuckCheckInterval)
+      } catch (err) {
+        clearInterval(stuckCheckInterval)
+        throw err
+      }
 
       // 最终进度更新
       const finalTotal = totalBytes > 0 ? totalBytes : downloadedBytes
@@ -354,14 +365,14 @@ export class Networks {
       }
       // 重试逻辑
       if (retryCount < this.maxRetries) {
-        const axiosError = /** @type {AxiosError} */(error)
         const is403or429 = axiosError.response?.status === 403 || axiosError.response?.status === 429
-        const delay = is403or429 ? 3000 + Math.random() * 2000 : 1500 * (retryCount + 1)
-        logger.warn(`下载失败，${Math.round(delay)}ms后重试 (${retryCount + 1}/${this.maxRetries})`)
+        const isTimeout = axiosError.code === 'ECONNABORTED' || axiosError.code === 'ETIMEDOUT'
+        const delay = is403or429 ? 3000 + Math.random() * 2000 : isTimeout ? 2000 : 1500 * (retryCount + 1)
+        logger.warn(`下载失败(${axiosError.code || axiosError.message})，${Math.round(delay)}ms后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1, options)
       }
-      throw error
+      throw axiosError.message
     }
   }
 }
