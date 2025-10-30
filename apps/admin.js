@@ -115,8 +115,8 @@ const FileWitch = {
   request: RequestType
 }
 
-const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
-const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\d+)$`)
+const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})\s*(开启|关闭)$`, 'i')
+const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})\s*(\d+)$`, 'i')
 
 export class kkkAdmin extends plugin {
   constructor() {
