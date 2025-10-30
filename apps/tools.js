@@ -96,12 +96,12 @@ export class kkkTools extends plugin {
       url = url.match(/(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/)?.[0] || url
     } else if (/bilibili\.com|bili2233\.cn/.test(url)) {
       url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[A-Za-z\d._?%&+\-=\/#]*/)?.[0] || url
-    } else if (/^BV[1-9a-zA-Z]{10}$/.test(url)) {
+    } else if (/^BV[1-9a-zA-Z]{10}$/.test(url) || /^av\d+$/.test(url)) {
       url = `https://www.bilibili.com/video/${url}`
     }
 
     if (!url) {
-      logger.warn(`未能在消息中找到有效的B站分享链接或BV号: ${url}`)
+      logger.warn(`未能在消息中找到有效的B站分享链接、BV号或av号: ${url}`)
       return true
     }
 

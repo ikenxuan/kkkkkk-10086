@@ -18,6 +18,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/blob/master/LICENSE)
 [![GitHub Release](https://img.shields.io/github/v/release/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/releases)
+[![问题反馈](https://img.shields.io/badge/%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88-795874649-blue)](https://qm.qq.com/q/JqU2EbMeAu)
 
 <div>
 
