@@ -9,9 +9,12 @@ const APPType = {
   视频解析: 'videotool',
   默认解析: 'defaulttool',
   转发: 'sendforwardmsg',
-  上传拦截: 'usefilelimit',
   API服务: 'APIServer',
   API服务日志: 'APIServerLog'
+}
+
+const UploadType = {
+  上传拦截: 'usefilelimit'
 }
 
 const DouYinType = {
@@ -50,13 +53,14 @@ const NumberCfgType = {
   B站推送设置权限: { type: 'bilibili', key: 'bilibilipushGroup', limit: '0-2' },
   渲染精度: { type: 'app', key: 'renderScale', limit: '50-200' },
   优先级: { type: 'app', key: 'priority', limit: '0-114514' },
-  上传拦截阈值: { type: 'app', key: 'filelimit', limit: '5-114514' },
+  上传拦截阈值: { type: 'upload', key: 'filelimit', limit: '5-114514' },
   快手评论数量: { type: 'kuaishou', key: 'kuaishounumcomments', limit: '0-30' }
 }
 
 /** 开关相关设置 */
 const SwitchCfgType = {
   ...APPType,
+  ...UploadType,
   ...DouYinType,
   ...BilibiliType,
   ...KuaiShouType
@@ -64,8 +68,10 @@ const SwitchCfgType = {
 
 const FileWitch = {
   app: APPType,
+  upload: UploadType,
   douyin: DouYinType,
-  bilibili: BilibiliType
+  bilibili: BilibiliType,
+  kuaishou: KuaiShouType
 }
 
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)

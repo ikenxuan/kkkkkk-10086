@@ -1,6 +1,9 @@
 # 抖音解析开关，单独开关，受「总开关」影响
 douyintool: true
 
+# 抖音解析提示开关，发送提示信息："检测到抖音链接，开始解析"
+douyintip: true
+
 # 抖音解析可选
 douyinTip:
   - 提示信息
@@ -8,6 +11,12 @@ douyinTip:
   - 视频
   - 背景音乐
   - 图集
+
+# 抖音评论解析开关
+comments: true
+
+# 抖音评论图开关
+commentsimg: true
 
 # 抖音评论数量，范围1~无限条
 numcomments: 5
@@ -35,3 +44,18 @@ push:
   log: true
   # 分享链接二维码的类型，web为跳转到抖音网页，download为视频下载直链
   shareType: 'web'
+
+# 抖音推送开关（平铺键，与 push.switch 同步）
+douyinpush: true
+
+# 抖音推送日志开关（平铺键，与 push.log 同步）
+douyinpushlog: true
+
+# 抖音推送定时任务的cron表达式（平铺键，与 push.cron 同步）
+douyinpushcron: '*/10 * * * *'
+
+# 抖音推送设置权限（平铺键，与 push.permission 同步）
+douyinpushGroup: master
+
+# 抖音推送时是否一同解析该作品（平铺键，与 push.parsedynamic 同步）
+senddynamicwork: false

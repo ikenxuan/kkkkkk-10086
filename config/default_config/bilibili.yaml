@@ -1,6 +1,9 @@
 # B站解析开关，单独开关，受「总开关」影响
 bilibilitool: true
 
+# B站解析提示开关，发送提示信息："检测到B站链接，开始解析"
+bilibilitip: true
+
 # B站解析可选列表
 bilibiliTip:
   - 提示信息
@@ -8,6 +11,9 @@ bilibiliTip:
   - 评论图
   - 视频
   - 动态
+
+# B站评论图开关
+bilibilicommentsimg: true
 
 # B站评论数量，设置接口返回的评论数量，范围1~无限条
 bilibilinumcomments: 5
@@ -70,3 +76,18 @@ push:
   pushVideoQuality: 0
   # 推送时遇到视频动态时解析的视频体积上限，自动画质模式下可接受的最大视频大小（单位：MB），仅在 「pushVideoQuality」 为 0 且「parsedynamic」为 true时生效
   pushMaxAutoVideoSize: 50
+
+# B站推送开关（平铺键，与 push.switch 同步）
+bilibilipush: true
+
+# B站推送日志开关（平铺键，与 push.log 同步）
+bilibilipushlog: true
+
+# B站推送定时任务的cron表达式（平铺键，与 push.cron 同步）
+bilibilipushcron: '*/10 * * * *'
+
+# B站推送设置权限（平铺键，与 push.permission 同步）
+bilibilipushGroup: master
+
+# B站推送时是否一同解析该动态（平铺键，与 push.parsedynamic 同步）
+senddynamicvideo: false

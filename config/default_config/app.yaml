@@ -24,3 +24,6 @@ APIServer: false
 
 # API服务端口
 APIServerPort: 4567
+
+# API服务日志（是否打印API请求日志）
+APIServerLog: false
