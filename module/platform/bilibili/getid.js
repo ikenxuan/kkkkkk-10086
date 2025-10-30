@@ -1,5 +1,5 @@
 import { baseHeaders, Networks } from '../../utils/index.js'
-import { av2bv } from './genParams.js'
+import amagi from '@ikenxuan/amagi'
 import fetch from 'node-fetch'
 
 /**
@@ -68,12 +68,16 @@ export const getBilibiliID = async (url, log = true) => {
       [
         'video',
         (url) => /video[\/-]([A-Za-z0-9]+)\/?/.test(url),
-        (url) => {
+        async (url) => {
           const bvideoMatch = /video[\/-]([A-Za-z0-9]+)\/?|bvid=([A-Za-z0-9]+)/.exec(url)
           const pParam = new URL(url).searchParams.get('p')
           const pValue = pParam ? parseInt(pParam, 10) : undefined
           let bvid = bvideoMatch ? bvideoMatch[1] || bvideoMatch[2] : undefined
-          if (bvid && !bvid.startsWith('BV')) bvid = av2bv(bvid.replace('av', ''))
+          if (bvid && bvid.toLowerCase().startsWith('av')) {
+            const avid = parseInt(bvid.replace(/^av/i, ''))
+            const convertResult = await amagi.bilibili.api.convertAvToBv({ avid, typeMode: 'strict' })
+            bvid = convertResult.data.data.bvid
+          }
           return {
             type: 'one_video',
             bvid,
@@ -96,16 +100,28 @@ export const getBilibiliID = async (url, log = true) => {
       // 番剧链接
       [
         'bangumi',
-        (url) => /play\/(\S+?)\??/.test(url),
+        (url) => /\/bangumi\/play\/(\w+)/.test(url) || /play\/(\S+?)\??/.test(url),
         (url) => {
-          const playMatch = /play\/(\w+)/.exec(url)
-          const id = playMatch && playMatch[1] ? playMatch[1] : ''
+          const isBangumiPlayFormat = /\/bangumi\/play\/(\w+)/.test(url)
+          let id = ''
           let realid = ''
-          if (id && id.startsWith('ss')) realid = 'season_id'
-          else if (id && id.startsWith('ep')) realid = 'ep_id'
+          let isEpid = false
+
+          const playMatch = /(?:\/bangumi)?\/play\/(\w+)/.exec(url)
+          id = playMatch?.[1] ?? ''
+
+          if (id) {
+            if (id.startsWith('ss')) {
+              realid = isBangumiPlayFormat ? id : 'season_id'
+            } else if (id.startsWith('ep')) {
+              realid = isBangumiPlayFormat ? id : 'ep_id'
+              isEpid = true
+            }
+          }
+
           return {
             type: 'bangumi_video_info',
-            isEpid: false,
+            isEpid,
             realid
           }
         }
@@ -113,14 +129,26 @@ export const getBilibiliID = async (url, log = true) => {
       // 动态链接
       [
         'dynamic',
-        (url) => /^https:\/\/t\.bilibili\.com\/(\d+)/.test(url) || /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.test(url),
         (url) => {
-          const tMatch = /^https:\/\/t\.bilibili\.com\/(\d+)/.exec(url)
-          const opusMatch = /^https:\/\/www\.bilibili\.com\/opus\/(\d+)/.exec(url)
-          const dynamic_id = tMatch ?? opusMatch
+          const parsedUrl = new URL(url)
+          const { hostname, pathname } = parsedUrl
+          return (
+            /^https:\/\/(?:t|www)\.bilibili\.com\/(?:opus\/)?(\d+)/.test(url) ||
+            (hostname === 't.bilibili.com' && /^\/\d+/.test(pathname)) ||
+            (hostname === 'www.bilibili.com' && /^\/opus\/\d+/.test(pathname))
+          )
+        },
+        (url) => {
+          const parsedUrl = new URL(url)
+          const { hostname, pathname } = parsedUrl
+          // 统一使用单个正则表达式匹配
+          const match = /^https:\/\/(?:t|www)\.bilibili\.com\/(?:opus\/)?(\d+)/.exec(url) ||
+            (hostname === 't.bilibili.com' && pathname.match(/^\/(\d+)/)) ||
+            (hostname === 'www.bilibili.com' && pathname.match(/^\/opus\/(\d+)/))
+
           return {
             type: 'dynamic_info',
-            dynamic_id: dynamic_id ? dynamic_id[1] : dynamic_id
+            dynamic_id: match ? match?.[1] : undefined
           }
         }
       ],
@@ -141,7 +169,8 @@ export const getBilibiliID = async (url, log = true) => {
     // 统一的链接处理逻辑
     for (const [name, test, extract] of urlPatterns) {
       if (test(longLink)) {
-        result = extract(longLink)
+        const extractResult = extract(longLink)
+        result = extractResult instanceof Promise ? await extractResult : extractResult
         if (log) logger.info(`[B站链接] 类型: ${name}`, result)
         break
       }
