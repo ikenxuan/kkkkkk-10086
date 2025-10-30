@@ -56,6 +56,7 @@ export { apps }
 logger.info('---------- ₍˄·͈༝·͈˄*₎◞ ̑̑ -----------')
 logger.info('kkkkkk-10086初始化~')
 logger.info('Created By ikenxuan')
+logger.info('交流群：795874649')
 logger.info('---------------------------------')
 
 if (Config.app.APIServer) {
