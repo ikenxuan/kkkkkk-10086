@@ -22,29 +22,6 @@
   font-weight: 700;
 }
 
-.head-box .title .label {
-  display: inline-block;
-  margin-left: 10px;
-}
-
-.head-box .genshin_logo {
-  position: absolute;
-  top: 1px;
-  right: 15px;
-  width: 97px;
-}
-
-.head-box .label {
-  font-size: 50px;
-  text-shadow: 0 0 3px #000,
-    1px 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-.head-box .label span {
-  color: #d3bc8e;
-  padding: 0 2px;
-}
-
 .head-box {
   margin: 0 0 90px 0;
 }
@@ -88,6 +65,9 @@
   box-shadow: 3px 3px 20px 0px rgb(0 0 0 / 50%);
   background-image: linear-gradient(90deg, #fceae7a1 40%, #fbf3f1b5 65%, #d5dfff9e);
   font-size: 37px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cfg-hint {
@@ -104,11 +84,13 @@
   height: 36px;
   width: 345px;
   text-align: center;
-  /* line-height: 80px; */
   font-size: 37px;
   color: #2d5285;
   font-weight: 700;
   border-radius: 0 16px 16px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cfg-status.status-off {
@@ -119,16 +101,4 @@
   font-size: 29px;
   color: #454444;
   margin: 10px 0 14px 23px;
-}
-
-.badge {
-  display: inline-block;
-  vertical-align: top;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 3px;
-  background: #f4cd00;
-  color: #fff;
-  font-size: 14px;
-  line-height: 18px;
 }
