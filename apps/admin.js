@@ -179,8 +179,9 @@ export class kkkAdmin extends plugin {
   // 渲染发送图片
   async index_Settings(e) {
     const data = {}
-    let _cfg = Config.All()
+    let _cfg = await Config.All()
     _cfg = (function () {
+      _cfg.cookies = _cfg.cookies || {}
       const { douyin, bilibili, kuaishou } = _cfg.cookies
       _cfg.cookies.b = bilibili
       _cfg.cookies.d = douyin
