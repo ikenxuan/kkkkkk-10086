@@ -81,9 +81,10 @@
   position: absolute;
   top: 0;
   right: 0;
-  height: 36px;
+  height: 69px;
   width: 345px;
   text-align: center;
+  line-height: 69px;
   font-size: 37px;
   color: #2d5285;
   font-weight: 700;
