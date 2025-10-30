@@ -74,6 +74,23 @@ const FileWitch = {
   kuaishou: KuaiShouType
 }
 
+/** 
+ * 映射平铺键到嵌套键的关系
+ * 用于同步修改配置时更新对应的嵌套键
+ */
+const KeyMapping = {
+  douyinpush: 'push.switch',
+  douyinpushlog: 'push.log',
+  douyinpushcron: 'push.cron',
+  douyinpushGroup: 'push.permission',
+  senddynamicwork: 'push.parsedynamic',
+  bilibilipush: 'push.switch',
+  bilibilipushlog: 'push.log',
+  bilibilipushcron: 'push.cron',
+  bilibilipushGroup: 'push.permission',
+  senddynamicvideo: 'push.parsedynamic'
+}
+
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).join('|')})(开启|关闭)$`)
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).join('|')})(\\d+)$`)
 export class kkkAdmin extends plugin {
@@ -157,6 +174,13 @@ export class kkkAdmin extends plugin {
     const is = regRet[2] == '开启'
     const _key = SwitchCfgType[key]
     Config.modify(file, _key?.key ?? _key, is)
+    
+    // 如果存在嵌套键映射，同时更新嵌套键
+    const nestedKey = KeyMapping[_key?.key ?? _key]
+    if (nestedKey) {
+      Config.modify(file, nestedKey, is)
+    }
+    
     // 渲染图片
     await this.index_Settings(e)
     return true
@@ -172,11 +196,26 @@ export class kkkAdmin extends plugin {
 
       if (groupMapping.hasOwnProperty(number)) {
         Config.modify(type.type, type.key, groupMapping[number])
+        // 同时更新嵌套键
+        const nestedKey = KeyMapping[type.key]
+        if (nestedKey) {
+          Config.modify(type.type, nestedKey, groupMapping[number])
+        }
       } else {
         Config.modify(type.type, type.key, groupMapping['3'])
+        // 同时更新嵌套键
+        const nestedKey = KeyMapping[type.key]
+        if (nestedKey) {
+          Config.modify(type.type, nestedKey, groupMapping['3'])
+        }
       }
     } else {
       Config.modify(type.type, type.key, number)
+      // 如果存在嵌套键映射，同时更新嵌套键
+      const nestedKey = KeyMapping[type.key]
+      if (nestedKey) {
+        Config.modify(type.type, nestedKey, number)
+      }
     }
     await this.index_Settings(e)
     return true
