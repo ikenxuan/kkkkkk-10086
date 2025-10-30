@@ -77,6 +77,11 @@ const FileWitch = {
 /** 
  * 映射平铺键到嵌套键的关系
  * 用于同步修改配置时更新对应的嵌套键
+ * 
+ * 注意：虽然 douyin 和 bilibili 的键映射到相同的嵌套路径（如 'push.switch'），
+ * 但它们实际修改的是不同的配置文件，因此不会产生冲突：
+ * - douyinpush -> douyin.yaml 中的 push.switch
+ * - bilibilipush -> bilibili.yaml 中的 push.switch
  */
 const KeyMapping = {
   douyinpush: 'push.switch',
@@ -173,10 +178,13 @@ export class kkkAdmin extends plugin {
       .find(([, values]) => Object.keys(values).includes(key))[0]
     const is = regRet[2] == '开启'
     const _key = SwitchCfgType[key]
-    Config.modify(file, _key?.key ?? _key, is)
+    const resolvedKey = _key?.key ?? _key
+    
+    // 修改配置键
+    Config.modify(file, resolvedKey, is)
     
     // 如果存在嵌套键映射，同时更新嵌套键
-    const nestedKey = KeyMapping[_key?.key ?? _key]
+    const nestedKey = KeyMapping[resolvedKey]
     if (nestedKey) {
       Config.modify(file, nestedKey, is)
     }
