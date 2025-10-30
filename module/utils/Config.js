@@ -41,8 +41,6 @@ import _ from 'lodash'
  * @property {('提示信息'|'评论图'|'视频'|'背景音乐'|'图集')[]} [DouyinConfig.douyinTip] 抖音解析可选列表 - 可选值：提示信息、评论图、视频、背景音乐、图集
  * @property {number} [DouyinConfig.numcomments] 抖音评论数量
  * @property {boolean} [DouyinConfig.realCommentCount] 评论图是否显示真实评论数量
- * @property {boolean} [DouyinConfig.commentsimg] 发送抖音作品评论图开关
- * @property {boolean} [DouyinConfig.detailMusic] 发送抖音背景音乐开关
  * @property {boolean} [DouyinConfig.sendHDrecord] 图集BGM是否使用高清语音发送
  * @property {boolean} [DouyinConfig.autoResolution] 根据「视频拦截阈值」自动选择合适的分辨率
  * @property {DouyinPushConfig} [DouyinConfig.push] 抖音推送相关配置

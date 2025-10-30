@@ -3,8 +3,6 @@ import { getBilibiliData } from '@ikenxuan/amagi'
 import * as QRCode from 'qrcode'
 import fs from 'node:fs'
 
-
-/** B站登录 */
 /**
  * 处理哔哩哔哩登录流程
  * @param {*} e - 消息对象
@@ -26,9 +24,9 @@ export const bilibiliLogin = async (e) => {
   const qrcodeMsg = await e.reply([ // 发送二维码图片和提示文字
     segment.image(qrimg?.split(';')[1]?.replace('base64,', 'base64://') || ''),
     '请在120秒内通过哔哩哔哩APP扫码进行登录'
-  ], { reply: true })
+  ], true)
 
-  messageIds.push(disclaimerMsg?.messageId, qrcodeMsg?.messageId) // 将消息ID存入数组
+  messageIds.push(disclaimerMsg?.message_id, qrcodeMsg?.message_id) // 将消息ID存入数组
 
   /**
    * 批量撤回消息
@@ -43,13 +41,13 @@ export const bilibiliLogin = async (e) => {
 
   /**
    * 处理登录成功
-   * @param {any} responseData - 登录响应数据
+   * @param {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').BiliCheckQrcode>} responseData - 登录响应数据
    */
   const handleLoginSuccess = async (responseData) => {
     Config.modify('cookies', 'bilibili', Array.isArray(responseData.data.data.headers['set-cookie'])
       ? responseData.data.data.headers['set-cookie'].join('; ')
       : responseData.data.data.headers['set-cookie'])
-    await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', { reply: true })
+    await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', true)
     await recallMessages()
   }
 
@@ -57,18 +55,18 @@ export const bilibiliLogin = async (e) => {
    * 处理二维码已扫描但未确认
    */
   const handleQrScanned = async () => {
-    const scannedMsg = await e.reply('二维码已扫码，未确认', { reply: true })
-    messageIds.push(scannedMsg?.messageId)
+    const scannedMsg = await e.reply('二维码已扫码，未确认', true)
+    messageIds.push(scannedMsg?.message_id)
 
     // 撤回原二维码消息
     try {
-      if (qrcodeMsg?.messageId) {
-        await e.bot.recallMsg(e, qrcodeMsg.messageId)
+      if (qrcodeMsg?.message_id) {
+        await e.bot.recallMsg(e, qrcodeMsg.message_id)
       }
     } catch { }
 
     // 从消息ID列表中移除已撤回的消息
-    const index = messageIds.indexOf(qrcodeMsg?.messageId)
+    const index = messageIds.indexOf(qrcodeMsg?.message_id)
     if (index > -1) {
       messageIds.splice(index, 1)
     }
@@ -78,7 +76,7 @@ export const bilibiliLogin = async (e) => {
    * 处理二维码失效
    */
   const handleQrExpired = async () => {
-    await e.reply('二维码已失效', { reply: true })
+    await e.reply('二维码已失效', true)
     await recallMessages()
   }
 
@@ -115,7 +113,7 @@ export const bilibiliLogin = async (e) => {
       await Common.sleep(3000)
     } catch (error) {
       console.error('轮询二维码状态时发生错误:', error)
-      await e.reply('登录过程中发生错误，请重试', { reply: true })
+      await e.reply('登录过程中发生错误，请重试', true)
       await recallMessages()
       return
     }
