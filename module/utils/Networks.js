@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import os from 'node:os'
 import http from 'node:http'
 import https from 'node:https'
 import Config from './Config.js'
@@ -8,24 +9,50 @@ import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
 /**
- * User-Agent 列表及权重配置
- * @type {{ua: string, weight: number}[]}
+ * User-Agent 列表及权重配置（按平台分类）
+ * @type {{windows: {ua: string, pct: number}[], mac: {ua: string, pct: number}[], linux: {ua: string, pct: number}[]}}
  */
-const userAgents = [
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', weight: 17.34 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.3124.85', weight: 2.48 },
-  { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0', weight: 2.48 }
-]
+const userAgentsByPlatform = {
+  windows: [
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 17.34 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0', pct: 2.48 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', pct: 2.48 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.0', pct: 2.48 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Trailer/93.3.8652.5', pct: 2.48 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0', pct: 1.24 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0', pct: 1.24 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36', pct: 1.24 },
+    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582', pct: 1.24 }
+  ],
+  mac: [
+    { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.15', pct: 43.03 },
+    { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36', pct: 21.05 }
+  ],
+  linux: [
+    { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 3.72 }
+  ]
+}
 
 /**
- * 根据权重随机获取 User-Agent
- * @returns {string | undefined} 随机的 User-Agent 字符串
+ * 根据系统平台和权重随机获取 User-Agent
+ * @returns {string} 随机的 User-Agent 字符串
  */
 const getRandomUserAgent = () => {
-  const totalWeight = userAgents.reduce((sum, a) => sum + a.weight, 0)
+  const platform = os.platform()
+  let agents
+
+  if (platform === 'win32') {
+    agents = userAgentsByPlatform.windows
+  } else if (platform === 'darwin') {
+    agents = userAgentsByPlatform.mac
+  } else {
+    agents = userAgentsByPlatform.linux
+  }
+
+  const totalWeight = agents.reduce((sum, a) => sum + a.pct, 0)
   let random = Math.random() * totalWeight
-  const found = userAgents.find(a => (random -= a.weight) <= 0)
-  return found?.ua || userAgents[0]?.ua
+  const found = agents.find(a => (random -= a.pct) <= 0)
+  return found?.ua || agents && agents[0]?.ua || ''
 }
 
 /**
@@ -184,19 +211,24 @@ export class Networks {
   /**
    * 获取重定向后的最终链接地址
    * @param {string} [url = ''] 可选参数，要获取重定向链接的URL地址
+   * @param {number} [retryCount = 0] 重试次数
    * @returns {Promise<string>} 返回最终的重定向链接地址
    */
-  async getLongLink(url = '') {
+  async getLongLink(url = '', retryCount = 0) {
     const targetUrl = url || this.url
     try {
       const response = await this.axiosInstance.get(targetUrl, {
-        ...this.getConfig(),
+        ...this.getConfig(retryCount),
         timeout: 5000,
         maxRedirects: 5
       })
-      return response.request.res.responseUrl || targetUrl
+      return response.request?.res?.responseUrl || response.config?.url || targetUrl
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
+      if (retryCount < this.maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return this.getLongLink(targetUrl, retryCount + 1)
+      }
       logger.error(`获取重定向链接失败: ${axiosError.message}`)
       return targetUrl
     }
@@ -204,12 +236,13 @@ export class Networks {
 
   /**
    * 获取首个302重定向地址
+   * @param {number} [retryCount = 0] 重试次数
    * @returns {Promise<string>} 返回重定向地址或原始URL
    */
-  async getLocation() {
+  async getLocation(retryCount = 0) {
     try {
       const response = await this.axiosInstance.get(this.url, {
-        ...this.getConfig(),
+        ...this.getConfig(retryCount),
         timeout: 3000,
         maxRedirects: 0,
         validateStatus: (status) => status >= 300 && status < 400
@@ -217,6 +250,10 @@ export class Networks {
       return response.headers.location || this.url
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
+      if (retryCount < this.maxRetries && axiosError.code !== 'ERR_BAD_REQUEST') {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return this.getLocation(retryCount + 1)
+      }
       logger.error(`获取首个302重定向地址失败: ${axiosError.message}`)
       return axiosError.response?.headers.location || this.url
     }

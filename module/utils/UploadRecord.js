@@ -235,8 +235,6 @@ async function prepareAudioFile(file) {
         })
       } catch (error) {
         throw new Error(`下载音频文件失败: ${error}`)
-      } finally {
-        network.cleanup()
       }
     }
     // 如果 file 是一个本地文件 URI 或者是一个存在的本地文件路径
