@@ -29,7 +29,8 @@ const userAgentsByPlatform = {
     { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36', pct: 21.05 }
   ],
   linux: [
-    { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 3.72 }
+    { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 3.72 },
+    { ua: 'Mozilla/5.0 (X11; Linux i686; rv:136.0) Gecko/20100101 Firefox/136.0', pct: 3.6 }
   ]
 }
 
@@ -114,13 +115,16 @@ export class Networks {
       timeout: this.timeout,
       scheduling
     }
-
-    this.httpAgent = new http.Agent(agentOptions)
-    this.httpsAgent = new https.Agent({
+    /** @type {import('https').AgentOptions} */
+    const httpsAgentOptions = {
       ...agentOptions,
       rejectUnauthorized: false,
-      secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3
-    })
+      minVersion: 'TLSv1',
+      maxVersion: 'TLSv1.3',
+      secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 | constants.SSL_OP_NO_COMPRESSION
+    }
+    this.httpAgent = new http.Agent(agentOptions)
+    this.httpsAgent = new https.Agent(httpsAgentOptions)
 
     this.axiosInstance = axios.create({
       timeout: this.timeout,
@@ -177,8 +181,7 @@ export class Networks {
   async getfetch() {
     try {
       return await this.request()
-    } catch (error) {
-      logger.error('请求失败:', error)
+    } catch (errr) {
       return false
     }
   }
@@ -194,13 +197,14 @@ export class Networks {
       return await this.axiosInstance(this.getConfig(retryCount))
     } catch (error) {
       const axiosError = /** @type {AxiosError} */(error)
+      const isSSLError = axiosError.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || axiosError.code === 'ERR_SSL_WRONG_VERSION_NUMBER' || axiosError.message?.includes('SSL')
       if (axiosError.response?.status === 429 || axiosError.response?.status === 403) {
         if (retryCount < this.maxRetries) {
           const delay = 2000 + Math.random() * 1000 + retryCount * 1000
           await new Promise(resolve => setTimeout(resolve, delay))
           return this.request(retryCount + 1)
         }
-      } else if (retryCount < this.maxRetries) {
+      } else if (retryCount < this.maxRetries && (isSSLError || !axiosError.response)) {
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
         return this.request(retryCount + 1)
       }
@@ -273,16 +277,26 @@ export class Networks {
 
   /**
    * 获取响应头信息
+   * @param {number} [retryCount = 0] 重试次数
    * @returns {Promise<import('axios').AxiosResponse['headers']>} 返回响应头信息
    */
-  async getHeaders() {
-    const config = this.getConfig()
-    const response = await this.axiosInstance.get(this.url, {
-      ...config,
-      timeout: 3000,
-      headers: { ...config.headers, Range: 'bytes=0-0' }
-    })
-    return response.headers
+  async getHeaders(retryCount = 0) {
+    try {
+      const config = this.getConfig(retryCount)
+      const response = await this.axiosInstance.get(this.url, {
+        ...config,
+        timeout: 3000,
+        headers: { ...config.headers, Range: 'bytes=0-0' }
+      })
+      return response.headers
+    } catch (error) {
+      const axiosError = /** @type {AxiosError} */(error)
+      if (retryCount < this.maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)))
+        return this.getHeaders(retryCount + 1)
+      }
+      throw axiosError.message
+    }
   }
 
   /**
@@ -302,20 +316,9 @@ export class Networks {
 
     try {
       let totalBytes = -1
-      // 重试时销毁旧连接池并创建新agent
-      let agent
-      if (retryCount > 0) {
-        // 销毁旧连接池
-        this.httpsAgent.destroy()
-        this.httpAgent.destroy()
-        // 重新创建连接池
-        const agentOpts = { keepAlive: false, timeout: 60000 }
-        agent = this.url.startsWith('https:')
-          ? new https.Agent({ ...agentOpts, rejectUnauthorized: false })
-          : new http.Agent(agentOpts)
-      } else {
-        agent = this.url.startsWith('https:') ? this.httpsAgent : this.httpAgent
-      }
+      // 选择合适的 agent
+      const httpsAgent = retryCount > 0 ? new https.Agent({ keepAlive: false, timeout: 60000, rejectUnauthorized: false }) : this.httpsAgent
+      const httpAgent = retryCount > 0 ? new http.Agent({ keepAlive: false, timeout: 60000 }) : this.httpAgent
       // 发起下载请求
       /** @type {import('axios').AxiosRequestConfig} */
       const downloadConfig = {
@@ -339,9 +342,9 @@ export class Networks {
 
       // 根据URL协议选择agent
       if (this.url.startsWith('https:')) {
-        downloadConfig.httpsAgent = agent
+        downloadConfig.httpsAgent = httpsAgent
       } else if (this.url.startsWith('http:')) {
-        downloadConfig.httpAgent = agent
+        downloadConfig.httpAgent = httpAgent
       }
 
       const response = await axios(downloadConfig)
@@ -419,7 +422,8 @@ export class Networks {
         const is403or429 = axiosError.response?.status === 403 || axiosError.response?.status === 429
         const isReset = axiosError.code === 'ECONNRESET' || axiosError.code === 'ECONNABORTED'
         const isTimeout = axiosError.code === 'ETIMEDOUT'
-        const delay = is403or429 ? 3000 + Math.random() * 2000 : isReset ? 2000 + retryCount * 1000 : isTimeout ? 2000 : 1500 * (retryCount + 1)
+        const isSSLError = axiosError.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || axiosError.code === 'ERR_SSL_WRONG_VERSION_NUMBER' || axiosError.message?.includes('SSL')
+        const delay = is403or429 ? 3000 + Math.random() * 2000 : isReset ? 2000 + retryCount * 1000 : isTimeout ? 2000 : isSSLError ? 1500 + retryCount * 500 : 1500 * (retryCount + 1)
         logger.warn(`下载失败(${axiosError.code || axiosError.message})，${Math.round(delay)}ms后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
         return this.downloadStream(progressCallback, retryCount + 1, options)

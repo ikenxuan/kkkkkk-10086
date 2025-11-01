@@ -11,7 +11,7 @@
     "postinstall": "node -e \"if (!require('fs').existsSync('node_modules/sqlite3/build')) process.exit(1)\" || npm rebuild @karinjs/sqlite3-cjs"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "5.7.1",
+    "@ikenxuan/amagi": "5.8.0",
     "@karinjs/md-html": "^1.3.0",
     "child_process": "^1.0.2",
     "axios": "npm:@karinjs/axios@1.13.1",
