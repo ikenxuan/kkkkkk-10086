@@ -148,7 +148,7 @@ export class kkkAdmin extends plugin {
           permission: 'master'
         },
         {
-          reg: /^#?(kkk)?\s*设置\s*(B站)ck$/i,
+          reg: /^#?(kkk)?\s*设置\s*([Bb]站)ck$/i,
           fnc: 'setbilick',
           permission: 'master'
         },
@@ -158,7 +158,7 @@ export class kkkAdmin extends plugin {
           permission: 'master'
         },
         {
-          reg: /^#?(kkk)?\s*B站\s*(扫码)?\s*登录$/i,
+          reg: /^#?(kkk)?\s*[Bb]站\s*(扫码)?\s*登录$/i,
           fnc: 'Blogin',
           permission: 'master'
         },
@@ -196,7 +196,7 @@ export class kkkAdmin extends plugin {
 
   async ConfigSwitch(e) {
     const regRet = SwitchCfgReg.exec(e.msg)
-    const key = regRet[1]
+    let key = regRet[1].replace(/b站/g, 'B站')
     const file = Object.entries(FileWitch).find(([, values]) => Object.keys(values).includes(key))?.[0]
     if (!file) {
       await e.reply('配置项不存在')
@@ -212,7 +212,8 @@ export class kkkAdmin extends plugin {
   async ConfigNumber(e) {
     const regRet = e.msg.match(NumberCfgReg)
     if (!regRet) return false
-    const type = NumberCfgType[regRet[1]]
+    let key = regRet[1].replace(/b站/g, 'B站')
+    const type = NumberCfgType[key]
     if (!type) {
       await e.reply('配置项不存在')
       return false

@@ -25,21 +25,21 @@ export class DouyinDBBase {
    */
   async init() {
     try {
-      logger.debug(logger.green("--------------------------[DouyinDB] 开始初始化数据库--------------------------"))
-      logger.debug("[DouyinDB] 正在连接数据库...")
+      logger.debug(logger.green('--------------------------[DouyinDB] 开始初始化数据库--------------------------'))
+      logger.debug('[DouyinDB] 正在连接数据库...')
       // 创建数据库连接
       await fs.promises.mkdir(path.dirname(this.dbPath), { recursive: true })
       this.db = new sqlite3.Database(this.dbPath)
       // 创建表结构
       await this.createTables()
-      logger.debug("[DouyinDB] 数据库模型同步成功")
-      logger.debug("[DouyinDB] 正在同步配置订阅...")
-      logger.debug("[DouyinDB] 配置项数量:", Config.pushlist.douyin?.length || 0)
+      logger.debug('[DouyinDB] 数据库模型同步成功')
+      logger.debug('[DouyinDB] 正在同步配置订阅...')
+      logger.debug('[DouyinDB] 配置项数量:', Config.pushlist.douyin?.length || 0)
       await this.syncConfigSubscriptions(Config.pushlist.douyin || [])
-      logger.debug("[DouyinDB] 配置订阅同步成功")
-      logger.debug(logger.green("--------------------------[DouyinDB] 初始化数据库完成--------------------------"))
+      logger.debug('[DouyinDB] 配置订阅同步成功')
+      logger.debug(logger.green('--------------------------[DouyinDB] 初始化数据库完成--------------------------'))
     } catch (error) {
-      logger.error("[DouyinDB] 数据库初始化失败:", error)
+      logger.error('[DouyinDB] 数据库初始化失败:', error)
       throw error
     }
     return this
@@ -193,11 +193,11 @@ export class DouyinDBBase {
    * @returns {Promise<{id: string, createdAt: string, updatedAt: string}>}
    */
   async getOrCreateBot(botId) {
-    let bot = await this.getQuery("SELECT * FROM Bots WHERE id = ?", [botId])
+    let bot = await this.getQuery('SELECT * FROM Bots WHERE id = ?', [botId])
     if (!bot) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO Bots (id, createdAt, updatedAt) VALUES (?, ?, ?)",
+        'INSERT INTO Bots (id, createdAt, updatedAt) VALUES (?, ?, ?)',
         [botId, now, now]
       )
       bot = { id: botId, createdAt: now, updatedAt: now }
@@ -213,12 +213,12 @@ export class DouyinDBBase {
    */
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
-    let group = await this.getQuery("SELECT * FROM Groups WHERE id = ?", [groupId])
+    let group = await this.getQuery('SELECT * FROM Groups WHERE id = ?', [groupId])
     if (!group) {
       // 如果群组不存在，创建新群组
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
         [groupId, botId, now, now]
       )
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
@@ -226,7 +226,7 @@ export class DouyinDBBase {
       // 如果群组已存在但机器人ID不同，更新机器人ID
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?",
+        'UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?',
         [botId, now, groupId]
       )
       group.botId = botId
@@ -243,19 +243,19 @@ export class DouyinDBBase {
    * @returns {Promise<{sec_uid: string, short_id?: string, remark?: string, living: boolean, filterMode: 'blacklist' | 'whitelist', createdAt: string, updatedAt: string}>}
    */
   async getOrCreateDouyinUser(sec_uid, short_id = '', remark = '') {
-    let user = await this.getQuery("SELECT * FROM DouyinUsers WHERE sec_uid = ?", [sec_uid])
+    let user = await this.getQuery('SELECT * FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
     if (!user) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO DouyinUsers (sec_uid, short_id, remark, living, filterMode, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [sec_uid, short_id, remark, 0, "blacklist", now, now]
+        'INSERT INTO DouyinUsers (sec_uid, short_id, remark, living, filterMode, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [sec_uid, short_id, remark, 0, 'blacklist', now, now]
       )
       user = {
         sec_uid,
         short_id,
         remark,
         living: false,
-        filterMode: "blacklist",
+        filterMode: 'blacklist',
         createdAt: now,
         updatedAt: now
       }
@@ -264,24 +264,24 @@ export class DouyinDBBase {
       const updates = []
       const params = []
       if (remark && user.remark !== remark) {
-        updates.push("remark = ?")
+        updates.push('remark = ?')
         params.push(remark)
         user.remark = remark
         needUpdate = true
       }
       if (short_id && user.short_id !== short_id) {
-        updates.push("short_id = ?")
+        updates.push('short_id = ?')
         params.push(short_id)
         user.short_id = short_id
         needUpdate = true
       }
       if (needUpdate) {
         const now = (/* @__PURE__ */ new Date()).toISOString()
-        updates.push("updatedAt = ?")
+        updates.push('updatedAt = ?')
         params.push(now)
         params.push(sec_uid)
         await this.runQuery(
-          `UPDATE DouyinUsers SET ${updates.join(", ")} WHERE sec_uid = ?`,
+          `UPDATE DouyinUsers SET ${updates.join(', ')} WHERE sec_uid = ?`,
           params
         )
         user.updatedAt = now
@@ -303,13 +303,13 @@ export class DouyinDBBase {
     await this.getOrCreateGroup(groupId, botId)
     await this.getOrCreateDouyinUser(sec_uid, short_id, remark)
     let subscription = await this.getQuery(
-      "SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?",
+      'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
       [groupId, sec_uid]
     )
     if (!subscription) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO GroupUserSubscriptions (groupId, sec_uid, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+        'INSERT INTO GroupUserSubscriptions (groupId, sec_uid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
         [groupId, sec_uid, now, now]
       )
       subscription = { groupId, sec_uid, createdAt: now, updatedAt: now }
@@ -325,11 +325,11 @@ export class DouyinDBBase {
    */
   async unsubscribeDouyinUser(groupId, sec_uid) {
     const result = await this.runQuery(
-      "DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?",
+      'DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
       [groupId, sec_uid]
     )
     await this.runQuery(
-      "DELETE FROM AwemeCaches WHERE groupId = ? AND sec_uid = ?",
+      'DELETE FROM AwemeCaches WHERE groupId = ? AND sec_uid = ?',
       [groupId, sec_uid]
     )
     return result.changes > 0
@@ -344,13 +344,13 @@ export class DouyinDBBase {
    */
   async addAwemeCache(aweme_id, sec_uid, groupId) {
     let cache = await this.getQuery(
-      "SELECT * FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?",
+      'SELECT * FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?',
       [aweme_id, sec_uid, groupId]
     )
     if (!cache) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
         [aweme_id, sec_uid, groupId, now, now]
       )
       cache = {
@@ -374,7 +374,7 @@ export class DouyinDBBase {
    */
   async isAwemePushed(aweme_id, sec_uid, groupId) {
     const result = await this.getQuery(
-      "SELECT COUNT(*) as count FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?",
+      'SELECT COUNT(*) as count FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?',
       [aweme_id, sec_uid, groupId]
     )
     return (result?.count || 0) > 0
@@ -386,7 +386,7 @@ export class DouyinDBBase {
    * @returns {Promise<{id: string, botId: string, createdAt: string, updatedAt: string}[]>}
    */
   async getBotGroups(botId) {
-    return await this.allQuery("SELECT * FROM Groups WHERE botId = ?", [botId])
+    return await this.allQuery('SELECT * FROM Groups WHERE botId = ?', [botId])
   }
 
   /**
@@ -444,7 +444,7 @@ export class DouyinDBBase {
    */
   async isSubscribed(sec_uid, groupId) {
     const result = await this.getQuery(
-      "SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE sec_uid = ? AND groupId = ?",
+      'SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE sec_uid = ? AND groupId = ?',
       [sec_uid, groupId]
     )
     return (result?.count || 0) > 0
@@ -456,7 +456,7 @@ export class DouyinDBBase {
    * @returns {Promise<{ sec_uid: string, short_id?: string, remark?: string, living: boolean, filterMode: 'blacklist' | 'whitelist', createdAt: string, updatedAt: string } | null>} 返回用户信息，如果不存在则返回null
    */
   async getDouyinUser(sec_uid) {
-    const user = await this.getQuery("SELECT * FROM DouyinUsers WHERE sec_uid = ?", [sec_uid])
+    const user = await this.getQuery('SELECT * FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
     if (user) {
       user.living = !!user.living
     }
@@ -474,7 +474,7 @@ export class DouyinDBBase {
     if (!user) return false
     const now = (/* @__PURE__ */ new Date()).toISOString()
     const result = await this.runQuery(
-      "UPDATE DouyinUsers SET living = ?, updatedAt = ? WHERE sec_uid = ?",
+      'UPDATE DouyinUsers SET living = ?, updatedAt = ? WHERE sec_uid = ?',
       [living ? 1 : 0, now, sec_uid]
     )
     return result.changes > 0
@@ -501,13 +501,13 @@ export class DouyinDBBase {
     // 初始化每个群组的订阅用户集合
     for (const item of configItems) {
       const sec_uid = item.sec_uid
-      const short_id = item.short_id ?? ""
-      const remark = item.remark ?? ""
+      const short_id = item.short_id ?? ''
+      const remark = item.remark ?? ''
       // 创建或更新抖音用户记录
       await this.getOrCreateDouyinUser(sec_uid, short_id, remark)
       // 处理该用户的所有群组订阅
       for (const groupWithBot of item.group_id) {
-        const [groupId, botId] = groupWithBot.split(":")
+        const [groupId, botId] = groupWithBot.split(':')
         if (!groupId || !botId) continue
         // 确保群组存在
         await this.getOrCreateGroup(groupId, botId)
@@ -526,7 +526,7 @@ export class DouyinDBBase {
     }
     // 2. 获取数据库中的所有订阅关系，并与配置文件比较，删除不在配置文件中的订阅
     // 获取所有群组
-    const allGroups = await this.allQuery("SELECT * FROM Groups")
+    const allGroups = await this.allQuery('SELECT * FROM Groups')
     for (const group of allGroups) {
       const groupId = group.id
       const configUsers = configSubscriptions.get(groupId) ?? /* @__PURE__ */ new Set()
@@ -544,17 +544,17 @@ export class DouyinDBBase {
     }
     // 3. 清理不再被任何群组订阅的抖音用户记录及其过滤词和过滤标签
     // 获取所有抖音用户
-    const allUsers = await this.allQuery("SELECT * FROM DouyinUsers")
+    const allUsers = await this.allQuery('SELECT * FROM DouyinUsers')
     for (const user of allUsers) {
       const sec_uid = user.sec_uid
       // 检查该用户是否还有群组订阅
       const subscribedGroups = await this.getUserSubscribedGroups(sec_uid)
       if (subscribedGroups.length === 0) {
         // 删除该用户的过滤词和过滤标签
-        await this.runQuery("DELETE FROM FilterWords WHERE sec_uid = ?", [sec_uid])
-        await this.runQuery("DELETE FROM FilterTags WHERE sec_uid = ?", [sec_uid])
+        await this.runQuery('DELETE FROM FilterWords WHERE sec_uid = ?', [sec_uid])
+        await this.runQuery('DELETE FROM FilterTags WHERE sec_uid = ?', [sec_uid])
         // 删除该用户记录
-        await this.runQuery("DELETE FROM DouyinUsers WHERE sec_uid = ?", [sec_uid])
+        await this.runQuery('DELETE FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
         logger.mark(`已删除抖音用户 ${sec_uid} 的记录及相关过滤设置（不再被任何群组订阅）`)
       }
     }
@@ -566,7 +566,7 @@ export class DouyinDBBase {
    * @returns {Promise<{id: string, botId: string, createdAt: string, updatedAt: string} | null>} 群组信息
    */
   async getGroupById(groupId) {
-    return await this.getQuery("SELECT * FROM Groups WHERE id = ?", [groupId]) || null
+    return await this.getQuery('SELECT * FROM Groups WHERE id = ?', [groupId]) || null
   }
 
   /**
@@ -579,7 +579,7 @@ export class DouyinDBBase {
     const user = await this.getOrCreateDouyinUser(sec_uid)
     const now = (/* @__PURE__ */ new Date()).toISOString()
     await this.runQuery(
-      "UPDATE DouyinUsers SET filterMode = ?, updatedAt = ? WHERE sec_uid = ?",
+      'UPDATE DouyinUsers SET filterMode = ?, updatedAt = ? WHERE sec_uid = ?',
       [filterMode, now, sec_uid]
     )
     return { ...user, filterMode, updatedAt: now }
@@ -594,13 +594,13 @@ export class DouyinDBBase {
   async addFilterWord(sec_uid, word) {
     await this.getOrCreateDouyinUser(sec_uid);
     let filterWord = await this.getQuery(
-      "SELECT * FROM FilterWords WHERE sec_uid = ? AND word = ?",
+      'SELECT * FROM FilterWords WHERE sec_uid = ? AND word = ?',
       [sec_uid, word]
     )
     if (!filterWord) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO FilterWords (sec_uid, douyinUserSecUid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO FilterWords (sec_uid, douyinUserSecUid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
         [sec_uid, sec_uid, word, now, now]
       )
       filterWord = {
@@ -623,7 +623,7 @@ export class DouyinDBBase {
    */
   async removeFilterWord(sec_uid, word) {
     const result = await this.runQuery(
-      "DELETE FROM FilterWords WHERE sec_uid = ? AND word = ?",
+      'DELETE FROM FilterWords WHERE sec_uid = ? AND word = ?',
       [sec_uid, word]
     )
     return result.changes > 0
@@ -638,13 +638,13 @@ export class DouyinDBBase {
   async addFilterTag(sec_uid, tag) {
     await this.getOrCreateDouyinUser(sec_uid)
     let filterTag = await this.getQuery(
-      "SELECT * FROM FilterTags WHERE sec_uid = ? AND tag = ?",
+      'SELECT * FROM FilterTags WHERE sec_uid = ? AND tag = ?',
       [sec_uid, tag]
     )
     if (!filterTag) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO FilterTags (sec_uid, douyinUserSecUid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO FilterTags (sec_uid, douyinUserSecUid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
         [sec_uid, sec_uid, tag, now, now]
       )
       filterTag = {
@@ -667,7 +667,7 @@ export class DouyinDBBase {
    */
   async removeFilterTag(sec_uid, tag) {
     const result = await this.runQuery(
-      "DELETE FROM FilterTags WHERE sec_uid = ? AND tag = ?",
+      'DELETE FROM FilterTags WHERE sec_uid = ? AND tag = ?',
       [sec_uid, tag]
     )
     return result.changes > 0
@@ -679,7 +679,7 @@ export class DouyinDBBase {
    * @returns {Promise<string[]>} 过滤词列表
    */
   async getFilterWords(sec_uid) {
-    const filterWords = await this.allQuery("SELECT * FROM FilterWords WHERE sec_uid = ?", [sec_uid])
+    const filterWords = await this.allQuery('SELECT * FROM FilterWords WHERE sec_uid = ?', [sec_uid])
     return filterWords.map((word) => word.word)
   }
 
@@ -689,7 +689,7 @@ export class DouyinDBBase {
    * @returns {Promise<string[]>} 过滤标签列表
    */
   async getFilterTags(sec_uid) {
-    const filterTags = await this.allQuery("SELECT * FROM FilterTags WHERE sec_uid = ?", [sec_uid])
+    const filterTags = await this.allQuery('SELECT * FROM FilterTags WHERE sec_uid = ?', [sec_uid])
     return filterTags.map((tag) => tag.tag)
   }
 
@@ -716,10 +716,11 @@ export class DouyinDBBase {
    * @returns {Promise<boolean>} 是否应该被过滤
    */
   async shouldFilter(PushItem, tags = []) {
+    // 使用 PushItem.sec_uid 而不是 PushItem.Detail_Data.sec_uid
     const sec_uid = PushItem.sec_uid
     if (!sec_uid) {
       logger.warn(`推送项缺少 sec_uid 参数: ${JSON.stringify(PushItem)}`)
-      return false
+      return false // 如果没有 sec_uid，默认不过滤
     }
     const { filterMode, filterWords, filterTags } = await this.getFilterConfig(sec_uid)
     logger.debug(`
@@ -728,7 +729,8 @@ export class DouyinDBBase {
       过滤词：${filterWords}
       过滤标签：${filterTags}
       `)
-    const desc = PushItem.Detail_Data.desc ?? ""
+    const desc = PushItem.Detail_Data.desc ?? ''
+    // 检查内容中是否包含过滤词
     const hasFilterWord = filterWords.some((word) => desc.includes(word))
     const hasFilterTag = filterTags.some(
       (filterTag) => tags.some((tag) => tag === filterTag)
@@ -736,24 +738,28 @@ export class DouyinDBBase {
     logger.debug(`
       作者：${PushItem.remark}
       检查内容：${desc}
-      命中词：[${filterWords.join("], [")}]
-      命中标签：[${filterTags.join("], [")}]
+      命中词：[${filterWords.join('], [')}]
+      命中标签：[${filterTags.join('], [')}]
       过滤模式：${filterMode}
       是否过滤：${hasFilterWord || hasFilterTag ? logger.red(`${hasFilterWord || hasFilterTag}`) : logger.green(`${hasFilterWord || hasFilterTag}`)}
       作品地址：${logger.green(`https://www.douyin.com/video/${PushItem.Detail_Data.aweme_id}`)}
       `)
-    if (filterMode === "blacklist") {
+    // 根据过滤模式决定是否过滤
+    if (filterMode === 'blacklist') {
+      // 黑名单模式：如果包含过滤词或过滤标签，则过滤
       if (hasFilterWord || hasFilterTag) {
         logger.warn(`
           作品内容命中黑名单规则，已过滤该作品不再推送
           作品地址：${logger.yellow(PushItem.Detail_Data.share_url)}
-          命中的黑名单词：[${filterWords.join("], [")}]
-          命中的黑名单标签：[${filterTags.join("], [")}]
+          命中的黑名单词：[${filterWords.join('], [')}]
+          命中的黑名单标签：[${filterTags.join('], [')}]
           `)
         return true
       }
       return false
     } else {
+      // 白名单模式：如果不包含任何白名单词或白名单标签，则过滤
+      // 注意：如果白名单为空，则不过滤任何内容
       if (filterWords.length === 0 && filterTags.length === 0) {
         return false
       }
@@ -763,8 +769,8 @@ export class DouyinDBBase {
       logger.warn(`
         作品内容未命中白名单规则，已过滤该作品不再推送
         作品地址：${logger.yellow(PushItem.Detail_Data.share_url)}
-        命中的黑名单词：[${filterWords.join("], [")}]
-        命中的黑名单标签：[${filterTags.join("], [")}]
+        命中的黑名单词：[${filterWords.join('], [')}]
+        命中的黑名单标签：[${filterTags.join('], [')}]
         `)
       return true
     }
@@ -778,7 +784,7 @@ export class DouyinDBBase {
   async cleanOldAwemeCache(days = 7) {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
     const result = await this.runQuery(
-      "DELETE FROM AwemeCaches WHERE datetime(createdAt) < datetime(?)",
+      'DELETE FROM AwemeCaches WHERE datetime(createdAt) < datetime(?)',
       [cutoffDate.toISOString()]
     )
     return result.changes ?? 0
@@ -798,7 +804,7 @@ export class DouyinDBBase {
         if (options?.where?.botId) {
           return await this.getBotGroups(options.where.botId)
         }
-        return await this.allQuery("SELECT * FROM Groups")
+        return await this.allQuery('SELECT * FROM Groups')
       }
     }
   }
@@ -815,50 +821,50 @@ export class DouyinDBBase {
        * @param {string} [options.where.groupId] - 群组ID
        * @param {number} [options.where.sec_uid] - 抖音用户UID
        * @param {string} [options.where.aweme_id] - 作品ID
-       * @param {Record<string, 'ASC' | 'DESC'>} [options.order] - 排序条件,键为字段名,值为"ASC"或"DESC"
+       * @param {Record<string, 'ASC' | 'DESC'>} [options.order] - 排序条件,键为字段名,值为'ASC'或'DESC'
        * @param {number} [options.take] - 限制返回记录数量
-       * @param {string[]} [options.relations] - 关联查询,支持"douyinUser"
+       * @param {string[]} [options.relations] - 关联查询,支持'douyinUser'
        * @returns {Promise<T[]>} 返回动态缓存记录数组
        */
       find: async (options = {}) => {
         const { where = {}, order, take, relations } = options
-        let sql = "SELECT * FROM AwemeCaches"
+        let sql = 'SELECT * FROM AwemeCaches'
         const params = []
         const conditions = []
         if (where.groupId) {
-          conditions.push("groupId = ?")
+          conditions.push('groupId = ?')
           params.push(where.groupId)
         }
         if (where.sec_uid) {
-          conditions.push("sec_uid = ?")
+          conditions.push('sec_uid = ?')
           params.push(where.sec_uid)
         }
         if (where.aweme_id) {
-          conditions.push("aweme_id = ?")
+          conditions.push('aweme_id = ?')
           params.push(where.aweme_id)
         }
         if (conditions.length > 0) {
-          sql += " WHERE " + conditions.join(" AND ")
+          sql += ' WHERE ' + conditions.join(' AND ')
         }
         if (order) {
           const orderClauses = [];
-          const allowedFields = ["id", "aweme_id", "sec_uid", "groupId", "createdAt", "updatedAt"]
-          const allowedDirections = ["ASC", "DESC"]
+          const allowedFields = ['id', 'aweme_id', 'sec_uid', 'groupId', 'createdAt', 'updatedAt']
+          const allowedDirections = ['ASC', 'DESC']
           for (const [field, direction] of Object.entries(order)) {
             if (allowedFields.includes(field) && allowedDirections.includes(direction)) {
               orderClauses.push(`${field} ${direction}`)
             }
           }
           if (orderClauses.length > 0) {
-            sql += " ORDER BY " + orderClauses.join(", ")
+            sql += ' ORDER BY ' + orderClauses.join(', ')
           }
         }
         if (take) {
-          sql += " LIMIT ?"
+          sql += ' LIMIT ?'
           params.push(take.toString())
         }
         const caches = await this.allQuery(sql, params)
-        if (relations && relations.includes("douyinUser")) {
+        if (relations && relations.includes('douyinUser')) {
           const result = []
           for (const cache of caches) {
             const douyinUser = await this.getDouyinUser(cache.sec_uid)
@@ -890,28 +896,28 @@ export class DouyinDBBase {
         const { groupId, sec_uid, aweme_id } = conditions
         if (groupId && sec_uid) {
           const result = await this.runQuery(
-            "DELETE FROM AwemeCaches WHERE groupId = ? AND sec_uid = ?",
+            'DELETE FROM AwemeCaches WHERE groupId = ? AND sec_uid = ?',
             [groupId, sec_uid]
           )
           return { affected: result.changes }
         }
         if (groupId) {
           const result = await this.runQuery(
-            "DELETE FROM AwemeCaches WHERE groupId = ?",
+            'DELETE FROM AwemeCaches WHERE groupId = ?',
             [groupId]
           )
           return { affected: result.changes }
         }
         if (sec_uid) {
           const result = await this.runQuery(
-            "DELETE FROM AwemeCaches WHERE sec_uid = ?",
+            'DELETE FROM AwemeCaches WHERE sec_uid = ?',
             [sec_uid]
           )
           return { affected: result.changes }
         }
         if (aweme_id) {
           const result = await this.runQuery(
-            "DELETE FROM AwemeCaches WHERE aweme_id = ?",
+            'DELETE FROM AwemeCaches WHERE aweme_id = ?',
             [aweme_id]
           )
           return { affected: result.changes }

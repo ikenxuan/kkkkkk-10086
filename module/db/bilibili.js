@@ -26,21 +26,21 @@ export class BilibiliDBBase {
    */
   async init() {
     try {
-      logger.debug(logger.green("--------------------------[BilibiliDB] 开始初始化数据库--------------------------"))
-      logger.debug("[BilibiliDB] 正在连接数据库...")
+      logger.debug(logger.green('--------------------------[BilibiliDB] 开始初始化数据库--------------------------'))
+      logger.debug('[BilibiliDB] 正在连接数据库...')
       // 创建数据库连接
       await fs.promises.mkdir(path.dirname(this.dbPath), { recursive: true })
       this.db = new sqlite3.Database(this.dbPath)
       // 创建表结构
       await this.createTables()
-      logger.debug("[BilibiliDB] 数据库模型同步成功")
-      logger.debug("[BilibiliDB] 正在同步配置订阅...")
-      logger.debug("[BilibiliDB] 配置项数量:", Config.pushlist.bilibili?.length || 0)
+      logger.debug('[BilibiliDB] 数据库模型同步成功')
+      logger.debug('[BilibiliDB] 正在同步配置订阅...')
+      logger.debug('[BilibiliDB] 配置项数量:', Config.pushlist.bilibili?.length || 0)
       await this.syncConfigSubscriptions(Config.pushlist.bilibili || [])
-      logger.debug("[BilibiliDB] 配置订阅同步成功")
-      logger.debug(logger.green("--------------------------[BilibiliDB] 初始化数据库完成--------------------------"))
+      logger.debug('[BilibiliDB] 配置订阅同步成功')
+      logger.debug(logger.green('--------------------------[BilibiliDB] 初始化数据库完成--------------------------'))
     } catch (error) {
-      logger.error("[BilibiliDB] 数据库初始化失败:", error)
+      logger.error('[BilibiliDB] 数据库初始化失败:', error)
       throw error
     }
     return this
@@ -193,11 +193,11 @@ export class BilibiliDBBase {
    * @returns {Promise<{id: string, createdAt: string, updatedAt: string}>}
    */
   async getOrCreateBot(botId) {
-    let bot = await this.getQuery("SELECT * FROM Bots WHERE id = ?", [botId])
+    let bot = await this.getQuery('SELECT * FROM Bots WHERE id = ?', [botId])
     if (!bot) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO Bots (id, createdAt, updatedAt) VALUES (?, ?, ?)",
+        'INSERT INTO Bots (id, createdAt, updatedAt) VALUES (?, ?, ?)',
         [botId, now, now]
       )
       bot = { id: botId, createdAt: now, updatedAt: now }
@@ -213,12 +213,12 @@ export class BilibiliDBBase {
    */
   async getOrCreateGroup(groupId, botId) {
     await this.getOrCreateBot(botId)
-    let group = await this.getQuery("SELECT * FROM Groups WHERE id = ?", [groupId])
+    let group = await this.getQuery('SELECT * FROM Groups WHERE id = ?', [groupId])
     if (!group) {
       // 如果群组不存在，创建新群组
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+        'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
         [groupId, botId, now, now]
       )
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
@@ -226,7 +226,7 @@ export class BilibiliDBBase {
       // 如果群组已存在但机器人ID不同，更新机器人ID
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?",
+        'UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?',
         [botId, now, groupId]
       )
       group.botId = botId
@@ -241,18 +241,18 @@ export class BilibiliDBBase {
    * @param {string} [remark=''] - UP主昵称
    * @returns {Promise<{host_mid: number, remark: string, filterMode: 'blacklist'|'whitelist', createdAt: string, updatedAt: string}>}
    */
-  async getOrCreateBilibiliUser(host_mid, remark = "") {
-    let user = await this.getQuery("SELECT * FROM BilibiliUsers WHERE host_mid = ?", [host_mid])
+  async getOrCreateBilibiliUser(host_mid, remark = '') {
+    let user = await this.getQuery('SELECT * FROM BilibiliUsers WHERE host_mid = ?', [host_mid])
     if (!user) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO BilibiliUsers (host_mid, remark, filterMode, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
-        [host_mid, remark, "blacklist", now, now]
+        'INSERT INTO BilibiliUsers (host_mid, remark, filterMode, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
+        [host_mid, remark, 'blacklist', now, now]
       )
       user = {
         host_mid,
         remark,
-        filterMode: "blacklist",
+        filterMode: 'blacklist',
         createdAt: now,
         updatedAt: now
       }
@@ -260,7 +260,7 @@ export class BilibiliDBBase {
       if (remark && user.remark !== remark) {
         const now = (/* @__PURE__ */ new Date()).toISOString()
         await this.runQuery(
-          "UPDATE BilibiliUsers SET remark = ?, updatedAt = ? WHERE host_mid = ?",
+          'UPDATE BilibiliUsers SET remark = ?, updatedAt = ? WHERE host_mid = ?',
           [remark, now, host_mid]
         )
         user.remark = remark
@@ -278,17 +278,17 @@ export class BilibiliDBBase {
    * @param {string} [remark=''] - UP主昵称
    * @returns {Promise<{ groupId: string, host_mid: number, createdAt: string, updatedAt: string }>}
    */
-  async subscribeBilibiliUser(groupId, botId, host_mid, remark = "") {
+  async subscribeBilibiliUser(groupId, botId, host_mid, remark = '') {
     await this.getOrCreateGroup(groupId, botId)
     await this.getOrCreateBilibiliUser(host_mid, remark)
     let subscription = await this.getQuery(
-      "SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?",
+      'SELECT * FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
       [groupId, host_mid]
     )
     if (!subscription) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       await this.runQuery(
-        "INSERT INTO GroupUserSubscriptions (groupId, host_mid, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
+        'INSERT INTO GroupUserSubscriptions (groupId, host_mid, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
         [groupId, host_mid, now, now]
       )
       subscription = { groupId, host_mid, createdAt: now, updatedAt: now }
@@ -304,11 +304,11 @@ export class BilibiliDBBase {
    */
   async unsubscribeBilibiliUser(groupId, host_mid) {
     const result = await this.runQuery(
-      "DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?",
+      'DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
       [groupId, host_mid]
     )
     await this.runQuery(
-      "DELETE FROM DynamicCaches WHERE groupId = ? AND host_mid = ?",
+      'DELETE FROM DynamicCaches WHERE groupId = ? AND host_mid = ?',
       [groupId, host_mid]
     )
     return result.changes > 0
@@ -331,13 +331,13 @@ export class BilibiliDBBase {
    */
   async addDynamicCache(dynamic_id, host_mid, groupId, dynamic_type = '') {
     let cache = await this.getQuery(
-      "SELECT * FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?",
+      'SELECT * FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?',
       [dynamic_id, host_mid, groupId]
     )
     if (!cache) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)",
+        'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
         [dynamic_id, host_mid, groupId, dynamic_type, now, now]
       )
       cache = {
@@ -362,7 +362,7 @@ export class BilibiliDBBase {
    */
   async isDynamicPushed(dynamic_id, host_mid, groupId) {
     const result = await this.getQuery(
-      "SELECT COUNT(*) as count FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?",
+      'SELECT COUNT(*) as count FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?',
       [dynamic_id, host_mid, groupId]
     )
     return (result?.count || 0) > 0
@@ -374,7 +374,7 @@ export class BilibiliDBBase {
    @returns {Promise<{id: string, botId: string, createdAt: string, updatedAt: string}[]>} - 群组列表
    */
   async getBotGroups(botId) {
-    return await this.allQuery("SELECT * FROM Groups WHERE botId = ?", [botId])
+    return await this.allQuery('SELECT * FROM Groups WHERE botId = ?', [botId])
   }
 
   /**
@@ -440,13 +440,13 @@ export class BilibiliDBBase {
    * @property {string} updatedAt - 更新时间
    */
   async getGroupDynamicCache(groupId, host_mid) {
-    let sql = "SELECT * FROM DynamicCaches WHERE groupId = ?"
+    let sql = 'SELECT * FROM DynamicCaches WHERE groupId = ?'
     const params = [groupId]
     if (host_mid) {
-      sql += " AND host_mid = ?"
+      sql += ' AND host_mid = ?'
       params.push(host_mid)
     }
-    sql += " ORDER BY createdAt DESC"
+    sql += ' ORDER BY createdAt DESC'
     return await this.allQuery(sql, params)
   }
 
@@ -458,7 +458,7 @@ export class BilibiliDBBase {
    */
   async isSubscribed(host_mid, groupId) {
     const result = await this.getQuery(
-      "SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE host_mid = ? AND groupId = ?",
+      'SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE host_mid = ? AND groupId = ?',
       [host_mid, groupId]
     )
     return (result?.count || 0) > 0
@@ -475,12 +475,12 @@ export class BilibiliDBBase {
     // 初始化每个群组的订阅UP集合
     for (const item of configItems) {
       const host_mid = item.host_mid
-      const remark = item.remark ?? ""
+      const remark = item.remark ?? ''
       // 创建或更新B站用户记录
       await this.getOrCreateBilibiliUser(host_mid, remark)
       // 处理该UP主的所有群组订阅
       for (const groupWithBot of item.group_id) {
-        const [groupId, botId] = groupWithBot.split(":")
+        const [groupId, botId] = groupWithBot.split(':')
         if (!groupId || !botId) continue
         // 确保群组存在
         await this.getOrCreateGroup(groupId, botId)
@@ -499,7 +499,7 @@ export class BilibiliDBBase {
     }
     // 2. 获取数据库中的所有订阅关系，并与配置文件比较，删除不在配置文件中的订阅
     // 获取所有群组
-    const allGroups = await this.allQuery("SELECT * FROM Groups")
+    const allGroups = await this.allQuery('SELECT * FROM Groups')
     for (const group of allGroups) {
       const groupId = group.id
       const configUps = configSubscriptions.get(groupId) ?? /* @__PURE__ */ new Set()
@@ -516,17 +516,17 @@ export class BilibiliDBBase {
     }
     // 3. 清理不再被任何群组订阅的UP主记录及其过滤词和过滤标签
     // 获取所有B站用户
-    const allUsers = await this.allQuery("SELECT * FROM BilibiliUsers")
+    const allUsers = await this.allQuery('SELECT * FROM BilibiliUsers')
     for (const user of allUsers) {
       const host_mid = user.host_mid
       // 检查该UP主是否还有群组订阅
       const subscribedGroups = await this.getUserSubscribedGroups(host_mid)
       if (subscribedGroups.length === 0) {
         // 删除该UP主的过滤词和过滤标签
-        await this.runQuery("DELETE FROM FilterWords WHERE host_mid = ?", [host_mid])
-        await this.runQuery("DELETE FROM FilterTags WHERE host_mid = ?", [host_mid])
+        await this.runQuery('DELETE FROM FilterWords WHERE host_mid = ?', [host_mid])
+        await this.runQuery('DELETE FROM FilterTags WHERE host_mid = ?', [host_mid])
         // 删除该UP主记录
-        await this.runQuery("DELETE FROM BilibiliUsers WHERE host_mid = ?", [host_mid])
+        await this.runQuery('DELETE FROM BilibiliUsers WHERE host_mid = ?', [host_mid])
         logger.mark(`已删除UP主 ${host_mid} 的记录及相关过滤设置（不再被任何群组订阅）`)
       }
     }
@@ -547,7 +547,7 @@ export class BilibiliDBBase {
     const user = await this.getOrCreateBilibiliUser(host_mid)
     const now = (/* @__PURE__ */ new Date()).toISOString()
     await this.runQuery(
-      "UPDATE BilibiliUsers SET filterMode = ?, updatedAt = ? WHERE host_mid = ?",
+      'UPDATE BilibiliUsers SET filterMode = ?, updatedAt = ? WHERE host_mid = ?',
       [filterMode, now, host_mid]
     )
     return { ...user, filterMode, updatedAt: now }
@@ -568,13 +568,13 @@ export class BilibiliDBBase {
   async addFilterWord(host_mid, word) {
     await this.getOrCreateBilibiliUser(host_mid)
     let filterWord = await this.getQuery(
-      "SELECT * FROM FilterWords WHERE host_mid = ? AND word = ?",
+      'SELECT * FROM FilterWords WHERE host_mid = ? AND word = ?',
       [host_mid, word]
     )
     if (!filterWord) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO FilterWords (host_mid, bilibiliUserHostMid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO FilterWords (host_mid, bilibiliUserHostMid, word, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
         [host_mid, host_mid, word, now, now]
       )
       filterWord = {
@@ -597,7 +597,7 @@ export class BilibiliDBBase {
    */
   async removeFilterWord(host_mid, word) {
     const result = await this.runQuery(
-      "DELETE FROM FilterWords WHERE host_mid = ? AND word = ?",
+      'DELETE FROM FilterWords WHERE host_mid = ? AND word = ?',
       [host_mid, word]
     )
     return result.changes > 0
@@ -618,13 +618,13 @@ export class BilibiliDBBase {
   async addFilterTag(host_mid, tag) {
     await this.getOrCreateBilibiliUser(host_mid)
     let filterTag = await this.getQuery(
-      "SELECT * FROM FilterTags WHERE host_mid = ? AND tag = ?",
+      'SELECT * FROM FilterTags WHERE host_mid = ? AND tag = ?',
       [host_mid, tag]
     )
     if (!filterTag) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        "INSERT INTO FilterTags (host_mid, bilibiliUserHostMid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)",
+        'INSERT INTO FilterTags (host_mid, bilibiliUserHostMid, tag, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
         [host_mid, host_mid, tag, now, now]
       )
       filterTag = {
@@ -647,7 +647,7 @@ export class BilibiliDBBase {
    */
   async removeFilterTag(host_mid, tag) {
     const result = await this.runQuery(
-      "DELETE FROM FilterTags WHERE host_mid = ? AND tag = ?",
+      'DELETE FROM FilterTags WHERE host_mid = ? AND tag = ?',
       [host_mid, tag]
     )
     return result.changes > 0
@@ -659,7 +659,7 @@ export class BilibiliDBBase {
    * @returns {Promise<string[]>} - 过滤词数组
    */
   async getFilterWords(host_mid) {
-    const filterWords = await this.allQuery("SELECT * FROM FilterWords WHERE host_mid = ?", [host_mid])
+    const filterWords = await this.allQuery('SELECT * FROM FilterWords WHERE host_mid = ?', [host_mid])
     return filterWords.map((word) => word.word)
   }
 
@@ -669,7 +669,7 @@ export class BilibiliDBBase {
    * @returns {Promise<string[]>} - 过滤标签数组
    */
   async getFilterTags(host_mid) {
-    const filterTags = await this.allQuery("SELECT * FROM FilterTags WHERE host_mid = ?", [host_mid])
+    const filterTags = await this.allQuery('SELECT * FROM FilterTags WHERE host_mid = ?', [host_mid])
     return filterTags.map((tag) => tag.tag)
   }
 
@@ -696,38 +696,45 @@ export class BilibiliDBBase {
    * @returns {Promise<{text: string, tags: string[]}>} - 提取的文本内容和标签
    */
   async extractTextAndTags(dynamicData) {
-    let text = ""
+    let text = ''
     /** @type {string[]} - 提取的标签数组 */
     const tags = []
+    // 如果没有模块数据，返回空结果
     if (!dynamicData || !dynamicData.modules || !dynamicData.modules.module_dynamic) {
       return { text, tags }
     }
     const moduleDynamic = dynamicData.modules.module_dynamic
+    // 提取直播标题和分区
     if (moduleDynamic.major && moduleDynamic.major.live_rcmd) {
       const content = JSON.parse(moduleDynamic.major.live_rcmd.content)
-      text += content.live_play_info.title + " "
+      text += content.live_play_info.title + ' '
       tags.push(content.live_play_info.area_name)
     }
+    // 提取描述文本
     if (moduleDynamic.desc && moduleDynamic.desc.text) {
-      text += moduleDynamic.desc.text + " "
+      text += moduleDynamic.desc.text + ' '
     }
+    // 提取视频标题
     if (moduleDynamic.major && moduleDynamic.major.archive && moduleDynamic.major.archive.title) {
-      text += moduleDynamic.major.archive.title + " "
+      text += moduleDynamic.major.archive.title + ' '
     }
+    // 提取标签
+    // 主动态
     if (moduleDynamic.desc && moduleDynamic.desc.rich_text_nodes) {
       for (const node of moduleDynamic.desc.rich_text_nodes) {
-        if (node.type !== "RICH_TEXT_NODE_TYPE_TEXT") {
+        if (node.type !== 'RICH_TEXT_NODE_TYPE_TEXT') {
           tags.push(node.orig_text)
         }
       }
     }
-    if (dynamicData.type === DynamicType.FORWARD && "orig" in dynamicData) {
+    // 若为转发动态，再检查子动态
+    if (dynamicData.type === DynamicType.FORWARD && 'orig' in dynamicData) {
       if (dynamicData.orig.type === DynamicType.AV) {
-        text += dynamicData.orig.modules.module_dynamic.major.archive.title + ""
+        text += dynamicData.orig.modules.module_dynamic.major.archive.title + ''
       } else {
         logger.debug(`提取子动态文本和tag：https://t.bilibili.com/${dynamicData.id_str}`)
         try {
-          text += dynamicData.orig.modules.module_dynamic.major.opus.summary.text + " "
+          text += dynamicData.orig.modules.module_dynamic.major.opus.summary.text + ' '
           for (const node of dynamicData.orig.modules.module_dynamic.major.opus.summary.rich_text_nodes) {
             tags.push(node.orig_text)
           }
@@ -746,6 +753,7 @@ export class BilibiliDBBase {
    * @returns {Promise<boolean>} - 是否应该被过滤
    */
   async shouldFilter(PushItem, extraTags = []) {
+    // 获取用户的过滤配置
     const { filterMode, filterWords, filterTags } = await this.getFilterConfig(PushItem.host_mid)
     logger.debug(`
       获取用户${PushItem.remark}（${PushItem.host_mid}）的过滤配置：
@@ -753,46 +761,55 @@ export class BilibiliDBBase {
       过滤词：${filterWords}
       过滤标签：${filterTags}
       `)
+    // 提取主动态的文本和标签
     const { text: mainText, tags: mainTags } = await this.extractTextAndTags(PushItem.Dynamic_Data)
     logger.debug(`
       提取主动态的文本和标签：
       文本：${mainText}
-      标签：[${mainTags.join("][")}]
+      标签：[${mainTags.join('][')}]
       `)
+    // 合并所有标签
     let allTags = [...mainTags, ...extraTags]
     let allText = mainText
-    if (PushItem.Dynamic_Data.type === DynamicType.FORWARD && "orig" in PushItem.Dynamic_Data) {
+    // 如果是转发动态，还需要检查原动态
+    if (PushItem.Dynamic_Data.type === DynamicType.FORWARD && 'orig' in PushItem.Dynamic_Data) {
       const { text: origText, tags: origTags } = await this.extractTextAndTags(PushItem.Dynamic_Data.orig)
-      allText += " " + origText
+      allText += ' ' + origText
       allTags = [...allTags, ...origTags]
     }
+    // 检查内容中是否包含过滤词
     const hasFilterWord = filterWords.some((word) => allText.includes(word))
+    // 检查标签中是否包含过滤标签
     const hasFilterTag = filterTags.some(
       (filterTag) => allTags.some((tag) => tag.includes(filterTag))
     )
     logger.debug(`
     UP主UID：${PushItem.host_mid}
     检查内容：${allText}
-    检查标签：${allTags.join(", ")}
-    命中词：[${filterWords.join("], [")}]
-    命中标签：[${filterTags.join("], [")}]
+    检查标签：${allTags.join(', ')}
+    命中词：[${filterWords.join('], [')}]
+    命中标签：[${filterTags.join('], [')}]
     过滤模式：${filterMode}
     是否过滤：${hasFilterWord || hasFilterTag ? logger.red(`${hasFilterWord || hasFilterTag}`) : logger.green(`${hasFilterWord || hasFilterTag}`)}
     动态地址：${logger.green(`https://t.bilibili.com/${PushItem.Dynamic_Data.id_str}`)}
     动态类型：${PushItem.dynamic_type}
     `)
-    if (filterMode === "blacklist") {
+    // 根据过滤模式决定是否过滤
+    if (filterMode === 'blacklist') {
+      // 黑名单模式：如果包含过滤词或过滤标签，则过滤
       if (hasFilterWord || hasFilterTag) {
         logger.warn(`
         动态内容命中黑名单规则，已过滤该动态不再推送
         动态地址：${logger.yellow(`https://t.bilibili.com/${PushItem.Dynamic_Data.id_str}`)}
-        命中的黑名单词：[${filterWords.join("], [")}]
-        命中的黑名单标签：[${filterTags.join("], [")}]
+        命中的黑名单词：[${filterWords.join('], [')}]
+        命中的黑名单标签：[${filterTags.join('], [')}]
         `)
         return true
       }
       return false
     } else {
+      // 白名单模式：如果不包含任何白名单词或白名单标签，则过滤
+      // 注意：如果白名单为空，则不过滤任何内容
       if (filterWords.length === 0 && filterTags.length === 0) {
         return false
       }
@@ -802,8 +819,8 @@ export class BilibiliDBBase {
       logger.warn(`
         动态内容未命中白名单规则，已过滤该动态不再推送
         动态地址：${logger.yellow(`https://t.bilibili.com/${PushItem.Dynamic_Data.id_str}`)}
-        当前白名单词：[${filterWords.join("], [")}]
-        当前白名单标签：[${filterTags.join("], [")}]
+        当前白名单词：[${filterWords.join('], [')}]
+        当前白名单标签：[${filterTags.join('], [')}]
       `)
       return true
     }
@@ -817,7 +834,7 @@ export class BilibiliDBBase {
   async cleanOldDynamicCache(days = 7) {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
     const result = await this.runQuery(
-      "DELETE FROM DynamicCaches WHERE datetime(createdAt) < datetime(?)",
+      'DELETE FROM DynamicCaches WHERE datetime(createdAt) < datetime(?)',
       [cutoffDate.toISOString()]
     )
     return result.changes ?? 0
@@ -837,7 +854,7 @@ export class BilibiliDBBase {
         if (options?.where?.botId) {
           return await this.getBotGroups(options.where.botId)
         }
-        return await this.allQuery("SELECT * FROM Groups")
+        return await this.allQuery('SELECT * FROM Groups')
       }
     }
   }
@@ -854,53 +871,53 @@ export class BilibiliDBBase {
        * @param {string} [options.where.groupId] - 群组ID
        * @param {number} [options.where.host_mid] - B站用户UID
        * @param {string} [options.where.dynamic_id] - 动态ID
-       * @param {Record<string, 'ASC' | 'DESC'>} [options.order] - 排序条件,键为字段名,值为"ASC"或"DESC"
+       * @param {Record<string, 'ASC' | 'DESC'>} [options.order] - 排序条件,键为字段名,值为'ASC'或'DESC'
        * @param {number} [options.take] - 限制返回记录数量
-       * @param {string[]} [options.relations] - 关联查询,支持"bilibiliUser"
+       * @param {string[]} [options.relations] - 关联查询,支持'bilibiliUser'
        * @returns {Promise<T[]>} 返回动态缓存记录数组
        */
       find: async (options = {}) => {
         const { where = {}, order, take, relations } = options
-        let sql = "SELECT * FROM DynamicCaches"
+        let sql = 'SELECT * FROM DynamicCaches'
         const params = []
         const conditions = []
         if (where.groupId) {
-          conditions.push("groupId = ?")
+          conditions.push('groupId = ?')
           params.push(where.groupId)
         }
         if (where.host_mid) {
-          conditions.push("host_mid = ?")
+          conditions.push('host_mid = ?')
           params.push(where.host_mid)
         }
         if (where.dynamic_id) {
-          conditions.push("dynamic_id = ?")
+          conditions.push('dynamic_id = ?')
           params.push(where.dynamic_id)
         }
         if (conditions.length > 0) {
-          sql += " WHERE " + conditions.join(" AND ")
+          sql += ' WHERE ' + conditions.join(' AND ')
         }
         if (order) {
           const orderClauses = []
-          const allowedFields = ["id", "dynamic_id", "host_mid", "groupId", "dynamic_type", "createdAt", "updatedAt"]
-          const allowedDirections = ["ASC", "DESC"]
+          const allowedFields = ['id', 'dynamic_id', 'host_mid', 'groupId', 'dynamic_type', 'createdAt', 'updatedAt']
+          const allowedDirections = ['ASC', 'DESC']
           for (const [field, direction] of Object.entries(order)) {
             if (allowedFields.includes(field) && allowedDirections.includes(direction)) {
               orderClauses.push(`${field} ${direction}`)
             }
           }
           if (orderClauses.length > 0) {
-            sql += " ORDER BY " + orderClauses.join(", ")
+            sql += ' ORDER BY ' + orderClauses.join(', ')
           }
         }
         if (take) {
-          sql += " LIMIT ?"
+          sql += ' LIMIT ?'
           params.push(take.toString())
         }
         const caches = await this.allQuery(sql, params)
-        if (relations && relations.includes("bilibiliUser")) {
+        if (relations && relations.includes('bilibiliUser')) {
           const result = []
           for (const cache of caches) {
-            const bilibiliUser = await this.getQuery("SELECT * FROM BilibiliUsers WHERE host_mid = ?", [cache.host_mid])
+            const bilibiliUser = await this.getQuery('SELECT * FROM BilibiliUsers WHERE host_mid = ?', [cache.host_mid])
             result.push({
               ...cache,
               bilibiliUser,
@@ -929,28 +946,28 @@ export class BilibiliDBBase {
         const { groupId, host_mid, dynamic_id } = conditions
         if (groupId && host_mid) {
           const result = await this.runQuery(
-            "DELETE FROM DynamicCaches WHERE groupId = ? AND host_mid = ?",
+            'DELETE FROM DynamicCaches WHERE groupId = ? AND host_mid = ?',
             [groupId, host_mid]
           )
           return { affected: result.changes }
         }
         if (groupId) {
           const result = await this.runQuery(
-            "DELETE FROM DynamicCaches WHERE groupId = ?",
+            'DELETE FROM DynamicCaches WHERE groupId = ?',
             [groupId]
           )
           return { affected: result.changes }
         }
         if (host_mid) {
           const result = await this.runQuery(
-            "DELETE FROM DynamicCaches WHERE host_mid = ?",
+            'DELETE FROM DynamicCaches WHERE host_mid = ?',
             [host_mid]
           )
           return { affected: result.changes }
         }
         if (dynamic_id) {
           const result = await this.runQuery(
-            "DELETE FROM DynamicCaches WHERE dynamic_id = ?",
+            'DELETE FROM DynamicCaches WHERE dynamic_id = ?',
             [dynamic_id]
           )
           return { affected: result.changes }

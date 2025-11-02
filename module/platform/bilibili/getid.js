@@ -58,7 +58,7 @@ export const getBilibiliID = async (url, log = true) => {
       if (response.url && response.url !== url) longLink = response.url
     }
 
-    /** 
+    /**
      * 统一的URL模式匹配表 [类型名称, 匹配函数, 提取函数]
      * @typedef {[string, (url: string) => boolean, (url: string) => BilibiliId]} UrlPattern
      * @type {UrlPattern[]}
