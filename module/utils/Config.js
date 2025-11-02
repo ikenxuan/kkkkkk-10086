@@ -355,61 +355,37 @@ class Cfg {
     for (const file of files) {
       const name = /** @type {keyof ConfigType} */(file.replace('.yaml', ''))
       config[name] = this.getDefOrConfig(name)
-
-      // 为 pushlist 配置添加数据库过滤配置
-      if (name === 'pushlist') {
-        await this.syncConfigWithDatabase(config[name])
+      if (config.pushlist) {
+        const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
+        const douyinDB = await getDouyinDB()
+        const bilibiliDB = await getBilibiliDB()
+        try {
+          if (config.pushlist.douyin) {
+            for (const item of config.pushlist.douyin) {
+              const filterWords = await douyinDB?.getFilterWords(item.sec_uid)
+              const filterTags = await douyinDB?.getFilterTags(item.sec_uid)
+              const userInfo = await douyinDB?.getDouyinUser(item.sec_uid)
+              if (userInfo) item.filterMode = userInfo.filterMode || 'blacklist'
+              item.Keywords = filterWords
+              item.Tags = filterTags
+            }
+          }
+          if (config.pushlist.bilibili) {
+            for (const item of config.pushlist.bilibili) {
+              const filterWords = await bilibiliDB?.getFilterWords(item.host_mid)
+              const filterTags = await bilibiliDB?.getFilterTags(item.host_mid)
+              const userInfo = await bilibiliDB?.getOrCreateBilibiliUser(item.host_mid)
+              if (userInfo) item.filterMode = userInfo.filterMode || 'blacklist'
+              item.Keywords = filterWords
+              item.Tags = filterTags
+            }
+          }
+        } catch (error) {
+          logger.error(`从数据库获取过滤配置时出错: ${error}`)
+        }
       }
     }
-
     return config
-  }
-
-  /**
-   * 同步配置中的数据库过滤配置
-   * @param {any} pushlistConfig - pushlist 配置对象
-   */
-  async syncConfigWithDatabase(pushlistConfig) {
-    const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
-    const douyinDB = await getDouyinDB()
-    const bilibiliDB = await getBilibiliDB()
-    try {
-      // 处理抖音推送配置
-      if (pushlistConfig.douyin && Array.isArray(pushlistConfig.douyin)) {
-        for (const item of pushlistConfig.douyin) {
-          if (!item.switch) continue
-          const id = item.sec_uid || item.short_id
-          if (!id) continue
-
-          // 从数据库获取过滤配置并合并
-          const filterWords = await douyinDB?.getFilterWords(id) || []
-          const filterTags = await douyinDB?.getFilterTags(id) || []
-
-          // 合并配置文件和数据库中的过滤词和标签
-          item.Keywords = [...new Set([...(item.Keywords || []), ...filterWords])]
-          item.Tags = [...new Set([...(item.Tags || []), ...filterTags])]
-        }
-      }
-
-      // 处理B站推送配置
-      if (pushlistConfig.bilibili && Array.isArray(pushlistConfig.bilibili)) {
-        for (const item of pushlistConfig.bilibili) {
-          if (!item.switch) continue
-          const id = item.host_mid
-          if (!id) continue
-
-          // 从数据库获取过滤配置并合并
-          const filterWords = await bilibiliDB?.getFilterWords(id) || []
-          const filterTags = await bilibiliDB?.getFilterTags(id) || []
-
-          // 合并配置文件和数据库中的过滤词和标签
-          item.Keywords = [...new Set([...(item.Keywords || []), ...filterWords])]
-          item.Tags = [...new Set([...(item.Tags || []), ...filterTags])]
-        }
-      }
-    } catch (error) {
-      logger.error('[Config] 同步数据库配置失败:', error)
-    }
   }
 
   /**
@@ -569,20 +545,13 @@ class Cfg {
    * @returns {Promise<void>}
    */
   async syncPushlistToDatabase() {
+    const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
     try {
+      /** @type {PushlistConfig} */
       const pushlistConfig = this.getDefOrConfig('pushlist')
-
-      // 同步抖音推送配置
-      if (pushlistConfig.douyin && Array.isArray(pushlistConfig.douyin)) {
-        await this.syncDouyinPushToDatabase(pushlistConfig.douyin)
-      }
-
-      // 同步B站推送配置
-      if (pushlistConfig.bilibili && Array.isArray(pushlistConfig.bilibili)) {
-        await this.syncBilibiliPushToDatabase(pushlistConfig.bilibili)
-      }
-
-      logger.info('[Config] pushlist配置已同步到数据库')
+      if (pushlistConfig.douyin) await this.syncFilterConfigToDb(pushlistConfig.douyin, await getDouyinDB(), 'sec_uid')
+      if (pushlistConfig.bilibili) await this.syncFilterConfigToDb(pushlistConfig.bilibili, await getBilibiliDB(), 'host_mid')
+      logger.info('[Config] pushlist的过滤配置已同步到数据库')
     } catch (error) {
       logger.error('[Config] 同步pushlist配置到数据库失败:', error)
       throw error
@@ -590,138 +559,42 @@ class Cfg {
   }
 
   /**
-   * 同步抖音推送配置到数据库
-   * @param {douyinPushItem[]} douyinPushList - 抖音推送配置列表
+   * 同步推送配置到数据库（通用方法）
+   * @param {any[]} items - 推送配置列表
+   * @param {any} db - 数据库实例
+   * @param {string} idField - ID字段名称
    * @returns {Promise<void>}
    */
-  async syncDouyinPushToDatabase(douyinPushList) {
-    const { getDouyinDB } = await import('../db/index.js')
-    const douyinDB = await getDouyinDB()
-    try {
-      for (const item of douyinPushList) {
-        // 检查是否启用
-        if (!item.switch) continue
+  async syncFilterConfigToDb(items, db, idField) {
+    for (const item of items) {
+      if (!item.switch) continue
+      const id = item[idField]
+      if (!id) continue
 
-        const id = item.sec_uid || item.short_id
-        if (!id) continue
-
-        // 同步过滤模式
-        if (item.filterMode !== undefined) {
-          await douyinDB?.updateFilterMode(id, item.filterMode)
-          logger.debug(`[Config] 更新抖音用户 ${id} 的过滤模式为: ${item.filterMode}`)
-        }
-
-        // 获取数据库中现有的过滤词和标签
-        const existingWords = await douyinDB?.getFilterWords(id)
-        const existingTags = await douyinDB?.getFilterTags(id)
-
-        // 获取配置中的过滤词和标签
-        const configWords = item.Keywords || []
-        const configTags = item.Tags || []
-
-        // 同步过滤词 - 添加配置中存在但数据库中不存在的词
-        for (const word of configWords) {
-          if (!existingWords?.includes(word)) {
-            await douyinDB?.addFilterWord(id, word)
-          }
-        }
-
-        // 同步过滤标签 - 添加配置中存在但数据库中不存在的标签
-        for (const tag of configTags) {
-          if (!existingTags?.includes(tag)) {
-            await douyinDB?.addFilterTag(id, tag)
-          }
-        }
-
-        // 同步过滤词 - 移除配置中不存在但数据库中存在的词
-        for (const word of existingWords || []) {
-          if (!configWords.includes(word)) {
-            await douyinDB?.removeFilterWord(id, word)
-          }
-        }
-
-        // 同步过滤标签 - 移除配置中不存在但数据库中存在的标签
-        for (const tag of existingTags || []) {
-          if (!configTags.includes(tag)) {
-            await douyinDB?.removeFilterTag(id, tag)
-          }
-        }
-
-        logger.debug(`[Config] 更新抖音用户 ${id} 的过滤配置`)
+      // 更新过滤模式
+      if (item.filterMode !== undefined) await db?.updateFilterMode(id, item.filterMode)
+      // 更新过滤词
+      const configWords = item.Keywords || []
+      const existingWords = await db?.getFilterWords(id)
+      // 删除不再需要的过滤词
+      for (const word of existingWords || []) {
+        if (!configWords.includes(word)) await db?.removeFilterWord(id, word)
       }
-
-      logger.info('[Config] 抖音推送配置已同步到数据库')
-    } catch (error) {
-      logger.error('[Config] 同步抖音推送配置到数据库失败:', error)
-      throw error
-    }
-  }
-
-  /**
-   * 同步B站推送配置到数据库
-   * @param {bilibiliPushItem[]} bilibiliPushList - B站推送配置列表
-   * @returns {Promise<void>}
-   */
-  async syncBilibiliPushToDatabase(bilibiliPushList) {
-    const { getBilibiliDB } = await import('../db/index.js')
-    const bilibiliDB = await getBilibiliDB()
-    try {
-      for (const item of bilibiliPushList) {
-        // 检查是否启用
-        if (!item.switch) continue
-
-        const id = item.host_mid
-        if (!id) continue
-
-        // 同步过滤模式
-        if (item.filterMode !== undefined) {
-          await bilibiliDB?.updateFilterMode(id, item.filterMode)
-          logger.debug(`[Config] 更新B站用户 ${id} 的过滤模式为: ${item.filterMode}`)
-        }
-
-        // 获取数据库中现有的过滤词和标签
-        const existingWords = await bilibiliDB?.getFilterWords(id)
-        const existingTags = await bilibiliDB?.getFilterTags(id)
-
-        // 获取配置中的过滤词和标签
-        const configWords = item.Keywords || []
-        const configTags = item.Tags || []
-
-        // 同步过滤词 - 添加配置中存在但数据库中不存在的词
-        for (const word of configWords) {
-          if (!existingWords?.includes(word)) {
-            await bilibiliDB?.addFilterWord(id, word)
-          }
-        }
-
-        // 同步过滤标签 - 添加配置中存在但数据库中不存在的标签
-        for (const tag of configTags) {
-          if (!existingTags?.includes(tag)) {
-            await bilibiliDB?.addFilterTag(id, tag)
-          }
-        }
-
-        // 同步过滤词 - 移除配置中不存在但数据库中存在的词
-        for (const word of existingWords || []) {
-          if (!configWords.includes(word)) {
-            await bilibiliDB?.removeFilterWord(id, word)
-          }
-        }
-
-        // 同步过滤标签 - 移除配置中不存在但数据库中存在的标签
-        for (const tag of existingTags || []) {
-          if (!configTags.includes(tag)) {
-            await bilibiliDB?.removeFilterTag(id, tag)
-          }
-        }
-
-        logger.debug(`[Config] 更新B站用户 ${id} 的过滤配置`)
+      // 添加新的过滤词
+      for (const word of configWords) {
+        if (!existingWords?.includes(word)) await db?.addFilterWord(id, word)
       }
-
-      logger.info('[Config] B站推送配置已同步到数据库')
-    } catch (error) {
-      logger.error('[Config] 同步B站推送配置到数据库失败:', error)
-      throw error
+      // 更新过滤标签
+      const configTags = item.Tags || []
+      const existingTags = await db?.getFilterTags(id)
+      // 删除不再需要的过滤标签
+      for (const tag of existingTags || []) {
+        if (!configTags.includes(tag)) await db?.removeFilterTag(id, tag)
+      }
+      // 添加新的过滤标签
+      for (const tag of configTags) {
+        if (!existingTags?.includes(tag)) await db?.addFilterTag(id, tag)
+      }
     }
   }
 
@@ -768,20 +641,14 @@ class Cfg {
    */
   async syncConfigToDatabase() {
     try {
-      const pushCfg = this.getYaml('config', 'pushlist')
+      /** @type {PushlistConfig} */
+      const pushCfg = this.getDefOrConfig('pushlist')
       const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
       const douyinDB = await getDouyinDB()
       const bilibiliDB = await getBilibiliDB()
-
       // 同步配置到数据库
-      if (pushCfg.bilibili) {
-        await bilibiliDB?.syncConfigSubscriptions(pushCfg.bilibili)
-      }
-
-      if (pushCfg.douyin) {
-        await douyinDB?.syncConfigSubscriptions(pushCfg.douyin)
-      }
-
+      if (pushCfg.bilibili) await bilibiliDB?.syncConfigSubscriptions(pushCfg.bilibili)
+      if (pushCfg.douyin) await douyinDB?.syncConfigSubscriptions(pushCfg.douyin)
       logger.debug('[BilibiliDB] + [DouyinDB] 配置已同步到数据库')
     } catch (error) {
       logger.error('同步配置到数据库失败:', error)
