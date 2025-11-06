@@ -14,7 +14,7 @@ const PLATFORM_CONFIG = [
     enabled: Config.douyin?.douyintool
   },
   {
-    reg: /(https?:\/\/(?:www\.)?(bilibili\.com|b23\.tv|t\.bilibili\.com|bili2233\.cn)|^BV[1-9a-zA-Z]{10}$|^av\d+$)/i,
+    reg: /(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|^BV[1-9a-zA-Z]{10}$|^av\d+$)/i,
     handler: 'bilibili',
     enabled: Config.bilibili?.bilibilitool
   },
