@@ -169,7 +169,7 @@ export class Base {
     const adapters = {
       // Miao-Yunzai 版本的适配器检查规则
       'Miao-Yunzai': {
-        'ICQQ': () => this.e?.bot?.sendUni,  // 检查是否有 sendUni 方法
+        'ICQQ': () => this.e?.bot?.online_status !== 0,
         'LagrangeCore': () => this.e?.bot?.adapter === 'LagrangeCore',
         'QQBot': () => this.e?.bot?.adapter === 'QQBot',
         'OneBotv11': () => this.e?.bot?.adapter === 'OneBotv11'
