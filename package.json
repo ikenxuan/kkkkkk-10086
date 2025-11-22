@@ -20,7 +20,7 @@
     "sharp": "^0.34.3",
     "silk-wasm": "^3.7.1",
     "simple-git": "^3.25.0",
-    "sqlite3": "npm:@karinjs/sqlite3@^0.4.2"
+    "sqlite3": "npm:@karinjs/sqlite3@^0.4.3"
   },
   "devDependencies": {
     "@types/trss-yunzai": "npm:@kaguyajs/trss-yunzai-types@latest",
