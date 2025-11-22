@@ -7,26 +7,25 @@
   "author": "ikenxuan",
   "license": "GPL-3.0-only",
   "scripts": {
-    "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix",
-    "postinstall": "node -e \"if (!require('fs').existsSync('node_modules/sqlite3/build')) process.exit(1)\" || npm rebuild @karinjs/sqlite3-cjs"
+    "fix": "eslint apps/**/*.js --fix && eslint module/**/*.js --fix"
   },
   "dependencies": {
     "@ikenxuan/amagi": "5.8.0",
     "@karinjs/md-html": "^1.3.0",
+    "axios": "npm:@karinjs/axios@^1.13.2",
     "child_process": "^1.0.2",
-    "axios": "npm:@karinjs/axios@1.13.1",
+    "heic-convert": "^2.1.0",
     "qrcode": "^1.5.4",
     "sequelize": "^6.37.7",
-    "sqlite3": "npm:@karinjs/sqlite3-cjs",
     "sharp": "^0.34.3",
+    "silk-wasm": "^3.7.1",
     "simple-git": "^3.25.0",
-    "heic-convert": "^2.1.0",
-    "silk-wasm": "^3.7.1"
+    "sqlite3": "npm:@karinjs/sqlite3@^0.4.2"
   },
   "devDependencies": {
+    "@types/trss-yunzai": "npm:@kaguyajs/trss-yunzai-types@latest",
     "eslint": "^9.11.1",
     "globals": "^15.9.0",
-    "neostandard": "^0.11.6",
-    "@kaguyajs/trss-yunzai-types": "latest"
+    "neostandard": "^0.11.6"
   }
 }

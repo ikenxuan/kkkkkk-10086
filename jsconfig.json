@@ -88,8 +88,5 @@
     "coverage",     // 排除测试覆盖率报告目录
     "*.test.js",    // 排除测试文件
     "*.spec.js"     // 排除测试文件
-  ],
-  "types": [
-    "@kaguyajs/trss-yunzai-types"
   ]
 }
