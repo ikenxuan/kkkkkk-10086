@@ -1,11 +1,10 @@
-# 已跑路！已跑路！已跑路！
-
 > [!IMPORTANT]
 >
 > ### 该插件仅为小范围使用，暂无上架插件库意图<br>
 >
 > 主开发已跑路到 [Karin](https://github.com/KarinJS/Karin) 了，使用开发效率更高和可维护性更健壮的强类型语言 TypeScript 重写插件逻（JavaScript 没类型和注释我写不下去了）。新仓库：https://github.com/ikenxuan/karin-plugin-kkk<br>
-> 云崽版（该仓库）可能将由社区开发者维护。
+> 云崽版（该仓库）将由社区开发者维护。
+> 有问题及时提ISSUE
 
 🦄 _**kkk插件（yunzai） 是一个 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件，提供对 Bot 的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
 
