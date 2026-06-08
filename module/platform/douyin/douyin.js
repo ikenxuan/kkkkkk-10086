@@ -230,7 +230,6 @@ export class DouYin extends Base {
             // 视频地址特殊判断：play_addr_h264、play_addr、
             const video = VideoData.data.aweme_detail.video
             FPS = video.bit_rate[0].FPS // FPS
-            videoFileSize = video.bit_rate[0].play_addr.data_size
             if (Config.douyin.autoResolution) {
               logger.debug(`开始排除不符合条件的视频分辨率；\n
               共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
@@ -238,6 +237,7 @@ export class DouYin extends Base {
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
               video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit || 100)
+              videoFileSize = video.bit_rate[0].play_addr.data_size
               g_video_url = await new Networks({
                 url: video.bit_rate[0].play_addr.url_list[2],
                 headers: {
@@ -247,6 +247,7 @@ export class DouYin extends Base {
                 }
               }).getLongLink()
             } else {
+              videoFileSize = video.bit_rate[0].play_addr.data_size
               g_video_url = await new Networks({
                 url: video.play_addr_h264.url_list[2] || video.play_addr_h264.url_list[2],
                 headers: {
@@ -288,7 +289,7 @@ export class DouYin extends Base {
                 Referer: g_video_url,
                 Cookies: ''
               },
-              fileSizeInBytes: videoFileSize
+              ...(videoFileSize > 0 && { fileSizeInBytes: videoFileSize })
             },
             {
               message_id: this.e.message_id
