@@ -223,12 +223,14 @@ export class DouYin extends Base {
           let FPS
           const video_res = []
           const sendvideofile = true
+          let videoFileSize = 0
           if (this.is_mp4 && (Config.douyin.douyinTip)?.includes('视频')) {
             const video_data = []
             const videores = []
             // 视频地址特殊判断：play_addr_h264、play_addr、
             const video = VideoData.data.aweme_detail.video
             FPS = video.bit_rate[0].FPS // FPS
+            videoFileSize = video.bit_rate[0].play_addr.data_size
             if (Config.douyin.autoResolution) {
               logger.debug(`开始排除不符合条件的视频分辨率；\n
               共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
@@ -286,7 +288,7 @@ export class DouYin extends Base {
                 Referer: g_video_url,
                 Cookies: ''
               },
-              fileSizeInBytes: video.bit_rate[0].play_addr.data_size
+              fileSizeInBytes: videoFileSize
             },
             {
               message_id: this.e.message_id
