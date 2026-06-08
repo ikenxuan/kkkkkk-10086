@@ -285,7 +285,8 @@ export class DouYin extends Base {
                 ...baseHeaders,
                 Referer: g_video_url,
                 Cookies: ''
-              }
+              },
+              fileSizeInBytes: video.bit_rate[0].play_addr.data_size
             },
             {
               message_id: this.e.message_id

@@ -444,7 +444,7 @@ export const uploadFile = async (e, file, videoUrl, options) => {
     logger.error('视频文件上传错误,' + String(error))
     return false
   } finally {
-    Config.app.removeCache && logger.info(`文件 ${file.filepath} 将在 10 分钟后删除`) && setTimeout(() => Common.removeFile(file.filepath), 10 * 60 * 1000)
+    Config.app.removeCache && Common.removeFile(file.filepath)
   }
 }
 
@@ -457,10 +457,18 @@ export const uploadFile = async (e, file, videoUrl, options) => {
  */
 export const downloadVideo = async (e, downloadOpt, uploadOpt) => {
   // 获取文件大小
-  const fileHeaders = await new Networks({ url: downloadOpt.video_url, headers: downloadOpt.headers ?? baseHeaders }).getHeaders()
-  const fileSizeContent = fileHeaders['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
-  const fileSizeInMB = (fileSizeContent / (1024 * 1024)).toFixed(2)
-  const fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
+  let fileSizeInMB, fileSize
+  if (downloadOpt.fileSizeInBytes) {
+    // 如果传入了文件大小，直接使用
+    fileSizeInMB = (downloadOpt.fileSizeInBytes / (1024 * 1024)).toFixed(2)
+    fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
+  } else {
+    // 否则通过 Range 请求获取
+    const fileHeaders = await new Networks({ url: downloadOpt.video_url, headers: downloadOpt.headers ?? baseHeaders }).getHeaders()
+    const fileSizeContent = fileHeaders['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
+    fileSizeInMB = (fileSizeContent / (1024 * 1024)).toFixed(2)
+    fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
+  }
 
   if (Config.upload.usefilelimit && Config.upload.filelimit && fileSize > Config.upload.filelimit) {
     const message = `视频：「${downloadOpt.title.originTitle ?? 'Error: 文件名获取失败'}」大小 (${fileSizeInMB} MB) 超出最大限制（设定值：${Config.upload.filelimit} MB），已取消上传`
