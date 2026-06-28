@@ -1,0 +1,62 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/xiaohongshu/css/comment.css" />
+{{/block}} {{block 'main'}}
+<div class="xhs-comment-page">
+  <header>
+    <div>
+      <div class="brand">小红书评论</div>
+      <h1>{{Type}}笔记 · {{CommentLength}} 条评论</h1>
+      {{if ImageLength}}<p>图片数量 {{ImageLength}} 张</p>{{/if}}
+    </div>
+    <div class="qrcode-box">
+      <div id="qrcode"></div>
+      <span>扫码查看原笔记</span>
+    </div>
+  </header>
+
+  <main class="comments">
+    {{each CommentsData item index}}
+    <article class="comment">
+      <img class="avatar" src="{{item.user_info.image}}" alt="" />
+      <div class="comment-body">
+        <div class="comment-top">
+          <strong>{{item.user_info.nickname}}</strong>
+          {{if item.show_tags && item.show_tags.length}}
+          <span>{{item.show_tags.join(' / ')}}</span>
+          {{/if}}
+        </div>
+        <p>{{item.content}}</p>
+        {{if item.pictures && item.pictures.length}}
+        <img class="comment-image" src="{{item.pictures[0].url_default}}" alt="" />
+        {{/if}}
+        <div class="comment-meta">
+          <span>{{item.create_time}}</span>
+          {{if item.ip_location}}<span>{{item.ip_location}}</span>{{/if}}
+          <span>赞 {{item.like_count}}</span>
+        </div>
+        {{if item.sub_comments && item.sub_comments.length}}
+        <section class="sub-comments">
+          {{each item.sub_comments sub}}
+          <div class="sub-comment">
+            <strong>{{sub.user_info.nickname}}</strong>
+            <span>{{sub.content}}</span>
+          </div>
+          {{/each}}
+        </section>
+        {{/if}}
+      </div>
+    </article>
+    {{/each}}
+  </main>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 230,
+    height: 230,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#ececec' : '#202020',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#111111' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

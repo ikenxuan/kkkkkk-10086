@@ -161,8 +161,7 @@ body.dark-mode .copyright .tip {
 /* cont */
 .cont {
   border-radius: 20px;
-  background: url("../common/cont/card-bg.png") top left repeat-x;
-  background-size: auto 100%;
+  background: rgba(0, 0, 0, 0.5);
   margin: 5px 15px 5px 10px;
   position: relative;
   box-shadow: 0 0 1px 0 #ccc, 2px 2px 4px 0 rgba(50, 50, 50, 0.8);

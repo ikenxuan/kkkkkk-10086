@@ -95,11 +95,12 @@ export class DouyinDBBase {
         aweme_id TEXT NOT NULL,
         sec_uid TEXT NOT NULL,
         groupId TEXT NOT NULL,
+        pushType TEXT NOT NULL DEFAULT 'post',
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sec_uid) REFERENCES DouyinUsers(sec_uid),
         FOREIGN KEY (groupId) REFERENCES Groups(id),
-        UNIQUE(aweme_id, sec_uid, groupId)
+        UNIQUE(aweme_id, sec_uid, groupId, pushType)
       )`,
 
       // 创建过滤词表
@@ -129,6 +130,35 @@ export class DouyinDBBase {
     for (const query of queries) {
       await this.runQuery(query)
     }
+    await this.migrateAwemeCachesPushType()
+  }
+
+  /**
+   * 迁移旧 AwemeCaches 表，为不同推送类型拆分去重缓存。
+   * @returns {Promise<void>}
+   */
+  async migrateAwemeCachesPushType() {
+    const columns = await this.allQuery('PRAGMA table_info(AwemeCaches)')
+    const hasPushType = columns.some(column => column.name === 'pushType')
+    if (hasPushType) return
+
+    logger.mark('[DouyinDB] 迁移 AwemeCaches 表，增加 pushType 字段')
+    await this.runQuery('ALTER TABLE AwemeCaches RENAME TO AwemeCaches_old')
+    await this.runQuery(`CREATE TABLE AwemeCaches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      aweme_id TEXT NOT NULL,
+      sec_uid TEXT NOT NULL,
+      groupId TEXT NOT NULL,
+      pushType TEXT NOT NULL DEFAULT 'post',
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (sec_uid) REFERENCES DouyinUsers(sec_uid),
+      FOREIGN KEY (groupId) REFERENCES Groups(id),
+      UNIQUE(aweme_id, sec_uid, groupId, pushType)
+    )`)
+    await this.runQuery(`INSERT OR IGNORE INTO AwemeCaches (id, aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt)
+      SELECT id, aweme_id, sec_uid, groupId, 'post', createdAt, updatedAt FROM AwemeCaches_old`)
+    await this.runQuery('DROP TABLE AwemeCaches_old')
   }
 
   /**
@@ -340,24 +370,26 @@ export class DouyinDBBase {
    * @param {string} aweme_id - 作品ID
    * @param {string} sec_uid - 抖音用户sec_uid
    * @param {string} groupId - 群组ID
-   * @returns {Promise<{id: number, aweme_id: string, sec_uid: string, groupId: string, createdAt: string, updatedAt: string}>}
+   * @param {'post'|'favorite'|'recommend'|'live'} [pushType='post'] - 推送类型
+   * @returns {Promise<{id: number, aweme_id: string, sec_uid: string, groupId: string, pushType: string, createdAt: string, updatedAt: string}>}
    */
-  async addAwemeCache(aweme_id, sec_uid, groupId) {
+  async addAwemeCache(aweme_id, sec_uid, groupId, pushType = 'post') {
     let cache = await this.getQuery(
-      'SELECT * FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?',
-      [aweme_id, sec_uid, groupId]
+      'SELECT * FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ? AND pushType = ?',
+      [aweme_id, sec_uid, groupId, pushType]
     )
     if (!cache) {
       const now = (/* @__PURE__ */ new Date()).toISOString()
       const result = await this.runQuery(
-        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
-        [aweme_id, sec_uid, groupId, now, now]
+        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [aweme_id, sec_uid, groupId, pushType, now, now]
       )
       cache = {
         id: result.lastID,
         aweme_id,
         sec_uid,
         groupId,
+        pushType,
         createdAt: now,
         updatedAt: now
       }
@@ -370,15 +402,37 @@ export class DouyinDBBase {
    * @param {string} aweme_id - 作品ID
    * @param {string} sec_uid - 抖音用户sec_uid
    * @param {string} groupId - 群组ID
+   * @param {'post'|'favorite'|'recommend'|'live'} [pushType='post'] - 推送类型
    * @returns {Promise<boolean>}
    */
-  async isAwemePushed(aweme_id, sec_uid, groupId) {
+  async isAwemePushed(aweme_id, sec_uid, groupId, pushType = 'post') {
     const result = await this.getQuery(
-      'SELECT COUNT(*) as count FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ?',
-      [aweme_id, sec_uid, groupId]
+      'SELECT COUNT(*) as count FROM AwemeCaches WHERE aweme_id = ? AND sec_uid = ? AND groupId = ? AND pushType = ?',
+      [aweme_id, sec_uid, groupId, pushType]
     )
     return (result?.count || 0) > 0
   }
+
+  /**
+   * 检查指定推送类型是否已有历史缓存。
+   * @param {string} sec_uid - 抖音用户sec_uid
+   * @param {string} groupId - 群组ID
+   * @param {'post'|'favorite'|'recommend'|'live'} [pushType='post'] - 推送类型
+   * @returns {Promise<boolean>}
+   */
+  async hasHistory(sec_uid, groupId, pushType = 'post') {
+    const result = await this.getQuery(
+      'SELECT COUNT(*) as count FROM AwemeCaches WHERE sec_uid = ? AND groupId = ? AND pushType = ?',
+      [sec_uid, groupId, pushType]
+    )
+    return (result?.count || 0) > 0
+  }
+
+  /**
+   * 兼容 Karin 新版列表快照接口。当前 Yunzai 版直接复用 AwemeCaches 去重。
+   * @returns {Promise<void>}
+   */
+  async updateListSnapshot() {}
 
   /**
    * 获取机器人管理的所有群组

@@ -5,11 +5,29 @@ import fs from 'node:fs'
 import YAML from 'yaml'
 import _ from 'lodash'
 
+const APP_UPLOAD_KEYS = [
+  'videoSendMode',
+  'sendbase64',
+  'usefilelimit',
+  'filelimit',
+  'compress',
+  'compresstrigger',
+  'compressvalue',
+  'usegroupfile',
+  'groupfilevalue',
+  'imageSendMode',
+  'downloadThrottle',
+  'downloadMaxSpeed',
+  'downloadAutoReduce',
+  'downloadMinSpeed'
+]
+
 /**
  * @typedef {Object} CookiesConfig
  * @property {string} [CookiesConfig.bilibili] B站平台Cookie信息
  * @property {string} [CookiesConfig.douyin] 抖音平台Cookie信息
  * @property {string} [CookiesConfig.kuaishou] 快手平台Cookie信息
+ * @property {string} [CookiesConfig.xiaohongshu] 小红书平台Cookie信息
  */
 
 /**
@@ -23,6 +41,17 @@ import _ from 'lodash'
  * @property {number} [AppConfig.renderScale] 渲染精度，可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度
  * @property {boolean} [AppConfig.APIServer] 放出API服务（本地部署一个抖音、B站的api服务）
  * @property {number} [AppConfig.APIServerPort] API服务端口
+ * @property {boolean} [AppConfig.APIServerMount] API服务是否挂载到框架HTTP服务
+ * @property {boolean} [AppConfig.RemoveWatermark] 渲染图片是否移除底部版本信息
+ * @property {number} [AppConfig.RenderWaitTime] 渲染图片等待时间，单位：秒
+ * @property {boolean} [AppConfig.EmojiReply] 表情回应开关
+ * @property {boolean} [AppConfig.parseTip] 解析提示开关
+ * @property {boolean} [AppConfig.fakeForward] 是否伪造合并转发消息
+ * @property {string[]} [AppConfig.errorLogSendTo] 错误日志接收者
+ * @property {boolean} [AppConfig.multiPageRender] 分页渲染开关
+ * @property {number} [AppConfig.multiPageHeight] 分页渲染高度
+ * @property {'google'|'xiaomi'|'oppo'|'huawei_honor'} [AppConfig.livePhotoSystem] Live Photo兼容系统
+ * @property {'video_and_livephoto'|'video_only'|'livephoto_only'} [AppConfig.livePhotoMode] Live Photo发送方式
  */
 
 /**
@@ -38,11 +67,22 @@ import _ from 'lodash'
 /**
  * @typedef {Object} DouyinConfig
  * @property {boolean} [DouyinConfig.douyintool] 抖音解析开关
+ * @property {boolean} [DouyinConfig.switch] 抖音解析开关（新配置名）
  * @property {('提示信息'|'评论图'|'视频'|'背景音乐'|'图集')[]} [DouyinConfig.douyinTip] 抖音解析可选列表 - 可选值：提示信息、评论图、视频、背景音乐、图集
+ * @property {('info'|'comment'|'video')[]} [DouyinConfig.sendContent] 抖音解析发送内容
  * @property {number} [DouyinConfig.numcomments] 抖音评论数量
+ * @property {number} [DouyinConfig.numcomment] 抖音评论数量（新配置名）
  * @property {boolean} [DouyinConfig.realCommentCount] 评论图是否显示真实评论数量
  * @property {boolean} [DouyinConfig.sendHDrecord] 图集BGM是否使用高清语音发送
  * @property {boolean} [DouyinConfig.autoResolution] 根据「视频拦截阈值」自动选择合适的分辨率
+ * @property {'540p'|'720p'|'1080p'|'2k'|'4k'|'adapt'} [DouyinConfig.videoQuality] 视频画质偏好
+ * @property {number} [DouyinConfig.maxAutoVideoSize] 自动画质最大大小
+ * @property {'text'|'image'} [DouyinConfig.videoInfoMode] 视频信息返回形式
+ * @property {('cover'|'title'|'author'|'stats')[]} [DouyinConfig.displayContent] 视频信息显示内容
+ * @property {boolean} [DouyinConfig.burnDanmaku] 是否烧录弹幕
+ * @property {number} [DouyinConfig.danmakuArea] 弹幕显示区域
+ * @property {'small'|'medium'|'large'} [DouyinConfig.danmakuFontSize] 弹幕字号
+ * @property {number} [DouyinConfig.danmakuOpacity] 弹幕透明度
  * @property {DouyinPushConfig} [DouyinConfig.push] 抖音推送相关配置
  */
 
@@ -66,7 +106,9 @@ import _ from 'lodash'
  * @property {boolean} [BilibiliConfig.videopriority] 解析视频是否优先保内容
  * @property {number} [BilibiliConfig.videoQuality] 视频画质偏好设置
  * @property {number} [BilibiliConfig.maxAutoVideoSize] 自动画质模式下可接受的最大视频大小
+ * @property {'text'|'image'} [BilibiliConfig.videoInfoMode] 视频信息返回形式
  * @property {string[]} [BilibiliConfig.displayContent] 视频解析时简介显示的内容
+ * @property {boolean} [BilibiliConfig.showDanmakuInVideoInfo] 视频信息图片是否展示高频弹幕
  * @property {BilibiliPushConfig} [BilibiliConfig.push] B站推送相关配置
  */
 
@@ -77,6 +119,7 @@ import _ from 'lodash'
  * @property {string} short_id - 抖音号，与sec_uid二选一
  * @property {string[]} group_id - 推送群号和机器人账号，多个则使用逗号隔开，必填。如：群号1:机器人账号1
  * @property {string} remark - 博主或UP主的名字信息，可不填
+ * @property {('post'|'favorite'|'recommend'|'live')[]} [pushTypes] - 推送类型：作品、喜欢列表、推荐列表、直播
  * @property {'blacklist'|'whitelist'} [filterMode='blacklist'] - 黑名单：命中不推送；白名单：命中才推送
  * @property {string[]} [Keywords] - 指定关键词
  * @property {string[]} [Tags] - 指定标签
@@ -89,6 +132,7 @@ import _ from 'lodash'
  * @property {number} host_mid - B站用户的UID，必填
  * @property {string[]} group_id - 推送群号和机器人账号，多个则使用逗号隔开，必填。如：群号1:机器人账号1
  * @property {string} [remark] - 博主或UP主的名字信息，可不填
+ * @property {('video'|'draw'|'word'|'live'|'forward'|'article')[]} [pushTypes] - 推送类型：视频、图文、纯文、直播、转发、专栏
  * @property {'blacklist'|'whitelist'} [filterMode='blacklist'] - 黑名单：命中不推送；白名单：命中才推送
  * @property {string[]} [Keywords] - 指定关键词
  * @property {string[]} [Tags] - 指定标签
@@ -105,6 +149,15 @@ import _ from 'lodash'
  * @property {boolean} [KuaishouConfig.kuaishoutool] 快手解析开关
  * @property {boolean} [KuaishouConfig.kuaishoutip] 快手解析提示开关
  * @property {number} [KuaishouConfig.kuaishounumcomments] 快手评论数量
+ */
+
+/**
+ * @typedef {Object} XiaohongshuConfig
+ * @property {boolean} [XiaohongshuConfig.switch] 小红书解析开关
+ * @property {('info'|'image'|'video'|'comment')[]} [XiaohongshuConfig.sendContent] 小红书解析发送内容
+ * @property {number} [XiaohongshuConfig.numcomment] 小红书评论数量
+ * @property {'540p'|'720p'|'1080p'|'2k'|'4k'|'adapt'} [XiaohongshuConfig.videoQuality] 视频画质偏好
+ * @property {number} [XiaohongshuConfig.maxAutoVideoSize] 自动画质最大大小
  */
 
 /**
@@ -130,6 +183,17 @@ import _ from 'lodash'
  */
 
 /**
+ * @typedef {Object} AmagiConfig
+ * @property {number} timeout 请求超时时间，单位：毫秒
+ * @property {string} User-Agent 用户代理
+ * @property {ProxyConfig} proxy 代理配置
+ * @property {CookiesConfig} cookies 平台 Cookie 配置
+ * @property {boolean} APIServer API 服务开关
+ * @property {boolean} APIServerMount API 服务挂载开关
+ * @property {number} APIServerPort API 服务端口
+ */
+
+/**
  * @typedef {Object} UploadConfig
  * @property {boolean} [UploadConfig.sendbase64] 发送视频经本插件转换为base64格式后再发送，适合Karin与机器人不在同一网络环境下开启
  * @property {boolean} [UploadConfig.usefilelimit] 视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传
@@ -150,7 +214,9 @@ import _ from 'lodash'
  * @property {PushlistConfig} pushlist - 推送列表
  * @property {UploadConfig} upload - 上传相关设置
  * @property {KuaishouConfig} kuaishou - 快手相关设置
+ * @property {XiaohongshuConfig} xiaohongshu - 小红书相关设置
  * @property {RequestConfig} request - 解析库请求配置设置
+ * @property {AmagiConfig} amagi - API 服务使用的解析库聚合配置
  * @property {any} [key] - 添加字符串索引签名
  */
 
@@ -314,6 +380,14 @@ class Cfg {
   }
 
   /**
+   * 获取小红书相关配置
+   * @returns {XiaohongshuConfig} 小红书配置对象
+   */
+  get xiaohongshu() {
+    return this.getDefOrConfig('xiaohongshu')
+  }
+
+  /**
    * 获取请求相关配置
    * @returns {RequestConfig} 请求配置对象，包含超时、代理等设置
    * 
@@ -326,6 +400,24 @@ class Cfg {
    */
   get request() {
     return this.getDefOrConfig('request')
+  }
+
+  /**
+   * 获取 API 服务使用的 Amagi 聚合配置。
+   * @returns {AmagiConfig}
+   */
+  get amagi() {
+    const request = this.request || {}
+    const app = this.app || {}
+    return {
+      timeout: request.timeout,
+      'User-Agent': request['User-Agent'],
+      proxy: request.proxy,
+      cookies: this.cookies || {},
+      APIServer: app.APIServer,
+      APIServerMount: app.APIServerMount,
+      APIServerPort: app.APIServerPort
+    }
   }
 
   /**
@@ -385,6 +477,14 @@ class Cfg {
         }
       }
     }
+    if (config.app && config.upload) {
+      config.app = {
+        ...config.app,
+        ...config.upload,
+        videoSendMode: config.upload.videoSendMode || (config.upload.sendbase64 ? 'base64' : 'file')
+      }
+    }
+    config.amagi = this.amagi
     return config
   }
 
@@ -541,6 +641,65 @@ class Cfg {
   }
 
   /**
+   * 批量修改指定配置模块。
+   * @param {keyof ConfigType} name 配置文件名
+   * @param {Record<string, any>} value 配置对象
+   * @param {'config' | 'default_config'} [type='config'] 配置类型
+   * @returns {boolean} 是否写入成功
+   */
+  ModifyPro(name, value, type = 'config') {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+    if (name === 'amagi') {
+      if ('timeout' in value) this.modify('request', 'timeout', value.timeout, type)
+      if ('User-Agent' in value) this.modify('request', 'User-Agent', value['User-Agent'], type)
+      if ('proxy' in value) this.modify('request', 'proxy', value.proxy, type)
+      if (value.cookies && typeof value.cookies === 'object') this.ModifyPro('cookies', value.cookies, type)
+      if ('APIServer' in value) this.modify('app', 'APIServer', value.APIServer, type)
+      if ('APIServerMount' in value) this.modify('app', 'APIServerMount', value.APIServerMount, type)
+      if ('APIServerPort' in value) this.modify('app', 'APIServerPort', value.APIServerPort, type)
+      return true
+    }
+
+    if (name === 'app') {
+      const writeModuleConfig = (moduleName, moduleValue) => {
+        const modulePath = `${Version.pluginPath}/config/${type}/${moduleName}.yaml`
+        if (!fs.existsSync(modulePath)) return false
+        const reader = new YamlReader(modulePath)
+        for (const [key, item] of Object.entries(moduleValue)) {
+          reader.document.set(key, item)
+        }
+        const success = reader.write()
+        if (success) delete this.config[`${type}.${moduleName}`]
+        return success
+      }
+
+      const appValue = {}
+      const uploadValue = {}
+      for (const [key, item] of Object.entries(value)) {
+        if (APP_UPLOAD_KEYS.includes(key)) uploadValue[key] = item
+        else appValue[key] = item
+      }
+
+      if ('videoSendMode' in uploadValue) uploadValue.sendbase64 = uploadValue.videoSendMode === 'base64'
+      const appSuccess = Object.keys(appValue).length ? writeModuleConfig('app', appValue) : true
+      const uploadSuccess = Object.keys(uploadValue).length ? writeModuleConfig('upload', uploadValue) : true
+      return appSuccess && uploadSuccess
+    }
+
+    const path = `${Version.pluginPath}/config/${type}/${name}.yaml`
+    if (!fs.existsSync(path)) return false
+
+    const reader = new YamlReader(path)
+    for (const [key, item] of Object.entries(value)) {
+      reader.document.set(key, item)
+    }
+
+    const success = reader.write()
+    if (success) delete this.config[`${type}.${name}`]
+    return success
+  }
+
+  /**
    * 同步pushlist配置到数据库
    * @returns {Promise<void>}
    */
@@ -658,7 +817,7 @@ class Cfg {
 }
 
 /**
- * @typedef {ConfigType & Pick<Cfg, 'All' | 'modify' | 'syncConfigToDatabase' | 'initCfg'>} Config$
+ * @typedef {ConfigType & Pick<Cfg, 'All' | 'modify' | 'ModifyPro' | 'syncConfigToDatabase' | 'initCfg'>} Config$
  */
 
 /**

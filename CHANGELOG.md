@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.36.0] - Karin 2.36.0 迁移版
+
+> 测试版：如遇到兼容性或功能问题，请提交 issue 反馈。
+
+### Features
+
+* 完整迁移 Karin 插件 2.36.0 的配置、依赖、API 服务、统计、推送预览、平台扫码登录、错误处理、模板与静态资源。
+* 补齐抖音、哔哩哔哩、快手、小红书解析与推送相关能力，并适配 Yunzai 运行时。
+* 新增 `other/help`、`other/changelog`、`other/handlerError`、`other/live-photo-tip`、`other/version_warning`、平台二维码等模板。
+* 配置入口迁移到锅巴面板，独立 Web 配置面板不再随 Yunzai 版提供。
+
 ## [1.9.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.8.0...v1.9.0) (2025-09-14)
 
 

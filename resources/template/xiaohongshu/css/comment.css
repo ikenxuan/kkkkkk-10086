@@ -1,0 +1,139 @@
+body.light-mode .container {
+  background: #f7f3f1;
+  color: #202020;
+  width: 1180px;
+}
+
+body.dark-mode .container {
+  background: #111;
+  color: #ececec;
+  width: 1180px;
+}
+
+.xhs-comment-page {
+  min-height: 100%;
+  padding: 52px 58px 64px;
+}
+
+header {
+  align-items: center;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.28);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 36px;
+}
+
+.brand {
+  color: #ff2442;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+h1 {
+  font-size: 56px;
+  line-height: 1.2;
+  margin: 14px 0 0;
+}
+
+header p {
+  color: #777;
+  font-size: 26px;
+  margin: 12px 0 0;
+}
+
+.qrcode-box {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#qrcode {
+  border: 5px dashed currentColor;
+  padding: 8px;
+}
+
+.qrcode-box span {
+  color: #777;
+  font-size: 22px;
+}
+
+.comments {
+  display: grid;
+  gap: 0;
+}
+
+.comment {
+  border-bottom: 1px solid rgba(128, 128, 128, 0.22);
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 110px minmax(0, 1fr);
+  padding: 34px 0;
+}
+
+.avatar {
+  border-radius: 50%;
+  height: 110px;
+  object-fit: cover;
+  width: 110px;
+}
+
+.comment-top {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.comment-top strong {
+  color: #777;
+  font-size: 30px;
+}
+
+.comment-top span {
+  background: rgba(255, 36, 66, 0.1);
+  color: #ff2442;
+  font-size: 20px;
+  padding: 6px 10px;
+}
+
+.comment-body p {
+  font-size: 38px;
+  line-height: 1.45;
+  margin: 16px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-image {
+  border-radius: 8px;
+  margin-top: 18px;
+  max-height: 460px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.comment-meta {
+  color: #777;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 24px;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.sub-comments {
+  background: rgba(128, 128, 128, 0.1);
+  margin-top: 20px;
+  padding: 16px 20px;
+}
+
+.sub-comment {
+  font-size: 26px;
+  line-height: 1.45;
+  margin: 8px 0;
+}
+
+.sub-comment strong {
+  color: #777;
+  margin-right: 10px;
+}

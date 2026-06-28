@@ -1,0 +1,19 @@
+# 小红书解析开关，单独开关，受「视频解析工具总开关」影响
+switch: true
+
+# 解析时发送的内容，可选值：info、comment、image、video
+sendContent:
+  - info
+  - comment
+  - image
+  - video
+
+# 小红书评论数量（后续评论图使用）
+numcomment: 10
+
+# 视频画质偏好设置，adapt 为自动根据 maxAutoVideoSize 选择，其他为固定画质
+# 可选值：540p、720p、1080p、2k、4k、adapt
+videoQuality: 4k
+
+# 视频体积上限，自动画质模式下可接受的最大视频大小（单位：MB）
+maxAutoVideoSize: 50

@@ -1,0 +1,87 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/douyin/css/videoInfo.css" />
+{{/block}} {{block 'main'}}
+<div class="douyin-video-page">
+  <div class="ambient">
+    <img src="{{image_url}}" alt="" />
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <span>记录美好生活</span>
+    </div>
+    <div class="aweme-id">{{aweme_id}}</div>
+  </header>
+
+  {{if showCover}}
+  <section class="cover-section">
+    <img class="cover" src="{{image_url}}" alt="封面" />
+    {{if video && video.duration}}
+    <div class="duration">{{video.duration}}</div>
+    {{/if}}
+  </section>
+  {{/if}}
+
+  <main class="content">
+    {{if showTitle}}
+    <h1>{{desc}}</h1>
+    <div class="publish-time">发布于 {{create_time}}</div>
+    {{/if}}
+
+    {{if showStats}}
+    <section class="stats-grid">
+      <div><strong>{{statistics.digg_count}}</strong><span>点赞</span></div>
+      <div><strong>{{statistics.comment_count}}</strong><span>评论</span></div>
+      <div><strong>{{statistics.collect_count}}</strong><span>收藏</span></div>
+      <div><strong>{{statistics.share_count}}</strong><span>分享</span></div>
+    </section>
+    {{/if}}
+
+    {{if music}}
+    <section class="music">
+      <img src="{{music.cover}}" alt="" />
+      <div>
+        <div class="music-title">{{music.title}}</div>
+        <div class="music-author">{{music.author}}</div>
+      </div>
+    </section>
+    {{/if}}
+  </main>
+
+  <footer class="footer">
+    {{if showAuthor}}
+    <section class="author">
+      <img class="avatar" src="{{author.avatar}}" alt="头像" />
+      <div>
+        <div class="author-name">{{author.name}}</div>
+        <div class="author-meta">抖音号: {{author.short_id}}</div>
+        {{if user_profile}}
+        <div class="author-meta">
+          粉丝 {{user_profile.follower_count}} · 获赞 {{user_profile.total_favorited}} · 作品 {{user_profile.aweme_count}}
+        </div>
+        {{if user_profile.ip_location}}
+        <div class="author-meta">{{user_profile.ip_location}}</div>
+        {{/if}}
+        {{/if}}
+      </div>
+    </section>
+    {{/if}}
+
+    <section class="qrcode-box">
+      <div id="qrcode"></div>
+      <div class="qrcode-text">作品分享链接</div>
+    </section>
+  </footer>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 320,
+    height: 320,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#e7e7e7' : '#202020',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#111111' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

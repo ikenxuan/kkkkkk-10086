@@ -56,6 +56,7 @@ body.dark-mode {
 
 .user-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 30px;
   color: var(--text-color);
   font-size: 25px;

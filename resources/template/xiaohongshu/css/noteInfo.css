@@ -1,0 +1,145 @@
+body.light-mode .container {
+  background: #f7f3f1;
+  color: #202020;
+  width: 1180px;
+}
+
+body.dark-mode .container {
+  background: #111;
+  color: #ececec;
+  width: 1180px;
+}
+
+.xhs-note-page {
+  min-height: 100%;
+  padding-bottom: 52px;
+}
+
+.cover {
+  height: 620px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cover img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.cover::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.48), transparent 50%);
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+.brand {
+  background: #ff2442;
+  bottom: 34px;
+  color: #fff;
+  font-size: 38px;
+  font-weight: 900;
+  left: 48px;
+  padding: 12px 22px;
+  position: absolute;
+  z-index: 2;
+}
+
+.content {
+  padding: 46px 58px 0;
+}
+
+h1 {
+  font-size: 64px;
+  line-height: 1.22;
+  margin: 0;
+  word-break: break-word;
+}
+
+.desc {
+  font-size: 34px;
+  line-height: 1.56;
+  margin: 28px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.meta {
+  color: #777;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 26px;
+  gap: 18px;
+  margin-top: 26px;
+}
+
+.stats {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 38px;
+}
+
+.stats div {
+  background: rgba(255, 36, 66, 0.1);
+  border-left: 7px solid #ff2442;
+  padding: 24px 20px;
+}
+
+.stats strong {
+  display: block;
+  font-size: 38px;
+}
+
+.stats span {
+  color: #777;
+  display: block;
+  font-size: 24px;
+  margin-top: 8px;
+}
+
+footer {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  padding: 48px 58px 0;
+}
+
+.author {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  min-width: 0;
+}
+
+.author img {
+  border-radius: 50%;
+  height: 128px;
+  object-fit: cover;
+  width: 128px;
+}
+
+.name {
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.uid,
+.qrcode-box span {
+  color: #777;
+  font-size: 24px;
+  margin-top: 8px;
+}
+
+.qrcode-box {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#qrcode {
+  border: 6px dashed currentColor;
+  padding: 10px;
+}

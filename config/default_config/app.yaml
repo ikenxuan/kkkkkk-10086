@@ -1,6 +1,9 @@
 # 视频解析工具总开关，修改后重启生效
 videotool: true
 
+# 默认解析，即识别最高优先级（新项目配置名，兼容 videotool/defaulttool）
+videoTool: true
+
 # 默认解析，即识别最高优先级，修改后重启生效
 defaulttool: true
 
@@ -24,3 +27,37 @@ APIServer: false
 
 # API服务端口
 APIServerPort: 4567
+
+# API 服务是否挂载到 Bot 框架自身 HTTP 服务上。Yunzai 版暂保留配置，当前独立 API 服务仍使用 APIServerPort。
+APIServerMount: false
+
+# 渲染图片是否移除底部版本信息
+RemoveWatermark: false
+
+# 渲染图片等待时间，单位：秒。传递 0 可禁用等待。
+RenderWaitTime: 60
+
+# 表情回应，若适配器或对应平台不支持需要关闭
+EmojiReply: true
+
+# 解析提示，发送提示信息："检测到xxx链接，开始解析"
+parseTip: false
+
+# 是否伪造合并转发消息，开启后使用触发者身份展示转发
+fakeForward: false
+
+# 遇到错误时谁会收到错误日志？可选值：master、allMasters、trigger
+errorLogSendTo:
+  - master
+
+# 分页渲染，将模板渲染成多页的图片，以降低渲染器压力
+multiPageRender: true
+
+# 分页渲染时，每页的高度
+multiPageHeight: 12000
+
+# Live Photo 兼容系统，可选值：google、xiaomi、oppo、huawei_honor
+livePhotoSystem: oppo
+
+# Live Photo 发送方式，可选值：video_and_livephoto、video_only、livephoto_only
+livePhotoMode: video_and_livephoto

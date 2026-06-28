@@ -1,0 +1,98 @@
+.error-page {
+  width: 88%;
+  margin: 68px auto 40px;
+}
+
+.error-page header {
+  border-bottom: 1px solid rgb(127 127 127 / 24%);
+  padding-bottom: 30px;
+  margin-bottom: 28px;
+}
+
+.status {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #f31260;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.error-page h1 {
+  font-size: 58px;
+  line-height: 1.12;
+  margin: 24px 0 14px;
+}
+
+.error-page header p {
+  font-size: 28px;
+  line-height: 1.45;
+  margin: 0;
+  word-break: break-word;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.meta-grid div,
+.block {
+  border: 1px solid rgb(127 127 127 / 18%);
+  border-radius: 8px;
+  padding: 22px 24px;
+}
+
+body.light-mode .meta-grid div,
+body.light-mode .block {
+  background: #f5f5f5;
+}
+
+body.dark-mode .meta-grid div,
+body.dark-mode .block {
+  background: #292929;
+}
+
+.meta-grid span {
+  display: block;
+  font-size: 18px;
+  opacity: 0.62;
+  margin-bottom: 8px;
+}
+
+.meta-grid strong {
+  font-size: 25px;
+  word-break: break-word;
+}
+
+.block {
+  margin-top: 16px;
+}
+
+.block h2 {
+  font-size: 28px;
+  margin: 0 0 14px;
+}
+
+pre {
+  font-family: Consolas, "Ubuntu Mono", monospace;
+  font-size: 19px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.log-line {
+  display: flex;
+  gap: 12px;
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+.log-line b {
+  color: #f31260;
+}

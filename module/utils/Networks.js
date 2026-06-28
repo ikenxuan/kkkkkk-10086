@@ -8,6 +8,55 @@ import { Transform } from 'node:stream'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
 
+class ThrottleStream extends Transform {
+  constructor (bytesPerSecond) {
+    super()
+    this.bytesPerSecond = bytesPerSecond
+    this.startTime = Date.now()
+    this.totalBytes = 0
+  }
+
+  _transform (chunk, _encoding, callback) {
+    this.totalBytes += chunk.length
+    const elapsed = (Date.now() - this.startTime) / 1000
+    const expectedTime = this.totalBytes / this.bytesPerSecond
+    const delay = Math.max(0, (expectedTime - elapsed) * 1000)
+
+    if (delay > 0) {
+      setTimeout(() => {
+        this.push(chunk)
+        callback()
+      }, delay)
+      return
+    }
+
+    this.push(chunk)
+    callback()
+  }
+}
+
+const MB = 1024 * 1024
+
+const formatBytes = (bytes) => {
+  if (!Number.isFinite(bytes)) return 'unknown'
+  if (bytes >= MB) return `${(bytes / MB).toFixed(1)}MB`
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)}KB`
+  return `${bytes}B`
+}
+
+const getThrottleOptions = (options) => {
+  const enabled = Boolean(Config.upload?.downloadThrottle)
+  const maxSpeed = Math.max(0.1, Number(Config.upload?.downloadMaxSpeed || 10)) * MB
+  const minSpeed = Math.max(0.1, Number(Config.upload?.downloadMinSpeed || 1)) * MB
+  const currentSpeed = Math.max(minSpeed, Number(options.currentSpeed || maxSpeed))
+  return {
+    enabled,
+    currentSpeed,
+    minSpeed,
+    autoReduce: Config.upload?.downloadAutoReduce !== false
+  }
+}
+
 /**
  * User-Agent 列表及权重配置（按平台分类）
  * @type {{windows: {ua: string, pct: number}[], mac: {ua: string, pct: number}[], linux: {ua: string, pct: number}[]}}
@@ -303,19 +352,31 @@ export class Networks {
    * 下载文件流
    * @param {(downloadedBytes: number, totalBytes: number, isLiveStream: boolean) => void} progressCallback
    * @param {number} retryCount
-   * @param {{ isLiveStream?: boolean, liveStreamMaxSize?: number }} options - 额外选项
+   * @param {{ isLiveStream?: boolean, liveStreamMaxSize?: number, currentSpeed?: number }} options - 额外选项
    * @property {boolean} options.isLiveStream - 是否为直播流
    * @property {number} options.liveStreamMaxSize - 直播流最大下载大小(字节)
    * @returns {Promise<{filepath: string, totalBytes: number}>} 返回文件路径和总字节数
    */
   async downloadStream(progressCallback, retryCount = 0, options = {}) {
     const { isLiveStream = false, liveStreamMaxSize = 10 * 1024 * 1024 } = options
+    const throttle = getThrottleOptions(options)
     const controller = new AbortController()
     const timeout = isLiveStream ? 120000 : 90000
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
       let totalBytes = -1
+      let startByte = 0
+
+      if (!isLiveStream && this.filepath && fs.existsSync(this.filepath)) {
+        const stats = fs.statSync(this.filepath)
+        startByte = Math.max(0, stats.size - 256 * 1024)
+        if (startByte > 0 && startByte < stats.size) {
+          fs.truncateSync(this.filepath, startByte)
+          logger.debug(`检测到部分下载文件，截断到 ${formatBytes(startByte)} 后断点续传`)
+        }
+      }
+
       // 选择合适的 agent
       const httpsAgent = retryCount > 0 ? new https.Agent({ keepAlive: false, timeout: 60000, rejectUnauthorized: false }) : this.httpsAgent
       const httpAgent = retryCount > 0 ? new http.Agent({ keepAlive: false, timeout: 60000 }) : this.httpAgent
@@ -336,6 +397,7 @@ export class Networks {
           'Accept': '*/*',
           'Accept-Encoding': 'identity',
           'Connection': retryCount > 0 ? 'close' : 'keep-alive',
+          ...(startByte > 0 ? { Range: `bytes=${startByte}-` } : {}),
           ...this.headers
         }
       }
@@ -355,15 +417,37 @@ export class Networks {
         throw new Error(`下载失败，状态码: ${response.status}`)
       }
 
+      if (startByte > 0 && response.status !== 206) {
+        logger.warn('服务器不支持断点续传，将重新下载整个文件')
+        startByte = 0
+        if (fs.existsSync(this.filepath)) fs.unlinkSync(this.filepath)
+      }
+
+      if (response.status === 206 && response.headers['content-range']) {
+        const contentRange = String(response.headers['content-range'])
+        const rangeStart = Number(contentRange.match(/bytes\s+(\d+)-/)?.[1])
+        if (Number.isFinite(rangeStart) && rangeStart !== startByte) {
+          logger.warn(`Content-Range 起始位置不匹配: 请求 ${startByte}, 实际 ${rangeStart}，将重新下载`)
+          if (fs.existsSync(this.filepath)) fs.unlinkSync(this.filepath)
+          response.data.destroy?.()
+          throw new Error('Content-Range 起始位置不匹配')
+        }
+      }
+
       // 从响应头获取文件大小
       if (!isLiveStream && response.headers['content-length']) {
-        totalBytes = parseInt(response.headers['content-length']) || -1
+        const contentLength = parseInt(response.headers['content-length']) || -1
+        totalBytes = response.status === 206 && contentLength > 0 ? startByte + contentLength : contentLength
       }
 
       // 根据文件大小动态调整缓冲区
       const bufferSize = totalBytes > 50 * 1024 * 1024 ? 32 * 1024 * 1024 : 16 * 1024 * 1024
-      const writer = fs.createWriteStream(this.filepath, { highWaterMark: bufferSize })
-      let downloadedBytes = 0
+      const writer = fs.createWriteStream(this.filepath, {
+        flags: startByte > 0 ? 'r+' : 'w',
+        start: startByte > 0 ? startByte : undefined,
+        highWaterMark: bufferSize
+      })
+      let downloadedBytes = startByte
       let lastUpdate = 0
       let lastChunkTime = Date.now()
       /** @type {NodeJS.Timeout | undefined} */
@@ -387,6 +471,13 @@ export class Networks {
         }
       })
 
+      const streams = [response.data]
+      if (throttle.enabled) {
+        logger.debug(`启用限速下载: ${formatBytes(throttle.currentSpeed)}/s`)
+        streams.push(new ThrottleStream(throttle.currentSpeed))
+      }
+      streams.push(transform, writer)
+
       // 检测下载卡死
       stuckCheckInterval = setInterval(() => {
         if (Date.now() - lastChunkTime > 30000) {
@@ -396,7 +487,7 @@ export class Networks {
       }, 5000)
 
       try {
-        await pipeline(response.data, transform, writer)
+        await pipeline(...streams)
         clearInterval(stuckCheckInterval)
       } catch (err) {
         clearInterval(stuckCheckInterval)
@@ -423,10 +514,16 @@ export class Networks {
         const isReset = axiosError.code === 'ECONNRESET' || axiosError.code === 'ECONNABORTED'
         const isTimeout = axiosError.code === 'ETIMEDOUT'
         const isSSLError = axiosError.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || axiosError.code === 'ERR_SSL_WRONG_VERSION_NUMBER' || axiosError.message?.includes('SSL')
+        const nextSpeed = isReset && throttle.enabled && throttle.autoReduce
+          ? Math.max(throttle.currentSpeed * 0.6, throttle.minSpeed)
+          : throttle.currentSpeed
+        if (nextSpeed < throttle.currentSpeed) {
+          logger.warn(`检测到下载断流，自动降速: ${formatBytes(throttle.currentSpeed)}/s -> ${formatBytes(nextSpeed)}/s`)
+        }
         const delay = is403or429 ? 3000 + Math.random() * 2000 : isReset ? 2000 + retryCount * 1000 : isTimeout ? 2000 : isSSLError ? 1500 + retryCount * 500 : 1500 * (retryCount + 1)
         logger.warn(`下载失败(${axiosError.code || axiosError.message})，${Math.round(delay)}ms后重试 (${retryCount + 1}/${this.maxRetries})`)
         await new Promise(r => setTimeout(r, delay))
-        return this.downloadStream(progressCallback, retryCount + 1, options)
+        return this.downloadStream(progressCallback, retryCount + 1, { ...options, currentSpeed: nextSpeed })
       }
       throw axiosError.message
     }

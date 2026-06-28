@@ -1,0 +1,46 @@
+{{extend defaultLayout}} {{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/statistics/css/index.css" />
+{{/block}} {{block 'main'}}
+<div class="stats-page">
+  <div class="stats-header">
+    <div>
+      <div class="eyebrow">KKK Analytics</div>
+      <h1>群组解析统计</h1>
+      <p>{{groupName || '群聊'}} · {{groupId}}</p>
+    </div>
+    <div class="header-badge">Group</div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span>本群解析次数</span>
+      <strong>{{groupTotalParses}}</strong>
+    </div>
+    <div class="metric-card">
+      <span>本群解析用户</span>
+      <strong>{{groupUniqueUsers}}</strong>
+    </div>
+    <div class="metric-card">
+      <span>全局群组数</span>
+      <strong>{{globalTotalGroups}}</strong>
+    </div>
+    <div class="metric-card">
+      <span>全局解析次数</span>
+      <strong>{{globalTotalParses}}</strong>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>平台分布</h2>
+    <div class="platform-list">
+      {{each platformRows row}}
+      <div class="platform-row">
+        <span>{{row.label}}</span>
+        <div class="bar"><i style="width: {{groupTotalParses > 0 ? row.count / groupTotalParses * 100 : 0}}%"></i></div>
+        <b>{{row.count}}</b>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>
+{{/block}}

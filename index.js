@@ -1,5 +1,4 @@
 import fs from 'fs'
-import Client from '@ikenxuan/amagi'
 import Config from './module/utils/Config.js'
 import Common from './module/utils/Common.js'
 import Version from './module/utils/Version.js'
@@ -60,12 +59,6 @@ logger.info('交流群：795874649')
 logger.info('---------------------------------')
 
 if (Config.app.APIServer) {
-  const amagiServer = new Client({
-    cookies: {
-      bilibili: Config.cookies.bilibili,
-      douyin: Config.cookies.douyin,
-      kuaishou: Config.cookies.kuaishou
-    }
-  })
-  amagiServer.startServer(Config.app.APIServerPort)
+  const { startPluginServer } = await import('./module/server/index.js')
+  startPluginServer()
 }

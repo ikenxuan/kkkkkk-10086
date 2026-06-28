@@ -4,6 +4,7 @@ import { execSync } from 'child_process'
 import Version from './Version.js'
 import simpleGit from 'simple-git'
 import { join } from 'node:path'
+import { applyWatermarkToImages, buildWatermarkText } from './Watermark.js'
 
 /**
  * 计算渲染缩放比例
@@ -113,8 +114,11 @@ export const Render = async (path, params) => {
     bilibili: 'bilibili/html',
     admin: 'admin/html',
     kuaishou: 'kuaishou/html',
+    xiaohongshu: 'xiaohongshu/html',
+    other: 'other/html',
     help: 'help/html',
     version: 'version/html',
+    statistics: 'statistics/html',
     apiError: 'apiError/html'
   }
   const platform = Object.keys(basePaths).find(key => path.startsWith(key))
@@ -136,7 +140,7 @@ export const Render = async (path, params) => {
     sys: {
       scale: scale(params?.scale ?? 1)
     },
-    copyright: `<span class="name">${Version.BotName}</span><span class="version">${Version.BotVersion}</span> & <span class="name">${Version.pluginName}</span><span class="version">${Version.version}</span> ${await gitstatus()}`,
+    copyright: Config.app.RemoveWatermark ? '' : `<span class="name">${Version.BotName}</span><span class="version">${Version.BotVersion}</span> & <span class="name">${Version.pluginName}</span><span class="version">${Version.version}</span> ${await gitstatus()}`,
     pageGotoParams: {
       waitUntil: 'load'
     },
@@ -149,5 +153,7 @@ export const Render = async (path, params) => {
     multiPageHeight: 12000,
     ...params
   }
-  return await puppeteer.screenshots(join(Version.pluginName, path), data)
+  const images = await puppeteer.screenshots(join(Version.pluginName, path), data)
+  if (Config.app.RemoveWatermark) return images
+  return await applyWatermarkToImages(images, buildWatermarkText())
 }

@@ -1,6 +1,9 @@
 # 发送视频经本插件转换为base64格式后再发送，适合云崽与机器人不在同一网络环境下开启
 sendbase64: false
 
+# 本地视频发送方式，可选值：file / base64。会同步兼容 sendbase64。
+videoSendMode: file
+
 # 视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传
 usefilelimit: true
 
@@ -21,3 +24,18 @@ usegroupfile: false
 
 # 群文件上传阈值，当文件大小超过该值时将使用群文件上传，单位：MB，「使用群文件上传」开启后才会生效
 groupfilevalue: 100
+
+# 网络图片发送方式，可选值：url / file / base64
+imageSendMode: url
+
+# 下载限速开关，开启后会限制下载速度，避免触发服务器风控导致连接被重置
+downloadThrottle: false
+
+# 下载速度限制，单位：MB/s，仅在 downloadThrottle 开启后生效
+downloadMaxSpeed: 10
+
+# 断流自动降速，检测到连接被重置时自动降低下载速度
+downloadAutoReduce: true
+
+# 最低下载速度，单位：MB/s，自动降速不会低于此值
+downloadMinSpeed: 1

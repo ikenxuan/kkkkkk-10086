@@ -1,8 +1,19 @@
 import { join, sep } from 'node:path'
+import path from 'node:path'
 import Version from './Version.js'
 import Config from './Config.js'
 import { Base } from './Base.js'
+import { Networks } from './Networks.js'
+import { scan } from '@ikenxuan/qrcode'
 import fs from 'node:fs'
+
+const supportedLinkPatterns = [
+  /(https?:\/\/)?(www|v|jx|m|jingxuan)\.(douyin|iesdouyin)\.com/i,
+  /https:\/\/aweme\.snssdk\.com\/aweme\/v1\/play/i,
+  /(bilibili\.com|b23\.tv|t\.bilibili\.com|bili2233\.cn|\bBV[1-9a-zA-Z]{10}\b|\bav\d+\b)/i,
+  /(快手.*快手|v\.kuaishou\.com|kuaishou\.com)/,
+  /(xiaohongshu\.com|xhslink\.com)/i
+]
 
 /** 常用工具合集 */
 class Tools {
@@ -17,6 +28,161 @@ class Tools {
       /** 图片缓存文件 */
       images: join(defaultPath, 'kkkdownload', 'images') + sep
     }
+    this.videoPreviews = new Map()
+  }
+
+  /**
+   * 注册可通过本地服务预览的视频文件。
+   * @param {string} filePath 视频绝对路径
+   * @param {boolean} [removeCache=Config.app.removeCache] 是否会自动删除
+   * @param {number} [ttlMs=10 * 60 * 1000] 预览有效期
+   * @returns {{ filename: string, filePath: string, removeCache: boolean, createdAt: number, expireAt?: number }}
+   */
+  registerVideoPreview(filePath, removeCache = Config.app.removeCache, ttlMs = 10 * 60 * 1000) {
+    const filename = path.basename(filePath)
+    const createdAt = Date.now()
+    const info = {
+      filename,
+      filePath,
+      removeCache: Boolean(removeCache),
+      createdAt,
+      expireAt: removeCache ? createdAt + ttlMs : undefined
+    }
+    this.videoPreviews.set(filename, info)
+    return info
+  }
+
+  /**
+   * 获取视频预览信息。
+   * @param {string} filename 文件名
+   * @returns {any}
+   */
+  getVideoPreview(filename) {
+    return this.videoPreviews.get(path.basename(filename))
+  }
+
+  /**
+   * 标记视频预览文件已删除。
+   * @param {string} filename 文件名
+   */
+  markVideoPreviewRemoved(filename) {
+    const safeName = path.basename(filename)
+    const info = this.videoPreviews.get(safeName)
+    if (info) {
+      info.removedAt = Date.now()
+      this.videoPreviews.set(safeName, info)
+    }
+  }
+
+  /**
+   * 校验视频请求文件名并返回安全路径。
+   * @param {string} filename 请求文件名
+   * @returns {string|null}
+   */
+  validateVideoRequest(filename) {
+    if (!filename) return null
+    const safeName = path.basename(filename)
+    if (safeName !== filename || filename.includes('/') || filename.includes('\\')) return null
+
+    const previewInfo = this.getVideoPreview(safeName)
+    const videoPath = previewInfo?.filePath || path.join(this.tempDri.video, safeName)
+    const resolvedVideoDir = path.resolve(this.tempDri.video)
+    const resolvedPath = path.resolve(videoPath)
+    if (!resolvedPath.startsWith(resolvedVideoDir + path.sep) && resolvedPath !== resolvedVideoDir) return null
+    if (!fs.existsSync(resolvedPath)) return null
+    return resolvedPath
+  }
+
+  /**
+   * 从图片 URL 或 base64 图片识别支持的平台二维码链接
+   * @param {string} image 图片 URL、本地路径或 base64 图片
+   * @param {string} source 来源描述
+   * @returns {Promise<string|null>} 识别到的平台链接
+   */
+  async tryScanImageQrCode(image, source = '消息图片') {
+    if (!image) return null
+    try {
+      logger.debug(`检测到${source}，尝试识别二维码`)
+      const buffer = await this.getImageBuffer(image)
+      if (!buffer) return null
+      const qrContent = scan(buffer)
+      if (qrContent && supportedLinkPatterns.some(pattern => pattern.test(qrContent))) {
+        logger.debug(`从${source}二维码中识别到支持的平台链接: ${qrContent}`)
+        return qrContent
+      }
+      if (qrContent) logger.debug(`识别到二维码内容但不是支持的平台: ${qrContent}`)
+    } catch (error) {
+      logger.warn(`识别${source}二维码失败: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    return null
+  }
+
+  /**
+   * 将图片输入转换为 Buffer
+   * @param {string} image 图片 URL、本地路径或 base64 图片
+   * @returns {Promise<Buffer|null>}
+   */
+  async getImageBuffer(image) {
+    if (!image) return null
+    if (image.startsWith('base64://')) {
+      return Buffer.from(image.replace(/^base64:\/\//, ''), 'base64')
+    }
+    if (/^data:image\/\w+;base64,/.test(image)) {
+      return Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+    }
+    if (/^https?:\/\//i.test(image)) {
+      const data = await new Networks({ url: image, type: 'arraybuffer' }).getData()
+      return Buffer.from(data)
+    }
+    if (fs.existsSync(image)) return await fs.promises.readFile(image)
+    return null
+  }
+
+  /**
+   * 尝试从消息元素中提取文本或识别图片二维码
+   * @param {Array<*>} messages 消息元素数组
+   * @param {string} source 来源描述
+   * @returns {Promise<string>}
+   */
+  async extractMessageText(messages, source = '消息') {
+    for (const msg of messages || []) {
+      if (['text', 'json'].includes(msg?.type)) {
+        const text = msg.text || msg.data || msg.data?.text || msg.data?.data || ''
+        const markdownText = await this.extractMarkdownText(text, source)
+        if (markdownText) return markdownText
+        if (text) return text
+      }
+      if (msg?.type === 'image') {
+        const image = msg.file || msg.url || msg.data?.file || msg.data?.url
+        const qrResult = await this.tryScanImageQrCode(image, source)
+        if (qrResult) return qrResult
+      }
+    }
+    return ''
+  }
+
+  /**
+   * 解析 markdown/json 文本中的图片二维码
+   * @param {string} text 文本
+   * @param {string} source 来源描述
+   * @returns {Promise<string>}
+   */
+  async extractMarkdownText(text, source) {
+    if (!text || typeof text !== 'string') return ''
+    let content = text
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed?.type === 'markdown' && parsed.data?.content) content = parsed.data.content
+    } catch {
+      // 普通文本不需要 JSON 解析
+    }
+    const imageRegex = /!\[.*?\]\((.*?)\)/g
+    let match
+    while ((match = imageRegex.exec(content)) !== null) {
+      const qrResult = await this.tryScanImageQrCode(match[1], `${source}中的 markdown 图片`)
+      if (qrResult) return qrResult
+    }
+    return content === text ? '' : content
   }
 
   /**
@@ -26,24 +192,25 @@ class Tools {
    */
   async getReplyMessage(e) {
     const botAdapter = new Base(e).botadapter
+    const currentMessageText = await this.extractMessageText(e.message, '当前消息')
+    if (currentMessageText && supportedLinkPatterns.some(pattern => pattern.test(currentMessageText))) {
+      return currentMessageText
+    }
     // TRSS-Yunzai 处理
     if (Version.BotName === 'TRSS-Yunzai' && e.reply_id) {
       const replyMsg = await e.getReply()
       if (replyMsg) {
         const sourceArray = Array.isArray(replyMsg) ? replyMsg : [replyMsg]
-        e.msg = sourceArray
-          .flatMap(item => item.message)
-          .filter(msg => ['text', 'json'].includes(msg?.type))
-          .map(i => i?.text || i?.data)
-          .join('')
+        const replyText = await this.extractMessageText(sourceArray.flatMap(item => item.message), '引用消息')
+        if (replyText) e.msg = replyText
       }
     }
     // ICQQ适配器处理
     if (botAdapter === 'ICQQ' && e.source) {
       const history = await (e.group || e.friend)?.getChatHistory(e.isGroup ? e.source.seq : e.source.time, 1)
       const message = history.pop()?.message
-      const textMsg = message?.find((/** @type {{ type: string; }} */ v) => ['text', 'json'].includes(v?.type))
-      if (textMsg) e.msg = textMsg.text || textMsg.data
+      const replyText = await this.extractMessageText(message, '引用消息')
+      if (replyText) e.msg = replyText
     }
 
     // OneBotv11 处理
@@ -51,8 +218,8 @@ class Tools {
       const replyMsg = e.message.find((/** @type {{ type: string; }} */ msg) => msg.type === 'reply')
       if (replyMsg) {
         const replyData = await e.bot?.sendApi?.('get_msg', { message_id: replyMsg.id })
-        const message = replyData?.data?.message?.find((/** @type {{ type: string; }} */ v) => ['text', 'json'].includes(v?.type))
-        if (message) e.msg = message.data?.text || message.data?.data
+        const replyText = await this.extractMessageText(replyData?.data?.message, '引用消息')
+        if (replyText) e.msg = replyText
       }
     }
     return e.msg || ''

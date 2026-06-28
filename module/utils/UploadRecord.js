@@ -1,7 +1,6 @@
 import { ffmpeg, ffprobe } from './FFmpeg.js'
 import { Networks } from './Networks.js'
 import querystring from 'querystring'
-import fetch from 'node-fetch'
 import crypto from 'crypto'
 import fs from 'fs'
 import os from 'os'

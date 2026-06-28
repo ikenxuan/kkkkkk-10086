@@ -1,6 +1,9 @@
 # 抖音解析开关，单独开关，受「总开关」影响
 douyintool: true
 
+# 抖音解析开关（新项目配置名，兼容 douyintool）
+switch: true
+
 # 抖音解析可选
 douyinTip:
   - 提示信息
@@ -9,8 +12,33 @@ douyinTip:
   - 背景音乐
   - 图集
 
+# 解析时发送的内容（新项目配置名）
+# 可选值：info、comment、video
+sendContent:
+  - info
+  - comment
+  - video
+
 # 抖音评论数量，范围1~无限条
 numcomments: 5
+
+# 抖音评论数量（新项目配置名，兼容 numcomments）
+numcomment: 5
+
+# 次级评论请求数量
+subCommentLimit: 5
+
+# 次级评论嵌套深度
+subCommentDepth: 3
+
+# 是否收集评论区的图片
+commentImageCollection: true
+
+# 合辑 Live 图 BGM 合并模式，可选值：continuous、independent
+liveImageMergeMode: continuous
+
+# 解析时是否直接输出文本，关闭后渲染为图片
+textMode: false
 
 # 评论图是否显示真实评论数量，关闭则显示解析到的评论数量
 realCommentCount: false
@@ -20,6 +48,39 @@ sendHDrecord: true
 
 # 根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载
 autoResolution: true
+
+# 视频画质偏好设置，可选值：adapt、540p、720p、1080p、2k、4k
+videoQuality: 4k
+
+# 自动画质模式下可接受的最大视频大小（单位：MB）
+maxAutoVideoSize: 50
+
+# 谁可以触发扫码登录
+loginPerm: master
+
+# 视频信息返回形式，可选值：text、image
+videoInfoMode: image
+
+# 视频信息的内容，可选值：cover、title、author、stats
+displayContent: ['cover', 'title', 'author', 'stats']
+
+# 弹幕烧录，需要重新编码视频，耗时较长
+burnDanmaku: false
+
+# 弹幕显示区域：0.25、0.5、0.75、1
+danmakuArea: 0.5
+
+# 弹幕字号：small、medium、large
+danmakuFontSize: medium
+
+# 弹幕透明度（0-100）
+danmakuOpacity: 70
+
+# 横屏转竖屏模式：off、standard、force
+verticalMode: off
+
+# 视频编码格式：h264、h265、av1
+videoCodec: h265
 
 # 抖音推送相关配置
 push: 
@@ -35,3 +96,7 @@ push:
   log: true
   # 分享链接二维码的类型，web为跳转到抖音网页，download为视频下载直链
   shareType: 'web'
+  # 推送解析时视频画质偏好设置
+  pushVideoQuality: 4k
+  # 推送解析时视频体积上限
+  pushMaxAutoVideoSize: 50

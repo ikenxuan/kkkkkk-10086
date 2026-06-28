@@ -8,8 +8,11 @@ export { default as Common } from './Common.js'
 export { Networks, baseHeaders } from './Networks.js'
 
 // ==================== 工具函数 ====================
-export { mergeFile } from './FFmpeg.js'
+export { mergeFile, getMediaDuration, getMediaFrameRate, loopVideoWithTransition } from './FFmpeg.js'
 export { default as UploadRecord } from './UploadRecord.js'
+export * from './ImageHelper.js'
+export * from './EmojiReaction.js'
+export * from './ErrorHandler/index.js'
 
 // ==================== 基础类 ====================
 export * from './Base.js'

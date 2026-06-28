@@ -7,15 +7,19 @@ import Config from '../../utils/Config.js'
  * @returns obj
  */
 export default async function comments (data, emojidata) {
+  const rootComments = data?.data?.visionCommentList?.rootComments || data?.visionCommentList?.rootComments || []
+  if (!Array.isArray(rootComments) || rootComments.length === 0) return []
+
   const jsonArray = []
-  for (let i = 0; i < data.data.visionCommentList.rootComments.length; i++) {
-    const cid = data.data.visionCommentList.rootComments[i].commentId
-    const aweme_id = data.data.visionCommentList.rootComments[i].commentId
-    const nickname = data.data.visionCommentList.rootComments[i].authorName
-    const userimageurl = data.data.visionCommentList.rootComments[i].headurl
-    const text = data.data.visionCommentList.rootComments[i].content
-    const time = getRelativeTimeFromTimestamp(data.data.visionCommentList.rootComments[i].timestamp)
-    const digg_count = data.data.visionCommentList.rootComments[i].likedCount
+  for (let i = 0; i < rootComments.length; i++) {
+    const item = rootComments[i]
+    const cid = item.commentId
+    const aweme_id = item.commentId
+    const nickname = item.authorName
+    const userimageurl = item.headurl
+    const text = item.content || ''
+    const time = getRelativeTimeFromTimestamp(item.timestamp)
+    const digg_count = item.realLikedCount ?? item.likedCount
     const commentObj = {
       id: i + 1,
       cid,
@@ -24,7 +28,8 @@ export default async function comments (data, emojidata) {
       userimageurl,
       text,
       digg_count,
-      create_time: time
+      create_time: time,
+      reply_comment_total: item.subCommentCount || 0
     }
     jsonArray.push(commentObj)
   }
@@ -63,7 +68,8 @@ export default async function comments (data, emojidata) {
     }
   }
   // 从数组前方开始保留 Config.kuaishou.kuaishounumcomments 条评论，自动移除数组末尾的评论
-  return jsonArray.slice(0, Math.min(jsonArray.length, Config.kuaishou.kuaishounumcomments))
+  const limit = Config.kuaishou.numcomment || Config.kuaishou.kuaishounumcomments || 5
+  return jsonArray.slice(0, Math.min(jsonArray.length, limit))
 }
 
 function getRelativeTimeFromTimestamp (timestamp) {

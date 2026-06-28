@@ -8,6 +8,25 @@ import Config from './Config.js'
 import Common from './Common.js'
 import fs from 'fs'
 
+const buildApiErrorImage = async (platform, method, err) => {
+  const error = err?.error || err?.data || {}
+  return await Render('other/handlerError', {
+    type: 'business_error',
+    platform,
+    method,
+    timestamp: new Date().toLocaleString('zh-CN', { hour12: false }),
+    frameworkVersion: Version.BotVersion,
+    pluginVersion: Version.version,
+    triggerCommand: error.requestUrl || error.request_url || '',
+    error: {
+      name: error.name || error.errorCode || error.code || 'APIError',
+      message: error.message || error.errorDescription || err?.message || 'API 请求失败',
+      stack: error.stack || error.amagiMessage || '',
+      businessName: method
+    }
+  })
+}
+
 /**
  * 统计每个平台使用最多的机器人 ID 和使用次数
  * @typedef {Object} PlatformBotStats
@@ -99,7 +118,8 @@ export class Base {
       cookies: {
         douyin: Config.cookies.douyin,
         bilibili: Config.cookies.bilibili,
-        kuaishou: Config.cookies.kuaishou
+        kuaishou: Config.cookies.kuaishou,
+        xiaohongshu: Config.cookies.xiaohongshu
       },
       request: {
         timeout: Config.request?.timeout || 15000,
@@ -131,7 +151,7 @@ export class Base {
             if (prop === 'getDouyinData' && (result.code !== 200)) {
               /** @type {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').APIErrorType<'douyin'>>} */
               const err = result
-              const img = await Render('apiError/index', err.error)
+              const img = await buildApiErrorImage('douyin', String(prop), err)
               if (Object.keys(e).length === 0) {
                 await sendMasterMessage('douyin', img)
                 throw new Error(err.message)
@@ -144,7 +164,18 @@ export class Base {
             if (prop === 'getBilibiliData' && result.code in bilibiliErrorCodeMap) {
               /** @type {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').APIErrorType<'bilibili'>>} */
               const err = result
-              const img = await Render('apiError/index', err.error)
+              const voucher = err?.data?.data?.v_voucher || err?.error?.data?.data?.v_voucher
+              if (err.code === -352 && voucher && Object.keys(e).length !== 0) {
+                const riskError = new Error(err.message || 'B站风控验证')
+                Object.assign(riskError, {
+                  code: err.code,
+                  platform: 'bilibili',
+                  data: err.data || err.error,
+                  rawError: err
+                })
+                throw riskError
+              }
+              const img = await buildApiErrorImage('bilibili', String(prop), err)
               if (Object.keys(e).length === 0) {
                 await sendMasterMessage('bilibili', img)
                 throw new Error(err.message)
@@ -408,12 +439,14 @@ export const uploadFile = async (e, file, videoUrl, options) => {
 
   // 文件处理
   let File
-  if (Config.upload.sendbase64 && !useGroupFile) {
+  const useBase64Video = Config.upload.videoSendMode === 'base64' || Config.upload.sendbase64
+  if (useBase64Video && !useGroupFile) {
     File = `base64://${fs.readFileSync(file.filepath).toString('base64')}`
     logger.mark(`已开启base64转换...`)
   } else {
     File = useGroupFile ? file.filepath : `file://${file.filepath}`
   }
+  Common.registerVideoPreview(file.filepath, Boolean(Config.app.removeCache))
 
   try {
     const msgType = isActiveMessage ? '主动' : '被动'

@@ -1,0 +1,14 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/changelog.css" />
+{{/block}}
+{{block 'main'}}
+<main class="changelog-page">
+  <header class="changelog-header">
+    <div class="eyebrow">CHANGELOG</div>
+    <h1>{{title || 'KKK 更新日志'}}</h1>
+    <p>当前版本 {{version || 'unknown'}}</p>
+  </header>
+  <pre class="markdown">{{markdown}}</pre>
+</main>
+{{/block}}

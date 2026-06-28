@@ -30,7 +30,6 @@
         // 获取当前时间并自动设置主题
         function setThemeBasedOnTime () {
           const body = document.body
-          console.log('{{useDarkTheme}}' === 'true' ? '深色模式' : '浅色模式')
           if ('{{useDarkTheme}}' === 'true') {
             body.classList.remove('light-mode')
             body.classList.add('dark-mode')

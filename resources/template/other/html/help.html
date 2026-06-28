@@ -1,0 +1,26 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/help.css" />
+{{/block}}
+{{block 'main'}}
+<div class="help-header">
+  <div>
+    <div class="eyebrow">{{role === 'master' ? 'MASTER' : 'MEMBER'}}</div>
+    <h1>{{title || 'KKK插件帮助页面'}}</h1>
+  </div>
+</div>
+
+{{each menu group}}
+<section class="menu-section">
+  <h2>{{group.title}}</h2>
+  <div class="menu-grid">
+    {{each group.items item}}
+    <div class="menu-item">
+      <div class="menu-title">{{item.title}}</div>
+      <div class="menu-description">{{item.description}}</div>
+    </div>
+    {{/each}}
+  </div>
+</section>
+{{/each}}
+{{/block}}

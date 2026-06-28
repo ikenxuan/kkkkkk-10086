@@ -1,3 +1,5 @@
+import './riskControl.js'
+
 export * from './bilibili.js'
 export * from './login.js'
 export * from './getid.js'

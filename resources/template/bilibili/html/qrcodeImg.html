@@ -1,0 +1,28 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/bilibili/css/qrcodeImg.css" />
+{{/block}}
+{{block 'main'}}
+<main class="qr-page">
+  <header>
+    <div class="platform">BILIBILI</div>
+    <h1>扫码登录</h1>
+    <p>请在 120 秒内使用哔哩哔哩 APP 扫码并确认登录</p>
+  </header>
+  <div id="qrcode"></div>
+  <section class="notice">
+    <b>免责声明</b>
+    <span>登录凭证仅保存到本地 cookies.yaml，用于请求官方 Web API。</span>
+  </section>
+</main>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 560,
+    height: 560,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#ececec' : '#202020',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#111111' : '#f4f4f4'
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

@@ -21,6 +21,7 @@ export default class KuaishouData extends Base {
    */
   async GetData (data) {
     switch (this.type) {
+      case 'one_work':
       case '单个作品信息': {
         this.obj = KuaishouAPI.单个作品信息(data.photoId)
         const VideoData = await this.GlobalGetData(

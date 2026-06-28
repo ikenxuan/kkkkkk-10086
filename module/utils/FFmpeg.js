@@ -245,6 +245,170 @@ export const mergeFile = async (type, options) => {
 }
 
 /**
+ * 获取媒体时长（秒）
+ * @param {string} filePath 媒体文件路径
+ * @returns {Promise<number>}
+ */
+export const getMediaDuration = async (filePath) => {
+  const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`, { trim: true })
+  const stdout = typeof result === 'object' && result?.stdout ? result.stdout : ''
+  const duration = Number.parseFloat(stdout)
+  return Number.isFinite(duration) ? duration : 0
+}
+
+/**
+ * 获取媒体帧率（fps）
+ * @param {string} filePath 媒体文件路径
+ * @returns {Promise<number>}
+ */
+export const getMediaFrameRate = async (filePath) => {
+  const result = await ffprobe(`-v error -select_streams v:0 -show_entries stream=avg_frame_rate -of default=noprint_wrappers=1:nokey=1 "${filePath}"`, { trim: true })
+  const rate = typeof result === 'object' && result?.stdout ? result.stdout : ''
+  if (!rate) return 30
+  if (rate.includes('/')) {
+    const [num, den] = rate.split('/', 2).map(value => Number(value))
+    if (!num || !den) return 30
+    return Math.round((num / den) * 100) / 100
+  }
+  const parsed = Number(rate)
+  return parsed && !Number.isNaN(parsed) ? Math.round(parsed * 100) / 100 : 30
+}
+
+const hasAudioStream = async (filePath) => {
+  const result = await ffprobe(`-v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "${filePath}"`, { trim: true })
+  return Boolean(typeof result === 'object' && result?.stdout)
+}
+
+/**
+ * 生成 Live Photo 风格循环视频，并按配置合并 BGM。
+ * @param {Object} options
+ * @param {string} options.inputPath 输入视频
+ * @param {string} options.outputPath 输出视频
+ * @param {number} options.loopCount 循环次数
+ * @param {string} options.staticImagePath 静态图路径
+ * @param {boolean} [options.transitionEnabled=true] 是否添加静态图过渡
+ * @param {string} [options.bgmPath] BGM 路径
+ * @param {'independent'|'continuous'} [options.mergeMode='independent'] BGM 合并模式
+ * @param {{bgmPath: string, bgmDuration: number, usedDuration: number}} [options.context] 连续模式上下文
+ * @returns {Promise<{success: boolean, context?: {bgmPath: string, bgmDuration: number, usedDuration: number}}>}
+ */
+export const loopVideoWithTransition = async (options) => {
+  const {
+    inputPath,
+    outputPath,
+    loopCount,
+    staticImagePath,
+    transitionEnabled = true,
+    bgmPath,
+    mergeMode = 'independent',
+    context
+  } = options
+
+  const duration = await getMediaDuration(inputPath)
+  const videoFps = await getMediaFrameRate(inputPath)
+  const safeLoopCount = Math.max(1, Number(loopCount) || 1)
+  const fadeDuration = transitionEnabled ? Math.min(0.5, Math.max(0.12, duration * 0.18)) : 0
+  const staticDuration = transitionEnabled ? 2.5 : 0
+  const videoFadeOffset = transitionEnabled ? Math.max(0, duration - fadeDuration) : 0
+
+  let inputArgs = `-stream_loop ${Math.max(0, safeLoopCount - 1)} -i "${inputPath}"`
+  let filterComplex = '[0:v]setpts=PTS-STARTPTS,format=yuv420p,setsar=1[outv]'
+  let composedDuration = duration * safeLoopCount
+
+  if (transitionEnabled) {
+    inputArgs = `-stream_loop ${Math.max(0, safeLoopCount)} -i "${inputPath}" -loop 1 -i "${staticImagePath}"`
+    const splitLabels = Array.from({ length: safeLoopCount }, (_, index) => `[vsplit${index}]`).join('')
+    const stillSplitLabels = Array.from({ length: safeLoopCount }, (_, index) => `[still${index}]`).join('')
+    const filterParts = [
+      `[0:v]setpts=PTS-STARTPTS,settb=1/1000,format=yuv420p,setsar=1,fps=${videoFps}[vbase]`,
+      `[vbase]split=${safeLoopCount}${splitLabels}`,
+      `[1:v]setpts=PTS-STARTPTS,settb=1/1000,format=yuv420p,setsar=1,fps=${videoFps}[still_base]`,
+      `[still_base]split=${safeLoopCount}${stillSplitLabels}`
+    ]
+
+    for (let i = 0; i < safeLoopCount; i += 1) {
+      const start = Math.max(0, duration * i)
+      filterParts.push(`[vsplit${i}]trim=start=${start}:duration=${duration},setpts=PTS-STARTPTS,settb=1/1000[v${i}]`)
+      filterParts.push(`[still${i}][v${i}]scale2ref=iw:ih:flags=lanczos[s${i}raw][v${i}r]`)
+      filterParts.push(`[s${i}raw]trim=duration=${staticDuration},setpts=PTS-STARTPTS,settb=1/1000[s${i}]`)
+    }
+
+    let lastLabel = 'x_s0'
+    composedDuration = duration
+    filterParts.push(`[v0r][s0]xfade=transition=fade:duration=${fadeDuration}:offset=${videoFadeOffset}[${lastLabel}]`)
+    composedDuration = composedDuration + staticDuration - fadeDuration
+
+    for (let i = 1; i < safeLoopCount; i += 1) {
+      const toVideoLabel = `x_v${i}`
+      const toStillLabel = `x_s${i}`
+      const offsetToVideo = Math.max(0, composedDuration - fadeDuration)
+      filterParts.push(`[${lastLabel}][v${i}r]xfade=transition=fade:duration=${fadeDuration}:offset=${offsetToVideo}[${toVideoLabel}]`)
+      composedDuration = composedDuration + duration - fadeDuration
+      const offsetToStill = Math.max(0, composedDuration - fadeDuration)
+      filterParts.push(`[${toVideoLabel}][s${i}]xfade=transition=fade:duration=${fadeDuration}:offset=${offsetToStill}[${toStillLabel}]`)
+      composedDuration = composedDuration + staticDuration - fadeDuration
+      lastLabel = toStillLabel
+    }
+
+    filterParts.push(`[${lastLabel}]null[outv]`)
+    filterComplex = filterParts.join(';')
+  }
+
+  if (bgmPath) {
+    const baseContext = context ?? {
+      bgmPath,
+      bgmDuration: await getMediaDuration(bgmPath),
+      usedDuration: 0
+    }
+    const bgmDuration = baseContext.bgmDuration || 1
+    const totalDuration = transitionEnabled ? composedDuration : duration * safeLoopCount
+    let bgmInputArgs = `-i "${bgmPath}"`
+    const bgmInputIndex = transitionEnabled ? 2 : 1
+    const bgmNeedLoop = totalDuration > bgmDuration
+
+    if (mergeMode === 'continuous') {
+      const bgmStartTime = baseContext.usedDuration % bgmDuration
+      const remainingBgm = bgmDuration - bgmStartTime
+      if (totalDuration <= remainingBgm) {
+        bgmInputArgs = `-ss ${bgmStartTime} -i "${bgmPath}"`
+      } else {
+        const bgmLoopCount = Math.ceil(totalDuration / bgmDuration) + 1
+        bgmInputArgs = `-stream_loop ${bgmLoopCount} -ss ${bgmStartTime} -i "${bgmPath}"`
+      }
+    } else if (bgmNeedLoop) {
+      const bgmLoopCount = Math.max(0, Math.ceil(totalDuration / bgmDuration) - 1)
+      bgmInputArgs = `-stream_loop ${bgmLoopCount} -i "${bgmPath}"`
+    }
+
+    const hasSourceAudio = await hasAudioStream(inputPath)
+    const audioFilter = hasSourceAudio
+      ? `${filterComplex};[0:a][${bgmInputIndex}:a]amix=inputs=2:duration=longest:dropout_transition=3[aout]`
+      : `${filterComplex};[${bgmInputIndex}:a]asetpts=PTS-STARTPTS[aout]`
+    const result = await ffmpeg(
+      `-y ${inputArgs} ${bgmInputArgs} -filter_complex "${audioFilter}" ` +
+        `-map "[outv]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -pix_fmt yuv420p -shortest "${outputPath}"`
+    )
+
+    let mergeContext
+    if (mergeMode === 'continuous') {
+      const outputDuration = result.status ? await getMediaDuration(outputPath) : totalDuration
+      const validDuration = Number.isFinite(outputDuration) && outputDuration > 0 ? outputDuration : totalDuration
+      mergeContext = {
+        ...baseContext,
+        usedDuration: (baseContext.usedDuration + validDuration) % bgmDuration
+      }
+    }
+
+    result.status ? logger.debug(`Live Photo 效果视频生成成功: ${outputPath}`) : logger.error('Live Photo 效果视频生成失败', result)
+    return { success: result.status, context: mergeContext }
+  }
+
+  const result = await ffmpeg(`-y ${inputArgs} -filter_complex "${filterComplex}" -map "[outv]" -c:v libx264 -pix_fmt yuv420p "${outputPath}"`)
+  result.status ? logger.debug(`Live Photo 效果视频生成成功: ${outputPath}`) : logger.error('Live Photo 效果视频生成失败', result)
+  return { success: result.status }
+}
+
+/**
  * @description 执行 shell 命令
  * @param {string} cmd - 要执行的命令
  * @param {Object} [options] - 执行选项

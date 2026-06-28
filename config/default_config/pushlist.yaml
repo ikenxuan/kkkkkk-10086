@@ -10,6 +10,10 @@
 #       - 1145141919810:8888888888
 #     # 这个博主的名字信息（可不填，执行推送时会自动填上）
 #     remark: 
+#     # 推送类型，可选：post（作品）、live（直播）、favorite（喜欢列表）、recommend（推荐列表）
+#     pushTypes:
+#       - post
+#       - live
 
 # # B站推送列表
 # bilibili:
@@ -21,6 +25,10 @@
 #       - 1145141919810:8888888888
 #     # 这个UP主的名字信息（可不填，执行推送时会自动填上）
 #     remark: 
+#     # 推送类型，可选：video、draw、word、live、forward、article
+#     pushTypes:
+#       - video
+#       - draw
 
 # 抖音推送列表
 douyin: 

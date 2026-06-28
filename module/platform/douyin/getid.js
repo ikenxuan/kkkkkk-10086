@@ -1,5 +1,4 @@
 import { baseHeaders, Networks } from '../../utils/index.js'
-import fetch from 'node-fetch'
 
 /**
  * @typedef {object} DouyinDataTypes
@@ -51,7 +50,7 @@ export const getDouyinID = async (url, log = true) => {
       if (response.url && response.url !== url) longLink = response.url
     }
 
-    /** 
+    /**
      * 统一的URL模式匹配表 [类型名称, 匹配函数, 提取函数]
      * @typedef {[string, (url: string) => boolean, (url: string) => DouyinIdData]} UrlPattern
      * @type {UrlPattern[]}
@@ -79,22 +78,11 @@ export const getDouyinID = async (url, log = true) => {
       ],
       // 视频作品链接
       [
-        'video',
-        (url) => /video\/\d+/.test(url),
+        'work',
+        (url) => /(?:video|article|note)\/\d+/.test(url),
         (url) => ({
           type: 'one_work',
-          aweme_id: url.match(/video\/(\d+)/)?.[1],
-          is_mp4: true
-        })
-      ],
-      // 图文作品链接
-      [
-        'note',
-        (url) => /note\/\d+/.test(url),
-        (url) => ({
-          type: 'one_work',
-          aweme_id: url.match(/note\/(\d+)/)?.[1],
-          is_mp4: false
+          aweme_id: url.match(/(?:video|article|note)\/(\d+)/)?.[1]
         })
       ],
       // 图集/幻灯片作品链接 (slides)
@@ -107,10 +95,19 @@ export const getDouyinID = async (url, log = true) => {
           is_mp4: false
         })
       ],
+      [
+        'modal',
+        (url) => /modal_id=(\d+)/.test(url),
+        (url) => ({
+          type: 'one_work',
+          aweme_id: url.match(/modal_id=(\d+)/)?.[1],
+          is_mp4: true
+        })
+      ],
       // 用户主页链接
       [
         'user',
-        (url) => /https:\/\/(?:www\.douyin\.com|www\.iesdouyin\.com)\/share\/user\/\S+/.test(url),
+        (url) => /https:\/\/(?:www\.douyin\.com|www\.iesdouyin\.com)\/(?:share\/)?user\/\S+/.test(url),
         (url) => ({
           type: 'user_dynamic',
           sec_uid: url.match(/user\/([a-zA-Z0-9_-]+)\b/)?.[1]

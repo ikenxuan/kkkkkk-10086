@@ -1,9 +1,10 @@
-import { Base, Config, UploadRecord, Networks, Render, mergeFile, Version, Common, downloadFile, downloadVideo, baseHeaders } from '../../utils/index.js'
+import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl } from '../../utils/index.js'
 import common from '../../../../../lib/common/common.js'
 import { markdown } from '@karinjs/md-html'
+import { burnDanmaku } from '../common/danmaku.js'
+import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '../common/livePhoto.js'
 import { douyinComments } from './index.js'
-import { join } from 'node:path'
-import QRCode from 'qrcode'
+import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, parseJsonSafely } from './workType.js'
 import fs from 'fs'
 
 /**
@@ -36,6 +37,43 @@ import fs from 'fs'
 let mp4size = ''
 let img
 
+const getFirstUrl = (data) => data?.url_list?.find(Boolean) || ''
+const formatVideoDuration = (duration) => {
+  const seconds = Math.floor((duration || 0) / 1000)
+  const minutes = Math.floor(seconds / 60)
+  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
+}
+const formatVideoStats = (statistics = {}) => [
+  `\n点赞：${Common.count(statistics.digg_count)}`,
+  `评论：${Common.count(statistics.comment_count)}`,
+  `收藏：${Common.count(statistics.collect_count)}`,
+  `分享：${Common.count(statistics.share_count)}`,
+  statistics.recommend_count !== undefined ? `推荐：${Common.count(statistics.recommend_count)}` : ''
+].filter(Boolean).join('\n')
+
+const hasUserConfigKey = (key) => Object.prototype.hasOwnProperty.call(Config.getConfig?.('douyin') || {}, key)
+const hasDouyinContent = (legacyKey, modernKey) => {
+  if (modernKey && hasUserConfigKey('sendContent')) {
+    return (Config.douyin.sendContent || []).includes(modernKey)
+  }
+  return (Config.douyin.douyinTip || []).includes(legacyKey)
+}
+
+const getDouyinMusicUrl = (music) => {
+  if (!music) return ''
+  if (music.play_url?.uri) return music.play_url.uri
+  try {
+    return JSON.parse(music.extra || '{}')?.original_song_url || ''
+  } catch {
+    return ''
+  }
+}
+
+const getDouyinLiveVideoUrl = (imageItem) => {
+  const uri = imageItem?.video?.play_addr_h264?.uri || imageItem?.video?.play_addr?.uri
+  return uri ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${uri}&ratio=1080p&line=0` : ''
+}
+
 export class DouYin extends Base {
   /** @type {import('./getid.js').DouyinDataTypes[keyof import('./getid.js').DouyinDataTypes]} */
   type
@@ -50,31 +88,68 @@ export class DouYin extends Base {
    */
 
   /**
-   * @param {*} e 
+   * @param {*} e
    * @param {import('./getid.js').DouyinIdData & ExtendedDouyinIdData} iddata
+   * @param {{ forceBurnDanmaku?: boolean }} [options]
    */
-  constructor(e, iddata) {
+  constructor (e, iddata, options) {
     super(e)
     this.e = e
     this.type = iddata?.type
     this.is_mp4 = iddata?.is_mp4
     this.is_slides = false
+    this.forceBurnDanmaku = options?.forceBurnDanmaku ?? false
+    this.hasProcessedLiveImage = false
+  }
+
+  async handleArticleWork (VideoData) {
+    const aweme = VideoData.data.aweme_detail
+    const content = parseJsonSafely(aweme.article_info?.article_content)
+    const feData = parseJsonSafely(aweme.article_info?.fe_data)
+    const articleHtml = markdown(content.markdown || aweme.desc || '', {})
+
+    const img = await Render('douyin/article-work', {
+      title: aweme.article_info?.article_title || aweme.desc || '抖音文章',
+      html: articleHtml,
+      images: feData.image_list || [],
+      read_time: feData.read_time || 0,
+      dianzan: Common.count(aweme.statistics?.digg_count),
+      pinglun: Common.count(aweme.statistics?.comment_count),
+      shouchang: Common.count(aweme.statistics?.collect_count),
+      share: Common.count(aweme.statistics?.share_count),
+      create_time: Common.convertTimestampToDateTime(aweme.create_time),
+      avater_url: getFirstUrl(aweme.author?.avatar_thumb) || getFirstUrl(aweme.author?.avatar_larger),
+      username: aweme.author?.nickname || '无法获取',
+      douyin_id: aweme.author?.unique_id || aweme.author?.short_id || '无法获取',
+      total_favorited: Common.count(aweme.author?.total_favorited),
+      following_count: Common.count(aweme.author?.following_count),
+      follower_count: Common.count(aweme.author?.follower_count),
+      share_url: aweme.share_url || `https://www.douyin.com/article/${aweme.aweme_id}`
+    })
+    await this.e.reply(img)
+    return true
   }
 
   /**
    * @param {import('./getid.js').DouyinIdData} data 抖音数据
    * @returns {Promise<*>}
    */
-  async RESOURCES(data) {
+  async RESOURCES (data) {
     try {
       if (this.type === 'undefined') return true
-      Config.douyin.douyinTip?.includes('提示信息') && this.e.reply('检测到抖音链接，开始解析')
+      (Config.app.parseTip || hasDouyinContent('提示信息')) && this.e.reply('检测到抖音链接，开始解析')
       switch (this.type) {
         case 'one_work': {
           const VideoData = await this.amagi.getDouyinData('聚合解析', {
             aweme_id: data.aweme_id,
             typeMode: 'strict'
           })
+          if (VideoData.data.aweme_detail === null) {
+            throw new Error('获取作品详情失败，可能是因为该作品已被删除或设置为私密。')
+          }
+          const isArticle = isDouyinArticle(VideoData.data.aweme_detail)
+          const isVideo = isDouyinVideo(VideoData.data.aweme_detail)
+          if (typeof this.is_mp4 !== 'boolean') this.is_mp4 = isVideo
           const CommentsData = await this.amagi.getDouyinData('评论数据', {
             aweme_id: data.aweme_id,
             number: Config.douyin.numcomments,
@@ -87,7 +162,7 @@ export class DouYin extends Base {
           /** 图集 */
           let imagenum = 0
           const image_res = []
-          if (this.is_mp4 === false && (Config.douyin.douyinTip)?.includes('图集')) {
+          if (!isVideo && !isArticle && hasDouyinContent('图集')) {
             switch (true) {
               // 图集
               case this.is_slides === false && VideoData.data.aweme_detail.images !== null: {
@@ -96,15 +171,91 @@ export class DouYin extends Base {
                 let image_url = ''
                 // 使用可选链和空值合并操作符确保安全访问
                 const images = VideoData.data.aweme_detail.images || []
+                const hasLiveImage = images.some(item => (item.clip_type ?? 2) !== 2)
+                const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
+                g_title = title
+
+                if (hasLiveImage) {
+                  const processedImages = []
+                  const temp = []
+                  let hasGeneratedLivePhoto = false
+                  let bgmContext = null
+                  const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
+                  const musicUrl = getDouyinMusicUrl(VideoData.data.aweme_detail.music)
+                  const liveimgbgm = musicUrl
+                    ? await downloadFile(musicUrl, {
+                      title: `Douyin_tmp_A_${Date.now()}.mp3`,
+                      headers: {
+                        ...this.headers,
+                        Referer: 'https://www.douyin.com/',
+                        Cookie: ''
+                      }
+                    })
+                    : null
+                  if (liveimgbgm?.filepath) temp.push(liveimgbgm)
+
+                  for (const [index, imageItem] of images.entries()) {
+                    imagenum++
+                    if (imageItem.clip_type === 2 || imageItem.clip_type === undefined) {
+                      image_url = imageItem.url_list?.[2] || imageItem.url_list?.[1] || imageItem.url_list?.[0] || ''
+                      const processedImageUrl = await processImageUrl(image_url, g_title, index, {
+                        Referer: 'https://www.douyin.com/',
+                        Cookie: Config.cookies.douyin || ''
+                      })
+                      processedImages.push(segment.image(processedImageUrl))
+                      continue
+                    }
+
+                    const livePhoto = await buildLivePhotoMessages({
+                      platform: 'douyin',
+                      staticUrl: imageItem.url_list?.[0] || imageItem.url_list?.[2] || imageItem.url_list?.[1],
+                      liveVideoUrl: getDouyinLiveVideoUrl(imageItem),
+                      index,
+                      headers: {
+                        ...this.headers,
+                        Referer: 'https://www.douyin.com/',
+                        Cookie: ''
+                      },
+                      bgmPath: liveimgbgm?.filepath,
+                      mergeMode,
+                      context: bgmContext,
+                      loopCount: imageItem.clip_type === 4 ? 1 : 3
+                    })
+                    bgmContext = livePhoto.context || bgmContext
+                    temp.push(...livePhoto.tempFiles)
+                    hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
+
+                    if (livePhoto.messages.length > 0) {
+                      processedImages.push(...livePhoto.messages)
+                    } else if (imageItem.url_list?.[0]) {
+                      const imageUrl = await processImageUrl(imageItem.url_list[0], g_title, index, {
+                        Referer: 'https://www.douyin.com/',
+                        Cookie: Config.cookies.douyin || ''
+                      })
+                      processedImages.push(segment.image(imageUrl))
+                    }
+                  }
+
+                  if (hasGeneratedLivePhoto) processedImages.push(await buildLivePhotoTipMessage())
+                  try {
+                    await this.e.reply(await common.makeForwardMsg(this.e, processedImages, '图集内容'))
+                  } finally {
+                    for (const item of temp) await Common.removeFile(item.filepath, true)
+                  }
+                  this.hasProcessedLiveImage = true
+                  break
+                }
+
                 for (const [index, imageItem] of images.entries()) {
                   // 获取图片地址，优先使用第三个URL，其次使用第二个URL
                   image_url = imageItem.url_list[2] || imageItem.url_list[1] || ''
 
                   // 处理标题，去除特殊字符
-                  const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
-                  g_title = title
-
-                  imageres.push(segment.image(image_url))
+                  const processedImageUrl = await processImageUrl(image_url, title, index, {
+                    Referer: 'https://www.douyin.com/',
+                    Cookie: Config.cookies.douyin || ''
+                  })
+                  imageres.push(segment.image(processedImageUrl))
                   imagenum++
 
                   if (Config.app.removeCache === false) {
@@ -117,7 +268,10 @@ export class DouYin extends Base {
                 image_data.push(res)
                 image_res.push(image_data)
                 if (imageres.length === 1) {
-                  await this.e.reply(segment.image(image_url))
+                  await this.e.reply(segment.image(await processImageUrl(image_url, g_title, 0, {
+                    Referer: 'https://www.douyin.com/',
+                    Cookie: Config.cookies.douyin || ''
+                  })))
                 } else {
                   await this.e.reply(res)
                 }
@@ -127,65 +281,71 @@ export class DouYin extends Base {
               case VideoData.data.aweme_detail.is_slides === true && VideoData.data.aweme_detail.images !== null: {
                 const images = []
                 const temp = []
-                /** BGM */
-                const liveimgbgm = await downloadFile(
-                  VideoData.data.aweme_detail.music.play_url.uri,
-                  {
+                let hasGeneratedLivePhoto = false
+                let bgmContext = null
+                const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
+                const musicUrl = getDouyinMusicUrl(VideoData.data.aweme_detail.music)
+                const liveimgbgm = musicUrl
+                  ? await downloadFile(musicUrl, {
                     title: `Douyin_tmp_A_${Date.now()}.mp3`,
                     headers: {
                       ...this.headers,
                       Referer: 'https://www.douyin.com/',
                       Cookie: ''
                     }
-                  }
-                )
-                temp.push(liveimgbgm)
+                  })
+                  : null
+                if (liveimgbgm?.filepath) temp.push(liveimgbgm)
+
                 const images1 = VideoData.data.aweme_detail.images || []
                 if (!images1.length) {
                   logger.debug('未获取到合辑的图片数据')
                 }
-                for (const item of images1) {
+                g_title = VideoData.data.aweme_detail.preview_title?.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ') || '抖音图集'
+                for (const [index, item] of images1.entries()) {
                   imagenum++
-                  // 静态图片，clip_type为2
-                  if (item.clip_type === 2) {
-                    item.url_list[0] && images.push(segment.image((item.url_list[0])))
+                  // 静态图片，clip_type为2或undefined
+                  if (item.clip_type === 2 || item.clip_type === undefined) {
+                    if (item.url_list[0]) {
+                      const processedImageUrl = await processImageUrl(item.url_list[0], VideoData.data.aweme_detail.preview_title || '抖音图集', imagenum, {
+                        Referer: 'https://www.douyin.com/',
+                        Cookie: Config.cookies.douyin || ''
+                      })
+                      images.push(segment.image(processedImageUrl))
+                    }
                     continue
                   }
-                  /** 动图 */
-                  const liveimg = await downloadFile(
-                    `https://aweme.snssdk.com/aweme/v1/play/?video_id=${item.video.play_addr_h264.uri}&ratio=1080p&line=0`,
-                    {
-                      title: `Douyin_tmp_V_${Date.now()}.mp4`,
-                      headers: {
-                        ...this.headers,
-                        Referer: 'https://www.douyin.com/',
-                        Cookie: ''
-                      }
-                    }
-                  )
 
-                  if (liveimg.filepath) {
-                    const resolvefilepath = Common.tempDri.video + `Douyin_Result_${Date.now()}.mp4`
-                    await mergeFile('视频*3 + 音频', {
-                      path: liveimg.filepath,
-                      path2: liveimgbgm.filepath,
-                      resultPath: resolvefilepath,
-                      callback: async (/** @type {boolean} */ success, /** @type {string} */ resultPath) => {
-                        if (success) {
-                          const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
-                          fs.renameSync(resultPath, filePath)
-                          await Common.removeFile(liveimg.filepath, true)
-                          temp.push({ filepath: filePath, totalBytes: 0 })
-                          images.push(segment.video(filePath))
-                          return true
-                        } else {
-                          await Common.removeFile(liveimg.filepath, true)
-                          return true
-                        }
-                      }
+                  const livePhoto = await buildLivePhotoMessages({
+                    platform: 'douyin',
+                    staticUrl: item.url_list?.[0] || item.url_list?.[2] || item.url_list?.[1],
+                    liveVideoUrl: getDouyinLiveVideoUrl(item),
+                    index,
+                    headers: {
+                      ...this.headers,
+                      Referer: 'https://www.douyin.com/',
+                      Cookie: ''
+                    },
+                    bgmPath: liveimgbgm?.filepath,
+                    mergeMode,
+                    context: bgmContext,
+                    loopCount: item.clip_type === 4 ? 1 : 3
+                  })
+                  bgmContext = livePhoto.context || bgmContext
+                  temp.push(...livePhoto.tempFiles)
+                  hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
+
+                  if (livePhoto.messages.length > 0) {
+                    images.push(...livePhoto.messages)
+                  } else if (item.url_list?.[0]) {
+                    const imageUrl = await processImageUrl(item.url_list[0], g_title, index, {
+                      Referer: 'https://www.douyin.com/',
+                      Cookie: Config.cookies.douyin || ''
                     })
+                    images.push(segment.image(imageUrl))
                   }
                 }
+                if (hasGeneratedLivePhoto) images.push(await buildLivePhotoTipMessage())
                 const Element = common.makeForwardMsg(this.e, images, '合辑内容')
                 try {
                   await this.e.reply(Element)
@@ -196,15 +356,16 @@ export class DouYin extends Base {
                     await Common.removeFile(item.filepath, true)
                   }
                 }
+                this.hasProcessedLiveImage = true
                 break
               }
             }
           }
 
           /** 背景音乐 */
-          if (VideoData.data.aweme_detail.music && (Config.douyin.douyinTip)?.includes('背景音乐')) {
+          if (!isArticle && VideoData.data.aweme_detail.music && hasDouyinContent('背景音乐') && !this.hasProcessedLiveImage) {
             const music = VideoData.data.aweme_detail.music
-            const music_url = music.play_url.uri // BGM link
+            const music_url = getDouyinMusicUrl(music) // BGM link
             if (this.is_mp4 === false && Config.app.removeCache === false && music_url !== undefined) {
               try {
                 const path = Common.tempDri.images + `${g_title}/BGM.mp3`
@@ -221,14 +382,13 @@ export class DouYin extends Base {
 
           /** 视频 */
           let FPS
-          const video_res = []
           const sendvideofile = true
-          if (this.is_mp4 && (Config.douyin.douyinTip)?.includes('视频')) {
-            const video_data = []
-            const videores = []
+          let video = null
+          let cover = ''
+          if (isVideo) {
             // 视频地址特殊判断：play_addr_h264、play_addr、
-            const video = VideoData.data.aweme_detail.video
-            FPS = video.bit_rate[0].FPS // FPS
+            video = VideoData.data.aweme_detail.video
+            FPS = video.bit_rate[0]?.FPS || '获取失败' // FPS
             if (Config.douyin.autoResolution) {
               logger.debug(`开始排除不符合条件的视频分辨率；\n
               共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
@@ -254,45 +414,171 @@ export class DouYin extends Base {
                 }
               }).getLongLink()
             }
-            const cover = video.origin_cover.url_list[0] || '' // video cover image
+            cover = getFirstUrl(video.animated_cover) || getFirstUrl(video.dynamic_cover) || getFirstUrl(video.cover_original_scale) || getFirstUrl(video.cover) || getFirstUrl(video.origin_cover)
 
             const title = VideoData.data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:\*\?"<>\|\r\n]/g, ' ') // video title
             g_title = title
             mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
-            videores.push(`标题：\n${title}`)
-            videores.push(`视频帧率：${'' + FPS}\n视频大小：${mp4size}MB`)
-            videores.push(
-              `永久直链(302跳转)\nhttps://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-            )
-            videores.push(`视频直链（有时效性，永久直链在下一条消息）：\n${g_video_url}`)
-            videores.push(segment.image(cover))
             logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
-            const res = common.makeForwardMsg(this.e, videores, '视频基本信息')
-            video_data.push(res)
-            video_res.push(video_data)
+          }
+
+          if (isVideo && hasDouyinContent('视频', 'info')) {
+            const aweme = VideoData.data.aweme_detail
+            const statistics = aweme.statistics || {}
+            const displayContent = Config.douyin.displayContent || ['cover', 'title', 'author', 'stats']
+            if (Config.douyin.videoInfoMode === 'text') {
+              const processedCover = await processImageUrl(cover, aweme.desc || g_title || '抖音视频封面', 0, {
+                Referer: 'https://www.douyin.com/',
+                Cookie: Config.cookies.douyin || ''
+              })
+              const contentMap = {
+                cover: segment.image(processedCover),
+                title: `\n标题：${aweme.desc || g_title}\n`,
+                author: `\n作者：${aweme.author?.nickname || '无法获取'}\n`,
+                stats: formatVideoStats(statistics)
+              }
+              const replyContent = []
+              for (const item of ['cover', 'title', 'author', 'stats']) {
+                if (displayContent.includes(item) && contentMap[item]) replyContent.push(contentMap[item])
+              }
+              if (replyContent.length) await this.e.reply(replyContent)
+            } else {
+              let userProfile
+              try {
+                const userProfileData = await this.amagi.getDouyinData('用户主页数据', {
+                  sec_uid: aweme.author.sec_uid,
+                  typeMode: 'strict'
+                })
+                userProfile = userProfileData?.data?.user
+              } catch (error) {
+                logger.warn('[抖音] 获取作者主页信息失败，继续渲染视频信息图', error)
+              }
+              const userProfileView = userProfile
+                ? {
+                  ip_location: userProfile.ip_location,
+                  follower_count: Common.count(userProfile.follower_count),
+                  total_favorited: Common.count(userProfile.total_favorited),
+                  aweme_count: Common.count(userProfile.aweme_count)
+                }
+                : undefined
+              const musicInfo = aweme.music
+                ? {
+                  author: aweme.music.author,
+                  title: aweme.music.title,
+                  cover: getFirstUrl(aweme.music.cover_hd) || getFirstUrl(aweme.music.cover_large) || getFirstUrl(aweme.music.cover_thumb)
+                }
+                : undefined
+              const videoInfo = video
+                ? {
+                  duration: formatVideoDuration(video.duration),
+                  width: video.width,
+                  height: video.height,
+                  ratio: video.ratio
+                }
+                : undefined
+              const videoInfoImg = await Render('douyin/videoInfo', {
+                desc: aweme.desc || g_title,
+                aweme_id: aweme.aweme_id,
+                share_url: aweme.share_url,
+                image_url: cover,
+                create_time: Common.convertTimestampToDateTime(aweme.create_time),
+                showCover: displayContent.includes('cover'),
+                showTitle: displayContent.includes('title'),
+                showAuthor: displayContent.includes('author'),
+                showStats: displayContent.includes('stats'),
+                statistics: {
+                  digg_count: Common.count(statistics.digg_count),
+                  comment_count: Common.count(statistics.comment_count),
+                  collect_count: Common.count(statistics.collect_count),
+                  share_count: Common.count(statistics.share_count),
+                  recommend_count: Common.count(statistics.recommend_count)
+                },
+                author: {
+                  name: aweme.author?.nickname || '无法获取',
+                  avatar: getFirstUrl(aweme.author?.avatar_thumb) || getFirstUrl(aweme.author?.avatar_larger),
+                  short_id: aweme.author?.unique_id || aweme.author?.short_id || '无法获取'
+                },
+                user_profile: userProfileView,
+                music: musicInfo,
+                video: videoInfo
+              })
+              await this.e.reply(videoInfoImg)
+            }
           }
 
           /** 发送视频 */
-          (Config.douyin.douyinTip)?.includes('视频') && sendvideofile && this.is_mp4 && await downloadVideo(
-            this.e,
-            {
-              video_url: g_video_url,
-              title: {
-                timestampTitle: `tmp_${Date.now()}.mp4`,
-                originTitle: `${g_title}.mp4`
-              },
-              headers: {
-                ...baseHeaders,
-                Referer: g_video_url,
-                Cookies: ''
-              }
-            },
-            {
-              message_id: this.e.message_id
+          if (isVideo && hasDouyinContent('视频', 'video') && sendvideofile) {
+            let danmakuList = []
+            const sendOriginalVideo = async () => {
+              await downloadVideo(
+                this.e,
+                {
+                  video_url: g_video_url,
+                  title: {
+                    timestampTitle: `tmp_${Date.now()}.mp4`,
+                    originTitle: `${g_title}.mp4`
+                  },
+                  headers: {
+                    ...baseHeaders,
+                    Referer: g_video_url,
+                    Cookies: ''
+                  }
+                },
+                {
+                  message_id: this.e.message_id
+                }
+              )
             }
-          )
 
-          if ((Config.douyin.douyinTip)?.includes('评论图')) {
+            if (this.forceBurnDanmaku || Config.douyin.burnDanmaku) {
+              try {
+                const danmakuData = await this.amagi.getDouyinData('弹幕数据', {
+                  aweme_id: data.aweme_id,
+                  duration: video.duration,
+                  typeMode: 'strict'
+                })
+                danmakuList = danmakuData?.data?.danmaku_list || danmakuData?.danmaku_list || []
+                logger.debug(`[抖音] 获取到 ${danmakuList.length} 条弹幕`)
+              } catch (error) {
+                logger.warn('[抖音] 获取弹幕失败，将发送原视频', error)
+              }
+            }
+
+            if ((this.forceBurnDanmaku || Config.douyin.burnDanmaku) && danmakuList.length > 0) {
+              const videoFile = await downloadFile(g_video_url, {
+                title: `Douyin_V_tmp_${Date.now()}.mp4`,
+                headers: {
+                  ...baseHeaders,
+                  Referer: 'https://www.douyin.com'
+                }
+              })
+              if (videoFile.filepath) {
+                const resultPath = Common.tempDri.video + `Douyin_Danmaku_${Date.now()}.mp4`
+                const ok = await burnDanmaku('douyin', videoFile.filepath, danmakuList, resultPath, {
+                  danmakuArea: Config.douyin.danmakuArea,
+                  danmakuFontSize: Config.douyin.danmakuFontSize,
+                  danmakuOpacity: Config.douyin.danmakuOpacity
+                })
+                await Common.removeFile(videoFile.filepath, true)
+                if (ok) {
+                  const size = await Common.getVideoFileSize(resultPath)
+                  await uploadFile(this.e, { filepath: resultPath, totalBytes: size, originTitle: g_title }, '')
+                } else {
+                  await sendOriginalVideo()
+                }
+              } else {
+                await sendOriginalVideo()
+              }
+            } else {
+              await sendOriginalVideo()
+            }
+          }
+
+          if (isArticle) {
+            await this.handleArticleWork(VideoData)
+          }
+
+          if (hasDouyinContent('评论图', 'comment')) {
             const EmojiData = await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' })
             const list = Emoji(EmojiData.data)
             const commentsArray = await douyinComments(CommentsData, list)
@@ -301,7 +587,7 @@ export class DouYin extends Base {
             } else {
               const img = await Render('douyin/comment',
                 {
-                  Type: this.is_mp4 ? '视频' : this.is_slides ? '合辑' : '图集',
+                  Type: isArticle ? '文章' : isVideo ? '视频' : this.is_slides ? '合辑' : '图集',
                   CommentsData: commentsArray,
                   CommentLength: Config.douyin.realCommentCount ? VideoData.data.aweme_detail.statistics.comment_count : commentsArray.jsonArray?.length ?? 0,
                   share_url: this.is_mp4
@@ -320,38 +606,72 @@ export class DouYin extends Base {
         }
 
         case 'user_dynamic': {
-          /** @type {*} */
           const UserVideoListData = await this.amagi.getDouyinData('用户主页视频列表数据', {
             sec_uid: data.sec_uid,
             typeMode: 'strict'
           })
+          const UserInfoData = await this.amagi.getDouyinData('用户主页数据', {
+            sec_uid: data.sec_uid,
+            typeMode: 'strict'
+          })
 
-          const veoarray = []
-          veoarray.unshift('------------------------------ | ---------------------------- |\n')
-          veoarray.unshift('标题                           | 分享二维码                    |\n')
-          const forwardmsg = []
-          for (const i of UserVideoListData.aweme_list) {
-            const title = i.desc
-            const cover = i.share_url
-            veoarray.push(`${title}       | ![img](${await QRCode.toDataURL(cover, {
-              errorCorrectionLevel: 'H',
-              type: 'image/png',
-              color: {
-                light: '#ffffff00',
-                dark: Common.useDarkTheme() ? '#FFFFFF' : '#000000'
-              }
-            })})    |\n`)
-            forwardmsg.push(`作品标题: ${title}\n分享链接: ${cover}`)
+          const awemeList = UserVideoListData?.data?.aweme_list || UserVideoListData?.aweme_list || []
+          const user = UserInfoData?.data?.user || {}
+          const timeoutSeconds = 120
+          const displayVideos = awemeList.slice(0, 16).map((aweme, index) => {
+            const isVideo = isDouyinVideo(aweme)
+            return {
+              aweme_id: aweme.aweme_id,
+              index: index + 1,
+              title: aweme.desc || aweme.item_title || '无标题',
+              cover: getDouyinWorkCoverUrl(aweme),
+              duration: aweme.video?.duration || 0,
+              create_time: Common.convertTimestampToDateTime(aweme.create_time),
+              is_top: aweme.is_top === 1,
+              is_video: isVideo,
+              type_text: isVideo ? '视频' : isDouyinArticle(aweme) ? '文章' : '图集',
+              statistics: {
+                like_count: Common.count(aweme.statistics?.digg_count),
+                comment_count: Common.count(aweme.statistics?.comment_count),
+                share_count: Common.count(aweme.statistics?.share_count),
+                collect_count: Common.count(aweme.statistics?.collect_count)
+              },
+              music: aweme.music
+                ? {
+                  title: aweme.music.title || '',
+                  author: aweme.music.author || ''
+                }
+                : undefined
+            }
+          })
+
+          const img = await Render('douyin/user_profile', {
+            user: {
+              head_image: user.cover_and_head_image_info?.profile_cover_list?.[0]?.cover_url?.url_list?.[0] || '',
+              nickname: user.nickname || '未知用户',
+              short_id: user.unique_id || user.short_id || '无法获取',
+              avatar: user.avatar_larger?.url_list?.[0] || user.avatar_thumb?.url_list?.[0] || '',
+              signature: user.signature || '这个用户很懒，还没有签名',
+              follower_count: Common.count(user.follower_count),
+              following_count: Common.count(user.following_count),
+              total_favorited: Common.count(user.total_favorited),
+              verified: Boolean(user.custom_verify || user.enterprise_verify_reason),
+              ip_location: user.ip_location || ''
+            },
+            videos: displayVideos,
+            timeoutSeconds
+          })
+          img && await this.e.reply(img)
+          if (!displayVideos.length) return true
+          return {
+            type: 'douyin_user_selection',
+            timeoutSeconds,
+            videos: displayVideos.map(item => ({
+              aweme_id: item.aweme_id,
+              title: item.title,
+              index: item.index
+            }))
           }
-          const matext = markdown(veoarray.join(''), {})
-          const htmlpath = join(Version.pluginPath, 'template', 'douyin', 'html', 'user_worklist.html')
-          fs.writeFileSync(htmlpath, matext, 'utf8')
-          /** @type {*} */
-          const img = await Render('douyin/user_worklist')
-          img && await this.e.reply(segment.image(img))
-          const Element2 = await common.makeForwardMsg(this.e, forwardmsg, '用户主页视频列表')
-          await this.e.reply(Element2)
-          return true
         }
         case 'music_work': {
           const MusicData = await this.amagi.getDouyinData('音乐数据', {
@@ -475,7 +795,7 @@ export const douyinProcessVideos = (videos, filelimit) => {
  * @param {number} delay - 延迟的小时数
  * @returns {string} - 返回格式化后的时间字符串
  */
-function Time(delay) {
+function Time (delay) {
   const currentDate = new Date()
   currentDate.setHours(currentDate.getHours() + delay)
 

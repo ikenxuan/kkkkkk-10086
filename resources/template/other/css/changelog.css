@@ -1,0 +1,49 @@
+.changelog-page {
+  width: 88%;
+  margin: 70px auto 40px;
+}
+
+.changelog-header {
+  border-bottom: 1px solid rgb(127 127 127 / 24%);
+  padding-bottom: 28px;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  font-size: 18px;
+  letter-spacing: 0;
+  opacity: 0.66;
+  margin-bottom: 10px;
+}
+
+.changelog-header h1 {
+  font-size: 52px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.changelog-header p {
+  font-size: 22px;
+  margin: 14px 0 0;
+  opacity: 0.66;
+}
+
+.markdown {
+  font-family: Consolas, "Ubuntu Mono", monospace;
+  font-size: 22px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: 8px;
+  padding: 30px;
+}
+
+body.light-mode .markdown {
+  background: #f5f5f5;
+  color: #222;
+}
+
+body.dark-mode .markdown {
+  background: #292929;
+  color: #ececec;
+}

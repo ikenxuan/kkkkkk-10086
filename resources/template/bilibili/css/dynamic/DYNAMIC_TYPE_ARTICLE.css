@@ -1,0 +1,164 @@
+body.light-mode .container {
+  background: #f4f4f4;
+  color: #242424;
+  width: 1440px;
+}
+
+body.dark-mode .container {
+  background: #1a1a1a;
+  color: #e9e9e9;
+  width: 1440px;
+}
+
+.article-page {
+  padding: 70px 86px 60px;
+  line-height: 1.55;
+}
+
+.article-user {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  position: relative;
+  margin-bottom: 52px;
+}
+
+.article-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 10px 20px #4343434f;
+}
+
+.article-frame {
+  position: absolute;
+  left: -28px;
+  top: -28px;
+  width: 206px;
+  height: 206px;
+}
+
+.article-username {
+  font-size: 66px;
+  font-weight: 700;
+}
+
+.article-time {
+  color: #808080;
+  font-size: 34px;
+  margin-top: 8px;
+}
+
+.article-content {
+  font-size: 42px;
+}
+
+.article-title {
+  font-size: 68px;
+  line-height: 1.28;
+  margin: 0 0 34px;
+}
+
+.article-banner,
+.article-body-image {
+  width: 100%;
+  border-radius: 20px;
+  margin: 24px 0;
+  box-shadow: 0 10px 20px #43434330;
+}
+
+.article-summary {
+  color: #777;
+  font-size: 42px;
+  margin: 24px 0;
+}
+
+body.dark-mode .article-summary {
+  color: #b8b8b8;
+}
+
+.article-meta,
+.article-stats,
+.article-author-stats {
+  color: #808080;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 34px;
+  font-size: 34px;
+  margin: 28px 0;
+}
+
+.article-body {
+  font-size: 44px;
+  word-break: break-word;
+}
+
+.article-paragraph,
+.article-blockquote {
+  margin: 24px 0;
+}
+
+.article-heading {
+  font-size: 54px;
+  margin: 38px 0 20px;
+}
+
+.article-blockquote {
+  border-left: 9px solid #00a1d6;
+  color: #666;
+  padding-left: 28px;
+}
+
+body.dark-mode .article-blockquote {
+  color: #c8c8c8;
+}
+
+.article-divider {
+  border: 0;
+  border-top: 2px solid #d0d0d0;
+  margin: 38px 0;
+}
+
+.article-link-card,
+.article-code {
+  background: rgba(128, 128, 128, 0.12);
+  border-radius: 12px;
+  margin: 24px 0;
+  padding: 24px;
+}
+
+.article-code {
+  font-family: Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.article-footer {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 70px;
+}
+
+.article-author-stats {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.article-qrcode {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#qrcode {
+  border: 7px dashed currentColor;
+  border-radius: 2%;
+  padding: 10px;
+}
+
+.article-qrcode-text {
+  color: #808080;
+  font-size: 36px;
+}

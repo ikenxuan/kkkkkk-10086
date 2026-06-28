@@ -1,0 +1,67 @@
+{{extend defaultLayout}} {{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/statistics/css/index.css" />
+{{/block}} {{block 'main'}}
+<div class="stats-page">
+  <div class="stats-header">
+    <div>
+      <div class="eyebrow">KKK Analytics</div>
+      <h1>全局解析统计</h1>
+      <p>所有群组与平台解析数据</p>
+    </div>
+    <div class="header-badge">Global</div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span>群组数</span>
+      <strong>{{totalGroups}}</strong>
+    </div>
+    <div class="metric-card">
+      <span>用户数</span>
+      <strong>{{totalUsers}}</strong>
+    </div>
+    <div class="metric-card wide">
+      <span>解析次数</span>
+      <strong>{{totalParses}}</strong>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>平台分布</h2>
+    <div class="platform-list">
+      {{each platformRows row}}
+      <div class="platform-row">
+        <span>{{row.label}}</span>
+        <div class="bar"><i style="width: {{totalParses > 0 ? row.count / totalParses * 100 : 0}}%"></i></div>
+        <b>{{row.count}}</b>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="split-section">
+    <div class="section">
+      <h2>近30天</h2>
+      <div class="compact-list">
+        {{if historyRows.length === 0}}
+        <div class="empty">暂无历史记录</div>
+        {{/if}}
+        {{each historyRows item}}
+        <div class="compact-row"><span>{{item.date}}</span><b>{{item.totalParses}}</b></div>
+        {{/each}}
+      </div>
+    </div>
+    <div class="section">
+      <h2>群组排行</h2>
+      <div class="compact-list">
+        {{if topGroups.length === 0}}
+        <div class="empty">暂无群组数据</div>
+        {{/if}}
+        {{each topGroups item index}}
+        <div class="compact-row"><span>#{{index + 1}} {{item.groupId}}</span><b>{{item.total}}</b></div>
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</div>
+{{/block}}

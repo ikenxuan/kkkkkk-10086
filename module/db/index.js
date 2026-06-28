@@ -1,8 +1,10 @@
 import { BilibiliDBBase } from './bilibili.js'
 import { DouyinDBBase } from './douyin.js'
+import { StatisticsDBBase } from './statistics.js'
 
 export * from './bilibili.js'
 export * from './douyin.js'
+export * from './statistics.js'
 
 /** 抖音数据库实例 @type {DouyinDBBase | null} */
 let douyinDB = null
@@ -13,6 +15,11 @@ let douyinInitializing = false
 let bilibiliDB = null
 /** @type {boolean} */
 let bilibiliInitializing = false
+
+/** 统计数据库实例 @type {StatisticsDBBase | null} */
+let statisticsDB = null
+/** @type {boolean} */
+let statisticsInitializing = false
 
 /**
  * 获取或初始化 DouyinDB 实例（单例模式）
@@ -61,21 +68,46 @@ export const getBilibiliDB = async () => {
 }
 
 /**
+ * 获取或初始化 StatisticsDB 实例（单例模式）
+ * @returns {Promise<StatisticsDBBase | null>} StatisticsDB实例
+ */
+export const getStatisticsDB = async () => {
+  if (statisticsDB) {
+    return statisticsDB
+  }
+
+  if (statisticsInitializing) {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    return statisticsDB
+  }
+
+  statisticsInitializing = true
+  try {
+    statisticsDB = await new StatisticsDBBase().init()
+    return statisticsDB
+  } finally {
+    statisticsInitializing = false
+  }
+}
+
+/**
  * 初始化所有数据库
  * @returns {Promise<{douyinDB: DouyinDBBase | null, bilibiliDB: BilibiliDBBase | null}>} 初始化后的数据库实例
  */
 export const initAllDatabases = async () => {
-  const [douyin, bilibili] = await Promise.all([
+  const [douyin, bilibili, statistics] = await Promise.all([
     getDouyinDB(),
-    getBilibiliDB()
+    getBilibiliDB(),
+    getStatisticsDB()
   ])
 
-  return { douyinDB: douyin, bilibiliDB: bilibili }
+  return { douyinDB: douyin, bilibiliDB: bilibili, statisticsDB: statistics }
 }
 
 // 导出数据库实例（延迟初始化）
 const douyinDBInstance = await getDouyinDB()
 const bilibiliDBInstance = await getBilibiliDB()
+const statisticsDBInstance = await getStatisticsDB()
 
 /**
  * 清理旧的动态缓存记录
@@ -95,4 +127,4 @@ export const cleanOldDynamicCache = async (platform, days = 7) => {
 }
 
 // 为了保持向后兼容性，保留原有的导出名称
-export { bilibiliDBInstance as bilibiliDB, douyinDBInstance as douyinDB }
+export { bilibiliDBInstance as bilibiliDB, douyinDBInstance as douyinDB, statisticsDBInstance as statisticsDB }

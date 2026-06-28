@@ -1,6 +1,5 @@
 import { baseHeaders, Networks } from '../../utils/index.js'
 import amagi from '@ikenxuan/amagi'
-import fetch from 'node-fetch'
 
 /**
  * @typedef {Object.<string, any>} BilibiliId
