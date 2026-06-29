@@ -1,6 +1,7 @@
 import { bilibiliDB, douyinDB } from '../module/db/index.js'
 import { Bilibilipush, getBilibiliID } from '../module/platform/bilibili/index.js'
-import { getBilibiliData, getDouyinData } from '@ikenxuan/amagi'
+import { getDouyinData } from '@ikenxuan/amagi'
+import { getBilibiliData } from '../module/platform/bilibili/api.js'
 import { DouYinpush, getDouyinID } from '../module/platform/douyin/index.js'
 import { Config } from '../module/utils/index.js'
 

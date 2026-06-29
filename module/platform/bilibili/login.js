@@ -1,5 +1,5 @@
 import { Common, Config, Render } from '../../utils/index.js'
-import { getBilibiliData } from '@ikenxuan/amagi'
+import { getBilibiliData } from './api.js'
 import * as QRCode from 'qrcode'
 import fs from 'node:fs'
 

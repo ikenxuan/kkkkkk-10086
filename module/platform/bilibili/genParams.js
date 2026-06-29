@@ -1,4 +1,5 @@
-import { getBilibiliData, wbi_sign } from '@ikenxuan/amagi'
+import { wbi_sign } from '@ikenxuan/amagi'
+import { getBilibiliData } from './api.js'
 import Config from '../../utils/Config.js'
 
 /**

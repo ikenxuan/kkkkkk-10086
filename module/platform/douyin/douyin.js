@@ -53,8 +53,9 @@ const formatVideoStats = (statistics = {}) => [
 
 const hasUserConfigKey = (key) => Object.prototype.hasOwnProperty.call(Config.getConfig?.('douyin') || {}, key)
 const hasDouyinContent = (legacyKey, modernKey) => {
-  if (modernKey && hasUserConfigKey('sendContent')) {
-    return (Config.douyin.sendContent || []).includes(modernKey)
+  const sendContent = Config.douyin.sendContent
+  if (modernKey && hasUserConfigKey('sendContent') && Array.isArray(sendContent) && sendContent.length > 0) {
+    return sendContent.includes(modernKey)
   }
   return (Config.douyin.douyinTip || []).includes(legacyKey)
 }

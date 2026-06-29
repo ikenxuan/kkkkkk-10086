@@ -1,5 +1,6 @@
 import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl } from '../../utils/index.js'
-import { bilibiliApiUrls, getBilibiliData, DynamicType, AdditionalType } from '@ikenxuan/amagi'
+import { bilibiliApiUrls, DynamicType, AdditionalType } from '@ikenxuan/amagi'
+import { getBilibiliData } from './api.js'
 import { burnDanmaku } from '../common/danmaku.js'
 import common from '../../../../../lib/common/common.js'
 import { bilibiliComments, checkCk, genParams } from './index.js'
@@ -18,8 +19,9 @@ let img
 
 const hasUserConfigKey = (key) => Object.prototype.hasOwnProperty.call(Config.getConfig?.('bilibili') || {}, key)
 const hasBilibiliContent = (legacyKey, modernKey) => {
-  if (modernKey && hasUserConfigKey('sendContent')) {
-    return (Config.bilibili.sendContent || []).includes(modernKey)
+  const sendContent = Config.bilibili.sendContent
+  if (modernKey && hasUserConfigKey('sendContent') && Array.isArray(sendContent) && sendContent.length > 0) {
+    return sendContent.includes(modernKey)
   }
   return (Config.bilibili.bilibiliTip || []).includes(legacyKey)
 }
