@@ -66,7 +66,7 @@ export const getBilibiliID = async (url, log = true) => {
       // 视频链接
       [
         'video',
-        (url) => /video[\/-]([A-Za-z0-9]+)\/?/.test(url),
+        (url) => /video[\/-]([A-Za-z0-9]+)\/?/.test(url) && !url.includes('video-quick'),
         async (url) => {
           const bvideoMatch = /video[\/-]([A-Za-z0-9]+)\/?|bvid=([A-Za-z0-9]+)/.exec(url)
           const pParam = new URL(url).searchParams.get('p')
