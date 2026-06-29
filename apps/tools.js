@@ -4,7 +4,7 @@ import { DouYin, getDouyinID } from '../module/platform/douyin/index.js'
 import { Xiaohongshu, getXiaohongshuID } from '../module/platform/xiaohongshu/index.js'
 import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, baseHeaders } from '../module/utils/index.js'
 import { getStatisticsDB } from '../module/db/index.js'
-import { getDouyinData } from '@ikenxuan/amagi'
+import { getDouyinData } from '../module/platform/douyin/api.js'
 
 // 用户状态存储对象
 const user = {}

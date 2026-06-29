@@ -1,5 +1,6 @@
 import Client, { bilibiliErrorCodeMap } from '@ikenxuan/amagi'
 import { getBilibiliData as fetchBilibiliData } from '../platform/bilibili/api.js'
+import { getDouyinData as fetchDouyinData } from '../platform/douyin/api.js'
 import { Networks, baseHeaders } from './Networks.js'
 import { mergeFile } from './FFmpeg.js'
 import cfg from '../../../../lib/config/config.js'
@@ -137,7 +138,11 @@ export class Base {
     // 使用Proxy包装amagi客户端
     this.amagi = new Proxy(client, {
       get(/** @type {ReturnType<typeof Client>} */ target, /** @type {keyof ReturnType<typeof Client>} */ prop) {
-        const method = prop === 'getBilibiliData' ? fetchBilibiliData : target[prop]
+        const method = prop === 'getBilibiliData'
+          ? fetchBilibiliData
+          : prop === 'getDouyinData'
+            ? fetchDouyinData
+            : target[prop]
         if (typeof method === 'function') {
           return async (/** @type {any} */ ...args) => {
             const result = await Function.prototype.apply.call(method, target, args)

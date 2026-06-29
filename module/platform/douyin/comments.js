@@ -1,5 +1,5 @@
 import { Common, Config, Networks, baseHeaders } from '../../utils/index.js'
-import { getDouyinData } from '@ikenxuan/amagi'
+import { getDouyinData } from './api.js'
 import convert from 'heic-convert'
 
 /**
