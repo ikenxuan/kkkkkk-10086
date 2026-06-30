@@ -1,5 +1,5 @@
 import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version, processImageUrl } from '../../utils/index.js'
-import { bilibiliProcessVideos, cover, generateDecorationCard, getvideosize, replacetext } from './bilibili.js'
+import { bilibiliProcessVideos, cover, generateDecorationCard, getBilibiliDash, getBilibiliPayload, getvideosize, replacetext } from './bilibili.js'
 import { formatBilibiliArticleBody } from './article.js'
 import { DynamicType, MajorType } from '@ikenxuan/amagi'
 import { getBilibiliData } from './api.js'
@@ -74,6 +74,7 @@ const normalizeBilibiliPushTypes = (pushTypes) => {
   }
   return result.length > 0 ? result : [...DEFAULT_BILIBILI_PUSH_TYPES]
 }
+
 
 export class Bilibilipush extends Base {
   force = false
@@ -492,26 +493,28 @@ export class Bilibilipush extends Base {
                         cid: dycrad.cid,
                         typeMode: 'strict'
                       })
+                      const playUrlPayload = getBilibiliPayload(playUrlData)
+                      const playUrlDash = getBilibiliDash(playUrlData)
                       /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
-                      const simplify = playUrlData.data.data.dash.video.filter((/** @type {{id: number}} */item, /** @type {number} */index, /** @type {{id: number}[]} */self) => {
+                      const simplify = (playUrlDash.video || []).filter((/** @type {{id: number}} */item, /** @type {number} */index, /** @type {{id: number}[]} */self) => {
                         return self.findIndex((/** @type {{id: number}} */ t) => {
                           return t.id === item.id
                         }) === index
                       })
                       /** 替换原始的视频信息对象 */
-                      playUrlData.data.data.dash.video = simplify
+                      playUrlDash.video = simplify
                       correctList = await bilibiliProcessVideos({
-                        accept_description: playUrlData.data.data.accept_description,
+                        accept_description: playUrlPayload.accept_description,
                         bvid: dynamicCARDINFO.data.data.card.desc.bvid,
                         qn: Config.bilibili.push.pushVideoQuality,
                         maxAutoVideoSize: Config.bilibili.push.pushMaxAutoVideoSize
-                      }, simplify, playUrlData.data.data.dash.audio[0].base_url)
-                      playUrlData.data.data.dash.video = correctList.videoList
-                      playUrlData.data.data.accept_description = correctList.accept_description
+                      }, simplify, playUrlDash.audio?.[0]?.base_url || '')
+                      playUrlDash.video = correctList.videoList
+                      playUrlPayload.accept_description = correctList.accept_description
                       /** 获取第一个视频流的大小 */
                       videoSize = await getvideosize(
                         correctList.videoList?.[0]?.base_url || '',
-                        playUrlData.data.data.dash.audio?.[0]?.base_url || '',
+                        playUrlDash.audio?.[0]?.base_url || '',
                         dynamicCARDINFO.data.data.card?.desc?.bvid || ''
                       )
                       if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
@@ -526,14 +529,14 @@ export class Bilibilipush extends Base {
                       logger.mark(`当前处于自动推送状态，解析到的视频大小为 ${logger.yellow(Number(videoSize))} MB`)
                       const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: dynamicCARDINFO.data.data.card.desc.bvid, typeMode: 'strict' })
                       const mp4File = await downloadFile(
-                        playUrlData.data?.data?.dash?.video[0].base_url,
+                        playUrlDash.video?.[0]?.base_url,
                         {
                           title: `Bil_V_${infoData.data.data.bvid}.mp4`,
                           headers: bilibiliBaseHeaders
                         }
                       )
                       const mp3File = await downloadFile(
-                        playUrlData.data?.data?.dash?.audio[0].base_url,
+                        playUrlDash.audio?.[0]?.base_url,
                         {
                           title: `Bil_A_${infoData.data.data.bvid}.mp3`,
                           headers: bilibiliBaseHeaders
