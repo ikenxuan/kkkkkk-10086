@@ -1,7 +1,7 @@
 # 发送视频经本插件转换为base64格式后再发送，适合云崽与机器人不在同一网络环境下开启
 sendbase64: false
 
-# 本地视频发送方式，可选值：file / base64。会同步兼容 sendbase64。
+# 本地视频发送方式，可选值：file / base64 / url。会同步兼容 sendbase64。
 videoSendMode: file
 
 # 视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传

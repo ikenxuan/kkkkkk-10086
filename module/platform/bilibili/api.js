@@ -1,4 +1,4 @@
-import { BilibiliMethodToFetcher, bilibiliFetcher } from '@ikenxuan/amagi'
+import { BilibiliMethodToFetcher, bilibiliFetcher, getEnglishMethodName } from '@ikenxuan/amagi'
 import Config from '../../utils/Config.js'
 
 const buildRequestConfig = () => ({
@@ -40,7 +40,7 @@ const normalizeArgs = (arg1, arg2) => {
  * @returns {Promise<any>}
  */
 export const getBilibiliData = async (method, arg1, arg2) => {
-  const fetcherMethod = BilibiliMethodToFetcher[method]
+  const fetcherMethod = getEnglishMethodName('bilibili', method) || BilibiliMethodToFetcher[method]
   if (!fetcherMethod || typeof bilibiliFetcher[fetcherMethod] !== 'function') {
     throw new Error(`Unsupported Bilibili API method: ${method}`)
   }

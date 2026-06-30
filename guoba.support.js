@@ -412,7 +412,8 @@ const schemas = [
   sw('upload.sendbase64', '转换 base64 发送', '适合云崽与机器人不在同一网络环境时开启'),
   radio('upload.videoSendMode', '本地视频发送方式', [
     option('文件', 'file'),
-    option('Base64', 'base64')
+    option('Base64', 'base64'),
+    option('URL', 'url')
   ], '会同步兼容 sendbase64'),
   sw('upload.usefilelimit', '使用视频上传拦截'),
   num('upload.filelimit', '视频上传拦截阈值', 5, 114514, 'MB'),
