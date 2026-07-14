@@ -180,8 +180,7 @@ export class Bilibilipush extends Base {
         let send_video = true
         /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
         let img = []
-        const dynamicCARDINFO = await this.amagi?.getBilibiliData('动态卡片数据', { dynamic_id: dynamicId, typeMode: 'strict' })
-        const dycrad = dynamicCARDINFO?.data.data.card && dynamicCARDINFO.data.data.card.card && JSON.parse(dynamicCARDINFO.data.data.card.card)
+        let dycrad
 
         if (!skip) {
           const userINFO = await this.amagi?.getBilibiliData('用户主页数据', { host_mid: dynamicItem.host_mid, typeMode: 'strict' })
@@ -205,7 +204,8 @@ export class Bilibilipush extends Base {
               }
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW',
                 {
-                  image_url: dycrad?.item?.pictures && cover(dycrad.item.pictures),
+                  image_url: cover(dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.pics ||
+                    dynamicItem.Dynamic_Data.modules.module_dynamic.major?.draw?.items || []),
                   text: replacetext(
                     br(
                       dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.summary?.text || ''),
@@ -266,6 +266,7 @@ export class Bilibilipush extends Base {
               if (dynamicItem.Dynamic_Data.modules.module_dynamic.major?.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicItem.Dynamic_Data?.modules.module_dynamic.major?.archive?.bvid || ''
                 const INFODATA = await getBilibiliData('单个视频作品数据', '', { bvid, typeMode: 'strict' })
+                dycrad = INFODATA.data.data
 
                 if (INFODATA.data.data.redirect_url) {
                   send_video = false
@@ -301,6 +302,7 @@ export class Bilibilipush extends Base {
             }
             /** 处理直播动态 */
             case DynamicType.LIVE_RCMD: {
+              dycrad = JSON.parse(dynamicItem.Dynamic_Data.modules.module_dynamic.major.live_rcmd.content)
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
                 {
                   image_url: [{ image_src: dycrad.live_play_info.cover }],
@@ -340,15 +342,14 @@ export class Bilibilipush extends Base {
                   break
                 }
                 case DynamicType.DRAW: {
-                  const dynamicCARD = await getBilibiliData('动态卡片数据', Config.cookies.bilibili || '', { dynamic_id: dynamicItem.Dynamic_Data.orig.id_str, typeMode: 'strict' })
-                  const cardData = JSON.parse(dynamicCARD.data.data.card.card)
                   const summary = dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major.opus.summary
                   param = {
                     username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
                     create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
                     avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
                     text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
-                    image_url: cardData.item.pictures ? cover(cardData.item.pictures) : [],
+                    image_url: cover(dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major?.opus?.pics ||
+                      dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major?.draw?.items || []),
                     decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
                     frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
                   }
@@ -505,7 +506,7 @@ export class Bilibilipush extends Base {
                       playUrlDash.video = simplify
                       correctList = await bilibiliProcessVideos({
                         accept_description: playUrlPayload.accept_description,
-                        bvid: dynamicCARDINFO.data.data.card.desc.bvid,
+                        bvid: dycrad.bvid,
                         qn: Config.bilibili.push.pushVideoQuality,
                         maxAutoVideoSize: Config.bilibili.push.pushMaxAutoVideoSize
                       }, simplify, playUrlDash.audio?.[0]?.base_url || '')
@@ -515,7 +516,7 @@ export class Bilibilipush extends Base {
                       videoSize = await getvideosize(
                         correctList.videoList?.[0]?.base_url || '',
                         playUrlDash.audio?.[0]?.base_url || '',
-                        dynamicCARDINFO.data.data.card?.desc?.bvid || ''
+                        dycrad.bvid || ''
                       )
                       if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
                         Bot?.[botId]?.pickGroup(groupId) && await Bot?.[botId]?.pickGroup(groupId)?.sendMsg(
@@ -527,7 +528,7 @@ export class Bilibilipush extends Base {
                         break
                       }
                       logger.mark(`当前处于自动推送状态，解析到的视频大小为 ${logger.yellow(Number(videoSize))} MB`)
-                      const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: dynamicCARDINFO.data.data.card.desc.bvid, typeMode: 'strict' })
+                      const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: dycrad.bvid, typeMode: 'strict' })
                       const mp4File = await downloadFile(
                         playUrlDash.video?.[0]?.base_url,
                         {

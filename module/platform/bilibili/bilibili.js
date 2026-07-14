@@ -362,14 +362,12 @@ export class Bilibili extends Base {
         case 'dynamic_info': {
           if (!hasBilibiliContent('动态')) break
           const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' })
-          const dynamicInfoCard = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.id_str, typeMode: 'strict' })
           const commentsData = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD && Config.bilibili.bilibilinumcomments && Config.bilibili?.bilibilinumcomments > 0 && await this.amagi.getBilibiliData('评论数据', {
             type: mapping_table(dynamicInfo.data.data.item.type),
-            oid: oid(dynamicInfo.data, dynamicInfoCard.data),
+            oid: oid(dynamicInfo.data),
             number: Config.bilibili.bilibilinumcomments,
             typeMode: 'strict'
           })
-          const dynamicCARD = JSON.parse(dynamicInfoCard.data.data.card.card)
           const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' })
 
           switch (dynamicInfo.data.data.item.type) {
@@ -435,8 +433,6 @@ export class Bilibili extends Base {
                 await this.e.reply(img)
               }
 
-              const dynamicCARD = JSON.parse(dynamicInfoCard.data.data.card.card)
-
               if ('topic' in dynamicInfo.data.data.item.modules.module_dynamic && dynamicInfo.data.data.item.modules.module_dynamic.topic !== null) {
                 const name = dynamicInfo.data.data.item.modules.module_dynamic.topic?.name
                 dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes.unshift({
@@ -452,8 +448,8 @@ export class Bilibili extends Base {
               }
 
               await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
-                image_url: cover(dynamicCARD.item.pictures),
-                // TIP: 2025/08/20, 动态卡片数据中，图文动态的描述文本在 major.opus.summary 中
+                image_url: cover(pics),
+                // 动态详情数据中，图文动态的描述文本在 major.opus.summary 中
                 text: dynamicInfo.data.data.item.modules.module_dynamic.major
                   ? replacetext(
                     br(dynamicInfo.data.data.item.modules.module_dynamic.major.opus?.summary?.text || ''),
@@ -559,15 +555,14 @@ export class Bilibili extends Base {
                   break
                 }
                 case DynamicType.DRAW: {
-                  const dynamicCARD2 = await this.amagi.getBilibiliData('动态卡片数据', { dynamic_id: dynamicInfo.data.data.item.orig.id_str, typeMode: 'strict' })
-                  const cardData = JSON.parse(dynamicCARD2.data.data.card.card)
                   const summary = dynamicInfo.data.data.item.orig.modules.module_dynamic.major.opus.summary
                   data = {
                     username: checkvip(dynamicInfo.data.data.item.orig.modules.module_author),
                     create_time: Common.convertTimestampToDateTime(dynamicInfo.data.data.item.orig.modules.module_author.pub_ts),
                     avatar_url: dynamicInfo.data.data.item.orig.modules.module_author.face,
                     text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
-                    image_url: cardData.item.pictures ? cover(cardData.item.pictures) : [],
+                    image_url: cover(dynamicInfo.data.data.item.orig.modules.module_dynamic.major?.opus?.pics ||
+                      dynamicInfo.data.data.item.orig.modules.module_dynamic.major?.draw?.items || []),
                     decoration_card: generateDecorationCard(dynamicInfo.data.data.item.orig.modules.module_author.decoration_card),
                     frame: dynamicInfo.data.data.item.orig.modules.module_author.pendant.image
                   }
@@ -635,8 +630,6 @@ export class Bilibili extends Base {
               if (dynamicInfo.data.data.item.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicInfo.data.data.item.modules.module_dynamic.major.archive.bvid
                 const INFODATA = await getBilibiliData('单个视频作品数据', '', { bvid, typeMode: 'strict' })
-                const dycrad = dynamicInfoCard.data.data.card && dynamicInfoCard.data.data.card.card && JSON.parse(dynamicInfoCard.data.data.card.card)
-
                 Config.bilibili.bilibilinumcomments && commentsData && await this.e.reply(
                   await Render('bilibili/comment', {
                     Type: '动态',
@@ -652,12 +645,12 @@ export class Bilibili extends Base {
                   {
                     image_url: [{ image_src: INFODATA.data.data.pic }],
                     text: br(INFODATA.data.data.title),
-                    desc: br(dycrad.desc),
+                    desc: br(INFODATA.data.data.desc || ''),
                     dianzan: Common.count(INFODATA.data.data.stat.like),
                     pinglun: Common.count(INFODATA.data.data.stat.reply),
                     share: Common.count(INFODATA.data.data.stat.share),
-                    view: Common.count(dycrad.stat.view),
-                    coin: Common.count(dycrad.stat.coin),
+                    view: Common.count(INFODATA.data.data.stat.view),
+                    coin: Common.count(INFODATA.data.data.stat.coin),
                     duration_text: dynamicInfo.data.data.item.modules.module_dynamic.major.archive.duration_text,
                     create_time: Common.convertTimestampToDateTime(INFODATA.data.data.ctime),
                     avatar_url: INFODATA.data.data.owner.face,
@@ -677,6 +670,7 @@ export class Bilibili extends Base {
             }
             /** 直播动态 */
             case DynamicType.LIVE_RCMD: {
+              const dynamicCARD = JSON.parse(dynamicInfo.data.data.item.modules.module_dynamic.major.live_rcmd.content)
               const userINFO = await getBilibiliData('用户主页数据', '', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' })
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
                 {
@@ -1115,7 +1109,7 @@ export const cover = (pic) => {
   // 遍历dycrad.item.pictures数组，将每个图片的img_src存入对象，并将该对象加入imgArray
   for (const i of pic) {
     const obj = {
-      image_src: i.img_src
+      image_src: i.img_src || i.src || i.url
     }
     imgArray.push(obj)
   }
@@ -1194,17 +1188,18 @@ function mapping_table(type) {
 
 /**
  * @param {import ('@ikenxuan/amagi').BiliDynamicInfo<DynamicType>} dynamicINFO 
- * @param {import ('@ikenxuan/amagi').BiliDynamicCard} dynamicInfoCard 
  * @returns 
  */
-const oid = (dynamicINFO, dynamicInfoCard) => {
+const oid = (dynamicINFO) => {
   switch (dynamicINFO.data.item.type) {
     case 'DYNAMIC_TYPE_WORD':
     case 'DYNAMIC_TYPE_FORWARD': {
       return dynamicINFO.data.item.id_str
     }
     default: {
-      return dynamicInfoCard.data.card.desc.rid.toString()
+      return dynamicINFO.data.item.basic?.comment_id_str ||
+        dynamicINFO.data.item.basic?.rid_str ||
+        dynamicINFO.data.item.id_str
     }
   }
 }
