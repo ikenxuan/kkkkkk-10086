@@ -136,7 +136,11 @@ export class Xiaohongshu extends Base {
       xsec_token: data.xsec_token
     })
     const card = getNoteCard(noteData)
-    if (!card) throw new Error('小红书笔记数据为空')
+    if (!card) {
+      throw new Error(noteData?.success === false
+        ? `小红书笔记获取失败: ${noteData.message || '未知错误'}`
+        : '小红书笔记数据为空')
+    }
 
     let emojiData = []
     if (sendContent.includes('info') || sendContent.includes('comment')) {
