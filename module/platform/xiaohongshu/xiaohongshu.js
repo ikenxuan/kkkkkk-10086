@@ -130,7 +130,7 @@ export class Xiaohongshu extends Base {
     }
 
     const sendContent = normalizeSendContent()
-    const noteData = await this.amagi.xiaohongshu.api.getNote({
+    const noteData = await this.amagi.xiaohongshu.fetcher.fetchNoteDetail({
       typeMode: 'strict',
       note_id: data.note_id,
       xsec_token: data.xsec_token
@@ -141,7 +141,7 @@ export class Xiaohongshu extends Base {
     let emojiData = []
     if (sendContent.includes('info') || sendContent.includes('comment')) {
       try {
-        const emojiList = await this.amagi.xiaohongshu.api.getEmojiList({ typeMode: 'strict' })
+        const emojiList = await this.amagi.xiaohongshu.fetcher.fetchEmojiList({ typeMode: 'strict' })
         emojiData = buildXiaohongshuEmojiList(emojiList)
       } catch (error) {
         logger.debug(`[小红书] 获取表情列表失败，使用纯文本渲染: ${error?.message || error}`)
@@ -168,7 +168,7 @@ export class Xiaohongshu extends Base {
     }
 
     if (sendContent.includes('comment')) {
-      const commentData = await this.amagi.xiaohongshu.api.getComments({
+      const commentData = await this.amagi.xiaohongshu.fetcher.fetchNoteComments({
         typeMode: 'strict',
         note_id: data.note_id,
         xsec_token: data.xsec_token || ''
