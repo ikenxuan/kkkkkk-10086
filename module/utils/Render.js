@@ -116,7 +116,6 @@ export const Render = async (path, params) => {
     kuaishou: 'kuaishou/html',
     xiaohongshu: 'xiaohongshu/html',
     other: 'other/html',
-    help: 'help/html',
     version: 'version/html',
     statistics: 'statistics/html',
     apiError: 'apiError/html'
