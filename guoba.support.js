@@ -207,7 +207,7 @@ const bilibiliPushListSchema = {
     multiple: true,
     schemas: [
       sw('switch', '是否启用'),
-      num('host_mid', '用户 UID', 1, 999999999999, ''),
+      num('host_mid', '用户 UID', 1, Number.MAX_SAFE_INTEGER, ''),
       {
         field: 'group_id',
         label: '推送群和推送账号',
