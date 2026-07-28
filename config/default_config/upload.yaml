@@ -34,12 +34,6 @@ downloadMultiThread: false
 # 多线程下载并发数，建议 2-8，数值过高可能触发服务器限流
 downloadConcurrency: 4
 
-# 多线程下载开关，开启后对支持 Range 的大文件使用分片并发下载
-downloadMultiThread: false
-
-# 多线程下载并发数，建议 2-8，数值过高可能触发服务器限流
-downloadConcurrency: 4
-
 # 下载限速开关，开启后会限制下载速度，避免触发服务器风控导致连接被重置
 downloadThrottle: false
 
