@@ -16,6 +16,8 @@ const APP_UPLOAD_KEYS = [
   'usegroupfile',
   'groupfilevalue',
   'imageSendMode',
+  'downloadMultiThread',
+  'downloadConcurrency',
   'downloadThrottle',
   'downloadMaxSpeed',
   'downloadAutoReduce',
@@ -203,6 +205,8 @@ const APP_UPLOAD_KEYS = [
  * @property {number} [UploadConfig.compressvalue] 压缩后的值，若视频文件大小大于「触发视频压缩的阈值」的值，则会进行压缩至该值（±5%），「压缩视频」开启后才会生效
  * @property {boolean} [UploadConfig.usegroupfile] 使用文件上传，开启后会将视频文件上传到群文件中，私聊也行
  * @property {number} [UploadConfig.groupfilevalue] 群文件上传阈值，当文件大小超过该值时将使用群文件上传，单位：MB，「使用群文件上传」开启后才会生效
+ * @property {boolean} [UploadConfig.downloadMultiThread] 多线程下载开关，仅对支持 Range 的大文件生效
+ * @property {number} [UploadConfig.downloadConcurrency] 多线程下载并发数，运行时限制为 2-8
  */
 
 /**

@@ -7,6 +7,7 @@ import constants from 'node:constants'
 import { Transform } from 'node:stream'
 import axios, { AxiosError } from 'axios'
 import { pipeline } from 'stream/promises'
+import { downloadMultipart, MULTIPART_MIN_SIZE, probeRangeSupport } from './MultipartDownloader.js'
 
 class ThrottleStream extends Transform {
   constructor (bytesPerSecond) {
@@ -360,6 +361,56 @@ export class Networks {
   async downloadStream(progressCallback, retryCount = 0, options = {}) {
     const { isLiveStream = false, liveStreamMaxSize = 10 * 1024 * 1024 } = options
     const throttle = getThrottleOptions(options)
+
+    if (!isLiveStream && retryCount === 0 && Config.upload?.downloadMultiThread === true) {
+      const request = async (requestOptions) => {
+        /** @type {import('axios').AxiosRequestConfig} */
+        const config = {
+          url: this.url,
+          method: 'GET',
+          responseType: requestOptions.responseType,
+          signal: requestOptions.signal,
+          timeout: 0,
+          maxRedirects: 5,
+          decompress: false,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          proxy: this.proxy,
+          headers: {
+            'User-Agent': this.userAgent,
+            Accept: '*/*',
+            ...this.headers,
+            ...requestOptions.headers
+          }
+        }
+        if (this.url.startsWith('https:')) config.httpsAgent = this.httpsAgent
+        else if (this.url.startsWith('http:')) config.httpAgent = this.httpAgent
+        return this.axiosInstance(config)
+      }
+
+      let probe
+      try {
+        probe = await probeRangeSupport({ request, headers: this.headers })
+      } catch (error) {
+        logger.debug(`服务器不满足多线程下载条件，自动回退单线程: ${error?.message || error}`)
+      }
+
+      if (probe?.total >= MULTIPART_MIN_SIZE) {
+        logger.debug(`启用多线程下载: ${Config.upload.downloadConcurrency || 4} 路, ${formatBytes(probe.total)}`)
+        return downloadMultipart({
+          filepath: this.filepath,
+          request,
+          headers: this.headers,
+          total: probe.total,
+          validator: probe.validator,
+          concurrency: Config.upload.downloadConcurrency,
+          maxRetries: this.maxRetries,
+          maxSpeed: throttle.enabled ? throttle.currentSpeed : 0,
+          onProgress: progressCallback
+        })
+      }
+    }
+
     const controller = new AbortController()
     const timeout = isLiveStream ? 120000 : 90000
     const timeoutId = setTimeout(() => controller.abort(), timeout)

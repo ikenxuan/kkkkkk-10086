@@ -207,7 +207,7 @@ const bilibiliPushListSchema = {
     multiple: true,
     schemas: [
       sw('switch', '是否启用'),
-      num('host_mid', '用户 UID', 1, 999999999999, ''),
+      num('host_mid', '用户 UID', 1, Number.MAX_SAFE_INTEGER, ''),
       {
         field: 'group_id',
         label: '推送群和推送账号',
@@ -427,6 +427,10 @@ const schemas = [
     option('文件', 'file'),
     option('Base64', 'base64')
   ]),
+  sw('upload.downloadMultiThread', '启用多线程下载', '仅对支持 Range 的大文件生效，不支持时自动回退单线程'),
+  num('upload.downloadConcurrency', '下载并发数', 2, 8, '路', '建议保持默认 4 路，过高可能触发服务器限流'),
+  sw('upload.downloadMultiThread', '启用多线程下载', '仅对支持 Range 的大文件生效，不支持时自动回退单线程'),
+  num('upload.downloadConcurrency', '下载并发数', 2, 8, '路', '建议保持默认 4 路，过高可能触发服务器限流'),
   sw('upload.downloadThrottle', '下载限速'),
   num('upload.downloadMaxSpeed', '下载速度限制', 1, 1024, 'MB/s'),
   sw('upload.downloadAutoReduce', '断流自动降速'),
