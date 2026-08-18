@@ -9,7 +9,7 @@
 🦄 _**kkk插件（yunzai） 是一个 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) & [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai) 的自用辅助插件，提供对 Bot 的视频解析功能，更多信息请移步[文档](https://ikenxuan.github.io/kkkkkk-10086)**_<img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
 
 ![Nodejs](https://img.shields.io/badge/-Node.js-3C873A?style=flat&logo=Node.js&logoColor=white)
-![JavaScript](https://img.shields.io/badge/-JavaScript-eed718?style=flat&logo=javascript&logoColor=ffffff)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat&logo=typescript&logoColor=ffffff)
 [![GitHub stars](https://img.shields.io/github/stars/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/ikenxuan/kkkkkk-10086)](https://github.com/ikenxuan/kkkkkk-10086/network)
 
@@ -23,18 +23,64 @@
 
 # [点击立即阅读插件文档](https://ikenxuan.github.io/kkkkkk-10086/) 📖
 
-## 源码、构建产物与本地验证
+## 安装插件
 
-本仓库以 `src/` 中的 TypeScript 为源码真源，`pnpm build` 会清理并重新生成 `lib/` 中的 JavaScript 构建产物。根入口会直接加载已提交的 `lib/`，因此修改源码时必须同步更新并提交对应的构建产物。
+请先准备 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) 或 [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai)。插件要求 Node.js 22.12.0 及以上版本，推荐使用 pnpm 9.15.9。
 
-本地验证需要 Node.js 22 和 pnpm 9.15.9：
+普通用户应安装已经编译完成的 `preview` 或 `release` 分支，不需要在本地执行构建。请在 **Yunzai 根目录**任选一个版本安装。
+
+### 预览版（开发版构建产物）
+
+`preview` 会在 `dev` 更新并通过检查后自动构建，功能更新最快，但可能包含尚未进入正式版的改动。
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm verify
+git clone --depth=1 --branch preview https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
+pnpm install
 ```
 
-`pnpm verify` 会先执行完整的 `pnpm check`（代码风格、类型检查、测试、构建和构建产物契约），随后通过 `git diff --exit-code -- lib` 检查构建后的 `lib/` 是否与仓库记录一致。若最后一步失败，请检查构建差异并将预期的 `lib/` 更新与源码一起提交。
+### 稳定版（正式发布构建产物）
+
+`release` 只在 `master` 创建正式版本后更新，适合希望优先保持稳定的用户。
+
+```bash
+git clone --depth=1 --branch release https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
+pnpm install
+```
+
+> [!NOTE]
+>
+> `release` 分支会在首次正式发版后生成。在此之前请安装 `preview`，不要把源码分支当作编译版安装。
+
+安装或更新依赖后重启 Yunzai。后续可使用主人命令 `#kkk更新` 更新当前安装分支；依赖发生变化时，请再次在 Yunzai 根目录执行 `pnpm install`。
+
+## 开发说明
+
+仓库采用“源码分支 → 构建分支”的发布方式：
+
+| 源码分支 | 构建分支 | 用途 |
+| --- | --- | --- |
+| `dev` | `preview` | 日常开发；推送后由 Actions 检查、构建并发布预览版 |
+| `master` | `release` | 正式发布；release-please 创建版本后构建并发布稳定版 |
+
+`dev` 和 `master` 保存 TypeScript、React 模板与构建配置；`preview` 和 `release` 只保存运行所需文件及生成后的 `lib/`。请勿直接修改构建分支。
+
+### 获取开发源码
+
+在 Yunzai 根目录执行：
+
+```bash
+git clone --branch dev https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
+pnpm install
+pnpm --dir ./plugins/kkkkkk-10086 check
+```
+
+`pnpm check` 会依次执行代码风格检查、源码类型检查、React 模板类型检查和完整构建。开发期间如需持续编译，可运行：
+
+```bash
+pnpm --dir ./plugins/kkkkkk-10086 build:watch
+```
+
+提交开发改动前请再次运行 `pnpm check`。`lib/`、`.generated/` 等生成目录不会提交，由 GitHub Actions 重新构建；`tests/**` 仅保留作本地验证并已被忽略，请勿强制加入 Git。
 
 ## 贡献者 🌟
 
