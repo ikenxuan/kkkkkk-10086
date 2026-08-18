@@ -3,7 +3,7 @@ name: 🚀 构建并推送到预览分支
 on:
   push:
     branches:
-      - master
+      - dev
   workflow_dispatch:
 
 permissions:
