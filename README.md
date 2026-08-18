@@ -23,6 +23,19 @@
 
 # [点击立即阅读插件文档](https://ikenxuan.github.io/kkkkkk-10086/) 📖
 
+## 源码、构建产物与本地验证
+
+本仓库以 `src/` 中的 TypeScript 为源码真源，`pnpm build` 会清理并重新生成 `lib/` 中的 JavaScript 构建产物。根入口会直接加载已提交的 `lib/`，因此修改源码时必须同步更新并提交对应的构建产物。
+
+本地验证需要 Node.js 22 和 pnpm 9.15.9：
+
+```bash
+pnpm install --frozen-lockfile
+pnpm verify
+```
+
+`pnpm verify` 会先执行完整的 `pnpm check`（代码风格、类型检查、测试、构建和构建产物契约），随后通过 `git diff --exit-code -- lib` 检查构建后的 `lib/` 是否与仓库记录一致。若最后一步失败，请检查构建差异并将预期的 `lib/` 更新与源码一起提交。
+
 ## 贡献者 🌟
 
 > 🌟 星光闪烁，你们的智慧如同璀璨的夜空。感谢所有为 **kkk插件（yunzai）** 做出贡献的人！

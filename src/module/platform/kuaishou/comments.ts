@@ -1,0 +1,159 @@
+import Config from '../../utils/Config.js'
+
+/** 处理后的表情项 */
+export interface KuaishouEmoji {
+  name: string
+  url: string
+}
+
+/** 渲染用的评论项 */
+export interface KuaishouComment {
+  id: number
+  cid?: string
+  aweme_id?: string
+  nickname?: string
+  userimageurl?: string
+  text: string
+  digg_count: number | string | undefined
+  create_time: string
+  reply_comment_total: number
+}
+
+interface RawKuaishouComment {
+  commentId?: string
+  authorName?: string
+  headurl?: string
+  content?: string
+  timestamp?: number
+  likedCount?: number
+  realLikedCount?: number
+  subCommentCount?: number
+}
+
+interface RawCommentPayload {
+  data?: { visionCommentList?: { rootComments?: RawKuaishouComment[] } }
+  visionCommentList?: { rootComments?: RawKuaishouComment[] }
+}
+
+/**
+ * 处理快手评论数据
+ * @param data 完整的评论数据
+ * @param emojidata 处理过后的 emoji 列表
+ */
+export default async function comments (
+  data: RawCommentPayload | null | undefined,
+  emojidata: KuaishouEmoji[]
+): Promise<KuaishouComment[]> {
+  const rootComments = data?.data?.visionCommentList?.rootComments || data?.visionCommentList?.rootComments || []
+  if (!Array.isArray(rootComments) || rootComments.length === 0) return []
+
+  const jsonArray: KuaishouComment[] = []
+  for (let i = 0; i < rootComments.length; i++) {
+    const item = rootComments[i]
+    if (!item) continue
+    const cid = item.commentId
+    const aweme_id = item.commentId
+    const nickname = item.authorName
+    const userimageurl = item.headurl
+    const text = item.content || ''
+    const time = getRelativeTimeFromTimestamp(item.timestamp)
+    const digg_count = item.realLikedCount ?? item.likedCount
+    const commentObj: KuaishouComment = {
+      id: i + 1,
+      cid,
+      aweme_id,
+      nickname,
+      userimageurl,
+      text,
+      digg_count,
+      create_time: time,
+      reply_comment_total: item.subCommentCount || 0
+    }
+    jsonArray.push(commentObj)
+  }
+
+  // 按照点赞量降序
+  jsonArray.sort((a, b) => Number(b.digg_count) - Number(a.digg_count))
+
+  // 两个函数均就地修改 text 字段，返回值与入参为同一数组
+  br(jsonArray)
+  await handling_at(jsonArray)
+
+  for (let i = 0; i < jsonArray.length; i++) {
+    const comment = jsonArray[i]
+    if (!comment) continue
+    if (Number(comment.digg_count) > 10000) {
+      comment.digg_count = (Number(comment.digg_count) / 10000).toFixed(1) + 'w'
+    }
+  }
+
+  for (const item1 of jsonArray) {
+    // 遍历emojidata中的每个元素
+    for (const item2 of emojidata) {
+      // 如果jsonArray中的text包含在emojidata中的name中
+      if (item1.text.includes(item2.name)) {
+        // 检查是否存在中括号
+        if (item1.text.includes('[') && item1.text.includes(']')) {
+          item1.text = item1.text.replace(/\[[^\]]*\]/g, `<img src="${item2.url}"/>`).replace(/\\/g, '')
+        } else {
+          item1.text = `<img src="${item2.url}"/>`
+        }
+        item1.text += '&#160'
+      }
+    }
+  }
+  // 从数组前方开始保留 Config.kuaishou.kuaishounumcomments 条评论，自动移除数组末尾的评论
+  const limit = Config.kuaishou.numcomment || Config.kuaishou.kuaishounumcomments || 5
+  return jsonArray.slice(0, Math.min(jsonArray.length, limit))
+}
+
+function getRelativeTimeFromTimestamp (timestamp: number | undefined): string {
+  // 快手是毫秒（ms）；缺失时间戳时与旧实现一样按 NaN 传播
+  const timestampInSeconds = Math.floor(Number(timestamp) / 1000)
+  const now = Math.floor(Date.now() / 1000)
+  const differenceInSeconds = now - timestampInSeconds
+
+  if (differenceInSeconds < 30) {
+    return '刚刚'
+  } else if (differenceInSeconds < 60) {
+    return differenceInSeconds + '秒前'
+  } else if (differenceInSeconds < 3600) {
+    return Math.floor(differenceInSeconds / 60) + '分钟前'
+  } else if (differenceInSeconds < 86400) {
+    return Math.floor(differenceInSeconds / 3600) + '小时前'
+  } else if (differenceInSeconds < 2592000) {
+    return Math.floor(differenceInSeconds / 86400) + '天前'
+  } else if (differenceInSeconds < 7776000) {
+    // 三个月的秒数
+    return Math.floor(differenceInSeconds / 2592000) + '个月前'
+  } else {
+    const date = new Date(Number(timestamp) * 1000) // 将时间戳转换为毫秒
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    return year + '-' + month + '-' + day
+  }
+}
+
+function br (data: KuaishouComment[]): KuaishouComment[] {
+  for (let i = 0; i < data.length; i++) {
+    const comment = data[i]
+    if (!comment) continue
+    comment.text = comment.text.replace(/\n/g, '<br>')
+  }
+  return data
+}
+
+async function handling_at (data: KuaishouComment[]): Promise<KuaishouComment[]> {
+  for (let i = 0; i < data.length; i++) {
+    const comment = data[i]
+    if (!comment) continue
+
+    // 匹配 @后面的字符，允许空格，直到 (\w+\)
+    comment.text = comment.text.replace(/(@[\S\s]+?)\(\w+\)/g, (match, p1: string) => {
+      // 将 @后面的名字替换为带有样式的 <span>，保留空格
+      return `<span style="color: rgb(3,72,141);">${p1.trim()}</span>`
+    })
+  }
+  return data
+}

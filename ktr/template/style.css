@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+@import '@karinjs/template-react/styles';
+@import 'highlight.js/styles/github.css';
+@import 'highlight.js/styles/github-dark.css';
+@import './font.css';
+@import '../font/mono/font.css';
+@import '../font/bilifont/font.css';
+@import '../font/fansmedal-num/font.css';
+@theme {
+  --font-mono: 'JetBrains Mono';
+  --radius-5xl: calc(var(--radius) * 5);
+  --radius-6xl: calc(var(--radius) * 6);
+  --radius-7xl: calc(var(--radius) * 7);
+  --radius-8xl: calc(var(--radius) * 8);
+}
+
+@source './**/*.{js,ts,jsx,tsx,html}';
+
+@custom-variant dark {
+  &:is(
+    .dark,
+    .dark *:not(:is(.dark .light *, .dark [data-theme='light'] *)),
+    [data-theme='dark'],
+    [data-theme='dark'] *:not(:is([data-theme='dark'] .light *, [data-theme='dark'] [data-theme='light'] *))
+  ) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:not(:is(.light, .light *, [data-theme='light'], [data-theme='light'] *)) {
+      @slot;
+    }
+  }
+}
+
+.hljs {
+  @import 'highlight.js/styles/github.css';
+}
+.dark .hljs {
+  @import 'highlight.js/styles/github-dark.css';
+}
+
+
+/* 基础样式 */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: HarmonyOSHans-Regular, bilifont, fansmedal-num;
+    line-height: 1.6;
+    color: var(--foreground);
+    background-color: var(--background);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    transition:
+      color 0.3s ease,
+      background-color 0.3s ease;
+  }
+}

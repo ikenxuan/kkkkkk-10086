@@ -1,0 +1,100 @@
+name: 🚀 发布并推送发布分支
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧪 触发 release-please 发布检查
+        uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: 📥 检出插件代码
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 📦 配置 pnpm
+        if: ${{ steps.release.outputs.release_created }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: ⚙️ 设置 Node.js 环境
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+
+      - name: 📦 安装依赖
+        if: ${{ steps.release.outputs.release_created }}
+        run: pnpm install --frozen-lockfile
+
+      - name: 🛠️ 构建并验证插件
+        if: ${{ steps.release.outputs.release_created }}
+        run: pnpm verify
+
+      - name: 📁 准备发布文件
+        if: ${{ steps.release.outputs.release_created }}
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } = require('node:fs')
+          const { join, resolve } = require('node:path')
+
+          const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
+          const publishDir = resolve('temp_lib_content')
+          rmSync(publishDir, { recursive: true, force: true })
+          mkdirSync(publishDir, { recursive: true })
+
+          for (const relativePath of packageJson.files ?? []) {
+            const source = resolve(relativePath)
+            if (!existsSync(source)) {
+              throw new Error(`Required release file does not exist: ${relativePath}`)
+            }
+            const destination = join(publishDir, relativePath)
+            mkdirSync(resolve(destination, '..'), { recursive: true })
+            cpSync(source, destination, { recursive: true })
+            console.log(`[copy] ${relativePath}`)
+          }
+
+          writeFileSync(join(publishDir, '.gitignore'), 'node_modules/\n')
+          console.log(`[ready] ${publishDir}`)
+          NODE
+
+      - name: 🧹 移除开发依赖
+        if: ${{ steps.release.outputs.release_created }}
+        working-directory: temp_lib_content
+        run: pnpm pkg delete devDependencies
+
+      - name: 📤 推送到 release 分支
+        if: ${{ steps.release.outputs.release_created }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: release
+          publish_dir: temp_lib_content
+          force_orphan: false
+          full_commit_message: ${{ github.event.head_commit.message || format('Release build {0}', github.sha) }}
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com

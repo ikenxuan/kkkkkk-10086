@@ -1,0 +1,7 @@
+priority: 900
+videotool: true
+videoTool: false
+defaulttool: true
+APIServer: false
+APIServerMount: false
+APIServerPort: 4567

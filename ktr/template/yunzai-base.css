@@ -1,0 +1,8 @@
+/*
+ * Local copy of the minimal @karinjs/template-react style bridge (MIT).
+ * The Yunzai runtime does not depend on Karin; this file only feeds the
+ * build-time Tailwind/HeroUI pipeline used by the upstream poster sources.
+ */
+@import '@heroui/styles';
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme='dark'], [data-theme='dark'] *));

@@ -1,0 +1,115 @@
+import { createRequire } from 'node:module'
+import type { DouyinMethodToFetcher as DouyinMethodToFetcherType } from '@ikenxuan/amagi'
+import Config from '../../utils/Config.js'
+import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '../../utils/RequestGuard.js'
+
+/** 旧版 amagi v5 使用的中文方法名 */
+export type DouyinMethodName = keyof typeof DouyinMethodToFetcherType
+
+/** amagi fetcher 方法，参数在 wrapper 边界收窄 */
+type DouyinFetcherMethod = (
+  options: Record<string, unknown>,
+  cookie: string,
+  requestConfig: DouyinRequestConfig
+) => Promise<unknown>
+
+/** 传给 fetcher 的请求配置 */
+export interface DouyinRequestConfig {
+  timeout: number
+  headers: { 'User-Agent'?: string }
+  signal?: AbortSignal
+  proxy: false | {
+    host: string
+    port: number
+    protocol: string
+    auth: unknown
+  }
+}
+
+/** api wrapper 的可注入依赖，仅用于测试替换真实 amagi */
+export interface DouyinApiDependencies {
+  methodMap: Record<string, string | undefined>
+  fetcher: Record<string, DouyinFetcherMethod | undefined>
+}
+
+interface AmagiDouyinModule {
+  DouyinMethodToFetcher: Record<string, string | undefined>
+  douyinFetcher: Record<string, DouyinFetcherMethod | undefined>
+}
+
+const require = createRequire(import.meta.url)
+let defaultDependencies: DouyinApiDependencies | undefined
+
+/** amagi 的 package exports 在 Vite 下解析失败，沿用 Base.ts 的 CommonJS 兜底 */
+const getDefaultDependencies = (): DouyinApiDependencies => {
+  if (!defaultDependencies) {
+    const amagi = require('@ikenxuan/amagi') as AmagiDouyinModule
+    defaultDependencies = {
+      methodMap: amagi.DouyinMethodToFetcher,
+      fetcher: amagi.douyinFetcher
+    }
+  }
+  return defaultDependencies
+}
+
+const buildRequestConfig = (): DouyinRequestConfig => ({
+  timeout: Config.request?.timeout || 15000,
+  headers: {
+    'User-Agent': Config.request?.['User-Agent']
+  },
+  proxy: Config.request?.proxy?.switch
+    ? { host: Config.request.proxy.host, port: Number(Config.request.proxy.port), protocol: Config.request.proxy.protocol, auth: Config.request.proxy.auth }
+    : false
+})
+
+const normalizeArgs = (
+  arg1?: string | Record<string, unknown>,
+  arg2?: Record<string, unknown>
+): { cookie: string, options: Record<string, unknown> } => {
+  if (typeof arg1 === 'string') {
+    return {
+      cookie: arg1,
+      options: arg2 || {}
+    }
+  }
+
+  return {
+    cookie: Config.cookies.douyin || '',
+    options: arg1 || {}
+  }
+}
+
+/**
+ * 兼容已移除的 amagi v5 `getDouyinData` API。
+ * 插件内部保留旧调用形态，内部改为分发到 v6 fetcher 方法。
+ *
+ * @param method 旧版 amagi 使用的中文方法名
+ * @param arg1 Cookie 或请求参数
+ * @param arg2 当 arg1 为 Cookie 时的请求参数
+ * @param dependencies 可注入的方法映射与 fetcher，缺省使用真实 amagi
+ */
+export const getDouyinData = async (
+  method: DouyinMethodName | string,
+  arg1?: string | Record<string, unknown>,
+  arg2?: Record<string, unknown>,
+  dependencies: DouyinApiDependencies = getDefaultDependencies()
+): Promise<unknown> => {
+  const fetcherMethod = dependencies.methodMap[method] ??
+    (typeof dependencies.fetcher[method] === 'function' ? method : undefined)
+  const fetcher = fetcherMethod ? dependencies.fetcher[fetcherMethod] : undefined
+  if (!fetcherMethod || typeof fetcher !== 'function') {
+    throw new Error(`Unsupported Douyin API method: ${method}`)
+  }
+
+  const { cookie, options } = normalizeArgs(arg1, arg2)
+  return await runWithRequestGuard(
+    async signal => await fetcher(options, cookie, {
+      ...buildRequestConfig(),
+      signal
+    }),
+    {
+      timeoutMs: Math.min(Config.request?.amagiTimeout ?? DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS),
+      maxRetries: Config.request?.amagiMaxRetries
+    }
+  )
+}

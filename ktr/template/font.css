@@ -1,0 +1,20 @@
+@font-face {
+  font-family: HarmonyOSHans-Regular;
+  src:
+    local('HarmonyOS Sans SC Regular'),
+    local('HarmonyOS Sans SC'),
+    url('../../resources/font/HarmonyOS_SansSC_Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  html body {
+    font-family: HarmonyOSHans-Regular, bilifont, fansmedal-num, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Arial, sans-serif;
+  }
+
+  :where(code, pre, kbd, samp) {
+    font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  }
+}

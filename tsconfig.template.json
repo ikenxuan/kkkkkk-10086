@@ -1,0 +1,32 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": false,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "types": ["node", "react", "react-dom"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "~/*": ["./src/*"],
+      "@karinjs/template-react": ["./src/template-sdk/index.ts"],
+      "@kkk/richtext": ["./ktr/richtext/index.ts"]
+    }
+  },
+  "include": [
+    ".generated/**/*.ts",
+    "src/template-sdk/**/*.ts",
+    "ktr/richtext/**/*.ts",
+    "ktr/richtext/**/*.tsx",
+    "ktr/utils/**/*.ts",
+    "ktr/template/**/*.ts",
+    "ktr/template/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "ktr/template/_preview"
+  ]
+}

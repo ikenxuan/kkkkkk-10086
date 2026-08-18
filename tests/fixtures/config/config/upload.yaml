@@ -1,0 +1,3 @@
+sendbase64: false
+videoSendMode: file
+downloadConcurrency: 4

@@ -2,6 +2,9 @@ on:
   issues:
     types: [labeled]
 
+permissions:
+  issues: write
+
 jobs:
   create-comment:
     runs-on: ubuntu-latest

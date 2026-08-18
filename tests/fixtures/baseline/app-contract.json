@@ -1,0 +1,278 @@
+{
+  "admin": {
+    "className": "kkkAdmin",
+    "name": "kkkkkk-10086-设置",
+    "dsc": null,
+    "event": "message",
+    "priority": "100",
+    "rule": [
+      {
+        "reg": "/^#kkk设置(缓存删除|视频解析工具总开关|默认解析|发送合并转发消息|深色主题|渲染精度|放出API服务|API服务端口|自定义优先级|抖音解析开关|抖音评论数量|抖音真实评论数量|抖音高清语音|抖音自动分辨率|抖音推送开关|抖音推送解析|抖音推送日志|B站解析开关|B站评论数量|B站真实评论数量|B站内容优先|B站画质偏好|B站自动画质大小|B站推送开关|B站推送解析|B站推送日志|B站推送画质|B站推送大小|快手解析开关|快手解析提示|快手评论数量|小红书解析开关|发送视频base64|视频上传拦截|视频拦截阈值|压缩视频|触发压缩阈值|压缩后的值|使用文件上传|群文件上传阈值|请求超时时间|代理开关)\\s*(开启|关闭)$/i",
+        "regType": "RegExp",
+        "fnc": "ConfigSwitch",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#kkk设置(抖音评论数量|B站评论数量|快手评论数量|小红书评论数量|小红书自动画质大小|渲染精度|优先级|API服务端口|B站画质偏好|B站自动画质大小|B站推送画质|B站推送大小|视频拦截阈值|触发压缩阈值|压缩后的值|群文件上传阈值|请求超时时间|深色主题)\\s*(\\d+)$/i",
+        "regType": "RegExp",
+        "fnc": "ConfigNumber",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#kkk设置$/",
+        "regType": "RegExp",
+        "fnc": "index_Settings",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*设置抖音ck$/i",
+        "regType": "RegExp",
+        "fnc": "setdyck",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*设置\\s*([Bb]站)ck$/i",
+        "regType": "RegExp",
+        "fnc": "setbilick",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*设置快手ck$/i",
+        "regType": "RegExp",
+        "fnc": "setksck",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*设置小红书ck$/i",
+        "regType": "RegExp",
+        "fnc": "setxhsck",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*[Bb]站\\s*(扫码)?\\s*登录$/i",
+        "regType": "RegExp",
+        "fnc": "Blogin",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?(kkk)?\\s*抖音(扫码)?\\s*登录$/i",
+        "regType": "RegExp",
+        "fnc": "dylogin",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#?kkk删除缓存$/",
+        "regType": "RegExp",
+        "fnc": "deltemp",
+        "permission": "master"
+      }
+    ],
+    "task": [
+      {
+        "name": "[kkkkkk-10086] 视频缓存自动删除",
+        "cron": "0 0 4 * * *",
+        "log": true,
+        "fnc": "function"
+      }
+    ]
+  },
+  "help": {
+    "className": "kkkHelp",
+    "name": "kkk帮助",
+    "dsc": null,
+    "event": "message",
+    "priority": "2000",
+    "rule": [
+      {
+        "reg": "^#?kkk帮助$",
+        "regType": "string",
+        "fnc": "help",
+        "permission": null
+      },
+      {
+        "reg": "^#?kkk(版本|更新日志|更新)$",
+        "regType": "string",
+        "fnc": "version",
+        "permission": null
+      }
+    ],
+    "task": []
+  },
+  "push": {
+    "className": "kkkPush",
+    "name": "kkkkkk-10086-推送功能",
+    "dsc": "推送",
+    "event": "message",
+    "priority": "500",
+    "rule": [
+      {
+        "reg": "/^#设置抖音推送/",
+        "regType": "RegExp",
+        "fnc": "setdyPush",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#设置[bB]站推送/",
+        "regType": "RegExp",
+        "fnc": "setbiliPush",
+        "permission": "all"
+      },
+      {
+        "reg": "/^#(抖音|[bB]站)(全部)?强制推送/",
+        "regType": "RegExp",
+        "fnc": "forcePush",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#(抖音|[bB]站)推送列表$/",
+        "regType": "RegExp",
+        "fnc": "pushlist",
+        "permission": null
+      },
+      {
+        "reg": "/^#kkk设置推送机器人/",
+        "regType": "RegExp",
+        "fnc": "changeBotID",
+        "permission": "master"
+      },
+      {
+        "reg": "/^#kkk推送全局忽略/",
+        "regType": "RegExp",
+        "fnc": "globalIgnore",
+        "permission": "master"
+      }
+    ],
+    "task": [
+      {
+        "name": "哔哩哔哩更新推送",
+        "cron": "0 */3 * * * *",
+        "log": false,
+        "fnc": "function"
+      },
+      {
+        "name": "抖音更新推送",
+        "cron": "0 */5 * * * *",
+        "log": true,
+        "fnc": "function"
+      }
+    ]
+  },
+  "statistics": {
+    "className": "kkkStatistics",
+    "name": "kkk解析统计",
+    "dsc": null,
+    "event": "message",
+    "priority": "2000",
+    "rule": [
+      {
+        "reg": "/^#?kkk解析统计$/",
+        "regType": "RegExp",
+        "fnc": "groupStatistics",
+        "permission": null
+      },
+      {
+        "reg": "/^#?kkk全局解析统计$/",
+        "regType": "RegExp",
+        "fnc": "globalStatistics",
+        "permission": "master"
+      }
+    ],
+    "task": []
+  },
+  "testPush": {
+    "className": "kkkTestPush",
+    "name": "kkkkkk-10086-测试推送",
+    "dsc": "测试推送",
+    "event": "message",
+    "priority": "100",
+    "rule": [
+      {
+        "reg": "/^#测试抖音(作品|喜欢列表|推荐列表|直播状态)推送/",
+        "regType": "RegExp",
+        "fnc": "testDouyinPush",
+        "permission": "master"
+      }
+    ],
+    "task": []
+  },
+  "tools": {
+    "className": "kkkTools",
+    "name": "kkkkkk-10086-视频功能",
+    "dsc": "视频",
+    "event": "message",
+    "priority": "500",
+    "rule": [
+      {
+        "reg": "/.*((www|v|jx|jingxuan|m)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*/i",
+        "regType": "RegExp",
+        "fnc": "douyin",
+        "permission": null
+      },
+      {
+        "reg": "/(bilibili.com|b23.tv|t.bilibili.com|bili2233.cn|^BV[1-9a-zA-Z]{10}$|^av\\d+$)/i",
+        "regType": "RegExp",
+        "fnc": "bilibili",
+        "permission": null
+      },
+      {
+        "reg": "/^((.*)快手(.*)快手(.*)|(.*)v\\.kuaishou(.*)|(.*)kuaishou\\.com\\/f\\/[a-zA-Z0-9]+.*)$/",
+        "regType": "RegExp",
+        "fnc": "kuaishou",
+        "permission": null
+      },
+      {
+        "reg": "/(xiaohongshu\\.com|xhslink\\.com)/i",
+        "regType": "RegExp",
+        "fnc": "xiaohongshu",
+        "permission": null
+      },
+      {
+        "reg": "/^(\\[图片\\])?$/",
+        "regType": "RegExp",
+        "fnc": "imageQrCode",
+        "permission": null
+      },
+      {
+        "reg": "/^#?\\d{1,2}$/",
+        "regType": "RegExp",
+        "fnc": "selectDouyinWork",
+        "permission": null
+      },
+      {
+        "reg": "/^#?(解析|kkk解析|弹幕解析)/",
+        "regType": "RegExp",
+        "fnc": "prefix",
+        "permission": null
+      },
+      {
+        "reg": "/#?BGM(\\d+)/",
+        "regType": "RegExp",
+        "fnc": "uploadRecord",
+        "permission": null
+      },
+      {
+        "reg": "/^#?第(\\d{1,3})集$/",
+        "regType": "RegExp",
+        "fnc": "next",
+        "permission": null
+      }
+    ],
+    "task": []
+  },
+  "update": {
+    "className": "kkkUpdate",
+    "name": "更新",
+    "dsc": null,
+    "event": "message",
+    "priority": "1000",
+    "rule": [
+      {
+        "reg": "/^#kkk(插件)?(强制)?更新(日志)?$/",
+        "regType": "RegExp",
+        "fnc": "update",
+        "permission": null
+      }
+    ],
+    "task": []
+  }
+}
