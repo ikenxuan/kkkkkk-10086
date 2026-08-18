@@ -1,0 +1,164 @@
+.stats-page {
+  width: 1180px;
+  padding: 54px;
+  color: #202226;
+}
+
+body.dark-mode .stats-page {
+  color: #f1f3f5;
+}
+
+.stats-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 42px;
+  border-radius: 28px;
+  background: #f4f6f8;
+  box-shadow: 0 20px 48px rgb(0 0 0 / 12%);
+}
+
+body.dark-mode .stats-header {
+  background: #24272d;
+  box-shadow: 0 20px 48px rgb(0 0 0 / 32%);
+}
+
+.eyebrow {
+  font-size: 24px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #677381;
+}
+
+.stats-header h1 {
+  margin: 14px 0 10px;
+  font-size: 64px;
+  line-height: 1.05;
+}
+
+.stats-header p {
+  margin: 0;
+  font-size: 30px;
+  color: #677381;
+}
+
+.header-badge {
+  min-width: 150px;
+  text-align: center;
+  padding: 16px 22px;
+  border-radius: 999px;
+  font-size: 26px;
+  font-weight: 800;
+  background: #171a1f;
+  color: #fff;
+}
+
+body.dark-mode .header-badge {
+  background: #f1f3f5;
+  color: #171a1f;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  margin: 28px 0;
+}
+
+.metric-card {
+  padding: 30px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 10%);
+}
+
+body.dark-mode .metric-card,
+body.dark-mode .section {
+  background: #1f2227;
+}
+
+.metric-card.wide {
+  grid-column: span 2;
+}
+
+.metric-card span {
+  display: block;
+  font-size: 24px;
+  color: #687482;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 14px;
+  font-size: 54px;
+}
+
+.section {
+  padding: 34px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 10%);
+}
+
+.section h2 {
+  margin: 0 0 26px;
+  font-size: 34px;
+}
+
+.platform-list,
+.compact-list {
+  display: grid;
+  gap: 18px;
+}
+
+.platform-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 90px;
+  align-items: center;
+  gap: 20px;
+  font-size: 28px;
+}
+
+.bar {
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e1e6eb;
+}
+
+body.dark-mode .bar {
+  background: #363b44;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00b894, #0984e3);
+}
+
+.split-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.compact-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid rgb(104 116 130 / 20%);
+  font-size: 25px;
+}
+
+.compact-row span {
+  overflow-wrap: anywhere;
+}
+
+.empty {
+  color: #687482;
+  font-size: 26px;
+}

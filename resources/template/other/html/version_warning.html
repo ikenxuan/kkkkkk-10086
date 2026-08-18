@@ -1,0 +1,29 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/version_warning.css" />
+{{/block}}
+{{block 'main'}}
+<main class="version-warning">
+  <header>
+    <div class="eyebrow">VERSION WARNING</div>
+    <h1>请升级运行时</h1>
+    <p>当前运行环境版本低于插件构建或建议版本，可能出现兼容性问题。</p>
+  </header>
+
+  <section class="versions">
+    <div>
+      <span>当前版本</span>
+      <strong>{{currentVersion || 'unknown'}}</strong>
+    </div>
+    <div>
+      <span>需要版本</span>
+      <strong>{{requireVersion || 'unknown'}}</strong>
+    </div>
+  </section>
+
+  <section class="steps">
+    <h2>处理方式</h2>
+    <p>请升级 Bot 框架或运行时依赖后重启，再重新加载 kkk 插件。</p>
+  </section>
+</main>
+{{/block}}

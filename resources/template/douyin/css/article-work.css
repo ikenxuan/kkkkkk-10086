@@ -1,0 +1,173 @@
+body.light-mode .container {
+  background: #f4f4f4;
+  color: #202020;
+  width: 1440px;
+}
+
+body.dark-mode .container {
+  background: #111;
+  color: #ececec;
+  width: 1440px;
+}
+
+.douyin-article-page {
+  min-height: 100%;
+  padding: 58px 70px 64px;
+}
+
+.article-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 24px;
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.logo {
+  background-image: url(../../../image/douyin/dylogo-dark.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  height: 96px;
+  width: 288px;
+}
+
+body.dark-mode .logo {
+  background-image: url(../../../image/douyin/dylogo-light.svg);
+}
+
+.create-time {
+  color: #808080;
+  font-size: 30px;
+}
+
+.article-main {
+  align-items: start;
+  display: grid;
+  gap: 46px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  margin-top: 46px;
+}
+
+.article-content h1 {
+  font-size: 58px;
+  line-height: 1.24;
+  margin: 0;
+  word-break: break-word;
+}
+
+.read-time {
+  color: #808080;
+  font-size: 28px;
+  margin-top: 18px;
+}
+
+.markdown-body {
+  font-size: 30px;
+  line-height: 1.72;
+  margin-top: 34px;
+  word-break: break-word;
+}
+
+.markdown-body img {
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.markdown-body p {
+  margin: 0 0 22px;
+}
+
+.image-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 34px;
+}
+
+.image-grid img {
+  border-radius: 8px;
+  height: 260px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.meta-panel {
+  background: rgba(128, 128, 128, 0.12);
+  border-left: 7px solid #00d6d0;
+  padding: 28px;
+}
+
+.author {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+}
+
+.avatar {
+  border-radius: 50%;
+  height: 96px;
+  object-fit: cover;
+  width: 96px;
+}
+
+.author-name {
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.author-id {
+  color: #808080;
+  font-size: 24px;
+  margin-top: 6px;
+}
+
+.stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 30px;
+}
+
+.stats div {
+  background: rgba(128, 128, 128, 0.12);
+  padding: 18px 14px;
+}
+
+.stats strong {
+  display: block;
+  font-size: 30px;
+}
+
+.stats span,
+.profile-stats,
+.qrcode-text {
+  color: #808080;
+  font-size: 22px;
+}
+
+.profile-stats {
+  display: grid;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.qrcode-box {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+#qrcode {
+  border: 6px dashed currentColor;
+  border-radius: 4px;
+  padding: 10px;
+}

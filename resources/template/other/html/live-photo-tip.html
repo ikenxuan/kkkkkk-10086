@@ -1,0 +1,27 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/live-photo-tip.css" />
+{{/block}}
+{{block 'main'}}
+<main class="tip-page">
+  <section class="hero">
+    <div class="icon">↓</div>
+    <div>
+      <div class="eyebrow">LIVE PHOTO</div>
+      <h1>{{title || '保存原图'}}</h1>
+      <p>{{description || '点击「查看原图」后保存到相册即可识别为实况照片'}}</p>
+    </div>
+  </section>
+
+  <section class="brand-grid">
+    <div class="brand ok">Google Photos<span>实测可用</span></div>
+    <div class="brand ok">Xiaomi<span>实测可用</span></div>
+    <div class="brand ok">Samsung<span>实测可用</span></div>
+    <div class="brand ok">OPPO / OnePlus<span>实测可用</span></div>
+    <div class="brand maybe">Huawei / Honor<span>理论支持</span></div>
+    <div class="brand no">iOS / vivo<span>暂不支持</span></div>
+  </section>
+
+  <footer>所有支持 Google Motion Photo 标准的相册 App 均可识别实况照片</footer>
+</main>
+{{/block}}

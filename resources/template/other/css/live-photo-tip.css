@@ -1,0 +1,113 @@
+body.light-mode .container,
+body.dark-mode .container {
+  width: 1080px;
+  min-height: 1080px;
+}
+
+.tip-page {
+  min-height: 1080px;
+  padding: 88px 78px 58px;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  display: flex;
+  gap: 34px;
+  align-items: center;
+  margin-bottom: 58px;
+}
+
+.icon {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 88px;
+  font-weight: 900;
+}
+
+body.light-mode .icon {
+  background: #111;
+  color: #fff;
+}
+
+body.dark-mode .icon {
+  background: #fff;
+  color: #111;
+}
+
+.eyebrow {
+  font-size: 24px;
+  letter-spacing: 0;
+  opacity: 0.55;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 76px;
+  line-height: 1;
+  margin: 0 0 18px;
+}
+
+.hero p {
+  font-size: 34px;
+  line-height: 1.35;
+  margin: 0;
+  opacity: 0.68;
+}
+
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.brand {
+  border-radius: 8px;
+  border: 1px solid rgb(127 127 127 / 18%);
+  min-height: 142px;
+  padding: 30px;
+  font-size: 34px;
+  font-weight: 850;
+}
+
+body.light-mode .brand {
+  background: #f5f5f5;
+}
+
+body.dark-mode .brand {
+  background: #292929;
+}
+
+.brand span {
+  display: block;
+  font-size: 22px;
+  margin-top: 14px;
+  font-weight: 700;
+}
+
+.ok span {
+  color: #22c55e;
+}
+
+.maybe span {
+  color: #f59e0b;
+}
+
+.no {
+  opacity: 0.54;
+}
+
+.no span {
+  color: #ef4444;
+}
+
+footer {
+  margin-top: auto;
+  font-size: 24px;
+  line-height: 1.45;
+  opacity: 0.58;
+}

@@ -1,0 +1,54 @@
+body.light-mode .container,
+body.dark-mode .container {
+  width: 1080px;
+}
+
+.qr-page {
+  padding: 72px 82px 52px;
+  text-align: center;
+}
+
+.platform {
+  color: #00a1d6;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 76px;
+  line-height: 1;
+  margin: 18px 0;
+}
+
+header p {
+  font-size: 30px;
+  opacity: 0.66;
+  margin: 0;
+}
+
+#qrcode {
+  display: inline-block;
+  margin: 58px auto 44px;
+  padding: 22px;
+  border: 8px solid #00a1d6;
+  border-radius: 8px;
+}
+
+.notice {
+  display: grid;
+  gap: 12px;
+  padding: 26px 32px;
+  text-align: left;
+  border-left: 8px solid #00a1d6;
+  background: rgb(0 161 214 / 10%);
+}
+
+.notice b {
+  font-size: 34px;
+}
+
+.notice span {
+  font-size: 26px;
+  line-height: 1.42;
+}

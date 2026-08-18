@@ -1,0 +1,25 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/help.css" />
+{{/block}}
+{{block 'main'}}
+<div class="help-header">
+  <div class="help-header-badge">{{role === 'master' ? 'MASTER' : 'MEMBER'}}</div>
+  <h1>{{title || 'KKK插件帮助页面'}}</h1>
+  <div class="help-header-sub">在聊天中发送下列指令即可使用 ~</div>
+</div>
+
+{{each menu group}}
+<section class="menu-section">
+  <h2><span class="section-dot"></span>{{group.title}}</h2>
+  <div class="menu-grid">
+    {{each group.items item}}
+    <div class="menu-item">
+      <div class="menu-title">{{item.title}}</div>
+      <div class="menu-description">{{item.description}}</div>
+    </div>
+    {{/each}}
+  </div>
+</section>
+{{/each}}
+{{/block}}

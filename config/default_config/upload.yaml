@@ -1,0 +1,47 @@
+# 发送视频经本插件转换为base64格式后再发送，适合云崽与机器人不在同一网络环境下开启
+sendbase64: false
+
+# 本地视频发送方式，可选值：file / base64 / url。会同步兼容 sendbase64。
+videoSendMode: file
+
+# 视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传
+usefilelimit: true
+
+# 视频拦截阈值（填数字），视频文件大于该数值则不会上传 单位: MB，「视频文件上传限制」开启后才会生效
+filelimit: 100
+
+# 压缩视频，开启后会将视频文件压缩后再上传，适合上传大文件
+compress: false
+
+# 触发视频压缩的阈值，单位：MB。当文件大小超过该值时，才会压缩视频，「压缩视频」开启后才会生效
+compresstrigger: 100
+
+# 压缩后的值，若视频文件大小大于「触发视频压缩的阈值」的值，则会进行压缩至该值（±5%），「压缩视频」开启后才会生效
+compressvalue: 50
+
+# 使用文件上传，开启后会将视频文件上传到群文件中，私聊也行
+usegroupfile: false
+
+# 群文件上传阈值，当文件大小超过该值时将使用群文件上传，单位：MB，「使用群文件上传」开启后才会生效
+groupfilevalue: 100
+
+# 网络图片发送方式，可选值：url / file / base64
+imageSendMode: url
+
+# 多线程下载开关，开启后对支持 Range 的大文件使用分片并发下载
+downloadMultiThread: false
+
+# 多线程下载并发数，建议 2-8，数值过高可能触发服务器限流
+downloadConcurrency: 4
+
+# 下载限速开关，开启后会限制下载速度，避免触发服务器风控导致连接被重置
+downloadThrottle: false
+
+# 下载速度限制，单位：MB/s，仅在 downloadThrottle 开启后生效
+downloadMaxSpeed: 10
+
+# 断流自动降速，检测到连接被重置时自动降低下载速度
+downloadAutoReduce: true
+
+# 最低下载速度，单位：MB/s，自动降速不会低于此值
+downloadMinSpeed: 1

@@ -1,0 +1,63 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/douyin/css/live.css" />
+{{/block}} {{block 'main'}}
+
+<div class="spacer1"></div>
+{{each image_url val}}
+<div class="cover">
+  <div class="imgbox">
+    <img class="imgbox_1" src="{{val.image_src}}" alt="封面" />
+  </div>
+</div>
+<div style="height: 20px"></div>
+{{/each}}
+<div class="info">
+  <div class="spacer3"></div>
+  <div class="info_title" style="font-weight: 700">{{@text}}</div>
+  <div class="spacer3"></div>
+  <div class="info_text" style="color: #808080; letter-spacing: normal">{{liveinf}}</div>
+  <div class="info_text" style="color: #808080; letter-spacing: normal">观看总人数{{总观看次数}} | 在线观众{{在线观众}}</div>
+  <div class="spacer6"></div>
+  <div class="avatarinfo">
+    <img src="{{avater_url}}" alt="头像" class="avatar" />
+    <div style "display: flex; flex-direction: column;align-items: flex-start;">
+      <div class="name_and_followers">
+        <div class="username"><span>{{@username}}</span></div>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <img class="livestat" src="{{_res_path}}image/douyin/抖音-直播中.png" alt="直播中" />
+      </div>
+      <div>
+        <span style="color: #808080; font-size: 35px;">{{fans}}粉丝</span>
+      </div>
+    </div>
+  </div>
+  <div class="spacer7"></div>
+  <div class="under">
+    <div class="other_text">抖音{{dynamicTYPE}}</div>
+    <div class="rectangular_box">
+      <div class="user" style="align-items: center">
+        <div class="userinfo">
+          <div class="logo"></div>
+          <div class="ftext">
+            <span class="extext">抖音 记录美好生活</span>
+          </div>
+        </div>
+      </div>
+      <div class="qrcode_box">
+        <div class="qrcode_text" style="font-size: 45px; margin: 20px 0 0 0;">直播分享链接</div>
+        <div id="qrcode"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 600,
+    height: 600,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#c3c3c3' : '#3a3a3a',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#121212' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

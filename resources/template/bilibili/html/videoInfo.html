@@ -1,0 +1,72 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/bilibili/css/videoInfo.css" />
+{{/block}} {{block 'main'}}
+<div class="video-info-page">
+  <div class="ambient">
+    <img src="{{pic}}" alt="" />
+  </div>
+
+  <div class="cover-wrap">
+    <img class="cover" src="{{pic}}" alt="封面" />
+    {{if hotDanmaku && hotDanmaku.length}}
+    <div class="danmaku-layer">
+      {{each hotDanmaku item index}}
+      <span style="margin-left: {{index % 4 * 40}}px">{{item.content}}</span>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+
+  <main class="content">
+    <div class="title-row">
+      <h1>{{title}}</h1>
+      <div class="bvid">{{bvid}}</div>
+    </div>
+
+    <div class="subline">
+      <span>{{ctime}}</span>
+      <span>{{stats.view}} 播放</span>
+      <span>{{stats.danmaku}} 弹幕</span>
+      <span>{{stats.reply}} 评论</span>
+    </div>
+
+    {{if desc}}
+    <section class="desc">{{@desc}}</section>
+    {{/if}}
+
+    <section class="stats-grid">
+      <div><strong>{{stats.like}}</strong><span>点赞</span></div>
+      <div><strong>{{stats.coin}}</strong><span>投币</span></div>
+      <div><strong>{{stats.favorite}}</strong><span>收藏</span></div>
+      <div><strong>{{stats.share}}</strong><span>分享</span></div>
+    </section>
+
+    <footer class="footer">
+      <div class="owner">
+        <div class="avatar-wrap">
+          <img class="avatar" src="{{owner.face}}" alt="头像" />
+          <img class="frame" src="{{owner.frame}}" alt="" />
+        </div>
+        <div>
+          <div class="owner-name">{{owner.name}}</div>
+          <div class="owner-mid">UID: {{owner.mid}}</div>
+        </div>
+      </div>
+      <div class="qrcode-box">
+        <div id="qrcode"></div>
+        <div class="qrcode-text">视频分享链接</div>
+      </div>
+    </footer>
+  </main>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 360,
+    height: 360,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#c3c3c3' : '#3a3a3a',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#121212' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

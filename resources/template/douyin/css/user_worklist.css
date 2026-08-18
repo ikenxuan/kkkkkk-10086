@@ -1,0 +1,61 @@
+.worklist {
+  width: 90%;
+  margin: 64px auto;
+}
+
+.worklist-header {
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgb(127 127 127 / 24%);
+}
+
+.eyebrow {
+  font-size: 18px;
+  opacity: 0.62;
+  margin-bottom: 8px;
+}
+
+.worklist h1 {
+  margin: 0 0 8px;
+  font-size: 42px;
+  line-height: 1.2;
+}
+
+.worklist p {
+  margin: 0;
+  font-size: 20px;
+  opacity: 0.68;
+}
+
+.markdown-body {
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid rgb(127 127 127 / 18%);
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+body.light-mode .markdown-body {
+  background: #f6f6f6;
+}
+
+body.dark-mode .markdown-body {
+  background: #292929;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-body th,
+.markdown-body td {
+  padding: 12px;
+  border-bottom: 1px solid rgb(127 127 127 / 20%);
+  vertical-align: middle;
+}
+
+.markdown-body img {
+  width: 96px;
+  height: 96px;
+}

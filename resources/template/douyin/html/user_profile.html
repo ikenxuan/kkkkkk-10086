@@ -1,0 +1,61 @@
+{{extend defaultLayout}} {{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/douyin/css/user_profile.css" />
+{{/block}} {{block 'main'}}
+<div class="profile-page">
+  {{if user.head_image}}
+  <section class="cover">
+    <img src="{{user.head_image}}" alt="" />
+  </section>
+  {{/if}}
+
+  <section class="profile">
+    <img class="avatar" src="{{user.avatar}}" alt="头像" />
+    <div class="profile-main">
+      <div class="name-row">
+        <h1>{{user.nickname}}</h1>
+        {{if user.verified}}<span class="verified">认证</span>{{/if}}
+      </div>
+      <div class="meta">
+        <span>抖音号: {{user.short_id}}</span>
+        {{if user.ip_location}}<span>{{user.ip_location}}</span>{{/if}}
+      </div>
+      <p>{{user.signature}}</p>
+      <div class="user-stats">
+        <div><strong>{{user.following_count}}</strong><span>关注</span></div>
+        <div><strong>{{user.follower_count}}</strong><span>粉丝</span></div>
+        <div><strong>{{user.total_favorited}}</strong><span>获赞</span></div>
+      </div>
+    </div>
+  </section>
+
+  {{if timeoutSeconds}}
+  <section class="hint">请在 {{timeoutSeconds}} 秒内发送 1~{{videos.length}} 的数字解析对应作品</section>
+  {{/if}}
+
+  <section class="works">
+    {{each videos item}}
+    <article class="work-card">
+      <div class="thumb">
+        <img src="{{item.cover}}" alt="" />
+        <span class="index">{{item.index}}</span>
+        <span class="type">{{item.type_text}}</span>
+        {{if item.is_top}}<span class="pin">置顶</span>{{/if}}
+      </div>
+      <div class="work-body">
+        <h2>{{item.title}}</h2>
+        <div class="time">{{item.create_time}}</div>
+        {{if item.music}}
+        <div class="music">{{item.music.title}} · {{item.music.author}}</div>
+        {{/if}}
+        <div class="work-stats">
+          <span>赞 {{item.statistics.like_count}}</span>
+          <span>评 {{item.statistics.comment_count}}</span>
+          <span>藏 {{item.statistics.collect_count}}</span>
+          <span>转 {{item.statistics.share_count}}</span>
+        </div>
+      </div>
+    </article>
+    {{/each}}
+  </section>
+</div>
+{{/block}}

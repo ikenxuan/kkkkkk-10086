@@ -1,0 +1,63 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/bilibili/css/dynamic/DYNAMIC_TYPE_ARTICLE.css" />
+{{/block}} {{block 'main'}}
+<div class="article-page">
+  <div class="article-user">
+    <img src="{{avatar_url}}" alt="头像" class="article-avatar" />
+    <img src="{{frame}}" alt="" class="article-frame" />
+    <div>
+      <div class="article-username">{{@username}}</div>
+      <div class="article-time">{{create_time}}</div>
+    </div>
+  </div>
+
+  <div class="article-content">
+    <h1 class="article-title">{{title}}</h1>
+    {{if banner_url}}
+    <img class="article-banner" src="{{banner_url}}" alt="专栏封面" />
+    {{/if}}
+    {{if summary}}
+    <div class="article-summary">{{summary}}</div>
+    {{/if}}
+    <div class="article-meta">
+      <span>{{words}} 字</span>
+      {{each categories val}}
+      <span>{{val}}</span>
+      {{/each}}
+    </div>
+    <div class="article-body">{{@body}}</div>
+  </div>
+
+  <div class="article-stats">
+    <span>{{view}} 阅读</span>
+    <span>{{like}} 点赞</span>
+    <span>{{favorite}} 收藏</span>
+    <span>{{reply}} 评论</span>
+    <span>{{share}} 分享</span>
+  </div>
+
+  <div class="article-footer">
+    <div class="article-author-stats">
+      <span>UID: {{user_shortid}}</span>
+      <span>获赞: {{total_favorited}}</span>
+      <span>关注: {{following_count}}</span>
+      <span>粉丝: {{fans}}</span>
+      <span>生成时间: {{render_time}}</span>
+    </div>
+    <div class="article-qrcode">
+      <div id="qrcode"></div>
+      <div class="article-qrcode-text">{{dynamicTYPE}}</div>
+    </div>
+  </div>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 420,
+    height: 420,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#c3c3c3' : '#3a3a3a',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#121212' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

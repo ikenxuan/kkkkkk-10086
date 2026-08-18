@@ -1,0 +1,68 @@
+{{extend defaultLayout}} {{block 'css'}}
+<script src="{{_res_path}}template/extend/js/qrcode.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/douyin/css/article-work.css" />
+{{/block}} {{block 'main'}}
+<div class="douyin-article-page">
+  <header class="article-header">
+    <div class="brand">
+      <div class="logo"></div>
+      <span>文章作品</span>
+    </div>
+    <div class="create-time">{{create_time}}</div>
+  </header>
+
+  <main class="article-main">
+    <section class="article-content">
+      <h1>{{title}}</h1>
+      {{if read_time}}
+      <div class="read-time">预计阅读 {{read_time}} 分钟</div>
+      {{/if}}
+      <article class="markdown-body">{{@html}}</article>
+      {{if images && images.length}}
+      <div class="image-grid">
+        {{each images item index}}
+        <img src="{{item.url_list ? item.url_list[0] : item.url}}" alt="article image {{index + 1}}" />
+        {{/each}}
+      </div>
+      {{/if}}
+    </section>
+
+    <aside class="meta-panel">
+      <section class="author">
+        <img class="avatar" src="{{avater_url}}" alt="头像" />
+        <div>
+          <div class="author-name">{{username}}</div>
+          <div class="author-id">抖音号: {{douyin_id}}</div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div><strong>{{dianzan}}</strong><span>点赞</span></div>
+        <div><strong>{{pinglun}}</strong><span>评论</span></div>
+        <div><strong>{{shouchang}}</strong><span>收藏</span></div>
+        <div><strong>{{share}}</strong><span>分享</span></div>
+      </section>
+
+      <section class="profile-stats">
+        <div>获赞 {{total_favorited}}</div>
+        <div>关注 {{following_count}}</div>
+        <div>粉丝 {{follower_count}}</div>
+      </section>
+
+      <section class="qrcode-box">
+        <div id="qrcode"></div>
+        <div class="qrcode-text">扫码查看原文</div>
+      </section>
+    </aside>
+  </main>
+</div>
+<script>
+  qrcode = new QRCode(document.getElementById('qrcode'), {
+    width: 260,
+    height: 260,
+    colorDark: '{{useDarkTheme}}' === 'true' ? '#e7e7e7' : '#202020',
+    colorLight: '{{useDarkTheme}}' === 'true' ? '#111111' : '#f4f4f4',
+  })
+  qrcode.makeCode('{{share_url}}')
+</script>
+{{/block}}

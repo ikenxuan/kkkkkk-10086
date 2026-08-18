@@ -1,0 +1,55 @@
+{{extend defaultLayout}}
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}template/other/css/handlerError.css" />
+{{/block}}
+{{block 'main'}}
+<main class="error-page">
+  <header>
+    <div class="status">ERROR</div>
+    <h1>{{error.name || 'Error'}}</h1>
+    <p>{{error.message}}</p>
+  </header>
+
+  <section class="meta-grid">
+    <div>
+      <span>平台</span>
+      <strong>{{platform || 'unknown'}}</strong>
+    </div>
+    <div>
+      <span>方法</span>
+      <strong>{{method || error.businessName || 'unknown'}}</strong>
+    </div>
+    <div>
+      <span>时间</span>
+      <strong>{{timestamp}}</strong>
+    </div>
+    <div>
+      <span>版本</span>
+      <strong>{{pluginVersion || 'unknown'}}</strong>
+    </div>
+  </section>
+
+  {{if triggerCommand}}
+  <section class="block">
+    <h2>触发命令</h2>
+    <pre>{{triggerCommand}}</pre>
+  </section>
+  {{/if}}
+
+  {{if error.stack}}
+  <section class="block">
+    <h2>调用栈</h2>
+    <pre>{{error.stack}}</pre>
+  </section>
+  {{/if}}
+
+  {{if logs && logs.length}}
+  <section class="block">
+    <h2>上下文</h2>
+    {{each logs log}}
+    <div class="log-line"><b>{{log.level}}</b><span>{{log.message}}</span></div>
+    {{/each}}
+  </section>
+  {{/if}}
+</main>
+{{/block}}

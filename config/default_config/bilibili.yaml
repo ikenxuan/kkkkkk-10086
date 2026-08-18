@@ -1,0 +1,126 @@
+# B站解析开关，单独开关，受「总开关」影响
+bilibilitool: true
+
+# B站解析开关（新项目配置名，兼容 bilibilitool）
+switch: true
+
+# B站解析可选列表
+bilibiliTip:
+  - 提示信息
+  - 简介
+  - 评论图
+  - 视频
+  - 动态
+
+# 解析时发送的内容（新项目配置名）
+# 可选值：info、comment、video
+sendContent:
+  - info
+  - video
+  - comment
+
+# B站评论数量，设置接口返回的评论数量，范围1~无限条
+bilibilinumcomments: 5
+
+# B站评论数量（新项目配置名，兼容 bilibilinumcomments）
+numcomment: 5
+
+# 评论图是否显示真实评论数量，关闭则显示解析到的评论数量
+realCommentCount: false
+
+# 是否收集评论区的图片
+commentImageCollection: true
+
+# 解析视频是否优先保内容，true为优先保证上传将使用最低分辨率，false则使用自定义画质偏好
+videopriority: false
+
+# 视频画质偏好设置，0 为自动根据大小选择，其他为固定画质
+#  - 0: 自动根据大小选择
+#  - 6: 240P 极速 (仅MP4格式支持)
+#  - 16: 360P 流畅
+#  - 32: 480P 清晰
+#  - 64: 720P 高清 (WEB默认值)
+#  - 74: 720P60 高帧率 (需登录)
+#  - 80: 1080P 高清 (TV/APP默认值，需登录)
+#  - 112: 1080P+ 高码率 (需大会员)
+#  - 116: 1080P60 高帧率 (需大会员)
+#  - 120: 4K 超清 (需大会员且支持4K)
+#  - 127: 8K 超高清 (需大会员且支持8K)
+videoQuality: 0
+
+# 自动画质模式下可接受的最大视频大小（单位：MB），仅在 videoQuality 为 0 时生效
+maxAutoVideoSize: 50
+
+# 谁可以触发扫码登录
+loginPerm: master
+
+# 解析图文动态时，遇到多张图片时的页面布局方式：vertical、waterfall、grid、auto
+imageLayout: auto
+
+# 视频信息返回形式：text、image
+videoInfoMode: image
+
+# 视频信息图片是否展示高频弹幕
+showDanmakuInVideoInfo: true
+
+# 视频解析时简介显示的内容，可选值：'cover'(封面)、'title'(标题)、'author'(作者)、'stats'(视频统计信息)、'desc'(简介)，数组为空则不显示任何内容
+displayContent:
+  - cover
+  - title
+  - author
+  - stats
+  - desc
+
+# 弹幕烧录，需要重新编码视频，耗时较长
+burnDanmaku: false
+
+# 弹幕显示区域：0.25、0.5、0.75、1
+danmakuArea: 0.5
+
+# 弹幕字号：small、medium、large
+danmakuFontSize: medium
+
+# 弹幕透明度（0-100）
+danmakuOpacity: 70
+
+# 竖屏适配：off、standard、force
+verticalMode: off
+
+# 视频编码格式：h264、h265、av1
+videoCodec: h265
+
+# B站推送相关配置
+push: 
+  # 推送开关，开启后需重启；使用「#设置B站推送 + 用户UID」配置推送列表
+  switch: true
+  # 谁可以设置推送，all为所有人，admin为管理员，master为主人，group.owner为群主，group.admin为群管理员。修改后需重启
+  permission: master
+  # 推送定时任务的cron表达式，默认为每十分钟推送一次
+  cron: '*/10 * * * *'
+  # 推送时是否一同解析该动态
+  parsedynamic: false
+  # 开启推送解析后，需要进一步解析的动态类型
+  #  - DYNAMIC_TYPE_AV: 视频动态
+  #  - DYNAMIC_TYPE_DRAW: 图文动态
+  #  - DYNAMIC_TYPE_ARTICLE: 文章动态
+  parseDynamicTypes:
+    - DYNAMIC_TYPE_AV
+    - DYNAMIC_TYPE_DRAW
+    - DYNAMIC_TYPE_ARTICLE
+  # 是否打印日志
+  log: true
+  # 推送时遇到视频动态时解析的画质偏好设置，0 为自动根据「pushMaxAutoVideoSize」大小选择，其他为固定画质，仅「parsedynamic」为 true 时生效
+  #  - 0: 自动根据大小选择
+  #  - 6: 240P 极速 (仅MP4格式支持)
+  #  - 16: 360P 流畅
+  #  - 32: 480P 清晰
+  #  - 64: 720P 高清 (WEB默认值)
+  #  - 74: 720P60 高帧率 (需登录)
+  #  - 80: 1080P 高清 (TV/APP默认值，需登录)
+  #  - 112: 1080P+ 高码率 (需大会员)
+  #  - 116: 1080P60 高帧率 (需大会员)
+  #  - 120: 4K 超清 (需大会员且支持4K)
+  #  - 127: 8K 超高清 (需大会员且支持8K)
+  pushVideoQuality: 0
+  # 推送时遇到视频动态时解析的视频体积上限，自动画质模式下可接受的最大视频大小（单位：MB），仅在 「pushVideoQuality」 为 0 且「parsedynamic」为 true时生效
+  pushMaxAutoVideoSize: 50

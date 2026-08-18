@@ -1,0 +1,10 @@
+@charset "UTF-8";
+@import "./bilifont/font.css";
+@import "./fansmedal-num/font.css";
+@import "./mono/font.css";
+
+@font-face {
+  font-family: "HarmonyOSHans-Regular";
+  src: url("./HarmonyOS_SansSC_Regular.woff2") format("woff2");
+  font-display: swap;
+}
