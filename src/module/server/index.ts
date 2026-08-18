@@ -13,6 +13,7 @@ import Config from '../utils/Config.js'
 import Common from '../utils/Common.js'
 import Version from '../utils/Version.js'
 import { sendNotFound } from './response.js'
+import { renderVideoPreviewPage } from './video-preview.js'
 
 interface VideoPreview {
   filename: string
@@ -44,11 +45,6 @@ interface StartPluginServerOptions extends PluginServerDependencies {
   port?: number
 }
 
-interface VideoPreviewPageData {
-  filename: string
-  videoDataUrl: string
-}
-
 const require = createRequire(import.meta.url)
 let serverInstance: Server | null = null
 let defaultAmagiRoutes: AmagiRouteFactories | undefined
@@ -66,14 +62,6 @@ const defaultDependencies: VideoPreviewDependencies = {
   validateVideoRequest: filename => Common.validateVideoRequest(filename),
   getVideoPreview: filename => Common.getVideoPreview(filename),
   markVideoPreviewRemoved: filename => Common.markVideoPreviewRemoved(filename)
-}
-
-const renderVideoPreviewPage = (data: VideoPreviewPageData): string => {
-  const templatePath = path.join(Version.pluginPath, 'resources', 'template', 'videoView', 'index.html')
-  const template = fs.readFileSync(templatePath, 'utf8')
-  return template
-    .replaceAll('{{filename}}', data.filename)
-    .replaceAll('{{videoDataUrl}}', data.videoDataUrl)
 }
 
 const getSafeFilename = (req: Request): string => {
@@ -134,9 +122,18 @@ const createRenderVideoPage = (dependencies: VideoPreviewDependencies) => (
 
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
+  const preview = dependencies.getVideoPreview(filename)
+  const removeCache = preview?.removeCache ?? Boolean(Config.app.removeCache)
+  const createdAt = preview?.createdAt ?? Date.now()
+  const expireAt = preview?.expireAt ?? (removeCache ? createdAt + 10 * 60 * 1000 : undefined)
   res.send(renderVideoPreviewPage({
     filename,
-    videoDataUrl: `${API_PREFIX}/stream/${encodeURIComponent(filename)}`
+    filePath: preview?.filePath ?? videoPath,
+    videoUrl: `${API_PREFIX}/stream/${encodeURIComponent(filename)}`,
+    removeCache,
+    createdAt,
+    expireAt,
+    eventsUrl: `${API_PREFIX}/video/${encodeURIComponent(filename)}/events`
   }))
 }
 

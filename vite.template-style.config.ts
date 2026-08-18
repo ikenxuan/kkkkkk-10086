@@ -13,6 +13,7 @@ export default defineConfig({
     emptyOutDir: false,
     cssCodeSplit: true,
     minify: false,
+    assetsInlineLimit: 10 * 1024 * 1024,
     rollupOptions: {
       input: resolve(root, 'ktr/template/style.css'),
       output: {

@@ -96,9 +96,9 @@ const rewriteMarkupAssets = (markup: string, assetsDir: string, inlineLimit: num
     `${name}=${quote}${rewriteAsset(asset, assetsDir, inlineLimit)}${quote}`)
 
 /**
- * Render a React component to standalone HTML for Yunzai's raw bridge.
- * React performs all user-data escaping; the bridge only inserts this result
- * and deliberately never treats it as another art-template source.
+ * Render a React component to a standalone document for Yunzai Puppeteer.
+ * React performs all user-data escaping; the finished HTML is handed to the
+ * host as a static file and is never treated as another template source.
  */
 export const renderTemplateDocument = async <Data>(
   options: RenderTemplateDocumentOptions<Data>

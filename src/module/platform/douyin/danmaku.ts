@@ -437,8 +437,7 @@ const normalizePngBuffer = (value: unknown, seen = new WeakSet<object>()): Buffe
 
 const defaultRenderStrip: DouyinStripRenderer = async request => {
   const { default: puppeteer } = await import('../../../runtime/host/puppeteer.js')
-  return await puppeteer.screenshot('kkkkkk-10086/douyin/danmaku-strip', {
-    tplFile: request.htmlPath.replace(/\\/g, '/'),
+  return await puppeteer.screenshotFile('kkkkkk-10086/douyin/danmaku-strip', request.htmlPath, {
     saveId: basename(request.htmlPath, '.html'),
     imgType: 'png',
     omitBackground: true,

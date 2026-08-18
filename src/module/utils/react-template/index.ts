@@ -14,3 +14,7 @@ export {
   resolveReactTemplateRoute,
   type ReactTemplateRoute
 } from './routes.js'
+export {
+  escapeTemplateDelimiters,
+  withStaticHtmlFile
+} from './static.js'
