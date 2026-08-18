@@ -25,6 +25,7 @@ import {
 import type { FileInfo } from '../../../types/platform.js'
 import type { XiaohongshuNoteId } from './getid.js'
 import { getXiaohongshuData } from './api.js'
+import { buildXiaohongshuShareUrl } from './link.js'
 
 /** 笔记卡片中被解析逻辑读取的字段 */
 interface XiaohongshuNoteCard {
@@ -61,7 +62,7 @@ export interface NoteCommentsResponse {
 }
 
 const buildShareUrl = (data: XiaohongshuNoteId): string =>
-  `https://www.xiaohongshu.com/discovery/item/${data.note_id}${data.xsec_token ? `?xsec_token=${data.xsec_token}` : ''}`
+  buildXiaohongshuShareUrl(data.note_id, data.xsec_token)
 
 const getNoteCard = (noteResponse: NoteDetailResponse | undefined): XiaohongshuNoteCard | undefined =>
   noteResponse?.data?.data?.items?.[0]?.note_card
@@ -296,7 +297,11 @@ export class Xiaohongshu extends Base {
         image_url: pickXiaohongshuImageUrl(card.image_list?.[0]) || card.video?.image?.url_default || card.video?.cover?.url_default || '',
         time: formatTime(card.time),
         ip_location: card.ip_location || '',
-        share_url: buildShareUrl(data)
+        share_url: buildShareUrl(data),
+        image_list: card.video
+          ? [card.video.image?.url_default || card.video.cover?.url_default || pickXiaohongshuImageUrl(card.image_list?.[0]) || ''].filter(Boolean)
+          : (card.image_list || []).map(item => pickXiaohongshuImageUrl(item)).filter((item): item is string => Boolean(item)),
+        is_video: Boolean(card.video)
       })
       await this.e!.reply!(noteInfoImg)
     }

@@ -6,6 +6,7 @@ import { Base } from './Base.js'
 import Config from './Config.js'
 import { Networks } from './Networks.js'
 import Version from './Version.js'
+import { XIAOHONGSHU_LINK_PATTERN } from '../platform/xiaohongshu/link.js'
 
 interface VideoPreview {
   filename: string
@@ -21,7 +22,7 @@ const supportedLinkPatterns = [
   /https:\/\/aweme\.snssdk\.com\/aweme\/v1\/play/i,
   /(bilibili\.com|b23\.tv|t\.bilibili\.com|bili2233\.cn|\bBV[1-9a-zA-Z]{10}\b|\bav\d+\b)/i,
   /(快手.*快手|v\.kuaishou\.com|kuaishou\.com)/,
-  /(xiaohongshu\.com|xhslink\.com)/i
+  XIAOHONGSHU_LINK_PATTERN
 ]
 
 export interface CoverThemeStats {

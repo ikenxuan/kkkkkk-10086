@@ -12,6 +12,7 @@ test/
 .eslintrc
 /lib/
 /.generated/
+/.artifacts/
 /.ktr/
 .claude/
 graphify-out/

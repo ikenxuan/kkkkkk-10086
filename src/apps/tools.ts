@@ -14,6 +14,7 @@ import {
   type ParseTarget
 } from '../module/utils/ParseCoordinator.js'
 import { createEmojiParseReactionPort } from '../module/utils/ParseReactionAdapter.js'
+import { XIAOHONGSHU_LINK_PATTERN } from '../module/platform/xiaohongshu/link.js'
 import type { CommandEvent, MessageEvent } from '../types/message.js'
 import type { Platform } from '../types/platform.js'
 
@@ -80,7 +81,7 @@ const PLATFORM_CONFIG: PlatformConfig[] = [
     enabled: getConfigValue(Config.kuaishou?.switch, Config.kuaishou?.kuaishoutool)
   },
   {
-    reg: /(xiaohongshu\.com|xhslink\.com)/i,
+    reg: XIAOHONGSHU_LINK_PATTERN,
     handler: 'xiaohongshu',
     enabled: Config.xiaohongshu?.switch
   }

@@ -15,26 +15,42 @@ const safeDecode = (value: string): string => {
   }
 }
 
-const resolveEffectiveLink = (link: string): string => {
-  const normalized = safeDecode(link)
+const normalizeRedirectPath = (value: string): string =>
+  /^(?:[a-z][a-z\d+.-]*:|\/)/i.test(value) ? value : safeDecode(value)
 
+const findRedirectPath = (link: string): string | undefined => {
   try {
-    const url = new URL(normalized)
+    const url = new URL(link)
     const redirectPath = url.searchParams.get('redirectPath')
-    if (url.pathname.startsWith('/404') && redirectPath) return safeDecode(redirectPath)
-    return normalized
+    if (redirectPath) return normalizeRedirectPath(redirectPath)
   } catch {
-    const match = /[?&]redirectPath=([^&#]+)/.exec(normalized)
-    return match?.[1] ? safeDecode(match[1]) : normalized
+    // Fall through to the regex fallback for incomplete URLs.
   }
+
+  const redirectPath = /[?&]redirectPath=([^&#]+)/.exec(link)?.[1]
+  return redirectPath ? normalizeRedirectPath(redirectPath) : undefined
+}
+
+export const resolveEffectiveLink = (link: string): string => {
+  const redirectPath = findRedirectPath(link)
+  if (redirectPath) return redirectPath
+
+  const normalizedLink = safeDecode(link)
+  const normalizedRedirectPath = normalizedLink === link ? undefined : findRedirectPath(normalizedLink)
+  if (normalizedRedirectPath) return normalizedRedirectPath
+  return normalizedLink
 }
 
 const pickToken = (link: string): string | undefined => {
   try {
     const url = new URL(link)
-    return url.searchParams.get('xsec_token') || url.searchParams.get('XSEC_TOKEN') || undefined
+    const queryToken = url.searchParams.get('xsec_token') || url.searchParams.get('XSEC_TOKEN')
+    if (queryToken) return queryToken
+    const hashToken = /(?:^|[?&#])(?:xsec_token|XSEC_TOKEN)=([^&#]+)/.exec(url.hash)?.[1]
+    return hashToken ? safeDecode(hashToken) : undefined
   } catch {
-    return /(?:^|[?&#])(?:xsec_token|XSEC_TOKEN)=([^&#]+)/.exec(link)?.[1]
+    const token = /(?:^|[?&#])(?:xsec_token|XSEC_TOKEN)=([^&#]+)/.exec(link)?.[1]
+    return token ? safeDecode(token) : undefined
   }
 }
 
@@ -53,8 +69,13 @@ export const getXiaohongshuID = async (url: string, log = true): Promise<Xiaohon
 
   const longLink = response?.request?.res?.responseUrl || url
   const effectiveLink = resolveEffectiveLink(longLink)
-  const token = pickToken(effectiveLink) || pickToken(longLink)
-  const noteId = /xiaohongshu\.com\/(?:discovery\/item|explore)\/([0-9a-zA-Z]+)/.exec(effectiveLink)?.[1]
+  const normalizedLink = safeDecode(longLink)
+  const normalizedInput = safeDecode(url)
+  const token = pickToken(effectiveLink) || pickToken(normalizedLink) || pickToken(normalizedInput)
+  const noteId = /xiaohongshu\.com\/(?:discovery\/item|explore)\/([0-9a-zA-Z]+)/.exec(effectiveLink)?.[1] ||
+    /[?&]target_note_id=([0-9a-zA-Z]+)/.exec(effectiveLink)?.[1] ||
+    /[?&]target_note_id=([0-9a-zA-Z]+)/.exec(normalizedLink)?.[1] ||
+    /xiaohongshu\.com\/(?:discovery\/item|explore)\/([0-9a-zA-Z]+)/.exec(normalizedInput)?.[1]
 
   if (!noteId) throw new Error('无法从链接中提取小红书笔记ID')
 
