@@ -14,10 +14,10 @@
 
 因此，**当前不能在本机完整运行 GitHub Actions job**。不过，可以执行两层有效验证：
 
-1. 用仓库契约测试解析所有关键 workflow，并检查 runner、Node、pnpm、安装命令、验证命令和最小权限；
+1. 检查关键 workflow 的 runner、Node、pnpm、安装命令、验证命令和最小权限；
 2. 在包含当前未提交改动的临时副本中，执行与 CI 相同的 pnpm 命令层。
 
-本轮已在隔离临时副本中实际执行 `pnpm install --frozen-lockfile` 和 `pnpm check`，结果通过：63 个 Vitest 文件、531 个测试、源码基线、完整 TypeScript/Vite 构建及 10 个分发契约均成功。首次干净安装还发现测试曾从云崽父级目录隐式解析 `art-template`；现在已将其声明为插件开发依赖并锁定，干净安装不再依赖父目录环境。
+`tests/**` 只保留在本地并由 `.gitignore` 排除，不上传源码分支。因此远端 `pnpm check` 只执行 lint、源码类型检查、模板类型检查和完整 TypeScript/Vite 构建；本地仍可按需执行 Vitest。首次干净安装还发现本地测试曾从云崽父级目录隐式解析 `art-template`；现在已将其声明为插件开发依赖并锁定，本地测试不再依赖父目录环境。
 
 本地命令层通过不代表整个 GitHub Actions workflow 已通过；第三方 `uses:` Action、GitHub 事件上下文、令牌权限、Issue API、Release API 和分支推送仍需在 GitHub 测试仓库或真实 workflow 中验证。
 
@@ -25,25 +25,25 @@
 
 | Workflow | 本地可验证 | 仍需 GitHub 验证 |
 | --- | --- | --- |
-| `ci.yml` | YAML/契约；Windows 上执行 `pnpm install --frozen-lockfile` 与 `pnpm check` | `ubuntu-latest` runner 的真实行为、`actions/checkout`、pnpm/Node setup Action、缓存 |
-| `build-push-preview.yml` | YAML/契约；临时副本执行 `pnpm verify`；发布文件准备脚本可单独复现 | Ubuntu runner、`GITHUB_TOKEN`、向 `preview` 分支推送、GitHub 事件字段 |
-| `release-and-push-build.yml` | YAML/契约；临时副本执行 `pnpm verify`；发布文件准备脚本可单独复现 | release-please 输出、Release/PR/Issue API、条件步骤、向 `release` 分支推送 |
-| `issue_geetings.yml` | YAML/契约；`issues: write` 最小权限 | `issues:labeled` 事件、评论和 reaction API、第三方 Action |
-| `issue_welcome.yml` | YAML/契约；`issues: write` 最小权限 | `issues:opened` 事件、欢迎评论、第三方 Action |
-| `issue_similarity.yml` | YAML/契约；`issues: write` 最小权限 | Issue 搜索/评论 API、相似度 Action 的运行结果 |
-| `stale.yml` | YAML/契约；Issue/PR 写权限 | 定时事件、Issue/PR API、第三方 Action |
+| `ci.yml` | YAML 检查；Windows 上执行 `pnpm install --frozen-lockfile` 与 `pnpm check` | `ubuntu-latest` runner 的真实行为、`actions/checkout`、pnpm/Node setup Action、缓存 |
+| `build-push-preview.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | Ubuntu runner、`GITHUB_TOKEN`、向 `preview` 分支推送、GitHub 事件字段 |
+| `release-and-push-build.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | release-please 输出、Release/PR/Issue API、条件步骤、向 `release` 分支推送 |
+| `issue_geetings.yml` | YAML 检查；`issues: write` 最小权限 | `issues:labeled` 事件、评论和 reaction API、第三方 Action |
+| `issue_welcome.yml` | YAML 检查；`issues: write` 最小权限 | `issues:opened` 事件、欢迎评论、第三方 Action |
+| `issue_similarity.yml` | YAML 检查；`issues: write` 最小权限 | Issue 搜索/评论 API、相似度 Action 的运行结果 |
+| `stale.yml` | YAML 检查；Issue/PR 写权限 | 定时事件、Issue/PR API、第三方 Action |
 
 ## 安全的本地验证命令
 
-### 1. Workflow 静态契约
+### 1. Workflow 静态检查
 
-在仓库根目录执行：
+若本机保留了被忽略的 `tests/**`，可在仓库根目录执行：
 
 ```powershell
 node --test tests/contracts/workflow-alignment.test.mjs
 ```
 
-该测试会通过 `yaml` 解析关键 workflow，并验证：
+该本地测试会通过 `yaml` 解析关键 workflow，并验证：
 
 - CI 同时声明 `ubuntu-latest` 与 `windows-latest`；
 - CI 使用 Node 22、pnpm 9.15.9、冻结锁文件安装和 `pnpm check`；

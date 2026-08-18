@@ -1,12 +1,13 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseTemplateToolCliArguments } from '../src/module/tooling/react-template/cli-options.ts'
+
+import { parseTemplateToolCliArguments } from './cli-options.ts'
 import {
   checkTemplateRegistry,
   syncTemplateRegistry
-} from '../src/module/tooling/react-template/registry-generator.ts'
+} from './registry-generator.ts'
 
-const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..')
 const { root, check } = parseTemplateToolCliArguments(
   process.argv.slice(2),
   repositoryRoot,
