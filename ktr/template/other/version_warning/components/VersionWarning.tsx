@@ -375,7 +375,7 @@ export const VersionWarning: React.FC<PosterProps<VersionWarningData>> = (props)
               </span>
             </div>
             <GlowImage
-              src="/image/kkkkkk-logo.svg"
+              src="/image/logo.png"
               alt="kkkkkk-10086"
               imgClassName="h-22 w-auto"
               glowStrength={1}

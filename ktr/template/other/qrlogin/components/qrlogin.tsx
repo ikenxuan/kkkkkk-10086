@@ -263,7 +263,7 @@ export const QrLogin: React.FC<PosterProps<QrLoginData>> = React.memo((props) =>
               </span>
             </div>
             <GlowImage glowStrength={1} blurRadius={25}>
-              <img src="/image/kkkkkk-logo.svg" alt="kkkkkk-10086" className="w-auto h-36" />
+              <img src="/image/logo.png" alt="kkkkkk-10086" className="w-auto h-36" />
             </GlowImage>
           </div>
         </div>

@@ -260,7 +260,7 @@ export const LivePhotoTip: React.FC<PosterProps<LivePhotoTipData>> = React.memo(
               </span>
             </div>
             <GlowImage glowStrength={1} blurRadius={25}>
-              <img src="/image/kkkkkk-logo.svg" alt="kkkkkk-10086" className="w-auto h-20" />
+              <img src="/image/logo.png" alt="kkkkkk-10086" className="w-auto h-20" />
             </GlowImage>
           </div>
         </div>
