@@ -653,14 +653,59 @@ const defaultUploadFileDependencies: UploadFileDependencies = {
 
 const toMessageTarget = (value: unknown): MessageTarget | undefined => isRecord(value) ? value as MessageTarget : undefined
 
-const getMessageId = (value: unknown): string | number | undefined => {
-  if (!isRecord(value)) return undefined
-  const messageId = value.message_id
-  return typeof messageId === 'string' || typeof messageId === 'number' ? messageId : undefined
+/**
+ * 判断宿主的发送返回是不是「确实发出去了」。
+ *
+ * 不能用 `Boolean(message_id)`：QQBot 适配器（wind-trace/Yunzai-QQBot-Plugin 的
+ * index.js:807 `async sendMsg`）返回的是 `{ message_id: [], data: [], error: [] }` ——
+ * message_id 是**数组**而不是标量，而且只在 `if (ret.id)` 成立时才 push，也就是说
+ * 发送成功了 message_id 仍可能是空数组；真正每次成功都会追加的是 data，失败则进 error。
+ *
+ * 旧判据只认 string | number 标量，于是视频明明已经通过直链发出去了却被判成失败，
+ * downloadVideo 接着又下载、又上传一遍，用户那边就收到了两条一样的视频。
+ *
+ * 现在的判据：
+ * - 抛异常 -> 调用方 catch 里返回 false
+ * - 标量 message_id -> 沿用旧实现的真假判断（0 / '' 这类占位值仍算没发出去）
+ * - message_id / data 数组非空 -> 已发送
+ * - 只有 error 而没有任何已发送记录 -> 适配器四次重试都失败了，真没发出去
+ * - 返回了对象但什么都不报告 -> 当作已发送（宁可少回退一次，也不能再发一遍）
+ * - 压根没有返回值（例如 e.reply 不存在，可选调用短路）-> 没发出去，与旧实现一致
+ */
+export const wasMessageSent = (status: unknown): boolean => {
+  if (!isRecord(status)) return false
+
+  // 标量 message_id 就是适配器给的权威答复，真假判断沿用旧实现：
+  // 0 / '' 这类占位值仍然算没发出去，不能因为「有这个字段」就判成成功。
+  const messageIds = status.message_id
+  if (typeof messageIds === 'string' || typeof messageIds === 'number') return Boolean(messageIds)
+  if (Array.isArray(messageIds) && messageIds.length > 0) return true
+
+  const sent = status.data
+  if (Array.isArray(sent) && sent.length > 0) return true
+
+  // error 存在说明这是会汇报失败的适配器（QQBot 就是），且上面两项都空 -> 确实没发出去
+  const errors = status.error
+  if (Array.isArray(errors)) return false
+  if (errors !== undefined && errors !== null) return false
+
+  return true
 }
 
-/** 读取宿主返回的原始 message_id，缺少返回结果时与旧实现一样抛出 */
-const readMessageId = (value: unknown): string => (value as { message_id: string }).message_id
+/**
+ * 读取宿主返回的原始 message_id，缺少返回结果时与旧实现一样抛出。
+ *
+ * 唯一的改动是拆数组：QQBot（wind-trace/Yunzai-QQBot-Plugin index.js:807）的 message_id
+ * 是数组，旧实现直接当标量塞给 segment.reply，拼出来的引用是坏的。
+ * 取到的值原样返回、不做 String() 转换——宿主自己也是原样传的
+ * （lib/plugins/loader.js:465），OneBot 的 message_id 是数字。
+ */
+const readMessageId = (value: unknown): string => {
+  const messageId = (value as { message_id: string | string[] }).message_id
+  // 空数组取到的是 undefined，跟旧实现里 message_id 字段缺失时一样，仍按原样交给
+  // segment.reply —— 宿主对拿不到 id 的引用段本来就是这个行为，这里不额外改动
+  return (Array.isArray(messageId) ? messageId[0] : messageId) as string
+}
 
 const sendVideoUrl = async (
   e: BaseEvent,
@@ -678,7 +723,7 @@ const sendVideoUrl = async (
     const status = isActiveMessage
       ? await target?.sendMsg?.(videoMessage || videoUrl)
       : await e.reply?.(videoMessage || videoUrl)
-    return Boolean(getMessageId(status))
+    return wasMessageSent(status)
   } catch (error) {
     logger.warn(`视频URL发送失败，回退本地下载上传: ${error instanceof Error ? error.message : String(error)}`)
     return false
@@ -728,7 +773,10 @@ export const uploadFile = async (
 
     logger.debug(`压缩完成: ${file.totalBytes.toFixed(1)}MB → ${newFileSize.toFixed(1)}MB`)
 
-    // 发送压缩结果消息
+    // 发送压缩结果消息，引用的是上面那条压缩提示。
+    // id 原样传给 segment.reply，不能 String() 包一层：宿主自己就是原样传的
+    // （lib/plugins/loader.js:465 `segment.reply(e.message_id)`），OneBot 的 message_id
+    // 是数字，包成字符串会拼出对不上的引用。
     const resultMsg = [`压缩完成: ${newFileSize.toFixed(1)}MB，耗时: ${compressTime}秒`, segment.reply(readMessageId(msg1))]
     if (isActiveMessage && options?.activeOption) {
       await Bot?.[options.activeOption.uin]?.pickGroup(options.activeOption.group_id)?.sendMsg(resultMsg)
@@ -783,7 +831,7 @@ export const uploadFile = async (
       const status = isActiveMessage
         ? await target?.sendMsg?.(segment.video(File) || videoUrl)
         : await e.reply!(segment.video(File) || videoUrl)
-      return Boolean(getMessageId(status))
+      return wasMessageSent(status)
     }
   } catch (error) {
     if (options && options.active === false) {
