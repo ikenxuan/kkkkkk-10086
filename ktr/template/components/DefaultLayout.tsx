@@ -36,10 +36,21 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
   return (
     <div
       className={cn(
-        // 圆角与裁剪从旧引擎外壳（#container 规则）迁移到模板根元素：观感不变，单个模板可用 className 覆盖。
-        // relative 同样从旧引擎外壳（transform 语义）迁来：根元素是绝对定位包含块，
-        // 模板里 inset-0 的氛围层锚定在卡片矩形上并被圆角裁剪，而不是锚到视口逃逸出去。
-        'relative w-360 shrink-0 overflow-hidden rounded-[5rem] bg-background bg-clip-padding text-foreground font-[HarmonyOSHans-Regular]',
+        /*
+         * 卡片是直角的，不带 rounded-[5rem]：宿主 TRSS-Yunzai 截的是 #container
+         * （renderers/puppeteer/lib/puppeteer.js:199），并且在 multiPage 为真时把编码强制改成 jpeg
+         * （同文件 212-215 行，我们传的 imgType: 'png' 直接被覆盖）。jpeg 没有 alpha，圆角外那圈
+         * 透明像素会被合成成纯白 —— 也就是用户看到的成图四角白色三角。
+         *
+         * 补一层同色不透明底能把白色去掉，但四角仍然是三角形：氛围辉光层被 overflow-hidden + 圆角
+         * 裁在圆弧内，角上只剩纯底色，跟紧邻的卡片内部对不上。所以在这个宿主上圆角根本渲染不出来，
+         * 只会渲染成四个色块。直角之后角上就是卡片内部本身（辉光照常铺过去），完全没有分界。
+         * 参考 gscore-adapter 的做法：不依赖透明度，整幅图都是不透明的，直接交给 jpeg。
+         *
+         * overflow-hidden 与 relative 仍从旧引擎外壳（#container 规则 / transform 语义）迁来：
+         * 根元素是绝对定位包含块，模板里 inset-0 的氛围层锚定在卡片矩形上并被裁剪，而不是锚到视口逃逸出去。
+         */
+        'relative w-360 shrink-0 overflow-hidden bg-background bg-clip-padding text-foreground font-[HarmonyOSHans-Regular]',
         className
       )}
       style={{
