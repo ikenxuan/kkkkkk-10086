@@ -1,10 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-
 import React from 'react'
 import { renderToString } from 'react-dom/server'
-
-import { PluginPath } from '../../dir.js'
 
 export interface VideoPreviewRenderOptions {
   filename: string
@@ -33,14 +28,136 @@ interface VideoPreviewState {
   removed: boolean
 }
 
-let templateCssCache: string | undefined
-
-const loadTemplateCss = (): string => {
-  if (templateCssCache !== undefined) return templateCssCache
-  const cssPath = join(PluginPath, 'lib', 'template-style.css')
-  templateCssCache = existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : ''
-  return templateCssCache
+// This page is served independently from the React template bundle. Keep its
+// small layout stylesheet inline so the SSR endpoint does not depend on a
+// generated Tailwind file that is only available to template rendering.
+const PREVIEW_LAYOUT_CSS = `
+.preview-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--preview-bg);
+  color: var(--preview-fg);
 }
+.preview-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.preview-backdrop-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(24px) saturate(150%) contrast(125%);
+  transform: scale(1.1);
+}
+.preview-noise-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+}
+.preview-noise-svg {
+  width: 100%;
+  height: 100%;
+}
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 35%);
+}
+.preview-content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  padding: 64px 16px;
+}
+.preview-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.preview-heading h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.preview-heading p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.preview-video-wrap {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  margin-top: 40px;
+}
+.preview-video {
+  display: block;
+  width: 100%;
+  max-height: 86vh;
+  border-radius: 16px;
+  background: #000;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 55%);
+}
+.preview-info {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 48px;
+}
+.preview-countdown-label {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+.preview-countdown {
+  margin-top: 8px;
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 600;
+}
+.preview-download {
+  display: inline-flex;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 0 16px;
+  border: 1px solid rgb(255 255 255 / 50%);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+}
+.preview-download:hover {
+  background: rgb(255 255 255 / 12%);
+}
+@media (min-width: 640px) {
+  .preview-info {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .preview-download {
+    align-self: auto;
+  }
+}
+@media (max-width: 720px) {
+  .preview-content {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
+`
 
 const formatCountdown = (milliseconds: number | null): string => {
   if (milliseconds === null) return '--:--'
@@ -55,9 +172,9 @@ const formatCountdown = (milliseconds: number | null): string => {
 }
 
 const PreviewVideoCard: React.FC<{ videoUrl: string }> = ({ videoUrl }) => (
-  <div className='relative z-10 mt-10 w-full'>
+  <div className='preview-video-wrap'>
     <video
-      className='w-full max-h-[86vh] rounded-2xl bg-black shadow-2xl'
+      className='preview-video'
       controls
       preload='metadata'
       autoPlay
@@ -71,17 +188,17 @@ const PreviewVideoCard: React.FC<{ videoUrl: string }> = ({ videoUrl }) => (
 
 const PreviewInfoCard: React.FC<{ state: VideoPreviewState }> = ({ state }) => (
   <div
-    className='relative z-10 mt-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'
+    className='preview-info'
     style={{ mixBlendMode: 'difference', color: '#ffffff' }}
   >
     <div>
-      <div className='text-xs uppercase tracking-[0.2em]'>删除倒计时</div>
-      <div className='mt-2 text-5xl font-semibold' id='preview-countdown'>
+      <div className='preview-countdown-label'>删除倒计时</div>
+      <div className='preview-countdown' id='preview-countdown'>
         {state.removeCache ? formatCountdown(state.remainingMs) : '不删除'}
       </div>
     </div>
     <a
-      className='inline-flex h-10 items-center justify-center rounded-full border border-white/50 px-4 text-sm font-medium text-white backdrop-blur'
+      className='preview-download'
       href={state.videoUrl}
       download
     >
@@ -91,10 +208,10 @@ const PreviewInfoCard: React.FC<{ state: VideoPreviewState }> = ({ state }) => (
 )
 
 const PreviewLayout: React.FC<{ state: VideoPreviewState }> = ({ state }) => (
-  <div className='relative min-h-screen bg-(--preview-bg) text-(--preview-fg)'>
-    <div className='absolute inset-0 overflow-hidden'>
+  <div className='preview-page'>
+    <div className='preview-backdrop'>
       <video
-        className='h-full w-full object-cover blur-3xl scale-110 saturate-150 contrast-125'
+        className='preview-backdrop-video'
         autoPlay
         loop
         muted
@@ -102,8 +219,8 @@ const PreviewLayout: React.FC<{ state: VideoPreviewState }> = ({ state }) => (
         preload='metadata'
         src={state.videoUrl}
       />
-      <div className='absolute inset-0 pointer-events-none opacity-[0.35] mix-blend-overlay dark:mix-blend-soft-light'>
-        <svg className='h-full w-full' xmlns='http://www.w3.org/2000/svg'>
+      <div className='preview-noise-layer'>
+        <svg className='preview-noise-svg' xmlns='http://www.w3.org/2000/svg'>
           <defs>
             <filter id='previewNoise'>
               <feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch' />
@@ -131,12 +248,12 @@ const PreviewLayout: React.FC<{ state: VideoPreviewState }> = ({ state }) => (
           <rect width='100%' height='100%' filter='url(#previewNoise)' mask='url(#previewNoiseMask)' fill='white' />
         </svg>
       </div>
-      <div className='absolute inset-0 bg-black/35' />
+      <div className='preview-overlay' />
     </div>
-    <div className='relative z-10 w-full px-4 py-16 sm:px-6'>
-      <div className='flex flex-col gap-2' style={{ mixBlendMode: 'difference', color: '#ffffff' }}>
-        <h1 className='text-2xl font-semibold'>临时预览</h1>
-        <p className='text-sm'>查看视频内容与删除时间</p>
+    <div className='preview-content'>
+      <div className='preview-heading' style={{ mixBlendMode: 'difference', color: '#ffffff' }}>
+        <h1>临时预览</h1>
+        <p>查看视频内容与删除时间</p>
       </div>
       <PreviewVideoCard videoUrl={state.videoUrl} />
       <PreviewInfoCard state={state} />
@@ -170,7 +287,7 @@ export const renderVideoPreviewPage = (options: VideoPreviewRenderOptions): stri
   }
   const appHtml = renderToString(<PreviewLayout state={state} />)
   const serializedState = serializeState(state)
-  const cssContent = options.css ?? loadTemplateCss()
+  const cssContent = [PREVIEW_LAYOUT_CSS, options.css].filter(Boolean).join('\n')
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">

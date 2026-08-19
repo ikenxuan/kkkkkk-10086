@@ -1,5 +1,8 @@
 import type { MessageEvent } from '../../../types/message.js'
 import type { Platform } from '../../../types/platform.js'
+import type { ErrorAdapterInfo } from './adapter.js'
+import type { CapturedLogEntry } from './log-context.js'
+import type { BuildMetadata } from '../../tooling/build-metadata.js'
 
 export interface ErrorHandlerPlugin {
   awaitContext?: (...args: unknown[]) => unknown
@@ -9,7 +12,7 @@ export interface ErrorHandlerOptions {
   businessName: string
   platform?: Platform
   plugin?: ErrorHandlerPlugin
-  customErrorHandler?: (error: unknown, logs: unknown[]) => unknown
+  customErrorHandler?: (error: unknown, logs: CapturedLogEntry[]) => unknown
   emojiReaction?: boolean
   rethrowAfterHandle?: boolean
   [key: string]: unknown
@@ -18,8 +21,10 @@ export interface ErrorHandlerOptions {
 export interface ErrorHandlerContext {
   error: unknown
   options: ErrorHandlerOptions
-  logs: unknown[]
+  logs: CapturedLogEntry[]
   event?: MessageEvent
+  buildMetadata?: BuildMetadata | null
+  adapterInfo?: ErrorAdapterInfo
 }
 
 export type ErrorStrategyResult = 'handled' | 'continue' | undefined

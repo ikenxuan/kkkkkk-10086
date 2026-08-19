@@ -1,12 +1,12 @@
 import { isAbsolute, relative, sep } from 'node:path'
 
 import { importHost } from './import-host.js'
+import { convertScreenshotToPng, withPngScreenshot } from './screenshot-options.js'
 
 const STATIC_HTML_FILE_KEY = '__kkkStaticHtmlFile'
 
 export interface ScreenshotResult {
-  type: string
-  data: string
+  [key: string]: unknown
 }
 
 export interface HostPuppeteer {
@@ -70,18 +70,28 @@ const withStaticHtml = (
   htmlPath: string,
   data: Record<string, unknown>
 ): Record<string, unknown> => ({
-  ...data,
+  ...withPngScreenshot(data),
   tplFile: htmlPath,
   [STATIC_HTML_FILE_KEY]: htmlPath
 })
 
 const puppeteer: HostPuppeteer = {
-  screenshot: async (name, data) => await hostPuppeteer.screenshot(name, data),
-  screenshots: async (name, data) => await hostPuppeteer.screenshots(name, data),
-  screenshotFile: async (name, htmlPath, data) =>
-    await hostPuppeteer.screenshot(name, withStaticHtml(htmlPath, data)),
-  screenshotsFile: async (name, htmlPath, data) =>
-    await hostPuppeteer.screenshots(name, withStaticHtml(htmlPath, data))
+  screenshot: async (name, data) => {
+    const image = await hostPuppeteer.screenshot(name, withPngScreenshot(data))
+    return image ? await convertScreenshotToPng(image) : image
+  },
+  screenshots: async (name, data) => {
+    const images = await hostPuppeteer.screenshots(name, withPngScreenshot(data))
+    return images ? await Promise.all(images.map(convertScreenshotToPng)) : images
+  },
+  screenshotFile: async (name, htmlPath, data) => {
+    const image = await hostPuppeteer.screenshot(name, withStaticHtml(htmlPath, data))
+    return image ? await convertScreenshotToPng(image) : image
+  },
+  screenshotsFile: async (name, htmlPath, data) => {
+    const images = await hostPuppeteer.screenshots(name, withStaticHtml(htmlPath, data))
+    return images ? await Promise.all(images.map(convertScreenshotToPng)) : images
+  }
 }
 
 export default puppeteer

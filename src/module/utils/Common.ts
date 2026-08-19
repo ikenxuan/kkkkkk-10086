@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path, { join, sep } from 'node:path'
 import { scan } from '@ikenxuan/qrcode'
-import type { MessageElement, MessageEvent } from '../../types/message.js'
+import type { MessageContent, MessageElement, MessageEvent, MessageMedia, MessageSegment } from '../../types/message.js'
 import { Base } from './Base.js'
 import Config from './Config.js'
 import { Networks } from './Networks.js'
@@ -250,7 +250,7 @@ class Tools {
     return resolvedPath
   }
 
-  async tryScanImageQrCode (image: string, source = '消息图片'): Promise<string | null> {
+  async tryScanImageQrCode (image: MessageMedia, source = '消息图片'): Promise<string | null> {
     if (!image) return null
     try {
       logger.debug(`检测到${source}，尝试识别二维码`)
@@ -268,8 +268,10 @@ class Tools {
     return null
   }
 
-  async getImageBuffer (image: string): Promise<Buffer | null> {
+  async getImageBuffer (image: MessageMedia): Promise<Buffer | null> {
     if (!image) return null
+    if (Buffer.isBuffer(image)) return image
+    if (typeof image !== 'string') return null
     if (image.startsWith('base64://')) return Buffer.from(image.replace(/^base64:\/\//, ''), 'base64')
     if (/^data:image\/\w+;base64,/.test(image)) {
       return Buffer.from(image.replace(/^data:image\/\w+;base64,/, ''), 'base64')
@@ -282,8 +284,14 @@ class Tools {
     return null
   }
 
-  async extractMessageText (messages: MessageElement[] | null | undefined, source = '消息'): Promise<string> {
-    for (const msg of messages || []) {
+  async extractMessageText (messages: MessageContent | null | undefined, source = '消息'): Promise<string> {
+    for (const msg of normalizeMessageSegments(messages)) {
+      if (typeof msg === 'string') {
+        const markdownText = await this.extractMarkdownText(msg, source)
+        if (markdownText) return markdownText
+        if (msg) return msg
+        continue
+      }
       if (msg.type === 'text' || msg.type === 'json') {
         const data = isRecord(msg.data) ? msg.data : undefined
         const text = msg.text || (typeof msg.data === 'string' ? msg.data : '') || data?.text || data?.data || ''
@@ -294,9 +302,10 @@ class Tools {
       }
       if (msg.type === 'image') {
         const data = isRecord(msg.data) ? msg.data : undefined
-        const image = msg.file || msg.url || stringValue(data?.file) || stringValue(data?.url)
-        if (image) {
-          const qrResult = await this.tryScanImageQrCode(image, source)
+        const images = [msg.file, msg.url, data?.file, data?.url]
+        for (const image of images) {
+          if (!image) continue
+          const qrResult = await this.tryScanImageQrCode(image as MessageMedia, source)
           if (qrResult) return qrResult
         }
       }
@@ -329,7 +338,7 @@ class Tools {
   async getReplyMessage (event: MessageEvent): Promise<string> {
     const legacyEvent = event as MessageEvent & Record<string, unknown>
     const botAdapter = new Base(legacyEvent).botadapter
-    const messages = Array.isArray(event.message) ? event.message : []
+    const messages = normalizeMessageSegments(event.message)
     const currentMessageText = await this.extractMessageText(messages, '当前消息')
     if (currentMessageText && supportedLinkPatterns.some(pattern => pattern.test(currentMessageText))) return currentMessageText
 
@@ -337,7 +346,11 @@ class Tools {
       const replyMsg = await event.getReply()
       if (replyMsg) {
         const sourceArray = Array.isArray(replyMsg) ? replyMsg : [replyMsg]
-        const replyElements = sourceArray.flatMap(item => isRecord(item) && Array.isArray(item.message) ? item.message as MessageElement[] : [])
+        const replyElements = sourceArray.flatMap(item =>
+          isRecord(item) && 'message' in item
+            ? normalizeMessageSegments(item.message)
+            : normalizeMessageSegments(item)
+        )
         const replyText = await this.extractMessageText(replyElements, '引用消息')
         if (replyText) event.msg = replyText
       }
@@ -349,11 +362,11 @@ class Tools {
       if (replyText) event.msg = replyText
     }
     if (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11'].includes(botAdapter)) {
-      const replyMsg = messages.find(msg => msg.type === 'reply')
+      const replyMsg = messages.find((msg): msg is MessageElement => typeof msg !== 'string' && msg.type === 'reply')
       if (replyMsg && event.bot?.sendApi) {
         const replyData = await event.bot.sendApi('get_msg', { message_id: replyMsg.id })
         const data = isRecord(replyData) && isRecord(replyData.data) ? replyData.data.message : undefined
-        const replyText = await this.extractMessageText(Array.isArray(data) ? data as MessageElement[] : [], '引用消息')
+        const replyText = await this.extractMessageText(normalizeMessageSegments(data), '引用消息')
         if (replyText) event.msg = replyText
       }
     }
@@ -469,8 +482,9 @@ function isRecord (value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function stringValue (value: unknown): string {
-  return typeof value === 'string' ? value : ''
+function normalizeMessageSegments (value: unknown): MessageSegment[] {
+  const values = Array.isArray(value) ? value : [value]
+  return values.filter((item): item is MessageSegment => typeof item === 'string' || isRecord(item))
 }
 
 export default new Tools()

@@ -1,5 +1,6 @@
 import { Render } from '../Render.js'
 import Version from '../Version.js'
+import { formatBuildTime } from '../../tooling/build-metadata.js'
 import type { ErrorHandlerContext } from './strategy.js'
 
 export interface NormalizedError {
@@ -39,7 +40,7 @@ export const renderErrorReport = async (ctx: ErrorHandlerContext): Promise<unkno
       type: 'business_error',
       platform: ctx.options.platform || 'unknown',
       method: ctx.options.businessName,
-      timestamp: new Date().toLocaleString('zh-CN', { hour12: false }),
+      timestamp: new Date().toISOString(),
       triggerCommand: ctx.event?.msg || '',
       frameworkVersion: Version.BotVersion,
       pluginVersion: Version.version,
@@ -50,9 +51,13 @@ export const renderErrorReport = async (ctx: ErrorHandlerContext): Promise<unkno
         businessName: ctx.options.businessName
       },
       logs: [
+        ...ctx.logs.slice().reverse(),
         { level: 'INFO', message: `群: ${groupId}`, raw: `群: ${groupId}` },
         { level: 'INFO', message: `用户: ${userId}`, raw: `用户: ${userId}` }
-      ]
+      ],
+      buildTime: ctx.buildMetadata?.buildTime ? formatBuildTime(ctx.buildMetadata.buildTime) : undefined,
+      commitHash: ctx.buildMetadata?.shortCommitHash || ctx.buildMetadata?.commitHash,
+      adapterInfo: ctx.adapterInfo
     })
   } catch (renderError: unknown) {
     logger.warn(`[ErrorHandler] 错误图片渲染失败，使用文本回退: ${normalizeError(renderError).message}`)

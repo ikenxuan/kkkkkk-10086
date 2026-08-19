@@ -1,26 +1,41 @@
+import type { Readable } from 'node:stream'
+
 export type MessageId = string | number
 export type EmojiId = string | number
+export type MessageMedia = string | Buffer | Readable
+export type MessageSegment = string | MessageElement
+export type MessageContent = MessageSegment | MessageSegment[]
 
 export interface MessageElementData {
   text?: string
   data?: string | MessageElementData
-  file?: string
-  url?: string
-  message?: MessageElement[]
+  file?: MessageMedia
+  url?: MessageMedia
+  fid?: string
+  message?: MessageContent
+  [key: string]: unknown
 }
 
 export interface MessageElement {
   type?: string
   id?: MessageId
+  message_id?: MessageId
+  user_id?: MessageId
+  qq?: MessageId | 'all'
   text?: string
-  file?: string
-  url?: string
+  file?: MessageMedia
+  url?: MessageMedia
+  fid?: string
+  name?: string
+  width?: number | string
+  height?: number | string
   data?: string | MessageElementData
-  message?: MessageElement[]
+  message?: MessageContent
+  [key: string]: unknown
 }
 
 export interface MessageContact {
-  getChatHistory?: (cursor: number, count: number) => Promise<Array<{ message?: MessageElement[] }>>
+  getChatHistory?: (cursor: number, count: number) => Promise<Array<{ message?: MessageContent }>>
 }
 
 export interface BotAdapterInfo {
@@ -66,7 +81,7 @@ export type CommandEvent = MessageEvent & { msg: string }
 
 export interface MessageEvent {
   msg?: string
-  message?: MessageElement[] | { id?: MessageId }
+  message?: MessageContent
   message_id?: MessageId
   messageId?: MessageId
   message_seq?: MessageId

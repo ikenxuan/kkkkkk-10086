@@ -1,7 +1,6 @@
 import { extractRichTextPlainText, renderRichTextToReact } from '@kkk/richtext'
 import { MapPinIcon, MusicNoteIcon, PlayIcon, UserPlusIcon, UsersIcon, UsersThreeIcon } from '@phosphor-icons/react'
-import { format, formatDistanceToNow, fromUnixTime } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
+import { format } from 'date-fns'
 import { Clock3, Hash } from 'lucide-react'
 import React from 'react'
 
@@ -12,6 +11,7 @@ import { QRCodeWithAvatar } from '../../../components/QRCodeWithAvatar'
 import type { PosterProps } from '../../../types/ctx'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import { DouyinCommentIcon, DouyinFavoriteIcon, DouyinLikeIcon, DouyinShareIcon } from '../../components/Icons'
+import { formatDouyinPublishTime } from './publish-time'
 import type { DouyinVideoWorkData } from './types'
 
 const getTitleClassName = (titleLength: number): string => {
@@ -72,10 +72,7 @@ const DouyinDiffuseBackground: React.FC<PosterProps<DouyinVideoWorkData>> = ({ d
 const DouyinPosterHeader: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data, ctx }) => {
   const { avater_url, username, create_time, ip_location } = data
   const useDarkTheme = isDarkMode(ctx)
-  const publishTime = formatDistanceToNow(fromUnixTime(create_time), {
-    addSuffix: true,
-    locale: zhCN
-  })
+  const publishTime = formatDouyinPublishTime(create_time)
 
   return (
     <header className="flex items-start justify-between gap-14">

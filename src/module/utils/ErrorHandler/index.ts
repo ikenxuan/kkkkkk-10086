@@ -1,4 +1,6 @@
 export { handleBusinessError, wrapWithErrorHandler } from './handler.js'
 export { buildErrorMessage, normalizeError, renderErrorReport } from './render.js'
+export { getAdapterInfo, getAdapterLogoPath } from './adapter.js'
+export { createLogContext, parseLogsToStructured } from './log-context.js'
 export { sendErrorToAllMasters, sendErrorToMaster, sendErrorToTrigger } from './sender.js'
 export { getStrategies, registerErrorStrategy } from './strategy.js'

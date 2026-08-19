@@ -1,5 +1,3 @@
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 import React from 'react'
 import { AiFillPushpin, AiOutlineVideoCamera } from 'react-icons/ai'
 import { BiImage } from 'react-icons/bi'
@@ -10,6 +8,7 @@ import { RiUserFollowLine, RiVerifiedBadgeFill } from 'react-icons/ri'
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import type { PosterProps } from '../../../types/ctx'
 import { DouyinCommentIcon, DouyinFavoriteIcon, DouyinLikeIcon, DouyinShareIcon } from '../../components/Icons'
+import { formatDouyinPublishTime } from '../../video-work/components/publish-time'
 import type { DouyinUserVideoListData } from './types'
 
 /**
@@ -90,10 +89,7 @@ const VideoCard: React.FC<{ video: DouyinUserVideoListData['videos'][number] }> 
 
         {/* 发布时间 */}
         <p className="text-3xl text-foreground/70 mb-8">
-          {formatDistanceToNow(new Date(video.create_time * 1000), {
-            locale: zhCN,
-            addSuffix: true
-          })}
+          {formatDouyinPublishTime(video.create_time)}
         </p>
 
         {/* 统计数据 */}

@@ -3,8 +3,7 @@ import puppeteer from '../../runtime/host/puppeteer.js'
 import { Config, Common } from './index.js'
 import {
   renderReactTemplate,
-  resolveReactTemplateRoute,
-  withStaticHtmlFile
+  resolveReactTemplateRoute
 } from './react-template/index.js'
 import Version from './Version.js'
 import {
@@ -96,12 +95,16 @@ export const Render = async (
     }
   }
 
-  const images = await withStaticHtmlFile(rendered.html, async htmlPath =>
-    await captureImages(
+  let images: ImageMessage[] | false
+  try {
+    images = await captureImages(
       `${Version.pluginName}/react/${reactRoute}`,
-      htmlPath,
+      rendered.htmlPath,
       screenshotData
-    ))
+    )
+  } finally {
+    await rendered.cleanup()
+  }
   if (images === false) return false
   if (Config.app.RemoveWatermark) return images
   return await applyWatermarkToImages(images, buildWatermarkText())

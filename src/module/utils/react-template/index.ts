@@ -1,6 +1,5 @@
 export {
   renderReactTemplate,
-  loadReactTemplateRegistry,
   type RenderReactTemplateResult
 } from './registry.js'
 export {

@@ -1,8 +1,11 @@
 import type { MessageEvent } from '../../../types/message.js'
 import { EmojiReactionManager } from '../EmojiReaction.js'
+import { getAdapterInfo } from './adapter.js'
+import { createLogContext, parseLogsToStructured, type CapturedLogEntry } from './log-context.js'
 import { renderErrorReport } from './render.js'
 import { sendErrorToAllMasters, sendErrorToMaster, sendErrorToTrigger } from './sender.js'
 import { getStrategies, type ErrorHandlerContext, type ErrorHandlerOptions } from './strategy.js'
+import { getBuildMetadata } from '../../tooling/build-metadata.js'
 
 type NextFunction = () => unknown
 type BusinessHandler<TResult> = (event: MessageEvent | undefined, next: NextFunction) => TResult | PromiseLike<TResult>
@@ -10,14 +13,16 @@ type BusinessHandler<TResult> = (event: MessageEvent | undefined, next: NextFunc
 export const handleBusinessError = async (
   error: unknown,
   options: ErrorHandlerOptions,
-  logs: unknown[] = [],
+  logs: CapturedLogEntry[] = [],
   event?: MessageEvent
 ): Promise<'handled' | undefined> => {
   const ctx: ErrorHandlerContext = {
     error,
     options,
     logs,
-    event
+    event,
+    buildMetadata: getBuildMetadata(),
+    adapterInfo: getAdapterInfo(event)
   }
 
   for (const strategy of getStrategies()) {
@@ -61,8 +66,10 @@ export const wrapWithErrorHandler = <TResult>(fn: BusinessHandler<TResult>, opti
       }, 1500)
     }
 
+    const logContext = createLogContext()
+
     try {
-      const result = await fn(event, next)
+      const result = await logContext.run(() => fn(event, next))
       if (emojiManager) {
         successTimer = setTimeout(() => {
           emojiManager.replace('PROCESSING', 'SUCCESS').catch(() => {})
@@ -77,12 +84,15 @@ export const wrapWithErrorHandler = <TResult>(fn: BusinessHandler<TResult>, opti
         await emojiManager.add('ERROR')
       }
       logger.error(`[${options.businessName}] 执行失败`, error)
-      const result = await handleBusinessError(error, options, [], event)
+      const logs = parseLogsToStructured(logContext.logs())
+      const result = await handleBusinessError(error, options, logs, event)
       if (result !== 'handled') {
         await event?.reply?.(`处理失败：${getErrorMessage(error)}`)
       }
       if (options.rethrowAfterHandle) throw error
       return true
+    } finally {
+      logContext.destroy()
     }
   }
 }

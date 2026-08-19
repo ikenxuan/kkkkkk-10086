@@ -12,7 +12,9 @@ const EMOJI_TYPES: EmojiType[] = ['EYES', 'PROCESSING', 'SUCCESS', 'ERROR']
 
 const getMessageId = (event?: MessageEvent): MessageId | undefined => {
   const message = event?.message
-  const nestedId = !Array.isArray(message) ? message?.id : undefined
+  const nestedId = !Array.isArray(message) && typeof message === 'object' && message !== null
+    ? message.id ?? message.message_id
+    : undefined
   return event?.message_id ?? event?.messageId ?? nestedId
 }
 

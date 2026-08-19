@@ -11,7 +11,7 @@ import type { PosterProps } from '../../../types/ctx'
 import { generateQRCode } from '../../../../utils/QRcode'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import { getRandomErrorTitle } from './errorTitles'
-import type { BusinessError, LogLevel } from './types'
+import type { AdapterInfo, BusinessError, LogLevel } from './types'
 import type { ApiErrorData } from './types'
 
 /**
@@ -206,21 +206,27 @@ const getLogLevelTheme = (level: LogLevel, isDark: boolean) => {
   return themeMap[level] || themeMap['TRAC']
 }
 
-const ADAPTER_LOGO_MAP: Record<string, string> = {
-  napcat: '/image/other/handlerError/napcat.webp',
-  lagrange: '/image/other/handlerError/lagrange.webp',
-  chronocat: '/image/other/handlerError/chronocat.svg',
-  llonebot: '/image/other/handlerError/llonebot.webp',
-  lltwobot: '/image/other/handlerError/llonebot.webp',
-  conwechat: '/image/other/handlerError/conwechat.webp',
-  gocq: '/image/other/handlerError/gocq-http.webp'
+const ADAPTER_LOGO_RULES: Array<{ pattern: RegExp; path: string }> = [
+  { pattern: /napcat/i, path: '/image/other/handlerError/napcat.webp' },
+  { pattern: /lagrange/i, path: '/image/other/handlerError/lagrange.webp' },
+  { pattern: /chronocat/i, path: '/image/other/handlerError/chronocat.svg' },
+  { pattern: /llonebot|lltwobot/i, path: '/image/other/handlerError/llonebot.webp' },
+  { pattern: /conwechat/i, path: '/image/other/handlerError/conwechat.webp' },
+  { pattern: /go[-_ ]?cq|gocq[-_ ]?http/i, path: '/image/other/handlerError/gocq-http.webp' },
+  { pattern: /milky/i, path: '/image/other/handlerError/Milky.png' },
+  { pattern: /satori/i, path: '/image/other/handlerError/satori.png' },
+  { pattern: /onebot|ob11/i, path: '/image/other/handlerError/onebot.png' }
+]
+
+const getAdapterLogoPath = (adapterInfo: AdapterInfo): string | undefined => {
+  const values = Object.values(adapterInfo).filter((value): value is string | number => typeof value === 'string' || typeof value === 'number')
+  return ADAPTER_LOGO_RULES.find(rule => rule.pattern.test(values.join(' ')))?.path
 }
 
-const getAdapterLogo = (adapterName: string): React.ReactNode => {
-  const nameLower = adapterName.toLowerCase()
-  for (const [key, logoPath] of Object.entries(ADAPTER_LOGO_MAP)) {
-    if (nameLower.includes(key)) return <img src={logoPath} className="h-20 w-auto" alt={adapterName} />
-  }
+const getAdapterLogo = (adapterInfo: AdapterInfo): React.ReactNode => {
+  const explicitLogo = typeof adapterInfo.logo === 'string' ? adapterInfo.logo : undefined
+  const logoPath = explicitLogo || getAdapterLogoPath(adapterInfo)
+  if (logoPath) return <img src={logoPath} className="h-20 w-auto object-contain" alt={adapterInfo.name} />
   return <Puzzle size={64} className="text-danger/80" />
 }
 
@@ -611,7 +617,7 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
               >
                 <div className="flex items-start justify-between gap-8 mb-6">
                   <div className="flex items-center gap-6 min-w-0">
-                    {getAdapterLogo(data.adapterInfo.name)}
+                    {getAdapterLogo(data.adapterInfo)}
                     <div className="min-w-0">
                       <p className="text-xl mb-1" style={{ color: mutedColor }}>
                         Adapter / 适配器

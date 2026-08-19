@@ -10,7 +10,15 @@ export type ImageMessage = object | ImagePayload
 
 const logWarn = (message: string): void => {
   const hostLogger = globalThis.logger as { warn?: (message: string) => unknown } | undefined
-  if (!hostLogger?.warn?.(message)) console.warn(message)
+  if (typeof hostLogger?.warn === 'function') {
+    try {
+      hostLogger.warn(message)
+      return
+    } catch {
+      // Fall back to the process logger if the host logger rejects the message.
+    }
+  }
+  console.warn(message)
 }
 
 const isPng = (buffer: Buffer): boolean => buffer.length >= 8 && buffer.subarray(0, 8).equals(PNG_SIGNATURE)
@@ -26,16 +34,41 @@ const toImageBuffer = (image: unknown): Buffer | null => {
   return null
 }
 
+const toWatermarkBuffer = (result: unknown): Buffer | null => {
+  const payload = isRecord(result) ? result.buffer : result
+  return toImageBuffer(payload)
+}
+
 const getImagePayload = (image: ImageMessage): unknown => {
   if (!isRecord(image)) return image
-  return image.file ?? (isRecord(image.data) ? image.data.file : undefined) ?? image.url ?? (isRecord(image.data) ? image.data.url : undefined) ?? image
+  return image.file ??
+    (isRecord(image.data) ? image.data.file : undefined) ??
+    image.url ??
+    (isRecord(image.data) ? image.data.url : undefined) ??
+    image.data ??
+    image
+}
+
+const encodeImagePayload = (source: unknown, payload: Buffer): Buffer | string => {
+  if (typeof source !== 'string') return payload
+  if (/^base64:\/\//i.test(source)) return `base64://${payload.toString('base64')}`
+  if (/^data:image\//i.test(source)) return `data:image/png;base64,${payload.toString('base64')}`
+  return payload
 }
 
 const setImagePayload = (image: ImageMessage, payload: Buffer): ImageMessage => {
   if (!isRecord(image)) return segment.image(payload) as ImageMessage
-  if (Object.prototype.hasOwnProperty.call(image, 'file')) return { ...image, file: payload }
+  if (Object.prototype.hasOwnProperty.call(image, 'file')) {
+    return { ...image, file: encodeImagePayload(image.file, payload) }
+  }
   if (isRecord(image.data) && Object.prototype.hasOwnProperty.call(image.data, 'file')) {
-    return { ...image, data: { ...image.data, file: payload } }
+    return {
+      ...image,
+      data: { ...image.data, file: encodeImagePayload(image.data.file, payload) }
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(image, 'data')) {
+    return { ...image, data: encodeImagePayload(image.data, payload) }
   }
   return segment.image(payload) as ImageMessage
 }
@@ -71,8 +104,10 @@ export const embedWatermark = async (
     const embedWatermarkToPngBytes = await getWatermarkEncoder()
     if (!embedWatermarkToPngBytes) return null
     const pngBuffer = isPng(input) ? input : await sharp(input).png().toBuffer()
-    const result = embedWatermarkToPngBytes(pngBuffer, watermarkText)
-    return Buffer.isBuffer(result) ? result : Buffer.from(result as unknown as Uint8Array)
+    const result = await embedWatermarkToPngBytes(pngBuffer, watermarkText)
+    const output = toWatermarkBuffer(result)
+    if (!output) throw new TypeError('\u9690\u6c34\u5370\u7f16\u7801\u5668\u8fd4\u56de\u4e86\u4e0d\u652f\u6301\u7684\u56fe\u7247\u6570\u636e')
+    return output
   } catch (error: unknown) {
     logWarn(`[Render] 嵌入隐水印失败: ${error instanceof Error ? error.message : String(error)}`)
     return null

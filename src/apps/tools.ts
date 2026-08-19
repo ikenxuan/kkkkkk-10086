@@ -359,8 +359,10 @@ export class kkkTools extends plugin {
 
   async _bilibili (e: CommandEvent): Promise<boolean> {
     const forceBurnDanmaku = /^#?弹幕解析/.test(e.msg)
-    const firstMessage = Array.isArray(e.message) ? e.message[0] : undefined
-    const messageFallback = typeof firstMessage?.data === 'string' ? firstMessage.data : ''
+    const firstMessage = Array.isArray(e.message) ? e.message[0] : e.message
+    const messageFallback = typeof firstMessage === 'string'
+      ? firstMessage
+      : typeof firstMessage?.data === 'string' ? firstMessage.data : ''
     let url = (e.msg || messageFallback).replaceAll('\\', '').trim()
 
     // 处理不同类型的B站链接
