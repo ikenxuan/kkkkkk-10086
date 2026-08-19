@@ -1,12 +1,13 @@
-import { bilibiliDB, douyinDB } from '../module/db/index.js'
-import { Bilibilipush, getBilibiliID } from '../module/platform/bilibili/index.js'
-import { getBilibiliData } from '../module/platform/bilibili/api.js'
-import { getDouyinData } from '../module/platform/douyin/api.js'
-import { DouYinpush, getDouyinID } from '../module/platform/douyin/index.js'
-import { Config } from '../module/utils/index.js'
+import { bilibiliDB, douyinDB } from '@/module/db/index'
+import { Bilibilipush, getBilibiliID } from '@/module/platform/bilibili/index'
+import { getBilibiliData } from '@/module/platform/bilibili/api'
+import { getDouyinData } from '@/module/platform/douyin/api'
+import { DouYinpush, getDouyinID } from '@/module/platform/douyin/index'
+import { Config, wrapWithErrorHandler } from '@/module/utils/index'
 import type { PluginRule, PluginTask } from 'trss-yunzai'
-import type { BilibiliPushItem, DouyinPushItem } from '../types/config.js'
-import type { CommandEvent } from '../types/message.js'
+import type { BilibiliPushItem, DouyinPushItem } from '@/types/config'
+import type { CommandEvent } from '@/types/message'
+import type { Platform } from '@/types/platform'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -81,7 +82,7 @@ export class kkkPush extends plugin {
       task.push({
         cron: Config.bilibili.push.cron as string,
         name: '哔哩哔哩更新推送',
-        fnc: async () => { await this.bilibiliPush() },
+        fnc: this.createPushTask('哔哩哔哩更新推送', 'bilibili', () => this.bilibiliPush()),
         log: Config.bilibili.push.log
       })
     }
@@ -89,11 +90,29 @@ export class kkkPush extends plugin {
       task.push({
         cron: Config.douyin.push.cron as string,
         name: '抖音更新推送',
-        fnc: async () => { await this.douyinPush() },
+        fnc: this.createPushTask('抖音更新推送', 'douyin', () => this.douyinPush()),
         log: Config.douyin.push.log
       })
     }
     this.task = task
+  }
+
+  /**
+   * 把定时推送包进 ErrorHandler。
+   *
+   * 定时任务没有触发事件，以前是把 `fnc` 直接交给宿主调度器的，于是整条链路都跑在
+   * `createLogContext()` 之外：AsyncLocalStorage 里没有 store，`appendLog` 全部丢弃，
+   * 推送出错时生成的错误卡片「执行日志」区永远是空的。
+   * 包一层之后日志能采到，报错也会以卡片形式发给主人，而不是只在宿主控制台留一行。
+   * （`testPush.ts` 里的测试推送本来就是这么包的，定时推送没包属于漏网。）
+   */
+  private createPushTask (
+    businessName: string,
+    platform: Platform,
+    fn: () => Promise<boolean>
+  ): () => Promise<void> {
+    const handler = wrapWithErrorHandler(fn, { businessName, platform })
+    return async () => { await handler(undefined) }
   }
 
   /**
