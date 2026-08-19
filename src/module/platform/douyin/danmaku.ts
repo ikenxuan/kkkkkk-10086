@@ -436,7 +436,7 @@ const normalizePngBuffer = (value: unknown, seen = new WeakSet<object>()): Buffe
 }
 
 const defaultRenderStrip: DouyinStripRenderer = async request => {
-  const { default: puppeteer } = await import('../../../runtime/host/puppeteer.js')
+  const { default: puppeteer } = await import('@/runtime/host/puppeteer')
   return await puppeteer.screenshotFile('kkkkkk-10086/douyin/danmaku-strip', request.htmlPath, {
     saveId: basename(request.htmlPath, '.html'),
     imgType: 'png',
@@ -1002,12 +1002,12 @@ export function buildDouyinFfmpegPlan (input: DouyinFfmpegPlanInput): DouyinFfmp
 }
 
 const defaultFfprobeRunner: DouyinCommandRunner = async (command, options) => {
-  const { ffprobe } = await import('../../utils/FFmpeg.js')
+  const { ffprobe } = await import('@/module/utils/FFmpeg')
   return await ffprobe(command, options)
 }
 
 const defaultFfmpegRunner: DouyinCommandRunner = async (command, options) => {
-  const { ffmpeg } = await import('../../utils/FFmpeg.js')
+  const { ffmpeg } = await import('@/module/utils/FFmpeg')
   return await ffmpeg(command, options)
 }
 

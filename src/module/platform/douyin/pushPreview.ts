@@ -1,4 +1,4 @@
-import { Base, Common, Render } from '../../utils/index.js'
+import { Base, Common, Render } from '@/module/utils/index'
 import { getDouyinID } from './getid.js'
 import { getDouyinWorkCoverUrl, type DouyinAweme } from './workType.js'
 import { getDouyinData } from './api.js'

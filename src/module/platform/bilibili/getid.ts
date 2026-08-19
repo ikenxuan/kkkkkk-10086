@@ -1,4 +1,4 @@
-import { baseHeaders, Networks } from '../../utils/index.js'
+import { baseHeaders, Networks } from '@/module/utils/index'
 import { getBilibiliData } from './api.js'
 
 /** B站数据类型 */

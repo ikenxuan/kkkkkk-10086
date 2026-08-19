@@ -1,4 +1,4 @@
-import Config from '../../utils/Config.js'
+import Config from '@/module/utils/Config'
 
 /** 处理后的表情项 */
 export interface KuaishouEmoji {

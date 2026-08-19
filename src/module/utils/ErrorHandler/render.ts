@@ -1,6 +1,6 @@
-import { Render } from '../Render.js'
-import Version from '../Version.js'
-import { formatBuildTime } from '../../tooling/build-metadata.js'
+import { Render } from '@/module/utils/Render'
+import Version from '@/module/utils/Version'
+import { formatBuildTime } from '@/module/tooling/build-metadata'
 import type { ErrorHandlerContext } from './strategy.js'
 
 export interface NormalizedError {

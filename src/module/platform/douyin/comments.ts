@@ -1,5 +1,5 @@
 import convert from 'heic-convert'
-import { Common, Config, Networks, baseHeaders } from '../../utils/index.js'
+import { Common, Config, Networks, baseHeaders } from '@/module/utils/index'
 import { getDouyinData } from './api.js'
 
 /** 表情项 */

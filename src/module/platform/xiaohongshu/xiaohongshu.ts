@@ -1,11 +1,11 @@
 import type { AxiosRequestConfig } from 'axios'
-import { Base, downloadVideo } from '../../utils/Base.js'
-import { baseHeaders } from '../../utils/Networks.js'
-import { Render } from '../../utils/Render.js'
-import Config from '../../utils/Config.js'
-import Common from '../../utils/Common.js'
-import { processImageUrl } from '../../utils/ImageHelper.js'
-import common from '../../../runtime/host/common.js'
+import { Base, downloadVideo } from '@/module/utils/Base'
+import { baseHeaders } from '@/module/utils/Networks'
+import { Render } from '@/module/utils/Render'
+import Config from '@/module/utils/Config'
+import Common from '@/module/utils/Common'
+import { processImageUrl } from '@/module/utils/ImageHelper'
+import common from '@/runtime/host/common'
 import {
   buildLivePhotoMessages,
   buildLivePhotoTipMessage,
@@ -22,7 +22,7 @@ import {
   type XiaohongshuTag,
   type XiaohongshuUserInfo
 } from './comments.js'
-import type { FileInfo } from '../../../types/platform.js'
+import type { FileInfo } from '@/types/platform'
 import type { XiaohongshuNoteId } from './getid.js'
 import { getXiaohongshuData } from './api.js'
 import { buildXiaohongshuShareUrl } from './link.js'

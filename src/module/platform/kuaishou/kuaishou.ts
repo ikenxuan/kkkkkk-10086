@@ -1,4 +1,4 @@
-import { Base, Config, Render, Networks, downloadVideo } from '../../utils/index.js'
+import { Base, Config, Render, Networks, downloadVideo } from '@/module/utils/index'
 import comments, { type KuaishouEmoji } from './comments.js'
 
 interface KuaishouPhoto {

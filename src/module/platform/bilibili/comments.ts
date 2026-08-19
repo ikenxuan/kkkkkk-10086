@@ -1,4 +1,4 @@
-import { Common } from '../../utils/index.js'
+import { Common } from '@/module/utils/index'
 
 /** 评论中的表情项 */
 interface BilibiliCommentEmote {

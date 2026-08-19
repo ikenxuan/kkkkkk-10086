@@ -17,7 +17,7 @@ import type {
   RequestConfig,
   UploadConfig,
   XiaohongshuConfig
-} from '../../types/config.js'
+} from '@/types/config'
 import YamlReader from './YamlReader.js'
 import Version from './Version.js'
 
@@ -25,11 +25,11 @@ export type {
   BilibiliPushItem,
   PushlistConfig,
   DouyinPushItem
-} from '../../types/config.js'
+} from '@/types/config'
 export type {
   DouyinPushItem as douyinPushItem,
   BilibiliPushItem as bilibiliPushItem
-} from '../../types/config.js'
+} from '@/types/config'
 
 const APP_UPLOAD_KEYS = new Set([
   'videoSendMode',
@@ -201,7 +201,7 @@ export class Cfg {
 
     const config = rawConfig as Partial<PluginConfigMap>
     if (config.pushlist) {
-      const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
+      const { getDouyinDB, getBilibiliDB } = await import('@/module/db/index')
       const douyinDB = await getDouyinDB()
       const bilibiliDB = await getBilibiliDB()
       try {
@@ -326,7 +326,7 @@ export class Cfg {
   }
 
   async syncPushlistToDatabase (): Promise<void> {
-    const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
+    const { getDouyinDB, getBilibiliDB } = await import('@/module/db/index')
     try {
       const pushlistConfig = this.getDefOrConfig('pushlist')
       if (pushlistConfig.douyin) {
@@ -401,7 +401,7 @@ export class Cfg {
   async syncConfigToDatabase (): Promise<void> {
     try {
       const pushCfg = this.getDefOrConfig('pushlist')
-      const { getDouyinDB, getBilibiliDB } = await import('../db/index.js')
+      const { getDouyinDB, getBilibiliDB } = await import('@/module/db/index')
       const douyinDB = await getDouyinDB()
       const bilibiliDB = await getBilibiliDB()
       if (pushCfg.bilibili) await bilibiliDB?.syncConfigSubscriptions(pushCfg.bilibili)

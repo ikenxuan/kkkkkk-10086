@@ -1,4 +1,4 @@
-import { baseHeaders, Networks } from '../../utils/index.js'
+import { baseHeaders, Networks } from '@/module/utils/index'
 
 /** 抖音数据类型 */
 export type DouyinDataType =

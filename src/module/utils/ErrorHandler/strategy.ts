@@ -1,8 +1,8 @@
-import type { MessageEvent } from '../../../types/message.js'
-import type { Platform } from '../../../types/platform.js'
+import type { MessageEvent } from '@/types/message'
+import type { Platform } from '@/types/platform'
 import type { ErrorAdapterInfo } from './adapter.js'
 import type { CapturedLogEntry } from './log-context.js'
-import type { BuildMetadata } from '../../tooling/build-metadata.js'
+import type { BuildMetadata } from '@/module/tooling/build-metadata'
 
 export interface ErrorHandlerPlugin {
   awaitContext?: (...args: unknown[]) => unknown

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
-import { Render, Version, Config } from '../module/utils/index.js'
-import type { CommandEvent } from '../types/message.js'
+import { Render, Version, Config } from '@/module/utils/index'
+import type { CommandEvent } from '@/types/message'
 
 /** 帮助条目的可见角色 */
 type HelpRole = 'member' | 'master'

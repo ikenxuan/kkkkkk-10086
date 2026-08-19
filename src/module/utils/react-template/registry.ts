@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import type { RenderContext } from '../../../template-sdk/index.js'
-import { PluginPath } from '../../../dir.js'
+import type { RenderContext } from '@/template-sdk/index'
+import { PluginPath } from '@/dir'
 import { resolveReactTemplateRoute, type ReactTemplateRoute } from './routes.js'
 
 interface StandaloneRenderResult {

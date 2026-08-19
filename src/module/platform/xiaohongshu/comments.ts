@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
-import Config from '../../utils/Config.js'
-import { processImageUrl } from '../../utils/ImageHelper.js'
+import Config from '@/module/utils/Config'
+import { processImageUrl } from '@/module/utils/ImageHelper'
 
 /** 小红书表情项 */
 export interface XiaohongshuEmoji {

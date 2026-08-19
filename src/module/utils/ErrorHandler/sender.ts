@@ -1,6 +1,6 @@
-import type { MessageEvent, MessageId } from '../../../types/message.js'
-import cfg from '../../../runtime/host/config.js'
-import Config from '../Config.js'
+import type { MessageEvent, MessageId } from '@/types/message'
+import cfg from '@/runtime/host/config'
+import Config from '@/module/utils/Config'
 import type { ErrorHandlerContext } from './strategy.js'
 
 const getBotId = (event?: MessageEvent): MessageId | undefined => {

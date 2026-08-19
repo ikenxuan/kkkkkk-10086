@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { basename, join } from 'node:path'
 import lodash from 'lodash'
-import { ClientPath, PluginPath } from '../../dir.js'
+import { ClientPath, PluginPath } from '@/dir'
 
 interface ChangeLogLine {
   title: string

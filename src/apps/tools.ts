@@ -1,22 +1,22 @@
-import { KuaiShou, GetKuaishouID, KuaishouData } from '../module/platform/kuaishou/index.js'
-import { Bilibili, getBilibiliID } from '../module/platform/bilibili/index.js'
-import { DouYin, getDouyinID } from '../module/platform/douyin/index.js'
-import { Xiaohongshu, getXiaohongshuID } from '../module/platform/xiaohongshu/index.js'
-import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, baseHeaders } from '../module/utils/index.js'
-import { getStatisticsDB } from '../module/db/index.js'
-import { getDouyinData } from '../module/platform/douyin/api.js'
-import type { BilibiliIdData } from '../module/platform/bilibili/getid.js'
-import type { ErrorHandlerPlugin } from '../module/utils/ErrorHandler/strategy.js'
-import { EmojiReactionManager } from '../module/utils/EmojiReaction.js'
+import { KuaiShou, GetKuaishouID, KuaishouData } from '@/module/platform/kuaishou/index'
+import { Bilibili, getBilibiliID } from '@/module/platform/bilibili/index'
+import { DouYin, getDouyinID } from '@/module/platform/douyin/index'
+import { Xiaohongshu, getXiaohongshuID } from '@/module/platform/xiaohongshu/index'
+import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, baseHeaders } from '@/module/utils/index'
+import { getStatisticsDB } from '@/module/db/index'
+import { getDouyinData } from '@/module/platform/douyin/api'
+import type { BilibiliIdData } from '@/module/platform/bilibili/getid'
+import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/strategy'
+import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import {
   ParseCoordinator,
   type ParseJobIdentity,
   type ParseTarget
-} from '../module/utils/ParseCoordinator.js'
-import { createEmojiParseReactionPort } from '../module/utils/ParseReactionAdapter.js'
-import { XIAOHONGSHU_LINK_PATTERN } from '../module/platform/xiaohongshu/link.js'
-import type { CommandEvent, MessageEvent } from '../types/message.js'
-import type { Platform } from '../types/platform.js'
+} from '@/module/utils/ParseCoordinator'
+import { createEmojiParseReactionPort } from '@/module/utils/ParseReactionAdapter'
+import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
+import type { CommandEvent, MessageEvent } from '@/types/message'
+import type { Platform } from '@/types/platform'
 
 interface PlatformConfig {
   reg: RegExp

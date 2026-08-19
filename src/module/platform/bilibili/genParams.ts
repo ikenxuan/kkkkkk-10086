@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 import { getBilibiliData } from './api.js'
-import Config from '../../utils/Config.js'
+import Config from '@/module/utils/Config'
 
 /** 「登录基本信息」响应，仅声明本文件读取的字段 */
 interface BilibiliLoginInfo {

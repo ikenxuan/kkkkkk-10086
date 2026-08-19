@@ -5,7 +5,7 @@ import os from 'node:os'
 import { join } from 'node:path'
 import { scan } from '@ikenxuan/qrcode'
 import { newInjectedPage } from 'fingerprint-injector'
-import { Common, Config, Render } from '../../utils/index.js'
+import { Common, Config, Render } from '@/module/utils/index'
 
 /** 登录流程使用的事件对象 */
 export interface DouyinLoginEvent {

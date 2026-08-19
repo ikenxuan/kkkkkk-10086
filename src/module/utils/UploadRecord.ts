@@ -1,6 +1,6 @@
 import { ffmpeg, ffprobe } from './FFmpeg.js'
 import { Networks } from './Networks.js'
-import type { MessageElement, MessageEvent } from '../../types/message.js'
+import type { MessageElement, MessageEvent } from '@/types/message'
 import querystring from 'querystring'
 import crypto from 'crypto'
 import fs from 'fs'

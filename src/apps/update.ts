@@ -1,7 +1,7 @@
-import Version from '../module/utils/Version.js'
+import Version from '@/module/utils/Version'
 // 宿主导出的类名是小写的 update，这里改名以便与本文件的 update 方法区分
-import { update as HostUpdate } from '../runtime/host/update.js'
-import type { CommandEvent } from '../types/message.js'
+import { update as HostUpdate } from '@/runtime/host/update'
+import type { CommandEvent } from '@/types/message'
 
 export class kkkUpdate extends plugin {
   constructor () {

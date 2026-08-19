@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 import type { DouyinMethodToFetcher as DouyinMethodToFetcherType } from '@ikenxuan/amagi'
-import Config from '../../utils/Config.js'
-import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '../../utils/RequestGuard.js'
+import Config from '@/module/utils/Config'
+import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '@/module/utils/RequestGuard'
 
 /** 旧版 amagi v5 使用的中文方法名 */
 export type DouyinMethodName = keyof typeof DouyinMethodToFetcherType

@@ -1,10 +1,10 @@
 /* eslint-disable indent */
-import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl } from '../../utils/index.js'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl } from '@/module/utils/index'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { getBilibiliData } from './api.js'
-import { burnDanmaku } from '../common/danmaku.js'
-import common from '../../../runtime/host/common.js'
+import { burnDanmaku } from '@/module/platform/common/danmaku'
+import common from '@/runtime/host/common'
 import { bilibiliComments, checkCk, genParams } from './index.js'
 import {
   buildBilibiliArticleRichText,
@@ -16,10 +16,10 @@ import {
 } from './dynamicText.js'
 import { extractBilibiliArticleImages } from './article.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
-import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '../common/livePhoto.js'
-import { runMediaTasks } from '../../utils/MediaTasks.js'
+import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { runMediaTasks } from '@/module/utils/MediaTasks'
 import fs from 'fs'
-import type { BaseEvent } from '../../utils/Base.js'
+import type { BaseEvent } from '@/module/utils/Base'
 
 const require = createRequire(import.meta.url)
 interface AmagiRuntime {

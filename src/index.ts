@@ -3,7 +3,7 @@ import Common from './module/utils/Common.js'
 import Config from './module/utils/Config.js'
 
 // 初始化数据库
-const { initAllDatabases } = await import('./module/db/index.js')
+const { initAllDatabases } = await import('@/module/db/index')
 await initAllDatabases()
 
 // 定义需要创建的目录
@@ -35,6 +35,6 @@ logger.info('交流群：795874649')
 logger.info('---------------------------------')
 
 if (Config.app.APIServer) {
-  const { startPluginServer } = await import('./module/server/index.js')
+  const { startPluginServer } = await import('@/module/server/index')
   startPluginServer()
 }

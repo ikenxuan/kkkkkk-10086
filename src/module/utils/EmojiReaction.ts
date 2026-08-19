@@ -1,4 +1,4 @@
-import type { EmojiId, MessageEvent, MessageId } from '../../types/message.js'
+import type { EmojiId, MessageEvent, MessageId } from '@/types/message'
 import Config from './Config.js'
 
 const PLATFORM_EMOJI_IDS = {

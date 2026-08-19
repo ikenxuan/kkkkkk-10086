@@ -2,9 +2,9 @@ import type { Database, RunResult as Sqlite3RunResult } from 'sqlite3'
 import sqlite3 from 'sqlite3'
 import path from 'node:path'
 import fs from 'node:fs'
-import Version from '../utils/Version.js'
-import Config from '../utils/Config.js'
-import type { DouyinPushItem } from '../../types/config.js'
+import Version from '@/module/utils/Version'
+import Config from '@/module/utils/Config'
+import type { DouyinPushItem } from '@/types/config'
 import type {
   AwemeCacheRow,
   BotRow,
@@ -20,7 +20,7 @@ import type {
   GroupRow,
   RunResult,
   TableColumnInfo
-} from '../../types/database.js'
+} from '@/types/database'
 
 /** shouldFilter 读取的推送项字段 */
 export interface DouyinFilterPushItem {

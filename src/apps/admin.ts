@@ -1,10 +1,10 @@
-import { Config, Version, Common } from '../module/utils/index.js'
-import { bilibiliLogin } from '../module/platform/bilibili/login.js'
-import { dylogin } from '../module/platform/douyin/login.js'
+import { Config, Version, Common } from '@/module/utils/index'
+import { bilibiliLogin } from '@/module/platform/bilibili/login'
+import { dylogin } from '@/module/platform/douyin/login'
 import fs from 'fs'
 import type { PluginTask } from 'trss-yunzai'
-import type { ConfigName } from '../types/config.js'
-import type { CommandEvent } from '../types/message.js'
+import type { ConfigName } from '@/types/config'
+import type { CommandEvent } from '@/types/message'
 
 /** 「中文配置项名 → yaml 字段名」映射表 */
 type CfgKeyMap = Record<string, string>

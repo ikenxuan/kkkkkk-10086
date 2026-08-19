@@ -1,11 +1,11 @@
-import type { MessageEvent } from '../../../types/message.js'
-import { EmojiReactionManager } from '../EmojiReaction.js'
+import type { MessageEvent } from '@/types/message'
+import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import { getAdapterInfo } from './adapter.js'
 import { createLogContext, parseLogsToStructured, type CapturedLogEntry } from './log-context.js'
 import { renderErrorReport } from './render.js'
 import { sendErrorToAllMasters, sendErrorToMaster, sendErrorToTrigger } from './sender.js'
 import { getStrategies, type ErrorHandlerContext, type ErrorHandlerOptions } from './strategy.js'
-import { getBuildMetadata } from '../../tooling/build-metadata.js'
+import { getBuildMetadata } from '@/module/tooling/build-metadata'
 
 type NextFunction = () => unknown
 type BusinessHandler<TResult> = (event: MessageEvent | undefined, next: NextFunction) => TResult | PromiseLike<TResult>

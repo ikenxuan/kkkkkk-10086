@@ -1,7 +1,7 @@
-import { getStatisticsDB } from '../module/db/index.js'
-import { Render } from '../module/utils/index.js'
-import type { ParseStatisticsRow, StatisticsPlatform } from '../types/database.js'
-import type { CommandEvent, MessageEvent } from '../types/message.js'
+import { getStatisticsDB } from '@/module/db/index'
+import { Render } from '@/module/utils/index'
+import type { ParseStatisticsRow, StatisticsPlatform } from '@/types/database'
+import type { CommandEvent, MessageEvent } from '@/types/message'
 
 const PLATFORM_LABELS: Record<StatisticsPlatform, string> = {
   douyin: '抖音',

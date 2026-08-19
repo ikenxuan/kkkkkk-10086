@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { ffmpeg, ffprobe } from '../../utils/FFmpeg.js'
+import { ffmpeg, ffprobe } from '@/module/utils/FFmpeg'
 
 /** 弹幕来源平台 */
 export type DanmakuSource = 'bilibili' | 'douyin'

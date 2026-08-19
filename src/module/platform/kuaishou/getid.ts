@@ -1,4 +1,4 @@
-import { Networks } from '../../utils/Networks.js'
+import { Networks } from '@/module/utils/Networks'
 
 /** 快手作品 ID 解析结果 */
 export interface KuaishouWorkId {

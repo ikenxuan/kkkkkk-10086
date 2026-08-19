@@ -1,10 +1,10 @@
-import { baseHeaders } from '../../utils/Networks.js'
-import Config from '../../utils/Config.js'
+import { baseHeaders } from '@/module/utils/Networks'
+import Config from '@/module/utils/Config'
 import {
   buildLivePhotoMessages as buildCommonLivePhotoMessages,
   buildLivePhotoTipMessage,
   type BuildLivePhotoResult
-} from '../common/livePhoto.js'
+} from '@/module/platform/common/livePhoto'
 
 export { buildLivePhotoTipMessage }
 

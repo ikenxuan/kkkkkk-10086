@@ -3,9 +3,9 @@ import type { Database, RunResult as Sqlite3RunResult } from 'sqlite3'
 import sqlite3 from 'sqlite3'
 import path from 'node:path'
 import fs from 'node:fs'
-import Version from '../utils/Version.js'
-import Config from '../utils/Config.js'
-import type { BilibiliPushItem } from '../../types/config.js'
+import Version from '@/module/utils/Version'
+import Config from '@/module/utils/Config'
+import type { BilibiliPushItem } from '@/types/config'
 import type {
   BilibiliFilterConfig,
   BilibiliFilterTagRow,
@@ -19,7 +19,7 @@ import type {
   FilterMode,
   GroupRow,
   RunResult
-} from '../../types/database.js'
+} from '@/types/database'
 
 interface AmagiDynamicTypes {
   AV: string

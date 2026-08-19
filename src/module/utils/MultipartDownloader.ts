@@ -5,7 +5,7 @@ import type { Readable } from 'node:stream'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
-import type { FileInfo } from '../../types/platform.js'
+import type { FileInfo } from '@/types/platform'
 
 const MB = 1024 * 1024
 export const MULTIPART_MIN_SIZE = 8 * MB

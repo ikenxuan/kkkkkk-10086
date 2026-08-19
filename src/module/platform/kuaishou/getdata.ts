@@ -1,5 +1,5 @@
-import { Base, Config, Networks } from '../../utils/index.js'
-import type { NetworkRequestOptions } from '../../utils/Networks.js'
+import { Base, Config, Networks } from '@/module/utils/index'
+import type { NetworkRequestOptions } from '@/module/utils/Networks'
 import KuaishouAPI, { type KuaishouApiRequest } from './api.js'
 
 /** 快手数据请求类型 */

@@ -1,6 +1,6 @@
-import { DouyinPushPreview } from '../module/platform/douyin/pushPreview.js'
-import { Config, wrapWithErrorHandler } from '../module/utils/index.js'
-import type { CommandEvent } from '../types/message.js'
+import { DouyinPushPreview } from '@/module/platform/douyin/pushPreview'
+import { Config, wrapWithErrorHandler } from '@/module/utils/index'
+import type { CommandEvent } from '@/types/message'
 
 const HELP = [
   '支持的命令：',

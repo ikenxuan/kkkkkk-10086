@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { AppsPath } from '../../dir.js'
+import { AppsPath } from '@/dir'
 
 export type AppModule = Record<string, unknown>
 export type PluginConstructor = typeof plugin

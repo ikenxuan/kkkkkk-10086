@@ -1,7 +1,7 @@
 import util from 'node:util'
 import { generate } from '@ikenxuan/qrcode'
-import { registerErrorStrategy, sendErrorToAllMasters, sendErrorToMaster } from '../../utils/ErrorHandler/index.js'
-import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '../../utils/ErrorHandler/strategy.js'
+import { registerErrorStrategy, sendErrorToAllMasters, sendErrorToMaster } from '@/module/utils/ErrorHandler/index'
+import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '@/module/utils/ErrorHandler/strategy'
 import { getBilibiliData } from './api.js'
 
 /** 判断是否为普通对象 */

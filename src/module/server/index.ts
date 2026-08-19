@@ -9,9 +9,9 @@ import express, {
   type RequestHandler,
   type Response
 } from 'express'
-import Config from '../utils/Config.js'
-import Common from '../utils/Common.js'
-import Version from '../utils/Version.js'
+import Config from '@/module/utils/Config'
+import Common from '@/module/utils/Common'
+import Version from '@/module/utils/Version'
 import { sendNotFound } from './response.js'
 import { renderVideoPreviewPage } from './video-preview.js'
 

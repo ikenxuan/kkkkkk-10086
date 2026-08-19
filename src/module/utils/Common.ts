@@ -1,12 +1,12 @@
 import fs from 'node:fs'
 import path, { join, sep } from 'node:path'
 import { scan } from '@ikenxuan/qrcode'
-import type { MessageContent, MessageElement, MessageEvent, MessageMedia, MessageSegment } from '../../types/message.js'
+import type { MessageContent, MessageElement, MessageEvent, MessageMedia, MessageSegment } from '@/types/message'
 import { Base } from './Base.js'
 import Config from './Config.js'
 import { Networks } from './Networks.js'
 import Version from './Version.js'
-import { XIAOHONGSHU_LINK_PATTERN } from '../platform/xiaohongshu/link.js'
+import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 
 interface VideoPreview {
   filename: string

@@ -2,7 +2,7 @@ import type { Database, RunResult as Sqlite3RunResult } from 'sqlite3'
 import sqlite3 from 'sqlite3'
 import path from 'node:path'
 import fs from 'node:fs'
-import Version from '../utils/Version.js'
+import Version from '@/module/utils/Version'
 import type {
   CountResult,
   GlobalStatisticsRow,
@@ -12,7 +12,7 @@ import type {
   RunResult,
   StatisticsPlatform,
   SumResult
-} from '../../types/database.js'
+} from '@/types/database'
 
 const PLATFORMS: StatisticsPlatform[] = ['douyin', 'bilibili', 'kuaishou', 'xiaohongshu']
 

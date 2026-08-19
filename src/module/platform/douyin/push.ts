@@ -1,15 +1,15 @@
-import { Base, baseHeaders, Networks, Render, Config, Common, downloadFile, downloadVideo, Version, processImageUrl } from '../../utils/index.js'
-import type { BaseEvent } from '../../utils/Base.js'
-import { cleanOldDynamicCache, douyinDB } from '../../db/index.js'
-import type { DouyinFilterPushItem } from '../../db/douyin.js'
-import type { DouyinPushType } from '../../../types/database.js'
-import type { DouyinPushItem as DouyinPushConfigItem } from '../../../types/config.js'
+import { Base, baseHeaders, Networks, Render, Config, Common, downloadFile, downloadVideo, Version, processImageUrl } from '@/module/utils/index'
+import type { BaseEvent } from '@/module/utils/Base'
+import { cleanOldDynamicCache, douyinDB } from '@/module/db/index'
+import type { DouyinFilterPushItem } from '@/module/db/douyin'
+import type { DouyinPushType } from '@/types/database'
+import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
 import { getDouyinID, douyinProcessVideos } from './index.js'
 import { getDouyinData } from './api.js'
-import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '../common/livePhoto.js'
+import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
-import common from '../../../runtime/host/common.js'
+import common from '@/runtime/host/common'
 
 /**
  * @typedef {import('@ikenxuan/amagi').ApiResponse} ApiResponse
@@ -65,7 +65,7 @@ const douyinBaseHeaders = {
 }
 
 /** 抖音推送支持的类型，与数据库层共用同一套字面量 */
-export type { DouyinPushType } from '../../../types/database.js'
+export type { DouyinPushType } from '@/types/database'
 
 /** 作品里的话题标签 */
 interface DouyinTextExtra {

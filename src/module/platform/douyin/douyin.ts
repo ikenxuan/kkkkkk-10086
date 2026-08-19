@@ -1,13 +1,13 @@
-import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl } from '../../utils/index.js'
-import { runMediaTasks } from '../../utils/MediaTasks.js'
-import common from '../../../runtime/host/common.js'
+import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl } from '@/module/utils/index'
+import { runMediaTasks } from '@/module/utils/MediaTasks'
+import common from '@/runtime/host/common'
 import { markdown } from '@karinjs/md-html'
 import {
   burnDouyinDanmaku,
   type DouyinDanmakuElem,
   type DouyinEmojiInfo
 } from './danmaku.js'
-import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '../common/livePhoto.js'
+import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { douyinComments } from './index.js'
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, parseJsonSafely, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
