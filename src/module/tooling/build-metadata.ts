@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { PluginPath } from '../../dir.js'
+import { PluginPath } from '@/dir'
 
 export interface BuildMetadata {
   version: string
@@ -14,6 +14,13 @@ export interface BuildMetadata {
   homepage: string
   commitHash: string
   shortCommitHash: string
+  /**
+   * 构建时所在分支，供无 .git 的压缩包安装判断发布通道。
+   *
+   * 可选：旧版本构建出的 build-metadata.json 没有这个字段，校验函数不强求它，
+   * 否则老文件会整体失效，连 buildTime / commitHash 一起丢掉。
+   */
+  branch?: string
 }
 
 let cachedMetadata: BuildMetadata | null | undefined
@@ -62,7 +69,8 @@ export const generateBuildMetadata = (): BuildMetadata => {
     description: text(packageJson.description),
     homepage: text(packageJson.homepage) || 'https://github.com/ikenxuan/kkkkkk-10086',
     commitHash,
-    shortCommitHash
+    shortCommitHash,
+    branch: readBuildBranch()
   }
 
   fs.mkdirSync(resolve(PluginPath, 'lib'), { recursive: true })
@@ -77,6 +85,28 @@ function readGitValue (args: string[]): string {
   } catch {
     return 'unknown'
   }
+}
+
+/**
+ * 构建时所在分支。
+ *
+ * 优先级从高到低：
+ *
+ * 1. `KKK_PUBLISH_BRANCH`：产物要被推到哪条分支。发布工作流一律从 dev 构建，再把产物
+ *    推到 release / preview，所以「从哪构建」和「装的是哪条线」根本不是一回事。只看
+ *    GITHUB_REF_NAME 的话，release 分支上的产物会被烘成 dev，压缩包安装（没有 .git、
+ *    只能靠这份元数据判断）的用户在稳定版上看到的通道全是 Dev。
+ * 2. `GITHUB_REF_NAME`：非发布场景下的 CI 构建。actions/checkout 默认留下分离 HEAD，
+ *    `--abbrev-ref HEAD` 只会返回字面量 `HEAD`，所以不能靠 git 问。
+ * 3. 本地 git 分支。
+ */
+function readBuildBranch (): string {
+  const publishBranch = text(process.env.KKK_PUBLISH_BRANCH).trim()
+  if (publishBranch) return publishBranch
+  const ciBranch = text(process.env.GITHUB_REF_NAME).trim()
+  if (ciBranch) return ciBranch
+  const local = readGitValue(['rev-parse', '--abbrev-ref', 'HEAD'])
+  return local && local !== 'HEAD' ? local : 'unknown'
 }
 
 function text (value: unknown): string {

@@ -38,6 +38,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: 🛠️ 构建并验证插件
+        env:
+          # 同 release-and-push-build.yml：构建发生在 dev，产物推到 preview。
+          # 不设这个的话 build-metadata 会烘成 dev，预览版会被标成 Dev。
+          KKK_PUBLISH_BRANCH: preview
         run: pnpm verify
 
       - name: 📁 准备发布文件

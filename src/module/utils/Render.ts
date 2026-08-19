@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import puppeteer from '../../runtime/host/puppeteer.js'
+import puppeteer from '@/runtime/host/puppeteer'
+import { getReleaseChannel } from '@/module/tooling/release-channel'
 import { Config, Common } from './index.js'
 import {
   renderReactTemplate,
@@ -58,7 +59,7 @@ export const Render = async (
       plugin: 'yunzai-plugin',
       pluginName: Version.pluginName,
       pluginVersion: Version.version,
-      releaseType: Version.version.includes('-') ? 'Preview' : 'Stable',
+      releaseType: getReleaseChannel(),
       poweredBy: Version.BotName,
       frameworkVersion: Version.BotVersion,
       hasUpdate: false

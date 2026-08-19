@@ -13,8 +13,8 @@ export interface PosterContext extends RenderContext {
     pluginName: string
     /** 插件版本 */
     pluginVersion: string
-    /** 发布类型 */
-    releaseType: 'Stable' | 'Preview'
+    /** 发布类型：由安装目录跟踪的远程分支推导（release/master→Stable，preview→Preview，其余→Dev） */
+    releaseType: 'Stable' | 'Preview' | 'Dev'
     /** 驱动框架 */
     poweredBy: string
     /** 框架版本 */

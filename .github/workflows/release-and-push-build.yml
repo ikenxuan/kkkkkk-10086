@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      # 仅监听 dev：master 仍由旧的 release-please.yml（v3、release-type: node）负责，
+      # 两者同时监听 master 会各自开出版本方案不同的发布 PR。
+      - dev
 
 permissions:
   contents: write
@@ -18,12 +20,19 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    # workflow_dispatch 在 Actions 界面里默认选中仓库默认分支（本仓库是 master）。
+    # 不加这个判断的话，手点一次「Run workflow」就会用 v4 manifest 语义对 master 开发布 PR，
+    # 和 master 自己那份 v3 release-please.yml 正面撞车——正是上面注释要避免的情况。
+    if: github.ref_name == 'dev'
 
     steps:
       - name: 🧪 触发 release-please 发布检查
         uses: googleapis/release-please-action@v4
         id: release
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # 写死 dev，不用 github.ref_name：这个工作流只负责 dev 这条线。
+          target-branch: dev
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -52,6 +61,11 @@ jobs:
 
       - name: 🛠️ 构建并验证插件
         if: ${{ steps.release.outputs.release_created }}
+        env:
+          # 这个工作流跑在 dev 上，产物推到 release。必须显式告诉构建产物「你属于 release」，
+          # 否则 build-metadata 会烘进 GITHUB_REF_NAME（dev），压缩包安装的用户在稳定版上
+          # 看到的发布通道会是 Dev。
+          KKK_PUBLISH_BRANCH: release
         run: pnpm verify
 
       - name: 📁 准备发布文件

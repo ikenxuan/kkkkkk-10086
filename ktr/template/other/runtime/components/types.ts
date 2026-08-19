@@ -13,7 +13,7 @@ export interface RuntimeReportData {
     pluginName: string
     pluginVersion: string
     karinVersion: string
-    releaseType: 'Stable' | 'Preview'
+    releaseType: 'Stable' | 'Preview' | 'Dev'
     requiredNodeVersion: string
     requiredKarinVersion: string
   }
