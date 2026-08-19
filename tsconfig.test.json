@@ -10,7 +10,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@karinjs/template-react": ["./src/template-sdk/index.ts"],
-      "@kkk/richtext": ["./ktr/richtext/index.ts"]
+      "@kkk/richtext": ["./src/module/utils/richtext/index.ts"]
     }
   },
   "include": [

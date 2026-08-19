@@ -23,7 +23,12 @@ import type {
   RichTextViewPictureNode,
   RichTextHorizontalRuleNode,
   RichTextInlineStyle
-} from '../types'
+// 走 "@/" 别名而不是 '../types.js'：src/ 的 lint 禁止跳出当前目录的相对导入。
+// 这里能这么写的前提是它必须保持 type-only —— 本目录同时被 ktr 的 vite 构建
+// （经 ktr/richtext/index.ts 这个 barrel）拉进去，而 karin.template.ts 里只配了
+// @kkk/richtext 一个别名，没有 "@/"。type-only 导入会被 esbuild 整条擦掉，
+// 说明符根本到不了 vite 的 resolver；一旦改成值导入，模板构建会立刻解析失败。
+} from '@/module/utils/richtext/types'
 
 /** 创建普通文本节点。 */
 export const createTextNode = (text: string, style?: RichTextInlineStyle): RichTextTextNode => ({

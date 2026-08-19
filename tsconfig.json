@@ -7,7 +7,7 @@
     "rewriteRelativeImportExtensions": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@kkk/richtext": ["./ktr/richtext/index.ts"]
+      "@kkk/richtext": ["./src/module/utils/richtext/index.ts"]
     },
     "rootDir": "./src",
     "outDir": "./lib",

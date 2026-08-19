@@ -17,6 +17,7 @@
   "include": [
     ".generated/**/*.ts",
     "src/template-sdk/**/*.ts",
+    "src/module/utils/richtext/**/*.ts",
     "ktr/richtext/**/*.ts",
     "ktr/richtext/**/*.tsx",
     "ktr/utils/**/*.ts",

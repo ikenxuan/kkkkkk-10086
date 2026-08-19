@@ -1,6 +1,6 @@
 import React, { type CSSProperties, type ReactNode } from 'react'
 
-import type { RichTextDocument, RichTextInlineStyle, RichTextNode, RichTextRenderOptions } from '../types'
+import type { RichTextDocument, RichTextInlineStyle, RichTextNode, RichTextRenderOptions } from '../../../src/module/utils/richtext/types'
 import { cn } from './cn'
 
 /**
