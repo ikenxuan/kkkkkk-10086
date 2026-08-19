@@ -218,7 +218,10 @@ const ADAPTER_LOGO_RULES: Array<{ pattern: RegExp; path: string }> = [
   { pattern: /go[-_ ]?cq|gocq[-_ ]?http/i, path: '/image/other/handlerError/gocq-http.webp' },
   { pattern: /milky/i, path: '/image/other/handlerError/Milky.png' },
   { pattern: /satori/i, path: '/image/other/handlerError/satori.png' },
-  { pattern: /onebot|ob11/i, path: '/image/other/handlerError/onebot.png' }
+  { pattern: /onebot|ob11/i, path: '/image/other/handlerError/onebot.png' },
+  // QQBot 放在 OneBot 系之后：官方 Bot 适配器的字段里不会出现 napcat/onebot 等标识，
+  // 反过来某些 OneBot 实现的 apk 信息里可能带 "QQ" 字样，让前面的规则先命中更稳。
+  { pattern: /qq[-_ ]?bot/i, path: '/image/other/handlerError/QQBot.svg' }
 ]
 
 const getAdapterLogoPath = (adapterInfo: AdapterInfo): string | undefined => {
