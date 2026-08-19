@@ -996,9 +996,17 @@ export class DouYin extends Base {
         default:
           break
       }
-    } catch (e) {
-      logger.warn(`抖音解析错误：${e}`)
-      return false
+    } catch (error) {
+      // 不能在这里把异常吃掉。四个调用点（tools.ts 的 305/345/383/492）全都跑在
+      // wrapWithErrorHandler 里，没有一个在看这里的返回值，所以 `return false` 传不出任何信息，
+      // 只是让统一错误处理层永远收不到东西——解析失败既不出错误卡片也不通知主人。
+      // 上面那些刻意抛出的提示（比如「该作品已被删除或设置为私密」）因此对用户完全静默。
+      //
+      // 这条日志必须留在 try 内部：wrapWithErrorHandler 自己的 logger.error 在
+      // logContext.run() 之外执行，那时 AsyncLocalStorage 的 store 已经没了，写不进日志上下文。
+      // 只有这里的记录会被采集进错误卡片的日志区。传 error 对象而不是 `${error}`，堆栈才不会丢。
+      logger.error(`[抖音] ${this.type} 解析失败`, error)
+      throw error
     }
   }
 }

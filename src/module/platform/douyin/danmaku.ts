@@ -1116,7 +1116,12 @@ export async function burnDouyinDanmaku (
       await removeTemporaryFile(videoPath)
     }
     return succeeded
-  } catch {
+  } catch (error) {
+    // 这里的 false 是真正的控制流——弹幕烧录是可选步骤，失败就退回没有弹幕的原视频，
+    // 所以不该往上抛。但原先是个连日志都没有的裸 catch：ffmpeg 或滤镜脚本持续失败时，
+    // 用户只会发现弹幕一直不出现，而任何地方都查不到原因。
+    // common/danmaku.ts:185 的写法就是这个样子，这里之前是唯一的例外。
+    logger.error('[Danmaku] 抖音弹幕烧录失败', error)
     return false
   } finally {
     await Promise.all(temporaryFiles.map(removeTemporaryFile))
