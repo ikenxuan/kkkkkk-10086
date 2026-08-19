@@ -21,7 +21,7 @@ import type {
   FileInfo,
   NormalizedDownloadOptions,
   NormalizedThrottleOptions
-} from '../../types/platform.js'
+} from '@/types/platform'
 import Config from './Config.js'
 import {
   clampConcurrency,
@@ -251,7 +251,10 @@ export class Networks {
         await delay(1000 * (retryCount + 1))
         return await this.request(retryCount + 1)
       }
-      throw axiosError.message
+      // 必须抛 Error 而不是 axiosError.message：抛裸字符串时 normalizeError
+      // （ErrorHandler/render.ts:15）拿不到 stack，错误卡片的堆栈区直接不渲染。
+      // toAxiosError 保证这里一定是带真实调用栈的 AxiosError。
+      throw axiosError
     }
   }
 
@@ -316,7 +319,7 @@ export class Networks {
         await delay(1000 * (retryCount + 1))
         return await this.getHeaders(retryCount + 1)
       }
-      throw axiosError.message
+      throw axiosError
     }
   }
 
@@ -518,7 +521,7 @@ export class Networks {
         await delay(wait)
         return await this.downloadStream(progressCallback, retryCount + 1, { ...options, currentSpeed: nextSpeed })
       }
-      throw axiosError.message
+      throw axiosError
     }
   }
 }

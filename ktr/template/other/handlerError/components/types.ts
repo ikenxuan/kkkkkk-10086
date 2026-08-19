@@ -48,6 +48,18 @@ export interface BusinessError {
   stack: string
   /** 业务名称 */
   businessName: string
+  /** 结构化诊断字段：接口类错误没有 JS 调用栈，改用键值对呈现 */
+  diagnostics?: ErrorDiagnostic[]
+}
+
+/**
+ * 结构化诊断条目
+ */
+export interface ErrorDiagnostic {
+  /** 字段名 */
+  label: string
+  /** 字段值 */
+  value: string
 }
 
 /**

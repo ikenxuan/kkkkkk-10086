@@ -1,7 +1,7 @@
 import { Chip } from '@heroui/react'
 import { formatDistanceToNow, parse } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { AlertCircle, Clock, FileText, GitBranch, Puzzle, QrCode, Terminal } from 'lucide-react'
+import { AlertCircle, Clock, Cpu, FileText, GitBranch, Puzzle, QrCode, Terminal } from 'lucide-react'
 import _ from 'lodash'
 import React from 'react'
 import { MdSchedule } from 'react-icons/md'
@@ -206,11 +206,14 @@ const getLogLevelTheme = (level: LogLevel, isDark: boolean) => {
   return themeMap[level] || themeMap['TRAC']
 }
 
+// 这张表在 src/module/utils/ErrorHandler/adapter.ts 里有一份等价副本（那边还带单元测试）。
+// 两份不是疏漏：ktr/ 是独立模板树，不导入 src/，详见 adapter.ts 上方的说明。
+// 改这里时必须同步改 src 那一份。
 const ADAPTER_LOGO_RULES: Array<{ pattern: RegExp; path: string }> = [
   { pattern: /napcat/i, path: '/image/other/handlerError/napcat.webp' },
   { pattern: /lagrange/i, path: '/image/other/handlerError/lagrange.webp' },
   { pattern: /chronocat/i, path: '/image/other/handlerError/chronocat.svg' },
-  { pattern: /llonebot|lltwobot/i, path: '/image/other/handlerError/llonebot.webp' },
+  { pattern: /llonebot|lltwo(bot)?/i, path: '/image/other/handlerError/llonebot.webp' },
   { pattern: /conwechat/i, path: '/image/other/handlerError/conwechat.webp' },
   { pattern: /go[-_ ]?cq|gocq[-_ ]?http/i, path: '/image/other/handlerError/gocq-http.webp' },
   { pattern: /milky/i, path: '/image/other/handlerError/Milky.png' },
@@ -245,6 +248,21 @@ const SectionTitle: React.FC<{ icon: React.ReactNode; en: string; zh: string; co
 )
 
 /**
+ * 把已经格式化过的构建时间换算成「多久以前」。
+ * 格式对不上就返回空串，让调用方退化成只显示绝对时间——绝不能让它在 SSR 阶段抛异常。
+ */
+const formatBuildTimeAgo = (buildTime?: string): string => {
+  if (!buildTime) return ''
+  const parsed = parse(buildTime, 'yyyy年MM月dd日 HH:mm', new Date())
+  if (Number.isNaN(parsed.getTime())) return ''
+  try {
+    return formatDistanceToNow(parsed, { locale: zhCN })
+  } catch {
+    return ''
+  }
+}
+
+/**
  * API错误显示组件 - 手机端 Apple 风格
  */
 export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
@@ -253,6 +271,21 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
   const isBusinessError = data.type === 'business_error'
   const businessError = isBusinessError ? (data.error as BusinessError) : null
   const displayMethod = businessError?.businessName || data.method
+  // 接口类错误没有 JS 调用栈，此时改用结构化诊断字段填充该区块，
+  // 两者都为空时整块不渲染，避免出现空盒子。
+  const stackText = String(businessError?.stack || data.error?.stack || '')
+  const diagnostics = businessError?.diagnostics ?? []
+  const hasFailureDetail = stackText !== '' || diagnostics.length > 0
+  // name/message 以前只能靠 stack 顺带带出来（堆栈首行是 "Name: message"），可
+  // render.ts:15 的 normalizeError 对 `throw '字符串'` 这类非对象抛出只给得出 message、
+  // stack 为空，于是 hasFailureDetail 为 false、整块被跳过，卡片上只剩一个随机大标题和
+  // 方法名——真正的错误原因一个字都没有。所以这里单独渲染，不依赖 stack 是否存在。
+  const errorName = String(data.error?.name || '')
+  const errorMessage = String(data.error?.message || '')
+  const errorSummary = [errorName === 'Error' ? '' : errorName, errorMessage]
+    .filter(Boolean)
+    .join(': ')
+  const buildTimeAgo = formatBuildTimeAgo(data.buildTime)
 
   // 631 配色 - 红/珊瑚色系
   const bgColor = isDark ? '#0f0a0a' : '#faf5f5'
@@ -264,9 +297,8 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
   return (
     <DefaultLayout
       ctx={props.ctx}
-      // version={undefined}
       className="relative overflow-hidden"
-      style={{ backgroundColor: bgColor, width: '1440px', minHeight: '1800px' }}
+      style={{ backgroundColor: bgColor, width: '1440px' }}
     >
       {/* 弥散光背景 - 深浅模式完全适配 */}
       <div className="absolute inset-0 pointer-events-none">
@@ -315,8 +347,8 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
         </svg>
       </div>
 
-      {/* 背景大字装饰 */}
-      <div className="absolute bottom-20 right-15 pointer-events-none select-none opacity-[0.03]">
+      {/* 背景大字装饰：置于页首区域之后，避免与页脚重叠 */}
+      <div className="absolute top-40 right-16 pointer-events-none select-none opacity-[0.03]">
         <span
           className="text-[180px] font-black tracking-tighter leading-none block text-right"
           style={{ color: isDark ? '#fff' : '#7f1d1d' }}
@@ -325,8 +357,9 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
         </span>
       </div>
 
-      {/* 四周装饰性图形点缀 */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+      {/* 四周装饰性图形点缀。页脚在画布内且背景透明，装饰层若铺到 inset-0
+          就会从页脚文字下面透出来，所以下边界留出页脚高度。 */}
+      <div className="absolute inset-x-0 top-0 bottom-72 pointer-events-none overflow-hidden z-0">
         {/* 右上角：实心方块阵列 */}
         <div className="absolute top-10 right-10 grid grid-cols-2 gap-3 opacity-20">
           <div className="w-4 h-4" style={{ backgroundColor: primaryColor }} />
@@ -345,8 +378,9 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
           }}
         />
 
-        {/* 右下角：同心圆弧 */}
-        <div className="absolute -bottom-20 -right-20 w-150 h-150 opacity-10 pointer-events-none">
+        {/* 右侧：同心圆弧。只让右边缘裁切它——贴着装饰层下边界会被那条看不见的线
+            横切成两截弧，像渲染坏了，所以改为垂直居中浮在内容场里。 */}
+        <div className="absolute top-1/2 -translate-y-1/2 -right-40 w-150 h-150 opacity-10 pointer-events-none">
           <div className="absolute bottom-0 right-0 w-full h-full border-40 rounded-full" style={{ borderColor: primaryColor }} />
           <div
             className="absolute bottom-20 right-20 w-[calc(100%-160px)] h-[calc(100%-160px)] border-20 rounded-full"
@@ -359,8 +393,8 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
         </div>
       </div>
 
-      {/* 内容层 */}
-      <div className="relative z-10 flex flex-col h-full p-16">
+      {/* 内容层：高度由信息量决定，不用 h-full + mt-auto 撑出空白带 */}
+      <div className="relative z-10 flex flex-col p-20">
         {/* 顶部状态栏 */}
         <div className="flex items-center justify-between mb-14">
           {/* 优化后的左侧状态标签 */}
@@ -464,6 +498,14 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
           <p className="text-5xl font-semibold" style={{ color: primaryColor }}>
             {displayMethod}
           </p>
+          {errorSummary && (
+            <p
+              className="text-4xl font-medium leading-snug mt-8 break-all"
+              style={{ color: secondaryColor }}
+            >
+              {errorSummary}
+            </p>
+          )}
         </div>
 
         {/* 验证二维码 */}
@@ -515,25 +557,72 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
           </div>
         )}
 
-        {/* 错误堆栈 */}
-        <div className="mb-14">
-          <SectionTitle icon={<AlertCircle size={36} style={{ color: mutedColor }} />} en="Stack Trace" zh="错误堆栈" color={mutedColor} />
-          <div
-            className="p-10 rounded-[36px]"
-            style={{
-              backgroundColor: isDark ? 'rgba(220,38,38,0.1)' : 'rgba(254,202,202,0.4)',
-              border: `1px solid ${isDark ? 'rgba(248,113,113,0.2)' : 'rgba(252,165,165,0.5)'}`
-            }}
-          >
-            <pre
-              className="text-2xl leading-relaxed whitespace-pre-wrap break-all font-mono"
-              style={{ color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(127,29,29,0.9)' }}
-              dangerouslySetInnerHTML={{
-                __html: convertAnsiToHtml(String(businessError?.stack || data.error?.stack || ''))
-              }}
+        {/* 错误堆栈 / 结构化诊断 */}
+        {hasFailureDetail && (
+          <div className="mb-14">
+            <SectionTitle
+              icon={<AlertCircle size={36} style={{ color: mutedColor }} />}
+              en={diagnostics.length > 0 ? 'Failure Details' : 'Stack Trace'}
+              zh={diagnostics.length > 0 ? '故障详情' : '错误堆栈'}
+              color={mutedColor}
             />
+            <div
+              className="p-10 rounded-[36px]"
+              style={{
+                backgroundColor: isDark ? 'rgba(220,38,38,0.1)' : 'rgba(254,202,202,0.4)',
+                border: `1px solid ${isDark ? 'rgba(248,113,113,0.2)' : 'rgba(252,165,165,0.5)'}`
+              }}
+            >
+              {/* 结构化字段用分隔线与间距分区，不再嵌套小卡片 */}
+              {diagnostics.length > 0 && (
+                <dl className="flex flex-col">
+                  {diagnostics.map((item, index) => (
+                    <div
+                      key={item.label}
+                      className="flex gap-8 py-5"
+                      style={{
+                        borderTop: index === 0
+                          ? undefined
+                          : `1px solid ${isDark ? 'rgba(248,113,113,0.14)' : 'rgba(220,38,38,0.1)'}`
+                      }}
+                    >
+                      <dt className="text-2xl font-medium shrink-0 w-56" style={{ color: mutedColor }}>
+                        {item.label}
+                      </dt>
+                      <dd
+                        className="text-2xl font-mono leading-relaxed break-all min-w-0 flex-1"
+                        style={{ color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(127,29,29,0.9)' }}
+                      >
+                        {item.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {stackText && (
+                <>
+                  {diagnostics.length > 0 && (
+                    <p
+                      className="text-xl font-semibold tracking-[0.18em] uppercase mt-8 mb-4 pt-6"
+                      style={{
+                        color: mutedColor,
+                        borderTop: `1px solid ${isDark ? 'rgba(248,113,113,0.2)' : 'rgba(220,38,38,0.14)'}`
+                      }}
+                    >
+                      Call Stack / 调用栈
+                    </p>
+                  )}
+                  <pre
+                    className="text-2xl leading-relaxed whitespace-pre-wrap break-all font-mono"
+                    style={{ color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(127,29,29,0.9)' }}
+                    dangerouslySetInnerHTML={{ __html: convertAnsiToHtml(stackText) }}
+                  />
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 执行日志 */}
         {data.logs && data.logs.length > 0 && (
@@ -549,17 +638,21 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
                 const theme = getLogLevelTheme(log.level, isDark)
                 return (
                   <fieldset key={index} className={`relative rounded-3xl ${theme.bgClass} border-2 ${theme.borderClass} p-6`}>
-                    {/* 时间戳 */}
-                    <legend className="flex items-center gap-2 ml-4">
-                      {/* 左侧圆角装饰 */}
-                      <span className={`w-2 h-6 rounded-full -mr-1.5 ${theme.dotClass}`} />
-                      <span className="flex items-center gap-2 px-3">
-                        <Clock size={18} className={theme.iconClass} />
-                        <span className={`text-xl font-mono font-medium ${theme.textClass}`}>{log.timestamp}</span>
-                      </span>
-                      {/* 右侧圆角装饰 */}
-                      <span className={`w-2 h-6 rounded-full -ml-1.5 ${theme.dotClass}`} />
-                    </legend>
+                    {/* 时间戳：群/用户这类合成条目没有时间，此时整条 legend 不渲染，避免空胶囊 */}
+                    {log.timestamp
+                      ? (
+                        <legend className="flex items-center gap-2 ml-4">
+                          {/* 左侧圆角装饰 */}
+                          <span className={`w-2 h-6 rounded-full -mr-1.5 ${theme.dotClass}`} />
+                          <span className="flex items-center gap-2 px-3">
+                            <Clock size={18} className={theme.iconClass} />
+                            <span className={`text-xl font-mono font-medium ${theme.textClass}`}>{log.timestamp}</span>
+                          </span>
+                          {/* 右侧圆角装饰 */}
+                          <span className={`w-2 h-6 rounded-full -ml-1.5 ${theme.dotClass}`} />
+                        </legend>
+                        )
+                      : null}
 
                     {/* 日志等级 */}
                     <div className="absolute bottom-2 right-6 pointer-events-none">
@@ -580,33 +673,12 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
         )}
 
         {/* 底部版本信息 */}
-        <div className="mt-auto pt-12" style={{ borderTop: `2px solid ${isDark ? 'rgba(248,113,113,0.15)' : 'rgba(252,165,165,0.3)'}` }}>
+        <div className="pt-16" style={{ borderTop: `2px solid ${isDark ? 'rgba(248,113,113,0.15)' : 'rgba(252,165,165,0.3)'}` }}>
           {/* 版本信息网格 */}
+          {/* 插件与框架的品牌/版本由 DefaultLayout 的页脚统一负责（ctx.version 非空时渲染），
+              这里不再自绘一份，否则同一张图会出现两组 plugin/framework 品牌对。
+              适配器信息是页脚没有的内容，所以保留在这里。 */}
           <div className="grid grid-cols-2 gap-10 mb-12">
-            <div className="flex items-center gap-6">
-              <img src="/image/yunzai-logo.svg" className="h-16 w-auto" alt="Yunzai" />
-              <div>
-                <p className="text-xl" style={{ color: mutedColor }}>
-                  Framework / 框架版本
-                </p>
-                <p className="text-3xl font-bold" style={{ color: accentColor }}>
-                  {data.frameworkVersion}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              <img src="/image/kkkkkk-logo.svg" className="h-16 w-auto" alt="kkkkkk-10086" />
-              <div>
-                <p className="text-xl" style={{ color: mutedColor }}>
-                  Plugin / 插件版本
-                </p>
-                <p className="text-3xl font-bold" style={{ color: accentColor }}>
-                  {data.pluginVersion}
-                </p>
-              </div>
-            </div>
-
             {data.adapterInfo && (
               <div
                 className="col-span-2 p-8 rounded-3xl"
@@ -717,8 +789,12 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
               <div className="flex items-center gap-3">
                 <MdSchedule size={24} />
                 <span>
-                  Built Time: {data.buildTime} 于{' '}
-                  {formatDistanceToNow(parse(data.buildTime, 'yyyy年MM月dd日 HH:mm', new Date()), { locale: zhCN })}前
+                  Built Time: {data.buildTime}
+                  {/* buildTime 是已经格式化过的字符串，这里再 parse 回去纯粹为了算"多久以前"。
+                      格式一旦对不上，parse 得到 Invalid Date，formatDistanceToNow 会抛 RangeError
+                      并且是在 SSR 阶段抛——整张错误卡片渲染失败，连原始错误都发不出去。
+                      所以校验后再用，算不出来就只显示绝对时间。 */}
+                  {buildTimeAgo ? ` 于 ${buildTimeAgo}前` : ''}
                 </span>
               </div>
             )}
@@ -727,6 +803,26 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
                 <GitBranch size={24} />
                 <span>Commit Hash: {data.commitHash}</span>
               </div>
+            )}
+            {/* RemoveWatermark 开启时 Render.ts 不传 ctx.version，DefaultLayout 的页脚整块不渲染，
+                插件与框架版本就彻底消失了——可这张图的用途正是拿去报 bug，版本号不能少。
+                所以页脚缺席时在这里补一份纯文字版本号：只有文字没有 logo，不构成第二组品牌对，
+                也顺带让 data.pluginVersion / data.frameworkVersion 这两个此前无人读取的字段真正生效。 */}
+            {!props.ctx?.version && (
+              <>
+                {data.pluginVersion && (
+                  <div className="flex items-center gap-3">
+                    <Puzzle size={24} />
+                    <span>Plugin: {data.pluginVersion}</span>
+                  </div>
+                )}
+                {data.frameworkVersion && (
+                  <div className="flex items-center gap-3">
+                    <Cpu size={24} />
+                    <span>Framework: {data.frameworkVersion}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 

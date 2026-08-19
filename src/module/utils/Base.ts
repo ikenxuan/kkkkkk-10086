@@ -1,16 +1,20 @@
 import { createRequire } from 'node:module'
 import type { AxiosRequestConfig } from 'axios'
-import type { ProxyAuth, PushlistConfig } from '../../types/config.js'
-import type { FileInfo, FileTitle } from '../../types/platform.js'
-import { getBilibiliData as fetchBilibiliData } from '../platform/bilibili/api.js'
-import { getDouyinData as fetchDouyinData } from '../platform/douyin/api.js'
+import type { ProxyAuth, PushlistConfig } from '@/types/config'
+import type { FileInfo, FileTitle } from '@/types/platform'
+import { getBilibiliData as fetchBilibiliData } from '@/module/platform/bilibili/api'
+import { getDouyinData as fetchDouyinData } from '@/module/platform/douyin/api'
 import { Networks, baseHeaders } from './Networks.js'
 import { mergeFile } from './FFmpeg.js'
-import cfg from '../../runtime/host/config.js'
+import cfg from '@/runtime/host/config'
 import { Render } from './Render.js'
 import Version from './Version.js'
 import Config from './Config.js'
 import Common from './Common.js'
+import { getAdapterInfo } from './ErrorHandler/adapter.js'
+import { getActiveLogEntries } from './ErrorHandler/log-context.js'
+import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metadata'
+import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
 
 interface AmagiClient {
@@ -128,27 +132,114 @@ const getAmagiMethod = (
   return Reflect.get(target, property)
 }
 
+/**
+ * 把栈帧里的绝对路径压成相对路径。
+ *
+ * 这张错误卡片是直接回复到群里的，绝对路径会连带把服务器的目录结构和系统用户名
+ * （`C:/Users/某人/...`）一起贴出去。只保留插件目录以内的相对位置，定位能力不受影响。
+ */
+const scrubStackPaths = (stack: string): string => {
+  const pluginPath = Version.pluginPath
+  if (!pluginPath) return stack
+  const yunzaiRoot = pluginPath.replace(/\/plugins\/[^/]+$/, '')
+  const normalized = stack.replace(/\\/g, '/').replaceAll(pluginPath, '.')
+  return yunzaiRoot && yunzaiRoot !== pluginPath
+    ? normalized.replaceAll(yunzaiRoot, '<yunzai>')
+    : normalized
+}
+
+/**
+ * amagi 的业务错误只带结构化字段，没有 JS 调用栈。
+ * 直接把 `stack` 留空会让错误卡片的堆栈区渲染成空盒子，
+ * 因此在代理里现场抓取真实调用栈作为兜底。
+ */
+const captureLiveStack = (name: string, message: string): string => {
+  const holder: { stack?: string } = {}
+  Error.captureStackTrace?.(holder, captureLiveStack)
+  const frames = (holder.stack ?? new Error(message).stack ?? '')
+    .split('\n')
+    .filter(line => /^\s+at\s/.test(line))
+  if (frames.length === 0) return ''
+  return scrubStackPaths([`${name}: ${message}`, ...frames].join('\n'))
+}
+
+/** 把 amagi 的结构化报错字段整理成键值对，供模板独立展示 */
+const collectApiDiagnostics = (
+  platform: string,
+  method: string,
+  error: Record<string, unknown>,
+  err: ApiErrorRecord
+): Array<{ label: string; value: string }> => {
+  const asText = (value: unknown): string =>
+    typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
+  const pick = (...values: unknown[]): string => values.map(asText).find(Boolean) || ''
+
+  return [
+    { label: '平台', value: platform },
+    { label: '接口', value: method },
+    { label: '业务码', value: pick(err.code, error.code, error.errorCode) },
+    { label: '请求类型', value: pick(error.requestType, error.request_type) },
+    { label: '错误描述', value: pick(error.errorDescription, error.amagiMessage) },
+    { label: '接口地址', value: pick(error.requestUrl, error.request_url) }
+  ].filter(item => item.value !== '')
+}
+
 const buildApiErrorImage = async (
   platform: string,
   method: string,
-  err: ApiErrorRecord
+  err: ApiErrorRecord,
+  event?: BaseEvent
 ): Promise<unknown> => {
   const error = isRecord(err.error) ? err.error : isRecord(err.data) ? err.data : {}
-  return await Render('other/handlerError', {
-    type: 'business_error',
-    platform,
-    method,
-    timestamp: new Date().toLocaleString('zh-CN', { hour12: false }),
-    frameworkVersion: Version.BotVersion,
-    pluginVersion: Version.version,
-    triggerCommand: error.requestUrl || error.request_url || '',
-    error: {
-      name: error.name || error.errorCode || error.code || 'APIError',
-      message: error.message || error.errorDescription || err?.message || 'API 请求失败',
-      stack: error.stack || error.amagiMessage || '',
-      businessName: method
-    }
-  })
+  // 事件形状比 BaseEvent 宽；适配器与群/用户信息只做只读取值。
+  const messageEvent = event as MessageEvent | undefined
+  const groupId = messageEvent?.group_id || messageEvent?.groupId || 'private'
+  const userId = messageEvent?.user_id || messageEvent?.userId || messageEvent?.sender?.user_id || 'unknown'
+
+  const name = String(error.name || error.errorCode || error.code || 'APIError')
+  const message = String(error.message || error.errorDescription || err?.message || 'API 请求失败')
+  const buildMetadata = getBuildMetadata()
+
+  try {
+    return await Render('other/handlerError', {
+      type: 'business_error',
+      platform,
+      method,
+      timestamp: new Date().toISOString(),
+      frameworkVersion: Version.BotVersion,
+      pluginVersion: Version.version,
+      triggerCommand: messageEvent?.msg || error.requestUrl || error.request_url || '',
+      error: {
+        name,
+        message,
+        stack: String(error.stack || '') || captureLiveStack(name, message),
+        businessName: method,
+        diagnostics: collectApiDiagnostics(platform, method, error, err)
+      },
+      logs: [
+        ...getActiveLogEntries().filter(entry => entry.level !== 'TRAC').reverse(),
+        { level: 'INFO', message: `群: ${groupId}`, raw: `群: ${groupId}` },
+        { level: 'INFO', message: `用户: ${userId}`, raw: `用户: ${userId}` }
+      ],
+      buildTime: buildMetadata?.buildTime ? formatBuildTime(buildMetadata.buildTime) : undefined,
+      commitHash: buildMetadata?.shortCommitHash || buildMetadata?.commitHash,
+      adapterInfo: getAdapterInfo(messageEvent)
+    })
+  } catch (renderError: unknown) {
+    // 和 ErrorHandler/render.ts 的 renderErrorReport 对齐：渲染失败必须退化成文本。
+    // 定时推送这条路径上 sendMasterMessage 是唯一的投递通道，这里让异常冒出去
+    // 就等于整个报错静默消失，只在宿主控制台留一行调度器日志。
+    const reason = renderError instanceof Error ? renderError.message : String(renderError)
+    logger.warn(`[Base] 接口错误图片渲染失败，使用文本回退: ${reason}`)
+    return [
+      `KKK接口调用出错: ${method}`,
+      `错误: ${name}: ${message}`,
+      `平台: ${platform}`,
+      `群: ${groupId}`,
+      `用户: ${userId}`,
+      `插件: ${Version.pluginName}@${Version.version}`
+    ].join('\n')
+  }
 }
 
 /**
@@ -279,6 +370,11 @@ export class Base {
       }
     })
 
+    // 捕获实例本身：下面 `get` 用的是方法简写，其内部 `this` 是 handler 对象而非 Base 实例。
+    // 只读构造参数 `e` 又会漏掉「子类构造后重新赋值 this.e」的情况（见 this.e 的注释），
+    // 所以错误上报时以 self.e 为准、退回构造参数。
+    const self = this
+
     // 使用Proxy包装amagi客户端
     this.amagi = new Proxy(client, {
       get (target, prop): unknown {
@@ -299,13 +395,18 @@ export class Base {
             }
             const result = rawResult as ApiErrorRecord
 
+            // 渲染、路由判断、回复必须用同一个事件。以前只有 buildApiErrorImage 用了
+            // self.e，判空和 reply 还读着构造参数 e，于是子类构造后重新赋值 this.e 时
+            // 会出现「按新事件渲染、却按旧事件投递」——卡片内容对，但发错了地方。
+            const event = self.e ?? e
+
             if (property === 'getDouyinData' && result.code !== 200) {
-              const img = await buildApiErrorImage('douyin', String(property), result)
-              if (Object.keys(e ?? {}).length === 0) {
+              const img = await buildApiErrorImage('douyin', String(property), result, event)
+              if (Object.keys(event ?? {}).length === 0) {
                 await sendMasterMessage('douyin', img)
                 throw new Error(result.message)
               }
-              await e?.reply?.(img)
+              await event?.reply?.(img)
               throw new Error(result.message)
             }
 
@@ -321,7 +422,7 @@ export class Base {
               const errorData = isRecord(error?.data) ? error.data : undefined
               const errorNestedData = isRecord(errorData?.data) ? errorData.data : undefined
               const voucher = nestedData?.v_voucher || errorNestedData?.v_voucher
-              if (result.code === -352 && voucher && Object.keys(e ?? {}).length !== 0) {
+              if (result.code === -352 && voucher && Object.keys(event ?? {}).length !== 0) {
                 const riskError = new Error(result.message || 'B站风控验证')
                 Object.assign(riskError, {
                   code: result.code,
@@ -331,12 +432,12 @@ export class Base {
                 })
                 throw riskError
               }
-              const img = await buildApiErrorImage('bilibili', String(property), result)
-              if (Object.keys(e ?? {}).length === 0) {
+              const img = await buildApiErrorImage('bilibili', String(property), result, event)
+              if (Object.keys(event ?? {}).length === 0) {
                 await sendMasterMessage('bilibili', img)
                 throw new Error(result.message)
               }
-              await e?.reply?.(img)
+              await event?.reply?.(img)
               throw new Error(result.message)
             }
             return result

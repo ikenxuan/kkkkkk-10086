@@ -1,4 +1,4 @@
-import type { BotAdapterInfo, MessageEvent } from '../../../types/message.js'
+import type { BotAdapterInfo, MessageEvent } from '@/types/message'
 
 export interface ErrorAdapterInfo {
   name: string
@@ -12,6 +12,10 @@ export interface ErrorAdapterInfo {
 
 type AdapterRecord = Record<string, unknown>
 
+// 这张表在 ktr/template/other/handlerError/components/handlerError.tsx 里有一份等价副本。
+// 两份不是疏漏：ktr/ 是独立的 SSR/浏览器侧模板树，只从 ktr/utils/ 取共享代码，不导入 src/
+// （模板构建没有配 "@/" 别名，也不该把 node 侧运行时代码拖进 vite bundle）。
+// 改这里时必须同步改模板那一份，否则错误卡片上的适配器图标会和 src 侧判定结果不一致。
 const ADAPTER_LOGO_RULES: Array<{ pattern: RegExp; path: string }> = [
   { pattern: /napcat/i, path: '/image/other/handlerError/napcat.webp' },
   { pattern: /lagrange/i, path: '/image/other/handlerError/lagrange.webp' },
