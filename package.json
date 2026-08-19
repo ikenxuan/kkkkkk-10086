@@ -42,7 +42,7 @@
     "verify": "pnpm check"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^6.1.3",
+    "@ikenxuan/amagi": "^6.5.0",
     "@ikenxuan/qrcode": "^1.2.0",
     "@ikenxuan/watermark": "1.3.0",
     "@karinjs/md-html": "^1.3.0",
@@ -69,7 +69,7 @@
     "@heroui/react": "3.2.2",
     "@heroui/styles": "3.2.4",
     "@icons-pack/react-simple-icons": "^13.13.0",
-    "@karinjs/template-react": "0.0.1-beta.6",
+    "@karinjs/template-react": "0.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.3.3",
     "@thesvg/icons": "^2.1.11",
@@ -103,10 +103,5 @@
     "victory": "^37.3.6",
     "vite": "^7.3.6",
     "vitest": "3.2.4"
-  },
-  "overrides": {
-    "@ikenxuan/amagi": {
-      "protobufjs": "8.6.5"
-    }
   }
 }
