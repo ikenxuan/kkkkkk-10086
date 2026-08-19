@@ -10,7 +10,6 @@
     "types": ["node", "react", "react-dom"],
     "paths": {
       "@/*": ["./src/*"],
-      "~/*": ["./src/*"],
       "@karinjs/template-react": ["./src/template-sdk/index.ts"],
       "@kkk/richtext": ["./ktr/richtext/index.ts"]
     }
