@@ -43,10 +43,14 @@ export const REACT_TEMPLATE_ROUTES = [
 
 export type ReactTemplateRoute = (typeof REACT_TEMPLATE_ROUTES)[number]
 
-const aliases: Record<string, ReactTemplateRoute> = {
-  // Current Yunzai callers still use the old, generic videoInfo name.
-  'douyin/videoInfo': 'douyin/video-work'
-}
+/**
+ * 调用方旧路由名到当前模板路由的映射。
+ *
+ * 目前为空：唯一的历史别名 `douyin/videoInfo` 已随 `renderWorkImage` 落地被去掉。
+ * 保留这张表是因为别名会让 `Render()` 的报错里出现调用方源码中不存在的路由名
+ * （报的是解析后的名字），排查时非常误导人，所以新增别名前先确认真的无法改调用点。
+ */
+const aliases: Record<string, ReactTemplateRoute> = {}
 
 const routeSet = new Set<string>(REACT_TEMPLATE_ROUTES)
 

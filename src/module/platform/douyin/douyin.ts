@@ -9,6 +9,7 @@ import {
 } from './danmaku.js'
 import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { douyinComments } from './index.js'
+import { renderWorkImage } from './render.js'
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, parseJsonSafely, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
@@ -232,11 +233,6 @@ let mp4size = ''
 let img: Awaited<ReturnType<typeof Render>>
 
 const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean) || ''
-const formatVideoDuration = (duration?: number): string => {
-  const seconds = Math.floor((duration || 0) / 1000)
-  const minutes = Math.floor(seconds / 60)
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`
-}
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
   `\n点赞：${Common.count(statistics.digg_count)}`,
   `评论：${Common.count(statistics.comment_count)}`,
@@ -666,59 +662,16 @@ export class DouYin extends Base {
                 } catch (error) {
                   logger.warn('[抖音] 获取作者主页信息失败，继续渲染视频信息图', error)
                 }
-                let userProfileView
-                if (userProfile) {
-                  userProfileView = {
-                    ip_location: userProfile.ip_location,
-                    follower_count: Common.count(userProfile.follower_count),
-                    total_favorited: Common.count(userProfile.total_favorited),
-                    aweme_count: Common.count(userProfile.aweme_count)
-                  }
-                }
-                let musicInfo
-                if (aweme.music) {
-                  musicInfo = {
-                    author: aweme.music.author,
-                    title: aweme.music.title,
-                    cover: getFirstUrl(aweme.music.cover_hd) || getFirstUrl(aweme.music.cover_large) || getFirstUrl(aweme.music.cover_thumb)
-                  }
-                }
-                let videoInfo
-                if (video) {
-                  videoInfo = {
-                    duration: formatVideoDuration(video.duration),
-                    width: video.width,
-                    height: video.height,
-                    ratio: video.ratio
-                  }
-                }
-                const videoInfoImg = await Render('douyin/videoInfo', {
-                  desc: aweme.desc || g_title,
-                  aweme_id: aweme.aweme_id,
-                  share_url: aweme.share_url,
-                  image_url: cover,
-                  create_time: Common.convertTimestampToDateTime(aweme.create_time),
-                  showCover: displayContent.includes('cover'),
-                  showTitle: displayContent.includes('title'),
-                  showAuthor: displayContent.includes('author'),
-                  showStats: displayContent.includes('stats'),
-                  statistics: {
-                    digg_count: Common.count(statistics.digg_count),
-                    comment_count: Common.count(statistics.comment_count),
-                    collect_count: Common.count(statistics.collect_count),
-                    share_count: Common.count(statistics.share_count),
-                    recommend_count: Common.count(statistics.recommend_count)
-                  },
-                  author: {
-                    name: aweme.author?.nickname || '无法获取',
-                    avatar: getFirstUrl(aweme.author?.avatar_thumb) || getFirstUrl(aweme.author?.avatar_larger),
-                    short_id: aweme.author?.unique_id || aweme.author?.short_id || '无法获取'
-                  },
-                  user_profile: userProfileView,
-                  music: musicInfo,
-                  video: videoInfo
+                const workInfoImg = await renderWorkImage({
+                  // 上游把 fetchUserProfile() 的整条响应原样挂在 user_info 上，这里已经取到
+                  // .data.user 了，所以按模板契约再包回去，render.ts 才读得到主页的高清头像和粉丝数。
+                  Detail_Data: userProfile ? { ...aweme, user_info: { data: { user: userProfile } } } : aweme,
+                  create_time: aweme.create_time,
+                  // 页脚二维码指向视频直链，照搬上游 douyin.ts 的调用形状
+                  shareLink: `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`,
+                  dynamicTypeLabel: '视频作品'
                 })
-                await this.e.reply(videoInfoImg)
+                if (workInfoImg.length) await this.e.reply(workInfoImg)
               }
             }
             : undefined
