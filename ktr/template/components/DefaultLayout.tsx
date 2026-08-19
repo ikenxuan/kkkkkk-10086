@@ -3,7 +3,7 @@ import React from 'react'
 
 import type { PosterContext } from '../types/ctx'
 import { cn } from '../../utils/cn'
-import { isDark as isDarkMode } from '../../utils/theme'
+import { isDark } from '../../utils/theme'
 import { GlowImage } from './GlowImage'
 import { RolldownLogo } from './RolldownLogo'
 import { ViteLogo } from './ViteLogo'
@@ -28,7 +28,9 @@ interface DefaultLayoutProps {
  * @returns JSX元素
  */
 export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, className = '', style = {} }) => {
-  const dark = isDarkMode(ctx)
+  // 明暗只用于内部装饰分支（辉光强度等）；dark 类与 data-theme 由 ktr 外壳统一写在 body 上，
+  // 模板根元素不再重复施加。唯一事实来源是 ctx.theme.mode。
+  const useDarkTheme = isDark(ctx)
   const { version, watermarkTextBitSize } = ctx
 
   return (
@@ -41,7 +43,10 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
         className
       )}
       style={{
-        // 固定设计宽度属于模板视觉布局；缩放和截图边界由 SSR 外壳的 #container 统一负责。
+        // renderScale 缩放由 ktr 外壳统一施加（#container 上的 zoom，SSR 与开发面板沙盒一致），
+        // 模板根元素不要再加 zoom/transform，否则会叠加成 scale²。
+        // 旧引擎 transform 顺带的层叠上下文也由外壳 #container 的 isolation: isolate 补回，
+        // 模板里 -z-10 的氛围层不会逃逸到 <html> 层叠上下文被卡片背景盖住。
         width: '1440px',
         minWidth: '1440px',
         maxWidth: '1440px',
@@ -50,100 +55,117 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
     >
       {children}
       {version ? (
-        <footer className="relative z-50 px-20 pt-24 pb-16 text-foreground/80">
-          <div className="border-t border-foreground/10 pt-10">
-            <div className="flex flex-wrap items-center justify-between gap-x-16 gap-y-10">
-              {/* 插件品牌与版本 */}
-              <div className="flex min-w-0 flex-1 items-center gap-6">
-                <GlowImage
-                  src="/image/logo.png"
-                  alt="kkkkkk-10086"
-                  imgClassName="h-16 w-16 object-contain"
-                  glowStrength={dark ? 1 : 0}
-                  blurRadius={20}
-                />
+        <div className="relative z-50 pt-32 pb-20 text-foreground/80">
+          {/* 版本信息：插件、框架、构建工具 */}
+          <div className="flex relative justify-center items-center space-x-8">
+            {/* 插件信息 */}
+            <div className="flex items-end space-x-8">
+              <GlowImage glowStrength={useDarkTheme ? 1 : 0} blurRadius={20}>
+                <svg id="114514" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 221" className="w-auto h-18">
+                  <path
+                    id="_1"
+                    d="M132.75,87.37l-53.72-53.37c-4.66-4.63-1.38-12.58,5.18-12.58h115.13c6.57,0,9.84,7.95,5.18,12.58l-53.72,53.37c-4.99,4.96-13.06,4.96-18.05,0Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    id="_2"
+                    d="M28.49,186.89l.03-51.42c-.02-6.57,7.92-9.87,12.56-5.23l57.02,57.02c4.64,4.64,1.34,12.41-5.23,12.39h-51.42c-7.04-.02-12.94-5.72-12.96-12.76Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M41.54,23.68l163.04,163.05c4.78,4.78,1.39,12.95-5.36,12.94h-47.88c-9.69,0-18.99-3.86-25.84-10.71L39.3,102.75c-6.85-6.85-10.7-16.15-10.7-25.84V29.04c0-6.76,8.16-10.14,12.94-5.36Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </GlowImage>
 
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-bold uppercase tracking-wide text-foreground/55">
-                    <span className="truncate">{version.plugin}</span>
-                    <span className="h-1 w-1 rounded-full bg-foreground/25" aria-hidden="true" />
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-2',
-                        version.hasUpdate && 'text-success',
-                        !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
-                      )}
-                    >
-                      {version.hasUpdate && <CircleFadingArrowUp strokeWidth={3} className="h-4 w-4" />}
-                      {!version.hasUpdate && version.releaseType === 'Stable' && <CheckCircle strokeWidth={3} className="h-4 w-4" />}
-                      {!version.hasUpdate && version.releaseType === 'Preview' && <AlertTriangle strokeWidth={3} className="h-4 w-4" />}
-                      {!version.hasUpdate && version.releaseType !== 'Stable' && version.releaseType !== 'Preview' && (
-                        <Info strokeWidth={3} className="h-4 w-4" />
-                      )}
-                      <span>{version.hasUpdate ? '有可用更新' : version.releaseType}</span>
-                    </span>
-                  </div>
-                  <div className="mt-2 flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
-                    <span className="max-w-full truncate text-[42px] font-black leading-none">{version.pluginName}</span>
-                    <span
-                      className={cn(
-                        'shrink-0 text-[24px] font-bold leading-none tabular-nums',
-                        version.hasUpdate && 'text-success',
-                        !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
-                      )}
-                    >
-                      v{version.pluginVersion}
-                    </span>
-                  </div>
+              <div className="flex flex-col items-start opacity-90">
+                <div className="flex items-center mb-1 space-x-2 text-sm font-bold uppercase text-foreground/80">
+                  <span>{version.plugin}</span>
                 </div>
+                <span className="text-5xl font-black">{version.pluginName}</span>
               </div>
+            </div>
 
-              <div className="hidden h-16 w-px shrink-0 bg-foreground/15 xl:block" aria-hidden="true" />
+            <div className="flex flex-col items-start opacity-90">
+              <div className="flex items-center mb-1 space-x-2 text-sm font-bold tracking-widest uppercase text-foreground/80">
+                {version.hasUpdate && <CircleFadingArrowUp strokeWidth={3} className="w-4 h-4 text-success" />}
+                {!version.hasUpdate && version.releaseType === 'Stable' && <CheckCircle strokeWidth={3} className="w-4 h-4" />}
+                {!version.hasUpdate && version.releaseType === 'Preview' && (
+                  <AlertTriangle strokeWidth={3} className="w-4 h-4 text-warning" />
+                )}
+                {!version.hasUpdate && version.releaseType !== 'Stable' && version.releaseType !== 'Preview' && (
+                  <Info strokeWidth={3} className="w-4 h-4" />
+                )}
+                <span
+                  className={cn(
+                    version.hasUpdate && 'text-success',
+                    !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
+                  )}
+                >
+                  {version.hasUpdate ? '有可用更新' : version.releaseType}
+                </span>
+              </div>
+              <span
+                className={cn(
+                  'text-5xl font-bold tracking-wide',
+                  version.hasUpdate && 'text-success',
+                  !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
+                )}
+              >
+                v{version.pluginVersion}
+              </span>
+            </div>
 
-              {/* 云崽框架品牌 */}
-              <div className="flex min-w-0 flex-1 items-center justify-start gap-6 xl:justify-end">
-                <GlowImage
-                  src="/image/frame-logo.png"
-                  alt={version.poweredBy || 'Yunzai'}
-                  imgClassName="h-20 w-20 object-contain"
-                  glowStrength={dark ? 1 : 0}
-                  blurRadius={28}
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-foreground/55">
-                    <Zap strokeWidth={3} className="h-4 w-4 opacity-90" />
-                    <span>Power By</span>
-                  </div>
-                  <div className="mt-2 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <span className="max-w-full truncate text-[42px] font-black leading-none opacity-90">{version.poweredBy}</span>
-                    <span className="shrink-0 text-[22px] font-bold leading-none opacity-70">v{version.frameworkVersion}</span>
-                  </div>
+            <div className="w-1 h-14 opacity-90 bg-foreground" />
+
+            {/* 框架信息 */}
+            <div className="flex items-end space-x-8">
+              <GlowImage
+                src="/image/frame-logo.png"
+                alt="logo"
+                imgClassName="w-auto h-18"
+                glowStrength={useDarkTheme ? 1 : 0}
+                blurRadius={40}
+              />
+              <div className="flex flex-col items-start">
+                <div className="flex items-center mb-1 space-x-2 text-sm font-bold tracking-widest uppercase text-foreground/80">
+                  <Zap strokeWidth={3} className="w-4 h-4 opacity-90" />
+                  <span className="opacity-90">Power By</span>
+                </div>
+                <div className="flex items-end space-x-2">
+                  <span className="text-5xl font-black leading-none opacity-90">{version.poweredBy}</span>
+                  <span className="pb-1 text-2xl font-bold leading-none opacity-90">v{version.frameworkVersion}</span>
                 </div>
               </div>
             </div>
 
-            {(version.releaseType === 'Stable' || typeof watermarkTextBitSize === 'number') && (
-              <div className="mt-9 flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-t border-foreground/10 pt-5">
-                {typeof watermarkTextBitSize === 'number' ? (
-                  <span className="font-mono text-xs text-foreground/30">Restore ID: {watermarkTextBitSize}</span>
-                ) : (
-                  <span aria-hidden="true" />
-                )}
+            {/* 构建工具信息 */}
+            {version.releaseType === 'Stable' && (
+              <>
+                <div className="w-1 h-14 opacity-90 bg-foreground/70" />
 
-                {version.releaseType === 'Stable' && (
-                  <div className="flex items-center gap-5 opacity-65">
-                    <GlowImage glowStrength={dark ? 1 : 0} blurRadius={6}>
-                      <RolldownLogo className="h-4 w-auto" />
-                    </GlowImage>
-                    <GlowImage glowStrength={dark ? 1 : 0} blurRadius={12}>
-                      <ViteLogo className="h-7 w-auto" />
+                <div className="flex flex-col items-start space-y-4">
+                  <div className="flex items-end space-x-2">
+                    <GlowImage glowStrength={useDarkTheme ? 1 : 0} blurRadius={6}>
+                      <RolldownLogo className="w-auto h-4" />
                     </GlowImage>
                   </div>
-                )}
-              </div>
+                  <GlowImage glowStrength={useDarkTheme ? 1 : 0} blurRadius={12}>
+                    <ViteLogo className="w-auto h-8" />
+                  </GlowImage>
+                </div>
+              </>
             )}
           </div>
-        </footer>
+
+          {/* Restore ID */}
+          {typeof watermarkTextBitSize === 'number' && (
+            <div className="flex justify-center">
+              <span className="text-xs font-mono text-foreground/30">Restore ID: {watermarkTextBitSize}</span>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="flex items-center justify-center h-24">
           {typeof watermarkTextBitSize === 'number' && (
