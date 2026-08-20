@@ -39,7 +39,7 @@
     "typecheck": "node -e \"require('node:child_process').execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.json', '--noEmit'], { stdio: 'inherit' });\"",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "typecheck:render": "tsc -p tsconfig.render.json --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:template && pnpm build",
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:template && pnpm typecheck:render && pnpm build",
     "verify": "pnpm check"
   },
   "dependencies": {
