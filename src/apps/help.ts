@@ -15,8 +15,7 @@ import type { CommandEvent } from '@/types/message'
  * - `karin.command()` -> Yunzai 的 `plugin` 类 + `rule` 表
  * - `config.master()` 判主人 -> Yunzai 的 `e.isMaster`
  * - `Render(e, path, params)` -> 本仓库是 `Render(path, params)`
- * - 上游 `#kkk更新` 是真的执行 git 更新，本仓库没有这个实现，
- *   沿用原有行为把它并到更新日志上
+ * - `#kkk更新` 由 `apps/update.ts` 调宿主的 update 真执行更新，不在本文件
  */
 
 /** 帮助条目的可见角色 */
@@ -193,10 +192,16 @@ const buildHelpGroups = (): HelpGroup[] => [
         roles: ['member', 'master']
       },
       {
-        title: '「#kkk更新日志」「#kkk更新」',
-        description: '查看更新日志',
-        icon: 'ph:arrows-clockwise-fill',
+        title: '#kkk更新日志',
+        description: '查看本地 CHANGELOG 最近十个版本',
+        icon: 'ph:scroll-fill',
         roles: ['member', 'master']
+      },
+      {
+        title: '「#kkk更新」「#kkk强制更新」',
+        description: '拉取并安装插件更新',
+        icon: 'ph:arrows-clockwise-fill',
+        roles: ['master']
       }
     ]
   }
@@ -234,7 +239,9 @@ export class kkkHelp extends plugin {
           fnc: 'version'
         },
         {
-          reg: '^#?kkk(更新日志|更新)$',
+          // 只收「更新日志」。`#kkk更新` 归 update.ts 真去执行更新，
+          // 那边优先级 1000 比这里的 2000 靠前，两条规则重叠时这里永远轮不到。
+          reg: '^#?kkk更新日志$',
           fnc: 'changelog'
         }
       ]

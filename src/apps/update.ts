@@ -11,7 +11,10 @@ export class kkkUpdate extends plugin {
       priority: 1000,
       rule: [
         {
-          reg: /^#kkk(插件)?(强制)?更新(日志)?$/,
+          // 不再收「日志」：`#kkk更新日志` 归 help.ts 出 other/changelog 卡片，
+          // 与上游一致。本文件优先级 1000 比 help 的 2000 靠前，两条规则重叠时
+          // 这边先返回 true，卡片就永远进不去。
+          reg: /^#kkk(插件)?(强制)?更新$/,
           fnc: 'update'
         }
       ]
@@ -19,17 +22,15 @@ export class kkkUpdate extends plugin {
   }
 
   async update (e: CommandEvent): Promise<boolean> {
+    // 更新是主人专属；非主人直接放行，让后面的插件有机会处理
+    if (!e.isMaster) return false
     let msg = e.msg
-    if (!msg.includes('日志') && !e.isMaster) return false
-    if (msg.includes('强制') && msg.includes('日志')) {
-      msg = msg.replace('强制', '')
-    }
     msg = msg.replace(/kkk(插件)?/, '')
     msg += Version.pluginName
     e.msg = msg
     const up = new HostUpdate(e)
     up.e = e
-    e.msg.includes('日志') ? up.updateLog() : up.update()
+    up.update()
     return true
   }
 }
