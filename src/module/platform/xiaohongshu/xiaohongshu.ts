@@ -15,11 +15,14 @@ import {
   type XiaohongshuStreamData
 } from './livePhoto.js'
 import {
+  buildNoteStatistics,
+  buildRenderComments,
   buildXiaohongshuEmojiList,
-  buildXiaohongshuText,
+  buildXiaohongshuRichText,
+  formatTime,
+  getCommentLimit,
   type XiaohongshuComment,
   type XiaohongshuEmoji,
-  type XiaohongshuTag,
   type XiaohongshuUserInfo
 } from './comments.js'
 import type { FileInfo } from '@/types/platform'
@@ -81,9 +84,6 @@ export type XiaohongshuCommentFetcher = (
   options: XiaohongshuCommentRequest
 ) => Promise<NoteCommentsResponse>
 
-const getCommentLimit = (): number =>
-  Math.max(1, Number(Config.xiaohongshu.numcomment || 5))
-
 /**
  * 按配置数量分页获取小红书评论，避免只取首屏导致评论数量不足。
  * fetchComments 参数用于隔离 API wrapper，也便于在不触碰真实网络的情况下验证分页仲裁。
@@ -133,8 +133,6 @@ export const fetchConfiguredNoteComments = async (
   }
 }
 
-const formatCount = (value: number | string | undefined): number | string => value ?? 0
-
 const collectVideoStreams = (streamData: XiaohongshuStreamData | undefined): XiaohongshuLiveVideo[] => {
   const codecPriority = ['h265', 'h264', 'av1', 'h266'] as const
   const streams: XiaohongshuLiveVideo[] = []
@@ -180,71 +178,6 @@ const selectVideoStream = (streamData: XiaohongshuStreamData | undefined): Xiaoh
   return sorted[0]
 }
 
-const formatTime = (timestamp: number | string | undefined): string => {
-  const time = Number(timestamp)
-  if (!time) return '未知时间'
-  const date = new Date(time < 10000000000 ? time * 1000 : time)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
-
-const pickCommentPictureUrl = (picture: unknown): string => {
-  if (typeof picture === 'string') return picture
-  const record = picture as {
-    url_default?: string
-    url_pre?: string
-    url?: string
-    info_list?: Array<{ url?: string }>
-  } | undefined
-  return record?.url_default || record?.url_pre || record?.url || record?.info_list?.[0]?.url || ''
-}
-
-const normalizeTagNames = (tags: XiaohongshuTag[] | undefined): string[] => {
-  if (!Array.isArray(tags)) return []
-  return tags
-    .map(tag => typeof tag === 'string' ? tag : tag?.name || tag?.tag || '')
-    .filter(Boolean)
-}
-
-const normalizeUser = (user: XiaohongshuUserInfo = {}): { nickname: string, image: string } => ({
-  nickname: user.nickname || user.nick_name || '未知用户',
-  image: user.image || user.avatar || user.avatar_url || user.avatar_url_default || ''
-})
-
-const buildRenderComments = (
-  comments: XiaohongshuComment[] | undefined,
-  emojiData: XiaohongshuEmoji[]
-): unknown[] => {
-  const limit = getCommentLimit()
-  return (Array.isArray(comments) ? comments : [])
-    .map(comment => ({ ...comment, show_tags: normalizeTagNames(comment.show_tags) }))
-    .sort((a, b) => Number(b.show_tags.includes('user_top')) - Number(a.show_tags.includes('user_top')))
-    .slice(0, limit)
-    .map(comment => ({
-      id: comment.id || comment.comment_id || `${comment.user_info?.user_id || 'user'}-${comment.create_time || Date.now()}`,
-      user_info: normalizeUser(comment.user_info),
-      content: buildXiaohongshuText(comment.content, emojiData, comment.at_users),
-      create_time: formatTime(comment.create_time),
-      ip_location: comment.ip_location || '',
-      like_count: formatCount(comment.like_count),
-      liked: Boolean(comment.liked),
-      show_tags: comment.show_tags,
-      sub_comment_count: String(comment.sub_comment_count || 0),
-      pictures: (Array.isArray(comment.pictures) ? comment.pictures : [])
-        .map(picture => ({ url_default: pickCommentPictureUrl(picture) }))
-        .filter(picture => picture.url_default),
-      sub_comments: (Array.isArray(comment.sub_comments) ? comment.sub_comments : []).slice(0, 3).map(item => ({
-        id: item.id || item.comment_id || `${item.user_info?.user_id || 'user'}-${item.create_time || Date.now()}`,
-        user_info: normalizeUser(item.user_info),
-        content: buildXiaohongshuText(item.content, emojiData, item.at_users),
-        create_time: formatTime(item.create_time),
-        ip_location: item.ip_location || '',
-        like_count: formatCount(item.like_count),
-        liked: Boolean(item.liked),
-        show_tags: normalizeTagNames(item.show_tags)
-      }))
-    }))
-}
-
 export class Xiaohongshu extends Base {
   type: string | undefined
 
@@ -286,8 +219,8 @@ export class Xiaohongshu extends Base {
     if (sendContent.includes('info')) {
       const noteInfoImg = await Render('xiaohongshu/noteInfo', {
         title: card.title || '无标题',
-        desc: buildXiaohongshuText(card.desc, emojiData, [], { stripTopicMarker: true }),
-        statistics: card.interact_info || {},
+        desc: buildXiaohongshuRichText(card.desc, emojiData, [], { stripTopicMarker: true }),
+        statistics: buildNoteStatistics(card.interact_info),
         note_id: card.note_id || data.note_id,
         author: {
           avatar: card.user?.avatar || card.user?.image || '',
@@ -314,7 +247,7 @@ export class Xiaohongshu extends Base {
       } else {
         const commentListImg = await Render('xiaohongshu/comment', {
           Type: card.video ? '视频' : '图文',
-          CommentsData: buildRenderComments(comments, emojiData),
+          CommentsData: buildRenderComments(comments, emojiData, card.note_id || data.note_id),
           CommentLength: comments.length,
           ImageLength: card.image_list?.length || 0,
           share_url: buildShareUrl(data)
