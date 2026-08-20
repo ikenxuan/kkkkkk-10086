@@ -362,6 +362,108 @@ export const formatBilibiliVideoDescRichText = (
   }))
 }
 
+/** 表情表条目，`push.ts` 的 `extractEmojisData` 的产物 */
+export interface BilibiliEmojiTableItem {
+  text?: string
+  url?: string
+}
+
+/**
+ * 用表情表把富文本里残留的 `[表情名]` 字面量换成 emoji 节点。
+ *
+ * B 站的 `rich_text_nodes` 通常已经给出 `RICH_TEXT_NODE_TYPE_EMOJI`，那条路
+ * {@link formatBilibiliDynamicRichText} 里已经走通了；这里兜的是只给纯文本的那种响应。
+ * 命中不了表情表就原样返回，所以对已有 emoji 节点的文档是个空操作。
+ *
+ * 顺带修掉 HTML 版的一个 bug：那边是
+ * `text.replace(/\[[^\]]*\]/g, '<img src="${item.url}"/>')`，
+ * 一次匹配把**所有**方括号片段都换成同一个表情的图，动态里出现两种表情就全渲染成第一种。
+ * 这里按 `[名字]` 逐个查表，查不到的保持原文。
+ *
+ * @param document 已构建好的富文本文档
+ * @param emojis 表情表
+ */
+export const applyBilibiliEmojiTable = (
+  document: RichTextDocument,
+  emojis: BilibiliEmojiTableItem[] | undefined
+): RichTextDocument => {
+  const table = new Map<string, string>()
+  for (const item of emojis ?? []) {
+    if (item?.text && item?.url) table.set(item.text, item.url)
+  }
+  if (table.size === 0) return document
+
+  const nodes: RichTextNode[] = []
+  for (const node of document.nodes) {
+    if (node.type !== 'text' || !node.text.includes('[')) {
+      nodes.push(node)
+      continue
+    }
+
+    const replaced: RichTextNode[] = []
+    let lastIndex = 0
+    for (const match of node.text.matchAll(/\[[^[\]]+\]/g)) {
+      const url = table.get(match[0])
+      if (!url) continue
+      if (match.index > lastIndex) replaced.push(createTextNode(node.text.slice(lastIndex, match.index), node.style))
+      replaced.push(createEmojiNode(match[0], url))
+      lastIndex = match.index + match[0].length
+    }
+
+    // 一个都没命中就别拆，保留原节点连带它的样式
+    if (!replaced.length) {
+      nodes.push(node)
+      continue
+    }
+    if (lastIndex < node.text.length) replaced.push(createTextNode(node.text.slice(lastIndex), node.style))
+    nodes.push(...replaced)
+  }
+
+  return createRichTextDocument(nodes, { platform: document.platform })
+}
+
+/** 专栏分类原始条目，B站 `viewinfo` 给的是对象，老代码也可能拿到裸字符串 */
+export type BilibiliArticleCategoryInput =
+  | { id?: number | string, name?: string, parent_id?: number | string }
+  | string
+
+/** 专栏分类，`DYNAMIC_TYPE_ARTICLE` 契约要的形状 */
+export interface BilibiliArticleCategory {
+  id: number
+  name: string
+  parent_id: number
+}
+
+/**
+ * 把专栏分类整理成模板要的形状。
+ *
+ * 之前两个调用点都是 `.map(item => item.name).filter(Boolean)`，
+ * 结果给出去的是 `(string | undefined)[]`，而契约要的是 `{id, name, parent_id}[]`。
+ * B站接口本来就返回带 id 的对象，直接留着，别在调用点各写一份。
+ *
+ * @param categories 接口返回的分类列表
+ */
+export const buildBilibiliArticleCategories = (
+  categories: BilibiliArticleCategoryInput[] | undefined
+): BilibiliArticleCategory[] => {
+  if (!Array.isArray(categories)) return []
+
+  const result: BilibiliArticleCategory[] = []
+  for (const item of categories) {
+    if (typeof item === 'string') {
+      if (item) result.push({ id: 0, name: item, parent_id: 0 })
+      continue
+    }
+    if (!item?.name) continue
+    result.push({
+      id: Number(item.id) || 0,
+      name: item.name,
+      parent_id: Number(item.parent_id) || 0
+    })
+  }
+  return result
+}
+
 /**
  * 统计弹幕出现次数，返回按热度排序的前 limit 条
  * @param danmakuList 弹幕列表

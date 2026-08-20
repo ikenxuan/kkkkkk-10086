@@ -3,10 +3,14 @@ import { createRequire } from 'node:module'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getBilibiliDash, getBilibiliPayload, getvideosize, replacetext } from './bilibili.js'
 import { buildBilibiliLiveSessionId, parseBilibiliLiveStartedAt } from './live-status.js'
 import {
+  applyBilibiliEmojiTable,
+  buildBilibiliArticleCategories,
   buildBilibiliArticleRichText,
   buildBilibiliRichTextForwardNodes,
+  formatBilibiliVideoDescRichText,
   getUsernameMetadata
 } from './dynamicText.js'
+import type { BilibiliArticleCategoryInput, BilibiliDescV2Item } from './dynamicText.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
 import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
@@ -218,6 +222,10 @@ interface BilibiliVideoInfo {
   cid: number
   ctime: number
   desc: string
+  /** 结构化简介，走 formatBilibiliVideoDescRichText；缺失时回落到 desc */
+  desc_v2?: BilibiliDescV2Item[]
+  /** 分P列表，模板只用它的长度 */
+  pages?: unknown[]
   pic: string
   redirect_url?: string
   title: string
@@ -227,7 +235,7 @@ interface BilibiliVideoInfo {
 
 interface BilibiliArticleInfo {
   banner_url?: string
-  categories?: Array<{ name?: string } | string>
+  categories?: BilibiliArticleCategoryInput[]
   image_urls?: string[]
   summary?: string
   title?: string
@@ -534,10 +542,11 @@ export class Bilibilipush extends Base {
                   image_url: cover(dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.pics ||
                     dynamicItem.Dynamic_Data.modules.module_dynamic.major?.draw?.items || []),
                   text: replacetext(
-                    br(
-                      dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.summary?.text || ''),
+                    dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.summary?.text || '',
                     dynamicItem.Dynamic_Data.modules.module_dynamic.major?.opus?.summary?.rich_text_nodes || []
                   ),
+                  // 'auto' 让模板按图片数自己挑布局，规则在 DYNAMIC_TYPE_DRAW.tsx 里
+                  imageLayout: 'auto',
                   dianzan: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.like.count),
                   pinglun: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.comment.count),
                   share: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.forward.count),
@@ -545,7 +554,8 @@ export class Bilibilipush extends Base {
                   avatar_url: dynamicItem.Dynamic_Data.modules.module_author.face,
                   frame: dynamicItem.Dynamic_Data.modules.module_author.pendant.image,
                   share_url: 'https://t.bilibili.com/' + dynamicItem.Dynamic_Data.id_str,
-                  username: checkvip(userINFO?.data?.data?.card),
+                  dynamic_id: String(dynamicItem.Dynamic_Data.id_str),
+                  usernameMeta: getUsernameMetadata(userINFO?.data?.data?.card ?? {}),
                   fans: Common.count(userINFO?.data?.data?.follower),
                   user_shortid: dynamicItem.host_mid,
                   total_favorited: Common.count(userINFO?.data?.data?.like_num),
@@ -559,18 +569,18 @@ export class Bilibilipush extends Base {
             }
             /** 处理纯文动态 */
             case DynamicType.WORD: {
-              let text = replacetext(dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.text || '', dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.rich_text_nodes || [])
-              for (const item of emojiDATA || []) {
-                if (text.includes(item.text)) {
-                  if (text.includes('[') && text.includes(']')) {
-                    text = text.replace(/\[[^\]]*\]/g, `<img src="${item.url}"/>`).replace(/\\/g, '')
-                  }
-                  text += '&#160'
-                }
-              }
+              // 表情先交给富文本构建（B 站的 rich_text_nodes 一般已带 emoji 节点），
+              // 剩下的 `[表情名]` 字面量再用表情表补一遍
+              const text = applyBilibiliEmojiTable(
+                replacetext(
+                  dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.text || '',
+                  dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.rich_text_nodes || []
+                ),
+                emojiDATA
+              )
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_WORD',
                 {
-                  text: br(text),
+                  text,
                   dianzan: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.like.count),
                   pinglun: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.comment.count),
                   share: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.forward.count),
@@ -578,11 +588,14 @@ export class Bilibilipush extends Base {
                   avatar_url: dynamicItem.Dynamic_Data.modules.module_author.face,
                   frame: dynamicItem.Dynamic_Data.modules.module_author.pendant.image,
                   share_url: 'https://t.bilibili.com/' + dynamicItem.Dynamic_Data.id_str,
-                  username: checkvip(userINFO.data.data.card || userINFO.data.data.card),
+                  dynamic_id: String(dynamicItem.Dynamic_Data.id_str),
+                  usernameMeta: getUsernameMetadata(userINFO.data.data.card),
                   fans: Common.count(userINFO.data.data.follower),
                   user_shortid: dynamicItem.host_mid,
                   total_favorited: Common.count(userINFO.data.data.like_num),
                   following_count: Common.count(userINFO.data.data.card.attention),
+                  decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.modules.module_author?.decoration_card),
+                  render_time: Common.getCurrentTime(),
                   dynamicTYPE: '纯文动态推送'
                 }
               )
@@ -603,24 +616,33 @@ export class Bilibilipush extends Base {
                 }
                 img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
                   {
-                    image_url: [{ image_src: INFODATA.data.data.pic }],
-                    text: br(INFODATA.data.data.title),
-                    desc: br(dycrad.desc),
+                    // 契约是单张封面字符串，不是数组
+                    image_url: INFODATA.data.data.pic,
+                    text: replacetext(INFODATA.data.data.title, []),
+                    desc: formatBilibiliVideoDescRichText(INFODATA.data.data.desc_v2, dycrad.desc || ''),
+                    dynamic_text: replacetext(
+                      dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.text || '',
+                      dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.rich_text_nodes || []
+                    ),
                     dianzan: Common.count(INFODATA.data.data.stat.like),
                     pinglun: Common.count(INFODATA.data.data.stat.reply),
                     share: Common.count(INFODATA.data.data.stat.share),
                     view: Common.count(dycrad.stat.view),
                     coin: Common.count(dycrad.stat.coin),
                     duration_text: dynamicItem.Dynamic_Data.modules.module_dynamic.major?.archive?.duration_text || '0:00',
+                    page_length: INFODATA.data.data.pages?.length || 1,
                     create_time: Common.convertTimestampToDateTime(INFODATA.data.data.ctime),
                     avatar_url: INFODATA.data.data.owner.face,
                     frame: dynamicItem.Dynamic_Data.modules.module_author.pendant.image,
                     share_url: 'https://www.bilibili.com/video/' + bvid,
-                    username: checkvip(userINFO.data.data.card),
+                    dynamic_id: String(dynamicItem.Dynamic_Data.id_str),
+                    usernameMeta: getUsernameMetadata(userINFO.data.data.card),
                     fans: Common.count(userINFO.data.data.follower),
                     user_shortid: dynamicItem.host_mid,
                     total_favorited: Common.count(userINFO.data.data.like_num),
                     following_count: Common.count(userINFO.data.data.card.attention),
+                    decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.modules.module_author?.decoration_card),
+                    render_time: Common.getCurrentTime(),
                     dynamicTYPE: '视频动态推送'
                   }
                 )
@@ -637,10 +659,11 @@ export class Bilibilipush extends Base {
               const liveCard = JSON.parse(liveContent) as BilibiliLiveCard
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
                 {
-                  image_url: [{ image_src: liveCard.live_play_info.cover }],
-                  text: br(liveCard.live_play_info.title),
-                  liveinf: br(`${liveCard.live_play_info.area_name} | 房间号: ${liveCard.live_play_info.room_id}`),
-                  username: checkvip(userINFO.data.data.card),
+                  // 契约是单张封面字符串，不是数组
+                  image_url: liveCard.live_play_info.cover,
+                  text: replacetext(liveCard.live_play_info.title, []),
+                  liveinf: `${liveCard.live_play_info.area_name} | 房间号: ${liveCard.live_play_info.room_id}`,
+                  usernameMeta: getUsernameMetadata(userINFO.data.data.card),
                   avatar_url: userINFO.data.data.card.face,
                   frame: dynamicItem.Dynamic_Data.modules.module_author.pendant.image,
                   fans: Common.count(userINFO.data.data.follower),
@@ -654,88 +677,98 @@ export class Bilibilipush extends Base {
             }
             /** 处理转发动态 */
             case DynamicType.FORWARD: {
-              const text = replacetext(br(dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.text || ''), dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.rich_text_nodes || [])
+              const text = replacetext(dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.text || '', dynamicItem.Dynamic_Data.modules.module_dynamic.desc?.rich_text_nodes || [])
               const originalMajor = dynamicItem.Dynamic_Data.orig.modules.module_dynamic.major
-              let param = {}
-              switch (dynamicItem.Dynamic_Data.orig.type) {
-                case DynamicType.AV: {
-                  param = {
-                    username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
-                    pub_action: dynamicItem.Dynamic_Data.orig.modules.module_author.pub_action,
-                    avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                    duration_text: originalMajor?.archive?.duration_text,
-                    title: originalMajor?.archive?.title,
-                    danmaku: originalMajor?.archive?.stat?.danmaku,
-                    play: originalMajor?.archive?.stat?.play,
-                    cover: originalMajor?.archive?.cover,
-                    create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
-                    decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
-                    frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
-                  }
-                  break
+              const originalAuthor = dynamicItem.Dynamic_Data.orig.modules.module_author
+              // 同 bilibili.ts：用 IIFE 而不是 `let param = {}` + 逐分支赋值。
+              // 那种写法 param 的类型是 `{}`，塞进 original_content 时编译期什么都拦不住，
+              // 漏字段全留到运行时；这里每个分支直接 return 对应的键，TS 按联合类型逐个校验。
+              const originalContent = (() => {
+                const authorBase = {
+                  usernameMeta: getUsernameMetadata(originalAuthor),
+                  avatar_url: originalAuthor.face,
+                  frame: originalAuthor.pendant?.image,
+                  create_time: Common.convertTimestampToDateTime(originalAuthor.pub_ts),
+                  decoration_card: generateDecorationCard(originalAuthor.decoration_card)
                 }
-                case DynamicType.DRAW: {
-                  const summary = originalMajor?.opus?.summary
-                  param = {
-                    username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
-                    create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
-                    avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                    text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
-                    image_url: cover(originalMajor?.opus?.pics || originalMajor?.draw?.items || []),
-                    decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
-                    frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
+                switch (dynamicItem.Dynamic_Data.orig.type) {
+                  case DynamicType.AV: {
+                    const origDesc = dynamicItem.Dynamic_Data.orig.modules.module_dynamic.desc
+                    return {
+                      DYNAMIC_TYPE_AV: {
+                        ...authorBase,
+                        cover: originalMajor?.archive?.cover ?? '',
+                        duration_text: originalMajor?.archive?.duration_text ?? '',
+                        // 契约要 string，模板直接拼在「{play}观看 {danmaku}弹幕」里
+                        play: Common.count(originalMajor?.archive?.stat?.play ?? 0),
+                        danmaku: Common.count(originalMajor?.archive?.stat?.danmaku ?? 0),
+                        // 模板对 title 走 renderRichTextToReact，必须是富文本
+                        title: replacetext(originalMajor?.archive?.title ?? '', []),
+                        // 模板读的是 `content.text.nodes.length`，没有短路。
+                        // 之前这个分支根本不传 text，转发视频动态必抛 reading 'nodes'。
+                        text: replacetext(origDesc?.text || '', origDesc?.rich_text_nodes || [])
+                      }
+                    }
                   }
-                  break
-                }
-                case DynamicType.WORD: {
-                  const summary = originalMajor?.opus?.summary
-                  param = {
-                    username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
-                    create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
-                    avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                    text: replacetext(br(summary?.text || ''), summary?.rich_text_nodes || []),
-                    decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
-                    frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image
+                  case DynamicType.DRAW: {
+                    const summary = originalMajor?.opus?.summary
+                    return {
+                      DYNAMIC_TYPE_DRAW: {
+                        ...authorBase,
+                        text: replacetext(summary?.text || '', summary?.rich_text_nodes || []),
+                        image_url: cover(originalMajor?.opus?.pics || originalMajor?.draw?.items || [])
+                      }
+                    }
                   }
-                  break
-                }
-                case DynamicType.LIVE_RCMD: {
-                  const liveContent = originalMajor?.live_rcmd?.content
-                  if (!liveContent) {
-                    logger.warn(`UP主：${dynamicItem.remark}的转发直播动态缺少直播卡片数据`)
-                    break
+                  case DynamicType.WORD: {
+                    const summary = originalMajor?.opus?.summary
+                    return {
+                      DYNAMIC_TYPE_WORD: {
+                        ...authorBase,
+                        text: replacetext(summary?.text || '', summary?.rich_text_nodes || [])
+                      }
+                    }
                   }
-                  const liveData = JSON.parse(liveContent) as BilibiliLiveCard
-                  param = {
-                    username: checkvip(dynamicItem.Dynamic_Data.orig.modules.module_author),
-                    create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.orig.modules.module_author.pub_ts),
-                    avatar_url: dynamicItem.Dynamic_Data.orig.modules.module_author.face,
-                    decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.orig.modules.module_author.decoration_card),
-                    frame: dynamicItem.Dynamic_Data.orig.modules.module_author.pendant.image,
-                    cover: liveData.live_play_info.cover,
-                    text_large: liveData.live_play_info.watched_show.text_large,
-                    area_name: liveData.live_play_info.area_name,
-                    title: liveData.live_play_info.title,
-                    online: liveData.live_play_info.online
+                  case DynamicType.LIVE_RCMD: {
+                    const liveContent = originalMajor?.live_rcmd?.content
+                    if (!liveContent) {
+                      logger.warn(`UP主：${dynamicItem.remark}的转发直播动态缺少直播卡片数据`)
+                      return {}
+                    }
+                    const liveData = JSON.parse(liveContent) as BilibiliLiveCard
+                    return {
+                      DYNAMIC_TYPE_LIVE_RCMD: {
+                        ...authorBase,
+                        cover: liveData.live_play_info.cover,
+                        text_large: liveData.live_play_info.watched_show.text_large,
+                        area_name: liveData.live_play_info.area_name,
+                        online: Common.count(liveData.live_play_info.online),
+                        // 同 AV：模板对 title 走 renderRichTextToReact
+                        title: replacetext(liveData.live_play_info.title, [])
+                      }
+                    }
                   }
-                  break
+                  case DynamicType.FORWARD:
+                  default: {
+                    logger.warn(`UP主：${dynamicItem.remark}的${logger.green('转发动态')}转发的原动态类型为「${logger.yellow(dynamicItem.Dynamic_Data.orig.type)}」暂未支持解析`)
+                    return {}
+                  }
                 }
-                case DynamicType.FORWARD:
-                default: {
-                  logger.warn(`UP主：${dynamicItem.remark}的${logger.green('转发动态')}转发的原动态类型为「${logger.yellow(dynamicItem.Dynamic_Data.orig.type)}」暂未支持解析`)
-                  break
-                }
-              }
+              })()
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_FORWARD', {
                 text,
+                // 转发动态本身不带图，模板用 `props.imgList &&` 短路；契约要求这个键存在
+                imgList: null,
                 dianzan: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.like.count),
                 pinglun: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.comment.count),
                 share: Common.count(dynamicItem.Dynamic_Data.modules.module_stat.forward.count),
-                create_time: dynamicItem.Dynamic_Data.modules.module_author.pub_time,
+                // 跟同文件其他推送路由保持一致：pub_time 是可选的，pub_ts 才是必填时间戳
+                create_time: Common.convertTimestampToDateTime(dynamicItem.Dynamic_Data.modules.module_author.pub_ts),
                 avatar_url: dynamicItem.Dynamic_Data.modules.module_author.face,
                 frame: dynamicItem.Dynamic_Data.modules.module_author.pendant.image,
                 share_url: 'https://t.bilibili.com/' + dynamicItem.Dynamic_Data.id_str,
-                username: checkvip(userINFO.data.data.card),
+                dynamic_id: String(dynamicItem.Dynamic_Data.id_str),
+                usernameMeta: getUsernameMetadata(userINFO.data.data.card),
                 fans: Common.count(userINFO.data.data.follower),
                 user_shortid: dynamicItem.Dynamic_Data.modules.module_author.mid,
                 total_favorited: Common.count(userINFO.data.data.like_num),
@@ -743,7 +776,7 @@ export class Bilibilipush extends Base {
                 dynamicTYPE: '转发动态推送',
                 decoration_card: generateDecorationCard(dynamicItem.Dynamic_Data.modules.module_author.decorate),
                 render_time: Common.getCurrentTime(),
-                original_content: { [dynamicItem.Dynamic_Data.orig.type]: param }
+                original_content: originalContent
               })
               break
             }
@@ -789,9 +822,7 @@ export class Bilibilipush extends Base {
               articleForwardPayload = { body, forwardNodes, title, summary, shareUrl }
 
               const stats = articleData.stats || {}
-              const categories = Array.isArray(articleData.categories)
-                ? articleData.categories.map(item => typeof item === 'string' ? item : item.name).filter(Boolean)
-                : []
+              const categories = buildBilibiliArticleCategories(articleData.categories)
 
               img = await Render('bilibili/dynamic/DYNAMIC_TYPE_ARTICLE', {
                 usernameMeta: getUsernameMetadata(userINFO.data.data.card),
@@ -1488,32 +1519,6 @@ export class Bilibilipush extends Base {
     const img = await Render('bilibili/userlist', { renderOpt })
     await event.reply?.(img)
   }
-}
-
-/**
- * 将换行符替换为HTML的<br>标签。
- * @param {string} data - 需要进行换行符替换的字符串
- * @returns {string} 替换后的字符串，其中的换行符\n被<br>替换
- */
-function br (data: string): string {
-  // 使用正则表达式将所有换行符替换为<br>
-  return (data = data.replace(/\n/g, '<br>'))
-}
-
-/**
- * 检查成员是否为VIP，并根据VIP状态改变其显示颜色。
- * @param {BiliUserProfile['data']['card'] | BiliUserDynamic['data']['items'][number]['orig']['modules']['module_author']} member - 成员对象，需要包含vip属性，该属性应包含vipStatus和nickname_color（可选）
- * @returns {string} 返回成员名称的HTML标签字符串，VIP成员将显示为特定颜色，非VIP成员显示为默认颜色
- */
-function checkvip (member: {
-  name?: string
-  vip?: { nickname_color?: string, status?: number }
-} | undefined): string {
-  // 根据VIP状态选择不同的颜色显示成员名称
-  if (!member) return ''
-  return member?.vip?.status === 1
-    ? `<span style="color: ${member.vip.nickname_color || '#FB7299'}; font-weight: 700;">${member.name}</span>`
-    : `<span style="color: ${Common.useDarkTheme() ? '#EDEDED' : '#606060'}">${member.name}</span>`
 }
 
 /**
