@@ -14,6 +14,7 @@ import type { BilibiliArticleCategoryInput, BilibiliDescV2Item } from './dynamic
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
 import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
 import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'
 import common from '@/runtime/host/common'
@@ -361,25 +362,6 @@ const bilibiliBaseHeaders = {
 
 const DEFAULT_BILIBILI_PUSH_TYPES = ['video', 'draw', 'word', 'live', 'forward', 'article'] as const
 type BilibiliPushType = typeof DEFAULT_BILIBILI_PUSH_TYPES[number]
-
-const BILIBILI_PUSH_TYPE_LABELS: Record<BilibiliPushType, string> = {
-  video: '视频',
-  draw: '图文',
-  word: '纯文',
-  live: '直播',
-  forward: '转发',
-  article: '专栏'
-}
-const getBilibiliPushTypeLabel = (type: BilibiliPushType): string => {
-  switch (type) {
-    case 'video': return BILIBILI_PUSH_TYPE_LABELS.video
-    case 'draw': return BILIBILI_PUSH_TYPE_LABELS.draw
-    case 'word': return BILIBILI_PUSH_TYPE_LABELS.word
-    case 'live': return BILIBILI_PUSH_TYPE_LABELS.live
-    case 'forward': return BILIBILI_PUSH_TYPE_LABELS.forward
-    case 'article': return BILIBILI_PUSH_TYPE_LABELS.article
-  }
-}
 
 const BILIBILI_PUSH_TYPE_TO_DYNAMIC_TYPE: Record<BilibiliPushType, string> = {
   video: DynamicType.AV,
@@ -1508,15 +1490,24 @@ export class Bilibilipush extends Base {
       renderOpt.push({
         avatar_img: userInfo.data.data.card.face,
         username: userInfo.data.data.card.name,
-        host_mid: userInfo.data.data.card.mid,
+        // card.mid 是数字，契约要字符串（模板直接把它当文本渲染）
+        host_mid: String(userInfo.data.data.card.mid),
         fans: Common.count(userInfo.data.data.follower),
         total_favorited: Common.count(userInfo.data.data.like_num),
         following_count: Common.count(userInfo.data.data.card.attention),
-        pushTypes: normalizeBilibiliPushTypes(configItem?.pushTypes).map(type => getBilibiliPushTypeLabel(type)).join(' / ')
+        // 原来漏了这个字段，卡片右上角那颗 ON/OFF 灯永远是 OFF
+        switch: configItem?.switch !== false,
+        // 契约要的是原始类型键数组：模板里是 `props.pushTypes ?? Object.keys(pushTypeConfig)`
+        // 再按键取 label。原来传的是 '视频 / 直播' 这种拼好的中文串，
+        // 建不出 Set 里的键，六个推送类型的图标全是灰的
+        pushTypes: normalizeBilibiliPushTypes(configItem?.pushTypes)
       })
     }
 
-    const img = await Render('bilibili/userlist', { renderOpt })
+    const img = await Render('bilibili/userlist', {
+      groupInfo: buildPushListGroupInfo(event),
+      renderOpt
+    })
     await event.reply?.(img)
   }
 }

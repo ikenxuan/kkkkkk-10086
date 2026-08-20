@@ -411,6 +411,20 @@ export const getBilibiliVideoStream = (response: unknown): BilibiliVideoStream |
   return payload.durl?.[0] || payload.dash?.video?.[0] || null
 }
 
+/**
+ * 视频流的分辨率文本，形如 `1920x1080`。
+ *
+ * `bilibili/comment` 契约里 `Resolution` 是必填的 `string | null`，模板在
+ * `Type === '视频'` 且值非空时才显示那个「分辨率（px）」小方块。原来这个字段
+ * 一个调用点都没传，所以视频评论图上从来没出现过分辨率。
+ * dash 流的条目带 `width`/`height`，durl（旧版整段 mp4）不带，取不到就返回 null。
+ */
+export const getBilibiliStreamResolution = (stream: BilibiliVideoStream | null): string | null => {
+  const width = Number(stream?.width)
+  const height = Number(stream?.height)
+  return width > 0 && height > 0 ? `${width}x${height}` : null
+}
+
 export class Bilibili extends Base {
   declare e: BilibiliEvent
   type: unknown
@@ -635,6 +649,7 @@ export class Bilibili extends Base {
                 share_url: 'https://b23.tv/' + infoData.data.data.bvid,
                 Clarity: Config.bilibili.videopriority === true || !this.islogin ? (getBilibiliAcceptDescription(playUrlData)[0] || '未知') : correctList?.selectedQuality,
                 VideoSize: Config.bilibili.videopriority === true || !this.islogin ? ((playUrlStream?.size || 0) / (1024 * 1024)).toFixed(2) : videoSize,
+                Resolution: getBilibiliStreamResolution(playUrlStream),
                 ImageLength: 0,
                 shareurl: 'https://b23.tv/' + infoData.data.data.bvid
               })
@@ -820,7 +835,9 @@ export class Bilibili extends Base {
                   CommentsData: commentsdata,
                   CommentLength: String(commentsdata?.length || 0),
                   share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
+                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
+                  // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
+                  Resolution: null,
                   shareurl: '动态分享链接'
                 })
                 await this.e.reply(img)
@@ -915,16 +932,21 @@ export class Bilibili extends Base {
                   dynamicTYPE: '纯文动态'
                 })
               )
-              Config.bilibili.bilibilinumcomments && commentsData && await this.e.reply(
-                await Render('bilibili/comment', {
-                  Type: '动态',
-                  CommentsData: bilibiliComments(commentsData.data),
-                  CommentLength: String((bilibiliComments(commentsData.data)?.length) ? bilibiliComments(commentsData.data)?.length : 0),
-                  share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
-                  shareurl: '动态分享链接'
-                })
-              )
+              if (Config.bilibili.bilibilinumcomments && commentsData) {
+                const commentsdata = bilibiliComments(commentsData.data)
+                await this.e.reply(
+                  await Render('bilibili/comment', {
+                    Type: '动态',
+                    CommentsData: commentsdata,
+                    CommentLength: String(commentsdata.length),
+                    share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
+                    ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
+                    // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
+                    Resolution: null,
+                    shareurl: '动态分享链接'
+                  })
+                )
+              }
               break
             }
             /** 转发动态 */
@@ -1046,16 +1068,21 @@ export class Bilibili extends Base {
               if (dynamicInfo.data.data.item.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicInfo.data.data.item.modules.module_dynamic.major.archive.bvid
                 const INFODATA = await getBilibiliData('单个视频作品数据', '', { bvid, typeMode: 'strict' }) as VideoInfoResponse
-                Config.bilibili.bilibilinumcomments && commentsData && await this.e.reply(
-                  await Render('bilibili/comment', {
-                    Type: '动态',
-                    CommentsData: bilibiliComments(commentsData.data),
-                    CommentLength: String((bilibiliComments(commentsData.data)?.length || 0)),
-                    share_url: 'https://www.bilibili.com/video/' + bvid,
-                    ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || '动态中没有附带图片',
-                    shareurl: '动态分享链接'
-                  })
-                )
+                if (Config.bilibili.bilibilinumcomments && commentsData) {
+                  const commentsdata = bilibiliComments(commentsData.data)
+                  await this.e.reply(
+                    await Render('bilibili/comment', {
+                      Type: '动态',
+                      CommentsData: commentsdata,
+                      CommentLength: String(commentsdata.length),
+                      share_url: 'https://www.bilibili.com/video/' + bvid,
+                      ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
+                      // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
+                      Resolution: null,
+                      shareurl: '动态分享链接'
+                    })
+                  )
+                }
 
                 img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
                   {
@@ -1198,16 +1225,21 @@ export class Bilibili extends Base {
               })
               await this.e.reply(img)
 
-              Config.bilibili.bilibilinumcomments && commentsData && await this.e.reply(
-                await Render('bilibili/comment', {
-                  Type: '动态',
-                  CommentsData: bilibiliComments(commentsData.data),
-                  CommentLength: String((bilibiliComments(commentsData.data)?.length || 0)),
-                  share_url: shareUrl,
-                  ImageLength: articleImages.length || '动态中没有附带图片',
-                  shareurl: '动态分享链接'
-                })
-              )
+              if (Config.bilibili.bilibilinumcomments && commentsData) {
+                const commentsdata = bilibiliComments(commentsData.data)
+                await this.e.reply(
+                  await Render('bilibili/comment', {
+                    Type: '动态',
+                    CommentsData: commentsdata,
+                    CommentLength: String(commentsdata.length),
+                    share_url: shareUrl,
+                    ImageLength: articleImages.length,
+                    // 契约里 Resolution 必填，专栏没有视频流，模板也只在 Type === '视频' 时显示这一格
+                    Resolution: null,
+                    shareurl: '动态分享链接'
+                  })
+                )
+              }
               break
             }
             default: {
