@@ -7,7 +7,16 @@ const ignores = [
   'lib/**',
   'node_modules/**',
   'data/**',
-  'config/config/**'
+  'config/config/**',
+  // ktr/ 是上游 karin-plugin-kkk 的模板树镜像，必须与上游保持逐字节可比：
+  // 排查问题时靠 `diff` 直接和上游同名文件对，能一眼看出哪几行是本仓库的适配
+  // （例如 ktr/richtext/react/index.tsx 与上游只差一行 import 路径）。
+  // 这里不是漏配：`pnpm lint` 的路径参数本来也没带 ktr，写进来是为了把「不 lint」
+  // 变成明确决定。真跑一次会报 4411 条，其中 4336 条是 jsx-quotes / indent /
+  // space-before-function-paren 这类纯风格问题，`--fix` 一下就等于把整个镜像
+  // 改写成本仓库的风格，此后每次同步上游都是巨型冲突。
+  // 模板树的类型安全由 typecheck:template / typecheck:render 两条 tsc 程序保证。
+  'ktr/**'
 ]
 
 const globals = {
