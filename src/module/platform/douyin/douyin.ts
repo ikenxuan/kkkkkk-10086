@@ -22,6 +22,9 @@ interface UrlResource {
 
 interface PlayAddress extends UrlResource {
   data_size: number
+  /** 该码率下的实际宽高，评论图页头的「分辨率」用这两个字段 */
+  width?: number
+  height?: number
 }
 
 interface DyVideo {
@@ -135,8 +138,17 @@ interface DouyinAweme extends WorkTypeDouyinAweme {
   item_title?: string
   music?: DouyinMusic
   preview_title: string
+  /** 作品归属地区，评论图页头要显示 */
+  region?: string
   share_url?: string
   statistics: DouyinStatistics
+  /** 「大家都在搜」，评论图底部的相关搜索来自这里 */
+  suggest_words?: {
+    suggest_words?: Array<{
+      scene?: string
+      words?: Array<{ word?: string }>
+    }>
+  }
   video: DouyinVideo
 }
 
@@ -773,24 +785,68 @@ export class DouYin extends Base {
 
           if (hasDouyinContent('评论图', 'comment')) {
             const list = await getEmojiList()
-            const commentsArray = await douyinComments(CommentsData, list)
-            if (!commentsArray || Array.isArray(commentsArray) || !commentsArray.jsonArray?.length) {
+            const commentsResult = await douyinComments(CommentsData, list)
+            if (!commentsResult.CommentsData.length) {
               await this.e.reply('这个作品没有评论 ~')
             } else {
+              const aweme = VideoData.data.aweme_detail
+              // 「大家都在搜」：只取评论区顶部那一组，其余场景（搜索页等）不是这张图要的
+              const suggest: string[] = []
+              for (const item of aweme.suggest_words?.suggest_words ?? []) {
+                if (item.scene !== 'comment_top_rec') continue
+                for (const word of item.words ?? []) {
+                  if (word.word) suggest.push(word.word)
+                }
+              }
+
               const img = await Render('douyin/comment',
                 {
                   Type: isArticle ? '文章' : isVideo ? '视频' : this.is_slides ? '合辑' : '图集',
-                  CommentsData: commentsArray,
-                  CommentLength: Config.douyin.realCommentCount ? VideoData.data.aweme_detail.statistics.comment_count : commentsArray.jsonArray?.length ?? 0,
+                  // 扁平数组，不是 { jsonArray } 包装：模板里 CommentsData.length / .map 直接读这个字段
+                  CommentsData: commentsResult.CommentsData,
+                  CommentLength: Config.douyin.realCommentCount
+                    ? aweme.statistics.comment_count ?? 0
+                    : commentsResult.CommentsData.length,
                   share_url: this.is_mp4
-                    ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`
-                    : VideoData.data.aweme_detail.share_url,
-                  Title: g_title,
+                    ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
+                    : aweme.share_url,
                   VideoSize: mp4size,
                   VideoFPS: FPS,
-                  ImageLength: imagenum
+                  ImageLength: imagenum,
+                  Region: aweme.region ?? '',
+                  suggestWrod: suggest,
+                  Resolution: isVideo && video
+                    ? `${video.bit_rate[0].play_addr.width} x ${video.bit_rate[0].play_addr.height}`
+                    : null,
+                  maxDepth: 6,
+                  Author: aweme.author.nickname ?? '',
+                  AuthorAvatar: aweme.author.avatar_thumb?.url_list[0] ?? '',
+                  // 线上 SSR 崩溃就是缺了这一个字段：VideoInfoHeader 直接读
+                  // props.Statistics.digg_count（Comment.tsx:147），拿 undefined 解属性当场抛。
+                  // 拿 HEAD 上的旧 payload 实测复现过，报错正是 reading 'digg_count'。
+                  Statistics: {
+                    digg_count: aweme.statistics.digg_count ?? 0,
+                    comment_count: aweme.statistics.comment_count ?? 0,
+                    share_count: aweme.statistics.share_count ?? 0,
+                    collect_count: aweme.statistics.collect_count ?? 0
+                  },
+                  CreateTime: aweme.create_time
                 }
               )
+
+              // 评论区图片收集：把评论里出现过的图片/表情包合并转发出去
+              if (Config.douyin.commentImageCollection && commentsResult.image_url.length > 0) {
+                const imageMessages = await Promise.all(
+                  commentsResult.image_url.map(async (url, index) =>
+                    segment.image(await processImageUrl(url, aweme.desc || g_title || '抖音评论图片', index, {
+                      ...this.headers,
+                      Referer: 'https://www.douyin.com/'
+                    }))
+                  )
+                )
+                await this.e.reply(await common.makeForwardMsg(this.e, imageMessages, '评论图片收集'))
+              }
+
               await this.e.reply(img)
             }
           }
