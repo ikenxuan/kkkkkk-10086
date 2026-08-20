@@ -61,8 +61,11 @@ export default class KuaiShou extends Base {
         Type: '视频',
         viewCount: videoDetail.photo.viewCount,
         CommentsData,
-        CommentLength: String(CommentsData?.length ? CommentsData.length : 0),
-        share_url: video_url,
+        // 契约要 number：模板里是 `CommentLength > 0` 这种数值比较，传字符串时 '0' > 0 为 false 但 '3' > 0 为 true，
+        // 靠隐式转换蒙对不如直接给数字
+        CommentLength: CommentsData?.length ?? 0,
+        // photoUrl 是可选字段，契约里 share_url 必填 string；拿不到就给空串，别把 undefined 塞进模板
+        share_url: video_url || '',
         VideoSize: videoSizeInMB,
         likeCount: videoDetail.photo.likeCount
       }
