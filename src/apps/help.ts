@@ -122,9 +122,14 @@ export class kkkHelp extends plugin {
   async version (e: CommandEvent): Promise<boolean> {
     const changelogs = fs.readFileSync(Version.pluginPath + '/CHANGELOG.md', 'utf8')
     const img = await Render('other/changelog', {
-      title: 'KKK 更新日志',
       markdown: changelogs,
-      version: Version.version
+      // `#kkk版本` 只看本地 CHANGELOG，不联网查远端，所以两个版本号相同。
+      // 模板里那两处「v{localVersion} → v{remoteVersion}」都在 `Tip === true`
+      // 或 `share_url` 分支里，本路径两个都不传，渲染不到。
+      // 原来传的是 `title` + `version`，契约里根本没有这两个键，
+      // 而 localVersion / remoteVersion 必填 —— 一旦走到更新提示就是 'vundefined'。
+      localVersion: Version.version,
+      remoteVersion: Version.version
     })
     await e.reply!(img)
     return true
@@ -135,7 +140,10 @@ export class kkkHelp extends plugin {
     const img = await Render('other/help', {
       title: 'KKK插件帮助页面',
       role,
-      menu: buildHelpMenu(role)
+      menu: buildHelpMenu(role),
+      // 契约里 list 必填，但 Help.tsx 只读 `props.data?.menu`，
+      // 这个字段在模板里没有任何消费者，给空数组占位
+      list: []
     })
     await e.reply!(img)
     return true
