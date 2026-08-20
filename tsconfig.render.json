@@ -6,8 +6,10 @@
     "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": false,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "types": ["node", "react", "react-dom", "trss-yunzai"],
+    // 不设 baseUrl：TS 5.9 起它是弃用项（7.0 移除），而从 4.1 开始 paths 就不再依赖它 ——
+    // 下面这些映射都以 "./" 开头，没有 baseUrl 时按本配置文件所在目录解析，结果完全一样。
+    // 全仓也没有依赖 baseUrl 的裸路径导入（`from 'src/...'` 这种）。
     "paths": {
       "@/*": ["./src/*"],
       "@karinjs/template-react": ["./src/template-sdk/index.ts"],

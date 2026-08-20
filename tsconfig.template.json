@@ -6,8 +6,8 @@
     "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": false,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "types": ["node", "react", "react-dom"],
+    // 同 tsconfig.render.json：baseUrl 在 TS 5.9 已弃用，paths 从 4.1 起不需要它
     "paths": {
       "@/*": ["./src/*"],
       "@karinjs/template-react": ["./src/template-sdk/index.ts"],

@@ -1,0 +1,16 @@
+{
+  // 这份文件只为编辑器存在，命令行一律用根目录的 `tsconfig.render.json`（pnpm typecheck:render）。
+  //
+  // contracts/ 里的两个文件只属于 render 那个 program：根 tsconfig 的 include 是 `src/**`，
+  // 而且 rootDir 是 `./src`（它是唯一产出 lib/ 的编译程序）。把 contracts/ 塞进根 tsconfig
+  // 会顺着 import 把 ktr/** 一起拖进那个 program，立刻 TS6059「File is not under rootDir」，
+  // pnpm build 直接崩；顺带还会往 lib/ 里吐两个空 .js。
+  //
+  // 但编辑器（tsserver）找配置是从文件所在目录往上走，第一个撞到的是根 tsconfig，
+  // 而 contracts/*.ts 不在它的 include 里，于是被丢进 inferred project —— 那里没有 paths，
+  // 结果就是 `@/module/platform/...` 全报「找不到模块」、`declare module '@/module/utils/...'`
+  // 报「扩大中的模块名无效」。代码本身没问题，是编辑器挑错了 program。
+  //
+  // 目录里放一份代理配置，tsserver 就会先撞到它，拿到 render 的 paths 和 include。
+  "extends": "../tsconfig.render.json"
+}
