@@ -9,6 +9,7 @@ import { getDouyinID, douyinProcessVideos } from './index.js'
 import { getDouyinData } from './api.js'
 import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
+import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
 import common from '@/runtime/host/common'
@@ -489,25 +490,44 @@ export class DouYinpush extends Base {
               : workData.video.play_addr.uri
                 ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${workData.video.play_addr.uri}&ratio=1080p&line=0`
                 : workData.share_url
-            img = await Render('douyin/dynamic', {
-              image_url: getDouyinWorkCoverUrl(workDetail),
-              desc: this.desc(workData, workData.desc),
-              dianzan: Common.count(workData.statistics.digg_count),
-              pinglun: Common.count(workData.statistics.comment_count),
-              share: Common.count(workData.statistics.share_count),
-              shouchang: Common.count(workData.statistics.collect_count),
-              create_time: Common.convertTimestampToDateTime(pushItem.create_time / 1000),
-              avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + (workData.user_info.data.user.avatar_larger.uri || ''),
-              share_url: shareUrl,
-              username: workData.author.nickname,
-              // unique_id 和 short_id 都是可选字段，契约必填 string；
-              // 原来 unique_id 为 undefined（不是 ''）时直接把 undefined 传给模板
-              抖音号: (workData.user_info.data.user.unique_id || workData.user_info.data.user.short_id) || '无法获取',
-              粉丝: Common.count(workData.user_info.data.user.follower_count),
-              获赞: Common.count(workData.user_info.data.user.total_favorited),
-              关注: Common.count(workData.user_info.data.user.following_count),
-              dynamicTYPE: `抖音${DOUYIN_PUSH_TYPE_LABELS[pushType] || '作品'}推送`
-            })
+
+            // 喜欢/推荐列表有专用卡片：通用卡只有一个作者区，装不下
+            // 「甲喜欢了乙的作品」里的甲。source_user_info 就是甲（订阅者）。
+            if (pushType === 'favorite' || pushType === 'recommend') {
+              const listCardWork = {
+                author: workData.author,
+                coverUrl: getDouyinWorkCoverUrl(workDetail),
+                createTime: Common.convertTimestampToDateTime(pushItem.create_time / 1000),
+                desc: workData.desc,
+                remark: pushItem.remark,
+                shareUrl,
+                statistics: workData.statistics
+              }
+              const subscriber = Detail_Data.source_user_info?.data?.user
+              img = pushType === 'favorite'
+                ? await Render('douyin/favorite-list', buildDouyinFavoritePayload({ ...listCardWork, liker: subscriber }))
+                : await Render('douyin/recommend-list', buildDouyinRecommendPayload({ ...listCardWork, recommender: subscriber }))
+            } else {
+              img = await Render('douyin/dynamic', {
+                image_url: getDouyinWorkCoverUrl(workDetail),
+                desc: this.desc(workData, workData.desc),
+                dianzan: Common.count(workData.statistics.digg_count),
+                pinglun: Common.count(workData.statistics.comment_count),
+                share: Common.count(workData.statistics.share_count),
+                shouchang: Common.count(workData.statistics.collect_count),
+                create_time: Common.convertTimestampToDateTime(pushItem.create_time / 1000),
+                avater_url: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + (workData.user_info.data.user.avatar_larger.uri || ''),
+                share_url: shareUrl,
+                username: workData.author.nickname,
+                // unique_id 和 short_id 都是可选字段，契约必填 string；
+                // 原来 unique_id 为 undefined（不是 ''）时直接把 undefined 传给模板
+                抖音号: (workData.user_info.data.user.unique_id || workData.user_info.data.user.short_id) || '无法获取',
+                粉丝: Common.count(workData.user_info.data.user.follower_count),
+                获赞: Common.count(workData.user_info.data.user.total_favorited),
+                关注: Common.count(workData.user_info.data.user.following_count),
+                dynamicTYPE: `抖音${DOUYIN_PUSH_TYPE_LABELS[pushType] || '作品'}推送`
+              })
+            }
           }
         }
 
