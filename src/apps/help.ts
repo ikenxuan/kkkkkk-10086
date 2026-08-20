@@ -1,5 +1,6 @@
 import { Render, Config } from '@/module/utils/index'
 import { collectRuntimeReport, getLocalChangelog } from '@/module/utils/runtime-report'
+import { checkYunzaiVersion } from '@/module/utils/yunzaiVersion'
 import type { CommandEvent } from '@/types/message'
 
 /**
@@ -248,10 +249,21 @@ export class kkkHelp extends plugin {
     })
   }
 
-  /** `#kkk版本`：运行环境诊断卡 */
+  /** `#kkk版本`：运行环境诊断卡，宿主版本偏低时追加一张升级告警卡 */
   async version (e: CommandEvent): Promise<boolean> {
     const img = await Render('other/runtime', collectRuntimeReport(e))
     await e.reply!(img)
+
+    // `other/version_warning` 模板从初始移植起就在仓库里、文案也改成了 Yunzai 版，
+    // 但一直没有调用点。挂在 `#kkk版本` 上而不是启动时推给主人：这条命令本来就是
+    // 「看运行环境」，用户主动问才回答，不会在每次重启时刷屏。
+    const outdated = checkYunzaiVersion()
+    if (outdated) {
+      await e.reply!(await Render('other/version_warning', {
+        requireVersion: outdated.required,
+        currentVersion: outdated.current
+      }))
+    }
     return true
   }
 

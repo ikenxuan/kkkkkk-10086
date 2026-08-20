@@ -138,7 +138,9 @@ const readEngines = (): { node?: string, karin?: string } => {
     const raw: unknown = JSON.parse(fs.readFileSync(path.join(Version.pluginPath, 'package.json'), 'utf8'))
     if (typeof raw !== 'object' || raw === null) return {}
     const pkg = raw as { engines?: Record<string, string>, karin?: { engines?: string } }
-    return { node: pkg.engines?.node, karin: pkg.karin?.engines ?? pkg.engines?.karin }
+    // 本仓库跑在 Yunzai 上，宿主要求写在 engines.yunzai；karin 那两个键留着是为了
+    // 与上游的字段来源对齐，真装到 Karin 上时照样能读出来
+    return { node: pkg.engines?.node, karin: pkg.engines?.yunzai ?? pkg.karin?.engines ?? pkg.engines?.karin }
   } catch {
     return {}
   }
