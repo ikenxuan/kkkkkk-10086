@@ -170,10 +170,48 @@ type CommentsResponse = ApiEnvelope<CommentsPayload>
 interface BangumiEpisode {
   long_title?: string
   badge?: string
+  /** 徽章配色，pgc 接口原样给出，`bilibili/bangumi` 契约要求必填 */
+  badge_info?: { bg_color?: string, bg_color_night?: string, text?: string }
+  bvid?: string
+  cover?: string
+  link?: string
+  /** 发布时间戳（秒），模板按它把剧集分组到时间轴上 */
+  pub_time?: number
   short_link?: string
   share_copy?: string
   cid?: number
   ep_id: number | string
+}
+
+/** 番剧 UP 主信息，字段名与 pgc 接口的 `result.up_info` 对齐 */
+interface BangumiUpInfo {
+  avatar: string
+  avatar_subscript_url: string
+  follower: number
+  is_follow: number
+  mid: number
+  nickname_color: string
+  pendant: { image: string, name: string, pid: number }
+  theme_type: number
+  uname: string
+  verify_type: number
+  vip_label: { bg_color: string, bg_style: number, border_color: string, text: string, text_color: string }
+  vip_status: number
+  vip_type: number
+}
+
+/** 番剧统计，模板无守卫地读 views / favorites / danmakus / coins */
+interface BangumiStat {
+  coins?: number
+  danmakus?: number
+  favorite?: number
+  favorites?: number
+  follow_text?: string
+  likes?: number
+  reply?: number
+  share?: number
+  views?: number
+  vt?: number
 }
 
 interface BangumiInfoData {
@@ -181,6 +219,21 @@ interface BangumiInfoData {
   title: string
   season_title: string
   season_id: number | string
+  actors?: string
+  cover?: string
+  evaluate?: string
+  link?: string
+  new_ep?: { desc?: string, id?: number, is_new?: number, title?: string }
+  stat?: BangumiStat
+  styles?: string[]
+  subtitle?: string
+  /**
+   * pgc 接口对自制/独播番剧给 `up_info`，外购番剧可能整个缺失。
+   * 契约把 UPInfo 写成必填，但模板两处消费都带守卫
+   * （`props.upInfo && …` 和 `props.UPInfo ? … : props.mainCover`），
+   * 所以真缺了只是不显示这一块，不会炸。
+   */
+  up_info?: BangumiUpInfo
 }
 
 interface BangumiInfoResponse {
@@ -409,6 +462,72 @@ export const getBilibiliAcceptDescription = (response: unknown): string[] => get
 export const getBilibiliVideoStream = (response: unknown): BilibiliVideoStream | null => {
   const payload = getBilibiliPayload(response)
   return payload.durl?.[0] || payload.dash?.video?.[0] || null
+}
+
+/**
+ * 组装 `bilibili/bangumi` 契约要的完整数据。
+ *
+ * 这里刻意不写返回类型标注：让 TS 推出字面量形状，`Render('bilibili/bangumi', …)`
+ * 调用点就会拿契约来校验它。
+ *
+ * 原来调用点只传了 `saveId` / `bangumiData` / `title` 三个键 —— 契约里一个都没有
+ * （标题的键是大写的 `Title`），而必填的 14 个字段全缺。模板里是
+ * `[...props.Episodes].sort(...)` 和 `props.stat.views` 这样的无守卫访问，
+ * 所以 `#番剧` 一执行就抛 `Cannot read properties of undefined`，从来没出过图。
+ *
+ * `Link` / `newEP` / `seasonID` / `Copyright` / `length` 这几个契约必填字段模板里
+ * 没有任何消费者，照实填上，不额外造数据。
+ */
+const buildBangumiPayload = (result: BangumiInfoData) => {
+  const stat = result.stat ?? {}
+  return {
+    mainCover: result.cover ?? '',
+    Title: result.title ?? '',
+    Actors: result.actors ?? '',
+    Evaluate: result.evaluate ?? '',
+    Link: result.link ?? '',
+    Styles: result.styles ?? [],
+    subtitle: result.subtitle ?? '',
+    seasonID: Number(result.season_id) || 0,
+    Copyright: '',
+    newEP: {
+      desc: result.new_ep?.desc ?? '',
+      id: Number(result.new_ep?.id) || 0,
+      is_new: Number(result.new_ep?.is_new) || 0,
+      title: result.new_ep?.title ?? ''
+    },
+    Stat: {
+      coins: stat.coins ?? 0,
+      danmakus: stat.danmakus ?? 0,
+      favorite: stat.favorite ?? 0,
+      favorites: stat.favorites ?? 0,
+      follow_text: stat.follow_text ?? '',
+      likes: stat.likes ?? 0,
+      reply: stat.reply ?? 0,
+      share: stat.share ?? 0,
+      views: stat.views ?? 0,
+      vt: stat.vt ?? 0
+    },
+    // 契约把 UPInfo 写成必填，而模板两处消费都带守卫，外购番剧真缺了只是不显示这块。
+    // 这里如实透传接口给的值，用断言让它对上契约，不造假的 UP 信息。
+    UPInfo: result.up_info as NonNullable<BangumiInfoData['up_info']>,
+    Episodes: (result.episodes ?? []).map(episode => ({
+      // 模板拿 bvid 当 React key，还用 findIndex 比对它算集数，
+      // 所以取不到 bvid 时得退回一个仍然唯一的值，否则所有集都会算成同一集
+      bvid: episode.bvid || String(episode.ep_id),
+      cover: episode.cover ?? '',
+      link: episode.link || episode.short_link || '',
+      long_title: episode.long_title ?? '',
+      pub_time: Number(episode.pub_time) || 0,
+      badge: episode.badge ?? '',
+      badge_info: {
+        bg_color: episode.badge_info?.bg_color ?? '',
+        bg_color_night: episode.badge_info?.bg_color_night ?? '',
+        text: episode.badge_info?.text ?? episode.badge ?? ''
+      }
+    })),
+    length: (result.episodes ?? []).length
+  }
 }
 
 /**
@@ -668,7 +787,6 @@ export class Bilibili extends Base {
           this.islogin = (await checkCk()).Status === 'isLogin'
           this.isVIP = (await checkCk()).isVIP
 
-          const barray = []
           const msg = []
 
           if (!videoInfo.data) {
@@ -676,20 +794,12 @@ export class Bilibili extends Base {
             return true
           }
           for (let i = 0; i < videoInfo.data.result.episodes.length; i++) {
-            const totalEpisodes = videoInfo.data.result.episodes.length
             /** @type {string} */
             const long_title = videoInfo.data.result.episodes[i]?.long_title || ''
             /** @type {string} */
             const badge = videoInfo.data.result.episodes[i]?.badge || ''
             /** @type {string} */
             const short_link = videoInfo.data.result.episodes[i]?.short_link || ''
-            barray.push({
-              id: i + 1,
-              totalEpisodes,
-              long_title,
-              badge: badge === '' ? '暂无' : badge,
-              short_link
-            })
             msg.push([
               `\n> ## 第${i + 1}集`,
               `\n> 标题: ${long_title}`,
@@ -698,11 +808,7 @@ export class Bilibili extends Base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : ''
             ])
           }
-          img = await Render('bilibili/bangumi', {
-            saveId: 'bangumi',
-            bangumiData: barray,
-            title: videoInfo.data.result.title
-          })
+          img = await Render('bilibili/bangumi', buildBangumiPayload(videoInfo.data.result))
           await this.e.reply(
             this.mkMsg(this.botadapter === 'QQBot' ? `# ${videoInfo.data.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数` : img, [
               { text: '第1集', callback: '第1集' },
