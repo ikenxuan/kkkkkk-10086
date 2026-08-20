@@ -13,6 +13,7 @@ import Config from './Config.js'
 import Common from './Common.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
 import { getActiveLogEntries } from './ErrorHandler/log-context.js'
+import { buildContextLogEntries, toErrorCardPlatform } from './ErrorHandler/render.js'
 import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metadata'
 import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
@@ -163,6 +164,13 @@ const captureLiveStack = (name: string, message: string): string => {
   return scrubStackPaths([`${name}: ${message}`, ...frames].join('\n'))
 }
 
+/** 只认字符串 / 数字，其余（对象、null、undefined）一律当空 —— 别让 `[object Object]` 印到卡片上 */
+const asText = (value: unknown): string =>
+  typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
+
+/** 按顺序取第一个非空的文本字段 */
+const pick = (...values: unknown[]): string => values.map(asText).find(Boolean) || ''
+
 /** 把 amagi 的结构化报错字段整理成键值对，供模板独立展示 */
 const collectApiDiagnostics = (
   platform: string,
@@ -170,10 +178,6 @@ const collectApiDiagnostics = (
   error: Record<string, unknown>,
   err: ApiErrorRecord
 ): Array<{ label: string; value: string }> => {
-  const asText = (value: unknown): string =>
-    typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
-  const pick = (...values: unknown[]): string => values.map(asText).find(Boolean) || ''
-
   return [
     { label: '平台', value: platform },
     { label: '接口', value: method },
@@ -203,12 +207,12 @@ const buildApiErrorImage = async (
   try {
     return await Render('other/handlerError', {
       type: 'business_error',
-      platform,
+      platform: toErrorCardPlatform(platform),
       method,
       timestamp: new Date().toISOString(),
       frameworkVersion: Version.BotVersion,
       pluginVersion: Version.version,
-      triggerCommand: messageEvent?.msg || error.requestUrl || error.request_url || '',
+      triggerCommand: pick(messageEvent?.msg, error.requestUrl, error.request_url),
       error: {
         name,
         message,
@@ -218,8 +222,7 @@ const buildApiErrorImage = async (
       },
       logs: [
         ...getActiveLogEntries().filter(entry => entry.level !== 'TRAC').reverse(),
-        { level: 'INFO', message: `群: ${groupId}`, raw: `群: ${groupId}` },
-        { level: 'INFO', message: `用户: ${userId}`, raw: `用户: ${userId}` }
+        ...buildContextLogEntries(groupId, userId)
       ],
       buildTime: buildMetadata?.buildTime ? formatBuildTime(buildMetadata.buildTime) : undefined,
       commitHash: buildMetadata?.shortCommitHash || buildMetadata?.commitHash,
