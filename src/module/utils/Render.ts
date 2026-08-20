@@ -4,7 +4,9 @@ import { getReleaseChannel } from '@/module/tooling/release-channel'
 import { Config, Common } from './index.js'
 import {
   renderReactTemplate,
-  resolveReactTemplateRoute
+  resolveReactTemplateRoute,
+  type ReactTemplateRoute,
+  type TemplateParams
 } from './react-template/index.js'
 import Version from './Version.js'
 import {
@@ -13,9 +15,7 @@ import {
   type ImageMessage
 } from './Watermark.js'
 
-export interface RenderParams extends Record<string, unknown> {
-  scale?: number
-}
+export type { RenderParams } from './react-template/index.js'
 
 const getRenderScale = (pct = 1): number => {
   const renderScale = Math.min(2, Math.max(0.5, Number(Config.app.renderScale) / 100))
@@ -44,9 +44,17 @@ const captureImages = async (
   return image ? [image] : false
 }
 
-export const Render = async (
-  templatePath: string,
-  params: RenderParams = {}
+/**
+ * 渲染一张模板图。
+ *
+ * `templatePath` 收窄成 {@link ReactTemplateRoute}，写错路由名不用等运行时抛错；
+ * `params` 按路由查 {@link TemplateParams}，登记过契约的路由少传、多传、类型不对都会红。
+ * 契约表只在 `pnpm typecheck:render` 那个 program 里填满，构建时是空表、退回宽松校验，
+ * 原因见 `react-template/template-data.ts`。
+ */
+export const Render = async <R extends ReactTemplateRoute> (
+  templatePath: R,
+  params: TemplateParams<R> = {} as TemplateParams<R>
 ): Promise<ImageMessage[] | false> => {
   const useDarkTheme = Common.useDarkTheme()
   const reactRoute = resolveReactTemplateRoute(templatePath)

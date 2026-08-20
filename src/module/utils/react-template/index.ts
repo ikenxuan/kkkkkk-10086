@@ -7,3 +7,8 @@ export {
   resolveReactTemplateRoute,
   type ReactTemplateRoute
 } from './routes.js'
+export {
+  type RenderParams,
+  type TemplateDataMap,
+  type TemplateParams
+} from './template-data.js'
