@@ -1,5 +1,6 @@
 import { Base, Common, Render } from '@/module/utils/index'
 import { getDouyinID } from './getid.js'
+import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinWorkCoverUrl, type DouyinAweme } from './workType.js'
 import { getDouyinData } from './api.js'
 
@@ -16,9 +17,13 @@ interface DouyinUser {
   unique_id?: string
   short_id?: string
   avatar_larger?: { url_list?: string[], uri?: string }
+  aweme_count?: number
   follower_count?: number
+  mplatform_followers_count?: number
   total_favorited?: number
   following_count?: number
+  ip_location?: string
+  signature?: string
   live_status?: number
   room_data?: string
   room_id_str?: string
@@ -50,19 +55,12 @@ interface ListDataResponse {
   data?: { aweme_list?: PreviewAweme[] }
 }
 
-interface LiveItem {
-  title?: string
-  cover?: { url_list?: string[] }
-  room_view_stats?: { display_value?: number | string }
-  stats?: { total_user_str?: number | string }
-}
-
 interface LiveDataResponse {
   data?: {
     data?: {
-      data?: LiveItem[] | LiveItem
+      data?: DouyinLiveItem[] | DouyinLiveItem
       partition_road_map?: { partition?: { title?: string } }
-    } & LiveItem[]
+    } & DouyinLiveItem[]
     partition_road_map?: { partition?: { title?: string } }
   }
 }
@@ -86,7 +84,8 @@ const douyinId = (user: DouyinUser | { sec_uid?: string, nickname?: string } | u
   return record?.unique_id || record?.short_id || ''
 }
 
-const buildWorkShareLink = (aweme: PreviewAweme | undefined, fallbackUrl: string): string | undefined => {
+/** 契约里 share_url 必填 string、模板拿它做二维码，所以最后一定要落到一个非空地址 */
+const buildWorkShareLink = (aweme: PreviewAweme | undefined, fallbackUrl: string): string => {
   const videoId = aweme?.video?.play_addr?.uri
   if (videoId) return `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videoId}&ratio=1080p&line=0`
   return aweme?.share_url || fallbackUrl
@@ -97,7 +96,7 @@ const pushTypeLabels: Record<PreviewListPushType, string> = {
   recommend: '推荐列表'
 }
 
-const getLiveItem = (liveData: LiveDataResponse | undefined): LiveItem => {
+const getLiveItem = (liveData: LiveDataResponse | undefined): DouyinLiveItem => {
   const nested = liveData?.data?.data
   const fromNestedArray = Array.isArray(nested?.data) ? nested?.data?.[0] : undefined
   const fromDataArray = Array.isArray(nested) ? nested[0] : undefined
@@ -105,11 +104,11 @@ const getLiveItem = (liveData: LiveDataResponse | undefined): LiveItem => {
   return fromNestedArray || fromDataArray || fromNestedObject || {}
 }
 
-const getPartitionTitle = (liveData: LiveDataResponse | undefined, liveItem: LiveItem): string =>
+/** 只负责分区名，取不到就交给 buildDouyinLivePayload 兜底（标题 → 未知分区） */
+const getPartitionTitle = (liveData: LiveDataResponse | undefined): string =>
   liveData?.data?.data?.partition_road_map?.partition?.title ||
   liveData?.data?.partition_road_map?.partition?.title ||
-  liveItem?.title ||
-  '未知分区'
+  ''
 
 export class DouyinPushPreview extends Base {
   /** amagi 客户端，访问方式与旧实现一致 */
@@ -222,29 +221,22 @@ export class DouyinPushPreview extends Base {
     if (user.live_status !== 1) return { ok: false, message: `${user.nickname || '该用户'} 当前未在直播` }
     if (!user.room_data) return { ok: false, message: '未获取到直播间信息' }
 
-    const roomData = JSON.parse(user.room_data) as { owner?: { web_rid?: string } }
+    const roomData = JSON.parse(user.room_data) as DouyinRoomData
     const liveData = await getDouyinData('直播间信息数据', {
       room_id: user.room_id_str,
-      web_rid: roomData.owner!.web_rid,
+      web_rid: roomData.owner?.web_rid,
       typeMode: 'strict'
     }) as LiveDataResponse
     const liveItem = getLiveItem(liveData)
     const webRid = roomData?.owner?.web_rid || iddata.room_id || ''
 
-    const image = await Render('douyin/live', {
-      image_url: [{ image_src: liveItem?.cover?.url_list?.[0] || '' }],
-      text: liveItem?.title || '',
-      liveinf: `${getPartitionTitle(liveData, liveItem)} | 房间号: ${webRid}`,
-      在线观众: Common.count(Number(liveItem?.room_view_stats?.display_value || 0)),
-      总观看次数: Common.count(Number(liveItem?.stats?.total_user_str || 0)),
-      username: user.nickname || '未知用户',
-      avater_url: avatarUrl(user),
-      fans: Common.count(user.follower_count),
-      create_time: Common.convertTimestampToDateTime(Date.now() / 1000),
-      now_time: Common.convertTimestampToDateTime(Date.now() / 1000),
-      share_url: `https://live.douyin.com/${webRid}`,
-      dynamicTYPE: '直播状态测试推送'
-    })
+    const image = await Render('douyin/live', buildDouyinLivePayload({
+      anchor: user,
+      dynamicTYPE: '直播状态测试推送',
+      liveItem,
+      partitionTitle: getPartitionTitle(liveData),
+      webRid
+    }))
 
     return { ok: true, image }
   }

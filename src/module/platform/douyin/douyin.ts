@@ -1,7 +1,6 @@
 import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl } from '@/module/utils/index'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
 import common from '@/runtime/host/common'
-import { markdown } from '@karinjs/md-html'
 import {
   burnDouyinDanmaku,
   type DouyinDanmakuElem,
@@ -10,7 +9,8 @@ import {
 import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
-import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, parseJsonSafely, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
+import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
+import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, normalizeArticleImages, parseJsonSafely, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
@@ -88,19 +88,8 @@ interface DouyinMusicInfo {
   user_count?: number
 }
 
-interface LiveItem {
-  cover?: UrlResource
-  room_view_stats?: { display_value?: string }
-  stats?: { total_user_str?: string }
-  title?: string
-}
-
 interface LivePartition {
   partition?: { title?: string }
-}
-
-interface RoomData {
-  owner?: { web_rid?: string }
 }
 
 interface DouyinVideo {
@@ -229,11 +218,11 @@ const getUploadRecordEvent = (event: DouyinRuntimeEvent): UploadRecordEvent => {
   return event as unknown as UploadRecordEvent
 }
 
-const getLivePayload = (response: LiveResponse): { items: LiveItem[], partition: LivePartition } => {
+const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], partition: LivePartition } => {
   const responseData = response.data
   const payload = isRecord(responseData.data) ? responseData.data : responseData
   const items = Array.isArray(payload.data)
-    ? payload.data.filter((item): item is LiveItem => isRecord(item))
+    ? payload.data.filter((item): item is DouyinLiveItem => isRecord(item))
     : []
   const partition = isRecord(payload.partition_road_map)
     ? payload.partition_road_map as LivePartition
@@ -245,6 +234,7 @@ let mp4size = ''
 let img: Awaited<ReturnType<typeof Render>>
 
 const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean) || ''
+
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
   `\n点赞：${Common.count(statistics.digg_count)}`,
   `评论：${Common.count(statistics.comment_count)}`,
@@ -305,12 +295,16 @@ export class DouYin extends Base {
     const aweme = VideoData.data.aweme_detail
     const content = parseJsonSafely<{ markdown?: string }>(aweme.article_info?.article_content)
     const feData = parseJsonSafely<{ image_list?: unknown[], read_time?: number }>(aweme.article_info?.fe_data)
-    const articleHtml = markdown(content.markdown || aweme.desc || '', {})
 
     const img = await Render('douyin/article-work', {
       title: aweme.article_info?.article_title || aweme.desc || '抖音文章',
-      html: articleHtml,
-      images: feData.image_list || [],
+      // 给原始 markdown，不是渲染好的 HTML：模板里是
+      // `<ReactMarkdown>{preprocessMarkdown(data.markdown)}</ReactMarkdown>`，
+      // 而 preprocessMarkdown 第一句就是 `markdown.replace(...)`，
+      // 字段名对不上时拿到 undefined 直接 TypeError（这条路由此前必炸）。
+      // 顺带 markdown 里的 `![](markdown_url)` 是模板换高清图的钩子，先转成 HTML 就换不了了。
+      markdown: content.markdown || aweme.desc || '',
+      images: normalizeArticleImages(feData.image_list),
       read_time: feData.read_time || 0,
       dianzan: Common.count(aweme.statistics?.digg_count),
       pinglun: Common.count(aweme.statistics?.comment_count),
@@ -319,10 +313,13 @@ export class DouYin extends Base {
       create_time: Common.convertTimestampToDateTime(aweme.create_time),
       avater_url: getFirstUrl(aweme.author?.avatar_thumb) || getFirstUrl(aweme.author?.avatar_larger),
       username: aweme.author?.nickname || '无法获取',
-      douyin_id: aweme.author?.unique_id || aweme.author?.short_id || '无法获取',
-      total_favorited: Common.count(aweme.author?.total_favorited),
-      following_count: Common.count(aweme.author?.following_count),
-      follower_count: Common.count(aweme.author?.follower_count),
+      // 页脚这四个字段名在契约里是中文（模板直接解构 `抖音号, 获赞, 关注, 粉丝`），
+      // 原来传的 douyin_id / total_favorited / following_count / follower_count 一个都没接上，
+      // 页脚四格全印 undefined
+      抖音号: aweme.author?.unique_id || aweme.author?.short_id || '无法获取',
+      获赞: Common.count(aweme.author?.total_favorited),
+      关注: Common.count(aweme.author?.following_count),
+      粉丝: Common.count(aweme.author?.follower_count),
       share_url: aweme.share_url || `https://www.douyin.com/article/${aweme.aweme_id}`
     })
     await this.e.reply(img)
@@ -601,14 +598,16 @@ export class DouYin extends Base {
           }
 
           /** 视频 */
-          let FPS
+          let FPS: number | undefined
           const sendvideofile = true
           let video = null
           let cover = ''
           if (isVideo) {
             // 视频地址特殊判断：play_addr_h264、play_addr、
             video = VideoData.data.aweme_detail.video
-            FPS = video.bit_rate[0]?.FPS || '获取失败' // FPS
+            // 契约里 VideoFPS 是 number；原来拿不到时给 '获取失败'，模板那句
+            // `{props.VideoFPS}Hz` 没有守卫，会印成「获取失败Hz」
+            FPS = Number(video.bit_rate[0]?.FPS) || undefined
             if (Config.douyin.autoResolution) {
               logger.debug(`开始排除不符合条件的视频分辨率；\n
               共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
@@ -809,7 +808,9 @@ export class DouYin extends Base {
                     : commentsResult.CommentsData.length,
                   share_url: this.is_mp4
                     ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
-                    : aweme.share_url,
+                    // 契约必填 string，而模板把它塞进二维码 `value={props.share_url}`；
+                    // 拿不到分享链接时退回作品页地址，别让二维码收到 undefined
+                    : aweme.share_url || `https://www.douyin.com/video/${aweme.aweme_id}`,
                   VideoSize: mp4size,
                   VideoFPS: FPS,
                   ImageLength: imagenum,
@@ -874,15 +875,20 @@ export class DouYin extends Base {
               title: aweme.desc || aweme.item_title || '无标题',
               cover: getDouyinWorkCoverUrl(aweme),
               duration: aweme.video?.duration || 0,
-              create_time: Common.convertTimestampToDateTime(aweme.create_time),
+              // 原始秒级时间戳，不是格式化好的日期串：模板走
+              // formatDouyinPublishTime(video.create_time) 出「3 天前」这种相对时间，
+              // 它对非数字字符串是 `Number(...)` -> NaN -> 直接返回「发布时间未知」，
+              // 所以列表里每条作品的发布时间一直都是这四个字
+              create_time: Number(aweme.create_time) || 0,
               is_top: aweme.is_top === 1,
               is_video: isVideo,
-              type_text: isVideo ? '视频' : isDouyinArticle(aweme) ? '文章' : '图集',
+              // 统计数给原始数字：模板自己有 formatCount 做万/亿换算，
+              // 这边先用 Common.count 转成 '1.2万' 再传，等于把它的换算搞成字符串比较
               statistics: {
-                like_count: Common.count(aweme.statistics?.digg_count),
-                comment_count: Common.count(aweme.statistics?.comment_count),
-                share_count: Common.count(aweme.statistics?.share_count),
-                collect_count: Common.count(aweme.statistics?.collect_count)
+                like_count: Number(aweme.statistics?.digg_count) || 0,
+                comment_count: Number(aweme.statistics?.comment_count) || 0,
+                share_count: Number(aweme.statistics?.share_count) || 0,
+                collect_count: Number(aweme.statistics?.collect_count) || 0
               },
               music: aweme.music
                 ? { title: aweme.music.title || '', author: aweme.music.author || '' }
@@ -897,9 +903,10 @@ export class DouYin extends Base {
               short_id: user.unique_id || user.short_id || '无法获取',
               avatar: user.avatar_larger?.url_list?.[0] || user.avatar_thumb?.url_list?.[0] || '',
               signature: user.signature || '这个用户很懒，还没有签名',
-              follower_count: Common.count(user.follower_count),
-              following_count: Common.count(user.following_count),
-              total_favorited: Common.count(user.total_favorited),
+              // 同上：模板里 formatCount(count: number) 自己做万/亿换算
+              follower_count: Number(user.follower_count) || 0,
+              following_count: Number(user.following_count) || 0,
+              total_favorited: Number(user.total_favorited) || 0,
               verified: Boolean(user.custom_verify || user.enterprise_verify_reason),
               ip_location: user.ip_location || ''
             },
@@ -944,11 +951,13 @@ export class DouYin extends Base {
               create_time: Time(0),
               user_count: Common.count(MusicData.data.music_info.user_count),
               avater_url: MusicData.data.music_info.avatar_large?.url_list[0] || UserData.data.user.avatar_larger.url_list[0],
-              fans: UserData.data.user.mplatform_followers_count || UserData.data.user.follower_count,
-              following_count: UserData.data.user.following_count,
-              total_favorited: UserData.data.user.total_favorited,
-              user_shortid: UserData.data.user.unique_id === '' ? UserData.data.user.short_id : UserData.data.user.unique_id,
-              share_url: MusicData.data.music_info.play_url.uri,
+              // 契约里这三个是必填 number、下面两个是必填 string，
+              // 接口这几个字段都可选，模板又是直接印（`粉丝: {fans}`），漏出来就是 undefined
+              fans: Number(UserData.data.user.mplatform_followers_count || UserData.data.user.follower_count) || 0,
+              following_count: Number(UserData.data.user.following_count) || 0,
+              total_favorited: Number(UserData.data.user.total_favorited) || 0,
+              user_shortid: (UserData.data.user.unique_id || UserData.data.user.short_id) ?? '',
+              share_url: MusicData.data.music_info.play_url.uri ?? '',
               username: MusicData.data.music_info?.original_musician_display_name || MusicData.data.music_info.owner_nickname === '' ? MusicData.data.music_info.author : MusicData.data.music_info.owner_nickname
             }
           )
@@ -979,23 +988,14 @@ export class DouYin extends Base {
             const { items: liveItems, partition } = getLivePayload(liveData)
             const liveItem = liveItems[0]
             if (!liveItem) throw new Error('直播间信息数据返回格式异常')
-            const roomData = narrowApiResponse<RoomData>(JSON.parse(UserInfoData.data.user.room_data || '{}'), '直播间房间数据')
-            const img = await Render('douyin/live',
-              {
-                image_url: [{ image_src: liveItem.cover?.url_list?.[0] }],
-                text: liveItem.title,
-                liveinf: `${partition.partition?.title || liveItem.title || ''} | 房间号: ${roomData.owner?.web_rid || ''}`,
-                在线观众: Common.count(Number(liveItem.room_view_stats?.display_value)),
-                总观看次数: Common.count(Number(liveItem.stats?.total_user_str)),
-                username: UserInfoData.data.user.nickname,
-                avater_url: UserInfoData.data.user.avatar_larger.url_list[0],
-                fans: Common.count(UserInfoData.data.user.follower_count),
-                create_time: Common.convertTimestampToDateTime(new Date().getTime()),
-                now_time: Common.convertTimestampToDateTime(new Date().getTime()),
-                share_url: 'https://live.douyin.com/' + (roomData.owner?.web_rid || ''),
-                dynamicTYPE: '直播间信息'
-              }
-            )
+            const roomData = narrowApiResponse<DouyinRoomData>(JSON.parse(UserInfoData.data.user.room_data || '{}'), '直播间房间数据')
+            const img = await Render('douyin/live', buildDouyinLivePayload({
+              anchor: UserInfoData.data.user,
+              dynamicTYPE: '直播间信息',
+              liveItem,
+              partitionTitle: partition.partition?.title || '',
+              webRid: roomData.owner?.web_rid || liveItem.owner?.web_rid || ''
+            }))
             await this.e.reply(img)
           } else {
             await this.e.reply(`「${UserInfoData.data.user.nickname}」\n未开播，正在休息中~`)

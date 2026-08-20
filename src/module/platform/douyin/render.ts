@@ -35,6 +35,7 @@ import {
   isDouyinArticle,
   isDouyinImage,
   isDouyinVideo,
+  normalizeArticleImages,
   parseJsonSafely,
   type DouyinAweme as WorkTypeDouyinAweme
 } from './workType.js'
@@ -540,8 +541,11 @@ export const renderWorkImage = async (options: RenderWorkImageOptions): Promise<
     const fe_data = parseJsonSafely<{ image_list?: unknown[], read_time?: number }>(Detail_Data.article_info?.fe_data)
     const images = await Render('douyin/article-work', {
       title: Detail_Data.article_info.article_title,
-      markdown: content.markdown,
-      images: fe_data.image_list || [],
+      // 给原始 markdown，不是渲染好的 HTML：模板里是
+      // `<ReactMarkdown>{preprocessMarkdown(data.markdown)}</ReactMarkdown>`，
+      // 而 preprocessMarkdown 第一句就是 `markdown.replace(...)`，拿到 undefined 直接 TypeError
+      markdown: content.markdown || Detail_Data.desc || '',
+      images: normalizeArticleImages(fe_data.image_list),
       read_time: fe_data.read_time || 0,
       ...statFields,
       create_time: formatTime,
