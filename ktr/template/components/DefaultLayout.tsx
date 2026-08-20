@@ -125,6 +125,20 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                 )}
               >
                 v{version.pluginVersion}
+                {/*
+                  本仓库相对上游 DefaultLayout 的本地增量：版本号后面补上 git describe 风格的
+                  构建标识，形如 v2.36.0-2-gf5f8315-dirty。
+                  `g` 前缀沿用 git describe 的写法，表示后面那串是 commit 而不是版本号的一部分。
+                  三段都可选：压缩包安装、构建时没有 git、探测不到工作区状态时各自缺哪段就不显示，
+                  最少也能退化成干净的 v2.36.0。
+                */}
+                {typeof version.commitsAhead === 'number' && version.commitsAhead > 0 && (
+                  <span className="font-mono text-4xl opacity-70">-{version.commitsAhead}</span>
+                )}
+                {version.commitId && (
+                  <span className="font-mono text-4xl opacity-70">-g{version.commitId}</span>
+                )}
+                {version.dirty && <span className="font-mono text-4xl opacity-70">-dirty</span>}
               </span>
             </div>
 
