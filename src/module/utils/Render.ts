@@ -98,6 +98,9 @@ export const Render = async <R extends ReactTemplateRoute> (
         scale: getRenderScale(params.scale ?? 1),
         theme: { mode: useDarkTheme ? 'dark' : 'light' },
         ambientCover: Config.app.ambientCover,
+        // 宿主在 multiPage 为真时把编码强制改成 jpeg（我们传的 imgType: 'png' 被覆盖），
+        // jpeg 没有 alpha。只有单图路径成图才真是 png，卡片也才敢上圆角。
+        alphaOutput: Config.app.multiPageRender === false,
         version
       }
     )

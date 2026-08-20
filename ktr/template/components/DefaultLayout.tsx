@@ -31,10 +31,18 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
   // 明暗只用于内部装饰分支（辉光强度等）；dark 类与 data-theme 由 ktr 外壳统一写在 body 上，
   // 模板根元素不再重复施加。唯一事实来源是 ctx.theme.mode。
   const useDarkTheme = isDark(ctx)
-  const { version, watermarkTextBitSize } = ctx
+  const { version, alphaOutput, watermarkTextBitSize } = ctx
 
   return (
-    <div
+    <>
+      {/*
+        只有成图真能留住 alpha 时才把外壳的兜底底色去掉（见 style.css 里 #container 那条）。
+        圆角外那圈透明像素靠它才透得出来；否则外壳的不透明底会把圆角填成四个色块。
+        写成模板内联 style 而不是改 style.css：那条兜底规则对 jpeg 路径仍然必要，
+        这里只在确定用不上时局部撤掉。
+      */}
+      {alphaOutput && <style>{'#container{background-color:transparent !important}'}</style>}
+      <div
       className={cn(
         /*
          * 卡片是直角的，不带 rounded-[5rem]：宿主 TRSS-Yunzai 截的是 #container
@@ -51,6 +59,8 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
          * 根元素是绝对定位包含块，模板里 inset-0 的氛围层锚定在卡片矩形上并被裁剪，而不是锚到视口逃逸出去。
          */
         'relative w-360 shrink-0 overflow-hidden bg-background bg-clip-padding text-foreground font-[HarmonyOSHans-Regular]',
+        // 圆角只在 alpha 能留住时才上，理由见下面那段注释和 ctx.alphaOutput 的说明
+        alphaOutput && 'rounded-[5rem]',
         className
       )}
       style={{
@@ -198,6 +208,7 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

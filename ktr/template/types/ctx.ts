@@ -39,6 +39,18 @@ export interface PosterContext extends RenderContext {
     /** 是否有可用更新 */
     hasUpdate?: boolean
   }
+  /**
+   * 成图会保留 alpha 通道。
+   *
+   * 宿主 TRSS-Yunzai 在 multiPage 为真时把编码强制改成 jpeg
+   * （renderers/puppeteer/lib/puppeteer.js:212-215，我们传的 imgType: 'png' 被覆盖），
+   * jpeg 没有 alpha，任何透明像素都会被合成成白色。只有走单图路径
+   * （`Config.app.multiPageRender === false`）时 png 才真的落地。
+   *
+   * 为真时卡片才敢上圆角：圆角外那圈是透明像素，能留住才有"形状"，
+   * 留不住就只会变成四个白色三角。见 DefaultLayout 与 style.css 里的说明。
+   */
+  alphaOutput?: boolean
   /** 水印比特大小（Restore ID） */
   watermarkTextBitSize?: number
   ambientCover?: {
