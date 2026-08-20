@@ -1,3 +1,18 @@
+import {
+  createAtNode,
+  createEmojiNode,
+  createLineBreakNode,
+  createLotteryNode,
+  createRichTextDocument,
+  createTextNode,
+  createTopicNode,
+  createViewPictureNode,
+  createVoteNode,
+  createWebLinkNode,
+  type RichTextDocument,
+  type RichTextNode
+} from '@kkk/richtext'
+
 const urlRegex = /https?:\/\/[-\w._~:/?#[\]@!$&'()*+,;=%]+/g
 
 /** B站表情节点，仅声明本文件读取的字段 */
@@ -204,6 +219,147 @@ export const formatBilibiliVideoDescText = (
   })
 
   return formatBilibiliDynamicText('', nodes, options)
+}
+
+/**
+ * 纯文本 → 富文本节点：换行拆成 lineBreak，裸 URL 拆成 webLink，其余是 text。
+ *
+ * 对应 HTML 版的 {@link parsePlainText}，但不再自己往里塞颜色 ——
+ * 配色是模板的事（`renderRichTextToReact` 按节点类型上样式），
+ * 生产方只负责说清「这段是链接」而不是「这段是 #006A9E」。
+ */
+const buildPlainTextNodes = (text: string | undefined): RichTextNode[] => {
+  const nodes: RichTextNode[] = []
+  const parts = String(text || '').split(/(\r?\n)/)
+
+  for (const part of parts) {
+    if (part === '\n' || part === '\r\n') {
+      nodes.push(createLineBreakNode())
+      continue
+    }
+    if (!part) continue
+
+    let lastIndex = 0
+    for (const match of part.matchAll(urlRegex)) {
+      if (match.index > lastIndex) nodes.push(createTextNode(part.slice(lastIndex, match.index)))
+      const url = match[0]
+      nodes.push(createWebLinkNode(url, url))
+      lastIndex = match.index + url.length
+    }
+    if (lastIndex < part.length) nodes.push(createTextNode(part.slice(lastIndex)))
+  }
+
+  return nodes
+}
+
+/** B 站富文本节点 → 富文本节点，逐类对应 {@link buildNodeHtml} 的那个 switch */
+const buildRichTextNodes = (node: BilibiliRichTextNode | undefined): RichTextNode[] => {
+  const matchText = node?.orig_text || node?.text || ''
+  if (!matchText) return []
+
+  switch (node?.type) {
+    case 'topic':
+    case 'RICH_TEXT_NODE_TYPE_TOPIC':
+      return [createTopicNode(matchText)]
+    case 'RICH_TEXT_NODE_TYPE_AT':
+      return [createAtNode(matchText)]
+    case 'RICH_TEXT_NODE_TYPE_LOTTERY':
+      return [createLotteryNode(matchText)]
+    case 'RICH_TEXT_NODE_TYPE_WEB':
+      // HTML 版把 orig_text 放 title、text 放正文，富文本里正好是 jumpUrl 和 text
+      return [createWebLinkNode(node?.text || matchText, matchText)]
+    case 'RICH_TEXT_NODE_TYPE_EMOJI': {
+      const url = node?.emoji?.gif_url || node?.emoji?.icon_url
+      // 拿不到图就退回文字，跟 HTML 版的 buildEmoji 一致
+      if (!url) return [createTextNode(matchText)]
+      return [createEmojiNode(matchText, url, {
+        scale: node?.emoji?.size === 2 || node?.emoji?.size === 3 ? 2 : 1
+      })]
+    }
+    case 'RICH_TEXT_NODE_TYPE_VOTE':
+      return [createVoteNode(node?.text || matchText)]
+    case 'RICH_TEXT_NODE_TYPE_VIEW_PICTURE':
+      return [createViewPictureNode(matchText)]
+    case 'RICH_TEXT_NODE_TYPE_TEXT':
+    default:
+      return buildPlainTextNodes(matchText)
+  }
+}
+
+/**
+ * 把 B 站动态正文 + rich_text_nodes 转成 React 模板要的 {@link RichTextDocument}。
+ *
+ * 这是 {@link formatBilibiliDynamicText} 的富文本版。那个返回 HTML 字符串，是
+ * art-template 时代的产物；React 模板拿到字符串会在 `document.nodes.map()` 上当场抛
+ * `Cannot read properties of undefined (reading 'map')`（实测复现过）。
+ * 交织逻辑跟 HTML 版逐行对齐，只把「拼字符串」换成「push 节点」。
+ *
+ * @param text 动态正文，允许传入已替换过的 `<br>`
+ * @param richTextNodes B 站 rich_text_nodes
+ */
+export const formatBilibiliDynamicRichText = (
+  text: string | undefined,
+  richTextNodes: BilibiliRichTextNode[] | undefined = []
+): RichTextDocument => {
+  const rawText = normalizeInputText(text)
+  const nodes = Array.isArray(richTextNodes) ? richTextNodes : []
+  const toDocument = (result: RichTextNode[]): RichTextDocument =>
+    createRichTextDocument(result, { platform: 'bilibili' })
+
+  if (!nodes.length) return toDocument(buildPlainTextNodes(rawText))
+  if (!rawText) return toDocument(nodes.flatMap(node => buildRichTextNodes(node)))
+
+  const result: RichTextNode[] = []
+  let currentPos = 0
+
+  for (const node of nodes) {
+    const matchText = node?.orig_text || node?.text || ''
+    if (!matchText) continue
+
+    const matchPos = rawText.indexOf(matchText, currentPos)
+    if (matchPos === -1) continue
+
+    if (matchPos > currentPos) {
+      result.push(...buildPlainTextNodes(rawText.slice(currentPos, matchPos)))
+    }
+
+    result.push(...buildRichTextNodes(node))
+    currentPos = matchPos + matchText.length
+  }
+
+  if (currentPos < rawText.length) {
+    result.push(...buildPlainTextNodes(rawText.slice(currentPos)))
+  }
+
+  return toDocument(result)
+}
+
+/**
+ * 视频简介 desc_v2 → {@link RichTextDocument}，{@link formatBilibiliVideoDescText} 的富文本版。
+ *
+ * `bilibili/videoInfo` 的契约要的就是这个类型。之前传的是 HTML 字符串版，
+ * 结果只要视频有简介就必炸（实测 success=false）。
+ *
+ * @param descV2 视频简介节点列表
+ * @param fallback desc_v2 缺失时使用的纯文本简介
+ */
+export const formatBilibiliVideoDescRichText = (
+  descV2: BilibiliDescV2Item[] | undefined = [],
+  fallback = ''
+): RichTextDocument => {
+  if (!Array.isArray(descV2) || descV2.length === 0) {
+    return formatBilibiliDynamicRichText(fallback, [])
+  }
+
+  return formatBilibiliDynamicRichText('', descV2.map(item => {
+    const rawText = item?.raw_text || ''
+    // type 2 是 @ 用户，B 站这里的 raw_text 有时带 @ 有时不带
+    if (item?.type === 2) {
+      const atText = rawText.startsWith('@') ? rawText : `@${rawText}`
+      return { type: 'RICH_TEXT_NODE_TYPE_AT', orig_text: atText, text: atText }
+    }
+    return { type: 'RICH_TEXT_NODE_TYPE_TEXT', orig_text: rawText, text: rawText }
+  }))
 }
 
 /**

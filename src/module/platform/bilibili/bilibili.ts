@@ -10,7 +10,7 @@ import {
   buildBilibiliArticleRichText,
   buildBilibiliRichTextForwardNodes,
   formatBilibiliDynamicText,
-  formatBilibiliVideoDescText,
+  formatBilibiliVideoDescRichText,
   getHotBilibiliDanmaku,
   getUsernameMetadata
 } from './dynamicText.js'
@@ -112,6 +112,17 @@ interface VideoStat {
   favorite: number
   danmaku: number
   reply: number
+  /**
+   * 下面这几个 view 接口也会返回，但模板只读上面 7 个。
+   * 声明成可选是为了让 `bilibili/videoInfo` 的契约（13 个必填）能在调用点补齐兜底值，
+   * 而不是假装接口一定给。
+   */
+  aid?: number
+  now_rank?: number
+  his_rank?: number
+  dislike?: number
+  evaluation?: string
+  vt?: number
   [key: string]: unknown
 }
 
@@ -126,7 +137,7 @@ interface VideoInfoData {
   title: string
   stat: VideoStat
   desc: string
-  desc_v2?: Parameters<typeof formatBilibiliVideoDescText>[0]
+  desc_v2?: Parameters<typeof formatBilibiliVideoDescRichText>[0]
   ctime: number
 }
 
@@ -505,23 +516,31 @@ export class Bilibili extends Base {
                 await this.e.reply(await Render('bilibili/videoInfo', {
                   share_url: 'https://b23.tv/' + infoData.data.data.bvid,
                   title,
-                  desc: formatBilibiliVideoDescText(infoData.data.data.desc_v2, desc, { useDarkTheme: Common.useDarkTheme() }),
-                  stat,
-                  stats: {
-                    view: Common.count(stat.view),
-                    danmaku: Common.count(stat.danmaku),
-                    reply: Common.count(stat.reply),
-                    like: Common.count(stat.like),
-                    coin: Common.count(stat.coin),
-                    favorite: Common.count(stat.favorite),
-                    share: Common.count(stat.share)
+                  // 必须是富文本：模板对 desc 做 `document.nodes.map()`，
+                  // 传 HTML 字符串会当场抛 reading 'map'（实测 success=false）。
+                  desc: formatBilibiliVideoDescRichText(infoData.data.data.desc_v2, desc),
+                  stat: {
+                    ...stat,
+                    // 契约要 13 个必填，模板实际只读 7 个；剩下的补真实值或兜底 0，
+                    // 不是凭空造数据 —— aid 就在同一份响应里
+                    aid: stat.aid ?? infoData.data.data.aid,
+                    now_rank: stat.now_rank ?? 0,
+                    his_rank: stat.his_rank ?? 0,
+                    dislike: stat.dislike ?? 0,
+                    evaluation: stat.evaluation ?? '',
+                    vt: stat.vt ?? 0
                   },
                   bvid: infoData.data.data.bvid,
-                  ctime: Common.convertTimestampToDateTime(infoData.data.data.ctime),
+                  // 契约要秒级时间戳，模板自己 fromUnixTime + format。
+                  // 之前传的是 convertTimestampToDateTime() 的日期字符串，
+                  // date-fns 拿到就抛 RangeError: Invalid time value（实测必炸）。
+                  ctime: infoData.data.data.ctime,
                   pic,
                   hotDanmaku,
                   owner: {
                     ...owner,
+                    // 契约要 number，本地 VideoOwner.mid 是 number | string
+                    mid: Number(owner.mid),
                     frame: userProfileData.data.data.card.pendant?.image || '',
                     name: userProfileData.data.data.card.name || owner.name,
                     face: userProfileData.data.data.card.face || owner.face
