@@ -65,6 +65,7 @@ const STRIP_TYPES_MESSAGE = '该文件由 `node --experimental-strip-types` 运�
  * 没有 "paths" 的 node 里，所以传染整条导入链。
  */
 const STRIP_TYPES_ENTRYPOINTS = [
+  'src/module/tooling/audit-runtime-deps.ts',
   'src/module/tooling/template-build.ts',
   'src/module/tooling/react-template/registry-cli.ts',
   'src/module/tooling/react-template/build-cleaner-cli.ts',
