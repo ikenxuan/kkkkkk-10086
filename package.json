@@ -30,6 +30,7 @@
     "clean:template": "node --experimental-strip-types src/module/tooling/react-template/build-cleaner-cli.ts",
     "template:build": "node --experimental-strip-types src/module/tooling/template-build.ts",
     "build:template": "pnpm template:build",
+    "audit:runtime-deps": "node --experimental-strip-types src/module/tooling/audit-runtime-deps.ts",
     "build:metadata": "node lib/module/tooling/build-metadata.js",
     "build": "rimraf lib && tsc -p tsconfig.json && tsc-alias -p tsconfig.json && pnpm build:metadata && pnpm build:template",
     "build:watch": "rimraf lib && pnpm build:template && concurrently --kill-others-on-fail \"tsc -p tsconfig.json --watch\" \"tsc-alias -p tsconfig.json --watch\"",
@@ -40,7 +41,7 @@
     "typecheck": "node -e \"require('node:child_process').execFileSync(process.execPath, ['node_modules/typescript/bin/tsc', '-p', 'tsconfig.json', '--noEmit'], { stdio: 'inherit' });\"",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "typecheck:render": "tsc -p tsconfig.render.json --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:template && pnpm typecheck:render && pnpm build",
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:template && pnpm typecheck:render && pnpm build && pnpm audit:runtime-deps",
     "verify": "pnpm check"
   },
   "dependencies": {
@@ -51,6 +52,7 @@
     "axios": "npm:@karinjs/axios@^1.13.2",
     "chokidar": "^5.0.0",
     "cors": "^2.8.6",
+    "date-fns": "^4.4.0",
     "express": "^5.2.1",
     "fingerprint-injector": "^2.1.82",
     "heic-convert": "^2.1.0",
