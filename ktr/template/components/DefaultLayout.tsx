@@ -113,30 +113,31 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
               </div>
               <span
                 className={cn(
-                  // whitespace-nowrap：页脚是一行 flex，三段构建标识全带上时整行内容宽刚好顶到
-                  // 1440（实测 406+493+4+441 + 3×32 的间距），不锁住就会换行、行高从 72 涨到 122，
-                  // 把插件名和框架名一起挤成两行。
                   'text-5xl font-bold tracking-wide whitespace-nowrap',
                   version.hasUpdate && 'text-success',
                   !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
                 )}
               >
                 v{version.pluginVersion}
-                {/*
-                  本仓库相对上游 DefaultLayout 的本地增量：版本号后面补上 git describe 风格的
-                  构建标识，形如 v2.36.0-2-gf5f8315-dirty。
-                  `g` 前缀沿用 git describe 的写法，表示后面那串是 commit 而不是版本号的一部分。
-                  三段都可选：压缩包安装、构建时没有 git、探测不到工作区状态时各自缺哪段就不显示，
-                  最少也能退化成干净的 v2.36.0。
-                */}
-                {typeof version.commitsAhead === 'number' && version.commitsAhead > 0 && (
-                  <span className="font-mono text-3xl opacity-70">-{version.commitsAhead}</span>
-                )}
-                {version.commitId && (
-                  <span className="font-mono text-3xl opacity-70">-g{version.commitId}</span>
-                )}
-                {version.dirty && <span className="font-mono text-3xl opacity-70">-dirty</span>}
               </span>
+              {/*
+                本仓库相对上游 DefaultLayout 的本地增量：版本号下面补一行 git describe 风格的
+                构建标识，形如 `-2-gf5f8315-dirty`，接着上面的 `v2.37.1` 读就是完整的 describe 串。
+                三段都可选：压缩包安装、构建时没有 git、探测不到工作区状态时各自缺哪段就不显示。
+
+                刻意另起一行而不是接在版本号后面：页脚是一行 flex，而 releaseType 为 Stable 时
+                右边会多出「构建工具」那一块（分隔线 + Rolldown/Vite 两个 logo），实测自然宽度
+                417+333+3+453+3+189 加 5×32 的间距 = 1558，超出卡片 1440 共 118px，
+                于是插件名和框架名一起被压成两行、行高从 74 涨到 120。把构建标识从横向预算里
+                拿掉之后 Stable 也放得下，且不会因为 hash 长度或通道名变化再次溢出。
+              */}
+              {(version.commitId || version.dirty || (typeof version.commitsAhead === 'number' && version.commitsAhead > 0)) && (
+                <span className="font-mono text-2xl leading-none opacity-60 whitespace-nowrap">
+                  {typeof version.commitsAhead === 'number' && version.commitsAhead > 0 && `-${version.commitsAhead}`}
+                  {version.commitId && `-g${version.commitId}`}
+                  {version.dirty && '-dirty'}
+                </span>
+              )}
             </div>
 
             <div className="w-1 h-14 opacity-90 bg-foreground" />
