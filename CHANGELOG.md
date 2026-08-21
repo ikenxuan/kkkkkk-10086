@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.38.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.2...v2.38.3) (2026-08-21)
+
+
+### 🐛 Bug 修复
+
+* **bilibili:** 播放地址避开 PCDN 节点，改用接口给的备用地址 ([a6f8463](https://github.com/ikenxuan/kkkkkk-10086/commit/a6f8463bff8400b35d6a33d98df6dc0f378802a7))
+* **push:** 单个订阅失败不再中断整轮推送；四角衬底改成上游那圈白边 ([d667849](https://github.com/ikenxuan/kkkkkk-10086/commit/d667849e860cdb6ae4118a6e4d3970a5ad4cd8ff))
+
+
+### ⚡ 性能优化
+
+* **parse:** 评论图改成独立分支，三条分支互不等待 ([0986048](https://github.com/ikenxuan/kkkkkk-10086/commit/09860486e4d095daf7bc04e13978e6190ffa9f19))
+
 ## [2.38.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.1...v2.38.2) (2026-08-21)
 
 
