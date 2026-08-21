@@ -17,12 +17,14 @@ export type ReleaseChannel = 'Stable' | 'Preview' | 'Dev'
 /**
  * 分支 → 发布通道。
  *
- * - `release`：CI 在 dev 上合掉 release-please 的发布 PR 后，构建产物推到的成品分支，
- *   普通用户的稳定线（见 .github/workflows/release-and-push-build.yml）
+ * - `master`：CI 在 dev 上合掉 release-please 的发布 PR 后，构建产物推到的成品分支，
+ *   普通用户的稳定线（见 .github/workflows/release-and-push-build.yml）。
+ *   重写前它是 JavaScript 源码线，源码提交停在 2026-07-28
  * - `preview`：CI 在每次 dev 推送后构建产物推到的成品分支，愿意吃 bug 的用户
  *   （见 .github/workflows/build-push-preview.yml）
  * - `dev`：开发线源码
- * - `master`：旧的稳定线源码，仍由 master 自己那份 release-please.yml 维护
+ * - `release`：保留映射。这个分支从未被创建过，但历史配置曾指向它，
+ *   万一有人手里是那会儿的克隆，不至于被判成 Dev
  */
 const CHANNEL_BY_BRANCH: Record<string, ReleaseChannel> = {
   release: 'Stable',

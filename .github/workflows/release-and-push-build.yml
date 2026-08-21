@@ -1,4 +1,4 @@
-name: 🚀 发布并推送发布分支
+name: 🚀 发布并推送到 master
 
 on:
   workflow_dispatch:
@@ -62,10 +62,10 @@ jobs:
       - name: 🛠️ 构建并验证插件
         if: ${{ steps.release.outputs.release_created }}
         env:
-          # 这个工作流跑在 dev 上，产物推到 release。必须显式告诉构建产物「你属于 release」，
+          # 这个工作流跑在 dev 上，产物推到 master。必须显式告诉构建产物「你属于 master」，
           # 否则 build-metadata 会烘进 GITHUB_REF_NAME（dev），压缩包安装的用户在稳定版上
-          # 看到的发布通道会是 Dev。
-          KKK_PUBLISH_BRANCH: release
+          # 看到的发布通道会是 Dev（release-channel.ts 的 CHANNEL_BY_BRANCH 里 master 映射为 Stable）。
+          KKK_PUBLISH_BRANCH: master
         run: pnpm verify
 
       - name: 📁 准备发布文件
@@ -101,12 +101,21 @@ jobs:
         working-directory: temp_lib_content
         run: pnpm pkg delete devDependencies
 
-      - name: 📤 推送到 release 分支
+      # 用 PAT 而不是 GITHUB_TOKEN：这一步是全量替换分支内容（keep_files 默认 false），
+      # 而 master 上还留着重写前那 5 个 workflow 文件（release-please.yml、issue_* 等），
+      # 推送里必然包含对 .github/workflows 的删除。GITHUB_TOKEN 没有 workflows 权限，
+      # 增删改 workflow 文件都会被拒（refusing to allow a GitHub App to create or update
+      # workflow file）。而 release-please 那一步是先打 tag 发 Release 再走到这里，
+      # 推送失败就会留下一个没有可安装分支的 Release，所以这里必须用有权限的 token。
+      #
+      # RELEASE_PUSH_TOKEN 需要的权限：classic PAT 勾 repo + workflow，
+      # 或 fine-grained PAT 给 Contents: Read and write + Workflows: Read and write。
+      - name: 📤 推送到 master 分支
         if: ${{ steps.release.outputs.release_created }}
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: release
+          personal_token: ${{ secrets.RELEASE_PUSH_TOKEN }}
+          publish_branch: master
           publish_dir: temp_lib_content
           force_orphan: false
           full_commit_message: ${{ github.event.head_commit.message || format('Release build {0}', github.sha) }}
