@@ -23,7 +23,7 @@
 
 # [点击立即阅读插件文档](https://ikenxuan.github.io/kkkkkk-10086/) 📖
 
-## 安装插件
+## 安装插件 📦
 
 请先准备 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) 或 [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai)。插件要求 Node.js 22.12.0 及以上版本，推荐使用 pnpm 9.15.9。
 
@@ -40,7 +40,7 @@ pnpm install
 
 ### 稳定版（正式发布构建产物）
 
-`release` 只在 `master` 创建正式版本后更新，适合希望优先保持稳定的用户。
+`release` 只在 `dev` 上的 release-please 发布 PR 合并后更新，适合希望优先保持稳定的用户。
 
 ```bash
 git clone --depth=1 --branch release https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
@@ -86,16 +86,20 @@ pnpm install
 
 切到源码分支（`dev` / `master`）用的是同一套命令，但源码分支不含 `lib/`，切过去必须自己构建才能运行，见下面的开发说明。
 
-## 开发说明
+## 开发说明 🛠️
 
 仓库采用“源码分支 → 构建分支”的发布方式：
 
 | 源码分支 | 构建分支 | 用途 |
 | --- | --- | --- |
-| `dev` | `preview` | 日常开发；推送后由 Actions 检查、构建并发布预览版 |
-| `master` | `release` | 正式发布；release-please 创建版本后构建并发布稳定版 |
+| `dev` | `preview` | 日常开发；每次推送后由 Actions 检查、构建并发布预览版 |
+| `dev` | `release` | 正式发布；release-please 的发布 PR 合并后构建并发布稳定版 |
 
-`dev` 和 `master` 保存 TypeScript、React 模板与构建配置；`preview` 和 `release` 只保存运行所需文件及生成后的 `lib/`。请勿直接修改构建分支。
+`dev` 保存 TypeScript、React 模板与构建配置；`preview` 和 `release` 只保存运行所需文件及生成后的 `lib/`。请勿直接修改构建分支。
+
+> [!NOTE]
+>
+> `master` 是重写前的 JavaScript 稳定线，仍由它自己那份 release-please 维护，不参与上面的构建发布。想看当前代码请以 `dev` 为准。
 
 ### 获取开发源码
 
