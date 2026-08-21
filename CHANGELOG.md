@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.38.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.0...v2.38.1) (2026-08-21)
+
+
+### 🐛 Bug 修复
+
+* **footer:** 插件名与框架名锁 nowrap 并降一档字号，彻底不再换行 ([641efde](https://github.com/ikenxuan/kkkkkk-10086/commit/641efde0ffc1477ac8e7f6d027c5fcda36ac8c3c))
+
 ## [2.38.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.37.1...v2.38.0) (2026-08-21)
 
 
