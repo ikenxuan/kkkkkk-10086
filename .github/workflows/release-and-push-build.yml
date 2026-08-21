@@ -124,6 +124,12 @@ jobs:
           publish_dir: temp_lib_content
           force_orphan: false
           keep_files: true
+          # 必须显式清空。这个 action 的 exclude_assets 默认值是 '.github'，
+          # 它在把产物拷进目标分支之后单独 rm 掉目标分支里的 .github，
+          # 和 keep_files 是两条独立逻辑 —— v2.37.0 那次发布日志里
+          # `[INFO] Keep existing files` 正常打出来了，master 上的 6 个
+          # issue 工作流与 issue 模板照样被这条默认规则删掉（已在 24568d0 恢复）。
+          exclude_assets: ''
           full_commit_message: ${{ github.event.head_commit.message || format('Release build {0}', github.sha) }}
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com
