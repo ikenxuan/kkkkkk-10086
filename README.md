@@ -27,7 +27,7 @@
 
 请先准备 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) 或 [TRSS-Yunzai](https://github.com/TimeRainStarSky/Yunzai)。插件要求 Node.js 22.12.0 及以上版本，推荐使用 pnpm 9.15.9。
 
-普通用户应安装已经编译完成的 `preview` 或 `release` 分支，不需要在本地执行构建。请在 **Yunzai 根目录**任选一个版本安装。
+普通用户应安装已经编译完成的 `master` 或 `preview` 分支，不需要在本地执行构建。请在 **Yunzai 根目录**任选一个版本安装。
 
 ### 预览版（开发版构建产物）
 
@@ -40,34 +40,34 @@ pnpm install
 
 ### 稳定版（正式发布构建产物）
 
-`release` 只在 `dev` 上的 release-please 发布 PR 合并后更新，适合希望优先保持稳定的用户。
+`master` 只在 `dev` 上的 release-please 发布 PR 合并后更新，适合希望优先保持稳定的用户。
 
 ```bash
-git clone --depth=1 --branch release https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
+git clone --depth=1 --branch master https://github.com/ikenxuan/kkkkkk-10086.git ./plugins/kkkkkk-10086
 pnpm install
 ```
 
 > [!NOTE]
 >
-> `release` 分支会在首次正式发版后生成。在此之前请安装 `preview`，不要把源码分支当作编译版安装。
+> `master` 在首次正式发版后才会变成编译产物。在此之前它还是重写前的 JavaScript 源码，请先安装 `preview`。
 
 安装或更新依赖后重启 Yunzai。后续可使用主人命令 `#kkk更新` 更新当前安装分支；依赖发生变化时，请再次在 Yunzai 根目录执行 `pnpm install`。
 
 ### 切换已安装的分支
 
-上面的安装命令带了 `--depth=1 --branch xxx`，克隆出来的是**浅克隆 + 单分支**，git 只跟踪你当初选的那一条分支，所以直接 `git checkout release` 会报：
+上面的安装命令带了 `--depth=1 --branch xxx`，克隆出来的是**浅克隆 + 单分支**，git 只跟踪你当初选的那一条分支，所以直接 `git checkout master` 会报：
 
 ```
-error: pathspec 'release' did not match any file(s) known to git
+error: pathspec 'master' did not match any file(s) known to git
 ```
 
-要换分支，得先让 git 认识目标分支，再切过去。在**插件目录**执行（把两处 `release` 换成你要切的分支名）：
+要换分支，得先让 git 认识目标分支，再切过去。在**插件目录**执行（把三处 `master` 换成你要切的分支名）：
 
 ```bash
 cd ./plugins/kkkkkk-10086
-git remote set-branches --add origin release
-git fetch --depth=1 origin release
-git checkout -B release origin/release
+git remote set-branches --add origin master
+git fetch --depth=1 origin master
+git checkout -B master origin/master
 ```
 
 然后回到 **Yunzai 根目录**装一次依赖，再重启 Yunzai：
@@ -84,7 +84,7 @@ pnpm install
 >
 > 切完之后 `#kkk更新` 更新的就是新分支，不需要额外设置。
 
-切到源码分支（`dev` / `master`）用的是同一套命令，但源码分支不含 `lib/`，切过去必须自己构建才能运行，见下面的开发说明。
+切到源码分支（`dev`）用的是同一套命令，但源码分支不含 `lib/`，切过去必须自己构建才能运行，见下面的开发说明。
 
 ## 开发说明 🛠️
 
@@ -93,13 +93,13 @@ pnpm install
 | 源码分支 | 构建分支 | 用途 |
 | --- | --- | --- |
 | `dev` | `preview` | 日常开发；每次推送后由 Actions 检查、构建并发布预览版 |
-| `dev` | `release` | 正式发布；release-please 的发布 PR 合并后构建并发布稳定版 |
+| `dev` | `master` | 正式发布；release-please 的发布 PR 合并后构建并发布稳定版 |
 
-`dev` 保存 TypeScript、React 模板与构建配置；`preview` 和 `release` 只保存运行所需文件及生成后的 `lib/`。请勿直接修改构建分支。
+`dev` 保存 TypeScript、React 模板与构建配置；`preview` 和 `master` 只保存运行所需文件及生成后的 `lib/`。请勿直接修改构建分支。
 
 > [!NOTE]
 >
-> `master` 是重写前的 JavaScript 稳定线，仍由它自己那份 release-please 维护，不参与上面的构建发布。想看当前代码请以 `dev` 为准。
+> `master` 在重写前是 JavaScript 源码线，源码提交停在 2026-07-28。它现在改作发布分支：发版后由 Actions 把编译产物推到 `master`，届时分支上的旧 JavaScript 源码会被产物替换。源码请一律以 `dev` 为准。
 
 ### 获取开发源码
 
