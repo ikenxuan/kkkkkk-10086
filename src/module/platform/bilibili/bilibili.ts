@@ -739,29 +739,28 @@ export class Bilibili extends Base {
             }
             : undefined
 
-          await runMediaTasks({
-            poster: sendVideoInfo,
-            video: sendVideo
-          }, {
-            onTaskFailure: ({ task, error }) => {
-              const taskLabel = task === 'poster' ? '视频信息海报/回复' : '视频下载、弹幕烧录与发送'
-              logger.error(`[Bilibili] ${taskLabel}任务失败`, error)
-            }
-          })
-
-          if (hasBilibiliContent('评论图', 'comment')) {
-            await preparePlayback()
-            const commentsData = await this.amagi.getBilibiliData('评论数据', '', {
-              number: Config.bilibili.bilibilinumcomments,
-              type: 1,
-              oid: infoData.data.data.aid.toString(),
-              typeMode: 'strict'
-            }) as CommentsResponse
-            const commentsdata = Config.bilibili.bilibilinumcomments && Config.bilibili.bilibilinumcomments > 0
-              ? bilibiliComments(commentsData.data)
-              : null
-            if (commentsdata?.length) {
-              img = await Render('bilibili/comment', {
+          /**
+           * 评论图自己取数、自己渲染、自己发送，和上面两条分支一起并发。
+           *
+           * 原来它排在 `await runMediaTasks(...)` 之后，于是视频上传多久、评论图就得等多久 ——
+           * 而这三件事之间没有任何数据依赖。`preparePlayback()` 是记忆化的
+           * （`preparePlaybackPromise ||=`），三条分支同时调也只会真的取一次播放地址，
+           * 并且 await 它之后 `playUrlStream` / `videoSize` / `correctList` 都已赋值。
+           */
+          const sendComment = hasBilibiliContent('评论图', 'comment')
+            ? async (): Promise<void> => {
+              await preparePlayback()
+              const commentsData = await this.amagi.getBilibiliData('评论数据', '', {
+                number: Config.bilibili.bilibilinumcomments,
+                type: 1,
+                oid: infoData.data.data.aid.toString(),
+                typeMode: 'strict'
+              }) as CommentsResponse
+              const commentsdata = Config.bilibili.bilibilinumcomments && Config.bilibili.bilibilinumcomments > 0
+                ? bilibiliComments(commentsData.data)
+                : null
+              if (!commentsdata?.length) return
+              const commentImage = await Render('bilibili/comment', {
                 Type: '视频',
                 CommentsData: commentsdata,
                 CommentLength: Config.bilibili.realCommentCount ? Common.count(infoData.data.data.stat.reply) : String(commentsdata.length),
@@ -772,14 +771,27 @@ export class Bilibili extends Base {
                 ImageLength: 0,
                 shareurl: 'https://b23.tv/' + infoData.data.data.bvid
               })
-              await this.e.reply(this.mkMsg(img, [
+              await this.e.reply(this.mkMsg(commentImage, [
                 {
                   text: '视频链接',
                   link: 'https://b23.tv/' + infoData.data.data.bvid
                 }
               ]))
             }
-          }
+            : undefined
+
+          await runMediaTasks({
+            poster: sendVideoInfo,
+            video: sendVideo,
+            comment: sendComment
+          }, {
+            onTaskFailure: ({ task, error }) => {
+              const taskLabel = task === 'poster'
+                ? '视频信息海报/回复'
+                : task === 'video' ? '视频下载、弹幕烧录与发送' : '评论图渲染与发送'
+              logger.error(`[Bilibili] ${taskLabel}任务失败`, error)
+            }
+          })
           break
         }
         case 'bangumi_video_info': {

@@ -768,12 +768,92 @@ export class DouYin extends Base {
             }
             : undefined
 
+          /**
+           * 评论图自己取数、自己渲染、自己发送，和海报/视频两条分支一起并发。
+           * 原来它排在 `await runMediaTasks(...)` 之后，视频上传多久评论图就得等多久，
+           * 而这三件事之间没有数据依赖。顺序不再保证，谁先好谁先发。
+           */
+          const sendComment = hasDouyinContent('评论图', 'comment')
+            ? async (): Promise<void> => {
+              const list = await getEmojiList()
+              const commentsResult = await douyinComments(CommentsData, list)
+              if (!commentsResult.CommentsData.length) {
+                await this.e.reply('这个作品没有评论 ~')
+              } else {
+                const aweme = VideoData.data.aweme_detail
+                // 「大家都在搜」：只取评论区顶部那一组，其余场景（搜索页等）不是这张图要的
+                const suggest: string[] = []
+                for (const item of aweme.suggest_words?.suggest_words ?? []) {
+                  if (item.scene !== 'comment_top_rec') continue
+                  for (const word of item.words ?? []) {
+                    if (word.word) suggest.push(word.word)
+                  }
+                }
+
+                const img = await Render('douyin/comment',
+                  {
+                    Type: isArticle ? '文章' : isVideo ? '视频' : this.is_slides ? '合辑' : '图集',
+                    // 扁平数组，不是 { jsonArray } 包装：模板里 CommentsData.length / .map 直接读这个字段
+                    CommentsData: commentsResult.CommentsData,
+                    CommentLength: Config.douyin.realCommentCount
+                      ? aweme.statistics.comment_count ?? 0
+                      : commentsResult.CommentsData.length,
+                    share_url: this.is_mp4
+                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
+                    // 契约必填 string，而模板把它塞进二维码 `value={props.share_url}`；
+                    // 拿不到分享链接时退回作品页地址，别让二维码收到 undefined
+                      : aweme.share_url || `https://www.douyin.com/video/${aweme.aweme_id}`,
+                    VideoSize: mp4size,
+                    VideoFPS: FPS,
+                    ImageLength: imagenum,
+                    Region: aweme.region ?? '',
+                    suggestWrod: suggest,
+                    Resolution: isVideo && video
+                      ? `${video.bit_rate[0].play_addr.width} x ${video.bit_rate[0].play_addr.height}`
+                      : null,
+                    maxDepth: 6,
+                    Author: aweme.author.nickname ?? '',
+                    AuthorAvatar: aweme.author.avatar_thumb?.url_list[0] ?? '',
+                    // 线上 SSR 崩溃就是缺了这一个字段：VideoInfoHeader 直接读
+                    // props.Statistics.digg_count（Comment.tsx:147），拿 undefined 解属性当场抛。
+                    // 拿 HEAD 上的旧 payload 实测复现过，报错正是 reading 'digg_count'。
+                    Statistics: {
+                      digg_count: aweme.statistics.digg_count ?? 0,
+                      comment_count: aweme.statistics.comment_count ?? 0,
+                      share_count: aweme.statistics.share_count ?? 0,
+                      collect_count: aweme.statistics.collect_count ?? 0
+                    },
+                    CreateTime: aweme.create_time
+                  }
+                )
+
+                // 评论区图片收集：把评论里出现过的图片/表情包合并转发出去
+                if (Config.douyin.commentImageCollection && commentsResult.image_url.length > 0) {
+                  const imageMessages = await Promise.all(
+                    commentsResult.image_url.map(async (url, index) =>
+                      segment.image(await processImageUrl(url, aweme.desc || g_title || '抖音评论图片', index, {
+                        ...this.headers,
+                        Referer: 'https://www.douyin.com/'
+                      }))
+                    )
+                  )
+                  await this.e.reply(await common.makeForwardMsg(this.e, imageMessages, '评论图片收集'))
+                }
+
+                await this.e.reply(img)
+              }
+            }
+            : undefined
+
           await runMediaTasks({
             poster: sendVideoInfo,
-            video: sendVideo
+            video: sendVideo,
+            comment: sendComment
           }, {
             onTaskFailure: ({ task, error }) => {
-              const taskLabel = task === 'poster' ? '视频信息海报/回复' : '视频下载、弹幕烧录与发送'
+              const taskLabel = task === 'poster'
+                ? '视频信息海报/回复'
+                : task === 'video' ? '视频下载、弹幕烧录与发送' : '评论图渲染与发送'
               logger.error(`[抖音] ${taskLabel}任务失败`, error)
             }
           })
@@ -782,75 +862,6 @@ export class DouYin extends Base {
             await this.handleArticleWork(VideoData)
           }
 
-          if (hasDouyinContent('评论图', 'comment')) {
-            const list = await getEmojiList()
-            const commentsResult = await douyinComments(CommentsData, list)
-            if (!commentsResult.CommentsData.length) {
-              await this.e.reply('这个作品没有评论 ~')
-            } else {
-              const aweme = VideoData.data.aweme_detail
-              // 「大家都在搜」：只取评论区顶部那一组，其余场景（搜索页等）不是这张图要的
-              const suggest: string[] = []
-              for (const item of aweme.suggest_words?.suggest_words ?? []) {
-                if (item.scene !== 'comment_top_rec') continue
-                for (const word of item.words ?? []) {
-                  if (word.word) suggest.push(word.word)
-                }
-              }
-
-              const img = await Render('douyin/comment',
-                {
-                  Type: isArticle ? '文章' : isVideo ? '视频' : this.is_slides ? '合辑' : '图集',
-                  // 扁平数组，不是 { jsonArray } 包装：模板里 CommentsData.length / .map 直接读这个字段
-                  CommentsData: commentsResult.CommentsData,
-                  CommentLength: Config.douyin.realCommentCount
-                    ? aweme.statistics.comment_count ?? 0
-                    : commentsResult.CommentsData.length,
-                  share_url: this.is_mp4
-                    ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
-                    // 契约必填 string，而模板把它塞进二维码 `value={props.share_url}`；
-                    // 拿不到分享链接时退回作品页地址，别让二维码收到 undefined
-                    : aweme.share_url || `https://www.douyin.com/video/${aweme.aweme_id}`,
-                  VideoSize: mp4size,
-                  VideoFPS: FPS,
-                  ImageLength: imagenum,
-                  Region: aweme.region ?? '',
-                  suggestWrod: suggest,
-                  Resolution: isVideo && video
-                    ? `${video.bit_rate[0].play_addr.width} x ${video.bit_rate[0].play_addr.height}`
-                    : null,
-                  maxDepth: 6,
-                  Author: aweme.author.nickname ?? '',
-                  AuthorAvatar: aweme.author.avatar_thumb?.url_list[0] ?? '',
-                  // 线上 SSR 崩溃就是缺了这一个字段：VideoInfoHeader 直接读
-                  // props.Statistics.digg_count（Comment.tsx:147），拿 undefined 解属性当场抛。
-                  // 拿 HEAD 上的旧 payload 实测复现过，报错正是 reading 'digg_count'。
-                  Statistics: {
-                    digg_count: aweme.statistics.digg_count ?? 0,
-                    comment_count: aweme.statistics.comment_count ?? 0,
-                    share_count: aweme.statistics.share_count ?? 0,
-                    collect_count: aweme.statistics.collect_count ?? 0
-                  },
-                  CreateTime: aweme.create_time
-                }
-              )
-
-              // 评论区图片收集：把评论里出现过的图片/表情包合并转发出去
-              if (Config.douyin.commentImageCollection && commentsResult.image_url.length > 0) {
-                const imageMessages = await Promise.all(
-                  commentsResult.image_url.map(async (url, index) =>
-                    segment.image(await processImageUrl(url, aweme.desc || g_title || '抖音评论图片', index, {
-                      ...this.headers,
-                      Referer: 'https://www.douyin.com/'
-                    }))
-                  )
-                )
-                await this.e.reply(await common.makeForwardMsg(this.e, imageMessages, '评论图片收集'))
-              }
-
-              await this.e.reply(img)
-            }
-          }
           return true
         }
 
