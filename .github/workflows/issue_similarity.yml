@@ -1,9 +1,12 @@
 # 问题相似性分析
-name: Issues Similarity Analysis
+name: 🔍 Issue 相似度分析
 
 on:
   issues:
     types: [opened, edited]
+
+permissions:
+  issues: write
 
 jobs:
   similarity-analysis:

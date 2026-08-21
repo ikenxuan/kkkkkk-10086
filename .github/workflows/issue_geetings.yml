@@ -1,6 +1,11 @@
+name: 💬 Issue 打标签自动回复
+
 on:
   issues:
     types: [labeled]
+
+permissions:
+  issues: write
 
 jobs:
   create-comment:
