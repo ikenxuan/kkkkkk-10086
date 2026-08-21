@@ -72,14 +72,14 @@
  * - `var(--background)`（5766273 的做法）：和卡片同色，四角看不出圆角，等于没有形状
  * - `transparent`（31e6462 的做法）：四角是透明像素，聊天软件在深色底上合成就是黑角，
  *   浅色底上又变白角 —— 白边刚没，黑边就来了
- * - `var(--surface-secondary)`：跟卡片的 `bg-background` 差一档明度
- *   （浅色 95.24% vs 97.02%，深色 25.7% vs 12%），四角能看出圆角，
- *   而且是不透明的，在任何查看器背景下都长一个样
+ * - `var(--surface)`：浅色下就是纯白（100%），和上游成图四周那圈白边一致；
+ *   深色下是 21.03%，比卡片的 12% 亮一档，圆角照样看得出来。
+ *   关键是它不透明 —— 在任何查看器背景下都长一个样，不会忽黑忽白
  *
  * 兜底到 --background 是防 heroui 哪天改 token 名：宁可退回"没有形状"，
  * 也不要退回透明后那种忽黑忽白。
  * 放在 @layer base 外面且用 ID 选择器，避免被任何无层规则盖掉。
  */
 #container {
-  background-color: var(--surface-secondary, var(--background));
+  background-color: var(--surface, var(--background));
 }

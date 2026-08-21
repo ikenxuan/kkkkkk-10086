@@ -688,53 +688,63 @@ export class DouYinpush extends Base {
       /** 过滤掉不启用的订阅项 */
       const filteredUserList = userList.filter(item => item.switch !== false)
       for (const item of filteredUserList) {
-        const sec_uid = item.sec_uid
-        if (!sec_uid) {
-          logger.warn(`用户 ${item.remark || item.short_id || '未知'} 缺少 sec_uid，跳过抖音推送`)
-          continue
-        }
-
-        const pushTypes = normalizePushTypes(item.pushTypes)
-        logger.debug(`开始获取用户：${item.remark}（${sec_uid}）的抖音内容，推送类型：${pushTypes.join(', ')}`)
-        const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
-
-        const targets = item.group_id.map(groupWithBot => {
-          const [groupId = '', botId = ''] = groupWithBot.split(':')
-          return { groupId, botId }
-        }).filter(target => target.groupId && target.botId)
-
-        // 如果没有订阅群组，跳过该用户
-        if (targets.length === 0) continue
-
-        for (const pushType of pushTypes) {
-          if (pushType === 'live') {
-            const liveItem = await this.buildLivePushItem(sec_uid, userinfo, item, targets)
-            if (liveItem) willbepushlist[`live_${sec_uid}`] = liveItem
+        try {
+          const sec_uid = item.sec_uid
+          if (!sec_uid) {
+            logger.warn(`用户 ${item.remark || item.short_id || '未知'} 缺少 sec_uid，跳过抖音推送`)
             continue
           }
 
-          const contentList = await this.fetchContentList(pushType, sec_uid, item)
-          for (const [index, aweme] of contentList.entries()) {
-            logger.debug(`开始处理${DOUYIN_PUSH_TYPE_LABELS[pushType]}作品：${aweme.aweme_id}`)
-            const validTargets = await this.getValidTargets(aweme, sec_uid, targets, pushType, index)
-            if (validTargets.length === 0) continue
+          const pushTypes = normalizePushTypes(item.pushTypes)
+          logger.debug(`开始获取用户：${item.remark}（${sec_uid}）的抖音内容，推送类型：${pushTypes.join(', ')}`)
+          const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
 
-            const authorUserinfo = pushType === 'post' ? userinfo : await this.getAuthorUserInfo(aweme, userinfo)
-            willbepushlist[`${pushType}_${aweme.aweme_id}`] = {
-              remark: item?.remark || aweme.author?.nickname || sec_uid,
-              sec_uid,
-              create_time: aweme.create_time * 1000,
-              targets: validTargets,
-              pushType,
-              Detail_Data: {
-                ...aweme,
-                user_info: authorUserinfo,
-                source_user_info: userinfo
-              },
-              avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + (authorUserinfo.data.user.avatar_larger?.uri || ''),
-              living: false
+          const targets = item.group_id.map(groupWithBot => {
+            const [groupId = '', botId = ''] = groupWithBot.split(':')
+            return { groupId, botId }
+          }).filter(target => target.groupId && target.botId)
+
+          // 如果没有订阅群组，跳过该用户
+          if (targets.length === 0) continue
+
+          for (const pushType of pushTypes) {
+            if (pushType === 'live') {
+              const liveItem = await this.buildLivePushItem(sec_uid, userinfo, item, targets)
+              if (liveItem) willbepushlist[`live_${sec_uid}`] = liveItem
+              continue
+            }
+
+            const contentList = await this.fetchContentList(pushType, sec_uid, item)
+            for (const [index, aweme] of contentList.entries()) {
+              logger.debug(`开始处理${DOUYIN_PUSH_TYPE_LABELS[pushType]}作品：${aweme.aweme_id}`)
+              const validTargets = await this.getValidTargets(aweme, sec_uid, targets, pushType, index)
+              if (validTargets.length === 0) continue
+
+              const authorUserinfo = pushType === 'post' ? userinfo : await this.getAuthorUserInfo(aweme, userinfo)
+              willbepushlist[`${pushType}_${aweme.aweme_id}`] = {
+                remark: item?.remark || aweme.author?.nickname || sec_uid,
+                sec_uid,
+                create_time: aweme.create_time * 1000,
+                targets: validTargets,
+                pushType,
+                Detail_Data: {
+                  ...aweme,
+                  user_info: authorUserinfo,
+                  source_user_info: userinfo
+                },
+                avatar_img: 'https://p3-pc.douyinpic.com/aweme/1080x1080/' + (authorUserinfo.data.user.avatar_larger?.uri || ''),
+                living: false
+              }
             }
           }
+        } catch (error) {
+          // 单个博主失败不再中断整轮推送，理由同 bilibili/push.ts 里那处：
+          // Base.ts 的 amagi 代理在接口返回非零 code 时会 throw，try 原来在循环外面，
+          // 第一个接口失败的博主就会把 for 整个终止，后面所有订阅当轮都不推。
+          logger.warn(
+            `[抖音推送] 用户 ${item.remark || item.short_id || item.sec_uid || '未知'}本轮跳过：${error instanceof Error ? error.message : String(error)}`
+          )
+          continue
         }
       }
     } catch (error) {

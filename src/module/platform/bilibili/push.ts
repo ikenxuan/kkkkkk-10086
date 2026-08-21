@@ -1182,81 +1182,93 @@ export class Bilibilipush extends Base {
       /** 过滤掉不启用的订阅项 */
       const filteredUserList = userList.filter(item => item.switch !== false)
       for (const item of filteredUserList) {
-        const pushTypes = normalizeBilibiliPushTypes(item.pushTypes)
-        const allowedDynamicTypes = new Set(pushTypes.map(type => BILIBILI_PUSH_TYPE_TO_DYNAMIC_TYPE[type]))
-        if (directLiveItems.handledUids.has(item.host_mid)) {
-          allowedDynamicTypes.delete(DynamicType.LIVE_RCMD)
-        }
-        if (allowedDynamicTypes.size === 0) continue
-        logger.debug(`[Bilibili 推送] 开始获取UP: ${item.remark}（${item.host_mid}） 的动态列表，推送类型：${pushTypes.join(', ')}`)
-        const dynamic_list = asAmagiResponse<BiliUserDynamic>(await this.amagi.getBilibiliData('用户主页动态列表数据', { host_mid: item.host_mid, typeMode: 'strict' }))
-        if (dynamic_list.data.data.items.length > 0) {
-          // 遍历接口返回的视频列表
-          for (const dynamic of dynamic_list.data.data.items) {
-            const now = Date.now()
-            // 获取动态发布时间戳(毫秒)
-            const createTime = dynamic.modules.module_author.pub_ts * 1000
-            const timeDifference = (now - createTime)
+        try {
+          const pushTypes = normalizeBilibiliPushTypes(item.pushTypes)
+          const allowedDynamicTypes = new Set(pushTypes.map(type => BILIBILI_PUSH_TYPE_TO_DYNAMIC_TYPE[type]))
+          if (directLiveItems.handledUids.has(item.host_mid)) {
+            allowedDynamicTypes.delete(DynamicType.LIVE_RCMD)
+          }
+          if (allowedDynamicTypes.size === 0) continue
+          logger.debug(`[Bilibili 推送] 开始获取UP: ${item.remark}（${item.host_mid}） 的动态列表，推送类型：${pushTypes.join(', ')}`)
+          const dynamic_list = asAmagiResponse<BiliUserDynamic>(await this.amagi.getBilibiliData('用户主页动态列表数据', { host_mid: item.host_mid, typeMode: 'strict' }))
+          if (dynamic_list.data.data.items.length > 0) {
+            // 遍历接口返回的视频列表
+            for (const dynamic of dynamic_list.data.data.items) {
+              const now = Date.now()
+              // 获取动态发布时间戳(毫秒)
+              const createTime = dynamic.modules.module_author.pub_ts * 1000
+              const timeDifference = (now - createTime)
 
-            const is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
-            let shouldPush = false // 是否列入推送数组
+              const is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
+              let shouldPush = false // 是否列入推送数组
 
-            const timeDiffSeconds = Math.round(timeDifference / 1000)
-            const timeDiffHours = Math.round((timeDifference / 1000 / 60 / 60) * 100) / 100 // 保留2位小数
+              const timeDiffSeconds = Math.round(timeDifference / 1000)
+              const timeDiffHours = Math.round((timeDifference / 1000 / 60 / 60) * 100) / 100 // 保留2位小数
 
-            // 条件判断，以下任何一项成立都将进行推送：如果是置顶且发布时间在一天内 || 如果是置顶作品且有新的群组且发布时间在一天内 || 如果有新的群组且发布时间在一天内
-            logger.debug(`
-              前期获取该动态基本信息：
-              UP主：${dynamic.modules.module_author.name}
-              动态ID：${dynamic.id_str}
-              发布时间：${Common.convertTimestampToDateTime(createTime / 1000)}
-              发布时间戳（ms）：${createTime}
-              当前时间戳（ms）：${now}
-              时间差（ms）：${timeDifference} ms (${timeDiffSeconds}s) (${timeDiffHours}h)
-              是否置顶：${is_top}
-              是否在一天内：${timeDifference < 86400000 ? logger.green('true') : logger.red('false')}
-              `)
+              // 条件判断，以下任何一项成立都将进行推送：如果是置顶且发布时间在一天内 || 如果是置顶作品且有新的群组且发布时间在一天内 || 如果有新的群组且发布时间在一天内
+              logger.debug(`
+                前期获取该动态基本信息：
+                UP主：${dynamic.modules.module_author.name}
+                动态ID：${dynamic.id_str}
+                发布时间：${Common.convertTimestampToDateTime(createTime / 1000)}
+                发布时间戳（ms）：${createTime}
+                当前时间戳（ms）：${now}
+                时间差（ms）：${timeDifference} ms (${timeDiffSeconds}s) (${timeDiffHours}h)
+                是否置顶：${is_top}
+                是否在一天内：${timeDifference < 86400000 ? logger.green('true') : logger.red('false')}
+                `)
 
-            if ((is_top && timeDifference < 86400000) || (timeDifference < 86400000)) {
-              shouldPush = true
-              logger.debug(logger.green(`根据以上判断，shoulPush 为 true，将对该动态纳入当天推送列表：https://t.bilibili.com/${dynamic.id_str}\n`))
-            } else {
-              logger.debug(logger.yellow(`根据以上判断，shoulPush 为 false，跳过该动态：https://t.bilibili.com/${dynamic.id_str}\n`))
-            }
-
-            // 如果 shouldPush 为 true，或该作品距现在的时间差小于一天，则将该动态添加到 willbepushlist 中
-            if (timeDifference < 86400000 || shouldPush) {
-              if (!allowedDynamicTypes.has(dynamic.type)) {
-                logger.debug(`UP主 ${item.remark || item.host_mid} 的动态 ${dynamic.id_str} 类型为「${dynamic.type}」，不在推送类型配置中，跳过`)
-                continue
+              if ((is_top && timeDifference < 86400000) || (timeDifference < 86400000)) {
+                shouldPush = true
+                logger.debug(logger.green(`根据以上判断，shoulPush 为 true，将对该动态纳入当天推送列表：https://t.bilibili.com/${dynamic.id_str}\n`))
+              } else {
+                logger.debug(logger.yellow(`根据以上判断，shoulPush 为 false，跳过该动态：https://t.bilibili.com/${dynamic.id_str}\n`))
               }
 
-              // 将群组ID和机器人ID分离
-              const targets = item.group_id.map(groupWithBot => {
-                const [groupId, botId] = groupWithBot.split(':')
-                return { groupId: groupId || '', botId: botId || '' }
-              })
+              // 如果 shouldPush 为 true，或该作品距现在的时间差小于一天，则将该动态添加到 willbepushlist 中
+              if (timeDifference < 86400000 || shouldPush) {
+                if (!allowedDynamicTypes.has(dynamic.type)) {
+                  logger.debug(`UP主 ${item.remark || item.host_mid} 的动态 ${dynamic.id_str} 类型为「${dynamic.type}」，不在推送类型配置中，跳过`)
+                  continue
+                }
 
-              const pushId = dynamic.type === DynamicType.LIVE_RCMD
-                ? await this.resolveLiveDynamicCacheId(dynamic, item.host_mid)
-                : dynamic.id_str
+                // 将群组ID和机器人ID分离
+                const targets = item.group_id.map(groupWithBot => {
+                  const [groupId, botId] = groupWithBot.split(':')
+                  return { groupId: groupId || '', botId: botId || '' }
+                })
 
-              // 确保 willbepushlist[pushId] 是一个对象
-              if (!willbepushlist[pushId]) {
-                willbepushlist[pushId] = {
-                  remark: item?.remark || dynamic.modules.module_author.name,
-                  host_mid: item.host_mid,
-                  create_time: dynamic.modules.module_author.pub_ts,
-                  targets,
-                  Dynamic_Data: dynamic, // 存储 dynamic 对象
-                  avatar_img: dynamic.modules.module_author.face,
-                  dynamic_type: dynamic.type
+                const pushId = dynamic.type === DynamicType.LIVE_RCMD
+                  ? await this.resolveLiveDynamicCacheId(dynamic, item.host_mid)
+                  : dynamic.id_str
+
+                // 确保 willbepushlist[pushId] 是一个对象
+                if (!willbepushlist[pushId]) {
+                  willbepushlist[pushId] = {
+                    remark: item?.remark || dynamic.modules.module_author.name,
+                    host_mid: item.host_mid,
+                    create_time: dynamic.modules.module_author.pub_ts,
+                    targets,
+                    Dynamic_Data: dynamic, // 存储 dynamic 对象
+                    avatar_img: dynamic.modules.module_author.face,
+                    dynamic_type: dynamic.type
+                  }
                 }
               }
             }
+          } else {
+            logger.error(`「${item.remark}」的动态列表数量为零！`)
           }
-        } else {
-          logger.error(`「${item.remark}」的动态列表数量为零！`)
+        } catch (error) {
+          // 单个 UP 失败不再中断整轮推送。
+          // Base.ts 的 amagi 代理在接口返回非零 code 时会 throw，原来这个 try 在循环
+          // 外面，于是第一个接口失败的 UP 就把 for 整个终止掉，后面所有订阅当轮都不推 ——
+          // 线上表现就是每轮固定报一次「B站数据获取失败」然后什么都没推。
+          // 与上游一致：按 UP 隔离，记一条 warn 然后跳过这一个。
+          logger.warn(
+            `[Bilibili 推送] UP主 ${item.remark}（${item.host_mid}）本轮跳过：${error instanceof Error ? error.message : String(error)}`
+          )
+          continue
         }
       }
     } catch (error) {
