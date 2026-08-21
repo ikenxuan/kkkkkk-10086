@@ -118,6 +118,11 @@ pnpm --dir ./plugins/kkkkkk-10086 build:watch
 - [XasYer/Shiranai-Plugin](https://github.com/XasYer/Shiranai-Plugin)
 - ...
 
+**TypeScript 工程结构参考**
+
+- [KaguyaJs/Yunzai-DF-Plugin](https://github.com/KaguyaJs/Yunzai-DF-Plugin) —— 本项目从 JavaScript 迁移到 TypeScript 时，工程结构（构建产物布局、ESM 出口、类型组织方式）参考了该项目
+- [KaguyaJs/TRSS-Yunzai-Types](https://github.com/KaguyaJs/TRSS-Yunzai-Types) —— 宿主全局声明，本项目以 `@types/trss-yunzai` 别名安装
+
 **接口文档与加密参数算法**
 
 - [ikenxuan/amagi](https://github.com/ikenxuan/amagi)
