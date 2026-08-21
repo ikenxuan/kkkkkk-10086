@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.38.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.1...v2.38.2) (2026-08-21)
+
+
+### 🐛 Bug 修复
+
+* **push:** 修主人收不到推送错误图，并解除 QQBot 主动推送拦截 ([e425763](https://github.com/ikenxuan/kkkkkk-10086/commit/e425763c36eb1272861346f4aa1386d79d8c7233))
+
 ## [2.38.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.0...v2.38.1) (2026-08-21)
 
 
