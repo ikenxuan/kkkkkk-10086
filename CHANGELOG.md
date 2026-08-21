@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.37.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.37.0...v2.37.1) (2026-08-21)
+
+
+### 🐛 Bug 修复
+
+* **ci:** 显式清空 exclude_assets，别再删掉 master 上的 .github ([569dfae](https://github.com/ikenxuan/kkkkkk-10086/commit/569dfae9b39fa3dc67039552d02baaf9bd622142))
+
 ## [2.37.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.36.0...v2.37.0) (2026-08-21)
 
 
