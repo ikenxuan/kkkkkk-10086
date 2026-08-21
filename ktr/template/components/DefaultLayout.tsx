@@ -88,7 +88,16 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                 <div className="flex items-center mb-1 space-x-2 text-sm font-bold uppercase text-foreground/80">
                   <span>{version.plugin}</span>
                 </div>
-                <span className="text-5xl font-black">{version.pluginName}</span>
+                {/*
+                  whitespace-nowrap + text-4xl 是本仓库相对上游的必要偏离，不是随手改的字号。
+                  上游那两个名字只有 3 个和 5 个字符，照它的 text-5xl 排一行绰绰有余；
+                  本仓库是 `kkkkkk-10086`（12 字）和 `TRSS-Yunzai`（11 字），在 releaseType 为
+                  Stable（右边多出分隔线 + Rolldown/Vite 一整块）时整行自然宽度只剩几十 px 余量，
+                  hash 多一位、通道词换一个都会把它顶过 1440，flex 于是把这两个名字压成两行。
+                  锁 nowrap 是让「换行」这个失效模式不可能发生；降一档字号是把余量做够
+                  （实测最坏情况余量从 48px 提到 274px）。
+                */}
+                <span className="text-4xl font-black whitespace-nowrap">{version.pluginName}</span>
               </div>
             </div>
 
@@ -157,7 +166,8 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                   <span className="opacity-90">Power By</span>
                 </div>
                 <div className="flex items-end space-x-2">
-                  <span className="text-5xl font-black leading-none opacity-90">{version.poweredBy}</span>
+                  {/* 同上：nowrap + 降一档字号，理由见插件名那处的注释 */}
+                  <span className="text-4xl font-black leading-none whitespace-nowrap opacity-90">{version.poweredBy}</span>
                   <span className="pb-1 text-2xl font-bold leading-none opacity-90">v{version.frameworkVersion}</span>
                 </div>
               </div>
