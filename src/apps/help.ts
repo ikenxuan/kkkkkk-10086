@@ -1,22 +1,24 @@
 import { Render, Config } from '@/module/utils/index'
-import { collectRuntimeReport, getLocalChangelog } from '@/module/utils/runtime-report'
+import { collectRuntimeReport } from '@/module/utils/runtime-report'
 import { checkYunzaiVersion } from '@/module/utils/yunzaiVersion'
 import type { CommandEvent } from '@/types/message'
 
 /**
- * 帮助 / 版本 / 更新日志三条命令。
+ * 帮助与版本两条命令。
  *
  * 菜单结构与三条命令的分工照搬上游 `karin-plugin-kkk` 的
  * `packages/core/src/apps/help.ts`：`#kkk版本` 出的是 `other/runtime`
- * 运行环境诊断卡，`#kkk更新日志` 才是 `other/changelog`。
- * 本仓库原来把两者合成一条规则、全渲染成更新日志，运行时诊断卡（路由和模板
- * 早就在仓库里）因此一直没有任何入口。
+ * 运行环境诊断卡。本仓库原来把版本和更新日志合成一条规则、全渲染成更新日志，
+ * 运行时诊断卡（路由和模板早就在仓库里）因此一直没有任何入口。
+ *
+ * `#kkk更新日志` 已挪到 `apps/update.ts`：它读的是插件目录 git 里的提交，
+ * 和「更新」同一份数据来源，跟帮助页无关。
  *
  * 与上游的差异仅限基础设施：
  * - `karin.command()` -> Yunzai 的 `plugin` 类 + `rule` 表
  * - `config.master()` 判主人 -> Yunzai 的 `e.isMaster`
  * - `Render(e, path, params)` -> 本仓库是 `Render(path, params)`
- * - `#kkk更新` 由 `apps/update.ts` 调宿主的 update 真执行更新，不在本文件
+ * - `#kkk更新` 与 `#kkk更新日志` 都在 `apps/update.ts`
  */
 
 /** 帮助条目的可见角色 */
@@ -194,7 +196,7 @@ const buildHelpGroups = (): HelpGroup[] => [
       },
       {
         title: '#kkk更新日志',
-        description: '查看本地 CHANGELOG 最近十个版本',
+        description: '查看插件目录 git 里最近的提交记录',
         icon: 'ph:scroll-fill',
         roles: ['member', 'master']
       },
@@ -238,12 +240,6 @@ export class kkkHelp extends plugin {
         {
           reg: '^#?kkk版本$',
           fnc: 'version'
-        },
-        {
-          // 只收「更新日志」。`#kkk更新` 归 update.ts 真去执行更新，
-          // 那边优先级 1000 比这里的 2000 靠前，两条规则重叠时这里永远轮不到。
-          reg: '^#?kkk更新日志$',
-          fnc: 'changelog'
         }
       ]
     })
@@ -264,25 +260,6 @@ export class kkkHelp extends plugin {
         currentVersion: outdated.current
       }))
     }
-    return true
-  }
-
-  /** `#kkk更新日志`：本地 CHANGELOG 最近十个版本 */
-  async changelog (e: CommandEvent): Promise<boolean> {
-    const markdown = getLocalChangelog(10)
-    if (!markdown) {
-      throw new Error('当前构建未携带可用的 CHANGELOG.md')
-    }
-
-    const img = await Render('other/changelog', {
-      markdown,
-      // 与上游一致：这条命令只看本地日志，不联网比对版本，
-      // 所以不进「更新提示」分支，两个版本号留空
-      Tip: false,
-      localVersion: '',
-      remoteVersion: ''
-    })
-    await e.reply!(img)
     return true
   }
 
