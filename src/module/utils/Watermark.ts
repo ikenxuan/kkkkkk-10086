@@ -39,6 +39,15 @@ const toWatermarkBuffer = (result: unknown): Buffer | null => {
   return toImageBuffer(payload)
 }
 
+/**
+ * 取出消息段里的图片字节。分片时要重新编码，所以和水印那条路共用同一套读写，
+ * 免得两处各自实现、对适配器返回的段形状理解不一致。
+ */
+export const readImageBytes = (image: ImageMessage): Buffer | null => toImageBuffer(getImagePayload(image))
+
+/** 把新的图片字节写回消息段，保持原段的字段形状（file / data.file / data / base64:// 编码） */
+export const replaceImageBytes = (image: ImageMessage, payload: Buffer): ImageMessage => setImagePayload(image, payload)
+
 const getImagePayload = (image: ImageMessage): unknown => {
   if (!isRecord(image)) return image
   return image.file ??

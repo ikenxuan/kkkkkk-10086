@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import puppeteer from '@/runtime/host/puppeteer'
 import { getBuildMetadata } from '@/module/tooling/build-metadata'
+import { sliceTallImage } from './imageSlicer.js'
 import { getInstallState, getReleaseChannel } from '@/module/tooling/release-channel'
 import { Config, Common } from './index.js'
 import {
@@ -33,16 +34,28 @@ const getMultiPageHeight = (): number => {
   return Number.isFinite(height) && height > 0 ? height : 12000
 }
 
+/**
+ * 截一张成图，超高时自己切片。
+ *
+ * 一律走宿主的单图接口，不用它的 `screenshots`：宿主只要看到 `multiPage` 为真就把编码
+ * 强制改成 jpeg（renderers/puppeteer/lib/puppeteer.js:212-215，我们传的 imgType: 'png'
+ * 被直接覆盖），jpeg 没有 alpha，卡片圆角外那圈透明像素会被合成成纯白 —— 实测
+ * rgba(255,255,255,255)，也就是成图四角的白三角。而它的分片路径还会从截元素改成截视口，
+ * 把卡片没盖住的区域一起拍进去。
+ *
+ * 所以分片改成自己做：拿单张 png，再按 `multiPageHeight` 用 sharp 纵向切，
+ * alpha 全程留得住，圆角在首片和末片上照常成立。
+ * `multiPageRender: false` 的语义不变 —— 那是「不要分片」，此时整张发出去。
+ */
 const captureImages = async (
   name: string,
   htmlPath: string,
   data: Record<string, unknown>
 ): Promise<ImageMessage[] | false> => {
-  if (Config.app.multiPageRender !== false) {
-    return await puppeteer.screenshotsFile(name, htmlPath, data)
-  }
   const image = await puppeteer.screenshotFile(name, htmlPath, data)
-  return image ? [image] : false
+  if (!image) return false
+  if (Config.app.multiPageRender === false) return [image]
+  return await sliceTallImage(image, getMultiPageHeight())
 }
 
 /**
@@ -98,9 +111,6 @@ export const Render = async <R extends ReactTemplateRoute> (
         scale: getRenderScale(params.scale ?? 1),
         theme: { mode: useDarkTheme ? 'dark' : 'light' },
         ambientCover: Config.app.ambientCover,
-        // 宿主在 multiPage 为真时把编码强制改成 jpeg（我们传的 imgType: 'png' 被覆盖），
-        // jpeg 没有 alpha。只有单图路径成图才真是 png，卡片也才敢上圆角。
-        alphaOutput: Config.app.multiPageRender === false,
         version
       }
     )
@@ -114,8 +124,9 @@ export const Render = async <R extends ReactTemplateRoute> (
     saveId: `${saveStem}-${randomUUID()}`,
     imgType: 'png',
     omitBackground: true,
-    multiPage: Config.app.multiPageRender !== false,
-    multiPageHeight: getMultiPageHeight(),
+    // 一定要是 false：宿主见到它为真就把 imgType 覆盖成 jpeg，alpha 就没了。
+    // 分片由 captureImages 自己用 sharp 做，宿主的 multiPageHeight 因此也不再需要。
+    multiPage: false,
     pageGotoParams: {
       waitUntil: 'load',
       timeout: getRenderTimeout()

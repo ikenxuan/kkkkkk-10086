@@ -31,36 +31,20 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
   // 明暗只用于内部装饰分支（辉光强度等）；dark 类与 data-theme 由 ktr 外壳统一写在 body 上，
   // 模板根元素不再重复施加。唯一事实来源是 ctx.theme.mode。
   const useDarkTheme = isDark(ctx)
-  const { version, alphaOutput, watermarkTextBitSize } = ctx
+  const { version, watermarkTextBitSize } = ctx
 
   return (
-    <>
-      {/*
-        只有成图真能留住 alpha 时才把外壳的兜底底色去掉（见 style.css 里 #container 那条）。
-        圆角外那圈透明像素靠它才透得出来；否则外壳的不透明底会把圆角填成四个色块。
-        写成模板内联 style 而不是改 style.css：那条兜底规则对 jpeg 路径仍然必要，
-        这里只在确定用不上时局部撤掉。
-      */}
-      {alphaOutput && <style>{'#container{background-color:transparent !important}'}</style>}
-      <div
+    <div
       className={cn(
-        /*
-         * 卡片是直角的，不带 rounded-[5rem]：宿主 TRSS-Yunzai 截的是 #container
-         * （renderers/puppeteer/lib/puppeteer.js:199），并且在 multiPage 为真时把编码强制改成 jpeg
-         * （同文件 212-215 行，我们传的 imgType: 'png' 直接被覆盖）。jpeg 没有 alpha，圆角外那圈
-         * 透明像素会被合成成纯白 —— 也就是用户看到的成图四角白色三角。
-         *
-         * 补一层同色不透明底能把白色去掉，但四角仍然是三角形：氛围辉光层被 overflow-hidden + 圆角
-         * 裁在圆弧内，角上只剩纯底色，跟紧邻的卡片内部对不上。所以在这个宿主上圆角根本渲染不出来，
-         * 只会渲染成四个色块。直角之后角上就是卡片内部本身（辉光照常铺过去），完全没有分界。
-         * 参考 gscore-adapter 的做法：不依赖透明度，整幅图都是不透明的，直接交给 jpeg。
-         *
-         * overflow-hidden 与 relative 仍从旧引擎外壳（#container 规则 / transform 语义）迁来：
-         * 根元素是绝对定位包含块，模板里 inset-0 的氛围层锚定在卡片矩形上并被裁剪，而不是锚到视口逃逸出去。
-         */
-        'relative w-360 shrink-0 overflow-hidden bg-background bg-clip-padding text-foreground font-[HarmonyOSHans-Regular]',
-        // 圆角只在 alpha 能留住时才上，理由见下面那段注释和 ctx.alphaOutput 的说明
-        alphaOutput && 'rounded-[5rem]',
+        // 圆角与裁剪从旧引擎外壳（#container 规则）迁移到模板根元素：观感不变，单个模板可用 className 覆盖。
+        // relative 同样从旧引擎外壳（transform 语义）迁来：根元素是绝对定位包含块，
+        // 模板里 inset-0 的氛围层锚定在卡片矩形上并被圆角裁剪，而不是锚到视口逃逸出去。
+        //
+        // 圆角外那圈是透明像素，能不能留住取决于成图编码：宿主只要看到 multiPage 为真就把编码
+        // 强制改成 jpeg（renderers/puppeteer/lib/puppeteer.js:212-215），jpeg 没有 alpha，
+        // 那圈会被合成成纯白（实测 rgba(255,255,255,255)）。所以本仓库不再走宿主的分片，
+        // 一律单张元素截图拿 png，超高再自己用 sharp 切（src/module/utils/imageSlicer.ts）。
+        'relative w-360 shrink-0 overflow-hidden rounded-[5rem] bg-background bg-clip-padding text-foreground font-[HarmonyOSHans-Regular]',
         className
       )}
       style={{
@@ -129,7 +113,10 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
               </div>
               <span
                 className={cn(
-                  'text-5xl font-bold tracking-wide',
+                  // whitespace-nowrap：页脚是一行 flex，三段构建标识全带上时整行内容宽刚好顶到
+                  // 1440（实测 406+493+4+441 + 3×32 的间距），不锁住就会换行、行高从 72 涨到 122，
+                  // 把插件名和框架名一起挤成两行。
+                  'text-5xl font-bold tracking-wide whitespace-nowrap',
                   version.hasUpdate && 'text-success',
                   !version.hasUpdate && version.releaseType === 'Preview' && 'text-warning'
                 )}
@@ -143,12 +130,12 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                   最少也能退化成干净的 v2.36.0。
                 */}
                 {typeof version.commitsAhead === 'number' && version.commitsAhead > 0 && (
-                  <span className="font-mono text-4xl opacity-70">-{version.commitsAhead}</span>
+                  <span className="font-mono text-3xl opacity-70">-{version.commitsAhead}</span>
                 )}
                 {version.commitId && (
-                  <span className="font-mono text-4xl opacity-70">-g{version.commitId}</span>
+                  <span className="font-mono text-3xl opacity-70">-g{version.commitId}</span>
                 )}
-                {version.dirty && <span className="font-mono text-4xl opacity-70">-dirty</span>}
+                {version.dirty && <span className="font-mono text-3xl opacity-70">-dirty</span>}
               </span>
             </div>
 
@@ -208,7 +195,6 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
           )}
         </div>
       )}
-      </div>
-    </>
+    </div>
   )
 }

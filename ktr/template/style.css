@@ -64,18 +64,18 @@
 }
 
 /*
- * 兜底的不透明底：宿主 TRSS-Yunzai 截的是 #container
- * （renderers/puppeteer/lib/puppeteer.js:199），而 ktr 外壳的 reset 把 html/body 的背景
- * 强制成 transparent !important，#container 自己也没有背景。宿主又会在 multiPage 为真时把编码
- * 强制改成 jpeg（同文件 212-215 行，我们传的 imgType: 'png' 被直接覆盖），jpeg 没有 alpha，
- * 任何透明像素都会被合成成纯白。
+ * 外壳必须是透明的：宿主 TRSS-Yunzai 截的是 #container
+ * （renderers/puppeteer/lib/puppeteer.js:199），卡片圆角外那圈是透明像素，
+ * 外壳一有底色就会从圆角外露出来，圆角变成四个色块。
  *
- * 卡片（DefaultLayout 根元素）现在是直角且不透明的，正常情况下已经把 #container 填满，
- * 这条规则只是兜住"卡片没铺满外壳"的情况（比如将来某个模板自己改了宽度）。
- * 注意只去掉 omitBackground 是没用的：reset 之后页面本身没有任何底色，
- * 回落到的仍然是 puppeteer 的默认白底（实测过）。放在 @layer base 外面且用 ID 选择器，
- * 避免被任何无层规则盖掉。
+ * 这里曾经放过一层同色的兜底底色（5766273），配的是"卡片直角 + 交给宿主分片出 jpeg"
+ * 那套方案。现在本仓库自己拿单张 png 再用 sharp 切片
+ * （src/module/utils/imageSlicer.ts），alpha 全程留得住，兜底底色反而成了圆角的阻碍。
+ *
+ * 写成显式 transparent 而不是干脆删掉这条规则：ktr 外壳的 reset 只管到 html/body，
+ * #container 没有任何来源保证它不带底色，显式写出来才是"这里必须透明"这个约束本身。
+ * 放在 @layer base 外面且用 ID 选择器，避免被任何无层规则盖掉。
  */
 #container {
-  background-color: var(--background);
+  background-color: transparent;
 }
