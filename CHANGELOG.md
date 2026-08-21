@@ -1,5 +1,92 @@
 # Changelog
 
+## [2.37.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.36.0...v2.37.0) (2026-08-21)
+
+
+### ✨ 新功能
+
+* **assets:** swap the framework and in-card logos ([66d067f](https://github.com/ikenxuan/kkkkkk-10086/commit/66d067f6b334b926a1b8d654ea8fea7761c4428b))
+* derive the release channel from the installed branch ([9dd444d](https://github.com/ikenxuan/kkkkkk-10086/commit/9dd444d2702946fa2a3af4c000bd2d20d56fc681))
+* **douyin:** 接上喜欢列表 / 推荐列表两张专用推送卡 ([c467723](https://github.com/ikenxuan/kkkkkk-10086/commit/c467723c8a681d120fdc7230cb5fc0da35272dc2))
+* **error-card:** 补上 QQBot 适配器图标 ([dfc5ba1](https://github.com/ikenxuan/kkkkkk-10086/commit/dfc5ba1e73d0c25be38664c9ede7e62d18b839dc))
+* **footer:** 页脚版本号后面补 git describe 风格的构建标识 ([aa31995](https://github.com/ikenxuan/kkkkkk-10086/commit/aa31995773c2ce059056f1dcb55d1fdb951decee))
+* **help:** kkk版本 照搬上游，改出运行环境诊断卡 ([9b3169d](https://github.com/ikenxuan/kkkkkk-10086/commit/9b3169d535f25ac4082f4cab69dc4d57bb82baa9))
+* **help:** 接上宿主版本告警卡，声明最低 Yunzai 版本 ([f5f8315](https://github.com/ikenxuan/kkkkkk-10086/commit/f5f8315e7c8d3b94ef6faa3fa4cde3b6c9b1c500))
+* migrate React templates to standalone runtime ([c322256](https://github.com/ikenxuan/kkkkkk-10086/commit/c32225668ff812129bf7c9026623af5f73eca522))
+* port Karin KKK runtime to Yunzai ([0471487](https://github.com/ikenxuan/kkkkkk-10086/commit/0471487d2ae9c2f7a7f368088b4cb9f1dd0273ba))
+* **render:** 单图 png 路径下恢复卡片圆角，白边问题量化定位 ([ac5cbe1](https://github.com/ikenxuan/kkkkkk-10086/commit/ac5cbe1babcb96fa38d7f137e43df016b657ce9d))
+* **render:** 卡片对齐上游圆角，成图改成透明 png 并自己分片 ([31e6462](https://github.com/ikenxuan/kkkkkk-10086/commit/31e6462f9915925498c69f17bd92a568ed7f93aa))
+* sync xiaohongshu v2.42.1 support ([98d9a7c](https://github.com/ikenxuan/kkkkkk-10086/commit/98d9a7ce79cf29891a5d908800f16a9ac0117697))
+* **types:** Render() 按路由校验模板 payload 契约 ([4755288](https://github.com/ikenxuan/kkkkkk-10086/commit/4755288f3ad1239b7e1df0c2cee7cc1a4bbced0c))
+
+
+### 🐛 Bug 修复
+
+* **apps:** 修复帮助、更新日志与两张统计卡片的数据契约 ([636c964](https://github.com/ikenxuan/kkkkkk-10086/commit/636c964775232f4cd8a318502c044a6e669f615f))
+* **apps:** 拆开 #kkk更新 与 #kkk更新日志 的规则重叠 ([60a13d6](https://github.com/ikenxuan/kkkkkk-10086/commit/60a13d60b773ec9d82c0720da7493e6ea7437feb))
+* **bilibili:** 动态路由改传富文本数据，修掉 React 模板必炸的几处 ([e057528](https://github.com/ikenxuan/kkkkkk-10086/commit/e05752822e34a0a21b45435cb1a2680cac8c6c45))
+* **bilibili:** 视频简介图必炸 —— desc 传 HTML 字符串、ctime 传日期字符串 ([49dbbfd](https://github.com/ikenxuan/kkkkkk-10086/commit/49dbbfdf6f88c2897f41c17a08fcf0b3cd81c79d))
+* **bilibili:** 重写评论数据构造以对上 React 模板契约 ([4452d37](https://github.com/ikenxuan/kkkkkk-10086/commit/4452d37cab8eef1eaa89222633f50c36a4e26bf5))
+* **bilibili:** 重建番剧卡片数据，存量契约违约清零 ([d2c1409](https://github.com/ikenxuan/kkkkkk-10086/commit/d2c140988e830b1d88585571d213092254a963ce))
+* capture log context on the paths that had none ([03bf25c](https://github.com/ikenxuan/kkkkkk-10086/commit/03bf25cadc99fbcb8a3c0f145db4538ddd58158e))
+* **deps:** date-fns 挪进 dependencies，并加一道发布前的运行时依赖审计 ([d4cee6c](https://github.com/ikenxuan/kkkkkk-10086/commit/d4cee6c3db5b9b8be10c619e52d5644ef9eef775))
+* **douyin:** 修复直播卡片与推送列表卡片的数据契约 ([69b1650](https://github.com/ikenxuan/kkkkkk-10086/commit/69b16503d0548c13b2b93ac0396ca30f043922e4))
+* **douyin:** 视频信息图照搬上游 renderWorkImage，修复 SSR 崩溃 ([39b5980](https://github.com/ikenxuan/kkkkkk-10086/commit/39b598080a46c1821ac6d615a30264077edc37ad))
+* **douyin:** 评论图 payload 照搬上游，补上崩溃的 Statistics ([c89a97c](https://github.com/ikenxuan/kkkkkk-10086/commit/c89a97c4f589720d4bf49e368fc173efa5a8355c))
+* **error-card:** 错误卡片 payload 收窄成契约形状 ([cd56a1b](https://github.com/ikenxuan/kkkkkk-10086/commit/cd56a1b670353bf6c52183dbcea43a8284157373))
+* **kuaishou:** 评论卡片改出富文本文档，修掉三处必炸/内容丢失 ([6aa5d23](https://github.com/ikenxuan/kkkkkk-10086/commit/6aa5d23d4ef4851ca016e5b7206341af9639f002))
+* make template tooling and CI cross-platform ([3d26ecd](https://github.com/ikenxuan/kkkkkk-10086/commit/3d26ecdb48a48b1066fa519be06699dacfc37c82))
+* publish dev builds to preview branch ([8905f6c](https://github.com/ikenxuan/kkkkkk-10086/commit/8905f6cd4831c2a62fc52f6ae3b000d56e6e2b9a))
+* put real error details, icons and a footer back on the error card ([0eb2744](https://github.com/ikenxuan/kkkkkk-10086/commit/0eb2744c242b215375882ad75746ea302de0c974))
+* **render:** 四角改成不透明衬底，SYSTEM_READY 让开左上角点阵 ([3873b15](https://github.com/ikenxuan/kkkkkk-10086/commit/3873b155ad3158aff744d76290180356e97a5c07))
+* stop swallowing platform parse errors so the ErrorHandler tier engages ([9fdd42a](https://github.com/ikenxuan/kkkkkk-10086/commit/9fdd42abd01dc5775fc47795d5cddd1dd17af81a))
+* **template:** 去掉卡片圆角，消除成图四角的白色三角 ([5766273](https://github.com/ikenxuan/kkkkkk-10086/commit/5766273b215dac63871ad29367bc51788cc8e1db))
+* **tools:** 解析规则不再吞掉 #kkk解析统计 ([b70836e](https://github.com/ikenxuan/kkkkkk-10086/commit/b70836ebe993046ddefa1cd485c6aed20640bc2c))
+* write XMP/Exif markers as escapes instead of raw NUL bytes ([bf15e8c](https://github.com/ikenxuan/kkkkkk-10086/commit/bf15e8c9112e8ac020f34033ae298e11461647c4))
+* **xiaohongshu:** 两条路由改传契约形状，修掉三处实测必炸 ([4c3314c](https://github.com/ikenxuan/kkkkkk-10086/commit/4c3314cdaa2dd927d94e4bbf61238dba1e279df0))
+* 修复 QQBot 下视频被发两遍 ([c2a91a6](https://github.com/ikenxuan/kkkkkk-10086/commit/c2a91a64365bbda68165d8b93b3d1659f1a69312))
+
+
+### 📝 文档
+
+* add install and development guide ([13a0332](https://github.com/ikenxuan/kkkkkk-10086/commit/13a0332b42cc4af353f07eba03e037ac4b3c9d0a))
+* **changelog:** 补全 v1.9.0 到 v2.36.0 之间缺失的 175 条历史 ([b9fe354](https://github.com/ikenxuan/kkkkkk-10086/commit/b9fe354c6a5a8401933e3aa94fab9c34802ff95f))
+* README 补上怎么切换已安装的分支 ([bd07289](https://github.com/ikenxuan/kkkkkk-10086/commit/bd07289c0bac062ba3e8cd101ffcbd5833e360d1))
+* 修正 master 的定位 ([84205ed](https://github.com/ikenxuan/kkkkkk-10086/commit/84205ed8c6f500e52d46360129fbe0fc229cf1eb))
+* 大标题补上 emoji，并修正 release 分支的来源 ([ee9fdd6](https://github.com/ikenxuan/kkkkkk-10086/commit/ee9fdd638f94efc9c1ae1db489a1fd228ffd1170))
+* 鸣谢补上 KaguyaJs/Yunzai-DF-Plugin ([ce59ee8](https://github.com/ikenxuan/kkkkkk-10086/commit/ce59ee8e986ff1f343083afe0f616673852ab57c))
+
+
+### 🎨 代码风格/格式
+
+* **template:** 页脚照搬上游 DefaultLayout 布局 ([22de9ac](https://github.com/ikenxuan/kkkkkk-10086/commit/22de9ac41beba2bacc7ad97bffcbea810e4cc2b5))
+
+
+### ♻️ 重构
+
+* drop the dead React SSR helper modules ([c9f9e11](https://github.com/ikenxuan/kkkkkk-10086/commit/c9f9e1102b2c64ec1a619caff9b6244965b1519d))
+* remove art-template rendering path ([f54ed6d](https://github.com/ikenxuan/kkkkkk-10086/commit/f54ed6d8d79c216f9c1a45ffeb2fe3256d44f499))
+* **richtext:** 核心移进 src/，@kkk/richtext 按 tsconfig 分别解析 ([9d215bd](https://github.com/ikenxuan/kkkkkk-10086/commit/9d215bdbf7a36e1279f8425c27cd9d6ce5d8de89))
+* use @/ path aliases instead of relative imports ([9713a47](https://github.com/ikenxuan/kkkkkk-10086/commit/9713a4748aee65b375f6b71e854e88213bb4b71b))
+
+
+### 📦 依赖更新
+
+* amagi 6.5.0, template-react 0.1.0, drop an inert override ([24177aa](https://github.com/ikenxuan/kkkkkk-10086/commit/24177aa77252509fba50197ced27cb02da7b1c0c))
+* 跟进上游 111609fa 的依赖升级 ([e930051](https://github.com/ikenxuan/kkkkkk-10086/commit/e9300515869cca968bb636d8f4d5fcadb1c28453))
+
+
+### 🏗️ 构建/打包
+
+* enforce the @/ import convention across the toolchain ([0b20872](https://github.com/ikenxuan/kkkkkk-10086/commit/0b20872162f887399618c4df1c44a93147229ff3))
+
+
+### 🤖 CI/CD 配置
+
+* anchor releases on v{version} tags so the two release lines agree ([a969364](https://github.com/ikenxuan/kkkkkk-10086/commit/a9693643ea0e740efb1ea486ac2a3fe7d6218376))
+* 发布产物改推 master，并按 master 的定位重写文档 ([2eb418c](https://github.com/ikenxuan/kkkkkk-10086/commit/2eb418cc8e3dab7ad661ce6a2cb187dbfea9c5ad))
+* 发布推送改用 keep_files，不再需要 PAT；工作流名统一带 emoji ([928a825](https://github.com/ikenxuan/kkkkkk-10086/commit/928a825274317d14fc6d714ce75125eb02a474ff))
+
 ## [2.36.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v1.9.0...v2.36.0) - Karin 2.36.0 迁移版
 
 > 测试版：如遇到兼容性或功能问题，请提交 issue 反馈。
