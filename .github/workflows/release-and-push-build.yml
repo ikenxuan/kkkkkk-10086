@@ -101,23 +101,29 @@ jobs:
         working-directory: temp_lib_content
         run: pnpm pkg delete devDependencies
 
-      # 用 PAT 而不是 GITHUB_TOKEN：这一步是全量替换分支内容（keep_files 默认 false），
-      # 而 master 上还留着重写前那 5 个 workflow 文件（release-please.yml、issue_* 等），
-      # 推送里必然包含对 .github/workflows 的删除。GITHUB_TOKEN 没有 workflows 权限，
-      # 增删改 workflow 文件都会被拒（refusing to allow a GitHub App to create or update
-      # workflow file）。而 release-please 那一步是先打 tag 发 Release 再走到这里，
-      # 推送失败就会留下一个没有可安装分支的 Release，所以这里必须用有权限的 token。
+      # keep_files: true 是必需的，不是偷懒。
       #
-      # RELEASE_PUSH_TOKEN 需要的权限：classic PAT 勾 repo + workflow，
-      # 或 fine-grained PAT 给 Contents: Read and write + Workflows: Read and write。
+      # master 是默认分支，`.github/workflows/issue_*.yml` 和 `.github/ISSUE_TEMPLATE/`
+      # 都得留在它上面：issues / schedule 事件的工作流和 issue 表单都是从**默认分支的副本**
+      # 读取的，删掉就等于关掉那几个 issue 机器人和两个 issue 模板。
+      #
+      # 而默认的 keep_files: false 是全量替换分支内容，推送里就会包含对
+      # .github/workflows 的删除 —— GITHUB_TOKEN 没有 workflows 权限，增删改 workflow
+      # 文件一律被拒（refusing to allow a GitHub App to create or update workflow file）。
+      # 而 release-please 是先打 tag 发 Release 再走到这一步，被拒就会留下一个
+      # 没有可安装分支的 Release。
+      #
+      # 所以：不删任何东西 -> 推送不含 workflow 文件 -> GITHUB_TOKEN 就够，不需要 PAT。
+      # 代价是以后从 files 里去掉的文件会残留在 master 上，需要时手动清一次。
       - name: 📤 推送到 master 分支
         if: ${{ steps.release.outputs.release_created }}
         uses: peaceiris/actions-gh-pages@v4
         with:
-          personal_token: ${{ secrets.RELEASE_PUSH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: master
           publish_dir: temp_lib_content
           force_orphan: false
+          keep_files: true
           full_commit_message: ${{ github.event.head_commit.message || format('Release build {0}', github.sha) }}
           user_name: github-actions[bot]
           user_email: github-actions[bot]@users.noreply.github.com

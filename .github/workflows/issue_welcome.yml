@@ -1,4 +1,4 @@
-name: Issue Welcome
+name: 👋 新 Issue 欢迎
 
 on:
   issues:

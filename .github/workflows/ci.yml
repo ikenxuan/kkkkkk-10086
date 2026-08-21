@@ -1,4 +1,4 @@
-name: CI
+name: ✅ 代码检查与构建
 
 on:
   push:

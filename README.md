@@ -99,7 +99,7 @@ pnpm install
 
 > [!NOTE]
 >
-> `master` 在重写前是 JavaScript 源码线，源码提交停在 2026-07-28。它现在改作发布分支：发版后由 Actions 把编译产物推到 `master`，届时分支上的旧 JavaScript 源码会被产物替换。源码请一律以 `dev` 为准。
+> `master` 在重写前是 JavaScript 源码线，源码提交停在 2026-07-28，那批源码已在 `735910e` 清理（历史仍可取回）。它现在改作发布分支：发版后由 Actions 把编译产物推到 `master`。源码请一律以 `dev` 为准。
 
 ### 获取开发源码
 
