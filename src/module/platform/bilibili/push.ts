@@ -395,10 +395,12 @@ export class Bilibilipush extends Base {
    */
   constructor (e?: BilibiliPushEvent, force = false) {
     super(e)
-    if (this.botadapter === 'QQBot') {
-      e?.reply?.('不支持QQBot，请使用其他适配器')
-      return
-    }
+    // 这里原来直接拦掉 QQBot：`if (this.botadapter === 'QQBot') { reply('不支持QQBot'); return }`。
+    // QQBot 开启全量消息后主动推送不再受限，所以这道拦截去掉。
+    //
+    // 顺带说明原来那段还有个坑：它是在构造函数里 `return`，对象照样被造出来，
+    // 只是漏掉了 `this.force = force` —— 调用方拿到的是一个「看着正常但 force 恒为 false」
+    // 的实例，然后继续往下跑。
     this.force = force
   }
 
