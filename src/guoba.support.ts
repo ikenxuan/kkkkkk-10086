@@ -183,23 +183,23 @@ const danmakuSchemas = (platform: DanmakuPlatform): GuobaSchema[] => [
     option('50%', 0.5),
     option('75%', 0.75),
     option('100%', 1)
-  ]),
+  ], '弹幕显示区域：0.25、0.5、0.75、1'),
   radio(`${platform}.danmakuFontSize`, '弹幕字号', [
     option('小', 'small'),
     option('中', 'medium'),
     option('大', 'large')
-  ]),
-  num(`${platform}.danmakuOpacity`, '弹幕透明度', 0, 100, '%'),
+  ], '弹幕字号：small、medium、large'),
+  num(`${platform}.danmakuOpacity`, '弹幕透明度', 0, 100, '%', '弹幕透明度（0-100）'),
   radio(`${platform}.verticalMode`, '竖屏适配', [
     option('关闭', 'off'),
     option('标准', 'standard'),
     option('强制', 'force')
-  ]),
+  ], '竖屏适配：off、standard、force'),
   radio(`${platform}.videoCodec`, '视频编码', [
     option('H.264', 'h264'),
     option('H.265', 'h265'),
     option('AV1', 'av1')
-  ])
+  ], '视频编码格式：h264、h265、av1')
 ]
 
 const pushFilterSchemas: GuobaSchema[] = [
@@ -219,7 +219,7 @@ const douyinPushListSchema: GuobaSchema = {
   componentProps: {
     multiple: true,
     schemas: [
-      sw('switch', '是否启用'),
+      sw('switch', '是否启用', '是否启用该推送'),
       input('sec_uid', '用户 sec_uid', '可不填，推送过程中会自动补齐'),
       input('short_id', '抖音号', 'sec_uid 和抖音号二选一'),
       {
@@ -239,7 +239,7 @@ const douyinPushListSchema: GuobaSchema = {
         option('直播', 'live'),
         option('喜欢列表', 'favorite'),
         option('推荐列表', 'recommend')
-      ], '', true),
+      ], '推送类型，可选：post（作品）、live（直播）、favorite（喜欢列表）、recommend（推荐列表）', true),
       ...pushFilterSchemas
     ]
   }
@@ -253,8 +253,8 @@ const bilibiliPushListSchema: GuobaSchema = {
   componentProps: {
     multiple: true,
     schemas: [
-      sw('switch', '是否启用'),
-      num('host_mid', '用户 UID', 1, Number.MAX_SAFE_INTEGER, ''),
+      sw('switch', '是否启用', '是否启用该推送'),
+      num('host_mid', '用户 UID', 1, Number.MAX_SAFE_INTEGER, '', '比如原神的：\n401742377'),
       {
         field: 'group_id',
         label: '推送群和推送账号',
@@ -274,7 +274,7 @@ const bilibiliPushListSchema: GuobaSchema = {
         option('直播', 'live'),
         option('转发', 'forward'),
         option('专栏', 'article')
-      ], '', true),
+      ], '推送类型，可选：video、draw、word、live、forward、article', true),
       ...pushFilterSchemas
     ]
   }
@@ -289,21 +289,21 @@ const schemas: GuobaSchema[] = [
   password('cookies.xiaohongshu', '小红书 Cookie', '登录 https://www.xiaohongshu.com/ 获取请求头中的 Cookie'),
 
   divider('全局开关'),
-  sw('app.videotool', '总开关', '视频解析工具总开关，修改后重启生效'),
+  sw('app.videotool', '总开关', '视频解析工具总开关，修改后重启生效，关闭后可使用 解析/kkk解析/弹幕解析 + 视频分享链接代替'),
   sw('app.videoTool', '总开关（新版键）', '兼容 Karin 新配置名，建议与总开关保持一致'),
   sw('app.defaulttool', '默认解析', '识别最高优先级，修改后重启生效'),
   num('app.priority', '解析优先级', 0, 114514, '', '默认解析关闭后生效，修改后重启生效'),
   sw('app.parseTip', '解析提示', '发送“检测到链接，开始解析”提示'),
   num('app.parseConcurrency', '解析并发数', 1, 16, '路', '控制同时解析任务数，建议保持默认 2 路'),
   sw('app.EmojiReply', '表情回应', '适配器或平台不支持时可关闭'),
-  sw('app.removeCache', '删除视频缓存', '自动删除下载到本地的视频缓存'),
-  sw('app.sendforwardmsg', '发送合并转发消息'),
+  sw('app.removeCache', '删除视频缓存', '自动删除下载到本地的视频缓存。保存目录云崽下的temp/kkkkkk-10086/kkkdownload，若要关闭请随时留意硬盘容量'),
+  sw('app.sendforwardmsg', '发送合并转发消息', '发送合并转发消息，可能多用于抖音解析'),
   sw('app.fakeForward', '伪造合并转发消息', '开启后使用触发者身份展示转发'),
   select('app.errorLogSendTo', '错误日志接收者', [
     option('主人', 'master'),
     option('全部主人', 'allMasters'),
     option('触发者', 'trigger')
-  ], '', true),
+  ], '遇到错误时谁会收到错误日志？可选值：master、allMasters、trigger', true),
 
   divider('渲染与媒体'),
   radio('app.Theme', '主题配置', [
@@ -311,30 +311,30 @@ const schemas: GuobaSchema[] = [
     option('浅色', 1),
     option('深色', 2),
     option('智能场景（根据封面）', 3)
-  ]),
+  ], '评论图、推送图主题配置'),
   num('app.ambientCover.coverOpacity', '封面氛围强度', 0, 1, '', '模糊封面层不透明度'),
   num('app.ambientCover.overlayEdgeOpacity', '封面边缘压色', 0, 1, '', '主题色压色罩两端不透明度'),
   num('app.ambientCover.overlayMiddleOpacity', '封面中部压色', 0, 1, '', '主题色压色罩中间带不透明度'),
-  num('app.renderScale', '渲染精度', 50, 200, '%'),
-  sw('app.RemoveWatermark', '移除底部版本信息'),
+  num('app.renderScale', '渲染精度', 50, 200, '%', '可选值50~200，建议100。设置高精度会提高图片的精细度，但因图片较大可能会影响渲染与发送速度'),
+  sw('app.RemoveWatermark', '移除底部版本信息', '渲染图片是否移除底部版本信息'),
   num('app.RenderWaitTime', '渲染等待时间', 0, 300, '秒', '传递 0 可禁用等待'),
   sw('app.multiPageRender', '分页渲染', '将模板渲染成多页图片以降低渲染器压力'),
-  num('app.multiPageHeight', '分页高度', 1000, 50000, 'px'),
+  num('app.multiPageHeight', '分页高度', 1000, 50000, 'px', '分页渲染时，每页的高度'),
   radio('app.livePhotoSystem', 'Live Photo 兼容系统', [
     option('Google', 'google'),
     option('Xiaomi', 'xiaomi'),
     option('OPPO', 'oppo'),
     option('Huawei / Honor', 'huawei_honor')
-  ]),
+  ], 'Live Photo 兼容系统，可选值：google、xiaomi、oppo、huawei_honor'),
   radio('app.livePhotoMode', 'Live Photo 发送方式', [
     option('视频 + Live Photo', 'video_and_livephoto'),
     option('仅视频', 'video_only'),
     option('仅 Live Photo', 'livephoto_only')
-  ]),
+  ], 'Live Photo 发送方式，可选值：video_and_livephoto、video_only、livephoto_only'),
 
   divider('API 服务（非配置面板）'),
   sw('app.APIServer', 'API 服务开关', '仅放出解析 API 与视频预览，不再提供 Web 配置面板'),
-  num('app.APIServerPort', 'API 服务端口', 1, 65535),
+  num('app.APIServerPort', 'API 服务端口', 1, 65535, '', 'API服务端口'),
   sw('app.APIServerMount', '挂载到框架 HTTP 服务', 'Yunzai 版当前保留配置，独立 API 服务仍使用端口启动'),
 
   group('抖音配置'),
@@ -347,33 +347,33 @@ const schemas: GuobaSchema[] = [
     option('评论图'),
     option('视频'),
     option('图集')
-  ], '', true),
-  select('douyin.sendContent', '发送内容', sendContentOptions.filter(item => item.value !== 'image'), '', true),
-  num('douyin.numcomments', '评论解析数量（旧版键）', 0, 9999, '条'),
-  num('douyin.numcomment', '评论解析数量', 0, 9999, '条'),
-  num('douyin.subCommentLimit', '次级评论请求数量', 0, 100, '条'),
-  num('douyin.subCommentDepth', '次级评论嵌套深度', 0, 10, '层'),
-  sw('douyin.realCommentCount', '显示真实评论数量'),
-  sw('douyin.commentImageCollection', '收集评论区图片'),
-  sw('douyin.sendHDrecord', '图集 BGM 使用高清语音'),
-  sw('douyin.autoResolution', '自动解析分辨率'),
+  ], '抖音解析可选。已被「发送内容」取代，保留以兼容旧配置；可多选', true),
+  select('douyin.sendContent', '发送内容', sendContentOptions.filter(item => item.value !== 'image'), '解析时发送的内容，可选值：info、comment、video', true),
+  num('douyin.numcomments', '评论解析数量（旧版键）', 0, 9999, '条', '抖音评论数量，范围1~无限条。已被「评论解析数量」取代，保留以兼容旧配置'),
+  num('douyin.numcomment', '评论解析数量', 0, 9999, '条', '抖音评论数量（新项目配置名，兼容 numcomments）'),
+  num('douyin.subCommentLimit', '次级评论请求数量', 0, 100, '条', '次级评论请求数量'),
+  num('douyin.subCommentDepth', '次级评论嵌套深度', 0, 10, '层', '次级评论嵌套深度'),
+  sw('douyin.realCommentCount', '显示真实评论数量', '评论图是否显示真实评论数量，关闭则显示解析到的评论数量'),
+  sw('douyin.commentImageCollection', '收集评论区图片', '是否收集评论区的图片'),
+  sw('douyin.sendHDrecord', '图集 BGM 使用高清语音', '高清语音「ios/PC」系统均无法播放，自行衡量开关'),
+  sw('douyin.autoResolution', '自动解析分辨率', '根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载'),
   radio('douyin.liveImageMergeMode', 'Live 图 BGM 合并模式', [
     option('连续合并', 'continuous'),
     option('独立发送', 'independent')
-  ]),
+  ], '合辑 Live 图 BGM 合并模式，可选值：continuous、independent'),
   sw('douyin.textMode', '文本模式', '开启后直接输出文本，关闭后渲染为图片'),
-  radio('douyin.videoQuality', '视频画质偏好', videoQualityOptions),
-  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB'),
-  radio('douyin.loginPerm', '扫码登录权限', permissionOptions),
+  radio('douyin.videoQuality', '视频画质偏好', videoQualityOptions, '视频画质偏好设置，可选值：adapt、540p、720p、1080p、2k、4k'),
+  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '自动画质模式下可接受的最大视频大小（单位：MB）'),
+  radio('douyin.loginPerm', '扫码登录权限', permissionOptions, '谁可以触发扫码登录'),
   radio('douyin.videoInfoMode', '视频信息返回形式', [
     option('文本', 'text'),
     option('图片', 'image')
-  ]),
-  select('douyin.displayContent', '视频信息内容', displayContentOptions.filter(item => item.value !== 'desc'), '', true),
+  ], '视频信息返回形式，可选值：text、image'),
+  select('douyin.displayContent', '视频信息内容', displayContentOptions.filter(item => item.value !== 'desc'), '视频信息的内容，可选值：cover、title、author、stats', true),
   ...danmakuSchemas('douyin'),
 
   divider('抖音推送'),
-  sw('douyin.push.switch', '抖音推送', '开启后需重启'),
+  sw('douyin.push.switch', '抖音推送', '开启后需重启；使用「#设置抖音推送 + 抖音号」配置推送列表'),
   {
     field: 'douyin.push.cron',
     label: 'Cron 表达式',
@@ -381,15 +381,15 @@ const schemas: GuobaSchema[] = [
     component: 'EasyCron',
     required: false
   },
-  radio('douyin.push.permission', '设置推送权限', permissionOptions),
-  sw('douyin.push.log', '定时任务日志'),
+  radio('douyin.push.permission', '设置推送权限', permissionOptions, '抖音推送添加权限'),
+  sw('douyin.push.log', '定时任务日志', '打开或关闭定时任务日志'),
   sw('douyin.push.parsedynamic', '一同发送作品视频', '和推送图一同发送新作品内容'),
   radio('douyin.push.shareType', '分享二维码类型', [
     option('抖音网页', 'web'),
     option('视频下载直链', 'download')
-  ]),
-  radio('douyin.push.pushVideoQuality', '推送视频画质偏好', videoQualityOptions),
-  num('douyin.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB'),
+  ], 'web为跳转到抖音网页，download为视频下载直链'),
+  radio('douyin.push.pushVideoQuality', '推送视频画质偏好', videoQualityOptions, '推送解析时视频画质偏好设置'),
+  num('douyin.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB', '推送解析时视频体积上限'),
   douyinPushListSchema,
 
   group('哔哩哔哩'),
@@ -402,32 +402,32 @@ const schemas: GuobaSchema[] = [
     option('评论图'),
     option('视频'),
     option('动态')
-  ], '', true),
-  select('bilibili.sendContent', '发送内容', sendContentOptions.filter(item => item.value !== 'image'), '', true),
-  select('bilibili.displayContent', '简介显示内容', displayContentOptions, '', true),
+  ], 'B站解析可选列表。已被「发送内容」取代，保留以兼容旧配置；可多选', true),
+  select('bilibili.sendContent', '发送内容', sendContentOptions.filter(item => item.value !== 'image'), '解析时发送的内容，可选值：info、comment、video', true),
+  select('bilibili.displayContent', '简介显示内容', displayContentOptions, '视频解析时简介显示的内容，可选值：cover(封面)、title(标题)、author(作者)、stats(视频统计信息)、desc(简介)，数组为空则不显示任何内容', true),
   sw('bilibili.videopriority', '优先保内容', '开启后优先保证上传成功，可能降低分辨率'),
-  radio('bilibili.videoQuality', '视频画质偏好', bilibiliQualityOptions),
-  num('bilibili.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB'),
-  num('bilibili.bilibilinumcomments', '评论解析数量（旧版键）', 0, 9999, '条'),
-  num('bilibili.numcomment', '评论解析数量', 0, 9999, '条'),
-  sw('bilibili.realCommentCount', '显示真实评论数量'),
-  sw('bilibili.commentImageCollection', '收集评论区图片'),
-  radio('bilibili.loginPerm', '扫码登录权限', permissionOptions),
+  radio('bilibili.videoQuality', '视频画质偏好', bilibiliQualityOptions, 'B站视频画质偏好设置'),
+  num('bilibili.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '自动画质模式下可接受的最大视频大小（单位：MB），仅在 videoQuality 为 0 时生效'),
+  num('bilibili.bilibilinumcomments', '评论解析数量（旧版键）', 0, 9999, '条', 'B站评论数量，设置接口返回的评论数量，范围1~无限条。已被「评论解析数量」取代，保留以兼容旧配置'),
+  num('bilibili.numcomment', '评论解析数量', 0, 9999, '条', 'B站评论数量（新项目配置名，兼容 bilibilinumcomments）'),
+  sw('bilibili.realCommentCount', '显示真实评论数量', '评论图是否显示真实评论数量，关闭则显示解析到的评论数量'),
+  sw('bilibili.commentImageCollection', '收集评论区图片', '是否收集评论区的图片'),
+  radio('bilibili.loginPerm', '扫码登录权限', permissionOptions, '谁可以触发扫码登录'),
   radio('bilibili.imageLayout', '图文动态布局', [
     option('自动', 'auto'),
     option('纵向', 'vertical'),
     option('瀑布流', 'waterfall'),
     option('网格', 'grid')
-  ]),
+  ], '解析图文动态时，遇到多张图片时的页面布局方式：vertical、waterfall、grid、auto'),
   radio('bilibili.videoInfoMode', '视频信息返回形式', [
     option('文本', 'text'),
     option('图片', 'image')
-  ]),
-  sw('bilibili.showDanmakuInVideoInfo', '视频信息展示高频弹幕'),
+  ], '视频信息返回形式：text、image'),
+  sw('bilibili.showDanmakuInVideoInfo', '视频信息展示高频弹幕', '视频信息图片是否展示高频弹幕'),
   ...danmakuSchemas('bilibili'),
 
   divider('B站推送'),
-  sw('bilibili.push.switch', 'B站推送', '开启后需重启'),
+  sw('bilibili.push.switch', 'B站推送', '开启后需重启；使用「#设置B站推送 + 用户UID」配置推送列表'),
   {
     field: 'bilibili.push.cron',
     label: 'Cron 表达式',
@@ -435,30 +435,30 @@ const schemas: GuobaSchema[] = [
     component: 'EasyCron',
     required: false
   },
-  radio('bilibili.push.permission', '设置推送权限', permissionOptions),
-  sw('bilibili.push.log', '定时任务日志'),
+  radio('bilibili.push.permission', '设置推送权限', permissionOptions, 'B站推送添加权限'),
+  sw('bilibili.push.log', '定时任务日志', '打开或关闭定时任务日志'),
   sw('bilibili.push.parsedynamic', '是否解析动态', '最新动态可能是视频，可选是否与推送图片一同发送'),
   select('bilibili.push.parseDynamicTypes', '推送解析动态类型', bilibiliDynamicTypeOptions, '开启推送解析后选择需要解析的动态类型', true),
-  radio('bilibili.push.pushVideoQuality', '推送视频画质偏好', bilibiliQualityOptions),
-  num('bilibili.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB'),
+  radio('bilibili.push.pushVideoQuality', '推送视频画质偏好', bilibiliQualityOptions, '推送视频画质偏好设置'),
+  num('bilibili.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB', '推送时遇到视频动态时解析的视频体积上限，仅在「pushVideoQuality」为 0 且「parsedynamic」为 true 时生效'),
   bilibiliPushListSchema,
 
   group('快手配置'),
   divider('快手解析'),
   sw('kuaishou.kuaishoutool', '快手解析开关（旧版键）', '受总开关影响'),
   sw('kuaishou.switch', '快手解析开关', '受总开关影响'),
-  sw('kuaishou.comment', '快手评论解析'),
-  sw('kuaishou.kuaishoutip', '快手解析提示'),
-  num('kuaishou.kuaishounumcomments', '快手评论数量（旧版键）', 0, 30, '条'),
-  num('kuaishou.numcomment', '快手评论数量', 0, 30, '条'),
+  sw('kuaishou.comment', '快手评论解析', '快手评论解析（新项目配置名）'),
+  sw('kuaishou.kuaishoutip', '快手解析提示', '快手解析提示，发送提示信息：“检测到快手链接，开始解析”'),
+  num('kuaishou.kuaishounumcomments', '快手评论数量（旧版键）', 0, 30, '条', '快手评论数量，范围1~30条。已被「评论解析数量」取代，保留以兼容旧配置'),
+  num('kuaishou.numcomment', '快手评论数量', 0, 30, '条', '快手评论数量（新项目配置名，兼容 kuaishounumcomments）'),
 
   group('小红书配置'),
   divider('小红书解析'),
   sw('xiaohongshu.switch', '小红书解析开关', '受总开关影响'),
-  select('xiaohongshu.sendContent', '发送内容', sendContentOptions, '', true),
-  num('xiaohongshu.numcomment', '评论解析数量', 0, 9999, '条'),
-  radio('xiaohongshu.videoQuality', '视频画质偏好', videoQualityOptions),
-  num('xiaohongshu.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB'),
+  select('xiaohongshu.sendContent', '发送内容', sendContentOptions, '解析时发送的内容，可选值：info、comment、image、video', true),
+  num('xiaohongshu.numcomment', '评论解析数量', 0, 9999, '条', '小红书评论数量（后续评论图使用）'),
+  radio('xiaohongshu.videoQuality', '视频画质偏好', videoQualityOptions, '视频画质偏好设置，adapt 为自动根据 maxAutoVideoSize 选择，其他为固定画质，可选值：540p、720p、1080p、2k、4k、adapt'),
+  num('xiaohongshu.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '视频体积上限，自动画质模式下可接受的最大视频大小（单位：MB）'),
 
   group('上传配置'),
   divider('上传与下载'),
@@ -468,41 +468,41 @@ const schemas: GuobaSchema[] = [
     option('Base64', 'base64'),
     option('URL', 'url')
   ], '会同步兼容 sendbase64'),
-  sw('upload.usefilelimit', '使用视频上传拦截'),
-  num('upload.filelimit', '视频上传拦截阈值', 5, 114514, 'MB'),
-  sw('upload.compress', '使用压缩视频'),
-  num('upload.compresstrigger', '压缩视频触发阈值', 5, 114514, 'MB'),
-  num('upload.compressvalue', '压缩后的视频大小', 5, 114514, 'MB'),
-  sw('upload.usegroupfile', '使用文件上传'),
-  num('upload.groupfilevalue', '群文件上传阈值', 5, 114514, 'MB'),
+  sw('upload.usefilelimit', '使用视频上传拦截', '视频上传拦截，开启后会根据解析的视频文件大小判断是否需要上传'),
+  num('upload.filelimit', '视频上传拦截阈值', 5, 114514, 'MB', '视频拦截阈值（填数字），视频文件大于该数值则不会上传 单位: MB，「使用视频上传拦截」开启后才会生效'),
+  sw('upload.compress', '使用压缩视频', '压缩视频，开启后会将视频文件压缩后再上传，适合上传大文件'),
+  num('upload.compresstrigger', '压缩视频触发阈值', 5, 114514, 'MB', '触发视频压缩的阈值，单位：MB。当文件大小超过该值时，才会压缩视频，「使用压缩视频」开启后才会生效'),
+  num('upload.compressvalue', '压缩后的视频大小', 5, 114514, 'MB', '压缩后的值，若视频文件大小大于「压缩视频触发阈值」的值，则会进行压缩至该值（±5%），「使用压缩视频」开启后才会生效'),
+  sw('upload.usegroupfile', '使用文件上传', '使用文件上传，开启后会将视频文件上传到群文件中，私聊也行'),
+  num('upload.groupfilevalue', '群文件上传阈值', 5, 114514, 'MB', '当文件大小超过该值时将使用群文件上传，单位：MB，「使用文件上传」开启后才会生效'),
   radio('upload.imageSendMode', '网络图片发送方式', [
     option('URL', 'url'),
     option('文件', 'file'),
     option('Base64', 'base64')
-  ]),
+  ], '网络图片发送方式，可选值：url / file / base64'),
   sw('upload.downloadMultiThread', '启用多线程下载', '仅对支持 Range 的大文件生效，不支持时自动回退单线程'),
   num('upload.downloadConcurrency', '下载并发数', 2, 8, '路', '建议保持默认 4 路，过高可能触发服务器限流'),
-  sw('upload.downloadThrottle', '下载限速'),
-  num('upload.downloadMaxSpeed', '下载速度限制', 1, 1024, 'MB/s'),
-  sw('upload.downloadAutoReduce', '断流自动降速'),
-  num('upload.downloadMinSpeed', '最低下载速度', 1, 1024, 'MB/s'),
+  sw('upload.downloadThrottle', '下载限速', '下载限速开关，开启后会限制下载速度，避免触发服务器风控导致连接被重置'),
+  num('upload.downloadMaxSpeed', '下载速度限制', 1, 1024, 'MB/s', '下载速度限制，单位：MB/s，仅在 downloadThrottle 开启后生效'),
+  sw('upload.downloadAutoReduce', '断流自动降速', '断流自动降速，检测到连接被重置时自动降低下载速度'),
+  num('upload.downloadMinSpeed', '最低下载速度', 1, 1024, 'MB/s', '最低下载速度，单位：MB/s，自动降速不会低于此值'),
 
   group('请求配置'),
   divider('请求配置'),
-  num('request.timeout', '请求超时时间', 5000, 9999999, 'ms'),
+  num('request.timeout', '请求超时时间', 5000, 9999999, 'ms', '请求超时时间，单位：毫秒'),
   num('request.amagiTimeout', 'Amagi 单次尝试超时', 1000, 60000, 'ms', '每次 Amagi 尝试的硬超时，最多一分钟'),
   num('request.amagiMaxRetries', 'Amagi 最大重试次数', 0, 5, '次', '初次请求之后的重试次数'),
-  input('request.User-Agent', '请求 User-Agent', '专门用于核心库 amagi 请求的 User-Agent'),
+  input('request.User-Agent', '请求 User-Agent', '专门用于核心库 amagi 请求的 User-Agent（Networks 模块不使用该 User-Agent）'),
   divider('代理配置'),
-  sw('request.proxy.switch', '使用代理'),
-  input('request.proxy.host', '代理主机'),
-  num('request.proxy.port', '代理端口', 0, 65535),
+  sw('request.proxy.switch', '使用代理', '使用代理，开启后会使用代理服务器进行请求'),
+  input('request.proxy.host', '代理主机', '代理服务器主机地址'),
+  num('request.proxy.port', '代理端口', 0, 65535, '', '代理服务器端口'),
   radio('request.proxy.protocol', '代理协议', [
     option('HTTP', 'http'),
     option('HTTPS', 'https')
-  ]),
-  input('request.proxy.auth.username', '代理用户名'),
-  input('request.proxy.auth.password', '代理密码', '', 'InputPassword')
+  ], '代理服务器协议类型(http/https)'),
+  input('request.proxy.auth.username', '代理用户名', '没有用户名可以为空'),
+  input('request.proxy.auth.password', '代理密码', '没有密码可以为空', 'InputPassword')
 ]
 
 export function supportGuoba (): GuobaSupport {
