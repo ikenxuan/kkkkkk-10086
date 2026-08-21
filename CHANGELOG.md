@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.38.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.37.1...v2.38.0) (2026-08-21)
+
+
+### ✨ 新功能
+
+* **update:** #kkk更新日志 挪到 update.ts，改出 git 提交而不是整份 CHANGELOG ([bbafbe5](https://github.com/ikenxuan/kkkkkk-10086/commit/bbafbe5cc952e4ed185efd92fa1d014f275d2dff))
+
+
+### 🐛 Bug 修复
+
+* **footer:** 构建标识挪到版本号下面一行，修 Stable 通道下页脚被挤成两行 ([274c7c0](https://github.com/ikenxuan/kkkkkk-10086/commit/274c7c0ba7e0ad224ac9e281e46f2211dfce44fe))
+
 ## [2.37.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.37.0...v2.37.1) (2026-08-21)
 
 

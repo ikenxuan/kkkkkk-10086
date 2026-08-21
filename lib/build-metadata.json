@@ -1,11 +1,11 @@
 {
-  "version": "2.37.1",
-  "buildTime": "2026-08-21T02:39:00.869Z",
-  "buildTimestamp": 1787279940876,
+  "version": "2.38.0",
+  "buildTime": "2026-08-21T04:32:06.108Z",
+  "buildTimestamp": 1787286726113,
   "name": "kkkkkk-10086",
   "description": "",
   "homepage": "https://github.com/ikenxuan/kkkkkk-10086",
-  "commitHash": "dbbebfc387b6ba5c4c01b7c5d66f902e116232cc",
-  "shortCommitHash": "dbbebfc",
+  "commitHash": "e541690620bc12a7c5ae343768ea21d964de5d7e",
+  "shortCommitHash": "e541690",
   "branch": "master"
 }
