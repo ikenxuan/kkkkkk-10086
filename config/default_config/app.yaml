@@ -16,8 +16,14 @@ priority: 800
 # 发送合并转发消息，可能多用于抖音解析
 sendforwardmsg: true
 
-# 评论图、推送图是否使用深色主题 0为根据时间自动切换 1为浅色 2为深色
+# 评论图、推送图是否使用深色主题 0为根据时间自动切换 1为浅色 2为深色 3为智能场景（根据封面）
 Theme: 0
+
+# 氛围封面配置，取值范围 0~1
+ambientCover:
+  coverOpacity: 0.7
+  overlayEdgeOpacity: 0.9
+  overlayMiddleOpacity: 0.2
 
 # 渲染精度，可选值50~200，建议100。设置高精度会提高图片的精细度，过高可能会影响渲染与发送速度
 renderScale: 100
@@ -42,6 +48,9 @@ EmojiReply: true
 
 # 解析提示，发送提示信息："检测到xxx链接，开始解析"
 parseTip: false
+
+# 同时解析任务数，范围 1~16
+parseConcurrency: 2
 
 # 是否伪造合并转发消息，开启后使用触发者身份展示转发
 fakeForward: false

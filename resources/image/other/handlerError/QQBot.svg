@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="QQBot">
+  <!--
+    QQBot 适配器图标。按 QQBot.ico（32x32 RGBA）逐行采样出的轮廓重绘为矢量：
+    32px 位图在错误卡片的 h-20（80px）渲染框里会明显发虚，矢量在任意尺寸都清晰。
+    坐标沿用原图的 32x32 网格，描边宽度 3 与原图轮廓粗细一致；品牌色取自原图像素 #0099FF。
+    同目录的 chronocat.svg 已证明本处的 <img> 可以直接吃 svg。
+  -->
+  <g fill="none" stroke="#0099FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 头部轮廓：上圆下方的胶囊形，圆心 x=15.5，上圆角 r=8、下圆角 r=5.5 -->
+    <path d="M11.5 10.5 H19.5 A8 8 0 0 1 27.5 18.5 V25 A5.5 5.5 0 0 1 22 30.5 H9 A5.5 5.5 0 0 1 3.5 25 V18.5 A8 8 0 0 1 11.5 10.5 Z" />
+    <!-- 天线支杆，上端被下面的圆点盖住 -->
+    <path d="M15.5 6 V10" stroke-linecap="butt" />
+  </g>
+  <!-- 天线圆点 -->
+  <circle cx="15.5" cy="4.5" r="3.5" fill="#0099FF" />
+  <!-- 双眼：3x5 药丸形，对称于 x=15.5 -->
+  <rect x="10" y="17" width="3" height="5" rx="1.5" fill="#0099FF" />
+  <rect x="18" y="17" width="3" height="5" rx="1.5" fill="#0099FF" />
+</svg>

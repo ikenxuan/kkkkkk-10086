@@ -99,6 +99,14 @@ push:
   cron: '*/10 * * * *'
   # 推送时是否一同解析该动态
   parsedynamic: false
+  # 开启推送解析后，需要进一步解析的动态类型
+  #  - DYNAMIC_TYPE_AV: 视频动态
+  #  - DYNAMIC_TYPE_DRAW: 图文动态
+  #  - DYNAMIC_TYPE_ARTICLE: 文章动态
+  parseDynamicTypes:
+    - DYNAMIC_TYPE_AV
+    - DYNAMIC_TYPE_DRAW
+    - DYNAMIC_TYPE_ARTICLE
   # 是否打印日志
   log: true
   # 推送时遇到视频动态时解析的画质偏好设置，0 为自动根据「pushMaxAutoVideoSize」大小选择，其他为固定画质，仅「parsedynamic」为 true 时生效
