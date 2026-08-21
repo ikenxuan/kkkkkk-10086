@@ -53,6 +53,39 @@ pnpm install
 
 安装或更新依赖后重启 Yunzai。后续可使用主人命令 `#kkk更新` 更新当前安装分支；依赖发生变化时，请再次在 Yunzai 根目录执行 `pnpm install`。
 
+### 切换已安装的分支
+
+上面的安装命令带了 `--depth=1 --branch xxx`，克隆出来的是**浅克隆 + 单分支**，git 只跟踪你当初选的那一条分支，所以直接 `git checkout release` 会报：
+
+```
+error: pathspec 'release' did not match any file(s) known to git
+```
+
+要换分支，得先让 git 认识目标分支，再切过去。在**插件目录**执行（把两处 `release` 换成你要切的分支名）：
+
+```bash
+cd ./plugins/kkkkkk-10086
+git remote set-branches --add origin release
+git fetch --depth=1 origin release
+git checkout -B release origin/release
+```
+
+然后回到 **Yunzai 根目录**装一次依赖，再重启 Yunzai：
+
+```bash
+pnpm install
+```
+
+> [!NOTE]
+>
+> 你自己的配置不会丢：构建分支只跟踪 `config/default_config`，`config/config/` 和 `data/` 都不在版本控制里，切分支不会动它们。
+
+> [!TIP]
+>
+> 切完之后 `#kkk更新` 更新的就是新分支，不需要额外设置。
+
+切到源码分支（`dev` / `master`）用的是同一套命令，但源码分支不含 `lib/`，切过去必须自己构建才能运行，见下面的开发说明。
+
 ## 开发说明
 
 仓库采用“源码分支 → 构建分支”的发布方式：
