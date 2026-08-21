@@ -64,18 +64,22 @@
 }
 
 /*
- * 外壳必须是透明的：宿主 TRSS-Yunzai 截的是 #container
- * （renderers/puppeteer/lib/puppeteer.js:199），卡片圆角外那圈是透明像素，
- * 外壳一有底色就会从圆角外露出来，圆角变成四个色块。
+ * 圆角外那圈的衬底色。宿主 TRSS-Yunzai 截的是 #container
+ * （renderers/puppeteer/lib/puppeteer.js:199），卡片是 rounded-[5rem]，
+ * 所以成图四角一定会露出这一层，只能选它是什么颜色，没法让它不存在。
  *
- * 这里曾经放过一层同色的兜底底色（5766273），配的是"卡片直角 + 交给宿主分片出 jpeg"
- * 那套方案。现在本仓库自己拿单张 png 再用 sharp 切片
- * （src/module/utils/imageSlicer.ts），alpha 全程留得住，兜底底色反而成了圆角的阻碍。
+ * 三种选法都试过，前两种都不行：
+ * - `var(--background)`（5766273 的做法）：和卡片同色，四角看不出圆角，等于没有形状
+ * - `transparent`（31e6462 的做法）：四角是透明像素，聊天软件在深色底上合成就是黑角，
+ *   浅色底上又变白角 —— 白边刚没，黑边就来了
+ * - `var(--surface-secondary)`：跟卡片的 `bg-background` 差一档明度
+ *   （浅色 95.24% vs 97.02%，深色 25.7% vs 12%），四角能看出圆角，
+ *   而且是不透明的，在任何查看器背景下都长一个样
  *
- * 写成显式 transparent 而不是干脆删掉这条规则：ktr 外壳的 reset 只管到 html/body，
- * #container 没有任何来源保证它不带底色，显式写出来才是"这里必须透明"这个约束本身。
+ * 兜底到 --background 是防 heroui 哪天改 token 名：宁可退回"没有形状"，
+ * 也不要退回透明后那种忽黑忽白。
  * 放在 @layer base 外面且用 ID 选择器，避免被任何无层规则盖掉。
  */
 #container {
-  background-color: transparent;
+  background-color: var(--surface-secondary, var(--background));
 }
