@@ -99,7 +99,7 @@ pnpm install
 
 > [!NOTE]
 >
-> `master` 是重写前的 JavaScript 稳定线，仍由它自己那份 release-please 维护，不参与上面的构建发布。想看当前代码请以 `dev` 为准。
+> `master` 是重写前的 JavaScript 源码线，最后一次源码提交停在 2026-07-28，已不再继续开发；当前代码请以 `dev` 为准。后续计划把 `master` 改作发布分支使用 —— 发版后由 Actions 把编译产物推到 `master`。
 
 ### 获取开发源码
 
