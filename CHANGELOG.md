@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.38.4](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.3...v2.38.4) (2026-08-22)
+
+
+### 🐛 Bug 修复
+
+* **douyin:** 图集/合辑/文章不再被挡在作品信息图之外 ([ae543b5](https://github.com/ikenxuan/kkkkkk-10086/commit/ae543b5cad92ec0d7cbe2fabb295762d065e7960))
+* **douyin:** 封面去掉本地私加的黑色渐变罩，覆盖层文字回到上游配色 ([edd7fdd](https://github.com/ikenxuan/kkkkkk-10086/commit/edd7fdd9a5d1689f76925dad1860d271e2eb9dbf))
+* **request:** UA 不再无条件覆盖 amagi，避免指纹自相矛盾触发 B站风控 ([5408cd8](https://github.com/ikenxuan/kkkkkk-10086/commit/5408cd8ef105e9ca01e512c418fda968be3251e7))
+
+
+### 📝 文档
+
+* **guoba:** 补回锅巴面板被抹掉的选项说明 ([e2d1717](https://github.com/ikenxuan/kkkkkk-10086/commit/e2d1717ec37e9b6724f3b697ce7dcd4a06cb5772))
+
 ## [2.38.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.2...v2.38.3) (2026-08-21)
 
 
