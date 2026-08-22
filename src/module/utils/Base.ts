@@ -786,6 +786,18 @@ export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boo
   sizeInMB > (LARGE_VIDEO_SEGMENT_ADAPTERS.includes(botAdapter) ? 102 : 75)
 
 /**
+ * 群文件通道用不了时的统一出口：如实报失败，而不是假装发送成功。
+ *
+ * @param {string} botAdapter 适配器名称
+ * @param {number} sizeInMB 没发出去的文件体积，单位 MB
+ * @returns {false} 恒为 false，供调用处直接 return
+ */
+const failGroupFileChannel = (botAdapter: string, sizeInMB: number): false => {
+  logger.error(`群文件上传通道不可用：${botAdapter} 的当前会话没有对应的上传接口，${sizeInMB.toFixed(1)}MB 的文件未能发出`)
+  return false
+}
+
+/**
  * 上传视频文件
  * @param {*} e 消息事件
  * @param {fileInfo} file 包含本地视频文件信息的对象
@@ -902,12 +914,26 @@ export const uploadFile = async (
       : toMessageTarget(e.isGroup ? e.group : e.friend)
 
     if (useGroupFile) {
+      /**
+       * 发之前先确认群文件接口真的存在。
+       *
+       * 原来这三条分支全用可选链（`await target!.fs?.upload?.(File)`），接口缺失时整句被
+       * 静默吞掉，紧接着照样 `return true` —— 文件没发出去，却向上报成功。
+       * ICQQ 的私聊必然踩中：icqq 里只有 Group 挂着群文件系统（lib/group.d.ts 的
+       * `readonly fs: Gfs`），Friend 上压根没有 fs 这个属性。
+       *
+       * 以前只有主动开了 usegroupfile 的人会遇到；现在体积超过消息段上限就会强制走这条路，
+       * 触及面变大，所以必须把「通道不可用」如实报出来，让日志和返回值都能看见。
+       */
       if (botAdapter === 'ICQQ') {
-        await target!.fs?.upload?.(File)
+        if (!target?.fs?.upload) return failGroupFileChannel(botAdapter, newFileSize)
+        await target.fs.upload(File)
       } else if (['LagrangeCore', 'OneBotv11', 'Lagrange.OneBot'].includes(botAdapter)) {
-        await target!.sendFile?.(File)
+        if (!target?.sendFile) return failGroupFileChannel(botAdapter, newFileSize)
+        await target.sendFile(File)
       } else {
-        await target!.sendMsg?.(segment.file(File))
+        if (!target?.sendMsg) return failGroupFileChannel(botAdapter, newFileSize)
+        await target.sendMsg(segment.file(File))
       }
       return true
     } else {
