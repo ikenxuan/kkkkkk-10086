@@ -3,8 +3,10 @@ import React from 'react'
 import type { PosterContext } from '../types/ctx'
 
 /**
- * 氛围背景的封面色贡献调节参数。
- * 封面色最终可见度 ≈ AMBIENT_COVER_OPACITY × (1 − 压色罩对应位置不透明度)。
+ * 氛围背景的封面色贡献默认参数。
+ * 生产渲染时 core 会把用户配置（app.ambientCover）经 ctx 注入覆盖这里；
+ * ktr 开发面板没有注入，直接使用这里的默认值。
+ * 封面色最终可见度 ≈ 封面层不透明度 × (1 − 压色罩对应位置不透明度)。
  */
 /** 模糊封面层不透明度 (0~1)：封面色强度总闸，越大整体越浓 */
 export const AMBIENT_COVER_OPACITY = 0.7
@@ -22,6 +24,7 @@ const overlayGradient = (color: string, edge: number, middle: number) =>
  * 氛围背景基础层：高斯模糊封面 + 主题色压色罩。
  * 压色罩浅色用主题背景色、深色用纯黑（两个层按 dark 变体显隐），
  * 各模板在此之上再叠加自己的杂色纹理层。
+ * 贡献度参数优先取 ctx.ambientCover（core 注入的用户配置），缺省用模块内默认值。
  */
 export const AmbientCover: React.FC<{ src: string; ctx?: PosterContext }> = React.memo(({ src, ctx }) => {
   const coverOpacity = ctx?.ambientCover?.coverOpacity ?? AMBIENT_COVER_OPACITY

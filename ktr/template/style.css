@@ -52,6 +52,19 @@
   body {
     font-family: HarmonyOSHans-Regular, bilifont, fansmedal-num;
     line-height: 1.6;
+    /*
+     * 本仓库相对上游的必要偏离：上游这两行取的是 --theme-text / --theme-bg 这对变量，
+     * 而它们在上游和本仓库的任何一处都没有定义过
+     * （全树 grep 过 ktr/ 与 @heroui/styles 的产物 css，零命中），
+     * 也就是上游那两条声明恒为无效值、body 实际拿不到前景色和背景色。
+     * 这里换成 heroui 真正定义的 --foreground / --background，
+     * 好让 body 有确定的明暗底色，而不是靠「恰好没人看 body」蒙对。
+     * 注意：这不影响封面观感 —— 卡片自己有 bg-background，封面是它上面的 img，
+     * 圆角外那圈由下面的 #container 规则管。
+     *
+     * tests/contracts/react-template-theme.test.ts 明确断言本文件不得再出现
+     * 那对旧变量的 var() 取值形式，所以上面只写裸变量名，别给它们补回 var()。
+     */
     color: var(--foreground);
     background-color: var(--background);
     margin: 0;

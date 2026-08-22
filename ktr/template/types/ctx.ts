@@ -41,9 +41,13 @@ export interface PosterContext extends RenderContext {
   }
   /** 水印比特大小（Restore ID） */
   watermarkTextBitSize?: number
+  /** 封面氛围背景贡献度参数（core 从 app.ambientCover 配置注入，缺省时模板用内置默认值） */
   ambientCover?: {
+    /** 模糊封面层不透明度 (0~1) */
     coverOpacity?: number
+    /** 压色罩两端（顶/底）不透明度 (0~1) */
     overlayEdgeOpacity?: number
+    /** 压色罩中间带不透明度 (0~1) */
     overlayMiddleOpacity?: number
   }
 }
