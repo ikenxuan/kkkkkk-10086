@@ -764,6 +764,28 @@ const sendVideoUrl = async (
 }
 
 /**
+ * 消息内嵌视频段实测能扛住约 102MB 的适配器；其余（QQBot、KOOKBot 等）按约 75MB 算。
+ *
+ * 这两个数字是实测上限而非协议规定值，集中放在这里，别再散成魔法数字。
+ * 名单里的 'OneBot11' 是历史遗留写法，botadapter 实际不会返回它，留着只为不改动既有判定。
+ */
+const LARGE_VIDEO_SEGMENT_ADAPTERS = ['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11', 'ICQQ']
+
+/**
+ * 判断文件是否**必须**改走群文件通道。
+ *
+ * 这是「能力」判断，不是「偏好」判断：体积一旦超过上限，消息内嵌视频段根本发不出去，
+ * 此时群文件不是「另一种可选方式」，而是唯一还有机会成功的通道。
+ * 用户偏好由 `upload.usegroupfile` / `upload.groupfilevalue` 表达，两者在 uploadFile 里取或。
+ *
+ * @param {string} botAdapter 适配器名称，必须是 `Base` 归一化后的名字（`new Base(e).botadapter`）
+ * @param {number} sizeInMB 文件体积，单位 MB
+ * @returns {boolean} true 表示消息段装不下，必须走群文件
+ */
+export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boolean =>
+  sizeInMB > (LARGE_VIDEO_SEGMENT_ADAPTERS.includes(botAdapter) ? 102 : 75)
+
+/**
  * 上传视频文件
  * @param {*} e 消息事件
  * @param {fileInfo} file 包含本地视频文件信息的对象
@@ -827,9 +849,37 @@ export const uploadFile = async (
     return false
   }
 
-  // 确定上传方式
-  const useGroupFile = Config.upload?.usegroupfile && newFileSize > (Config.upload.groupfilevalue || 100)
-  if (options) options.useGroupFile = useGroupFile
+  /**
+   * 确定上传方式：调用方的「必须走群文件」优先，其次才是用户配置的偏好。
+   *
+   * 旧代码是 `const useGroupFile = Config.upload?.usegroupfile && newFileSize > (...)`，
+   * 在读取之前就把调用方传进来的 `options.useGroupFile` 整个覆盖掉了（下一行还写回给调用方），
+   * 于是三个调用点传的值全部失效，唯一生效的判据只剩配置。而 `usegroupfile` 默认 false，
+   * 结果 `filelimit` 放开到 1536 也永远走不到群文件通道：超过 100MB 的视频被硬塞进消息段，
+   * 然后发送失败。
+   *
+   * 为什么要尊重调用方传值：那个 true 表达的是**事实**而不是偏好 ——「这个体积塞不进消息段」。
+   *   - downloadVideo（本文件）与 bilibili.ts 用 needsGroupFileChannel 按适配器算（102MB / 75MB）；
+   *   - push.ts 那一处是「体积已越过 groupfilevalue 分流线」的分支。
+   * 消息段发不出去时，另一个选择不是「发在聊天里」，而是「发不出去」，所以必须尊重。
+   * 「我压根不想收这么大的文件」有 `usefilelimit` / `filelimit` 专门表达，不该由这里代劳。
+   *
+   * 为什么是 `||` 而不是 `??`：
+   *   `??` 只在 null / undefined 时回落，可 downloadVideo **总是**传一个算好的布尔值，
+   *   小文件那次传的就是 false。用 `??` 会让这个 false 连用户配置一起吃掉：
+   *   usegroupfile=true、groupfilevalue=50 时，60MB 的视频（60 < 102，适配器说「不必须」）
+   *   会被判成 false 而走消息段，用户设的 50MB 分流线失效 —— 那是新引入的退化。
+   *   传入的 false 语义是「不强制」，不是「禁止」，所以两个判据取或：
+   *   必要性成立、或者用户偏好成立，就走群文件。
+   *   显式写 `=== true` 是为了让 undefined 和 false 走同一条路，不依赖真值转换。
+   *
+   * 原来紧跟着的 `if (options) options.useGroupFile = useGroupFile` 一并删掉：
+   * 仓库里没有任何地方在 uploadFile 返回后读这个字段（调用点传的都是临时字面量对象），
+   * 它只会悄悄改写调用方的入参，留着反而让人误以为有谁依赖它。
+   */
+  const requiredByCaller = options?.useGroupFile === true
+  const preferredByConfig = Boolean(Config.upload?.usegroupfile) && newFileSize > (Config.upload?.groupfilevalue || 100)
+  const useGroupFile = requiredByCaller || preferredByConfig
 
   // 文件处理
   let File
@@ -923,8 +973,9 @@ export const downloadVideo = async (
   res = { ...res, ...downloadOpt.title }
   res.totalBytes = Number((res.totalBytes / (1024 * 1024)).toFixed(2))
 
-  // 视频大小判断
-  const useGroupFile = res.totalBytes > (['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11', 'ICQQ'].includes(botAdapter) ? 102 : 75)
+  // 视频大小判断：超过本适配器消息段上限就必须改走群文件，没超过则传 false，
+  // 交给 uploadFile 按 usegroupfile / groupfilevalue 决定（false 只表示「不强制」，不是「禁止」）
+  const useGroupFile = needsGroupFileChannel(botAdapter, res.totalBytes)
   // 上传视频
   return await uploadFile(e, res, downloadOpt.video_url, { ...uploadOpt, useGroupFile })
 }

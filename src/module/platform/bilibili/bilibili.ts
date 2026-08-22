@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl } from '@/module/utils/index'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, needsGroupFileChannel, processImageUrl } from '@/module/utils/index'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { getBilibiliData } from './api.js'
@@ -1591,10 +1591,27 @@ export class Bilibili extends Base {
             const stats = fs.statSync(filePath)
             const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
 
-            // 根据文件大小选择上传方式
-            return fileSizeInMB > (Config.upload?.filelimit || 100)
-              ? await uploadFile(this.e, { filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '', { useGroupFile: true })
-              : await uploadFile(this.e, { filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename }, '')
+            /**
+             * 根据文件大小选择上传方式。
+             *
+             * 原来的分流线错用了 `upload.filelimit` —— 那是「多大就直接放弃上传」的闸门，
+             * 已经放开到 1536MB，于是 `useGroupFile: true` 那条分支实际上永远走不到，
+             * 几百 MB 的合流视频会被塞进消息段然后发送失败（这条路径不经过 downloadVideo，
+             * 拿不到那边按适配器算的判据，所以必须在这里自己算）。
+             *
+             * 现在只回答「消息段装不下吗」这一个问题；装得下时传 false，
+             * 由 uploadFile 再按 usegroupfile / groupfilevalue 决定要不要走群文件。
+             *
+             * 适配器名字取 `new Base(this.e).botadapter` 而不是本类的 `this.botadapter`：
+             * 本类的 override 返回的是**未归一化**的原始名字（Lagrange 系会是 'Lagrange'），
+             * 无事件时还会返回 undefined，拿去比对名单会得出错误的上限。
+             */
+            return await uploadFile(
+              this.e,
+              { filepath: filePath, totalBytes: fileSizeInMB, originTitle: this.downloadfilename },
+              '',
+              { useGroupFile: needsGroupFileChannel(new Base(this.e).botadapter, fileSizeInMB) }
+            )
           }
         })
       }
