@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import type { XiaohongshuMethodToFetcher as XiaohongshuMethodToFetcherType } from '@ikenxuan/amagi'
 import Config from '@/module/utils/Config'
+import { buildUserAgentHeader } from '@/module/platform/common/userAgent'
 import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '@/module/utils/RequestGuard'
 
 /** 旧版 amagi v5 使用的中文方法名 */
@@ -54,8 +55,13 @@ const getDefaultDependencies = (): XiaohongshuApiDependencies => {
 
 const buildRequestConfig = (): XiaohongshuRequestConfig => ({
   timeout: Config.request?.timeout || 15000,
+  // 只在配置的 UA 明确比 amagi 内置的更新时才覆盖；否则交回给 amagi。
+  // 直接写 `'User-Agent': Config.request?.['User-Agent']` 有两个坑：这个 key 一旦存在就会
+  // 覆盖 amagi 随版本更新的 UA，而 amagi 的 Sec-Ch-Ua 是从 UA 派生的，UA 落后会让整组
+  // 客户端提示自相矛盾（B站 gaia 风控正看这个）；值为 undefined 时更糟，spread 之后
+  // headers['User-Agent'] 是显式 undefined，axios 会发自己的 UA 或不带 UA。
   headers: {
-    'User-Agent': Config.request?.['User-Agent']
+    ...buildUserAgentHeader('xiaohongshu')
   },
   proxy: Config.request?.proxy?.switch
     ? { host: Config.request.proxy.host, port: Number(Config.request.proxy.port), protocol: Config.request.proxy.protocol, auth: Config.request.proxy.auth }
