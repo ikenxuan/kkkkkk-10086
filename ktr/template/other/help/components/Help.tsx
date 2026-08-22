@@ -214,10 +214,13 @@ export const Help: React.FC<PosterProps<HelpData>> = React.memo((props) => {
         <div className="flex justify-between items-end mb-24 border-b-4 border-foreground/10 pb-8">
           <div className="flex flex-col gap-2">
             {/*
-              pl-8 是为了避开左上角那组装饰点阵：点阵在 top-12 left-12（x 48..96），
-              而内容区 p-18 让这一行从 x=72 起，实测 x 方向重叠 24px、y 方向重叠 20px。
+              本地改动（上游没有）：pl-8 是为了避开左上角那组装饰点阵。
+              点阵在 top-12 left-12（x 48..96），而内容区 p-18 让这一行从 x=72 起，
+              实测 x 方向重叠 24px、y 方向重叠 20px。
               往右挪 32px 之后这一行从 x=104 开始，和点阵右边缘留 8px 空隙。
-              只挪这一行，下面的 COMMANDS 仍然对齐内容区左边界。
+              只挪这一行，下面的 COMMANDS 仍然对齐内容区左边界（x=72）。
+              statistics/global、statistics/group 两张卡片同样的问题、同样用 pl-8 修的，
+              三处的标签行都对齐在 x=104。同步上游时请保留——上游这行没有 pl-8。
             */}
             <div className="flex items-center gap-3 pl-8 opacity-60">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />

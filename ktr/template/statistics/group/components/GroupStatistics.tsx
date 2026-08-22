@@ -136,7 +136,19 @@ export const GroupStatistics: React.FC<PosterProps<GroupStatisticsData>> = (prop
       <div className="relative z-10 p-18 flex flex-col min-h-100">
         {/* 头部区域 */}
         <div className="mb-20 border-b-4 border-border/30 pb-10">
-          <div className="flex items-center gap-5 opacity-60 mb-8">
+          {/*
+            本地改动（上游没有）：pl-8 是为了避开左上角那组装饰点阵。
+            点阵在 top-12 left-12（x 48..96、y 48..96），而内容区 p-18 让这一行从 x=72 起，
+            于是那个 w-4 的脉冲圆点原本落在 x 72..88——整个嵌在点阵里，
+            实测 x 方向重叠 16px、y 方向重叠 14px（GROUP_ANALYTICS 文字也只离点阵右边缘 12px，挤在一起）。
+            往右挪 32px 之后圆点从 x=104 开始、文字从 x=140 开始，
+            和点阵右边缘分别留 8px / 44px 空隙，重叠归零。
+            这里的圆点比 Help.tsx 的 w-2 大一倍，但点阵尺寸相同，
+            所以沿用同样的 pl-8，三张卡片的标签行都对齐在 x=104，留白一致。
+            只挪这一行：下面的大标题仍然对齐内容区左边界（x=72），不受影响。
+            同步上游时请保留——上游这行没有 pl-8，抹掉会让点阵重新压住圆点。
+          */}
+          <div className="flex items-center gap-5 pl-8 opacity-60 mb-8">
             <span className="w-4 h-4 rounded-full bg-pink-500 animate-pulse" />
             <span className="text-3xl font-mono tracking-widest text-muted/80">GROUP_ANALYTICS</span>
           </div>
