@@ -141,21 +141,14 @@ const DouyinVideoCover: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data }) 
         referrerPolicy="no-referrer"
         crossOrigin="anonymous"
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-[6%] z-20 h-[38%] bg-linear-to-b from-transparent via-black/38 to-transparent" />
-
-      <div className="absolute left-24 top-10 z-30 flex items-center gap-5 text-white">
-        {durationText && <span className="text-[34px] font-black tabular-nums drop-shadow-lg">时长: {durationText}</span>}
+      <div className="absolute left-24 top-10 z-30 flex items-center gap-5 text-foreground/85">
+        {durationText && <span className="text-[34px] font-black tabular-nums">时长: {durationText}</span>}
       </div>
 
-      <PlayIcon
-        size={104}
-        weight="fill"
-        aria-label="播放"
-        className="absolute bottom-12 right-24 z-30 text-white opacity-90 drop-shadow-2xl"
-      />
+      <PlayIcon size={104} weight="fill" aria-label="播放" className="absolute bottom-12 right-24 z-30 text-white/50" />
 
       {music && (
-        <div className="absolute bottom-12 left-24 z-30 flex max-w-212.5 items-center gap-5 text-white drop-shadow-xl">
+        <div className="absolute bottom-12 left-24 z-30 flex max-w-212.5 items-center gap-5 text-foreground/85">
           {music.cover ? (
             <div className="relative h-20 w-20 shrink-0">
               <GlowImage glowStrength={1} blurRadius={20}>
@@ -173,7 +166,7 @@ const DouyinVideoCover: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data }) 
           )}
           <div className="min-w-0">
             <div className="truncate text-[36px] font-black leading-tight select-text">{music.title}</div>
-            <div className="truncate text-[27px] font-semibold text-white/76 select-text">{music.author}</div>
+            <div className="truncate text-[27px] font-semibold text-foreground/60 select-text">{music.author}</div>
           </div>
         </div>
       )}

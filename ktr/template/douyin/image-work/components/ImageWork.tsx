@@ -214,9 +214,7 @@ const DouyinImageCover: React.FC<PosterProps<DouyinImageWorkData>> = ({ data }) 
         crossOrigin="anonymous"
       />
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-[6%] z-20 h-[38%] bg-linear-to-b from-transparent via-black/38 to-transparent" />
-
-      <div className="absolute left-24 top-12 z-30 flex items-center gap-4 text-white drop-shadow-2xl">
+      <div className="absolute left-24 top-12 z-30 flex items-center gap-4 text-foreground/85">
         <MediaIcon size={72} weight="fill" />
         <span className="text-[34px] font-black select-text">{mediaMeta.label}</span>
       </div>
@@ -242,12 +240,12 @@ const DouyinImageCover: React.FC<PosterProps<DouyinImageWorkData>> = ({ data }) 
         </div>
       )}
 
-      <div className="absolute  bottom-12 right-24 z-30 flex items-center gap-5 text-white drop-shadow-lg">
+      <div className="absolute bottom-12 right-24 z-30 flex items-center gap-5 text-foreground/85">
         <span className="text-[34px] font-black tabular-nums">共 {totalCount} 张</span>
       </div>
 
       {music && (
-        <div className="absolute bottom-12 left-24 z-30 flex max-w-212.5 items-center gap-5 text-white drop-shadow-xl">
+        <div className="absolute bottom-12 left-24 z-30 flex max-w-212.5 items-center gap-5 text-foreground/85">
           {music.cover ? (
             <div className="relative h-20 w-20 shrink-0">
               <GlowImage glowStrength={1} blurRadius={20}>
@@ -265,7 +263,7 @@ const DouyinImageCover: React.FC<PosterProps<DouyinImageWorkData>> = ({ data }) 
           )}
           <div className="min-w-0">
             <div className="truncate text-[36px] font-black leading-tight select-text">{music.title}</div>
-            <div className="truncate text-[27px] font-semibold text-white/76 select-text">{music.author}</div>
+            <div className="truncate text-[27px] font-semibold text-foreground/60 select-text">{music.author}</div>
           </div>
         </div>
       )}
