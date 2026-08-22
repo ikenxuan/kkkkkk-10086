@@ -92,7 +92,12 @@ const NumberCfgType: Record<string, NumberCfgItem> = {
   B站自动画质大小: { type: 'bilibili', key: 'maxAutoVideoSize', limit: '1-200' },
   B站推送画质: { type: 'bilibili', key: 'push.pushVideoQuality', limit: [0, 6, 16, 32, 64, 74, 80, 112, 116, 120, 127] },
   B站推送大小: { type: 'bilibili', key: 'push.pushMaxAutoVideoSize', limit: '1-200' },
-  视频拦截阈值: { type: 'upload', key: 'filelimit', limit: '5-200' },
+  // 上限 4096MB：默认值已放开到 1536MB（1.5GB），而 checkNumberValue 是「静默钳制」而不是报错，
+  // 旧的 '5-200' 会让 `#kkk设置视频拦截阈值 1536` 悄悄写成 200，用户看不出来。留到 4096 给群文件通道
+  // 一点余量（群文件才扛得住 GB 级，消息内嵌视频段约 100MB 就见顶了）。
+  视频拦截阈值: { type: 'upload', key: 'filelimit', limit: '5-4096' },
+  // 下面三项维持 '5-200'：触发压缩阈值兼作压缩目标体积、群文件上传阈值是走群文件的分流线，
+  // 都不该跟着「视频拦截阈值」一起放大，详见 config/default_config/upload.yaml 里的说明。
   触发压缩阈值: { type: 'upload', key: 'compresstrigger', limit: '5-200' },
   压缩后的值: { type: 'upload', key: 'compressvalue', limit: '5-200' },
   群文件上传阈值: { type: 'upload', key: 'groupfilevalue', limit: '5-200' },
