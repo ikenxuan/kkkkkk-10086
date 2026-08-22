@@ -786,6 +786,35 @@ export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boo
   sizeInMB > (LARGE_VIDEO_SEGMENT_ADAPTERS.includes(botAdapter) ? 102 : 75)
 
 /**
+ * 远程 URL 直发前的体积门：**已知**体积超过本适配器消息段上限时才拦。
+ *
+ * 为什么探不到体积也要放行：`downloadVideo` 开头那次 `getHeaders()` 只是尽力而为 ——
+ * 源站不返回 `content-range`（不支持 Range、CDN 抹掉响应头、鉴权失败只回 200 等）时
+ * 体积会算成 0。这在实际使用里是**常态而不是异常**，所以 0 只表示「不知道」，
+ * 绝不能当成「小」或「大」来用：一旦让未知体积去堵这条路，所有拿不到响应头的源站
+ * 都会永久失去远程直发能力，而它们本来是发得出去的。
+ *
+ * 因此这里的语义被刻意收窄成「我确定它太大」，不确定就一律放行，让 `sendVideoUrl`
+ * 照旧去试 —— 它失败会返回 false，调用点的 `&&` 短路自然回落到下载 + 群文件那条路，
+ * 兜底一直都在，多试一次的代价远小于误堵一条本来可用的通道。
+ *
+ * 阈值直接复用 `needsGroupFileChannel`，没有另造数字：`sendVideoUrl` 发出去的是
+ * `segment.video(视频直链)`，与本地那条 `segment.video(File)` 是同一种消息内嵌视频段，
+ * 区别只在段里装的是直链还是本地路径，通道本身没换，上限自然同源。
+ * upload.yaml 对 `filelimit` 的注释也写了「QQBot 官方接口更低（约 75MB）」，
+ * 而 QQBot 恰好落在 `needsGroupFileChannel` 的 75MB 那一档，数字对得上。
+ *
+ * @param {string} botAdapter 适配器名称，必须是 `Base` 归一化后的名字（`new Base(e).botadapter`）
+ * @param {number} sizeInMB 探测到的体积，单位 MB；0 / NaN / 负数都表示「探不到」
+ * @returns {boolean} true 表示「确定装不下」，此时不该再走远程直发
+ */
+export const isRemoteVideoTooLargeForUrlSend = (botAdapter: string, sizeInMB: number): boolean => {
+  // 体积未知（探测失败）一律放行，判断权交还给 sendVideoUrl 的实际发送结果
+  if (!Number.isFinite(sizeInMB) || sizeInMB <= 0) return false
+  return needsGroupFileChannel(botAdapter, sizeInMB)
+}
+
+/**
  * 群文件通道用不了时的统一出口：如实报失败，而不是假装发送成功。
  *
  * @param {string} botAdapter 适配器名称
@@ -982,7 +1011,34 @@ export const downloadVideo = async (
   }
 
   const botAdapter = new Base(e).botadapter
-  const canSendRemoteVideo = downloadOpt.video_url && !uploadOpt?.forceLocal && !Config.upload.compress && (botAdapter === 'QQBot' || Config.upload.videoSendMode === 'url')
+
+  /**
+   * 远程 URL 直发的准入判断。体积由函数开头那次 `getHeaders()` 顺带探到，
+   * 这里只是把它拿来用，**不会为此再发一次 HTTP 请求**。
+   *
+   * 体积门只对 `botAdapter === 'QQBot'` 那条**自动**分流生效，对 videoSendMode === 'url' 不生效：
+   *   - QQBot 这条是插件替用户做的决定（没人要求过），给它加上体积感知本就是插件的份内事；
+   *     而且 upload.yaml 明确写了 QQBot 官方接口约 75MB，正是 `needsGroupFileChannel` 给
+   *     QQBot 的那一档，阈值有出处、不用外推。
+   *   - `videoSendMode === 'url'` 是用户自己拨的开关。102 / 75 这两个数字的实测背景是
+   *     「消息段装本地字节」，换成 Lagrange / NapCat 这类适配器发远程直链时是否同样受限，
+   *     仓库里没有任何测量支撑。拿一个外推来的上限去悄悄推翻用户的显式配置，
+   *     比多试一次失败的发送要糟得多 —— 何况试失败也只是回落到下载那条路，兜底一直都在。
+   *
+   * 顺带得到一个逃生口：QQBot 用户若觉得这道门判错了（自家源站的大视频其实发得出去），
+   * 把 videoSendMode 设成 url 就能显式绕开它，不必改代码。
+   */
+  const remoteUrlRequestedByUser = Config.upload.videoSendMode === 'url'
+  const blockedBySize = !remoteUrlRequestedByUser && isRemoteVideoTooLargeForUrlSend(botAdapter, parseFloat(fileSizeInMB))
+  const canSendRemoteVideo = downloadOpt.video_url && !uploadOpt?.forceLocal && !Config.upload.compress && !blockedBySize && (botAdapter === 'QQBot' || remoteUrlRequestedByUser)
+
+  if (blockedBySize) {
+    logger.mark(`视频大小 (${fileSizeInMB} MB) 超出 ${botAdapter} 消息段上限，跳过URL直发，改走下载上传`)
+  } else if (canSendRemoteVideo && fileSizeContent === 0) {
+    // 探不到体积是常态（源站不给 content-range），不是异常，所以用 debug 而不是 warn。
+    // 留这条是为了日后排查「这么大的视频怎么还走了URL直发」时有迹可循
+    logger.debug('视频体积未知（未取到 content-range），仍尝试远程URL直发')
+  }
   if (canSendRemoteVideo && await sendVideoUrl(e, downloadOpt.video_url, uploadOpt)) {
     logger.mark(`视频大小 (${fileSizeInMB} MB) 已通过URL发送，跳过本地下载`)
     return true
