@@ -1,5 +1,6 @@
 import type { EmojiId, MessageEvent, MessageId } from '@/types/message'
 import Config from './Config.js'
+import { getErrorMessage } from './error-message.js'
 
 const PLATFORM_EMOJI_IDS = {
   qq: { EYES: 128064, PROCESSING: 366, SUCCESS: 389, ERROR: 379 },
@@ -307,8 +308,4 @@ export class EmojiReactionManager {
 
 function isEmojiType (value: string): value is EmojiType {
   return EMOJI_TYPES.includes(value as EmojiType)
-}
-
-function getErrorMessage (error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }

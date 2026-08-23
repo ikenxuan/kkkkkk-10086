@@ -3,6 +3,7 @@ import path from 'node:path'
 import axios, { type AxiosRequestConfig } from 'axios'
 import Common from './Common.js'
 import Config from './Config.js'
+import { getErrorMessage } from './error-message.js'
 import { sanitizeFilenameSegment } from './filename.js'
 import { baseHeaders } from './Networks.js'
 
@@ -92,8 +93,4 @@ export const processImageUrls = async (
   headers: AxiosRequestConfig['headers'] = {}
 ): Promise<string[]> => {
   return await Promise.all((imageUrls || []).map(async (url, index) => await processImageUrl(url, title, index, headers)))
-}
-
-function getErrorMessage (error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }

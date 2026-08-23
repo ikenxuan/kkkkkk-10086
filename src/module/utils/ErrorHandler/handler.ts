@@ -1,5 +1,6 @@
 import type { MessageEvent } from '@/types/message'
 import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
+import { getErrorMessage } from '@/module/utils/error-message'
 import { getAdapterInfo } from './adapter.js'
 import { createLogContext, parseLogsToStructured, type CapturedLogEntry } from './log-context.js'
 import { renderErrorReport } from './render.js'
@@ -102,11 +103,4 @@ export const wrapWithErrorHandler = <TResult>(fn: BusinessHandler<TResult>, opti
       logContext.destroy()
     }
   }
-}
-
-function getErrorMessage (error: unknown): string {
-  if (typeof error === 'object' && error !== null && 'message' in error && error.message) {
-    return String(error.message)
-  }
-  return String(error)
 }

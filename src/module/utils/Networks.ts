@@ -23,6 +23,7 @@ import type {
   NormalizedThrottleOptions
 } from '@/types/platform'
 import Config from './Config.js'
+import { getErrorMessage } from './error-message.js'
 import {
   clampConcurrency,
   downloadMultipart,
@@ -543,10 +544,6 @@ function isSslError (error: AxiosError): boolean {
   return error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
     error.code === 'ERR_SSL_WRONG_VERSION_NUMBER' ||
     Boolean(error.message?.includes('SSL'))
-}
-
-function getErrorMessage (error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 async function delay (ms: number): Promise<void> {

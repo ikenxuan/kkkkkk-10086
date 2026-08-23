@@ -1,6 +1,7 @@
 import type { MessageEvent, MessageId } from '@/types/message'
 import cfg from '@/runtime/host/config'
 import Config from '@/module/utils/Config'
+import { getErrorMessage } from '@/module/utils/error-message'
 import type { ErrorHandlerContext } from './strategy.js'
 
 const getBotId = (event?: MessageEvent): MessageId | undefined => {
@@ -110,11 +111,4 @@ export const sendErrorToAllMasters = async (ctx: ErrorHandlerContext, message: u
       logger.error(`[ErrorHandler] 发送错误消息给主人 ${master} 失败: ${getErrorMessage(error)}`)
     }
   }
-}
-
-function getErrorMessage (error: unknown): string {
-  if (typeof error === 'object' && error !== null && 'message' in error && error.message) {
-    return String(error.message)
-  }
-  return String(error)
 }

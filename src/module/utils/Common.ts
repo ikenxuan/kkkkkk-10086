@@ -4,6 +4,7 @@ import { scan } from '@ikenxuan/qrcode'
 import type { MessageContent, MessageElement, MessageEvent, MessageMedia, MessageSegment } from '@/types/message'
 import { Base } from './Base.js'
 import Config from './Config.js'
+import { getErrorMessage } from './error-message.js'
 import { Networks } from './Networks.js'
 import Version from './Version.js'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
@@ -480,10 +481,6 @@ class Tools {
   async sleep (ms: number): Promise<void> {
     await new Promise<void>(resolve => { setTimeout(resolve, ms) })
   }
-}
-
-function getErrorMessage (error: unknown): string {
-  return error instanceof Error ? error.message : String(error)
 }
 
 function isRecord (value: unknown): value is Record<string, unknown> {
