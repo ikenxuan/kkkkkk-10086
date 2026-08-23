@@ -103,10 +103,19 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                   本仓库是 `kkkkkk-10086`（12 字）和 `TRSS-Yunzai`（11 字），在 releaseType 为
                   Stable（右边多出分隔线 + Rolldown/Vite 一整块）时整行自然宽度只剩几十 px 余量，
                   hash 多一位、通道词换一个都会把它顶过 1440，flex 于是把这两个名字压成两行。
-                  锁 nowrap 是让「换行」这个失效模式不可能发生；降一档字号是把余量做够
-                  （实测最坏情况余量从 48px 提到 274px）。
+                  锁 nowrap 是让「换行」这个失效模式不可能发生；降一档字号是把余量做够。
+                  实测（容器 1440，最坏情况 = Stable 通道，右边多出分隔线 + Rolldown/Vite 一整块）：
+                  照上游的 text-5xl(48px) 排会溢出容器，这是锁 nowrap 的起因；
+                  现在插件名 33px、框架名 36px，Stable 档整行自然宽 1121.9，余 318.1px。
+
+                  33px 而不是 text-3xl(30px)：用户反馈这个名字「大了一点点」，
+                  36 -> 30 是降 17%，比「一点点」多；33px 降 8% 才对得上。
+                  Tailwind 的刻度在 36 和 30 之间没有档位，所以用任意值。
+                  注意框架名（下面 text-4xl 的 poweredBy）视觉上和这个名字成对，
+                  只缩这一个会让 TRSS-Yunzai 看着比 kkkkkk-10086 大一点 ——
+                  这是按用户明确要求「插件名偏大」做的，不是漏改。
                 */}
-                <span className="text-4xl font-black whitespace-nowrap">{version.pluginName}</span>
+                <span className="text-[33px] font-black whitespace-nowrap">{version.pluginName}</span>
               </div>
             </div>
 
@@ -146,11 +155,30 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
                   比左右两侧高出一截、基线也对不上，看着更别扭。
                   字号压到 text-lg 并 align-baseline 贴住版本号的基线，
                   整块（含 STABLE 那行）就只有两层，和插件名、框架名齐平。
-                  横向余量够：实测 Stable（右边多出分隔线 + Rolldown/Vite 一整块）最坏情况
-                  自然宽 1276/1440，仍余 164px。
+                  横向余量够：实测 Stable（右边多出分隔线 + Rolldown/Vite 一整块）自然宽
+                  1121.9/1440；最坏情况（再加上 -12 和 -dirty 两段）1206.7，仍余 233.3px。
+                  hash 实际是 7 位：`git rev-parse --short HEAD`，core.abbrev 未设置，
+                  这个仓库的对象数下 git 的 auto 长期停在 7。
+
+                  opacity 是 75 而不是 50：这个 span 外面还套着一层 opacity-90（上面那个版本块
+                  wrapper），opacity 逐层相乘，写 50 实际只有 0.5×0.9=0.45，提到 75 是 0.675。
+                  配合下面的 text-foreground（colorAlpha=1），四个通道现在都是这一个值。
+                  字号保持 text-lg（横向余量不动）：决定性的是 alpha 不是字号 ——
+                  单变量验过，只放大字号（20px 仍 0.5）还是发灰，只提 alpha 就清楚了。
+
+                  text-foreground 是显式压掉继承色，不是多余的：这个 span 在版本号里面，
+                  而版本号在 Preview / 有更新时套了 text-warning / text-success，
+                  hash 于是跟着变成琥珀或绿色。浅色底上琥珀压在近白背景上，
+                  alpha 提到多少都救不回来（实测提 alpha 只从 1.34 到 1.52，大字要 3.0）——
+                  瓶颈是色相不是 alpha。压成前景色后实测（采样 hash 区域真实像素的最暗/最亮）：
+                  浅色 Preview 5.55、Stable 6.42、有更新 5.97、最坏 6.41；
+                  深色四档 7.47 ~ 8.86。四档八张图全部过大字 3.0。
+                  语义上也该这样：这段后缀是构建标识（-2-g201e9da-dirty），
+                  它描述「跑的是哪份代码」，和发布通道没关系，跟着通道走色本来就是继承的副作用。
+                  Stable / Dev 两档本来就继承页脚的前景色，这一改对它们等价。
                 */}
                 {(version.commitId || version.dirty || (typeof version.commitsAhead === 'number' && version.commitsAhead > 0)) && (
-                  <span className="align-baseline font-mono text-lg font-medium opacity-50">
+                  <span className="align-baseline font-mono text-lg font-medium text-foreground opacity-75">
                     {typeof version.commitsAhead === 'number' && version.commitsAhead > 0 && `-${version.commitsAhead}`}
                     {version.commitId && `-g${version.commitId}`}
                     {version.dirty && '-dirty'}
