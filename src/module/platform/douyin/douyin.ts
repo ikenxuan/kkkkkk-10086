@@ -7,6 +7,7 @@ import {
   type DouyinEmojiInfo
 } from './danmaku.js'
 import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { douyinCommentLimit } from '@/module/platform/common/commentLimit'
 import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
@@ -316,7 +317,9 @@ export class DouYin extends Base {
           if (typeof this.is_mp4 !== 'boolean') this.is_mp4 = isVideo
           const CommentsData = narrowApiResponse<CommentsPayload>(await this.amagi.getDouyinData('评论数据', {
             aweme_id: data.aweme_id,
-            number: Config.douyin.numcomments,
+            // 面板上「评论解析数量」写的是新键 douyin.numcomment，这里原来只读旧键 numcomments，
+            // 于是用户在面板里改了数量却没有任何效果。走 helper 统一「新键优先、旧键兜底」。
+            number: douyinCommentLimit(),
             typeMode: 'strict'
           }), '评论数据')
           let emojiListPromise: Promise<DouyinEmojiInfo[]> | undefined

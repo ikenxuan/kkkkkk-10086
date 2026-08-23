@@ -19,6 +19,7 @@ import type { BilibiliArticleCategoryInput } from './dynamicText.js'
 import { extractBilibiliArticleImages } from './article.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/Base'
@@ -796,13 +797,16 @@ export class Bilibili extends Base {
           const sendComment = hasBilibiliContent('评论图', 'comment')
             ? async (): Promise<void> => {
               await preparePlayback()
+              // 取一次有效数量复用：取值和「要不要出评论图」的判断必须来自同一个键，
+              // 否则会出现「新键设了 5，判断却读旧键的 undefined 而整块跳过」。
+              const commentLimit = bilibiliCommentLimit()
               const commentsData = await this.amagi.getBilibiliData('评论数据', '', {
-                number: Config.bilibili.bilibilinumcomments,
+                number: commentLimit,
                 type: 1,
                 oid: infoData.data.data.aid.toString(),
                 typeMode: 'strict'
               }) as CommentsResponse
-              const commentsdata = Config.bilibili.bilibilinumcomments && Config.bilibili.bilibilinumcomments > 0
+              const commentsdata = commentLimit > 0
                 ? bilibiliComments(commentsData.data)
                 : null
               if (!commentsdata?.length) return
@@ -930,12 +934,15 @@ export class Bilibili extends Base {
         case 'dynamic_info': {
           if (!hasBilibiliContent('动态')) break
           const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' }) as DynamicInfoResponse
+          // 整个 dynamic_info 分支共用这一个有效数量：下面取数、以及各动态类型里
+          // 「要不要发评论图」的判断都得用它，不能一半读新键一半读旧键。
+          const commentLimit = bilibiliCommentLimit()
           const commentsData: CommentsResponse | false = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
-            Boolean(Config.bilibili.bilibilinumcomments && Config.bilibili.bilibilinumcomments > 0)
+            commentLimit > 0
             ? await this.amagi.getBilibiliData('评论数据', '', {
               type: mapping_table(dynamicInfo.data.data.item.type),
               oid: oid(dynamicInfo.data),
-              number: Config.bilibili.bilibilinumcomments,
+              number: commentLimit,
               typeMode: 'strict'
             }) as CommentsResponse
             : false
@@ -1096,7 +1103,7 @@ export class Bilibili extends Base {
                   dynamicTYPE: '纯文动态'
                 })
               )
-              if (Config.bilibili.bilibilinumcomments && commentsData) {
+              if (commentLimit > 0 && commentsData) {
                 const commentsdata = bilibiliComments(commentsData.data)
                 await this.e.reply(
                   await Render('bilibili/comment', {
@@ -1232,7 +1239,7 @@ export class Bilibili extends Base {
               if (dynamicInfo.data.data.item.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicInfo.data.data.item.modules.module_dynamic.major.archive.bvid
                 const INFODATA = await getBilibiliData('单个视频作品数据', '', { bvid, typeMode: 'strict' }) as VideoInfoResponse
-                if (Config.bilibili.bilibilinumcomments && commentsData) {
+                if (commentLimit > 0 && commentsData) {
                   const commentsdata = bilibiliComments(commentsData.data)
                   await this.e.reply(
                     await Render('bilibili/comment', {
@@ -1389,7 +1396,7 @@ export class Bilibili extends Base {
               })
               await this.e.reply(img)
 
-              if (Config.bilibili.bilibilinumcomments && commentsData) {
+              if (commentLimit > 0 && commentsData) {
                 const commentsdata = bilibiliComments(commentsData.data)
                 await this.e.reply(
                   await Render('bilibili/comment', {
