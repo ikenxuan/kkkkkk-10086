@@ -7,8 +7,12 @@ package-lock.json
 !.gitignore
 amagi/node_modules/*
 .vscode/
+# test/（单数）是早期的手动调试草稿，自带 node_modules，继续忽略。
+# /tests/（复数）是 vitest + node --test 的正式测试树，从此跟踪，不再忽略：
+# 它被忽略期间烂过两次而 CI 全绿（standalone 迁移烂了 11 处断言、
+# 后来又烂了 4 个契约测试），因为 `pnpm test` 在全新检出上找不到用例就退 0。
+# tests/ 不在 package.json 的 files 里，所以不会进 preview / master 发布分支。
 test/
-/tests/
 .eslintrc
 /lib/
 /.generated/

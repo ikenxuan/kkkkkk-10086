@@ -1,0 +1,10 @@
+timeout: 30000
+User-Agent: fixture-agent
+proxy:
+  switch: false
+  host: ''
+  port: ''
+  protocol: http
+  auth:
+    username: ''
+    password: ''
