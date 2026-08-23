@@ -1,5 +1,6 @@
 import { getStatisticsDB, PRIVATE_GROUP_ID } from '@/module/db/index'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
+import { buildGroupUserRanking } from '@/module/platform/common/userRanking'
 import { Render } from '@/module/utils/index'
 import type { ParseStatisticsRow, StatisticsPlatform } from '@/types/database'
 import type { CommandEvent, MessageEvent } from '@/types/message'
@@ -120,6 +121,18 @@ export class kkkStatistics extends plugin {
     const groupStats = await statisticsDB.getGroupStatistics(String(groupId))
     const groupUniqueUsers = await statisticsDB.getGroupUniqueUsers(String(groupId))
     const globalSummary = await statisticsDB.getGlobalSummary()
+    /**
+     * 本群用户解析排行，取前 10 名。
+     *
+     * 走 SQL 聚合而不是从上面的 `groupStats` 现算：聚合和 `LIMIT` 都压到 SQLite 里，
+     * 无论这个群攒了多少行都只回 10 行（理由详见 `getGroupUserRanking()` 的注释）。
+     * 昵称由 `buildGroupUserRanking` 从宿主群成员表同步补齐，不发任何请求。
+     */
+    const userRanking = buildGroupUserRanking(
+      e,
+      String(groupId),
+      await statisticsDB.getGroupUserRanking(String(groupId), 10)
+    )
     const platformData = groupStats.reduce<PlatformStats>(
       (acc, stat: ParseStatisticsRow) => {
         acc[stat.platform] = (acc[stat.platform] || 0) + stat.parseCount
@@ -149,7 +162,9 @@ export class kkkStatistics extends plugin {
       // 契约里没这个键，而必填的 platformData 一直缺着
       platformData,
       globalTotalGroups: globalSummary.totalGroups,
-      globalTotalParses: globalSummary.totalParses
+      globalTotalParses: globalSummary.totalParses,
+      // 本地新增的可选字段（上游没有）：空数组时模板整块不渲染
+      userRanking
     })
 
     await e.reply!(img)

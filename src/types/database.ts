@@ -51,6 +51,23 @@ export interface ParseHistoryRow {
   createdAt: string
 }
 
+/**
+ * 群内单个用户的解析次数聚合行，`getGroupUserRanking()` 的返回元素。
+ *
+ * 不是某张表的行：`ParseStatistics` 里一个用户占四行（每个平台一行），
+ * 这里是按 userId 合并之后的结果，所以 `totalParses` 与四个平台字段
+ * 都由 SQL 的 `SUM()` 现算，表上并没有对应的列。
+ */
+export interface GroupUserRankingRow {
+  userId: string
+  /** 该用户在这个群的总解析次数，等于下面四个平台之和 */
+  totalParses: number
+  douyin: number
+  bilibili: number
+  kuaishou: number
+  xiaohongshu: number
+}
+
 /** GlobalStatistics 表行 */
 export interface GlobalStatisticsRow {
   key: string

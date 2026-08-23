@@ -7,6 +7,7 @@ import type {
   CountResult,
   GlobalStatisticsRow,
   GlobalStatisticsSummary,
+  GroupUserRankingRow,
   ParseHistoryRow,
   ParseStatisticsRow,
   RunResult,
@@ -215,6 +216,42 @@ export class StatisticsDBBase {
 
   async getGroupStatistics (groupId: string): Promise<ParseStatisticsRow[]> {
     return await this.allQuery<ParseStatisticsRow>('SELECT * FROM ParseStatistics WHERE groupId = ? ORDER BY platform, userId', [groupId])
+  }
+
+  /**
+   * 群内用户解析次数排行，按总次数从多到少取前 `limit` 名。
+   *
+   * 为什么走 SQL 聚合而不是拿 `getGroupStatistics()` 的结果在应用层 reduce：
+   * - 建表时的 `UNIQUE(groupId, userId, platform)` 会带一个隐式索引，列序正好是
+   *   「groupId 前缀 + userId」，所以 `WHERE groupId = ? GROUP BY userId` 能直接
+   *   沿这个索引有序扫过去，SQLite 不用为分组另建临时 B 树。
+   * - `LIMIT` 在 SQLite 里生效，跨进程边界只回 `limit` 行；应用层聚合要先把这个群
+   *   的全部行读进 JS 堆，再建 Map、再排序，行数随群活跃度无上限增长。
+   *
+   * 四个平台的分布用 `SUM(CASE WHEN ...)` 一次查完，不再为每个用户补查一次。
+   *
+   * `ORDER BY` 补了 `userId ASC` 作次级键：次数打平时 SQLite 不保证行序，
+   * 少了它同样的数据每次渲染可能排出不同的名次。
+   *
+   * @param groupId 群号
+   * @param limit 取前几名，默认 10
+   */
+  async getGroupUserRanking (groupId: string, limit = 10): Promise<GroupUserRankingRow[]> {
+    return await this.allQuery<GroupUserRankingRow>(
+      `SELECT
+         userId,
+         SUM(parseCount) AS totalParses,
+         SUM(CASE WHEN platform = 'douyin' THEN parseCount ELSE 0 END) AS douyin,
+         SUM(CASE WHEN platform = 'bilibili' THEN parseCount ELSE 0 END) AS bilibili,
+         SUM(CASE WHEN platform = 'kuaishou' THEN parseCount ELSE 0 END) AS kuaishou,
+         SUM(CASE WHEN platform = 'xiaohongshu' THEN parseCount ELSE 0 END) AS xiaohongshu
+       FROM ParseStatistics
+       WHERE groupId = ?
+       GROUP BY userId
+       ORDER BY totalParses DESC, userId ASC
+       LIMIT ?`,
+      [groupId, limit]
+    )
   }
 
   async getGroupUniqueUsers (groupId: string): Promise<number> {

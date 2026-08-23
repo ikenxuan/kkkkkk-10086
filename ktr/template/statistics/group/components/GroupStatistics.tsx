@@ -1,5 +1,5 @@
 import React from 'react'
-import { RiPieChart2Fill } from 'react-icons/ri'
+import { RiPieChart2Fill, RiTrophyFill } from 'react-icons/ri'
 import { VictoryPie } from 'victory'
 
 import { DefaultLayout } from '../../../components/DefaultLayout'
@@ -304,6 +304,81 @@ export const GroupStatistics: React.FC<PosterProps<GroupStatisticsData>> = (prop
             })}
           </div>
         </div>
+
+        {/*
+          用户排行区块（本地新增，上游 karin-plugin-kkk 的这张卡没有；同步上游时请保留）。
+
+          排版照抄同仓 statistics/global 的「群组排行」：同一套区块头
+          （w-5 h-24 的色条 + text-[5rem] 标题 + uppercase 副标题）、同一套行容器
+          （p-12 rounded-3xl bg-surface/40 backdrop-blur-md border-2）、前三名同一套
+          RiTrophyFill 配色（金/银/铜），右侧同样是 text-[5rem] 的总次数 + 「次」。
+          色条取 yellow-500 也跟那张卡的排行一致，接在本卡 pink/blue/violet 之后。
+
+          守卫写成 `?.length ? ... : null`：整个 userRanking 是可选字段，
+          不传、传空数组都在这里整块跳过，不会走到下面的 .map。
+          数字不做 w/亿 缩写 —— 本卡其余数字（本群解析、平台详情）都是原样输出，
+          global 那张卡才有 formatWithCommas，这里跟着本卡保持一致。
+        */}
+        {props.data.userRanking?.length ? (
+          <div className="mb-40">
+            <div className="flex items-center gap-8 mb-16">
+              <div className="w-5 h-24 rounded-full bg-yellow-500" />
+              <div className="flex flex-col">
+                <h2 className="text-[5rem] font-black tracking-tight leading-none text-foreground/90">用户排行</h2>
+                <span className="text-2xl font-medium tracking-[0.15em] uppercase text-muted/70 mt-2">TOP USERS</span>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              {props.data.userRanking.map((user, index) => (
+                <div
+                  key={user.userId}
+                  className="relative p-12 rounded-3xl bg-surface/40 backdrop-blur-md border-2 border-border/40 flex items-center gap-10"
+                >
+                  {/* 头像：非 QQ 群（QQBot 频道等）拿不到，缺省时这格整个不渲染 */}
+                  {user.avatar && (
+                    <img
+                      src={user.avatar}
+                      alt={user.nickname}
+                      className="w-28 h-28 rounded-2xl object-cover border-2 border-border/50 shrink-0"
+                    />
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="text-4xl font-black text-foreground/90 truncate">{user.nickname}</div>
+                      {/* 前三名奖杯，配色与 global 群组排行一致 */}
+                      {index === 0 && <RiTrophyFill size={48} className="text-yellow-400 shrink-0" />}
+                      {index === 1 && <RiTrophyFill size={48} className="text-gray-400 shrink-0" />}
+                      {index === 2 && <RiTrophyFill size={48} className="text-orange-400 shrink-0" />}
+                    </div>
+                    {/* truncate：QQBot 的 userId 是几十位 openid，不裁会把这一行顶出容器 */}
+                    <div className="text-2xl text-foreground/80 mb-4 truncate">{user.userId}</div>
+                    {user.platforms && (
+                      <div className="flex gap-6 flex-wrap">
+                        {Object.entries(user.platforms).map(([platform, count]) => {
+                          if (count === 0) return null
+                          const config = platformConfig[platform as keyof typeof platformConfig]
+                          return (
+                            <div key={platform} className="flex items-center gap-3">
+                              <img src={config.logo} alt={config.name} className="h-10 w-auto object-contain" />
+                              <span className="text-3xl font-bold text-foreground/80">{count}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <div className="text-[5rem] font-black text-foreground/90 leading-none">{user.totalParses}</div>
+                    <div className="text-3xl text-foreground/80 mt-2">次</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* 底部信息 */}
         <div className="mt-auto pt-20 border-t-2 border-border">
