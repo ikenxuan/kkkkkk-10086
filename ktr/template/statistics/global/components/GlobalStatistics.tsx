@@ -70,6 +70,32 @@ export const GlobalStatistics: React.FC<PosterProps<GlobalStatisticsData>> = (pr
     xiaohongshu: props.data.allStats.filter((s) => s.platform === 'xiaohongshu').reduce((sum, s) => sum + s.parseCount, 0)
   }
 
+  /*
+    本地增量（上游 packages/core/ktr/template/statistics/global/components/GlobalStatistics.tsx 没有）：
+    「平台详情」环形图只喂次数非零的平台，零值平台不上环、不出标签。
+
+    零值扇区会把标签全挤到同一个坐标上。victory-pie 把角度算交给 d3-shape 的 pie()，
+    那一行是 `a1 = a0 + (v > 0 ? v * k : 0) + pa`
+    （victory-vendor/lib-vendor/d3-shape/src/pie.js），即 y=0 的扇区跨度只剩一个 padAngle。
+    本图 padAngle=3、labelRadius=400，于是相邻两个零值标签的质心只差
+    400 × 3° ≈ 21px，而标签是两行 40px 字、宽 150~250px，几乎完全叠在一起。
+    实测「抖音 138 / 哔哩哔哩 25 / 快手 0 / 小红书 0」时，快手与小红书两个标签的
+    矩形交集 13322px²（占快手标签自身面积的 98%），在 12 点方向糊成一团无法辨认；
+    只有一个平台有数据时更糟，三个零值标签互相交集 1.3~1.5w px²。
+    顺带一提零值扇区还白占着 3° 的 padAngle，让 100% 的环在 12 点方向裂开一道口子。
+
+    改法对齐下方图例的口径——图例本来就 `if (count === 0) return null` 只列非零平台，
+    环上再标一个「0% / 0次」没有信息量。全平台都是 0 时这里得到空数组，
+    victory 的 Data.formatData() 对空数组返回 []（不会退化成内置示例数据），
+    环形图整块留空，和同样为空的图例一致。
+
+    注意 data 与 colorScale 必须由这同一个数组派生：victory-pie 的 getColor() 只认
+    style.data.fill 和 colorScale[index % colorScale.length]，datum 上的 fill 字段它根本不读，
+    两个数组一旦不同序，扇区颜色就会串台。
+    同步上游时请保留这段。
+  */
+  const activePlatforms = (Object.entries(platformStats) as Array<[keyof typeof platformConfig, number]>).filter(([, count]) => count > 0)
+
   // 按群组聚合数据
   const groupMap = new Map<
     string,
@@ -484,8 +510,8 @@ export const GlobalStatistics: React.FC<PosterProps<GlobalStatisticsData>> = (pr
                   standalone={false}
                   width={1200}
                   height={1000}
-                  data={Object.entries(platformStats).map(([platform, count]) => {
-                    const config = platformConfig[platform as keyof typeof platformConfig]
+                  data={activePlatforms.map(([platform, count]) => {
+                    const config = platformConfig[platform]
                     const total = Object.values(platformStats).reduce((sum, c) => sum + c, 0)
                     const percentage = total > 0 ? ((count / total) * 100).toFixed(0) : '0'
                     return {
@@ -498,7 +524,10 @@ export const GlobalStatistics: React.FC<PosterProps<GlobalStatisticsData>> = (pr
                   innerRadius={220}
                   radius={320}
                   padAngle={3}
-                  colorScale={Object.keys(platformStats).map((platform) => platformConfig[platform as keyof typeof platformConfig].color)}
+                  colorScale={
+                    // 必须与上面的 data 同序：victory-pie 只按扇区 index 从 colorScale 取色
+                    activePlatforms.map(([platform]) => platformConfig[platform].color)
+                  }
                   style={{
                     labels: {
                       fontSize: 40,
