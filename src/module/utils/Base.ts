@@ -12,6 +12,7 @@ import Version from './Version.js'
 import Config from './Config.js'
 import { buildSharedUserAgentHeader } from '@/module/platform/common/userAgent'
 import Common from './Common.js'
+import { sanitizeFilename } from './filename.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
 import { getActiveLogEntries } from './ErrorHandler/log-context.js'
 import { buildContextLogEntries, toErrorCardPlatform } from './ErrorHandler/render.js'
@@ -1134,23 +1135,17 @@ export const downloadFile = async (
 
 /**
  * 处理文件名长度，保留文件扩展名
+ *
+ * 清洗规则统一在 utils/filename.ts：这个名字来自远端作品标题，落盘后会被拼进
+ * ffmpeg 的命令串，所以除了文件系统非法字符，shell 元字符（反引号、$、;、& 等）
+ * 也必须剔掉，否则标题里一对反引号在 POSIX sh 下就是命令替换。
+ *
  * @param {string} filename 原始文件名
  * @param {number} [maxLength=50] 最大长度（不包括扩展名）
  * @returns {string} 处理后的文件名
  */
 const processFilename = (filename: string, maxLength = 50): string => {
-  const lastDotIndex = filename.lastIndexOf('.')
-  const hasExtension = lastDotIndex > 0 && lastDotIndex < filename.length - 1
-
-  if (!hasExtension) {
-    return filename.substring(0, maxLength).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
-  }
-
-  const nameWithoutExt = filename.substring(0, lastDotIndex)
-  const extension = filename.substring(lastDotIndex)
-  const processedName = nameWithoutExt.substring(0, maxLength).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
-
-  return processedName + '...' + extension
+  return sanitizeFilename(filename, maxLength, 'video')
 }
 
 function isRecord (value: unknown): value is Record<string, unknown> {

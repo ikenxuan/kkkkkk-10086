@@ -3,17 +3,14 @@ import path from 'node:path'
 import axios, { type AxiosRequestConfig } from 'axios'
 import Common from './Common.js'
 import Config from './Config.js'
+import { sanitizeFilenameSegment } from './filename.js'
 import { baseHeaders } from './Networks.js'
 
 const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)$/i
 
-const sanitizeFilename = (filename: string): string => {
-  return String(filename || 'image')
-    .replace(/[\\/:*?"<>|\r\n]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 50) || 'image'
-}
+// 这里只清洗标题本身，扩展名由 getExtension 单独决定，所以用 segment 版。
+// 清洗规则（含 shell 元字符）统一在 utils/filename.ts，理由见那里的说明。
+const sanitizeFilename = (filename: string): string => sanitizeFilenameSegment(filename, 50, 'image')
 
 const getExtension = (imageUrl: string): string => {
   try {

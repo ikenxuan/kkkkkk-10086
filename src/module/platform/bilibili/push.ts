@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version, processImageUrl } from '@/module/utils/index'
+import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { createRequire } from 'node:module'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getBilibiliDash, getBilibiliPayload, getvideosize, replacetext } from './bilibili.js'
 import { buildBilibiliLiveSessionId, parseBilibiliLiveStartedAt } from './live-status.js'
@@ -969,7 +969,7 @@ export class Bilibilipush extends Base {
                                 // 使用文件上传
                                 return await uploadFile(
                                   this.e ?? {},
-                                  { filepath: filePath, totalBytes: fileSizeInMB, originTitle: `${infoData.data.data.desc.substring(0, 50).replace(/[\\/:\\*\\?"<>\\|\r\n\s]/g, ' ')}` },
+                                  { filepath: filePath, totalBytes: fileSizeInMB, originTitle: sanitizeFilenameSegment(infoData.data.data.desc, 50, 'B站视频') },
                                   '',
                                   { useGroupFile: true, active: true, activeOption: { group_id: groupId, uin: botId } }
                                 )

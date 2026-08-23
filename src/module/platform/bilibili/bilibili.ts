@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, needsGroupFileChannel, processImageUrl } from '@/module/utils/index'
+import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, needsGroupFileChannel, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { getBilibiliData } from './api.js'
@@ -652,7 +652,7 @@ export class Bilibili extends Base {
           const { name } = owner
           const { coin, like, share, view, favorite, danmaku } = stat
 
-          this.downloadfilename = title.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ')
+          this.downloadfilename = sanitizeFilenameSegment(title, 50, 'B站视频')
 
           const playUrlPayload = getBilibiliPayload(playUrlData)
           const playUrlStream = getBilibiliVideoStream(playUrlData)
@@ -885,7 +885,11 @@ export class Bilibili extends Base {
             if (/^[一二三四五六七八九十百千万]+$/.test(Episode)) {
               Episode = Common.chineseToArabic(Episode).toString()
             }
-            this.downloadfilename = videoInfo.data.result.episodes[Number(Episode) - 1]?.share_copy?.substring(0, 50).replace(/[\\/:*?"<>|\r\n\s]/g, ' ') || ''
+            this.downloadfilename = sanitizeFilenameSegment(
+              videoInfo.data.result.episodes[Number(Episode) - 1]?.share_copy,
+              50,
+              ''
+            )
             this.e.reply(`收到请求，第${Episode}集\n${this.downloadfilename}\n正在下载中`)
           } else {
             logger.debug(Episode)

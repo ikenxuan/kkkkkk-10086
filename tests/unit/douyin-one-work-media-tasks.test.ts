@@ -39,7 +39,11 @@ const mocks = vi.hoisted(() => ({
   }
 }))
 
-vi.mock('../../src/module/utils/index.js', () => {
+// 工厂是 async 的、并且引真实的 filename.js：它零依赖纯函数，塞个假的反而会和
+// 真实清洗行为漂移（那套清洗是安全边界，见 utils/filename.ts 的说明）。
+vi.mock('../../src/module/utils/index.js', async () => {
+  const { sanitizeFilename, sanitizeFilenameSegment } = await import('../../src/module/utils/filename.js')
+
   class Base {
     e: Record<string, unknown>
     headers: Record<string, string> = {}
@@ -57,6 +61,8 @@ vi.mock('../../src/module/utils/index.js', () => {
   }
 
   return {
+    sanitizeFilename,
+    sanitizeFilenameSegment,
     Base,
     Common: {
       count: (value: unknown) => String(value ?? 0),

@@ -1,4 +1,4 @@
-import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl } from '@/module/utils/index'
+import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
 import common from '@/runtime/host/common'
 import {
@@ -357,7 +357,7 @@ export class DouYin extends Base {
                 // 使用可选链和空值合并操作符确保安全访问
                 const images = VideoData.data.aweme_detail.images || []
                 const hasLiveImage = images.some(item => (item.clip_type ?? 2) !== 2)
-                const title = VideoData.data.aweme_detail.preview_title.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ')
+                const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 50, '抖音图集')
                 g_title = title
 
                 if (hasLiveImage) {
@@ -486,7 +486,7 @@ export class DouYin extends Base {
                 if (!images1.length) {
                   logger.debug('未获取到合辑的图片数据')
                 }
-                g_title = VideoData.data.aweme_detail.preview_title?.substring(0, 50).replace(/[\\/:*?"<>|\r\n]/g, ' ') || '抖音图集'
+                g_title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 50, '抖音图集')
                 for (const [index, item] of images1.entries()) {
                   imagenum++
                   // 静态图片，clip_type为2或undefined
@@ -603,7 +603,7 @@ export class DouYin extends Base {
             }
             cover = getFirstUrl(video.animated_cover) || getFirstUrl(video.dynamic_cover) || getFirstUrl(video.cover_original_scale) || getFirstUrl(video.cover) || getFirstUrl(video.origin_cover)
 
-            const title = VideoData.data.aweme_detail.preview_title.substring(0, 80).replace(/[\\/:*?"<>|\r\n]/g, ' ') // video title
+            const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 80, '抖音视频') // video title
             g_title = title
             mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
             logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
