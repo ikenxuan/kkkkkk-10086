@@ -29,6 +29,7 @@
     "typecheck:template": "node node_modules/typescript/bin/tsc -p tsconfig.template.json --noEmit",
     "clean:template": "node --experimental-strip-types src/module/tooling/react-template/build-cleaner-cli.ts",
     "template:build": "node --experimental-strip-types src/module/tooling/template-build.ts",
+    "template:dev": "node node_modules/@karinjs/template-react/bin/ktr.mjs dev --open",
     "build:template": "pnpm template:build",
     "audit:runtime-deps": "node --experimental-strip-types src/module/tooling/audit-runtime-deps.ts",
     "build:metadata": "node lib/module/tooling/build-metadata.js",
