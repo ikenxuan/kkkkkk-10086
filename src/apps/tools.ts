@@ -3,7 +3,7 @@ import { Bilibili, getBilibiliID } from '@/module/platform/bilibili/index'
 import { DouYin, getDouyinID } from '@/module/platform/douyin/index'
 import { Xiaohongshu, getXiaohongshuID } from '@/module/platform/xiaohongshu/index'
 import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, baseHeaders } from '@/module/utils/index'
-import { getStatisticsDB } from '@/module/db/index'
+import { getStatisticsDB, PRIVATE_GROUP_ID } from '@/module/db/index'
 import { getDouyinData } from '@/module/platform/douyin/api'
 import type { BilibiliIdData } from '@/module/platform/bilibili/getid'
 import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/strategy'
@@ -102,7 +102,8 @@ const findPlatformConfig = (msg: string): PlatformConfig | undefined =>
   PLATFORM_CONFIG.find(config => config.enabled && config.reg.test(msg))
 const getEventUserId = (e: MessageEvent): string =>
   String(e.user_id || e.userId || e.sender?.user_id || e.sender?.userId || 'unknown')
-const getEventGroupId = (e: MessageEvent): string => String(e.group_id || e.groupId || 'private')
+/** 事件所在群的群号；私聊没有群号，退回统一的私聊占位值 */
+const getEventGroupId = (e: MessageEvent): string => String(e.group_id || e.groupId || PRIVATE_GROUP_ID)
 const getSelectionKey = (e: MessageEvent): string => `${getEventGroupId(e)}:${getEventUserId(e)}`
 
 const trimUrlPunctuation = (value: string): string => value.replace(/[\])}>,，。！？、]+$/u, '')
@@ -156,8 +157,12 @@ const isDouyinMusicData = (value: unknown): value is DouyinMusicData => {
 }
 
 const recordParseStatistics = async (e: MessageEvent, platform: Platform): Promise<void> => {
-  const groupId = String(e.group_id || e.groupId || 'private')
-  const userId = String(e.user_id || e.userId || e.sender?.user_id || e.sender?.userId || 'unknown')
+  // 私聊记录照常写库：总解析次数、平台分布、用户数算它是有意义的，
+  // 只有「按群聚合」的读取端要把 PRIVATE_GROUP_ID 排除掉（见 apps/statistics.ts）。
+  // 这里原来把 getEventGroupId / getEventUserId 的表达式各抄了一遍，
+  // 改成直接复用，免得占位值在两处漂移。
+  const groupId = getEventGroupId(e)
+  const userId = getEventUserId(e)
   try {
     const statisticsDB = await getStatisticsDB()
     await statisticsDB?.recordParse(groupId, userId, platform)

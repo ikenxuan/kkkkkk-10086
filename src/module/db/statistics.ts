@@ -16,6 +16,18 @@ import type {
 
 const PLATFORMS: StatisticsPlatform[] = ['douyin', 'bilibili', 'kuaishou', 'xiaohongshu']
 
+/**
+ * ParseStatistics 表里给私聊解析占位的 groupId。
+ *
+ * 表上有 `UNIQUE(groupId, userId, platform)`，groupId 又是 `NOT NULL`，
+ * 而私聊根本没有群号，于是统一写成这个字面量。
+ *
+ * 它不是群号：凡是按「群」聚合的读取端（全局统计的群组排行、群数统计）
+ * 都必须先把它排除掉，否则会凭空多出一个群号写着 `private` 的假群。
+ * 写库端和读取端共用这一个常量，避免两边字面量各写一份后悄悄漂移。
+ */
+export const PRIVATE_GROUP_ID = 'private'
+
 const isStatisticsPlatform = (value: string): value is StatisticsPlatform =>
   (PLATFORMS as string[]).includes(value)
 
@@ -228,8 +240,18 @@ export class StatisticsDBBase {
     return result?.total || 0
   }
 
+  /**
+   * 真实群数。
+   *
+   * 必须排除 `PRIVATE_GROUP_ID`：私聊解析在表里也占一行，
+   * 直接 `COUNT(DISTINCT groupId)` 会把「私聊」当成一个群多算一个，
+   * 让统计卡片上的「服务群组」比实际群数多 1。
+   */
   async getTotalGroups (): Promise<number> {
-    const result = await this.getQuery<CountResult>('SELECT COUNT(DISTINCT groupId) as count FROM ParseStatistics')
+    const result = await this.getQuery<CountResult>(
+      'SELECT COUNT(DISTINCT groupId) as count FROM ParseStatistics WHERE groupId != ?',
+      [PRIVATE_GROUP_ID]
+    )
     return result?.count || 0
   }
 
