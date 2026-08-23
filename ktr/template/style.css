@@ -77,22 +77,34 @@
 }
 
 /*
- * 圆角外那圈的衬底色。宿主 TRSS-Yunzai 截的是 #container
- * （renderers/puppeteer/lib/puppeteer.js:199），卡片是 rounded-[5rem]，
- * 所以成图四角一定会露出这一层，只能选它是什么颜色，没法让它不存在。
+ * 【本仓库相对上游 ktr/ 镜像的本地增量】圆角外那圈保持透明。
  *
- * 三种选法都试过，前两种都不行：
- * - `var(--background)`（5766273 的做法）：和卡片同色，四角看不出圆角，等于没有形状
- * - `transparent`（31e6462 的做法）：四角是透明像素，聊天软件在深色底上合成就是黑角，
- *   浅色底上又变白角 —— 白边刚没，黑边就来了
- * - `var(--surface)`：浅色下就是纯白（100%），和上游成图四周那圈白边一致；
- *   深色下是 21.03%，比卡片的 12% 亮一档，圆角照样看得出来。
- *   关键是它不透明 —— 在任何查看器背景下都长一个样，不会忽黑忽白
+ * 宿主 TRSS-Yunzai 截的是 #container（renderers/puppeteer/lib/puppeteer.js:199），
+ * 卡片是 rounded-[5rem]，所以成图四角一定会露出这一层 ——
+ * 只能选它是什么颜色（或者透明），没法让它不存在。
  *
- * 兜底到 --background 是防 heroui 哪天改 token 名：宁可退回"没有形状"，
- * 也不要退回透明后那种忽黑忽白。
+ * 这里来回改过三轮，按时间顺序记下每轮为什么被推翻，别再重走一遍：
+ *
+ * 1. `var(--background)`（5766273）：和卡片同色，四角看不出圆角，等于没有形状。
+ * 2. `transparent`（31e6462）：四角 alpha=0。被推翻的理由是「白边没了黑边来了」——
+ *    透明像素被聊天软件在深色底上合成成黑角、浅色底上合成成白角，看起来忽黑忽白。
+ * 3. `var(--surface)` 不透明衬底（3873b15 / d667849）：好让它在任何查看器背景下
+ *    都长一个样。代价是它永远压在深色背景上亮一块。
+ * 4. 回到 `transparent`（现在）：用户明确反馈「纯黑背景下打开还是有点白，做成 PNG 透明」。
+ *    纯黑看图时那块亮斑比第 2 轮想避免的忽黑忽白更刺眼，所以按用户的选择走透明。
+ *
+ * 这是取舍，不是 bug：
+ * - 透明   = 四角随查看器背景走（纯黑下干净，混色背景下可能看出圆角边缘）
+ * - 不透明 = 四角恒定一个颜色（纯黑下必然亮一块）
+ *
+ * 要改回不透明之前，先确认那是用户新的要求，而不是又把第 2 轮的结论重放一遍。
+ * 透明能成立的前提是整条链路上 alpha 不被拍平（已逐环实测）：
+ * Render.ts 传 imgType:'png' + omitBackground:true + multiPage:false（宿主只要看到
+ * multiPage 为真就把编码强制改成 jpeg，alpha 直接没了）→ imageSlicer.ts 分片走
+ * .extract().png() → Watermark.ts 走 embedWatermarkToPngBytes。三环缺一环就退回白角。
+ *
  * 放在 @layer base 外面且用 ID 选择器，避免被任何无层规则盖掉。
  */
 #container {
-  background-color: var(--surface, var(--background));
+  background-color: transparent;
 }
