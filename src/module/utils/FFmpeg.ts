@@ -711,36 +711,41 @@ function exec (
 }
 
 /**
- * @description 将错误对象转换为可序列化的格式
- * 这个函数主要用于错误信息的日志记录和调试，将 Error 对象转换为普通对象以便于 JSON 序列化
- * @param {Error|undefined} [error] - 要处理的错误对象，可以是 undefined
- * @returns {{name: string|undefined, message: string|undefined, stack: string|undefined}} 格式化后的错误信息对象
- * @property {string} [name] - 错误名称（如 'Error', 'TypeError' 等）
- * @property {string} [message] - 错误描述信息
- * @property {string} [stack] - 错误堆栈跟踪信息
+ * 诊断日志用的错误序列化结果。
  *
- * @example
- * // 处理普通错误
- * try {
- *   someRiskyOperation();
- * } catch (err) {
- *   const errorInfo = stringifyError(err);
- *   console.log(JSON.stringify(errorInfo));
- * }
- *
- * @example
- * // 处理空值情况
- * const errorInfo = stringifyError(undefined);
- * // 返回: { name: undefined, message: undefined, stack: undefined }
+ * 三个具名字段固定存在（可能是 undefined），其余是 Node 挂在错误上的
+ * 诊断字段，有就带上。
  */
-const stringifyError = (error?: Error): {
+interface SerializedExecError extends Record<string, unknown> {
   name: string | undefined
   message: string | undefined
   stack: string | undefined
-} => {
+}
+
+/**
+ * 把 `execFile` 的错误转成能被 `JSON.stringify` 打出来的普通对象。
+ *
+ * 为什么必须手动摘字段：`name` / `message` / `stack` 在 `Error` 上是**不可枚举**的，
+ * 所以 `JSON.stringify(new Error('boom'))` 的结果是 `{}` —— 直接把错误塞进日志
+ * 等于什么都没打。
+ *
+ * 为什么要 `...error`：原来这里只保留 name/message/stack，而 `ExecFileException`
+ * 上真正能定位问题的是那些**可枚举**的自有字段，全被丢掉了。实测两种失败形状：
+ * - ffmpeg 没装：`code: 'ENOENT'`、`syscall: 'spawn'`、`path`、`spawnargs`
+ * - ffmpeg 退出码非 0：`code: 3`、`killed`、`signal`、`cmd`
+ *
+ * `code` 是这里面最关键的一个 —— 它区分「程序没找到」和「程序跑了但报错」，
+ * 而原来的实现让这两种情况在日志里长得几乎一样。用展开而不是逐个列举，
+ * 是因为将来 Node 往错误上加字段时这里不用跟着改。
+ *
+ * 传 undefined 时三个字段都返回 undefined，这是有意的：`JSON.stringify` 会丢掉
+ * 值为 undefined 的属性，所以命令成功那条路径打出来是 `error: {}`，一眼可辨。
+ *
+ * @param error `execFile` 回调给的错误，命令成功时传 undefined
+ * @returns 可直接交给 `JSON.stringify` 的普通对象
+ */
+const stringifyError = (error?: ExecFileException): SerializedExecError => {
   if (!error) return { name: undefined, message: undefined, stack: undefined }
-  // 解构错误对象的主要属性
   const { name, message, stack } = error
-  // 返回格式化后的错误信息
-  return { name, message, stack }
+  return { ...error, name, message, stack }
 }

@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../src/module/utils/Common.js', () => ({
   default: { removeFile: vi.fn() }
@@ -120,5 +120,80 @@ describe('ffmpeg / ffprobe 走 execFile，参数不经过 shell', () => {
   it('booleanResult 只回执行成败', async () => {
     expect(await ffmpeg([printerPath], { booleanResult: true })).toBe(true)
     expect(await ffmpeg([join(workDirectory, 'does-not-exist.cjs')], { booleanResult: true })).toBe(false)
+  })
+})
+
+/**
+ * `stringifyError` 是模块私有的，只能通过 `log: true` 那条路径观察它的产物。
+ *
+ * 这组用例钉住的是「诊断字段不许再被丢掉」：Error 的 name/message/stack 不可枚举，
+ * 所以必须手动摘；而 ExecFileException 上真正能定位问题的 code/syscall/killed
+ * 是可枚举的自有字段，原来的实现只保留三个具名字段，把它们全扔了。
+ */
+describe('exec 的错误序列化（诊断日志）', () => {
+  const loggedError = (): Record<string, unknown> => {
+    const infoMock = vi.mocked(logger.info)
+    // 第二次调用是「执行结果」那条；第一次是「执行命令」
+    const resultLine = infoMock.mock.calls.at(-1)?.[0]
+    const json = String(resultLine).match(/error: (\{[\s\S]*\})$/)?.[1]
+    return JSON.parse(json ?? '{}') as Record<string, unknown>
+  }
+
+  beforeEach(() => {
+    vi.mocked(logger.info).mockClear()
+  })
+
+  it('命令成功时打成空对象，一眼可辨「没有错误」', async () => {
+    // 三个字段都是 undefined，而 JSON.stringify 会丢掉值为 undefined 的属性。
+    // 这个 `{}` 是有意的：换成 normalizeError 那种必填 string 会打出
+    // {"name":"Error","message":"undefined","stack":""}，反而像真出了错
+    await ffmpeg([printerPath, '-i', 'x.mp4'], { log: true })
+
+    expect(loggedError()).toEqual({})
+  })
+
+  it('可执行文件不存在时带上 code/syscall，不只是一句 message', async () => {
+    // 把「ffmpeg」临时指向一个不存在的可执行文件，模拟没装 ffmpeg 的机器。
+    // 不用 `ffmpeg([])`：那会以无参数启动 node，进 REPL 等 stdin，用例会挂住
+    const restore = process.env.FFMPEG_PATH
+    process.env.FFMPEG_PATH = join(workDirectory, 'definitely-not-ffmpeg')
+    try {
+      await ffmpeg(['-version'], { log: true })
+    } finally {
+      process.env.FFMPEG_PATH = restore
+    }
+    const info = loggedError()
+
+    // 这几个字段是判断「ffmpeg 没装」的依据，原来的实现会把它们全丢掉
+    expect(info.code).toBe('ENOENT')
+    expect(info.syscall).toBeTruthy()
+    // 三个具名字段照旧在（Error 上它们不可枚举，靠手动摘）
+    expect(info.name).toBe('Error')
+    expect(typeof info.message).toBe('string')
+    expect(typeof info.stack).toBe('string')
+  })
+
+  it('退出码非 0 时带上数字 code，与 ENOENT 那种区分得开', async () => {
+    const failing = join(workDirectory, 'exit3.cjs')
+    writeFileSync(failing, 'process.exit(3)')
+    await ffmpeg([failing], { log: true })
+    const info = loggedError()
+
+    // code 是这里最关键的一个：'ENOENT'（程序没找到）vs 3（程序跑了但报错），
+    // 原来两种情况在日志里长得几乎一样
+    expect(info.code).toBe(3)
+    expect(info.killed).toBe(false)
+  })
+
+  it('message 的染色是原地改的，不能把其它字段一起冲掉', async () => {
+    // 调用点会 info.message = `\x1b[91m${info.message}\x1b[0m`，
+    // 如果哪天把返回值换成不可写的形状，这条会先炸
+    const failing = join(workDirectory, 'exit4.cjs')
+    writeFileSync(failing, 'process.exit(4)')
+    await ffmpeg([failing], { log: true })
+    const info = loggedError()
+
+    expect(String(info.message)).toContain('[91m')
+    expect(info.code).toBe(4)
   })
 })
