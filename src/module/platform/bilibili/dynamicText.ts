@@ -10,6 +10,7 @@ import {
   createVoteNode,
   createWebLinkNode,
   type RichTextDocument,
+  type RichTextInlineStyle,
   type RichTextNode
 } from '@kkk/richtext'
 
@@ -486,118 +487,21 @@ export const getHotBilibiliDanmaku = (
     .map(([content, count]) => ({ content, count }))
 }
 
-/** B 站专栏解析使用的宿主无关富文本文档。 */
-export interface BilibiliArticleRichTextInlineStyle {
-  bold?: boolean
-  italic?: boolean
-  strike?: boolean
-  color?: string
-  link?: string
-  fontSize?: string
-}
-
-export interface BilibiliArticleRichTextTextNode {
-  type: 'text'
-  text: string
-  style?: BilibiliArticleRichTextInlineStyle
-}
-
-export interface BilibiliArticleRichTextLineBreakNode { type: 'lineBreak' }
-export interface BilibiliArticleRichTextEmojiNode {
-  type: 'emoji'
-  name: string
-  src: string
-  scale?: number
-}
-export interface BilibiliArticleRichTextMentionNode { type: 'mention', text: string, userId?: string }
-export interface BilibiliArticleRichTextSearchKeywordNode { type: 'searchKeyword', text: string, queryId?: string }
-export interface BilibiliArticleRichTextTopicNode { type: 'topic', text: string }
-export interface BilibiliArticleRichTextAtNode { type: 'at', text: string, userId?: string }
-export interface BilibiliArticleRichTextLotteryNode { type: 'lottery', text: string }
-export interface BilibiliArticleRichTextWebLinkNode { type: 'webLink', text: string, jumpUrl: string }
-export interface BilibiliArticleRichTextVoteNode { type: 'vote', text: string }
-export interface BilibiliArticleRichTextViewPictureNode { type: 'viewPicture', text: string }
-export interface BilibiliArticleRichTextHashtagNode { type: 'hashtag', text: string }
-
-export interface BilibiliArticleRichTextHeadingNode {
-  type: 'heading'
-  level: 1 | 2 | 3 | 4 | 5 | 6
-  nodes: BilibiliArticleRichTextNode[]
-}
-export interface BilibiliArticleRichTextParagraphNode {
-  type: 'paragraph'
-  nodes: BilibiliArticleRichTextNode[]
-}
-export interface BilibiliArticleRichTextImageNode {
-  type: 'image'
-  src: string
-  alt?: string
-  caption?: string
-}
-export interface BilibiliArticleRichTextHorizontalRuleNode { type: 'horizontalRule' }
-export interface BilibiliArticleRichTextBlockquoteNode {
-  type: 'blockquote'
-  nodes: BilibiliArticleRichTextNode[]
-}
-export interface BilibiliArticleRichTextListItemNode {
-  type: 'listItem'
-  nodes: BilibiliArticleRichTextNode[]
-}
-export interface BilibiliArticleRichTextListNode {
-  type: 'list'
-  ordered: boolean
-  items: BilibiliArticleRichTextListItemNode[]
-}
-export interface BilibiliArticleRichTextCodeBlockNode {
-  type: 'codeBlock'
-  language?: string
-  content: string
-}
-export interface BilibiliArticleRichTextLinkCardNode {
-  type: 'linkCard'
-  title: string
-  url: string
-  cardType?: string
-  meta?: Record<string, unknown>
-}
-
-export type BilibiliArticleRichTextInlineNode =
-  | BilibiliArticleRichTextTextNode
-  | BilibiliArticleRichTextEmojiNode
-  | BilibiliArticleRichTextMentionNode
-  | BilibiliArticleRichTextSearchKeywordNode
-  | BilibiliArticleRichTextLineBreakNode
-  | BilibiliArticleRichTextTopicNode
-  | BilibiliArticleRichTextAtNode
-  | BilibiliArticleRichTextLotteryNode
-  | BilibiliArticleRichTextWebLinkNode
-  | BilibiliArticleRichTextVoteNode
-  | BilibiliArticleRichTextViewPictureNode
-  | BilibiliArticleRichTextHashtagNode
-
-export type BilibiliArticleRichTextBlockNode =
-  | BilibiliArticleRichTextHeadingNode
-  | BilibiliArticleRichTextParagraphNode
-  | BilibiliArticleRichTextImageNode
-  | BilibiliArticleRichTextBlockquoteNode
-  | BilibiliArticleRichTextListNode
-  | BilibiliArticleRichTextListItemNode
-  | BilibiliArticleRichTextCodeBlockNode
-  | BilibiliArticleRichTextLinkCardNode
-  | BilibiliArticleRichTextHorizontalRuleNode
-
-export type BilibiliArticleRichTextNode =
-  | BilibiliArticleRichTextInlineNode
-  | BilibiliArticleRichTextBlockNode
-
-export interface BilibiliArticleRichTextDocument {
-  version: 1
-  platform?: string
-  nodes: BilibiliArticleRichTextNode[]
-}
+/**
+ * 专栏解析用的富文本类型直接取自 `@kkk/richtext` 核心。
+ *
+ * 这里原来另有一族 `BilibiliArticleRichText*`（26 个声明、113 行），字段和核心
+ * 那族逐个相同，是 0471487 那次整体移植留下的重复，不是刻意的平台特化 ——
+ * 本文件当时已经在从核心导入 `RichTextDocument` / `RichTextNode` 给动态正文用，
+ * 专栏那半边却自带一套。两族互相可赋值（删之前用编译期断言逐条验过，
+ * 26 条全通，并投毒确认断言本身不空过），所以换成核心类型不改变任何调用点。
+ *
+ * 留着的代价不是行数，是它会漂：核心加一种节点，专栏这半边不会跟着加，
+ * 而两族之间没有任何编译期约束能让人发现。
+ */
 
 /** B 站 opus 文字样式；只声明解析层会读取的字段。 */
-export interface BilibiliArticleOpusWordStyle extends BilibiliArticleRichTextInlineStyle {
+export interface BilibiliArticleOpusWordStyle extends RichTextInlineStyle {
   list?: string | number | boolean
   header?: number | boolean
 }
@@ -694,8 +598,8 @@ const ARTICLE_BLOCK_HTML_TAGS = new Set([
 ])
 
 const createBilibiliArticleDocument = (
-  nodes: BilibiliArticleRichTextNode[] = []
-): BilibiliArticleRichTextDocument => ({
+  nodes: RichTextNode[] = []
+): RichTextDocument => ({
   version: 1,
   platform: 'bilibili',
   nodes
@@ -703,8 +607,8 @@ const createBilibiliArticleDocument = (
 
 const articleTextNode = (
   text: string,
-  style?: BilibiliArticleRichTextInlineStyle
-): BilibiliArticleRichTextNode => Object.keys(style || {}).length > 0
+  style?: RichTextInlineStyle
+): RichTextNode => Object.keys(style || {}).length > 0
   ? { type: 'text', text, style }
   : { type: 'text', text }
 
@@ -814,15 +718,15 @@ const articleHtmlTextContent = (node: ArticleHtmlTreeNode, preserveWhitespace = 
 }
 
 const articleStyleEquals = (
-  left: BilibiliArticleRichTextInlineStyle | undefined,
-  right: BilibiliArticleRichTextInlineStyle | undefined
+  left: RichTextInlineStyle | undefined,
+  right: RichTextInlineStyle | undefined
 ): boolean => JSON.stringify(left || {}) === JSON.stringify(right || {})
 
 const mergeArticleInlineStyle = (
-  inherited: BilibiliArticleRichTextInlineStyle | undefined,
+  inherited: RichTextInlineStyle | undefined,
   element: ArticleHtmlElementNode
-): BilibiliArticleRichTextInlineStyle | undefined => {
-  const style: BilibiliArticleRichTextInlineStyle = { ...(inherited || {}) }
+): RichTextInlineStyle | undefined => {
+  const style: RichTextInlineStyle = { ...(inherited || {}) }
   const tag = element.tag
   if (tag === 'b' || tag === 'strong') style.bold = true
   if (tag === 'i' || tag === 'em') style.italic = true
@@ -852,7 +756,7 @@ const mergeArticleInlineStyle = (
   return Object.keys(style).length > 0 ? style : undefined
 }
 
-const isArticleInlineRichTextNode = (node: BilibiliArticleRichTextNode): boolean => {
+const isArticleInlineRichTextNode = (node: RichTextNode): boolean => {
   switch (node.type) {
     case 'text':
     case 'emoji':
@@ -873,8 +777,8 @@ const isArticleInlineRichTextNode = (node: BilibiliArticleRichTextNode): boolean
 }
 
 const pushArticleInlineNode = (
-  target: BilibiliArticleRichTextNode[],
-  node: BilibiliArticleRichTextNode
+  target: RichTextNode[],
+  node: RichTextNode
 ): void => {
   if (node.type === 'text' && !node.text) return
   const previous = target[target.length - 1]
@@ -889,8 +793,8 @@ const pushArticleInlineNode = (
 }
 
 const trimArticleInlineNodes = (
-  source: BilibiliArticleRichTextNode[]
-): BilibiliArticleRichTextNode[] => {
+  source: RichTextNode[]
+): RichTextNode[] => {
   const nodes = source.map(node => node.type === 'text'
     ? { ...node, style: node.style ? { ...node.style } : undefined }
     : node)
@@ -953,8 +857,8 @@ const getArticleCodeLanguage = (element: ArticleHtmlElementNode): string | undef
 
 const collectArticleInlineNodes = (
   node: ArticleHtmlTreeNode,
-  inheritedStyle: BilibiliArticleRichTextInlineStyle | undefined,
-  target: BilibiliArticleRichTextNode[]
+  inheritedStyle: RichTextInlineStyle | undefined,
+  target: RichTextNode[]
 ): void => {
   if (node.kind === 'text') {
     const text = normalizeArticleHtmlInlineText(node.value)
@@ -978,8 +882,8 @@ const collectArticleInlineNodes = (
 
 const collectArticleMixedNodes = (
   node: ArticleHtmlTreeNode,
-  inheritedStyle: BilibiliArticleRichTextInlineStyle | undefined,
-  target: BilibiliArticleRichTextNode[]
+  inheritedStyle: RichTextInlineStyle | undefined,
+  target: RichTextNode[]
 ): void => {
   if (node.kind === 'text') {
     const text = normalizeArticleHtmlInlineText(node.value)
@@ -1024,10 +928,10 @@ const collectArticleMixedNodes = (
 }
 
 const articleMixedNodesToBlocks = (
-  mixedNodes: BilibiliArticleRichTextNode[]
-): BilibiliArticleRichTextNode[] => {
-  const result: BilibiliArticleRichTextNode[] = []
-  let inlineBuffer: BilibiliArticleRichTextNode[] = []
+  mixedNodes: RichTextNode[]
+): RichTextNode[] => {
+  const result: RichTextNode[] = []
+  let inlineBuffer: RichTextNode[] = []
 
   const flushInline = () => {
     const nodes = trimArticleInlineNodes(inlineBuffer)
@@ -1054,9 +958,9 @@ const isArticleHtmlBlockElement = (element: ArticleHtmlElementNode): boolean =>
 
 const convertArticleHtmlFlow = (
   children: ArticleHtmlTreeNode[]
-): BilibiliArticleRichTextNode[] => {
-  const result: BilibiliArticleRichTextNode[] = []
-  let inlineBuffer: BilibiliArticleRichTextNode[] = []
+): RichTextNode[] => {
+  const result: RichTextNode[] = []
+  let inlineBuffer: RichTextNode[] = []
 
   const flushInline = () => {
     const nodes = trimArticleInlineNodes(inlineBuffer)
@@ -1064,7 +968,7 @@ const convertArticleHtmlFlow = (
     if (nodes.length > 0) result.push({ type: 'paragraph', nodes })
   }
 
-  const appendMixed = (mixed: BilibiliArticleRichTextNode[]) => {
+  const appendMixed = (mixed: RichTextNode[]) => {
     for (const node of mixed) {
       if (isArticleInlineRichTextNode(node)) {
         pushArticleInlineNode(inlineBuffer, node)
@@ -1081,7 +985,7 @@ const convertArticleHtmlFlow = (
       result.push(...convertArticleHtmlElement(child))
       continue
     }
-    const mixed: BilibiliArticleRichTextNode[] = []
+    const mixed: RichTextNode[] = []
     collectArticleMixedNodes(child, undefined, mixed)
     appendMixed(mixed)
   }
@@ -1091,21 +995,21 @@ const convertArticleHtmlFlow = (
 
 const convertArticleHtmlList = (
   element: ArticleHtmlElementNode
-): BilibiliArticleRichTextNode[] => {
+): RichTextNode[] => {
   const listElements = element.children.filter((child): child is ArticleHtmlElementNode =>
     child.kind === 'element' && child.tag === 'li')
-  const items: Array<Extract<BilibiliArticleRichTextNode, { type: 'listItem' }>> = []
+  const items: Array<Extract<RichTextNode, { type: 'listItem' }>> = []
 
   for (const listElement of listElements) {
     const blocks = convertArticleHtmlFlow(listElement.children)
-    let itemNodes: BilibiliArticleRichTextNode[] = blocks
+    let itemNodes: RichTextNode[] = blocks
     const firstBlock = blocks[0]
     if (blocks.length === 1 && firstBlock?.type === 'paragraph') itemNodes = firstBlock.nodes
     if (itemNodes.length > 0) items.push({ type: 'listItem', nodes: itemNodes })
   }
 
   if (items.length === 0) {
-    const inline: BilibiliArticleRichTextNode[] = []
+    const inline: RichTextNode[] = []
     for (const child of element.children) collectArticleInlineNodes(child, undefined, inline)
     const nodes = trimArticleInlineNodes(inline)
     if (nodes.length > 0) items.push({ type: 'listItem', nodes })
@@ -1116,7 +1020,7 @@ const convertArticleHtmlList = (
 
 const convertArticleHtmlFigure = (
   element: ArticleHtmlElementNode
-): BilibiliArticleRichTextNode[] => {
+): RichTextNode[] => {
   const captionElement = findArticleHtmlElements(element, child => child.tag === 'figcaption')[0]
   const caption = captionElement
     ? articleHtmlTextContent(captionElement).replace(/[\t\r\n\f ]+/g, ' ').trim()
@@ -1127,7 +1031,7 @@ const convertArticleHtmlFigure = (
     return convertArticleHtmlFlow(element.children)
   }
 
-  const result: BilibiliArticleRichTextNode[] = []
+  const result: RichTextNode[] = []
   for (const imageElement of images) {
     const image = getArticleHtmlImageData(imageElement, caption)
     if (!image.src) {
@@ -1149,12 +1053,12 @@ const convertArticleHtmlFigure = (
 
 const convertArticleHtmlElement = (
   element: ArticleHtmlElementNode
-): BilibiliArticleRichTextNode[] => {
+): RichTextNode[] => {
   const tag = element.tag
   if (ARTICLE_IGNORED_HTML_TAGS.has(tag)) return []
 
   if (/^h[1-6]$/.test(tag)) {
-    const inline: BilibiliArticleRichTextNode[] = []
+    const inline: RichTextNode[] = []
     for (const child of element.children) collectArticleInlineNodes(child, undefined, inline)
     const nodes = trimArticleInlineNodes(inline)
     if (nodes.length === 0) return []
@@ -1163,7 +1067,7 @@ const convertArticleHtmlElement = (
   }
 
   if (tag === 'p' || tag === 'figcaption') {
-    const mixed: BilibiliArticleRichTextNode[] = []
+    const mixed: RichTextNode[] = []
     for (const child of element.children) collectArticleMixedNodes(child, undefined, mixed)
     return articleMixedNodesToBlocks(mixed)
   }
@@ -1225,7 +1129,7 @@ const convertArticleHtmlElement = (
  */
 export const parseHtmlContentToRichText = (
   content: string | undefined = ''
-): BilibiliArticleRichTextDocument => {
+): RichTextDocument => {
   if (!String(content || '').trim()) return createBilibiliArticleDocument()
   const tree = parseArticleHtmlTree(String(content))
   return createBilibiliArticleDocument(convertArticleHtmlFlow(tree.children))
@@ -1234,9 +1138,9 @@ export const parseHtmlContentToRichText = (
 const opusTextStyle = (
   word: BilibiliArticleOpusWord,
   useDarkTheme: boolean
-): BilibiliArticleRichTextInlineStyle | undefined => {
+): RichTextInlineStyle | undefined => {
   const source = word.style || {}
-  const style: BilibiliArticleRichTextInlineStyle = {}
+  const style: RichTextInlineStyle = {}
   if (source.bold) style.bold = true
   if (source.italic) style.italic = true
   if (source.strike) style.strike = true
@@ -1251,11 +1155,11 @@ const opusTextStyle = (
 const opusWordLinesToNodes = (
   word: BilibiliArticleOpusWord,
   useDarkTheme: boolean
-): BilibiliArticleRichTextNode[] => {
+): RichTextNode[] => {
   const words = String(word.words || '')
   if (!words) return []
   const style = opusTextStyle(word, useDarkTheme)
-  const result: BilibiliArticleRichTextNode[] = []
+  const result: RichTextNode[] = []
   for (const part of words.split(/(\r?\n)/)) {
     if (part === '\n' || part === '\r\n') result.push({ type: 'lineBreak' })
     else if (part) pushArticleInlineNode(result, articleTextNode(part, style))
@@ -1299,14 +1203,14 @@ const opusParagraphFallbackText = (paragraph: BilibiliArticleOpusParagraph): str
 export const parseOpusToRichText = (
   opus: BilibiliArticleOpus | null | undefined,
   useDarkTheme = false
-): BilibiliArticleRichTextDocument => {
+): RichTextDocument => {
   const paragraphs = opus?.content?.paragraphs
   if (!Array.isArray(paragraphs)) return createBilibiliArticleDocument()
 
-  const result: BilibiliArticleRichTextNode[] = []
+  const result: RichTextNode[] = []
   let listBuffer: {
     ordered: boolean
-    items: Array<Extract<BilibiliArticleRichTextNode, { type: 'listItem' }>>
+    items: Array<Extract<RichTextNode, { type: 'listItem' }>>
   } | undefined
 
   const flushList = () => {
@@ -1445,7 +1349,7 @@ export const buildBilibiliArticleRichText = (
   opus: BilibiliArticleOpus | null | undefined,
   content?: string,
   useDarkTheme = false
-): BilibiliArticleRichTextDocument => {
+): RichTextDocument => {
   if (Array.isArray(opus?.content?.paragraphs)) return parseOpusToRichText(opus, useDarkTheme)
   return parseHtmlContentToRichText(content)
 }
@@ -1509,7 +1413,7 @@ const formatBilibiliForwardLink = (text: string, url?: string): string => {
 }
 
 const bilibiliInlineNodeToForwardText = (
-  node: BilibiliArticleRichTextNode
+  node: RichTextNode
 ): string => {
   switch (node.type) {
     case 'text':
@@ -1539,7 +1443,7 @@ const bilibiliInlineNodeToForwardText = (
  * 图片解析失败时会把 alt/caption 放回文本，并继续处理后续节点。
  */
 export const buildBilibiliRichTextForwardNodes = async (
-  document: BilibiliArticleRichTextDocument,
+  document: RichTextDocument,
   options: BilibiliRichTextForwardOptions = {}
 ): Promise<BilibiliRichTextForwardNode[]> => {
   const result: BilibiliRichTextForwardNode[] = []
@@ -1564,12 +1468,12 @@ export const buildBilibiliRichTextForwardNodes = async (
     for (const chunk of splitBilibiliRichText(text, maxTextLength)) result.push({ type: 'text', text: chunk })
   }
 
-  const appendChildren = async (nodes: BilibiliArticleRichTextNode[]): Promise<void> => {
+  const appendChildren = async (nodes: RichTextNode[]): Promise<void> => {
     for (const node of nodes) await appendNode(node)
   }
 
   const appendImage = async (
-    node: Extract<BilibiliArticleRichTextNode, { type: 'image' }>
+    node: Extract<RichTextNode, { type: 'image' }>
   ): Promise<void> => {
     flushText()
     const index = imageIndex++
@@ -1607,7 +1511,7 @@ export const buildBilibiliRichTextForwardNodes = async (
     ensureBlockBreak()
   }
 
-  const appendNode = async (node: BilibiliArticleRichTextNode): Promise<void> => {
+  const appendNode = async (node: RichTextNode): Promise<void> => {
     const inlineText = bilibiliInlineNodeToForwardText(node)
     if (inlineText) {
       appendText(inlineText)
