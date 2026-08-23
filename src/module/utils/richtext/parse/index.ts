@@ -1,18 +1,10 @@
 import type {
-  RichTextBlockquoteNode,
-  RichTextCodeBlockNode,
   RichTextDocument,
   RichTextEmojiNode,
   RichTextHashtagNode,
-  RichTextHeadingNode,
-  RichTextImageNode,
   RichTextLineBreakNode,
-  RichTextLinkCardNode,
-  RichTextListItemNode,
-  RichTextListNode,
   RichTextMentionNode,
   RichTextNode,
-  RichTextParagraphNode,
   RichTextSearchKeywordNode,
   RichTextTextNode,
   RichTextTopicNode,
@@ -21,7 +13,6 @@ import type {
   RichTextWebLinkNode,
   RichTextVoteNode,
   RichTextViewPictureNode,
-  RichTextHorizontalRuleNode,
   RichTextInlineStyle
 // 走 "@/" 别名而不是 '../types.js'：src/ 的 lint 禁止跳出当前目录的相对导入。
 // 这里能这么写的前提是它必须保持 type-only —— 本目录同时被 ktr 的 vite 构建
@@ -108,70 +99,17 @@ export const createViewPictureNode = (text: string): RichTextViewPictureNode => 
   text
 })
 
-/** 创建标题节点。 */
-export const createHeadingNode = (level: 1 | 2 | 3 | 4 | 5 | 6, nodes: RichTextNode[]): RichTextHeadingNode => ({
-  type: 'heading',
-  level,
-  nodes
-})
-
-/** 创建段落节点。 */
-export const createParagraphNode = (nodes: RichTextNode[]): RichTextParagraphNode => ({
-  type: 'paragraph',
-  nodes
-})
-
-/** 创建图片节点。 */
-export const createImageNode = (src: string, alt?: string, caption?: string): RichTextImageNode => ({
-  type: 'image',
-  src,
-  alt,
-  caption
-})
-
-/** 创建水平分隔线节点。 */
-export const createHorizontalRuleNode = (): RichTextHorizontalRuleNode => ({
-  type: 'horizontalRule'
-})
-
-/** 创建引用块节点。 */
-export const createBlockquoteNode = (nodes: RichTextNode[]): RichTextBlockquoteNode => ({
-  type: 'blockquote',
-  nodes
-})
-
-/** 创建列表节点。 */
-export const createListNode = (ordered: boolean, items: RichTextListItemNode[]): RichTextListNode => ({
-  type: 'list',
-  ordered,
-  items
-})
-
-/** 创建列表项节点。 */
-export const createListItemNode = (nodes: RichTextNode[]): RichTextListItemNode => ({
-  type: 'listItem',
-  nodes
-})
-
-/** 创建代码块节点。 */
-export const createCodeBlockNode = (content: string, language?: string): RichTextCodeBlockNode => ({
-  type: 'codeBlock',
-  content,
-  language
-})
-
-/** 创建链接卡片节点。 */
-export const createLinkCardNode = (
-  title: string,
-  url: string,
-  options: { cardType?: string; meta?: Record<string, any> } = {}
-): RichTextLinkCardNode => ({
-  type: 'linkCard',
-  title,
-  url,
-  cardType: options.cardType,
-  meta: options.meta
-})
+/*
+ * 这里原来还有 9 个 block 级节点的构造函数（heading / paragraph / image /
+ * horizontalRule / blockquote / list / listItem / codeBlock / linkCard），
+ * 全部零引用，已删。
+ *
+ * 别照着上面的 inline 构造函数把它们补回来：block 节点唯一的生产者是
+ * `platform/bilibili/dynamicText.ts`，它按对象字面量直接造（`{ type: 'heading', ... }`），
+ * 因为那边是从 B 站专栏的 HTML 树递归转换、需要在一处同时决定 type 和字段。
+ * 渲染侧（ktr/richtext/react）按 `node.type` 判别，不依赖谁构造的。
+ * inline 那批构造函数是活的，被 dynamicText 的行内解析和其他平台共用。
+ */
 
 /**
  * 创建 hashtag 节点。
