@@ -1,10 +1,11 @@
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PluginPath = fileURLToPath(new URL('../../../', import.meta.url))
 const tsconfigPath = join(PluginPath, 'tsconfig.json')
+const ktrBin = join(PluginPath, 'node_modules/@karinjs/template-react/bin/ktr.mjs')
 
 /**
  * ktr standalone typechecks its generated entry with the root tsconfig.
@@ -33,7 +34,11 @@ const buildTemplates = (): void => {
 
   writeFileSync(tsconfigPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
   try {
-    execSync('pnpm exec ktr build', {
+    // 直接跑 ktr 的入口文件，不走 `pnpm exec ktr`：本插件是宿主 Yunzai pnpm
+    // workspace 的成员，`pnpm exec` 依赖 node_modules/.bin/ 里的 shim，shim 一缺
+    // 就会往宿主根 .bin 穿透（宿主根按 isolated linker 只放它自己的直接依赖，
+    // 没有 ktr），于是这一步整个失败。package.json 里的 scripts 同理都改成了直调。
+    execFileSync(process.execPath, [ktrBin, 'build'], {
       cwd: PluginPath,
       stdio: 'inherit'
     })
