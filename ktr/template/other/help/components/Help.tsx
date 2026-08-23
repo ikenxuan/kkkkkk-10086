@@ -214,15 +214,20 @@ export const Help: React.FC<PosterProps<HelpData>> = React.memo((props) => {
         <div className="flex justify-between items-end mb-24 border-b-4 border-foreground/10 pb-8">
           <div className="flex flex-col gap-2">
             {/*
-              本地改动（上游没有）：pl-8 是为了避开左上角那组装饰点阵。
+              本地改动（上游没有）：pl-16 是为了避开左上角那组装饰点阵。
               点阵在 top-12 left-12（x 48..96），而内容区 p-18 让这一行从 x=72 起，
-              实测 x 方向重叠 24px、y 方向重叠 20px。
-              往右挪 32px 之后这一行从 x=104 开始，和点阵右边缘留 8px 空隙。
-              只挪这一行，下面的 COMMANDS 仍然对齐内容区左边界（x=72）。
-              statistics/global、statistics/group 两张卡片同样的问题、同样用 pl-8 修的，
-              三处的标签行都对齐在 x=104。同步上游时请保留——上游这行没有 pl-8。
+              不挪的话脉冲圆点整个压在点阵上（实测 x 方向重叠 24px、y 方向重叠 20px）。
+              先前是 pl-8（32px），圆点只推到 x=104，点阵右缘到圆点左缘剩 8px——
+              实测这点间隙远看像是点阵多长了一列，所以加到 pl-16（64px）：
+              圆点左缘 x=136，点阵右缘到圆点左缘间隙 40px，SYSTEM_READY 左缘 x=156。
+              再往右就过了：80px 时这一行会脱开下面的大标题，左边空出一条明显的白带。
+              pl 加在整行 flex 容器上，所以圆点和后面的英文标签是一起右移的。
+              只挪这一行，下面的 COMMANDS 仍然对齐内容区左边界（x=72），不受影响。
+              statistics/global、statistics/group 两张卡片是同样的问题、同样用 pl 修的，
+              三处的 pl 值要保持一致（都是 pl-16），改一处记得同步另两处。
+              同步上游时请保留——上游这行没有 pl，抹掉会让点阵重新压住圆点。
             */}
-            <div className="flex items-center gap-3 pl-8 opacity-60">
+            <div className="flex items-center gap-3 pl-16 opacity-60">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               <span className="text-sm font-mono tracking-widest text-muted">SYSTEM_READY</span>
             </div>
