@@ -69,7 +69,13 @@ const normalizeFilterPath = (filepath: string): string => filepath
   .replace(/'/g, "\\'")
 
 const getVideoResolution = async (filepath: string): Promise<VideoResolution> => {
-  const result = await ffprobe(`-v error -select_streams v:0 -show_entries stream=width,height -of json "${filepath}"`)
+  const result = await ffprobe([
+    '-v', 'error',
+    '-select_streams', 'v:0',
+    '-show_entries', 'stream=width,height',
+    '-of', 'json',
+    filepath
+  ])
   if (result?.status && result.stdout) {
     try {
       const parsed = JSON.parse(result.stdout) as { streams?: Array<{ width?: number, height?: number }> }
@@ -179,7 +185,18 @@ export const burnDanmaku = async (
 
   try {
     const assFilterPath = normalizeFilterPath(assPath)
-    const result = await ffmpeg(`-y -i "${videoPath}" -vf "subtitles='${assFilterPath}'" -c:v libx264 -preset medium -crf 23 -c:a copy "${outputPath}"`)
+    // normalizeFilterPath 的转义仍然要做：那是 ffmpeg 滤镜解析器自己的引号规则
+    // （Windows 盘符的 `:`、路径里的 `'`），跟 shell 无关，execFile 不会替它处理
+    const result = await ffmpeg([
+      '-y',
+      '-i', videoPath,
+      '-vf', `subtitles='${assFilterPath}'`,
+      '-c:v', 'libx264',
+      '-preset', 'medium',
+      '-crf', '23',
+      '-c:a', 'copy',
+      outputPath
+    ])
     if (!result?.status) {
       logger.error(`[Danmaku] ${source} 弹幕烧录失败`, result)
       return false

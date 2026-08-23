@@ -406,12 +406,24 @@ describe('buildDouyinFfmpegPlan', () => {
     const plan = buildDouyinFfmpegPlan({ ...baseInput, overlays: [] })
 
     expect(plan.cwd).toBe(dirname(baseInput.outputPath))
-    expect(plan.command).toContain('-vf')
-    expect(plan.command).toContain("subtitles='source_danmaku.ass'")
-    expect(plan.command).not.toContain('-filter_complex')
-    expect(plan.command).toContain('"source.mp4"')
-    expect(plan.command).toContain('"output.mp4"')
-    expect(plan.command).not.toContain(baseDirectory)
+    // 逐元素比对整条 argv，而不是在拼好的命令串里找子串：这才是真正交给
+    // execFile 的东西。顺带钉住「路径不带引号」——argv 里带引号的话 ffmpeg
+    // 会把字面量的 `"` 当成文件名的一部分，那种 bug 用 toContain 是看不出来的。
+    expect(plan.args).toEqual([
+      '-y',
+      '-i', 'source.mp4',
+      '-vf', "fps=60,subtitles='source_danmaku.ass'",
+      '-r', '60',
+      '-c:v', 'libx264',
+      '-preset', 'medium',
+      '-crf', '23',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'copy',
+      'output.mp4'
+    ])
+    expect(plan.args).not.toContain('-filter_complex')
+    // 绝对路径不该出现在任何一个参数里（cwd 已经切到输出目录）
+    expect(plan.args.some(argument => argument.includes(baseDirectory))).toBe(false)
     expect(plan.tempFiles).toEqual([])
   })
 
@@ -430,9 +442,17 @@ describe('buildDouyinFfmpegPlan', () => {
       overlays: [overlay, { ...overlay, startTime: 2000, endTime: 10000 }]
     })
 
-    expect(plan.command).toContain('-filter_complex_script "douyin-filter.txt"')
-    expect(plan.command).not.toContain('-filter_complex "')
-    expect(plan.command.match(/strip\.png/g)).toHaveLength(1)
+    // 相邻两个元素：选项名和它的值在 argv 里必须分开
+    const scriptIndex = plan.args.indexOf('-filter_complex_script')
+    expect(scriptIndex).toBeGreaterThan(-1)
+    expect(plan.args[scriptIndex + 1]).toBe('douyin-filter.txt')
+    // 大滤镜图走脚本文件，不进 argv
+    expect(plan.args).not.toContain('-filter_complex')
+    // 同一个 PNG 复用一个输入，不重复 -i
+    expect(plan.args.filter(argument => argument.endsWith('strip.png'))).toHaveLength(1)
+    // 标签名不带引号：方括号以前要写成 `"[vout]"` 躲 shell 通配符，argv 直传后必须是裸的
+    expect(plan.args).toContain('[vout]')
+    expect(plan.args).not.toContain('"[vout]"')
     expect(plan.filterComplex).toContain("overlay=x='1080-(t-1.000)*160.000'")
     expect(plan.filterComplex).toContain("enable='between(t,1.000,9.000)'")
     expect(plan.filterScriptPath).toBe(baseInput.filterScriptPath)
@@ -453,8 +473,11 @@ describe('buildDouyinFfmpegPlan', () => {
     const plan = buildDouyinFfmpegPlan({ ...baseInput, overlays })
 
     expect(plan.filterComplex?.length).toBeGreaterThan(30_000)
-    expect(plan.command.length).toBeLessThan(2_000)
-    expect(plan.command).not.toContain('between(t')
+    // 改成 argv 之后这条限制依然要守：Windows 的 CreateProcess 把整个 argv
+    // 拼成一条命令行（上限 32767 字符），所以「大滤镜图必须走脚本文件」
+    // 和以前一样是硬要求，只是现在量的是参数总长而不是命令串长度
+    expect(plan.args.join(' ').length).toBeLessThan(2_000)
+    expect(plan.args.some(argument => argument.includes('between(t'))).toBe(false)
     expect(plan.overlayInputCount).toBe(4)
   })
 })
@@ -469,7 +492,7 @@ describe('burnDouyinDanmaku', () => {
     const ffprobeRunner = vi.fn(async () => {
       throw new Error('probe unavailable')
     })
-    const ffmpegRunner = vi.fn(async (_command: string) => {
+    const ffmpegRunner = vi.fn(async (_args: readonly string[]) => {
       throw new Error('encode failed')
     })
 
@@ -484,7 +507,8 @@ describe('burnDouyinDanmaku', () => {
 
     expect(ffprobeRunner).toHaveBeenCalledTimes(1)
     expect(ffmpegRunner).toHaveBeenCalledTimes(1)
-    expect(ffmpegRunner.mock.calls[0]?.[0]).toContain('subtitles=')
+    // 滤镜串整个是一个 argv 元素，所以找「某个元素包含 subtitles=」而不是搜整条命令串
+    expect(ffmpegRunner.mock.calls[0]?.[0]?.some(argument => argument.includes('subtitles='))).toBe(true)
   })
 
   it('writes and cleans a filter script while reusing explicit emoji data and one PNG input', async () => {
@@ -498,20 +522,23 @@ describe('burnDouyinDanmaku', () => {
     ]) satisfies readonly DouyinEmojiInfo[]
     const emojiFetcher = vi.fn(async () => emojiList)
     const renderStrip = vi.fn(async () => createPng(200, 32))
-    let ffmpegCommand = ''
+    let ffmpegArgs: readonly string[] = []
     let filterScriptPath = ''
     let filterScript = ''
 
-    const ffprobeRunner = vi.fn(async (command: string, options?: DouyinCommandOptions) => {
-      expect(command).toContain('"source video.mp4"')
-      expect(command).not.toContain(tempDir)
+    const ffprobeRunner = vi.fn(async (args: readonly string[], options?: DouyinCommandOptions) => {
+      // 带空格的路径以裸值出现在 argv 里，不再带引号 —— execFile 不经过 shell，
+      // 引号留着会变成文件名的一部分
+      expect(args).toContain('source video.mp4')
+      expect(args.join(' ')).not.toContain(tempDir)
       expect(options).toEqual({ cwd: tempDir, timeout: 10_000 })
       return { status: true, stdout: '1080x1920' }
     })
-    const ffmpegRunner = vi.fn(async (command: string, options?: DouyinCommandOptions) => {
-      ffmpegCommand = command
+    const ffmpegRunner = vi.fn(async (args: readonly string[], options?: DouyinCommandOptions) => {
+      ffmpegArgs = args
       expect(options).toEqual({ cwd: tempDir, timeout: 0 })
-      const scriptArgument = command.match(/-filter_complex_script "([^"]+)"/)?.[1]
+      // argv 里选项和它的值是相邻两个元素，取值就是取下一个元素，不用再正则剥引号
+      const scriptArgument = args[args.indexOf('-filter_complex_script') + 1]
       expect(scriptArgument).toBeTruthy()
       filterScriptPath = resolve(options?.cwd ?? '', scriptArgument ?? '')
       filterScript = await readFile(filterScriptPath, 'utf8')
@@ -532,10 +559,13 @@ describe('burnDouyinDanmaku', () => {
 
     expect(emojiFetcher).not.toHaveBeenCalled()
     expect(renderStrip).toHaveBeenCalledTimes(1)
-    expect(ffmpegCommand).toContain('-filter_complex_script')
-    expect(ffmpegCommand).not.toContain('-filter_complex "')
-    expect(ffmpegCommand).not.toContain(tempDir)
-    expect(ffmpegCommand.match(/-i "[^"]+\.png"/g)).toHaveLength(1)
+    expect(ffmpegArgs).toContain('-filter_complex_script')
+    // 滤镜图始终走脚本文件，不作为 -filter_complex 的内联值
+    expect(ffmpegArgs).not.toContain('-filter_complex')
+    // 路径全部相对 cwd，绝对路径不出现在参数里
+    expect(ffmpegArgs.join(' ')).not.toContain(tempDir)
+    // 两条弹幕复用同一个 PNG，只有一个 .png 输入
+    expect(ffmpegArgs.filter(argument => argument.endsWith('.png'))).toHaveLength(1)
     expect(filterScript).toContain('split=2')
     expect(filterScript).toContain("overlay=x='")
     expect(filterScriptPath).not.toBe('')

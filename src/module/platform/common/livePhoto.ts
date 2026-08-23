@@ -262,7 +262,7 @@ const readOrConvertToJpeg = async (imagePath: string): Promise<Buffer> => {
   if (isJpegBuffer(sourceBuffer)) return sourceBuffer
 
   const tempJpegPath = path.join(Common.tempDri.images, `motion_${getTimestampName()}.jpg`)
-  const result = await ffmpeg(`-y -i "${imagePath}" -frames:v 1 -q:v 2 "${tempJpegPath}"`)
+  const result = await ffmpeg(['-y', '-i', imagePath, '-frames:v', '1', '-q:v', '2', tempJpegPath])
   if (!result?.status) throw new Error(`图片转换 JPEG 失败: ${imagePath}`)
 
   try {

@@ -1,4 +1,4 @@
-import { ffmpeg, ffprobe } from './FFmpeg.js'
+import { durationProbeArgs, ffmpeg, ffprobe } from './FFmpeg.js'
 import { fromSeconds, reportMedia } from './media-metrics.js'
 import { Networks } from './Networks.js'
 import type { MessageElement, MessageEvent } from '@/types/message'
@@ -471,14 +471,14 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
 
     if (isLarge) {
       // 大文件处理：先转换再获取时长
-      const result = await ffmpeg(`-y -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`)
+      const result = await ffmpeg(['-y', '-i', file, '-fs', '10485600', '-ab', '128k', `${file}.mp3`])
       if (isCommandResult(result) && result.status) {
         const buffer = fs.readFileSync(`${file}.mp3`)
 
         // ffprobe 必须在 unlink 之前跑：原来是先删再 probe 同一个路径，
         // probe 恒失败 → 走到最后的 return { code: -1 }，连已经转好的 buffer 一起丢掉，
         // 于是 ≥10MB 的音频每次都白转一遍、还永远拿不到时长。
-        const probeResult = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}.mp3"`)
+        const probeResult = await ffprobe(durationProbeArgs(`${file}.mp3`))
         // 放 finally 之外的话，probe 失败那条路径又会把临时 mp3 留在磁盘上。
         try {
           fs.unlinkSync(`${file}.mp3`)
@@ -496,7 +496,7 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
       }
     } else {
       // 小文件直接使用 ffprobe 获取时长
-      const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}"`)
+      const result = await ffprobe(durationProbeArgs(file))
       if (isCommandResult(result) && result.status && result.stdout) {
         const duration = parseFloat(result.stdout.trim())
         const time = new Date(duration * 1000).toISOString().slice(11, 19)
@@ -544,7 +544,7 @@ async function audioTrans (file: string): Promise<Buffer | false> {
     const tmpfile = `${TMP_DIR}/${uuid()}.pcm`
 
     try {
-      const result = await ffmpeg(`-y -i "${file}" -f s16le -ar 24000 -ac 1 "${tmpfile}"`)
+      const result = await ffmpeg(['-y', '-i', file, '-f', 's16le', '-ar', '24000', '-ac', '1', tmpfile])
       if (isCommandResult(result) && result.status) {
         const pcmData = await fs.promises.readFile(tmpfile)
         const silkData = await encode(pcmData, 24000)
@@ -572,7 +572,7 @@ async function audioTransFallback (file: string): Promise<Buffer | false> {
   const tmpfile = `${TMP_DIR}/${uuid()}`
 
   try {
-    const result = await ffmpeg(`-y -i "${file}" -ac 1 -ar 8000 -f amr "${tmpfile}"`)
+    const result = await ffmpeg(['-y', '-i', file, '-ac', '1', '-ar', '8000', '-f', 'amr', tmpfile])
     if (isCommandResult(result) && result.status) {
       const amr = await fs.promises.readFile(tmpfile)
       return amr

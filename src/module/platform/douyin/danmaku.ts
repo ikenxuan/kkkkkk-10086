@@ -68,8 +68,15 @@ export interface DouyinCommandOptions {
   timeout?: number
 }
 
+/**
+ * 执行一条 ffmpeg / ffprobe 命令。
+ *
+ * 参数是数组而不是命令串：底层走 `execFile`，argv 逐个交给内核、不经过 shell
+ * （理由见 `utils/FFmpeg.ts` 的 `exec`）。所以每个元素都是被执行程序看到的
+ * 字面值 —— 路径不加引号，滤镜串整串作为一个元素。
+ */
 export type DouyinCommandRunner = (
-  command: string,
+  args: readonly string[],
   options?: DouyinCommandOptions
 ) => Promise<DouyinCommandResult | boolean>
 
@@ -149,7 +156,13 @@ export interface DouyinFfmpegPlanInput {
 }
 
 export interface DouyinFfmpegPlan {
-  command: string
+  /**
+   * ffmpeg 的参数数组，直接交给 `DouyinCommandRunner`。
+   *
+   * 原来是一条拼好的命令串（带手写引号），现在是 argv：不经过 shell，
+   * 所以路径里的空格、引号、元字符都不需要转义。
+   */
+  args: string[]
   filter: string
   filterComplex?: string
   filterScriptPath?: string
@@ -838,11 +851,18 @@ const escapeFilterPath = (path: string): string => path
   .replace(/'/g, "\\'")
   .replace(/,/g, '\\,')
 
-const quoteCommandArgument = (value: string): string => {
-  const withoutControlCharacters = value.replace(/[\r\n\0]/g, '')
-  const escaped = withoutControlCharacters.replace(/"/g, '\\"')
-  return `"${escaped}"`
-}
+/**
+ * 单个 argv 元素的清洗。
+ *
+ * 以前这里是 `quoteCommandArgument`：给值补一层双引号、把内部的 `"` 转义，
+ * 因为命令要交给 shell。现在命令走 `execFile`（参数逐个交给内核，不经过 shell），
+ * 引号必须去掉 —— 留着的话 ffmpeg 会把字面量的 `"` 当成文件名的一部分，
+ * 于是所有路径都变成打不开的 `"video.mp4"`。
+ *
+ * 只保留控制字符的剔除：`\0` 会让 Node 直接抛 ERR_INVALID_ARG_VALUE，
+ * 换行在路径里本来就不合法，早剔掉比让 ffmpeg 报一个难懂的错好。
+ */
+const sanitizeArgument = (value: string): string => value.replace(/[\r\n\0]/g, '')
 
 const resolveEncoder = (encoder: string | undefined, codec: DouyinVideoCodec = 'h264'): string => {
   if (encoder && SAFE_ENCODERS.has(encoder)) return encoder
@@ -874,6 +894,7 @@ const toCommandPath = (cwd: string, path: string): string => {
 
 interface OverlayInputData {
   overlays: DanmakuOverlay[]
+  /** 摊平的 argv 片段：`['-i', 路径, '-i', 路径, ...]`，直接展开进整条参数数组 */
   inputArguments: string[]
   inputIndices: number[]
   inputCount: number
@@ -897,7 +918,9 @@ const planOverlayInputs = (
     if (existing !== undefined) return existing
     const inputIndex = inputIndexByPath.size + 1
     inputIndexByPath.set(resolvedPath, inputIndex)
-    inputArguments.push(`-i ${quoteCommandArgument(toCommandPath(cwd, resolvedPath))}`)
+    // 两个元素而不是一个 `-i path`：argv 里 `-i` 和它的值必须分开，
+    // 合成一个元素时 ffmpeg 会把整串当成一个选项名而认不出来
+    inputArguments.push('-i', sanitizeArgument(toCommandPath(cwd, resolvedPath)))
     return inputIndex
   })
 
@@ -962,17 +985,28 @@ export function buildDouyinFfmpegPlan (input: DouyinFfmpegPlanInput): DouyinFfmp
   const canvas = calculateCanvas(input.width, input.height, input.verticalMode ?? 'off')
   const scrollTime = Math.max(0.1, finiteOr(input.scrollTime, 8))
   const encoder = resolveEncoder(input.encoder)
-  const encoderArguments = `-r ${OUTPUT_FPS} -c:v ${encoder} -preset medium -crf 23 -pix_fmt yuv420p -c:a copy`
+  const encoderArguments = [
+    '-r', String(OUTPUT_FPS),
+    '-c:v', encoder,
+    '-preset', 'medium',
+    '-crf', '23',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'copy'
+  ]
   const cwd = selectCommandCwd(input.videoPath, input.outputPath)
-  const videoPath = toCommandPath(cwd, input.videoPath)
-  const outputPath = toCommandPath(cwd, input.outputPath)
+  // 三条路径都过一遍 sanitizeArgument：控制字符在路径里本来就不合法，
+  // 而 `\0` 会让 Node 在 execFile 处直接抛。overlay 的路径在 planOverlayInputs 里同样处理
+  const videoPath = sanitizeArgument(toCommandPath(cwd, input.videoPath))
+  const outputPath = sanitizeArgument(toCommandPath(cwd, input.outputPath))
+  // assPath 只进滤镜串（`subtitles='...'`），escapeFilterPath 管的是 ffmpeg
+  // 滤镜解析器的引号，和这里的控制字符剔除是两件事，两层都要
   const assPath = toCommandPath(cwd, input.assPath)
   const overlayInputs = planOverlayInputs(input.overlays, cwd)
   const simpleFilter = buildBaseFilter(canvas, assPath)
 
   if (overlayInputs.overlays.length === 0) {
     return {
-      command: `-y -i ${quoteCommandArgument(videoPath)} -vf ${quoteCommandArgument(simpleFilter)} ${encoderArguments} ${quoteCommandArgument(outputPath)}`,
+      args: ['-y', '-i', videoPath, '-vf', simpleFilter, ...encoderArguments, outputPath],
       filter: simpleFilter,
       cwd,
       tempFiles: [],
@@ -990,7 +1024,18 @@ export function buildDouyinFfmpegPlan (input: DouyinFfmpegPlanInput): DouyinFfmp
     scrollTime
   )
   return {
-    command: `-y -i ${quoteCommandArgument(videoPath)} ${overlayInputs.inputArguments.join(' ')} -filter_complex_script ${quoteCommandArgument(toCommandPath(cwd, filterScriptPath))} -map "[vout]" -map "0:a?" ${encoderArguments} ${quoteCommandArgument(outputPath)}`,
+    args: [
+      '-y',
+      '-i', videoPath,
+      ...overlayInputs.inputArguments,
+      '-filter_complex_script', toCommandPath(cwd, filterScriptPath),
+      // `[vout]` 以前要写成 `"[vout]"`：方括号在 sh 里是通配符、在 cmd 里也有含义。
+      // argv 直传之后这就是 ffmpeg 看到的字面标签名，不能再带引号
+      '-map', '[vout]',
+      '-map', '0:a?',
+      ...encoderArguments,
+      outputPath
+    ],
     filter: filterComplex,
     filterComplex,
     filterScriptPath,
@@ -1001,14 +1046,14 @@ export function buildDouyinFfmpegPlan (input: DouyinFfmpegPlanInput): DouyinFfmp
   }
 }
 
-const defaultFfprobeRunner: DouyinCommandRunner = async (command, options) => {
+const defaultFfprobeRunner: DouyinCommandRunner = async (args, options) => {
   const { ffprobe } = await import('@/module/utils/FFmpeg')
-  return await ffprobe(command, options)
+  return await ffprobe(args, options)
 }
 
-const defaultFfmpegRunner: DouyinCommandRunner = async (command, options) => {
+const defaultFfmpegRunner: DouyinCommandRunner = async (args, options) => {
   const { ffmpeg } = await import('@/module/utils/FFmpeg')
-  return await ffmpeg(command, options)
+  return await ffmpeg(args, options)
 }
 
 const readCommandStdout = (result: DouyinCommandResult | boolean): string =>
@@ -1021,7 +1066,13 @@ const getDouyinResolution = async (
 ): Promise<{ width: number, height: number }> => {
   try {
     const result = await runner(
-      `-v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 ${quoteCommandArgument(toCommandPath(cwd, videoPath))}`,
+      [
+        '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'stream=width,height',
+        '-of', 'csv=s=x:p=0',
+        toCommandPath(cwd, videoPath)
+      ],
       { cwd, timeout: 10_000 }
     )
     const match = readCommandStdout(result).trim().match(/^(\d+)x(\d+)$/)
@@ -1109,7 +1160,7 @@ export async function burnDouyinDanmaku (
     }
 
     const ffmpegRunner = options.ffmpegRunner ?? defaultFfmpegRunner
-    const execution = await ffmpegRunner(plan.command, { cwd: plan.cwd, timeout: 0 })
+    const execution = await ffmpegRunner(plan.args, { cwd: plan.cwd, timeout: 0 })
     const succeeded = commandSucceeded(execution)
 
     if (succeeded && options.removeSource && resolve(videoPath) !== resolve(outputPath)) {

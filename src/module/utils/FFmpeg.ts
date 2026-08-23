@@ -12,24 +12,38 @@
  *
  */
 import {
-  exec as execCmd,
-  type ExecException,
-  type ExecOptions
+  execFile as execFileCmd,
+  type ExecFileException,
+  type ExecFileOptions
 } from 'node:child_process'
 import Common from './Common.js'
 
 export interface FFmpegExecResult {
   status: boolean
-  error: ExecException | null
+  /**
+   * `execFile` 的错误类型，`code` 可能是 string（信号退出时是 `null`、
+   * spawn 失败时是 `'ENOENT'` 这种字符串），所以不是 `ExecException`。
+   */
+  error: ExecFileException | null
   stdout: string
   stderr: string
 }
 
-export interface FFmpegExecOptions extends ExecOptions {
+export interface FFmpegExecOptions extends ExecFileOptions {
   log?: boolean
   booleanResult?: boolean
   trim?: boolean
 }
+
+/**
+ * 一条 ffmpeg / ffprobe 命令的参数数组。
+ *
+ * 是数组而不是字符串：这两个函数走 `execFile`，参数逐个交给内核，
+ * 不经过 shell。所以每个元素都是 ffmpeg 看到的**字面值** ——
+ * 路径不要加引号（`'-i', path` 而不是 `'-i', '"path"'`），
+ * 滤镜串里的单引号要保留（那是 ffmpeg 滤镜解析器自己的引号，不是 shell 的）。
+ */
+export type FFmpegArgs = readonly string[]
 
 type FFmpegCallback = (success: boolean, resultPath: string) => boolean | Promise<boolean>
 
@@ -106,6 +120,22 @@ export const normalizeLoopVideoOptions = (
   mergeMode: options.mergeMode ?? 'independent',
   context: options.context
 })
+
+/**
+ * 「只读一个时长出来」的 ffprobe 参数。
+ *
+ * 抽成函数是因为这串参数在本文件和 UploadRecord.ts 里一共出现四次，
+ * 逐处手抄 argv 数组比抄命令串更容易漏掉一两个元素（漏了不报错，
+ * 只是 stdout 变成整份 format 信息，parseFloat 出来是 NaN）。
+ *
+ * @param filePath 媒体文件路径，原样传给 ffprobe，不需要加引号
+ */
+export const durationProbeArgs = (filePath: string): string[] => [
+  '-v', 'error',
+  '-show_entries', 'format=duration',
+  '-of', 'default=noprint_wrappers=1:nokey=1',
+  filePath
+]
 
 /**
  * @typedef {Object} FFmpegClientOptions
@@ -187,7 +217,7 @@ class FFmpeg {
 
     switch (this.type) {
       case '二合一（视频 + 音频）': {
-        const result = await ffmpeg(`-y -i "${opt.path}" -i "${opt.path2}" -c copy "${opt.resultPath}"`)
+        const result = await ffmpeg(['-y', '-i', opt.path, '-i', String(opt.path2), '-c', 'copy', opt.resultPath])
         if (result && typeof result === 'object' && 'status' in result) {
           result.status ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
           if (opt.callback) await opt.callback(result.status, opt.resultPath)
@@ -195,7 +225,22 @@ class FFmpeg {
         return /** @type {MergeFileResult<T>} */ (result)
       }
       case '视频*3 + 音频': {
-        const result = await ffmpeg(`-y -stream_loop 2 -i "${opt.path}" -i "${opt.path2}" -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest "${opt.resultPath}"`)
+        const result = await ffmpeg([
+          '-y',
+          '-stream_loop', '2',
+          '-i', opt.path,
+          '-i', String(opt.path2),
+          // 滤镜图整串作为一个参数：`;` 在 shell 里是命令分隔符，在这里只是
+          // ffmpeg 滤镜语法的一部分，execFile 不经过 shell 所以无需转义
+          '-filter_complex', '[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]',
+          '-map', '[v]',
+          '-map', '[aout]',
+          '-c:v', 'libx264',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-shortest',
+          opt.resultPath
+        ])
         if (result && typeof result === 'object' && 'status' in result) {
           result.status ? logger.mark(`视频合成成功！文件地址：${opt.resultPath}`) : logger.error(result)
           if (opt.callback) await opt.callback(result.status, opt.resultPath)
@@ -203,7 +248,7 @@ class FFmpeg {
         return /** @type {MergeFileResult<T>} */ (result)
       }
       case '获取指定视频文件时长': {
-        const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${opt.path}"`)
+        const result = await ffprobe(durationProbeArgs(opt.path))
         if (result && typeof result === 'object' && 'stdout' in result) {
           return parseFloat(parseFloat(String(result.stdout).trim()).toFixed(2))
         }
@@ -211,7 +256,20 @@ class FFmpeg {
       }
       case '压缩视频': {
         const normalized = normalizeCompressionOptions(opt)
-        const result = await ffmpeg(`-y -i "${normalized.path}" -b:v ${normalized.targetBitrate}k -maxrate ${normalized.maxRate}k -bufsize ${normalized.bufSize}k -crf ${normalized.crf} -preset medium -c:v libx264 -vf "scale='if(gte(iw/ih,16/9),1280,-1)':'if(gte(iw/ih,16/9),-1,720)',scale=ceil(iw/2)*2:ceil(ih/2)*2" "${normalized.resultPath}"`)
+        const result = await ffmpeg([
+          '-y',
+          '-i', normalized.path,
+          '-b:v', `${normalized.targetBitrate}k`,
+          '-maxrate', `${normalized.maxRate}k`,
+          '-bufsize', `${normalized.bufSize}k`,
+          '-crf', String(normalized.crf),
+          '-preset', 'medium',
+          '-c:v', 'libx264',
+          // 滤镜串里的单引号是 ffmpeg 自己的引号（保护 scale 表达式里的逗号），
+          // 不是 shell 的，所以原样保留
+          '-vf', "scale='if(gte(iw/ih,16/9),1280,-1)':'if(gte(iw/ih,16/9),-1,720)',scale=ceil(iw/2)*2:ceil(ih/2)*2",
+          normalized.resultPath
+        ])
         if (result && typeof result === 'object' && 'status' in result) {
           if (result.status) {
             logger.mark(`视频已压缩并保存到: ${normalized.resultPath}`)
@@ -242,7 +300,7 @@ const checkFFmpegAvailable = async (): Promise<boolean> => {
     // 添加延时防止阻塞
     return await new Promise<boolean>(resolve => {
       setTimeout(async () => {
-        resolve(await exec(`${getFFmpegPath()} -version`, { booleanResult: true }))
+        resolve(await exec(getFFmpegPath(), ['-version'], { booleanResult: true }))
       }, 1000)
     })
   } catch (error) {
@@ -253,72 +311,61 @@ const checkFFmpegAvailable = async (): Promise<boolean> => {
 
 /**
  * @description 执行 FFmpeg 命令
- * @param {string} cmd - FFmpeg 命令（不包含 'ffmpeg' 前缀）
- * @param {Object} [options] - 执行选项
- * @param {boolean} [options.log=false] - 是否打印执行日志
- * @param {boolean} [options.booleanResult=false] - 是否只返回执行状态
- * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
- * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
- * @property {boolean} status - 命令是否执行成功
- * @property {Error|null} error - 错误信息（如果有）
- * @property {string} stdout - 标准输出
- * @property {string} stderr - 标准错误输出
+ *
+ * 参数是数组、不经过 shell（理由见 `exec`）。每个元素都是 ffmpeg 看到的字面值：
+ * 路径不要自己加引号，滤镜串整个作为一个元素传。
+ *
+ * @param args - 参数数组（不含 'ffmpeg' 本身）
+ * @param options - 执行选项
+ * @param options.log - 是否打印执行日志
+ * @param options.booleanResult - 是否只返回执行状态
+ * @param options.trim - 是否去除输出内容的首尾空白
+ * @param options.cwd - 命令执行的工作目录
  *
  * @example
  * // 转换视频格式
- * const result = await ffmpeg('-i input.mp4 output.avi');
+ * const result = await ffmpeg(['-i', 'input.mp4', 'output.avi'])
  *
  * @example
- * // 获取视频信息
- * const info = await ffmpeg('-i input.mp4', { log: true });
+ * // 带空格的路径不需要引号，execFile 会原样传给 ffmpeg
+ * const info = await ffmpeg(['-i', 'my video.mp4'], { log: true })
  */
-export function ffmpeg (cmd: string, options: FFmpegExecOptions & { booleanResult: true }): Promise<boolean>
-export function ffmpeg (cmd: string, options?: FFmpegExecOptions): Promise<FFmpegExecResult>
+export function ffmpeg (args: FFmpegArgs, options: FFmpegExecOptions & { booleanResult: true }): Promise<boolean>
+export function ffmpeg (args: FFmpegArgs, options?: FFmpegExecOptions): Promise<FFmpegExecResult>
 export async function ffmpeg (
-  cmd: string,
+  args: FFmpegArgs,
   options?: FFmpegExecOptions
 ): Promise<FFmpegExecResult | boolean> {
-  // 移除命令前缀并添加完整路径
-  cmd = cmd.replace(/^ffmpeg/, '').trim()
-  cmd = `${getFFmpegPath()} ${cmd}`
-  if (options?.booleanResult) return await exec(cmd, { ...options, booleanResult: true })
-  return await exec(cmd, options)
+  if (options?.booleanResult) return await exec(getFFmpegPath(), args, { ...options, booleanResult: true })
+  return await exec(getFFmpegPath(), args, options)
 }
 
 /**
  * @description 执行 FFprobe 命令
- * @param {string} cmd - FFprobe 命令（不包含 'ffprobe' 前缀）
- * @param {Object} [options] - 执行选项
- * @param {boolean} [options.log=false] - 是否打印执行日志
- * @param {boolean} [options.booleanResult=false] - 是否只返回执行状态
- * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
- * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
- * @property {boolean} status - 命令是否执行成功
- * @property {Error|null} error - 错误信息（如果有）
- * @property {string} stdout - 标准输出
- * @property {string} stderr - 标准错误输出
+ *
+ * 参数是数组、不经过 shell（理由见 `exec`）。
+ *
+ * @param args - 参数数组（不含 'ffprobe' 本身）
+ * @param options - 执行选项
+ * @param options.log - 是否打印执行日志
+ * @param options.booleanResult - 是否只返回执行状态
+ * @param options.trim - 是否去除输出内容的首尾空白
+ * @param options.cwd - 命令执行的工作目录
  *
  * @example
- * // 获取视频信息
- * const info = await ffprobe('-i input.mp4');
+ * const info = await ffprobe(['-i', 'input.mp4'])
  *
  * @example
- * // 获取视频详细信息
- * const details = await ffprobe('-i input.mp4 -show_format -show_streams', { log: true });
+ * const details = await ffprobe(['-i', 'input.mp4', '-show_format', '-show_streams'], { log: true })
  */
-export function ffprobe (cmd: string, options: FFmpegExecOptions & { booleanResult: true }): Promise<boolean>
-export function ffprobe (cmd: string, options?: FFmpegExecOptions): Promise<FFmpegExecResult>
+export function ffprobe (args: FFmpegArgs, options: FFmpegExecOptions & { booleanResult: true }): Promise<boolean>
+export function ffprobe (args: FFmpegArgs, options?: FFmpegExecOptions): Promise<FFmpegExecResult>
 export async function ffprobe (
-  cmd: string,
+  args: FFmpegArgs,
   options?: FFmpegExecOptions
 ): Promise<FFmpegExecResult | boolean> {
-  // 移除命令前缀并添加完整路径
-  cmd = cmd.replace(/^ffprobe/, '').trim()
-  cmd = `${getFFprobePath()} ${cmd}`
-  if (options?.booleanResult) return await exec(cmd, { ...options, booleanResult: true })
-  return await exec(cmd, options)
+  if (options?.booleanResult) return await exec(getFFprobePath(), args, { ...options, booleanResult: true })
+  return await exec(getFFprobePath(), args, options)
 }
 
 /**
@@ -369,7 +416,7 @@ export async function mergeFile (
  * @returns {Promise<number>}
  */
 export const getMediaDuration = async (filePath: string): Promise<number> => {
-  const result = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`, { trim: true })
+  const result = await ffprobe(durationProbeArgs(filePath), { trim: true })
   const stdout = typeof result === 'object' && result?.stdout ? result.stdout : ''
   const duration = Number.parseFloat(stdout)
   return Number.isFinite(duration) ? duration : 0
@@ -381,7 +428,13 @@ export const getMediaDuration = async (filePath: string): Promise<number> => {
  * @returns {Promise<number>}
  */
 export const getMediaFrameRate = async (filePath: string): Promise<number> => {
-  const result = await ffprobe(`-v error -select_streams v:0 -show_entries stream=avg_frame_rate -of default=noprint_wrappers=1:nokey=1 "${filePath}"`, { trim: true })
+  const result = await ffprobe([
+    '-v', 'error',
+    '-select_streams', 'v:0',
+    '-show_entries', 'stream=avg_frame_rate',
+    '-of', 'default=noprint_wrappers=1:nokey=1',
+    filePath
+  ], { trim: true })
   const rate = typeof result === 'object' && result?.stdout ? result.stdout : ''
   if (!rate) return 30
   if (rate.includes('/')) {
@@ -394,7 +447,13 @@ export const getMediaFrameRate = async (filePath: string): Promise<number> => {
 }
 
 const hasAudioStream = async (filePath: string): Promise<boolean> => {
-  const result = await ffprobe(`-v error -select_streams a:0 -show_entries stream=index -of csv=p=0 "${filePath}"`, { trim: true })
+  const result = await ffprobe([
+    '-v', 'error',
+    '-select_streams', 'a:0',
+    '-show_entries', 'stream=index',
+    '-of', 'csv=p=0',
+    filePath
+  ], { trim: true })
   return Boolean(typeof result === 'object' && result?.stdout)
 }
 
@@ -431,12 +490,17 @@ export const loopVideoWithTransition = async (
   const staticDuration = transitionEnabled ? 2.5 : 0
   const videoFadeOffset = transitionEnabled ? Math.max(0, duration - fadeDuration) : 0
 
-  let inputArgs = `-stream_loop ${Math.max(0, safeLoopCount - 1)} -i "${inputPath}"`
+  let inputArgs: string[] = ['-stream_loop', String(Math.max(0, safeLoopCount - 1)), '-i', inputPath]
   let filterComplex = '[0:v]setpts=PTS-STARTPTS,format=yuv420p,setsar=1[outv]'
   let composedDuration = duration * safeLoopCount
 
   if (transitionEnabled) {
-    inputArgs = `-stream_loop ${Math.max(0, safeLoopCount)} -i "${inputPath}" -loop 1 -i "${staticImagePath}"`
+    inputArgs = [
+      '-stream_loop', String(Math.max(0, safeLoopCount)),
+      '-i', inputPath,
+      '-loop', '1',
+      '-i', staticImagePath
+    ]
     const splitLabels = Array.from({ length: safeLoopCount }, (_, index) => `[vsplit${index}]`).join('')
     const stillSplitLabels = Array.from({ length: safeLoopCount }, (_, index) => `[still${index}]`).join('')
     const filterParts = [
@@ -482,7 +546,7 @@ export const loopVideoWithTransition = async (
     }
     const bgmDuration = baseContext.bgmDuration || 1
     const totalDuration = transitionEnabled ? composedDuration : duration * safeLoopCount
-    let bgmInputArgs = `-i "${bgmPath}"`
+    let bgmInputArgs: string[] = ['-i', bgmPath]
     const bgmInputIndex = transitionEnabled ? 2 : 1
     const bgmNeedLoop = totalDuration > bgmDuration
 
@@ -490,24 +554,36 @@ export const loopVideoWithTransition = async (
       const bgmStartTime = baseContext.usedDuration % bgmDuration
       const remainingBgm = bgmDuration - bgmStartTime
       if (totalDuration <= remainingBgm) {
-        bgmInputArgs = `-ss ${bgmStartTime} -i "${bgmPath}"`
+        bgmInputArgs = ['-ss', String(bgmStartTime), '-i', bgmPath]
       } else {
         const bgmLoopCount = Math.ceil(totalDuration / bgmDuration) + 1
-        bgmInputArgs = `-stream_loop ${bgmLoopCount} -ss ${bgmStartTime} -i "${bgmPath}"`
+        bgmInputArgs = ['-stream_loop', String(bgmLoopCount), '-ss', String(bgmStartTime), '-i', bgmPath]
       }
     } else if (bgmNeedLoop) {
       const bgmLoopCount = Math.max(0, Math.ceil(totalDuration / bgmDuration) - 1)
-      bgmInputArgs = `-stream_loop ${bgmLoopCount} -i "${bgmPath}"`
+      bgmInputArgs = ['-stream_loop', String(bgmLoopCount), '-i', bgmPath]
     }
 
     const hasSourceAudio = await hasAudioStream(inputPath)
     const audioFilter = hasSourceAudio
       ? `${filterComplex};[0:a][${bgmInputIndex}:a]amix=inputs=2:duration=longest:dropout_transition=3[aout]`
       : `${filterComplex};[${bgmInputIndex}:a]asetpts=PTS-STARTPTS[aout]`
-    const result = await ffmpeg(
-      `-y ${inputArgs} ${bgmInputArgs} -filter_complex "${audioFilter}" ` +
-        `-map "[outv]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -pix_fmt yuv420p -shortest "${outputPath}"`
-    )
+    const result = await ffmpeg([
+      '-y',
+      ...inputArgs,
+      ...bgmInputArgs,
+      '-filter_complex', audioFilter,
+      // `[outv]` 这类流标签原来在命令串里带着引号，那是为了躲开 shell 的方括号globbing；
+      // execFile 不经过 shell，ffmpeg 要看到的就是裸的 `[outv]`
+      '-map', '[outv]',
+      '-map', '[aout]',
+      '-c:v', 'libx264',
+      '-c:a', 'aac',
+      '-b:a', '192k',
+      '-pix_fmt', 'yuv420p',
+      '-shortest',
+      outputPath
+    ])
 
     let mergeContext: LoopVideoContext | undefined
     if (mergeMode === 'continuous') {
@@ -523,47 +599,57 @@ export const loopVideoWithTransition = async (
     return { success: result.status, context: mergeContext }
   }
 
-  const result = await ffmpeg(`-y ${inputArgs} -filter_complex "${filterComplex}" -map "[outv]" -c:v libx264 -pix_fmt yuv420p "${outputPath}"`)
+  const result = await ffmpeg([
+    '-y',
+    ...inputArgs,
+    '-filter_complex', filterComplex,
+    '-map', '[outv]',
+    '-c:v', 'libx264',
+    '-pix_fmt', 'yuv420p',
+    outputPath
+  ])
   result.status ? logger.debug(`Live Photo 效果视频生成成功: ${outputPath}`) : logger.error('Live Photo 效果视频生成失败', result)
   return { success: result.status }
 }
 
 /**
- * @description 执行 shell 命令
- * @param {string} cmd - 要执行的命令
- * @param {Object} [options] - 执行选项
- * @param {boolean} [options.log=false] - 是否打印执行日志
- * @param {boolean} [options.booleanResult=false] - 是否只返回布尔值表示命令是否成功执行
- * @param {boolean} [options.trim=false] - 是否去除输出内容的首尾空白
- * @param {string} [options.cwd] - 命令执行的工作目录
- * @returns {Promise<{status: boolean, error: Error|null, stdout: string, stderr: string}|boolean>} 返回执行结果或状态对象
- * @property {boolean} status - 命令是否执行成功
- * @property {Error|null} error - 错误信息（如果有）
- * @property {string} stdout - 标准输出
- * @property {string} stderr - 标准错误输出
+ * @description 执行一个可执行文件，参数以数组传入、不经过 shell
+ *
+ * 用 `execFile` 而不是 `exec`：后者把整条命令串交给 `/bin/sh`（Windows 是 cmd.exe），
+ * 于是拼进命令的每一个远端字符串都成了潜在的注入点。实测过标题里带一对反引号时
+ * POSIX sh 在双引号内仍做命令替换，payload 会真的执行。`execFile` 把 argv 逐个
+ * 交给内核，参数里有什么字符都只是那个参数的字面内容，注入面直接消失。
+ *
+ * `utils/filename.ts` 的清洗仍然保留 —— 那层管的是「能否安全落盘」
+ * （文件系统非法字符、长度、控制字符），和这里的注入防护是两件事。
+ *
+ * @param file - 可执行文件路径
+ * @param args - 参数数组，每个元素都是被执行程序看到的字面值
+ * @param options - 执行选项
+ * @param options.log - 是否打印执行日志
+ * @param options.booleanResult - 是否只返回布尔值表示命令是否成功执行
+ * @param options.trim - 是否去除输出内容的首尾空白
+ * @param options.cwd - 命令执行的工作目录
  *
  * @example
- * // 执行简单命令
- * const result = await exec('ls -la');
+ * const result = await exec('ffmpeg', ['-i', 'input.mp4', 'output.avi'])
  *
  * @example
- * // 执行命令并获取详细输出
- * const output = await exec('npm test', { log: true });
- *
- * @example
- * // 只检查命令是否成功
- * const success = await exec('npm test', { booleanResult: true });
+ * const success = await exec('ffmpeg', ['-version'], { booleanResult: true })
  */
 function exec (
-  cmd: string,
+  file: string,
+  args: FFmpegArgs,
   options: FFmpegExecOptions & { booleanResult: true }
 ): Promise<boolean>
 function exec (
-  cmd: string,
+  file: string,
+  args: FFmpegArgs,
   options?: FFmpegExecOptions
 ): Promise<FFmpegExecResult>
 function exec (
-  cmd: string,
+  file: string,
+  args: FFmpegArgs,
   options?: FFmpegExecOptions
 ): Promise<FFmpegExecResult | boolean> {
   return new Promise(resolve => {
@@ -572,13 +658,17 @@ function exec (
       logger.info([
         '[exec] 执行命令:',
         `pwd: ${options?.cwd || process.cwd()}`,
-        `cmd: ${cmd}`,
+        `file: ${file}`,
+        // 逐个参数打印，不拼成一行：拼起来会让「一个带空格的参数」和
+        // 「两个参数」在日志里看起来一模一样，排查命令问题时正好需要区分
+        `args: ${JSON.stringify(args)}`,
         `options: ${JSON.stringify(options)}`
       ].join('\n'))
     }
 
-    // 执行命令
-    execCmd(cmd, options, (error, stdout, stderr) => {
+    // 执行命令。maxBuffer 保持 Node 默认的 1MB —— 迁移前的 `exec` 也是这个默认值，
+    // 这轮只换执行方式、不顺手改行为。真撞到 ENOBUFS 再单独调。
+    execFileCmd(file, [...args], options ?? {}, (error, stdout, stderr) => {
       // 打印执行结果日志（如果启用）
       if (options?.log) {
         const info = stringifyError(error || undefined)
