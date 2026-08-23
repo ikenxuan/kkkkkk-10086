@@ -29,6 +29,7 @@ import type { FileInfo } from '@/types/platform'
 import type { XiaohongshuNoteId } from './getid.js'
 import { getXiaohongshuData } from './api.js'
 import { buildXiaohongshuShareUrl } from './link.js'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 /** 笔记卡片中被解析逻辑读取的字段 */
 interface XiaohongshuNoteCard {
@@ -212,7 +213,7 @@ export class Xiaohongshu extends Base {
         const emojiList = await getXiaohongshuData('表情列表', { typeMode: 'strict' })
         emojiData = buildXiaohongshuEmojiList(emojiList as Parameters<typeof buildXiaohongshuEmojiList>[0])
       } catch (error: unknown) {
-        logger.debug(`[小红书] 获取表情列表失败，使用纯文本渲染: ${error instanceof Error ? error.message : String(error)}`)
+        logger.debug(`[小红书] 获取表情列表失败，使用纯文本渲染: ${getErrorMessage(error)}`)
       }
     }
 

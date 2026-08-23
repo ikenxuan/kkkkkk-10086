@@ -16,6 +16,7 @@ import {
   buildWatermarkText,
   type ImageMessage
 } from './Watermark.js'
+import { getErrorMessage } from './error-message.js'
 
 export type { RenderParams } from './react-template/index.js'
 
@@ -115,7 +116,7 @@ export const Render = async <R extends ReactTemplateRoute> (
       }
     )
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = getErrorMessage(error)
     throw new Error(`[Render] React SSR 渲染失败（${reactRoute}）：${message}`, { cause: error })
   }
 

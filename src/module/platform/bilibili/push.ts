@@ -21,6 +21,7 @@ import common from '@/runtime/host/common'
 import type { BilibiliPushItem as BilibiliPushConfigItem } from '@/types/config'
 import type { MessageEvent } from '@/types/message'
 import fs from 'node:fs'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 const require = createRequire(import.meta.url)
 
@@ -1108,7 +1109,7 @@ export class Bilibilipush extends Base {
         }))
         liveStatus = response.data.data
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
+        const message = getErrorMessage(error)
         logger.warn(`[Bilibili 推送] UP主 ${item.remark || item.host_mid}（${item.host_mid}）直播状态直查失败，本轮回退到直播动态检测：${message}`)
         continue
       }
@@ -1152,7 +1153,7 @@ export class Bilibilipush extends Base {
         }
         handledUids.add(item.host_mid)
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
+        const message = getErrorMessage(error)
         logger.warn(`[Bilibili 推送] UP主 ${item.remark || item.host_mid}（${item.host_mid}）直播场次信息不完整，本轮回退到直播动态检测：${message}`)
       }
     }
@@ -1176,7 +1177,7 @@ export class Bilibilipush extends Base {
       const liveInfo = response.data.data
       return buildBilibiliLiveSessionId(hostMid, liveInfo.room_id, liveInfo.live_time) || dynamic.id_str
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = getErrorMessage(error)
       logger.warn(`[Bilibili 推送] 直播动态 ${dynamic.id_str} 无法解析统一场次键，将使用动态ID去重：${message}`)
       return dynamic.id_str
     }
@@ -1275,7 +1276,7 @@ export class Bilibilipush extends Base {
           // 线上表现就是每轮固定报一次「B站数据获取失败」然后什么都没推。
           // 与上游一致：按 UP 隔离，记一条 warn 然后跳过这一个。
           logger.warn(
-            `[Bilibili 推送] UP主 ${item.remark}（${item.host_mid}）本轮跳过：${error instanceof Error ? error.message : String(error)}`
+            `[Bilibili 推送] UP主 ${item.remark}（${item.host_mid}）本轮跳过：${getErrorMessage(error)}`
           )
           continue
         }

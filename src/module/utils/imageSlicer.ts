@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 
 import { readImageBytes, replaceImageBytes, type ImageMessage } from './Watermark.js'
+import { getErrorMessage } from './error-message.js'
 
 /**
  * 超高成图的分片。
@@ -58,7 +59,7 @@ export const sliceTallImage = async (image: ImageMessage, maxHeight: number): Pr
   } catch (error: unknown) {
     // 分片只是为了迁就上传限制，失败时把整张发出去，好过一张都发不出去
     const hostLogger = globalThis.logger as { warn?: (message: string) => unknown } | undefined
-    hostLogger?.warn?.(`[Render] 成图分片失败，改为发送整张：${error instanceof Error ? error.message : String(error)}`)
+    hostLogger?.warn?.(`[Render] 成图分片失败，改为发送整张：${getErrorMessage(error)}`)
     return [image]
   }
 }

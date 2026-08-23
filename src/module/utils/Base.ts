@@ -19,6 +19,7 @@ import { buildContextLogEntries, toErrorCardPlatform } from './ErrorHandler/rend
 import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metadata'
 import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
+import { getErrorMessage } from './error-message.js'
 
 interface AmagiClient {
   [key: string]: unknown
@@ -234,7 +235,7 @@ const buildApiErrorImage = async (
     // 和 ErrorHandler/render.ts 的 renderErrorReport 对齐：渲染失败必须退化成文本。
     // 定时推送这条路径上 sendMasterMessage 是唯一的投递通道，这里让异常冒出去
     // 就等于整个报错静默消失，只在宿主控制台留一行调度器日志。
-    const reason = renderError instanceof Error ? renderError.message : String(renderError)
+    const reason = getErrorMessage(renderError)
     logger.warn(`[Base] 接口错误图片渲染失败，使用文本回退: ${reason}`)
     return [
       `KKK接口调用出错: ${method}`,
@@ -759,7 +760,7 @@ const sendVideoUrl = async (
       : await e.reply?.(videoMessage || videoUrl)
     return wasMessageSent(status)
   } catch (error) {
-    logger.warn(`视频URL发送失败，回退本地下载上传: ${error instanceof Error ? error.message : String(error)}`)
+    logger.warn(`视频URL发送失败，回退本地下载上传: ${getErrorMessage(error)}`)
     return false
   }
 }

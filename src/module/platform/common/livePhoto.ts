@@ -9,6 +9,7 @@ import Common from '@/module/utils/Common'
 import Config from '@/module/utils/Config'
 import { Render } from '@/module/utils/Render'
 import { ffmpeg, loopVideoWithTransition } from '@/module/utils/FFmpeg'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 /** 实况图生成模式 */
 export type LivePhotoMode = 'video_and_livephoto' | 'video_only' | 'livephoto_only'
@@ -92,7 +93,7 @@ export const buildLivePhotoTipMessage = async (): Promise<ImageMessage[] | false
       description: '点击「查看原图」后保存到相册即可识别为实况照片'
     })
   } catch (error: unknown) {
-    logger.warn(`[实况图] 提示图渲染失败，使用文本回退: ${error instanceof Error ? error.message : String(error)}`)
+    logger.warn(`[实况图] 提示图渲染失败，使用文本回退: ${getErrorMessage(error)}`)
     return livePhotoTipText
   }
 }

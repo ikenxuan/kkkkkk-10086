@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { scan } from '@ikenxuan/qrcode'
 import { newInjectedPage } from 'fingerprint-injector'
 import { Common, Config, Render } from '@/module/utils/index'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 /** 登录流程使用的事件对象 */
 export interface DouyinLoginEvent {
@@ -74,7 +75,7 @@ const safeScreenshot = async (page: Page, filename: string): Promise<void> => {
     await Common.mkdir(Common.tempDri.default)
     await page.screenshot({ path: join(Common.tempDri.default, filename) as `${string}.png` })
   } catch (error) {
-    logger.warn(`[抖音登录] 截图失败: ${error instanceof Error ? error.message : String(error)}`)
+    logger.warn(`[抖音登录] 截图失败: ${getErrorMessage(error)}`)
   }
 }
 
@@ -97,7 +98,7 @@ const waitQrcode = async (page: Page): Promise<QrcodeResult> => {
     decoded = await scan(imageBuffer) || ''
     if (decoded) logger.mark(`[抖音登录] 二维码解码成功: ${decoded}`)
   } catch (error) {
-    logger.warn(`[抖音登录] 二维码解码失败，将发送原图: ${error instanceof Error ? error.message : String(error)}`)
+    logger.warn(`[抖音登录] 二维码解码失败，将发送原图: ${getErrorMessage(error)}`)
   }
   return {
     src,
@@ -219,7 +220,7 @@ const handleSecondVerify = async (
             else if (json?.message === 'success' || !json?.data?.error_code) resolve(true)
             else resolve(false)
           } catch (error) {
-            logger.warn(`[抖音登录] 解析验证码验证响应失败: ${error instanceof Error ? error.message : String(error)}`)
+            logger.warn(`[抖音登录] 解析验证码验证响应失败: ${getErrorMessage(error)}`)
           }
         }
         page.on('response', handler as never)
@@ -284,7 +285,7 @@ export const dylogin = async (
       qr = await waitQrcode(page)
     } catch (error) {
       await safeScreenshot(page, 'DouyinLoginQrcodeError.png')
-      await e.reply(`获取二维码失败：${error instanceof Error ? error.message : String(error)}`, true)
+      await e.reply(`获取二维码失败：${getErrorMessage(error)}`, true)
       return true
     }
 
@@ -338,7 +339,7 @@ export const dylogin = async (
             if (!verifyResult.ok) finish(verifyResult)
           }
         } catch (error) {
-          logger.warn(`[抖音登录] 处理登录响应失败: ${error instanceof Error ? error.message : String(error)}`)
+          logger.warn(`[抖音登录] 处理登录响应失败: ${getErrorMessage(error)}`)
         }
       })
     })

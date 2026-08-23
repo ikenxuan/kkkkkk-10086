@@ -3,6 +3,7 @@ import { generate } from '@ikenxuan/qrcode'
 import { registerErrorStrategy, sendErrorToAllMasters, sendErrorToMaster } from '@/module/utils/ErrorHandler/index'
 import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '@/module/utils/ErrorHandler/strategy'
 import { getBilibiliData } from './api.js'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 /** 判断是否为普通对象 */
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -133,7 +134,7 @@ export const bilibiliRiskControlStrategy: ErrorStrategy = {
       await event?.reply?.('验证失败，请重试。')
     } catch (verifyError) {
       logger.error('[BilibiliRiskControl] 验证请求失败:', verifyError)
-      await event?.reply?.(`验证失败: ${verifyError instanceof Error ? verifyError.message : String(verifyError)}`)
+      await event?.reply?.(`验证失败: ${getErrorMessage(verifyError)}`)
     }
 
     return 'handled'

@@ -1,5 +1,6 @@
 import sharp from 'sharp'
 import Version from './Version.js'
+import { getErrorMessage } from './error-message.js'
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 let watermarkModulePromise: Promise<typeof import('@ikenxuan/watermark')> | null = null
@@ -91,7 +92,7 @@ const getWatermarkEncoder = async (): Promise<((imageBytes: Buffer, watermarkTex
     watermarkModulePromise = null
     if (!watermarkLoadWarned) {
       watermarkLoadWarned = true
-      logWarn(`[Render] 隐水印模块加载失败，已跳过隐水印: ${error instanceof Error ? error.message : String(error)}`)
+      logWarn(`[Render] 隐水印模块加载失败，已跳过隐水印: ${getErrorMessage(error)}`)
     }
     return null
   }
@@ -118,7 +119,7 @@ export const embedWatermark = async (
     if (!output) throw new TypeError('\u9690\u6c34\u5370\u7f16\u7801\u5668\u8fd4\u56de\u4e86\u4e0d\u652f\u6301\u7684\u56fe\u7247\u6570\u636e')
     return output
   } catch (error: unknown) {
-    logWarn(`[Render] 嵌入隐水印失败: ${error instanceof Error ? error.message : String(error)}`)
+    logWarn(`[Render] 嵌入隐水印失败: ${getErrorMessage(error)}`)
     return null
   }
 }

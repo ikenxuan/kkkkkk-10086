@@ -13,6 +13,7 @@ import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listC
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
 import common from '@/runtime/host/common'
+import { getErrorMessage } from '@/module/utils/error-message'
 
 /**
  * @typedef {import('@ikenxuan/amagi').ApiResponse} ApiResponse
@@ -742,7 +743,7 @@ export class DouYinpush extends Base {
           // Base.ts 的 amagi 代理在接口返回非零 code 时会 throw，try 原来在循环外面，
           // 第一个接口失败的博主就会把 for 整个终止，后面所有订阅当轮都不推。
           logger.warn(
-            `[抖音推送] 用户 ${item.remark || item.short_id || item.sec_uid || '未知'}本轮跳过：${error instanceof Error ? error.message : String(error)}`
+            `[抖音推送] 用户 ${item.remark || item.short_id || item.sec_uid || '未知'}本轮跳过：${getErrorMessage(error)}`
           )
           continue
         }
