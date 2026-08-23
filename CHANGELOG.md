@@ -1,5 +1,60 @@
 # Changelog
 
+## [2.39.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.4...v2.39.0) (2026-08-23)
+
+
+### ✨ 新功能
+
+* **statistics:** 单群统计卡加本群用户解析排行 ([964291b](https://github.com/ikenxuan/kkkkkk-10086/commit/964291b62a30fc63018dac470efb26d45e90c5d8))
+* **statistics:** 解析统计加上媒体时长/体积/耗时 ([f4d5650](https://github.com/ikenxuan/kkkkkk-10086/commit/f4d56508f1ff44246db9b9143b1fe416dacb0320))
+* **tooling:** 加开发面板入口 template:dev，支持捕获真实渲染数据 ([044139e](https://github.com/ikenxuan/kkkkkk-10086/commit/044139edbf9bcad8d520fdcf8eb7e8be088ea296))
+* **upload:** 视频发送体积上限从 100MB 提到 1536MB（1.5GB） ([595d9c1](https://github.com/ikenxuan/kkkkkk-10086/commit/595d9c16858e0dbb696d346e649a6162b4db226c))
+
+
+### 🐛 Bug 修复
+
+* **bilibili:** 实况图推送把临时文件清理挪到发送之后 ([97e1cbd](https://github.com/ikenxuan/kkkkkk-10086/commit/97e1cbdb11fbe00ddf8371416787fb607e290beb))
+* **comment:** 抖音/B站评论数量改读新键 numcomment，旧键仅作兜底 ([bee4334](https://github.com/ikenxuan/kkkkkk-10086/commit/bee4334475d30273e7c9fcf5fc6d34666c150e32))
+* **db:** 修正两处类型与实际读取不符 ([1529b27](https://github.com/ikenxuan/kkkkkk-10086/commit/1529b27653c767261d144e5c86dcdf7a3d2a3821))
+* **error:** 错误卡片按 Bot 取主人，不再发到 QQBot 的 QQ 号上 ([7c728a0](https://github.com/ikenxuan/kkkkkk-10086/commit/7c728a041356976f9165af8e1cf75b8e39090ed2))
+* **render:** 成图四角改回透明，纯黑背景下不再亮一块 ([88330bf](https://github.com/ikenxuan/kkkkkk-10086/commit/88330bf3f1eb18613a78c6e07739f7991f0851c9))
+* **scripts:** npm scripts 改按路径直调本地二进制，不再依赖 .bin shim ([5e98a56](https://github.com/ikenxuan/kkkkkk-10086/commit/5e98a563e66e449dc50d58feb6ae33c4d6244564))
+* **security:** ffmpeg/ffprobe 改 execFile + 参数数组，命令不再过 shell ([9dc2440](https://github.com/ikenxuan/kkkkkk-10086/commit/9dc2440933f88fdd5424cd4ddb9102c36f5e19cd))
+* **security:** 文件名清洗统一封口，剔掉 shell 元字符 ([49120c2](https://github.com/ikenxuan/kkkkkk-10086/commit/49120c21a0d3a252801ca9d1416901b1517f9b01))
+* **statistics:** 全局统计按群号查群名，排行不再算私聊 ([0da60cd](https://github.com/ikenxuan/kkkkkk-10086/commit/0da60cd33b3469ba67118b320c2fc6f24082e36b))
+* **template:** 全局统计环形图不再给零值平台画标签 ([d4ac049](https://github.com/ikenxuan/kkkkkk-10086/commit/d4ac049858a4a40c76ec25db1c435b74ad04c71c))
+* **template:** 标签行再右移，和左上角装饰点阵拉开距离 ([0f06a71](https://github.com/ikenxuan/kkkkkk-10086/commit/0f06a71d0ff83d76b38711f5ed15a9787605ff3c))
+* **template:** 统计卡片标签行让开左上角装饰点阵 ([e9161b2](https://github.com/ikenxuan/kkkkkk-10086/commit/e9161b292c018519c9b71ccecc6bf42f6f9254aa))
+* **template:** 群组统计的标签行也跟上 pl-16 ([f8b2667](https://github.com/ikenxuan/kkkkkk-10086/commit/f8b26675d0196ce78fd838f9bba0a8f032556c51))
+* **template:** 页脚插件名缩到 33px，commit hash 不再跟通道走色 ([731d4ba](https://github.com/ikenxuan/kkkkkk-10086/commit/731d4ba77b69bae14540cb9fcff46b812fda52b2))
+* **tooling:** 模板构建直调 ktr 入口，不再依赖 .bin shim ([5d57025](https://github.com/ikenxuan/kkkkkk-10086/commit/5d570253996e6355f870ae35e10e1311a0423abc))
+* **upload:** useGroupFile 入参不再被配置覆盖，1536MB 上限真正可达 ([3a79d85](https://github.com/ikenxuan/kkkkkk-10086/commit/3a79d8518fbdd3be2cef66c53df8fb1f9704daac))
+* **upload:** 群文件接口缺失时如实报失败，不再假装发送成功 ([85eccd8](https://github.com/ikenxuan/kkkkkk-10086/commit/85eccd89b44762acea21092fecb8788cc7152f47))
+* **upload:** 远程URL直发先按体积判断，探不到体积不阻塞发送 ([210abcb](https://github.com/ikenxuan/kkkkkk-10086/commit/210abcb05ee11a3971088e4c77cba3101a3689f0))
+* **utils:** exec 的错误日志丢掉了 code/syscall，只剩一句 message ([701fe34](https://github.com/ikenxuan/kkkkkk-10086/commit/701fe34b55872f4230c5ba2160be975f37807fe5))
+* **utils:** 修四处审查查出的真缺陷 ([98eadb0](https://github.com/ikenxuan/kkkkkk-10086/commit/98eadb08c7d05a62191a1fa9a7247584602ecbd7))
+
+
+### 📝 文档
+
+* **ktr:** ktr/ 镜像的注释与上游对齐，零行为变更 ([99ee232](https://github.com/ikenxuan/kkkkkk-10086/commit/99ee23257dcc98990291c36056bbb495eb4f2f50))
+* **security:** 两处注释还在说 ffmpeg 命令过 shell，已经不是了 ([e403e88](https://github.com/ikenxuan/kkkkkk-10086/commit/e403e88d5c59838ac95586d6fc430e62dcdd5e73))
+
+
+### ♻️ 重构
+
+* **bilibili:** 删掉与 richtext 核心逐字段重复的 26 个平行类型 ([994e6e5](https://github.com/ikenxuan/kkkkkk-10086/commit/994e6e5ec0800aa0bab8f5a7eae0827b216ccbf0))
+* **guoba:** 面板 schema 按分组拆到 src/module/guoba/，入口只留拼装 ([72afae7](https://github.com/ikenxuan/kkkkkk-10086/commit/72afae7778f90af6526598b2ecdcfff7c27f6015))
+* **richtext:** linkCard.meta 的 any 收成 unknown ([03820b5](https://github.com/ikenxuan/kkkkkk-10086/commit/03820b59a2f1dc9b6ae168803748f97d428f4a3b))
+* **utils:** 19 处手写的 instanceof Error 三元式换成共享 getErrorMessage ([58ff348](https://github.com/ikenxuan/kkkkkk-10086/commit/58ff3480afe497f75e50f92eb818e04566de8909))
+* **utils:** 6 份 getErrorMessage 并成一份，取鸭子类型那族语义 ([de4e2d0](https://github.com/ikenxuan/kkkkkk-10086/commit/de4e2d04b47a984f1d5a648157aa777255d4d398))
+* **utils:** 删掉零引用的 changelog 解析与 9 个 richtext 构造函数 ([68863cf](https://github.com/ikenxuan/kkkkkk-10086/commit/68863cf740fc18c8d7adda9a3137f27f55b23dfc))
+
+
+### ✅ 测试
+
+* tests/ 进仓库，check 链补上 typecheck:test / test / test:dist ([d3e5c94](https://github.com/ikenxuan/kkkkkk-10086/commit/d3e5c94f034e42e1cad225dae4a98b9dcfd1d9dd))
+
 ## [2.38.4](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.3...v2.38.4) (2026-08-22)
 
 
