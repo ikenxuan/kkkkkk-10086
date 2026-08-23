@@ -238,8 +238,16 @@ export interface RichTextLinkCardNode {
   url: string
   /** 卡片类型标识 */
   cardType?: string
-  /** 额外元数据 */
-  meta?: Record<string, any>
+  /**
+   * 额外元数据。
+   *
+   * 值是 `unknown` 而不是 `any`：这里装的是平台接口原样塞进来的东西
+   * （目前只有 B站 opus 的 `bizId` / `contentCard`），没有任何渲染器或模板读它，
+   * 纯粹是留给排查用的旁路数据。用 `any` 的话，将来谁真去读会拿到一个
+   * 不报错的 `any` 一路传下去；`unknown` 强迫读的人先收窄，
+   * 这正是「来源不可信的旁路数据」该有的姿态。
+   */
+  meta?: Record<string, unknown>
 }
 
 /** 平台表情定义，通常由 core 从平台表情接口转换得到。 */
