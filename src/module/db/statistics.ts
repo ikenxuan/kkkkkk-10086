@@ -293,7 +293,8 @@ export class StatisticsDBBase {
   }
 
   async getTotalParses (): Promise<number> {
-    const result = await this.getQuery<GlobalStatisticsRow>('SELECT value FROM GlobalStatistics WHERE key = ?', ['totalParses'])
+    // 只投影 value 一列，用整行类型会让 key / updatedAt 在类型上存在、运行时却是 undefined
+    const result = await this.getQuery<Pick<GlobalStatisticsRow, 'value'>>('SELECT value FROM GlobalStatistics WHERE key = ?', ['totalParses'])
     return Number.parseInt(result?.value || '0', 10)
   }
 

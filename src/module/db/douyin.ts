@@ -317,6 +317,9 @@ export class DouyinDBBase {
         updatedAt: now
       }
     } else {
+      // living 在表里是 INTEGER，SELECT * 读回来是 0/1，和 getDouyinUser 一样转成 boolean，
+      // 否则类型写着 boolean、运行时却是 number，`=== true` 之类的判断会静默失败
+      user.living = !!user.living
       let needUpdate = false
       const updates: string[] = []
       const params: unknown[] = []
