@@ -1136,9 +1136,10 @@ export const downloadFile = async (
 /**
  * 处理文件名长度，保留文件扩展名
  *
- * 清洗规则统一在 utils/filename.ts：这个名字来自远端作品标题，落盘后会被拼进
- * ffmpeg 的命令串，所以除了文件系统非法字符，shell 元字符（反引号、$、;、& 等）
- * 也必须剔掉，否则标题里一对反引号在 POSIX sh 下就是命令替换。
+ * 清洗规则统一在 utils/filename.ts：这个名字来自远端作品标题，除了文件系统非法
+ * 字符，shell 元字符（反引号、$、;、& 等）也一起剔掉。注入这条路已经由
+ * FFmpeg.ts 的 execFile + 参数数组封死，这里剔元字符是为了文件名本身好用
+ * （别的工具、别人的脚本、日志里都少一堆需要转义的东西）。
  *
  * @param {string} filename 原始文件名
  * @param {number} [maxLength=50] 最大长度（不包括扩展名）
