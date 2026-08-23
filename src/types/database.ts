@@ -83,6 +83,86 @@ export interface GlobalStatisticsSummary {
   platformStats: Record<StatisticsPlatform, number>
 }
 
+/**
+ * MediaMetrics 表行：解析出去的媒体的时长 / 体积 / 耗时累计。
+ *
+ * 三组 `*Samples` 是各自的分母，不能用 `mediaCount` 代替：快手、小红书当前的
+ * 解析路径上拿不到时长，那些条目只增 `mediaCount` 不增 `durationSamples`
+ * （见 utils/media-metrics.ts）。拿 mediaCount 当分母会把这些「没有时长的条目」
+ * 按 0 算进平均值。
+ */
+export interface MediaMetricsRow {
+  id: number
+  groupId: string
+  platform: StatisticsPlatform
+  /** 媒体条数。一次解析可能产出多条（图集里的实况图各算一条） */
+  mediaCount: number
+  videoCount: number
+  audioCount: number
+  /** 累计毫秒，已按平台单位归一（见 media-metrics.ts 的 fromSeconds / fromMilliseconds） */
+  videoDurationMs: number
+  audioDurationMs: number
+  /** 真正带到时长的条数，平均时长的分母 */
+  durationSamples: number
+  /** 单条最长时长，毫秒 */
+  maxDurationMs: number
+  totalBytes: number
+  /** 真正带到体积的条数，平均体积的分母 */
+  bytesSamples: number
+  processingMs: number
+  /** 真正带到耗时的条数 */
+  processingSamples: number
+  successCount: number
+  failureCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * 媒体度量的聚合结果，模板直接消费这个形状。
+ *
+ * 所有平均值都是「可缺」的：分母为 0 时是 undefined 而不是 0 ——
+ * 「没有数据」和「平均 0 秒」在卡片上必须能区分开。
+ */
+export interface MediaMetricsSummary {
+  /** 总媒体条数 */
+  mediaCount: number
+  videoCount: number
+  audioCount: number
+  /** 总时长毫秒（视频 + 音频） */
+  totalDurationMs: number
+  videoDurationMs: number
+  audioDurationMs: number
+  /** 带到时长的条数 */
+  durationSamples: number
+  /** 平均时长毫秒。durationSamples 为 0 时缺省 */
+  averageDurationMs?: number
+  /** 最长单条时长毫秒。没有样本时缺省 */
+  maxDurationMs?: number
+  totalBytes: number
+  /** 平均耗时毫秒。processingSamples 为 0 时缺省 */
+  averageProcessingMs?: number
+  successCount: number
+  failureCount: number
+  /** 成功率 0~1。成功 + 失败为 0 时缺省 */
+  successRate?: number
+  /** 各平台时长分布，用于排行条 */
+  platforms: Record<StatisticsPlatform, MediaMetricsPlatformSummary>
+}
+
+/** 单个平台的媒体度量 */
+export interface MediaMetricsPlatformSummary {
+  mediaCount: number
+  /** 总时长毫秒 */
+  totalDurationMs: number
+  /** 带到时长的条数。为 0 表示这个平台一条时长都没拿到（不是「时长为 0」） */
+  durationSamples: number
+  /** 平均时长毫秒。durationSamples 为 0 时缺省 */
+  averageDurationMs?: number
+  maxDurationMs?: number
+  totalBytes: number
+}
+
 /** DouyinUsers 表行 */
 export interface DouyinUserRow {
   sec_uid: string

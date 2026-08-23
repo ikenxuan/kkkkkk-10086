@@ -229,4 +229,147 @@ describe('StatisticsDBBase', () => {
       expect(await db.getGroupUserRanking('group-does-not-exist')).toEqual([])
     })
   })
+
+  describe('recordMediaMetrics', () => {
+    it('首次解析建行，再次解析在同一行上累加', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'douyin', [
+        { kind: 'video', durationMs: 30_000, bytes: 1_000 }
+      ], 'success', 500)
+      await db.recordMediaMetrics('group-1', 'douyin', [
+        { kind: 'video', durationMs: 10_000, bytes: 2_000 }
+      ], 'success', 700)
+
+      // UNIQUE(groupId, platform) 让第二次走 ON CONFLICT 分支，而不是插第二行
+      const rows = await db.getGroupMediaMetrics('group-1')
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toMatchObject({
+        mediaCount: 2,
+        videoCount: 2,
+        videoDurationMs: 40_000,
+        durationSamples: 2,
+        totalBytes: 3_000,
+        processingMs: 1_200,
+        processingSamples: 2,
+        successCount: 2,
+        failureCount: 0
+      })
+    })
+
+    it('maxDurationMs 取最大值而不是累加，短的那次不会把它压下去', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'douyin', [{ kind: 'video', durationMs: 90_000 }], 'success')
+      await db.recordMediaMetrics('group-1', 'douyin', [{ kind: 'video', durationMs: 5_000 }], 'success')
+
+      expect((await db.getGroupMediaMetrics('group-1'))[0]?.maxDurationMs).toBe(90_000)
+    })
+
+    it('拿不到时长的条目只增条数，不污染时长分母', async () => {
+      const { db } = await createStatisticsDB()
+
+      // 快手 / 小红书当前的解析路径上就是这样：有媒体但没有时长字段
+      await db.recordMediaMetrics('group-1', 'kuaishou', [
+        { kind: 'video' },
+        { kind: 'video' }
+      ], 'success')
+
+      const row = (await db.getGroupMediaMetrics('group-1'))[0]
+      expect(row).toMatchObject({ mediaCount: 2, videoCount: 2, durationSamples: 0, videoDurationMs: 0 })
+      // 分母为 0 -> 平均值缺省，而不是 0
+      expect((await db.getGroupMediaSummary('group-1')).averageDurationMs).toBeUndefined()
+    })
+
+    it('音频与视频分开计时长，汇总里合成总时长', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'bilibili', [
+        { kind: 'video', durationMs: 60_000 },
+        { kind: 'audio', durationMs: 20_000 }
+      ], 'success')
+
+      const summary = await db.getGroupMediaSummary('group-1')
+      expect(summary).toMatchObject({
+        videoCount: 1,
+        audioCount: 1,
+        videoDurationMs: 60_000,
+        audioDurationMs: 20_000,
+        totalDurationMs: 80_000,
+        averageDurationMs: 40_000
+      })
+    })
+
+    it('不支持的平台直接忽略，不建行', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'unknown', [{ kind: 'video', durationMs: 1_000 }], 'success')
+
+      expect(await db.getAllMediaMetrics()).toEqual([])
+    })
+
+    it('一条媒体都没有、也没有耗时可记时不建全 0 行', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'douyin', [], 'success')
+
+      expect(await db.getAllMediaMetrics()).toEqual([])
+    })
+
+    it('纯图文解析（无媒体但有耗时）仍记成败，用于成功率', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'douyin', [], 'success', 300)
+      await db.recordMediaMetrics('group-1', 'douyin', [], 'failure', 100)
+
+      const summary = await db.getGroupMediaSummary('group-1')
+      expect(summary).toMatchObject({
+        mediaCount: 0,
+        successCount: 1,
+        failureCount: 1,
+        successRate: 0.5,
+        averageProcessingMs: 200
+      })
+      // 一条媒体都没有 -> 时长相关一律缺省
+      expect(summary.averageDurationMs).toBeUndefined()
+      expect(summary.maxDurationMs).toBeUndefined()
+    })
+
+    it('同一平台横跨多个群时，全局汇总按平台累加', async () => {
+      const { db } = await createStatisticsDB()
+
+      await db.recordMediaMetrics('group-1', 'douyin', [{ kind: 'video', durationMs: 30_000 }], 'success')
+      await db.recordMediaMetrics('group-2', 'douyin', [{ kind: 'video', durationMs: 50_000 }], 'success')
+
+      expect(await db.getAllMediaMetrics()).toHaveLength(2)
+      const summary = await db.getGlobalMediaSummary()
+      expect(summary.platforms.douyin).toMatchObject({
+        mediaCount: 2,
+        totalDurationMs: 80_000,
+        durationSamples: 2,
+        averageDurationMs: 40_000,
+        maxDurationMs: 50_000
+      })
+      // 单群汇总只看自己那一行
+      expect((await db.getGroupMediaSummary('group-1')).totalDurationMs).toBe(30_000)
+    })
+
+    it('重开同一个库，已累计的度量还在', async () => {
+      const { db, dataPath } = await createStatisticsDB()
+      await db.recordMediaMetrics('group-1', 'douyin', [{ kind: 'video', durationMs: 30_000 }], 'success')
+
+      const reopened = await reopenStatisticsDB(dataPath)
+
+      expect((await reopened.getGroupMediaSummary('group-1')).totalDurationMs).toBe(30_000)
+    })
+
+    it('没有任何度量的群，汇总是全 0 且平均值缺省', async () => {
+      const { db } = await createStatisticsDB()
+
+      const summary = await db.getGroupMediaSummary('group-does-not-exist')
+      expect(summary).toMatchObject({ mediaCount: 0, totalDurationMs: 0, durationSamples: 0 })
+      expect(summary.averageDurationMs).toBeUndefined()
+      expect(summary.successRate).toBeUndefined()
+    })
+  })
 })

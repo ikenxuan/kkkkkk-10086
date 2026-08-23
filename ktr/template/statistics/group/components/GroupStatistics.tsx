@@ -5,6 +5,7 @@ import { VictoryPie } from 'victory'
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import type { PosterProps } from '../../../types/ctx'
 import { isDark as isDarkMode } from '../../../../utils/theme'
+import { MediaMetricsSection } from '../../components/MediaMetricsSection'
 import type { GroupStatisticsData } from './types'
 
 /**
@@ -307,6 +308,22 @@ export const GroupStatistics: React.FC<PosterProps<GroupStatisticsData>> = (prop
             })}
           </div>
         </div>
+
+        {/*
+          媒体统计区块（本地新增，上游没有；同步上游时请保留，连带 types.ts 的
+          mediaMetrics 字段和 statistics/components/MediaMetricsSection.tsx 一起。
+          那个组件 global 那张卡也在用，删之前先看两处调用点）。
+
+          放在「平台详情」之后、「用户排行」之前：上半张卡讲「解析了多少次」，
+          这一块讲「解析出去的东西有多少」，两者都是平台维度的；用户维度的排行接在后面。
+          色条取 emerald-500，接在本卡 pink/blue/violet 之后、yellow（用户排行）之前。
+
+          守卫在这里而不在组件内部：字段可选，不传就整块不渲染，
+          老调用点（以及 MediaMetrics 表还没攒到数据的新装用户）都照常出图。
+        */}
+        {props.data.mediaMetrics && (
+          <MediaMetricsSection metrics={props.data.mediaMetrics} platformConfig={platformConfig} />
+        )}
 
         {/*
           用户排行区块（本地新增，上游 karin-plugin-kkk 的这张卡没有；同步上游时请保留）。

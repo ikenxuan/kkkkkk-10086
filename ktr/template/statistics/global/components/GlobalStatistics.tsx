@@ -5,6 +5,7 @@ import { VictoryAxis, VictoryChart, VictoryLabel, VictoryLine, VictoryPie, Victo
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import type { PosterProps } from '../../../types/ctx'
 import { isDark as isDarkMode } from '../../../../utils/theme'
+import { MediaMetricsSection } from '../../components/MediaMetricsSection'
 import type { GlobalStatisticsData } from './types'
 
 /**
@@ -569,6 +570,21 @@ export const GlobalStatistics: React.FC<PosterProps<GlobalStatisticsData>> = (pr
             </div>
           </div>
         </div>
+
+        {/*
+          媒体统计区块（本地新增，上游没有；同步上游时请保留，连带 types.ts 的
+          mediaMetrics 字段和 statistics/components/MediaMetricsSection.tsx 一起）。
+
+          放在「平台详情」之后、「群组排行」之前，与 statistics/group 那张卡的
+          位置一致：平台维度的内容排在一起，群/用户维度的排行接在后面。
+          区块内部的排版全在共享组件里，两张卡不会各自漂移。
+
+          守卫在这里而不在组件内部：字段可选，不传就整块不渲染，
+          老调用点（以及 MediaMetrics 表还没攒到数据的新装用户）都照常出图。
+        */}
+        {props.data.mediaMetrics && (
+          <MediaMetricsSection metrics={props.data.mediaMetrics} platformConfig={platformConfig} />
+        )}
 
         {/* 群组排行榜 */}
         <div>

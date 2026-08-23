@@ -1,5 +1,6 @@
 import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
+import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
 import common from '@/runtime/host/common'
 import {
   burnDouyinDanmaku,
@@ -673,6 +674,16 @@ export class DouYin extends Base {
           /** 发送视频 */
           const sendVideo = isVideo && hasDouyinContent('视频', 'video') && sendvideofile
             ? async (): Promise<void> => {
+              /*
+                媒体度量上报（本地新增，上游没有）。放在这条分支开头：走到这里就代表
+                这次解析确实要发一条视频出去，而下面无论走原视频还是烧弹幕的分支，
+                发出去的都是同一条媒体，只该记一次。
+
+                `video.duration` 是**毫秒**（同仓 ktr/template/douyin/video-work 的
+                formatDuration 就是先除 1000），所以用 fromMilliseconds；B站那边是秒、
+                走 fromSeconds。单位搞反会让抖音的时长大 1000 倍。
+              */
+              reportMedia({ kind: 'video', durationMs: fromMilliseconds(video?.duration) })
               let danmakuList: DanmakuList = []
               const sendOriginalVideo = async (): Promise<void> => {
                 await downloadVideo(

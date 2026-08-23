@@ -1,4 +1,5 @@
 import { getStatisticsDB, PRIVATE_GROUP_ID } from '@/module/db/index'
+import { buildMediaMetricsView } from '@/module/platform/common/mediaMetricsView'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
 import { buildGroupUserRanking } from '@/module/platform/common/userRanking'
 import { Render } from '@/module/utils/index'
@@ -164,7 +165,9 @@ export class kkkStatistics extends plugin {
       globalTotalGroups: globalSummary.totalGroups,
       globalTotalParses: globalSummary.totalParses,
       // 本地新增的可选字段（上游没有）：空数组时模板整块不渲染
-      userRanking
+      userRanking,
+      // 同上，本群一条媒体都没攒到时是 undefined，模板整块不渲染
+      mediaMetrics: buildMediaMetricsView(await statisticsDB.getGroupMediaSummary(String(groupId)))
     })
 
     await e.reply!(img)
@@ -218,7 +221,16 @@ export class kkkStatistics extends plugin {
     const img = await Render('statistics/global', {
       allStats,
       historyData: history.reverse(),
-      groupInfoMap
+      groupInfoMap,
+      /**
+       * 本地新增的可选字段（上游没有）：一条媒体都没攒到时是 undefined，模板整块不渲染。
+       *
+       * 这里用的是全量汇总、含私聊，跟上面 allStats 滤掉 PRIVATE_GROUP_ID 的口径不同：
+       * 私聊解析出去的媒体，时长和体积是真实发生的，计入「累计解析了多少时长」有意义；
+       * allStats 之所以要滤，是因为模板拿它现算「群组排行」和「服务群组数」，
+       * 一个 groupId 写着 private 的假群会污染那两项（见 getAllMediaMetrics 的注释）。
+       */
+      mediaMetrics: buildMediaMetricsView(await statisticsDB.getGlobalMediaSummary())
     })
 
     await e.reply!(img)

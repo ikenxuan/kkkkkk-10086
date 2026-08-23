@@ -14,6 +14,7 @@ import {
   type ParseTarget
 } from '@/module/utils/ParseCoordinator'
 import { createEmojiParseReactionPort } from '@/module/utils/ParseReactionAdapter'
+import { runWithMediaMetrics, type MediaRecord } from '@/module/utils/media-metrics'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
@@ -171,6 +172,28 @@ const recordParseStatistics = async (e: MessageEvent, platform: Platform): Promi
   }
 }
 
+/**
+ * 把一次解析收集到的媒体度量写库。
+ *
+ * 和 recordParseStatistics 分开两个函数、各自 try/catch：解析次数是老口径，
+ * 媒体度量是新加的，后者写库失败不该让前者也丢。群号口径两边一致（私聊照常写，
+ * 按群聚合的读取端自己排除 PRIVATE_GROUP_ID）。
+ */
+const recordMediaMetrics = async (
+  e: MessageEvent,
+  platform: Platform,
+  records: readonly MediaRecord[],
+  outcome: 'success' | 'failure',
+  processingMs: number
+): Promise<void> => {
+  try {
+    const statisticsDB = await getStatisticsDB()
+    await statisticsDB?.recordMediaMetrics(getEventGroupId(e), platform, records, outcome, processingMs)
+  } catch (error) {
+    logger.error('[统计] 记录媒体度量失败', error)
+  }
+}
+
 export class kkkTools extends plugin {
   constructor () {
     super({
@@ -287,7 +310,24 @@ export class kkkTools extends plugin {
     try {
       const result = await parseCoordinator.submit(
         createMessageParseIdentity(platform, e),
-        () => handler(e),
+        // 媒体度量的作用域包在协调器**里面**、而不是外面：submit 会对重复请求去重，
+        // 只有胜出的那个任务真的跑 handler。开在外面的话，被去重掉的请求也会开一个
+        // 空作用域、并在结束时写一条全 0 的耗时记录，把成功率和平均耗时都掺水。
+        async () => {
+          const startedAt = Date.now()
+          // 成败要在这里自己记：handler 配了 rethrowAfterHandle，失败时异常穿过
+          // runWithMediaMetrics 一路抛到下面那个 catch，onSettled 里看不到成败。
+          let outcome: 'success' | 'failure' = 'failure'
+          return await runWithMediaMetrics(
+            platform,
+            async () => {
+              const value = await handler(e)
+              outcome = 'success'
+              return value
+            },
+            records => recordMediaMetrics(e, platform, records, outcome, Date.now() - startedAt)
+          )
+        },
         reaction
       )
       return result === undefined ? true : result as boolean

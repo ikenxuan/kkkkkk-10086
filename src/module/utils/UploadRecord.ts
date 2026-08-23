@@ -1,4 +1,5 @@
 import { ffmpeg, ffprobe } from './FFmpeg.js'
+import { fromSeconds, reportMedia } from './media-metrics.js'
 import { Networks } from './Networks.js'
 import type { MessageElement, MessageEvent } from '@/types/message'
 import querystring from 'querystring'
@@ -228,6 +229,10 @@ async function UploadRecord (
     if (!bot?.sendUni) {
       const silkBuffer = await audioTrans(filePath)
       if (!silkBuffer) return segment.record(record_url) // 转换失败，返回原始地址
+      // 这条路（非 ICQQ 适配器）拿不到时长：audioTrans 只做编码转换、不 probe。
+      // 仍然上报一条，让条数对得上——durationMs 缺省时写库端只增 mediaCount，
+      // 不动平均时长的分母（见 media-metrics.ts）
+      reportMedia({ kind: 'audio' })
       return segment.record(`base64://${silkBuffer.toString('base64')}`)
     }
 
@@ -237,6 +242,9 @@ async function UploadRecord (
     if (transcoding) await fs.promises.writeFile(filePath, result.buffer) // 将buffer写入临时文件
     const recordSize = (await fs.promises.stat(filePath)).size
     if (seconds === 0 && result.time) seconds = result.time.seconds
+    // getPttBuffer 那几条分支给的都是秒（SILK/WAV 自己算、大文件走 ffprobe），
+    // 所以用 fromSeconds。作用域外调用是空操作，推送任务不会凭空写进统计。
+    reportMedia({ kind: 'audio', durationMs: fromSeconds(seconds), bytes: recordSize })
     const hash = md5(result.buffer)
     let codec = 0
     try {

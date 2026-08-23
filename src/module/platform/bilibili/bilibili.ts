@@ -21,6 +21,7 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
+import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/Base'
 import type { RichTextDocument } from '@kkk/richtext'
@@ -777,6 +778,27 @@ export class Bilibili extends Base {
                 await this.e.reply(`设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n` + '视频太大了，还是去B站看吧~', { reply: true })
                 return
               }
+              /*
+                媒体度量上报（本地增量，上游没有）。位置在体积检查之后、真正发送之前：
+                超限那条分支上面已经 return，视频压根没发出去，不该计入统计。
+
+                时长走 fromSeconds —— B站的 `data.duration` 单位是秒
+                （fetchVideoDanmakuList 的 JSDoc 写明这点，它拿弹幕秒数直接和它比大小），
+                而收集器内部统一存毫秒。分P视频取当前那一P的时长，和上面弹幕那段同源。
+
+                体积用 videoSize 而不是 playUrlStream.size：videopriority 关闭且已登录时
+                videoSize 是「视频 + 音频」两条流加起来的真实大小（getvideosize 算的），
+                只取 video 流会漏掉音频那部分。它是 MB 字符串，这里换回字节。
+              */
+              const metricsDuration = iddata.p
+                ? (infoData.data.data.pages[iddata.p - 1]?.duration || infoData.data.data.duration)
+                : infoData.data.data.duration
+              const metricsBytes = Number(videoSize) > 0 ? Math.round(Number(videoSize) * 1024 * 1024) : undefined
+              reportMedia({
+                kind: 'video',
+                durationMs: fromSeconds(metricsDuration),
+                bytes: metricsBytes
+              })
               await this.getvideo(
                 Config.bilibili.videopriority === true
                   ? { playUrlData, danmakuList }
