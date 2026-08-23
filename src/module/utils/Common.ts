@@ -469,8 +469,16 @@ class Tools {
     return `${seconds}秒`
   }
 
+  /**
+   * 真的等 `ms` 毫秒再 resolve。
+   *
+   * 原来的写法是 `setTimeout(() => {}, ms)` 而没有包 Promise —— 函数体同步跑完就
+   * resolve，`await` 它等于零延迟。唯一调用点是 bilibili 扫码登录的 `while (true)`
+   * 轮询末尾（login.ts），于是那个循环变成忙轮询、无节流地打 B站 的二维码状态接口，
+   * 直到扫码成功或二维码失效才退出。
+   */
   async sleep (ms: number): Promise<void> {
-    setTimeout(() => {}, ms)
+    await new Promise<void>(resolve => { setTimeout(resolve, ms) })
   }
 }
 

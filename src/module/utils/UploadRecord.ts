@@ -217,6 +217,12 @@ async function UploadRecord (
   let cleanupFile = false
   try {
     filePath = await prepareAudioFile(record_url)
+    // 拿到路径就立刻标记要清理，别等到流程末尾：下面「没有 sendUni」「转换失败」
+    // 「拿不到 buffer」三条 return 都在末尾之前，原来那些路径上 finally 判假，
+    // 每次都往系统临时目录留一个文件。非 ICQQ 适配器走的正是第一条，不是异常路径。
+    // startsWith(TMP_DIR) 这个判据必须跟着一起搬：prepareAudioFile 对已是本地文件的
+    // 入参会原样返回，那种情况下删的就是用户自己的文件。
+    cleanupFile = filePath.startsWith(TMP_DIR)
 
     // 如果没有上传高清语音功能，直接返回转换后的音频
     if (!bot?.sendUni) {
@@ -304,7 +310,6 @@ async function UploadRecord (
       30: { 1: 0, 5: 0, 6: 'sss', 7: 0, 8: brief, 9: 0 }
     })
 
-    cleanupFile = filePath.startsWith(TMP_DIR) // 如果是临时文件，需要清理
     return {
       type: 'record',
       file: 'protobuf://' + Buffer.from(b as Uint8Array).toString('base64')
@@ -461,10 +466,16 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
       const result = await ffmpeg(`-y -i "${file}" -fs 10485600 -ab 128k "${file}.mp3"`)
       if (isCommandResult(result) && result.status) {
         const buffer = fs.readFileSync(`${file}.mp3`)
-        fs.unlinkSync(`${file}.mp3`)
 
-        // 使用 ffprobe 获取转换后文件的时长
+        // ffprobe 必须在 unlink 之前跑：原来是先删再 probe 同一个路径，
+        // probe 恒失败 → 走到最后的 return { code: -1 }，连已经转好的 buffer 一起丢掉，
+        // 于是 ≥10MB 的音频每次都白转一遍、还永远拿不到时长。
         const probeResult = await ffprobe(`-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${file}.mp3"`)
+        // 放 finally 之外的话，probe 失败那条路径又会把临时 mp3 留在磁盘上。
+        try {
+          fs.unlinkSync(`${file}.mp3`)
+        } catch { /* 已经不在就算了 */ }
+
         if (isCommandResult(probeResult) && probeResult.status && probeResult.stdout) {
           const duration = parseFloat(probeResult.stdout.trim())
           const time = new Date(duration * 1000).toISOString().slice(11, 19)

@@ -978,7 +978,15 @@ export const uploadFile = async (
     logger.error('视频文件上传错误,' + String(error))
     return false
   } finally {
-    Config.app.removeCache && logger.info(`文件 ${file.filepath} 将在 10 分钟后删除`) && setTimeout(() => Common.removeFile(file.filepath), 10 * 60 * 1000)
+    // 用 if 而不是 `a && b && c` 链：宿主的 logger.info 最终落到 log4js 的
+    // `Logger.prototype[levelMethod] = function (...args) { this.log(level, ...args) }`，
+    // 那个函数没有 return，所以返回 undefined。写成 && 链的话第二项就短路了，
+    // 后面的 setTimeout 从来没注册过 —— removeCache 默认是 true，而这里是普通解析
+    // 路径（downloadVideo -> uploadFile）唯一的删除点，于是缓存视频只增不减。
+    if (Config.app.removeCache) {
+      logger.info(`文件 ${file.filepath} 将在 10 分钟后删除`)
+      setTimeout(() => Common.removeFile(file.filepath), 10 * 60 * 1000)
+    }
   }
 }
 
