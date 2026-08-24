@@ -10,6 +10,7 @@ import Config from '@/module/utils/Config'
 import { Render } from '@/module/utils/Render'
 import { ffmpeg, loopVideoWithTransition } from '@/module/utils/FFmpeg'
 import { getErrorMessage } from '@/module/utils/error-message'
+import { isRecord } from '@/module/utils/record'
 
 /** 实况图生成模式 */
 export type LivePhotoMode = 'video_and_livephoto' | 'video_only' | 'livephoto_only'
@@ -383,8 +384,4 @@ export const buildLivePhotoMessages = async (
     logger.warn(`[${platform}] 实况图处理失败，将回退普通图片`, error)
     return { messages: [], tempFiles, generatedLivePhoto: false }
   }
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }

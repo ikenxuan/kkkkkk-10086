@@ -1,12 +1,10 @@
 import sharp from 'sharp'
+import { isRecord } from '@/module/utils/record'
 
 type ScreenshotRecord = Record<string, unknown>
 type ScreenshotValue = ScreenshotRecord | Uint8Array | string
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const toBuffer = (value: unknown): Buffer | null => {
   if (Buffer.isBuffer(value)) return value

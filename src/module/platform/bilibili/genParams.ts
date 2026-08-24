@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import { getBilibiliData } from './api.js'
 import Config from '@/module/utils/Config'
+import { isRecord } from '@/module/utils/record'
 
 /** 「登录基本信息」响应，仅声明本文件读取的字段 */
 interface BilibiliLoginInfo {
@@ -22,11 +23,6 @@ let wbiSign: AmagiWbiSignModule['wbi_sign'] | undefined
 const getWbiSign = (): AmagiWbiSignModule['wbi_sign'] => {
   wbiSign ??= (require('@ikenxuan/amagi') as AmagiWbiSignModule).wbi_sign
   return wbiSign
-}
-
-/** 判断是否为普通对象 */
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /** 从「登录基本信息」响应中读取 vipStatus，读取不到时返回 undefined */

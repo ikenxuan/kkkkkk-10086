@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import { basename, join } from 'node:path'
 import { ClientPath, PluginPath } from '@/dir'
+import { isRecord } from './record.js'
 
 interface PackageMetadata {
   version: string
@@ -41,8 +42,4 @@ function readPackageMetadata (file: string): PackageMetadata {
     throw new TypeError(`package.json version is invalid: ${file}`)
   }
   return { version: value.version }
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

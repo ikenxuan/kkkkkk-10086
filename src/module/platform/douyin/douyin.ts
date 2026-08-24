@@ -16,6 +16,7 @@ import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, type DouyinAweme
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
+import { isRecord } from '@/module/utils/record'
 
 interface UrlResource {
   uri?: string
@@ -191,9 +192,6 @@ interface EmojiResponse {
 interface LiveResponse {
   data: Record<string, unknown>
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 const isDouyinDataType = (value: string): value is DouyinDataType => [
   'one_work',

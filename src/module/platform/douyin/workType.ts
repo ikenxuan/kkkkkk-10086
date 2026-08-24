@@ -1,3 +1,4 @@
+import { isRecord } from '@/module/utils/record'
 /** 抖音作品中被类型判定读取的字段 */
 export interface DouyinAweme {
   aweme_type?: number
@@ -75,9 +76,6 @@ export const getDouyinWorkCoverUrl = (aweme: DouyinAweme | undefined): string =>
 
   return ''
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 /**
  * 文章配图 → `douyin/article-work` 契约的 `images`。

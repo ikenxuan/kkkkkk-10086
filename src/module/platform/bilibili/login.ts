@@ -2,6 +2,7 @@ import { Common, Config, Render } from '@/module/utils/index'
 import { getBilibiliData } from './api.js'
 import * as QRCode from 'qrcode'
 import fs from 'node:fs'
+import { isRecord } from '@/module/utils/record'
 
 /** 登录流程使用的事件对象，与 douyin/login.ts 的 DouyinLoginEvent 保持一致 */
 export interface BilibiliLoginEvent {
@@ -10,9 +11,6 @@ export interface BilibiliLoginEvent {
     recallMsg?: (event: unknown, id: unknown) => Promise<unknown>
   }
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 /**
  * 按路径读取 amagi 响应里的字段。

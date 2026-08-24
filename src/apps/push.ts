@@ -8,9 +8,7 @@ import type { PluginRule, PluginTask } from 'trss-yunzai'
 import type { BilibiliPushItem, DouyinPushItem } from '@/types/config'
 import type { CommandEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
+import { isRecord } from '@/module/utils/record'
 
 /**
  * 取 amagi 响应外层的 `data`。

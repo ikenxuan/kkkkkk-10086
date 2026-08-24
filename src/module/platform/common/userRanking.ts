@@ -8,6 +8,7 @@
 
 import type { GroupUserRankingRow } from '@/types/database'
 import type { MessageEvent } from '@/types/message'
+import { isRecord } from '@/module/utils/record'
 
 /** 契约 `GroupStatisticsData['userRanking']` 的元素类型 */
 export interface GroupUserRankingEntry {
@@ -31,9 +32,6 @@ interface MemberListProvider {
   /** 群成员表。icqq 的键是 number，QQBot 等适配器是 string */
   gml?: HostMemberMap
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 /**
  * 从一条群成员信息里取展示名。

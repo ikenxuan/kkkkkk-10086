@@ -6,6 +6,7 @@ import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { FileInfo } from '@/types/platform'
+import { isRecord } from './record.js'
 
 const MB = 1024 * 1024
 export const MULTIPART_MIN_SIZE = 8 * MB
@@ -246,8 +247,4 @@ function getErrorCode (error: unknown): string {
 function getErrorResponseStatus (error: unknown): number | undefined {
   if (!isRecord(error) || !isRecord(error.response)) return undefined
   return typeof error.response.status === 'number' ? error.response.status : undefined
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

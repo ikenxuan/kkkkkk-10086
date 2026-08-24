@@ -18,6 +18,7 @@ import { runWithMediaMetrics, type MediaRecord } from '@/module/utils/media-metr
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
+import { isRecord } from '@/module/utils/record'
 
 interface PlatformConfig {
   reg: RegExp
@@ -142,9 +143,6 @@ const createMessageParseIdentity = (platform: Platform, e: MessageEvent): ParseJ
       : { type: 'private', id: getEventUserId(e) }
   }
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 const isDouyinSelectionResult = (value: unknown): value is DouyinSelectionResult => {
   if (!isRecord(value) || value.type !== 'douyin_user_selection' || typeof value.timeoutSeconds !== 'number') return false

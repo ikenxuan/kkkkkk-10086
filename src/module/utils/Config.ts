@@ -30,6 +30,7 @@ export type {
   DouyinPushItem as douyinPushItem,
   BilibiliPushItem as bilibiliPushItem
 } from '@/types/config'
+import { isRecord } from './record.js'
 
 const APP_UPLOAD_KEYS = new Set([
   'videoSendMode',
@@ -470,10 +471,6 @@ export default new Proxy({} as ConfigService, {
     return Reflect.get(getConfigInstance(), prop)
   }
 })
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 async function callLegacyLookup<TResult> (
   receiver: unknown,

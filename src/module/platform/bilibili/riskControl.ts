@@ -4,11 +4,7 @@ import { registerErrorStrategy, sendErrorToAllMasters, sendErrorToMaster } from 
 import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '@/module/utils/ErrorHandler/strategy'
 import { getBilibiliData } from './api.js'
 import { getErrorMessage } from '@/module/utils/error-message'
-
-/** 判断是否为普通对象 */
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
+import { isRecord } from '@/module/utils/record'
 
 /** 按路径读取嵌套字段，任意一层缺失时返回 undefined */
 const readPath = (value: unknown, path: string[]): unknown => {

@@ -20,6 +20,7 @@ import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metada
 import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
 import { getErrorMessage } from './error-message.js'
+import { isRecord } from './record.js'
 
 interface AmagiClient {
   [key: string]: unknown
@@ -1148,8 +1149,4 @@ export const downloadFile = async (
  */
 const processFilename = (filename: string, maxLength = 50): string => {
   return sanitizeFilename(filename, maxLength, 'video')
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

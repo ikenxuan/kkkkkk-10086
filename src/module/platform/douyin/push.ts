@@ -14,6 +14,7 @@ import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from
 import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
 import common from '@/runtime/host/common'
 import { getErrorMessage } from '@/module/utils/error-message'
+import { isRecord } from '@/module/utils/record'
 
 /**
  * @typedef {import('@ikenxuan/amagi').ApiResponse} ApiResponse
@@ -239,9 +240,6 @@ export interface DouyinSkipCheckItem extends DouyinFilterPushItem {
     text_extra?: DouyinTextExtra[]
   }
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 const DEFAULT_DOUYIN_PUSH_TYPES: DouyinPushType[] = ['post', 'live']
 const DOUYIN_PUSH_TYPE_LABELS: Record<DouyinPushType, string> = {

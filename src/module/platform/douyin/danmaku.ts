@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
+import { isRecord } from '@/module/utils/record'
 
 /** A single Douyin danmaku item. */
 export interface DouyinDanmakuElem {
@@ -235,9 +236,6 @@ const SAFE_ENCODERS = new Set([
   'hevc_amf',
   'av1_amf'
 ])
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(maximum, Math.max(minimum, value))

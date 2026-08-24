@@ -8,6 +8,7 @@ import { getErrorMessage } from './error-message.js'
 import { Networks } from './Networks.js'
 import Version from './Version.js'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
+import { isRecord } from './record.js'
 
 interface VideoPreview {
   filename: string
@@ -481,10 +482,6 @@ class Tools {
   async sleep (ms: number): Promise<void> {
     await new Promise<void>(resolve => { setTimeout(resolve, ms) })
   }
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function normalizeMessageSegments (value: unknown): MessageSegment[] {

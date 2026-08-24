@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import YAML from 'yaml'
+import { isRecord } from './record.js'
 
 export default class YamlReader {
   readonly filePath: string
@@ -92,8 +93,4 @@ export default class YamlReader {
       return false
     }
   }
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

@@ -1,3 +1,4 @@
+import { isRecord } from './record.js'
 /** A guarded request is allowed one initial attempt and this many retries by default. */
 export const DEFAULT_REQUEST_MAX_RETRIES = 2
 
@@ -303,6 +304,3 @@ const getHttpStatus = (error: unknown): number | undefined => {
   }
   return undefined
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null

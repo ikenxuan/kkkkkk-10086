@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import Version from './Version.js'
 import { getErrorMessage } from './error-message.js'
+import { isRecord } from './record.js'
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 let watermarkModulePromise: Promise<typeof import('@ikenxuan/watermark')> | null = null
@@ -136,8 +137,4 @@ export const applyWatermarkToImages = async (
     result.push(watermarked ? setImagePayload(image, watermarked) : image)
   }
   return result
-}
-
-function isRecord (value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

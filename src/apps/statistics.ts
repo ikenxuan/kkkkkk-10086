@@ -5,15 +5,13 @@ import { buildGroupUserRanking } from '@/module/platform/common/userRanking'
 import { Render } from '@/module/utils/index'
 import type { ParseStatisticsRow, StatisticsPlatform } from '@/types/database'
 import type { CommandEvent, MessageEvent } from '@/types/message'
+import { isRecord } from '@/module/utils/record'
 
 /** 各平台解析次数，键固定为四个平台 */
 type PlatformStats = Record<StatisticsPlatform, number>
 
 const sumPlatformStats = (stats: PlatformStats): number =>
   Object.values(stats).reduce((sum, count) => sum + count, 0)
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 /** 宿主的群列表 Map。值的形状各适配器不一，读的时候再收窄 */
 type HostGroupMap = Map<string | number, unknown>

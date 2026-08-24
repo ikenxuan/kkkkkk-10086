@@ -25,6 +25,7 @@ import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/Base'
 import type { RichTextDocument } from '@kkk/richtext'
+import { isRecord } from '@/module/utils/record'
 
 const require = createRequire(import.meta.url)
 interface AmagiRuntime {
@@ -491,9 +492,6 @@ const hasBilibiliContent = (legacyKey: LegacyBilibiliContent, modernKey?: Modern
   }
   return (Config.bilibili.bilibiliTip || []).includes(legacyKey)
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
 
 export const getBilibiliPayload = (response: unknown): BilibiliPayload => {
   const root = isRecord(response) ? response : undefined

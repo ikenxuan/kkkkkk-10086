@@ -16,6 +16,7 @@ import Config from './module/utils/Config.js'
 
 import type { ConfigName } from './types/config.js'
 import type { GuobaSchema, GuobaSupport } from './types/guoba.js'
+import { isRecord as isPlainRecord } from './module/utils/record.js'
 
 /** 锅巴只允许写入 `getConfigData()` 暴露的九个配置域。 */
 const CONFIG_NAMES = [
@@ -25,10 +26,6 @@ const CONFIG_NAMES = [
 
 const isConfigName = (name: string): name is ConfigName =>
   CONFIG_NAMES.some(configName => configName === name)
-
-/** 顶层配置项一定是对象；数组要走点分路径分支，所以排除数组 */
-const isPlainRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /**
  * 面板分组的先后顺序。
