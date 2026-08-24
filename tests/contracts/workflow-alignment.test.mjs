@@ -79,6 +79,44 @@ test('dev publishes preview builds and owns the v4 release-please line', () => {
   assert.equal(stale.permissions['pull-requests'], 'write')
 })
 
+test('master 的产物提交信息自带上下文，不是 dev 那条 squash 信息', () => {
+  const release = readWorkflow(releasePath)
+  const message = release.jobs['release-please'].steps.at(-1).with.full_commit_message
+
+  // 这一步只在 release_created 时执行，那一刻 dev 的 head 必然是 release-please
+  // 的「chore(dev): release X.Y.Z (#N)」。直接搬它等于让 master 上每条产物提交都
+  // 只写「版本号 PR 被合并了」—— 而 master 上除了产物什么都没有，提交信息是唯一线索。
+  assert.doesNotMatch(
+    message,
+    /github\.event\.head_commit\.message/,
+    'master 的产物提交信息不能直接搬 dev 的 head_commit.message'
+  )
+
+  // tag / 版本 / 源提交三者都得在：翻 master 历史时要能一眼对上是哪个 tag、
+  // 由哪个 dev 提交构建出来的。
+  assert.match(message, /steps\.release\.outputs\.tag_name/)
+  assert.match(message, /steps\.release\.outputs\.version/)
+  assert.match(message, /github\.sha/)
+
+  // 不许把 changelog 正文塞进提交信息：那是由提交信息/PR 标题拼出来的自由文本，
+  // 几十行且内容不可控，而它已经随产物里的 CHANGELOG.md 和 Release 页发出去了。
+  assert.doesNotMatch(
+    message,
+    /steps\.release\.outputs\.body/,
+    '不要把 changelog 正文塞进提交信息'
+  )
+
+  // preview 那条是每个 dev 提交推一次，head_commit.message 本身就是有意义的
+  // （`refactor(utils): ...`），所以它继续用那个值是对的 —— 两条线的取值不该被
+  // 顺手统一掉。
+  const preview = readWorkflow(previewPath)
+  assert.match(
+    preview.jobs['build-and-push'].steps.at(-1).with.full_commit_message,
+    /github\.event\.head_commit\.message/,
+    'preview 是逐提交推送，应当保留源提交信息'
+  )
+})
+
 test('published artifacts are stamped with the branch they ship to, not the branch they build from', () => {
   const buildMetadataSource = readFileSync('src/module/tooling/build-metadata.ts', 'utf8')
   // 压缩包安装（没有 .git）判断发布通道的唯一依据就是这份烘进产物的元数据。
