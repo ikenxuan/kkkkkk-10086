@@ -1,9 +1,4 @@
-const escapeHtml = (value: string | number | undefined | null): string => String(value ?? '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;')
+import { escapeHtml } from '@/module/utils/html'
 
 /** 专栏正文的文字样式，仅声明本文件读取的字段 */
 interface BilibiliOpusWordStyle {

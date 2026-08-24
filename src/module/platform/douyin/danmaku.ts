@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import { isRecord } from '@/module/utils/record'
+import { escapeHtml } from '@/module/utils/html'
 
 /** A single Douyin danmaku item. */
 export interface DouyinDanmakuElem {
@@ -364,13 +365,6 @@ export async function fetchDouyinEmojiList (
     return []
   }
 }
-
-const escapeHtml = (value: string): string => value
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;')
 
 const buildStripHtml = (
   segments: readonly StripSegment[],

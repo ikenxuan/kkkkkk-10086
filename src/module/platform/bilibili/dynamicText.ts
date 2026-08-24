@@ -13,6 +13,7 @@ import {
   type RichTextInlineStyle,
   type RichTextNode
 } from '@kkk/richtext'
+import { escapeHtml } from '@/module/utils/html'
 
 const urlRegex = /https?:\/\/[-\w._~:/?#[\]@!$&'()*+,;=%]+/g
 
@@ -68,13 +69,6 @@ export const getUsernameMetadata = (member: {
 }
 
 const linkColor = (useDarkTheme: boolean): string => useDarkTheme ? '#58B0D5' : '#006A9E'
-
-const escapeHtml = (value: string | number | undefined | null): string => String(value ?? '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;')
 
 const normalizeInputText = (text: string | undefined): string => String(text || '').replace(/<br\s*\/?>/gi, '\n')
 
