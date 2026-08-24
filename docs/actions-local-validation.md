@@ -27,7 +27,7 @@
 | --- | --- | --- |
 | `check.yml` | YAML 检查；Windows 上执行 `pnpm install --frozen-lockfile` 与 `pnpm check` | `ubuntu-latest` runner 的真实行为、`actions/checkout`、pnpm/Node setup Action、缓存 |
 | `build-push-preview.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | Ubuntu runner、`GITHUB_TOKEN`、向 `preview` 分支推送、GitHub 事件字段 |
-| `release-and-push-build.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | release-please 输出、Release/PR/Issue API、条件步骤、向 `release` 分支推送 |
+| `release-and-push-build.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | release-please 输出、Release/PR/Issue API、条件步骤、向 `master` 分支推送 |
 | `issue_geetings.yml` | YAML 检查；`issues: write` 最小权限 | `issues:labeled` 事件、评论和 reaction API、第三方 Action |
 | `issue_welcome.yml` | YAML 检查；`issues: write` 最小权限 | `issues:opened` 事件、欢迎评论、第三方 Action |
 | `issue_similarity.yml` | YAML 检查；`issues: write` 最小权限 | Issue 搜索/评论 API、相似度 Action 的运行结果 |
@@ -49,7 +49,7 @@ node --test tests/contracts/workflow-alignment.test.mjs
 - CI 使用 Node 22、pnpm 9.15.9、冻结锁文件安装和 `pnpm check`；
 - Preview/Release 使用 Node 22.12.0、pnpm 9.15.9、冻结锁文件安装和 `pnpm verify`；
 - Issue 自动化仅请求 `issues: write`；
-- 发布分支、release-please、stale 权限和项目发布契约保持一致。
+- 发布推送目标分支（`release-and-push-build.yml` 推 `master`、`build-push-preview.yml` 推 `preview`）、release-please、stale 权限和项目发布契约保持一致。
 
 ### 2. 在临时副本复现 CI 命令层
 

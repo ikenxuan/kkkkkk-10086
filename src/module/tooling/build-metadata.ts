@@ -93,8 +93,8 @@ function readGitValue (args: string[]): string {
  * 优先级从高到低：
  *
  * 1. `KKK_PUBLISH_BRANCH`：产物要被推到哪条分支。发布工作流一律从 dev 构建，再把产物
- *    推到 release / preview，所以「从哪构建」和「装的是哪条线」根本不是一回事。只看
- *    GITHUB_REF_NAME 的话，release 分支上的产物会被烘成 dev，压缩包安装（没有 .git、
+ *    推到 master / preview，所以「从哪构建」和「装的是哪条线」根本不是一回事。只看
+ *    GITHUB_REF_NAME 的话，master 上的产物会被烘成 dev，压缩包安装（没有 .git、
  *    只能靠这份元数据判断）的用户在稳定版上看到的通道全是 Dev。
  * 2. `GITHUB_REF_NAME`：非发布场景下的 CI 构建。actions/checkout 默认留下分离 HEAD，
  *    `--abbrev-ref HEAD` 只会返回字面量 `HEAD`，所以不能靠 git 问。

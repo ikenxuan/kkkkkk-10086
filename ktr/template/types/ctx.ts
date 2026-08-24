@@ -19,7 +19,7 @@ export interface PosterContext extends RenderContext {
      * 本仓库相对上游 DefaultLayout 的本地增量：页脚在版本号后面补一段
      * `-g{commitId}`，好让用户报 bug 时一眼说清跑的是哪次提交。
      * 取的是构建时烘进 `lib/build-metadata.json` 的源码提交 ——
-     * preview / release 分支上的 git 历史是产物历史，问它拿不到源码提交号。
+     * master / preview 分支上的 git 历史是产物历史，问它拿不到源码提交号。
      */
     commitId?: string
     /**

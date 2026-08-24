@@ -144,7 +144,7 @@ test('published artifacts are stamped with the branch they ship to, not the bran
 
     assert.ok(buildStep, `${path}: 找不到执行 pnpm verify 的构建步骤`)
     // 两个发布工作流都在 dev 上构建，却把产物推到别的分支。烘进去的分支必须是
-    // 「推到哪」而不是 GITHUB_REF_NAME 的「从哪构建」——否则 release 分支的产物
+    // 「推到哪」而不是 GITHUB_REF_NAME 的「从哪构建」——否则 master 上的产物
     // 自称 dev，稳定版用户的错误卡片上通道全是 Dev。
     assert.equal(
       buildStep.env?.KKK_PUBLISH_BRANCH,
