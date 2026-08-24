@@ -25,7 +25,7 @@
 
 | Workflow | 本地可验证 | 仍需 GitHub 验证 |
 | --- | --- | --- |
-| `ci.yml` | YAML 检查；Windows 上执行 `pnpm install --frozen-lockfile` 与 `pnpm check` | `ubuntu-latest` runner 的真实行为、`actions/checkout`、pnpm/Node setup Action、缓存 |
+| `check.yml` | YAML 检查；Windows 上执行 `pnpm install --frozen-lockfile` 与 `pnpm check` | `ubuntu-latest` runner 的真实行为、`actions/checkout`、pnpm/Node setup Action、缓存 |
 | `build-push-preview.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | Ubuntu runner、`GITHUB_TOKEN`、向 `preview` 分支推送、GitHub 事件字段 |
 | `release-and-push-build.yml` | YAML 检查；临时副本执行 `pnpm verify`；发布文件准备步骤可单独复现 | release-please 输出、Release/PR/Issue API、条件步骤、向 `release` 分支推送 |
 | `issue_geetings.yml` | YAML 检查；`issues: write` 最小权限 | `issues:labeled` 事件、评论和 reaction API、第三方 Action |

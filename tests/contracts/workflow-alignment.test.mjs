@@ -13,7 +13,12 @@ const readJson = path => JSON.parse(
 )
 const readWorkflow = path => parse(readFileSync(path, 'utf8'))
 
-const ciPath = '.github/workflows/ci.yml'
+// 文件名是 check.yml 而不是 ci.yml：GitHub 的 workflow 实体按**路径**存，
+// 侧边栏显示的名字只在该路径首次登记时读一次 `name:`。ci.yml 那条实体的名字
+// 停在移植时的 'CI'，928a825 把 `name:` 改成中文后再没被重读过（同一现象也
+// 落在 release-and-push-build.yml 上，它的实体名还是旧的「发布并推送发布分支」）。
+// 换路径等于让 GitHub 建一个新实体、重读一次 name。
+const ciPath = '.github/workflows/check.yml'
 const previewPath = '.github/workflows/build-push-preview.yml'
 const releasePath = '.github/workflows/release-and-push-build.yml'
 const issueWorkflowPaths = [
@@ -28,6 +33,10 @@ const findStep = (workflow, jobName, predicate) =>
 test('dev publishes preview builds and owns the v4 release-please line', () => {
   assert.equal(existsSync(previewPath), true)
   assert.equal(existsSync(releasePath), true)
+  assert.equal(existsSync(ciPath), true)
+  // 旧路径不许回来。GitHub 按路径存 workflow 实体，ci.yml 那条实体的名字停在
+  // 移植时的 'CI'，改回旧文件名等于把侧边栏那个错标签一起带回来。
+  assert.equal(existsSync('.github/workflows/ci.yml'), false)
   // release-please.yml (v3, release-type: node) still lives on origin/master and is intentionally
   // NOT carried onto dev — dev's release line is release-and-push-build.yml (v4, manifest-driven).
   // Verify with: git ls-tree -r --name-only origin/master -- .github/workflows/
@@ -205,7 +214,7 @@ test('issue automation workflows request the minimum write permission', () => {
 
 test('development branch does not enforce generated lib drift', () => {
   const packageJson = readJson('package.json')
-  const ci = readWorkflow('.github/workflows/ci.yml')
+  const ci = readWorkflow(ciPath)
 
   assert.equal(existsSync('src/scripts/check-generated.ts'), false)
   assert.equal(existsSync('lib/scripts/check-generated.js'), false)
