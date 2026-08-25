@@ -26,6 +26,7 @@ globalThis.logger = {
 
 const { DouyinDBBase } = await import('../../src/module/db/douyin.js')
 const { BilibiliDBBase } = await import('../../src/module/db/bilibili.js')
+const { KEEP_PER_TARGET } = await import('../../src/module/db/retention.js')
 
 type PushDatabase = InstanceType<typeof DouyinDBBase> | InstanceType<typeof BilibiliDBBase>
 
@@ -156,7 +157,10 @@ describe('DouyinDBBase', () => {
     expect(await db.unsubscribeDouyinUser('group-1', 'sec-1')).toBe(false)
   })
 
-  it('removes only cache rows older than the retention window', async () => {
+  it('keeps an old row while it is still among the newest per target', async () => {
+    // 清理判据从「够老」改成了「够老 **且** 不在该目标最新 KEEP_PER_TARGET 条之内」。
+    // 这条用例原来断言 stale 会被删 —— 现在两行都在保留窗口内，一行都不该删。
+    // 为什么要这样改：这张表的行就是去重键，键消失而作品还在接口列表里就会重复推送。
     const { db } = await createDouyinDB()
     const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
     await db.addAwemeCache('fresh', 'sec-1', 'group-1')
@@ -165,10 +169,46 @@ describe('DouyinDBBase', () => {
       ['stale', 'sec-1', 'group-1', 'post', old, old]
     )
 
-    expect(await db.cleanOldAwemeCache(7)).toBe(1)
+    expect(await db.cleanOldAwemeCache(7)).toBe(0)
 
     expect(await db.isAwemePushed('fresh', 'sec-1', 'group-1')).toBe(true)
-    expect(await db.isAwemePushed('stale', 'sec-1', 'group-1')).toBe(false)
+    expect(await db.isAwemePushed('stale', 'sec-1', 'group-1')).toBe(true)
+  })
+
+  it('recycles rows that fell out of the newest window', async () => {
+    // 保留策略是上界不是永久保留：超出 KEEP_PER_TARGET 的陈旧行仍要回收，否则表无界增长。
+    const { db } = await createDouyinDB()
+    const total = KEEP_PER_TARGET + 20
+    for (let index = 0; index < total; index++) {
+      const stamp = new Date(Date.now() - (total - index) * 24 * 60 * 60 * 1000).toISOString()
+      await db.runQuery(
+        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [`aweme-${index}`, 'sec-1', 'group-1', 'post', stamp, stamp]
+      )
+    }
+
+    expect(await db.cleanOldAwemeCache(1)).toBe(20)
+
+    // 最老的 20 条被回收，最新的一条必须还在
+    expect(await db.isAwemePushed('aweme-0', 'sec-1', 'group-1')).toBe(false)
+    expect(await db.isAwemePushed(`aweme-${total - 1}`, 'sec-1', 'group-1')).toBe(true)
+  })
+
+  it('counts each push type as its own target when recycling', async () => {
+    // AwemeCaches 的 UNIQUE 是 (aweme_id, sec_uid, groupId, pushType)：同一条作品在
+    // post / favorite / recommend 下是三个独立去重键。分区不带 pushType 的话，
+    // 一种类型的行会挤掉另一种的，导致那一种重复推送。
+    const { db } = await createDouyinDB()
+    const old = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    for (const pushType of ['post', 'favorite', 'recommend']) {
+      await db.runQuery(
+        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        ['shared-aweme', 'sec-1', 'group-1', pushType, old, old]
+      )
+    }
+
+    // 三个分区各只有 1 行，都在保留窗口内
+    expect(await db.cleanOldAwemeCache(1)).toBe(0)
   })
 
   it('tracks the live status of a subscribed user', async () => {
@@ -294,7 +334,8 @@ describe('BilibiliDBBase', () => {
     expect(await db.isDynamicPushed('dynamic-1', 1234, 'group-1')).toBe(false)
   })
 
-  it('removes only dynamic cache rows older than the retention window', async () => {
+  it('keeps an old dynamic row while it is still among the newest per target', async () => {
+    // 同 douyin 侧：判据改成「够老 **且** 不在最新 KEEP_PER_TARGET 条之内」，两行都该留下
     const { db } = await createBilibiliDB()
     const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
     await db.addDynamicCache('fresh', 1234, 'group-1')
@@ -303,10 +344,42 @@ describe('BilibiliDBBase', () => {
       ['stale', 1234, 'group-1', '', old, old]
     )
 
-    expect(await db.cleanOldDynamicCache(7)).toBe(1)
+    expect(await db.cleanOldDynamicCache(7)).toBe(0)
 
     expect(await db.isDynamicPushed('fresh', 1234, 'group-1')).toBe(true)
-    expect(await db.isDynamicPushed('stale', 1234, 'group-1')).toBe(false)
+    expect(await db.isDynamicPushed('stale', 1234, 'group-1')).toBe(true)
+  })
+
+  it('keeps a long-running live session key no matter how old it gets', async () => {
+    // 这是改动的正题：直播场次键是 host_mid + room_id + live_time，一场播只有一行。
+    // 只按年龄删的话，播满保留期后这行被回收，下一轮直播推送会把同一场当成新场次再推一遍。
+    // 一个长播 30 天的直播间在该 (host_mid, group) 下只有这一行，必须活着。
+    const { db } = await createBilibiliDB()
+    const veryOld = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    await db.runQuery(
+      'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+      ['live_100_room1_1690000000', 100, 'group-1', 'live', veryOld, veryOld]
+    )
+
+    expect(await db.cleanOldDynamicCache(1)).toBe(0)
+    expect(await db.isDynamicPushed('live_100_room1_1690000000', 100, 'group-1')).toBe(true)
+  })
+
+  it('recycles dynamic rows that fell out of the newest window', async () => {
+    const { db } = await createBilibiliDB()
+    const total = KEEP_PER_TARGET + 20
+    for (let index = 0; index < total; index++) {
+      const stamp = new Date(Date.now() - (total - index) * 24 * 60 * 60 * 1000).toISOString()
+      await db.runQuery(
+        'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [`dyn-${index}`, 1234, 'group-1', '', stamp, stamp]
+      )
+    }
+
+    expect(await db.cleanOldDynamicCache(1)).toBe(20)
+
+    expect(await db.isDynamicPushed('dyn-0', 1234, 'group-1')).toBe(false)
+    expect(await db.isDynamicPushed(`dyn-${total - 1}`, 1234, 'group-1')).toBe(true)
   })
 
   it('stores filter words, tags and the filter mode per user', async () => {

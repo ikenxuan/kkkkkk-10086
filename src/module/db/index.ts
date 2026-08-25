@@ -5,6 +5,7 @@ import { StatisticsDBBase } from './statistics.js'
 export * from './bilibili.js'
 export * from './douyin.js'
 export * from './statistics.js'
+export * from './retention.js'
 
 /**
  * 构造单例 getter：并发调用共享同一次初始化，失败后清空以允许重试
