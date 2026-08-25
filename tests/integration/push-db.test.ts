@@ -179,13 +179,16 @@ describe('DouyinDBBase', () => {
     // 保留策略是上界不是永久保留：超出 KEEP_PER_TARGET 的陈旧行仍要回收，否则表无界增长。
     const { db } = await createDouyinDB()
     const total = KEEP_PER_TARGET + 20
-    for (let index = 0; index < total; index++) {
+    // 一条 INSERT 塞完 120 行，不要 for 循环逐条 await：本地 sqlite 快（半秒），
+    // 但 CI 的 windows runner 磁盘慢得多，逐条提交会跑到 60 秒、撞上 30 秒超时。
+    const rows = Array.from({ length: total }, (_, index) => {
       const stamp = new Date(Date.now() - (total - index) * 24 * 60 * 60 * 1000).toISOString()
-      await db.runQuery(
-        'INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [`aweme-${index}`, 'sec-1', 'group-1', 'post', stamp, stamp]
-      )
-    }
+      return [`aweme-${index}`, 'sec-1', 'group-1', 'post', stamp, stamp]
+    })
+    await db.runQuery(
+      `INSERT INTO AwemeCaches (aweme_id, sec_uid, groupId, pushType, createdAt, updatedAt) VALUES ${rows.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')}`,
+      rows.flat()
+    )
 
     expect(await db.cleanOldAwemeCache(1)).toBe(20)
 
@@ -368,13 +371,15 @@ describe('BilibiliDBBase', () => {
   it('recycles dynamic rows that fell out of the newest window', async () => {
     const { db } = await createBilibiliDB()
     const total = KEEP_PER_TARGET + 20
-    for (let index = 0; index < total; index++) {
+    // 单条批量 INSERT，理由同 douyin 侧那条：逐条 await 在 CI 的慢磁盘上会撞超时
+    const rows = Array.from({ length: total }, (_, index) => {
       const stamp = new Date(Date.now() - (total - index) * 24 * 60 * 60 * 1000).toISOString()
-      await db.runQuery(
-        'INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
-        [`dyn-${index}`, 1234, 'group-1', '', stamp, stamp]
-      )
-    }
+      return [`dyn-${index}`, 1234, 'group-1', '', stamp, stamp]
+    })
+    await db.runQuery(
+      `INSERT INTO DynamicCaches (dynamic_id, host_mid, groupId, dynamic_type, createdAt, updatedAt) VALUES ${rows.map(() => '(?, ?, ?, ?, ?, ?)').join(', ')}`,
+      rows.flat()
+    )
 
     expect(await db.cleanOldDynamicCache(1)).toBe(20)
 
