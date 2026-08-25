@@ -10,23 +10,37 @@ permissions:
 jobs:
   create-comment:
     runs-on: ubuntu-latest
+    # 只有这两个标签需要回复，其余标签直接不起 runner
+    if: github.event.label.name == 'enhancement' || github.event.label.name == 'bug'
     steps:
-      - name: Create comment for enhancement
-        if: github.event.label.name == 'enhancement'
-        uses: actions-cool/issues-helper@v3
+      # 原来用的 actions-cool/issues-helper 在 2026-05-19 被 GitHub 以违反 ToS 封禁
+      # （API 返回 Repository access blocked / reason: tos），拉取 action 这一步就失败，
+      # 于是这个流程每次打标签都红。改用官方 github-script 自己实现，文案与行为保持不变。
+      - name: 按标签回复
+        uses: actions/github-script@v9
         with:
-          actions: 'create-comment'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            你好 @${{ github.event.issue.user.login }}，我们已经记录了你的新功能提议。如果你有任何具体的实现想法或设计草图，欢迎随时分享给我们。
-          emoji: 'eyes'
+          script: |
+            const { owner, repo } = context.repo
+            const author = context.payload.issue.user.login
+            const label = context.payload.label.name
 
-      - name: Create comment for bug
-        if: github.event.label.name == 'bug'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'create-comment'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            你好 @${{ github.event.issue.user.login }}，看来我们的代码不小心打了个盹儿。别担心，我们已经唤醒了开发团队，他们正快马加鞭地赶来修复！🔨🐞
-          emoji: 'eyes'
+            const bodies = {
+              enhancement: `你好 @${author}，我们已经记录了你的新功能提议。如果你有任何具体的实现想法或设计草图，欢迎随时分享给我们。`,
+              bug: `你好 @${author}，看来我们的代码不小心打了个盹儿。别担心，我们已经唤醒了开发团队，他们正快马加鞭地赶来修复！🔨🐞`
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              body: bodies[label]
+            })
+
+            // 表情是「已收到」的信号，重复打同一个标签会重复调用，
+            // 但 reactions 接口对同一用户同一表情是幂等的，不会叠加。
+            await github.rest.reactions.createForIssue({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              content: 'eyes'
+            })

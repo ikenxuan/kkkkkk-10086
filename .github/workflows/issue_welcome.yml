@@ -11,10 +11,39 @@ jobs:
   issue-welcome:
     runs-on: ubuntu-latest
     steps:
-      - name: welcome
-        uses: actions-cool/issues-helper@v3
+      # 原来用的 actions-cool/issues-helper 在 2026-05-19 被 GitHub 以违反 ToS 封禁
+      # （API 返回 Repository access blocked / reason: tos），拉取 action 这一步就失败，
+      # 于是这个流程每次开 issue 都红。改用官方 github-script 自己实现，行为保持不变。
+      - name: 首次提 issue 的作者才欢迎
+        uses: actions/github-script@v9
         with:
-          actions: 'welcome'
-          token: ${{ secrets.GITHUB_TOKEN }}
-          body: 你好 @${{ github.event.issue.user.login }}，我们注意到你是一次创建问题，感谢你的加入！我们非常期待你的想法和贡献。🌟
-          issue-emoji: 'eyes'
+          script: |
+            const { owner, repo } = context.repo
+            const author = context.payload.issue.user.login
+
+            // issues-helper 的 welcome 动作只招呼「第一次提 issue 的人」，这里照样只查作者
+            // 历史 issue 数：搜索接口把 PR 也算成 issue，所以额外加 is:issue 把 PR 排掉。
+            const { data } = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue author:${author}`,
+              per_page: 2
+            })
+
+            // 当前这条已经建好了，所以首次提 issue 的人这里恰好是 1 条
+            if (data.total_count > 1) {
+              core.info(`${author} 之前提过 ${data.total_count - 1} 个 issue，跳过欢迎`)
+              return
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              body: `你好 @${author}，我们注意到你是第一次创建问题，感谢你的加入！我们非常期待你的想法和贡献。🌟`
+            })
+
+            await github.rest.reactions.createForIssue({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              content: 'eyes'
+            })
