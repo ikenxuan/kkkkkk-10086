@@ -164,15 +164,15 @@ test('build workflow command layers stay aligned with local validation', () => {
     'windows-latest'
   ])
   assert.equal(
-    findStep(ci, 'check', step => step.uses === 'pnpm/action-setup@v4').with
+    findStep(ci, 'check', step => step.uses === 'pnpm/action-setup@v6').with
       .version,
     '9.15.9'
   )
   assert.equal(
-    findStep(ci, 'check', step => step.uses === 'actions/setup-node@v4').with[
+    findStep(ci, 'check', step => step.uses === 'actions/setup-node@v7').with[
       'node-version'
     ],
-    22
+    24
   )
   assert.equal(
     findStep(ci, 'check', step => step.run?.startsWith('pnpm install')).run,
@@ -185,14 +185,14 @@ test('build workflow command layers stay aligned with local validation', () => {
     [release, 'release-please']
   ]) {
     assert.equal(
-      findStep(workflow, jobName, step => step.uses === 'pnpm/action-setup@v4').with
+      findStep(workflow, jobName, step => step.uses === 'pnpm/action-setup@v6').with
         .version,
       '9.15.9'
     )
     assert.equal(
-      findStep(workflow, jobName, step => step.uses === 'actions/setup-node@v4')
+      findStep(workflow, jobName, step => step.uses === 'actions/setup-node@v7')
         .with['node-version'],
-      '22.12.0'
+      24
     )
     assert.equal(
       findStep(workflow, jobName, step => step.run?.startsWith('pnpm install')).run,
