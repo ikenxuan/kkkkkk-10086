@@ -1,5 +1,44 @@
 # Changelog
 
+## [2.39.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.0...v2.39.1) (2026-08-25)
+
+
+### 🐛 Bug 修复
+
+* **adapter:** 适配器名取协议端真名，协议实现不再显示成平台名 ([b79ef3e](https://github.com/ikenxuan/kkkkkk-10086/commit/b79ef3e64eeca175aacbf7ded01c9e0214570235))
+* **bilibili:** ck 失效时改走 dash 兜底，不再误报「请配置CooKie后重试」 ([84c5917](https://github.com/ikenxuan/kkkkkk-10086/commit/84c591701eb62bacf415b07e9f54f19ce51ce07b))
+* **bilibili:** 风控验证失败按错误码给提示，并改出错误卡片 ([91024ef](https://github.com/ikenxuan/kkkkkk-10086/commit/91024efe99db1d1bc3ce9aec62ce0bd8807a7260))
+* **config:** cookie 归一成字符串，写入失败不再谎报保存成功 ([59b09c8](https://github.com/ikenxuan/kkkkkk-10086/commit/59b09c81a2bf6652460e7099a2369956373e7061))
+* **db:** 去重键按目标保留最新若干条，长播场次不再被清掉重推 ([e1c6145](https://github.com/ikenxuan/kkkkkk-10086/commit/e1c6145dd943ce853a16f6b2d110f1bed908692a))
+* **douyin,xiaohongshu:** 同步上游修过的取值与守卫 ([df51410](https://github.com/ikenxuan/kkkkkk-10086/commit/df514105ea86f7710e959d912f73f67fc0afb2f2))
+* **error:** 卡片发到触发者后不再补发同一条错误的文字 ([6001aaa](https://github.com/ikenxuan/kkkkkk-10086/commit/6001aaa01fa2042488608bf5cb53af6a5cbab537))
+* **push:** 发送失败不再记已推，避免那条内容永久漏发 ([36fe326](https://github.com/ikenxuan/kkkkkk-10086/commit/36fe326f0a61bc2495c8b42f2b1e0cc8f961c368))
+* **template:** 排行图的名字改换行，不再被切掉半个字 ([ca7a280](https://github.com/ikenxuan/kkkkkk-10086/commit/ca7a2802d714e5cb922d393dc6f57abee9e6eb73))
+
+
+### 📝 文档
+
+* 修正产物推送目标分支，实际是 master 不是 release ([f3a6fef](https://github.com/ikenxuan/kkkkkk-10086/commit/f3a6fef4b5351c656875ec77faa0ad8c40a63d55))
+
+
+### ♻️ 重构
+
+* **types:** 删掉 camelCase 事件字段的兼容分支 ([8c51cd5](https://github.com/ikenxuan/kkkkkk-10086/commit/8c51cd59c6374559dfd12e26d3ca17c1bf7d4652))
+* **utils:** 23 份 isRecord 并成一份，统一取排除数组的严格语义 ([3c02fc3](https://github.com/ikenxuan/kkkkkk-10086/commit/3c02fc31b4687d43c8bd46940e3ec903bdf0489a))
+* **utils:** 3 份 escapeHtml 并成一份 ([afb9bd7](https://github.com/ikenxuan/kkkkkk-10086/commit/afb9bd7d64dcbee38cd33029a85a0c9a7da39df7))
+
+
+### ✅ 测试
+
+* **tooling:** 把「二进制按路径直调」这个不变量钉进契约 ([780b82d](https://github.com/ikenxuan/kkkkkk-10086/commit/780b82dbbb64477f1a381b2ca8ae223909b54431))
+* 集成测试超时从默认 5s 放宽到 30s ([594d810](https://github.com/ikenxuan/kkkkkk-10086/commit/594d810b8f76cdcaa9e9188184e9c77894e9d758))
+
+
+### 🤖 CI/CD 配置
+
+* ci.yml 改名 check.yml，让侧边栏读到中文 workflow 名 ([eedd94b](https://github.com/ikenxuan/kkkkkk-10086/commit/eedd94b8eb8687955214225c3b7ef2884eafe151))
+* **release:** master 的产物提交信息带上 tag / 版本 / 源提交 ([810cefd](https://github.com/ikenxuan/kkkkkk-10086/commit/810cefd556592ec9979e9dcf7ff299c6b7abf53a))
+
 ## [2.39.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.38.4...v2.39.0) (2026-08-23)
 
 
