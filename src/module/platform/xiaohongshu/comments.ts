@@ -388,7 +388,9 @@ export const buildRenderComments = (
       // 模板是 renderRichTextToReact(content, ...)，拿到字符串会在 document.nodes.map() 上抛
       content: buildXiaohongshuRichText(comment.content, emojiData, comment.at_users),
       create_time: toMilliseconds(comment.create_time),
-      ip_location: comment.ip_location || '',
+      // 模板把 ip_location 原样渲染、没有空值分支，给空串就是一段突兀的留白。
+      // 同文件的纯文本分支也是用「未知」兜底，这里保持一致。
+      ip_location: comment.ip_location || '未知',
       // 模板里 formatXiaohongshuLikeCount(count: string) 先 Number(count) 再 `count || '0'`
       like_count: String(comment.like_count ?? 0),
       liked: Boolean(comment.liked),
@@ -405,7 +407,8 @@ export const buildRenderComments = (
         user_info: normalizeUser(item.user_info),
         content: buildXiaohongshuRichText(item.content, emojiData, item.at_users),
         create_time: toMilliseconds(item.create_time),
-        ip_location: item.ip_location || '',
+        // 同上：子评论模板也是原样渲染 ip_location
+        ip_location: item.ip_location || '未知',
         like_count: String(item.like_count ?? 0),
         liked: Boolean(item.liked),
         status: Number(item.status) || 0,

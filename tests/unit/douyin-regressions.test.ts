@@ -94,7 +94,7 @@ globalThis.logger = {
   red: (value: string) => value
 } as unknown as typeof logger
 
-const { DouYin } = await import('../../src/module/platform/douyin/douyin.js')
+const { DouYin, pickDouyinPlayUrl } = await import('../../src/module/platform/douyin/douyin.js')
 const { DouYinpush } = await import('../../src/module/platform/douyin/push.js')
 const { DouyinPushPreview } = await import('../../src/module/platform/douyin/pushPreview.js')
 
@@ -321,5 +321,109 @@ describe('Douyin migration regressions', () => {
 
     expect(result).toBe(true)
     expect(addAwemeCacheMock).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * url_list[2] 是 www.douyin.com/aweme/v1/play 的包装 URL，会按抖音负载均衡 302 到任意 CDN，
+ * 部分 CDN 返回非 MP4 乱码字节，下下来的文件放不出来。旧实现取的正是 [2]，还额外用
+ * getLongLink 主动跟随那个 302 —— 等于把「落到坏 CDN」的概率全吃下来。
+ * 上游的修法是直接用 url_list[0] 的签名直链绕开这层跳转。
+ */
+describe('pickDouyinPlayUrl 绕开 aweme/v1/play 包装地址', () => {
+  const wrapped = 'https://www.douyin.com/aweme/v1/play/?video_id=v1&ratio=1080p'
+
+  it('优先取 url_list[0] 的签名直链，而不是包装地址', () => {
+    expect(pickDouyinPlayUrl({
+      url_list: ['https://v3-web.douyinvod.com/signed.mp4', 'https://v26-web.douyinvod.com/backup.mp4', wrapped]
+    })).toBe('https://v3-web.douyinvod.com/signed.mp4')
+  })
+
+  it('[0] 缺失时退到 [1]，仍然不碰包装地址', () => {
+    expect(pickDouyinPlayUrl({
+      url_list: ['', 'https://v26-web.douyinvod.com/backup.mp4', wrapped]
+    })).toBe('https://v26-web.douyinvod.com/backup.mp4')
+  })
+
+  it('只有包装地址时才退回它，保证不比修复前更差', () => {
+    expect(pickDouyinPlayUrl({ url_list: ['', '', wrapped] })).toBe(wrapped)
+  })
+
+  it('play_addr 缺失或没有候选时返回空串而不是抛错', () => {
+    // 关掉 autoResolution 时读的是 play_addr_h264，部分作品没有这个变体
+    expect(pickDouyinPlayUrl(undefined)).toBe('')
+    expect(pickDouyinPlayUrl({ url_list: [] })).toBe('')
+  })
+})
+
+/**
+ * 账号注销后主页接口照样有响应，但作品/直播列表恒空。上游在拿到 special_state 后就 continue，
+ * 本仓库原来没拦：每一轮推送都会为这个 sec_uid 白打一遍作品列表接口、白吃一次风控额度。
+ */
+describe('抖音推送跳过已注销账号', () => {
+  const deletedProfile = {
+    data: {
+      user: {
+        nickname: '已注销用户',
+        avatar_larger: { uri: 'avatar' },
+        special_state_info: { special_state: 1, title: '该账号已注销' },
+        user_deleted: true
+      }
+    }
+  }
+
+  const liveProfile = {
+    data: {
+      user: {
+        nickname: '正常用户',
+        avatar_larger: { uri: 'avatar' }
+      }
+    }
+  }
+
+  const userList = [{
+    sec_uid: 'sec-deleted',
+    remark: 'gone',
+    group_id: ['group-1:bot-1'],
+    pushTypes: ['post'],
+    switch: true
+  }] as never
+
+  it('账号已注销时不再去拉作品列表', async () => {
+    douyinDataMock.mockResolvedValue(deletedProfile)
+
+    const result = await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
+
+    expect(result).toEqual({})
+    // 只应该有那一次「用户主页数据」，不该再有作品列表请求
+    expect(douyinDataMock).toHaveBeenCalledTimes(1)
+    expect(guardedDouyinDataMock).not.toHaveBeenCalled()
+  })
+
+  it('special_state 为 1 但账号未删除时照常推送', async () => {
+    // 两个条件是「与」关系：只有 special_state 不足以判定注销（私密账号等也会带状态）
+    douyinDataMock.mockResolvedValue({
+      data: {
+        user: {
+          ...liveProfile.data.user,
+          special_state_info: { special_state: 1, title: '私密账号' },
+          user_deleted: false
+        }
+      }
+    })
+    guardedDouyinDataMock.mockResolvedValue({ data: { aweme_list: [] } })
+
+    await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
+
+    expect(guardedDouyinDataMock).toHaveBeenCalled()
+  })
+
+  it('正常账号不受影响', async () => {
+    douyinDataMock.mockResolvedValue(liveProfile)
+    guardedDouyinDataMock.mockResolvedValue({ data: { aweme_list: [] } })
+
+    await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
+
+    expect(guardedDouyinDataMock).toHaveBeenCalled()
   })
 })

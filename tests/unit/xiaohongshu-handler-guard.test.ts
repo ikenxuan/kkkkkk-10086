@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const configMock = vi.hoisted(() => ({
+  app: { parseTip: false },
   cookies: { xiaohongshu: 'xhs-cookie' },
   xiaohongshu: { sendContent: [] as string[], numcomment: 5 }
 }))
@@ -59,6 +60,7 @@ vi.mock('../../src/module/platform/xiaohongshu/api.js', () => ({
 const { Xiaohongshu, fetchConfiguredNoteComments } = await import('../../src/module/platform/xiaohongshu/xiaohongshu.js')
 
 beforeEach(() => {
+  configMock.app.parseTip = false
   configMock.cookies.xiaohongshu = 'xhs-cookie'
   configMock.xiaohongshu.sendContent = []
   configMock.xiaohongshu.numcomment = 5
@@ -88,6 +90,31 @@ describe('Xiaohongshu guarded Amagi integration', () => {
       xsec_token: 'token-1'
     })
     expect(reply).not.toHaveBeenCalled()
+  })
+
+  /**
+   * 上游在取数之前就会回一句「检测到小红书链接，开始解析」，本仓库的 bilibili/douyin/kuaishou
+   * 也都有，只有小红书漏了 —— 开了 parseTip 的用户在小红书链接上看不到任何反馈。
+   */
+  it('replies with the parse tip when parseTip is enabled', async () => {
+    configMock.app.parseTip = true
+    const reply = vi.fn()
+    const handler = new Xiaohongshu({ reply } as never)
+
+    await expect(handler.XiaohongshuHandler({ type: 'note', note_id: 'note-1', xsec_token: 'token-1' }))
+      .resolves.toBe(true)
+
+    expect(reply).toHaveBeenCalledWith('检测到小红书链接，开始解析')
+  })
+
+  it('stays silent when parseTip is disabled', async () => {
+    configMock.app.parseTip = false
+    const reply = vi.fn()
+    const handler = new Xiaohongshu({ reply } as never)
+
+    await handler.XiaohongshuHandler({ type: 'note', note_id: 'note-1', xsec_token: 'token-1' })
+
+    expect(reply).not.toHaveBeenCalledWith('检测到小红书链接，开始解析')
   })
 })
 
@@ -297,5 +324,46 @@ describe('Xiaohongshu comment rendering after pagination', () => {
         expect.objectContaining({ id: 'regular' })
       ]
     }))
+  })
+
+  /**
+   * 分页取数为了凑够 numcomment 条会把整页拿回来，comments 往往比真正渲染的多。
+   * CommentLength 是模板头部那句「评论数量：N条」，跟卡片数对不上就是明摆着的错数：
+   * 限 2 条却写「评论数量：5条」。
+   */
+  it('reports the rendered comment count, not the fetched page size', async () => {
+    configMock.xiaohongshu.sendContent = ['comment']
+    configMock.xiaohongshu.numcomment = 2
+    getXiaohongshuDataMock.mockImplementation(async (method: string) => {
+      if (method === '单个笔记数据') {
+        return { success: true, data: { data: { items: [{ note_card: { note_id: 'note-1' } }] } } }
+      }
+      if (method === '表情列表') return { success: true }
+      if (method === '评论数据') {
+        // 一页就返回 5 条，超过 numcomment=2
+        return {
+          success: true,
+          data: {
+            data: {
+              comments: Array.from({ length: 5 }, (_, index) => ({
+                id: `c${index}`,
+                user_info: { nickname: `u${index}` },
+                show_tags: []
+              })),
+              has_more: false
+            }
+          }
+        }
+      }
+      return { success: true }
+    })
+    renderMock.mockResolvedValue('rendered-comment-image')
+
+    const handler = new Xiaohongshu({ reply: vi.fn() } as never)
+    await handler.XiaohongshuHandler({ type: 'note', note_id: 'note-1', xsec_token: 'token-1' })
+
+    const payload = renderMock.mock.calls.find(([template]) => template === 'xiaohongshu/comment')?.[1]
+    expect(payload.CommentsData).toHaveLength(2)
+    expect(payload.CommentLength).toBe(2)
   })
 })

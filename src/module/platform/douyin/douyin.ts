@@ -235,6 +235,17 @@ let img: Awaited<ReturnType<typeof Render>>
 
 const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean) || ''
 
+/**
+ * 从 play_addr 里挑真正能下载的视频直链。
+ *
+ * url_list[2] 是 www.douyin.com/aweme/v1/play 的包装 URL，会按抖音负载均衡 302 到任意 CDN，
+ * 部分 CDN（如 cjjd14.com、n98-v-ncdnon）返回非 MP4 乱码字节 —— 下下来的文件放不出来。
+ * 所以优先取 url_list[0] 的签名直链绕开这层跳转，拿不到再按下标往后退。
+ * 之前这里取的是 [2] 并且还用 getLongLink 主动跟随那个 302，等于把落到坏 CDN 的概率全吃下来。
+ */
+export const pickDouyinPlayUrl = (playAddr?: UrlResource): string =>
+  playAddr?.url_list?.[0] || playAddr?.url_list?.[1] || playAddr?.url_list?.[2] || ''
+
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
   `\n点赞：${Common.count(statistics.digg_count)}`,
   `评论：${Common.count(statistics.comment_count)}`,
@@ -530,9 +541,14 @@ export class DouYin extends Base {
                   }
                 }
                 if (hasGeneratedLivePhoto) images.push(await buildLivePhotoTipMessage())
-                const Element = common.makeForwardMsg(this.e, images, '合辑内容')
                 try {
-                  await this.e.reply(Element)
+                  // 每张图都下载失败时 images 是空的，照发就是一条空合并转发，
+                  // 用户只看到一个点不开的卡片。上游在这里改成记一条 warn 后跳过。
+                  if (images.length === 0) {
+                    logger.warn(`抖音合辑解析未生成可发送内容，aweme_id=${VideoData.data.aweme_detail.aweme_id}`)
+                  } else {
+                    await this.e.reply(common.makeForwardMsg(this.e, images, '合辑内容'))
+                  }
                 } catch (error) {
                   logger.error(error)
                 } finally {
@@ -582,23 +598,9 @@ export class DouYin extends Base {
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
               video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit || 100)
-              g_video_url = await new Networks({
-                url: video.bit_rate[0].play_addr.url_list[2] || '',
-                headers: {
-                  ...this.headers,
-                  Referer: video.bit_rate[0].play_addr.url_list[0] || '',
-                  Cookie: ''
-                }
-              }).getLongLink()
+              g_video_url = pickDouyinPlayUrl(video.bit_rate[0].play_addr)
             } else {
-              g_video_url = await new Networks({
-                url: video.play_addr_h264.url_list[2] || '',
-                headers: {
-                  ...this.headers,
-                  Referer: video.play_addr_h264.url_list[0] || video.play_addr_h264.url_list[0],
-                  Cookie: ''
-                }
-              }).getLongLink()
+              g_video_url = pickDouyinPlayUrl(video.play_addr_h264)
             }
             cover = getFirstUrl(video.animated_cover) || getFirstUrl(video.dynamic_cover) || getFirstUrl(video.cover_original_scale) || getFirstUrl(video.cover) || getFirstUrl(video.origin_cover)
 
