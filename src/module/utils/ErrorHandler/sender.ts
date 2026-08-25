@@ -5,7 +5,7 @@ import { getErrorMessage } from '@/module/utils/error-message'
 import type { ErrorHandlerContext } from './strategy.js'
 
 const getBotId = (event?: MessageEvent): MessageId | undefined => {
-  return (event?.self_id || event?.selfId || event?.bot?.uin || event?.bot?.self_id || event?.bot?.selfId) as
+  return (event?.self_id || event?.bot?.uin || event?.bot?.self_id) as
     | MessageId
     | undefined
 }
@@ -74,41 +74,53 @@ export const hasErrorReportTarget = (ctx: ErrorHandlerContext): boolean => {
   return sendTo.includes('master') || sendTo.includes('allMasters')
 }
 
-export const sendErrorToTrigger = async (ctx: ErrorHandlerContext, message: unknown): Promise<void> => {
-  if (!ctx.event || !Config.app.errorLogSendTo?.includes('trigger')) return
+/**
+ * 把错误卡片发给触发者。
+ *
+ * 返回「触发者到底收到没有」：调用方要靠它决定还要不要补那条 `处理失败：...` 纯文字。
+ * 原来这里是 void，于是卡片已经发到触发者眼前了，调用方还是照发一遍文字，
+ * 同一个错误在同一个会话里出现两次。
+ */
+export const sendErrorToTrigger = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
+  if (!ctx.event || !Config.app.errorLogSendTo?.includes('trigger')) return false
 
   try {
     await ctx.event.reply!(message)
+    return true
   } catch (error: unknown) {
     logger.error(`[ErrorHandler] 发送错误消息给触发者失败: ${getErrorMessage(error)}`)
+    return false
   }
 }
 
-export const sendErrorToMaster = async (ctx: ErrorHandlerContext, message: unknown): Promise<void> => {
-  if (!Config.app.errorLogSendTo?.includes('master')) return
+export const sendErrorToMaster = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
+  if (!Config.app.errorLogSendTo?.includes('master')) return false
 
   const botId = getBotId(ctx.event)
   const master = getMasterList(botId)[0]
-  if (!master || !botId) return
+  if (!master || !botId) return false
 
   try {
-    await sendPrivate(botId, master, message)
+    return await sendPrivate(botId, master, message)
   } catch (error: unknown) {
     logger.error(`[ErrorHandler] 发送错误消息给主人失败: ${getErrorMessage(error)}`)
+    return false
   }
 }
 
-export const sendErrorToAllMasters = async (ctx: ErrorHandlerContext, message: unknown): Promise<void> => {
-  if (!Config.app.errorLogSendTo?.includes('allMasters')) return
+export const sendErrorToAllMasters = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
+  if (!Config.app.errorLogSendTo?.includes('allMasters')) return false
 
   const botId = getBotId(ctx.event)
-  if (!botId) return
+  if (!botId) return false
 
+  let delivered = false
   for (const master of new Set(getMasterList(botId))) {
     try {
-      await sendPrivate(botId, master, message)
+      if (await sendPrivate(botId, master, message)) delivered = true
     } catch (error: unknown) {
       logger.error(`[ErrorHandler] 发送错误消息给主人 ${master} 失败: ${getErrorMessage(error)}`)
     }
   }
+  return delivered
 }

@@ -39,40 +39,115 @@ export const toErrorCardPlatform = (platform: string | undefined) => {
   }
 }
 
+/** 空值和空串都算「这个场景没有这个字段」，统一收敛成 undefined，好让下游只判一种「没有」 */
+const presentOrUndefined = (value: string | number | null | undefined) =>
+  value === null || value === '' ? undefined : value
+
+/**
+ * 会话群号，私聊场景返回 undefined。
+ *
+ * 为什么判定放这一层而不是模板里：「什么算私聊」是宿主事件形状的知识（哪个字段、几种拼写），
+ * 属于数据层；模板只该看「这条信息在不在」。旧实现用 `|| 'private'` 兜底，
+ * 把「这里没有群」写成了一个看起来像群号的占位串，私聊出的图上就是「群: private」，
+ * 读起来像解析出错，反而盖住了真正要看的错误。
+ *
+ * `isPrivate` 是宿主 loader 注入的布尔，`is_private` 是 OneBot 原始字段，两种拼写都认；
+ * 都没有时退回「有没有 group_id」—— 主动推送连事件对象都没有，同样落到 undefined。
+ *
+ * 只读 snake_case：camelCase 的 `groupId` 全宿主（lib/、7 个适配器、其余协议插件）
+ * 无一处产生，`@kaguyajs/trss-yunzai-types` 也只声明 snake_case，那层兼容是防御一个
+ * 不存在的形状，删掉。
+ */
+const resolveGroupId = (event: ErrorHandlerContext['event']) => {
+  if (event?.isPrivate === true || event?.is_private === true) return undefined
+  return presentOrUndefined(event?.group_id)
+}
+
+/**
+ * 触发者用户号，主动推送场景返回 undefined。
+ *
+ * 定时推送由 cron 触发，`push.ts` 的 createPushTask 是 `handler(undefined)` —— 压根没有事件对象，
+ * 也就不存在「触发用户」这回事。旧实现 `|| 'unknown'` 让卡片多出一行「用户: unknown」，
+ * 看着像取用户失败，其实是这个场景本就没有用户。
+ * （`testPush.ts` 走的是 `handler(e)`，那是主人手敲命令触发的，有真实触发者，这行照常渲染。）
+ */
+const resolveUserId = (event: ErrorHandlerContext['event']) => {
+  return presentOrUndefined(event?.user_id ?? event?.sender?.user_id)
+}
+
 /**
  * 群 / 用户这类合成条目不是真日志行，没有发生时刻，所以时间戳给空串。
  *
  * 契约里 `LogEntry.timestamp` 是必填 string，而模板那边是 `log.timestamp ? <legend> : null`，
  * 空串走的正是「不渲染时间胶囊」这条分支 —— 和现在线上的表现一模一样，
  * 只是把「字段缺失」换成了「字段为空」，契约就能过。
+ *
+ * 两行各自按「拿到 id 了才生成」处理，于是「隐藏某一行」不需要模板配合：模板本来就是
+ * `data.logs.map`，条目不在数组里那一行就不存在。契约那边 `logs` 已经是可选数组，
+ * 少一条不用改 ApiErrorData。
+ *
+ * 刻意不写返回类型标注：`LogEntry` 是 ktr/ 里的模板契约，src/ 这个 program 的 rootDir 是
+ * ./src，引进来就是 TS6059（同 toErrorCardPlatform）。交给 TS 推断，`Render()` 调用点
+ * 照样能拿契约校验这个数组。
  */
-export const buildContextLogEntries = (groupId: string | number, userId: string | number) => [
-  { timestamp: '', level: 'INFO' as const, message: `群: ${groupId}`, raw: `群: ${groupId}` },
-  { timestamp: '', level: 'INFO' as const, message: `用户: ${userId}`, raw: `用户: ${userId}` }
-]
+export const buildContextLogEntries = (groupId?: string | number, userId?: string | number) => {
+  return [
+    groupId === undefined ? null : { timestamp: '', level: 'INFO' as const, message: `群: ${groupId}`, raw: `群: ${groupId}` },
+    userId === undefined ? null : { timestamp: '', level: 'INFO' as const, message: `用户: ${userId}`, raw: `用户: ${userId}` }
+  ].filter((entry): entry is Exclude<typeof entry, null> => entry !== null)
+}
+
+/**
+ * 从事件对象直接算出该渲染哪几行上下文。
+ *
+ * 错误卡片有两个调用点（本文件的 renderErrorReport，和 `Base.ts` 的 buildApiErrorImage），
+ * 场景判定必须是同一套，否则同一张模板在两条路径上会给出不一样的行。把「解析事件 + 生成条目」
+ * 收成一个入口，调用点就不用各自复制一遍 group_id/isPrivate 的取值规则 ——
+ * `Base.ts` 目前还在自己拼 `|| 'private'` / `|| 'unknown'`，改成调这个函数即可对齐。
+ */
+export const buildEventContextLogEntries = (event: ErrorHandlerContext['event']) =>
+  buildContextLogEntries(resolveGroupId(event), resolveUserId(event))
 
 export const buildErrorMessage = (ctx: ErrorHandlerContext): string => {
   const error = normalizeError(ctx.error)
-  const groupId = ctx.event?.group_id || ctx.event?.groupId || 'private'
-  const userId = ctx.event?.user_id || ctx.event?.userId || ctx.event?.sender?.user_id || 'unknown'
+  const groupId = resolveGroupId(ctx.event)
+  const userId = resolveUserId(ctx.event)
 
   return [
     `KKK业务执行出错: ${ctx.options.businessName}`,
     `错误: ${error.name}: ${error.message}`,
-    `群: ${groupId}`,
-    `用户: ${userId}`,
+    // 文本回退跟卡片共用同一套场景判定：渲染挂了的时候这条是唯一的信息载体，
+    // 不该比卡片多出「群: private」这种占位行。空串会被下面的 filter(Boolean) 丢掉。
+    groupId === undefined ? '' : `群: ${groupId}`,
+    userId === undefined ? '' : `用户: ${userId}`,
     `插件: ${Version.pluginName}@${Version.version}`,
     error.stack ? `堆栈:\n${error.stack.split('\n').slice(0, 8).join('\n')}` : ''
   ].filter(Boolean).join('\n')
 }
 
-export const renderErrorReport = async (ctx: ErrorHandlerContext): Promise<unknown> => {
+/**
+ * 卡片上那些不由 ctx 决定的附加字段。
+ *
+ * 目前只有风控验证在用：`ktr/template/other/handlerError` 早就支持
+ * `isVerification` + `verificationUrl`（模板里按这两个字段渲染带二维码的验证块），
+ * 但此前没有任何调用点能喂进去 —— `renderErrorReport` 只收一个 ctx，
+ * 于是 B站风控只能自己手搓一张裸二维码发出去，和插件其余出图的观感对不上。
+ * 上游同一处走的是 `renderErrorImage(ctx, { isVerification: true, verificationUrl })`。
+ */
+export interface ErrorReportExtras {
+  isVerification?: boolean
+  verificationUrl?: string
+}
+
+export const renderErrorReport = async (
+  ctx: ErrorHandlerContext,
+  extras: ErrorReportExtras = {}
+): Promise<unknown> => {
   const error = normalizeError(ctx.error)
-  const groupId = ctx.event?.group_id || ctx.event?.groupId || 'private'
-  const userId = ctx.event?.user_id || ctx.event?.userId || ctx.event?.sender?.user_id || 'unknown'
 
   try {
     return await Render('other/handlerError', {
+      ...extras,
       type: 'business_error',
       platform: toErrorCardPlatform(ctx.options.platform),
       method: ctx.options.businessName,
@@ -88,7 +163,7 @@ export const renderErrorReport = async (ctx: ErrorHandlerContext): Promise<unkno
       },
       logs: [
         ...ctx.logs.slice().reverse(),
-        ...buildContextLogEntries(groupId, userId)
+        ...buildEventContextLogEntries(ctx.event)
       ],
       buildTime: ctx.buildMetadata?.buildTime ? formatBuildTime(ctx.buildMetadata.buildTime) : undefined,
       commitHash: ctx.buildMetadata?.shortCommitHash || ctx.buildMetadata?.commitHash,
