@@ -38,10 +38,11 @@ const readVipStatus = (value: unknown): number | undefined => {
  * @param apiURL 请求地址
  */
 export async function genParams (apiURL: string): Promise<string> {
-  if (Config.cookies.bilibili === '' || Config.cookies.bilibili === null) return '&platform=html5'
+  // 「没配置」只有空串这一种表示，归一化在 Config.cookies getter 里做（见那边的注释）
+  if (Config.cookies.bilibili === '') return '&platform=html5'
   /** 保留原有的直接取值方式：响应结构异常时同样抛出错误交给调用方 */
   const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili) as BilibiliLoginInfo
-  const genSign = await getWbiSign()(apiURL, Config.cookies.bilibili || '')
+  const genSign = await getWbiSign()(apiURL, Config.cookies.bilibili)
 
   const qn = [6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]
   let isvip
@@ -80,12 +81,13 @@ export interface BilibiliCkStatus {
  */
 export async function checkCk (): Promise<BilibiliCkStatus> {
   // 如果Cookie为空或未配置，直接返回未登录状态
-  if (Config.cookies.bilibili === '' || Config.cookies.bilibili === null) {
+  // （「没配置」只有空串这一种表示，归一化在 Config.cookies getter 里做）
+  if (Config.cookies.bilibili === '') {
     return { Status: '!isLogin', isVIP: false }
   }
 
   // 获取用户登录信息
-  const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili || '')
+  const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili)
 
   // 判断VIP状态：vipStatus为1表示是VIP用户
   const isVIP = readVipStatus(loginInfo) === 1

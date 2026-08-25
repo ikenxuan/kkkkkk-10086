@@ -91,10 +91,25 @@ export const bilibiliLogin = async (e: BilibiliLoginEvent): Promise<void> => {
    * @param responseData 登录响应数据
    */
   const handleLoginSuccess = async (responseData: unknown): Promise<void> => {
+    // readPath 只校验中间层是不是对象，末端取不到就是 undefined。旧实现把这个 undefined
+    // 原样交给 Config.modify，yaml 落成 `bilibili: null`，然后照样回「凭证已保存」——
+    // 用户以为登录好了，解析时却报「请配置CooKie后重试」。这里改成写之前先确认拿到了东西。
     const setCookie = readPath(responseData, ['data', 'data', 'headers', 'set-cookie'])
-    Config.modify('cookies', 'bilibili', Array.isArray(setCookie)
-      ? setCookie.join('; ')
-      : setCookie)
+    const cookie = (Array.isArray(setCookie)
+      ? setCookie.filter(item => typeof item === 'string').join('; ')
+      : typeof setCookie === 'string' ? setCookie : ''
+    ).trim()
+
+    if (!cookie) {
+      // 不打印 responseData：这个响应里正常情况下就带着 cookie，
+      // 打进日志等于把凭证写进磁盘。只报「哪个路径没取到」足够定位。
+      logger.error('[B站登录] 扫码已确认，但 data.data.headers.set-cookie 没取到内容，cookies.yaml 未改动')
+      await e.reply('扫码已确认，但没能从响应里取到登录凭证，cookies.yaml 未改动。请重试，或用「#设置B站ck」手动填入。', true)
+      await recallMessages()
+      return
+    }
+
+    Config.modify('cookies', 'bilibili', cookie)
     await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', true)
     await recallMessages()
   }
