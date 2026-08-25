@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.39.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.1...v2.39.2) (2026-08-25)
+
+
+### ✅ 测试
+
+* **ci:** workflow 契约跟上 Node 24 与新 action 版本 ([59da304](https://github.com/ikenxuan/kkkkkk-10086/commit/59da304280f1a6b00272ebac4d4750a7a2eccff5))
+* **db:** 保留期用例改批量插入，CI 上不再超时 ([83603a4](https://github.com/ikenxuan/kkkkkk-10086/commit/83603a4d22b184045de169ae419e9c10915411fb))
+
+
+### 🤖 CI/CD 配置
+
+* Node 版本钉到 24，action 升到自身跑 node24 的版本 ([73b41ee](https://github.com/ikenxuan/kkkkkk-10086/commit/73b41ee3d670e6f530345b82029b8cf5ea840535))
+
 ## [2.39.1](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.0...v2.39.1) (2026-08-25)
 
 
