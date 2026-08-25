@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.39.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.2...v2.39.3) (2026-08-25)
+
+
+### 🐛 Bug 修复
+
+* **ci:** issue 自动回复换用官方 github-script，原 action 已被封禁 ([8d82c21](https://github.com/ikenxuan/kkkkkk-10086/commit/8d82c21fdf1fcc0d50670646857d7dcd92baf0a1))
+
 ## [2.39.2](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.1...v2.39.2) (2026-08-25)
 
 
