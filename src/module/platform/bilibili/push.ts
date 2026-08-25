@@ -377,6 +377,20 @@ const isBilibiliPushType = (value: unknown): value is BilibiliPushType => (
   typeof value === 'string' && (DEFAULT_BILIBILI_PUSH_TYPES as readonly string[]).includes(value)
 )
 
+/**
+ * 推送时的「二次解析」是否覆盖该动态类型。
+ *
+ * 配置缺省时按「全部允许」处理：`Config` 对 default_config 与用户配置只做浅合并，
+ * 用户只要写了 `push:` 这一层就可能读不到 parseDynamicTypes，这时必须保持加这道
+ * 开关之前的行为，不能因为读不到配置就把二次解析整个关掉。
+ * 显式配成空数组是「一个都不解析」，照配置执行。
+ */
+const isParseDynamicTypeAllowed = (dynamicType: string): boolean => {
+  const configured = Config.bilibili?.push?.parseDynamicTypes
+  if (!Array.isArray(configured)) return true
+  return (configured as string[]).includes(dynamicType)
+}
+
 export const normalizeBilibiliPushTypes = (pushTypes: unknown): BilibiliPushType[] => {
   if (!Array.isArray(pushTypes) || pushTypes.length === 0) return [...DEFAULT_BILIBILI_PUSH_TYPES]
   const result: BilibiliPushType[] = []
@@ -849,8 +863,20 @@ export class Bilibilipush extends Base {
           }
         }
 
+        // Render 返回 false 表示这一轮渲染失败（截图超时、模板报错等）。
+        // 原来会一路落到下面 `status = img ? … : { message_id: '1' }` 的兜底分支，
+        // 拿到一个假 message_id 之后照样写已推缓存，于是这条动态再也不会重试 ——
+        // 线上表现是「浏览器抖一下就永久漏推一条」。douyin/push.ts 早就这么拦了，这里漏了。
+        if (!skip && img === false) {
+          logger.warn(`[Bilibili 推送] 动态 ${dynamicId} 渲染失败，保留未推送状态等待下一轮重试`)
+          continue
+        }
+
         // 遍历 targets 数组，并发送消息
         for (const target of dynamicItem.targets) {
+          // 这条卡片是否已经「不必再重发」：被过滤跳过、发送成功、或 bot/群不存在的兜底。
+          // 二次解析（视频/图集/专栏）失败不改变它 —— 卡片已经出去了，重发只会让群里看到两遍。
+          let cardDelivered = skip
           try {
             let status
             if (!skip) {
@@ -885,7 +911,11 @@ export class Bilibilipush extends Base {
                 logger.warn(`bot${botId}不存在或群${groupId}不存在`)
                 status = { message_id: '1' }
               }
-              if (Config.bilibili?.push?.parsedynamic) {
+              cardDelivered = Boolean(status?.message_id)
+              // parsedynamic 只是「要不要顺带解析」的总开关，parseDynamicTypes 才是「解析哪些类型」。
+              // 后者 config/default_config 和锅巴面板都暴露了，但这里原来只读总开关，
+              // 于是用户取消勾选的类型照样会被二次解析、在卡片之后多发一条视频/图集消息。
+              if (Config.bilibili?.push?.parsedynamic && isParseDynamicTypeAllowed(dynamicItem.dynamic_type)) {
                 switch (dynamicItem.dynamic_type) {
                   case 'DYNAMIC_TYPE_AV': {
                     if (send_video) {
@@ -1041,19 +1071,25 @@ export class Bilibilipush extends Base {
                       // 只有 videoSendMode/imageSendMode === 'base64' 时字节已经内联进消息段，
                       // 才不受影响 —— 而 default_config/upload.yaml 默认是 file / url，
                       // 所以默认配置下这个顺序就是坏的。
-                      // 早退的 `return false` 仍会触发 finally，临时文件不会漏。
-                      if (!imgArray.length) return false
-                      const forwardMsg = Version.BotName === 'Miao-Yunzai'
-                        ? Bot?.makeForwardMsg(imgArray.map(img => ({
-                          user_id: 2854196310,
-                          message: img
-                        })) as ForwardNodes)
-                        : common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
-                      // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
-                      if (Bot?.[botId]?.pickGroup(groupId) && forwardMsg) {
-                        await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg as GroupSendable)
+                      // 一张都没解析出来时只放弃这次二次解析。
+                      // 原来这里是 `return false`：直接从 getdata 返回，把同一轮里后面所有
+                      // UP 的动态一起丢掉（它们没写缓存，线上表现是「这一轮只推了前几条」），
+                      // 而当前这条的动态卡片其实已经发出去了。
+                      if (imgArray.length) {
+                        const forwardMsg = Version.BotName === 'Miao-Yunzai'
+                          ? Bot?.makeForwardMsg(imgArray.map(img => ({
+                            user_id: 2854196310,
+                            message: img
+                          })) as ForwardNodes)
+                          : common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
+                        // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+                        if (Bot?.[botId]?.pickGroup(groupId) && forwardMsg) {
+                          await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg as GroupSendable)
+                        } else {
+                          logger.warn(`bot${botId}不存在或群${groupId}不存在`)
+                        }
                       } else {
-                        logger.warn(`bot${botId}不存在或群${groupId}不存在`)
+                        logger.warn(`[Bilibili 推送] 动态 ${dynamicId} 没有可发送的图片内容，跳过二次解析`)
                       }
                     } finally {
                       for (const item of tempFiles) {
@@ -1068,14 +1104,18 @@ export class Bilibilipush extends Base {
           } catch (e) {
             logger.error(e)
           } finally {
-            // 无论推送是否成功，都添加动态缓存以防止重复推送
-            // 这确保即使在消息发送失败或跳过的情况下，也不会在下次运行时重复推送相同的动态
-            await bilibiliDB?.addDynamicCache(
-              dynamicId,
-              dynamicItem.host_mid,
-              target.groupId,
-              dynamicItem.dynamic_type
-            )
+            // 只有确实送达（或被过滤跳过）才写已推标记。
+            // 原来这里是无条件写的，理由是「防止重复推送」—— 但 bot 上线补推那个场景已经由
+            // 上面 bot/群不存在时的 message_id: '1' 兜底覆盖了。发送本身抛错（风控、网络抖动、
+            // 消息过长）时无条件写缓存，等于把这条动态永久吞掉，群里永远收不到。
+            if (cardDelivered) {
+              await bilibiliDB?.addDynamicCache(
+                dynamicId,
+                dynamicItem.host_mid,
+                target.groupId,
+                dynamicItem.dynamic_type
+              )
+            }
           }
         }
       }
@@ -1454,8 +1494,8 @@ export class Bilibilipush extends Base {
   async forcepush (data: WillBePushList): Promise<void> {
     const event = this.e
     if (!event) return
-    const currentGroupId = String(event.group_id || event.groupId || '')
-    const currentBotId = String(event.self_id || event.selfId || '')
+    const currentGroupId = String(event.group_id || '')
+    const currentBotId = String(event.self_id || '')
 
     // 如果不是全部强制推送，需要过滤数据
     if (!(event.msg ?? '').includes('全部')) {
