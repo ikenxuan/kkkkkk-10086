@@ -12,12 +12,133 @@ jobs:
   similarity-analysis:
     runs-on: ubuntu-latest
     steps:
-      - name: analysis
-        uses: actions-cool/issues-similarity-analysis@v1
+      # 原来用的 actions-cool/issues-similarity-analysis 和已被 GitHub 以违反 ToS 封禁的
+      # issues-helper 同组织、最后更新停在 2024-02，换成官方 github-script 自己实现。
+      #
+      # 算法没照抄它依赖的 compare-similarity（词级贪心 + 长度差惩罚）：那份实现按空格切词，
+      # 而本仓库的 issue 标题几乎全是中文，切完只有一个「词」，退化成整串编辑距离。拿仓库里
+      # 44 条真实 issue 跑过对照，照抄的结果是 #115 被列出 18 条「相似」，排第一的 #73 标题
+      # 只有模板前缀（正文全空），而真正重复的 #97/#93 反而低于无关配对 —— 没有任何阈值能分开。
+      # 换成按字符二元组算 Dice 系数，并且先剥掉模板前缀，同一批数据上只剩 2 条 issue 会收到
+      # 评论、各 1 条，命中的正是真重复对。
+      - name: 找出相似的历史 issue
+        uses: actions/github-script@v9
+        env:
+          FILTER_THRESHOLD: '0.4'
+          SINCE_DAYS: '730'
+          MAX_RESULTS: '5'
+          MIN_LENGTH: '5'
+          COMMENT_TITLE: '### 似乎有相似的问题'
+          SHOW_MENTIONED: 'true'
         with:
-          filter-threshold: 0.5
-          comment-title: '### 似乎有相似的问题'
-          comment-body: '${index}. ${similarity} #${number}'
-          show-footer: false
-          show-mentioned: true
-          since-days: 730
+          script: |
+            const threshold = Number(process.env.FILTER_THRESHOLD)
+            const sinceDays = Number(process.env.SINCE_DAYS)
+            const maxResults = Number(process.env.MAX_RESULTS)
+            const minLength = Number(process.env.MIN_LENGTH)
+            const commentTitle = process.env.COMMENT_TITLE
+            const showMentioned = process.env.SHOW_MENTIONED === 'true'
+            const { owner, repo } = context.repo
+            const issue = context.payload.issue
+
+            // 隐藏标记用来复用同一条评论。仓库里已有的评论都带老 action 的署名行，
+            // 查的时候两种都认，写的时候只写新的。
+            const MARKER = '<!-- Created by kkk issue similarity workflow. Do not remove. -->'
+            const LEGACY_MARKER = 'Created by actions-cool/issues-similarity-analysis'
+
+            // issue 模板给每个标题都加了 `[Bug?]:` / `[Feature Request]:` 前缀，
+            // 不剥掉的话光这段公共样板就能把大部分标题顶过阈值。
+            const stripTemplatePrefix = title => title.replace(/^\s*\[[^\]]*\]\s*[:：]?/, '')
+
+            /** 归一化：去 emoji、转小写、标点（含全角）和空白全部丢掉，只留下实义字符 */
+            const normalize = text => text
+              .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}\u{20E3}]/gu, '')
+              .toLowerCase()
+              .replace(/[-_/\\|,.;:!?'"`~@#$%^&*()[\]{}<>+=，。；：！？、「」『』（）【】《》…—～]/g, '')
+              .replace(/\s+/g, '')
+
+            /** 字符二元组集合；太短的标题信息量不够，返回 null 表示不参与比较 */
+            const bigrams = title => {
+              const text = normalize(stripTemplatePrefix(title))
+              if (text.length < minLength) return null
+              const set = new Set()
+              for (let i = 0; i < text.length - 1; i++) set.add(text.slice(i, i + 2))
+              return set
+            }
+
+            // Dice 系数：交集占两边总量的比例。用它而不是 overlap（除以较短的一边），
+            // 因为 overlap 在短标题上会直接满分 —— `test` ⊂ `test action` 能拿 1.00。
+            const dice = (a, b) => {
+              if (!a || !b) return 0
+              let shared = 0
+              for (const gram of a) if (b.has(gram)) shared++
+              return (2 * shared) / (a.size + b.size)
+            }
+
+            const findExisting = async () => {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner, repo, issue_number: issue.number, per_page: 100
+              })
+              return comments.filter(c => c.body?.includes(MARKER) || c.body?.includes(LEGACY_MARKER))
+            }
+
+            const dropExisting = async () => {
+              for (const comment of await findExisting()) {
+                await github.rest.issues.deleteComment({ owner, repo, comment_id: comment.id })
+                core.info(`删掉过期的相似度评论 ${comment.id}`)
+              }
+            }
+
+            const own = bigrams(issue.title)
+            if (!own) {
+              core.info('标题归一化后太短，跳过分析')
+              await dropExisting()
+              return
+            }
+
+            const body = issue.body || ''
+            /** show-mentioned 关掉时，正文里已经引用过的 issue 不再重复列出 */
+            const notMentioned = number => showMentioned || !body
+              ? true
+              : !body.includes(`#${number}`) &&
+                !body.includes(`https://github.com/${owner}/${repo}/issues/${number}`)
+
+            // since 过滤的是 updated_at，和老 action 一致
+            const since = new Date(Date.now() - sinceDays * 86400_000).toISOString()
+            const candidates = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', since, per_page: 100
+            })
+
+            const matches = candidates
+              .filter(c => !c.pull_request && c.number !== issue.number && notMentioned(c.number))
+              .map(c => ({ number: c.number, similarity: dice(own, bigrams(c.title)) }))
+              .filter(c => c.similarity >= threshold)
+              .sort((x, y) => y.similarity - x.similarity)
+              .slice(0, maxResults)
+
+            if (!matches.length) {
+              core.info('没有超过阈值的相似 issue')
+              await dropExisting()
+              return
+            }
+
+            const lines = matches.map(
+              (m, i) => `${i + 1}. ${Math.round(m.similarity * 100)}% #${m.number}`
+            )
+            const commentBody = `${commentTitle}\n${lines.join('\n')}\n\n${MARKER}`
+
+            const existing = await findExisting()
+            if (existing.length > 1) {
+              core.setFailed(`找到 ${existing.length} 条带标记的评论，不确定该改哪条，先人工清理`)
+              return
+            }
+            if (existing.length === 1) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing[0].id, body: commentBody
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number, body: commentBody
+              })
+            }
+            core.info(`列出 ${matches.length} 条相似 issue`)

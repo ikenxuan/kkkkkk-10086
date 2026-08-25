@@ -212,6 +212,95 @@ test('issue automation workflows request the minimum write permission', () => {
   }
 })
 
+test('issue 自动化不依赖 actions-cool，全部走官方 github-script', () => {
+  // actions-cool/issues-helper 在 2026-05-19 被 GitHub 以违反 ToS 封禁（拉 action 就失败，
+  // 三个流程每次都红）。同组织的 issues-similarity-analysis 一并换掉，避免再踩一次。
+  for (const path of issueWorkflowPaths) {
+    const workflow = readWorkflow(path)
+    const uses = Object.values(workflow.jobs).flatMap(job => job.steps.map(step => step.uses))
+
+    for (const entry of uses) {
+      assert.doesNotMatch(entry ?? '', /^actions-cool\//, `${path}: 不许再用 actions-cool 的 action`)
+    }
+    assert.ok(
+      uses.includes('actions/github-script@v9'),
+      `${path}: 应当用 actions/github-script@v9 自己实现`
+    )
+  }
+})
+
+test('相似度算法能分开真重复对和仅共用模板前缀的无关对', async () => {
+  const path = '.github/workflows/issue_similarity.yml'
+  const step = readWorkflow(path).jobs['similarity-analysis'].steps[0]
+
+  // 直接跑 workflow 里那段脚本，不复制一份实现 —— 复制的话改了 yml 而测试还绿，
+  // 正是这个测试要防的情况。
+  const run = new Function(
+    'github', 'context', 'core', 'process',
+    `return (async () => {${step.with.script}})()`
+  )
+
+  // 真实标题。前四条是人工标注的重复对，后面是「只共用 issue 模板前缀」的无关对 ——
+  // 照抄老 action 依赖的 compare-similarity 时，这些无关对全都过了阈值。
+  const titles = {
+    97: '[Bug?]: B站动态推送缓存没到24h就被清理导致重复发推送',
+    93: 'b站动态存在重复推送问题',
+    115: '[Bug?]: 偶现抖音解析错误403',
+    106: '[Bug?]: 抖音解析报错',
+    109: '[Bug?]: B站动态解析错误',
+    100: '[Bug]: #kkk设置目前不能使用',
+    84: '[Bug?]: 扫码登录的功能不能使用',
+    73: '[Bug?]: ',
+    128: 'test action',
+    127: '[Bug?]: test'
+  }
+  const issues = Object.entries(titles).map(([number, title]) => ({
+    number: Number(number), title
+  }))
+
+  const listForRepo = Symbol('listForRepo')
+  const analyze = async target => {
+    let posted = null
+    const github = {
+      paginate: async fn => (fn === listForRepo ? issues : []),
+      rest: {
+        issues: {
+          listForRepo,
+          listComments: Symbol('listComments'),
+          createComment: async ({ body }) => { posted = body },
+          updateComment: async () => {},
+          deleteComment: async () => {}
+        }
+      }
+    }
+    await run(
+      github,
+      { repo: { owner: 'o', repo: 'r' }, payload: { issue: target }, issue: { number: target.number } },
+      { info: () => {}, setFailed: message => assert.fail(message) },
+      { env: step.env }
+    )
+    return posted
+  }
+
+  const listed = async number => {
+    const body = await analyze(issues.find(i => i.number === number))
+    return body ? [...body.matchAll(/#(\d+)/g)].map(m => Number(m[1])) : []
+  }
+
+  // 命中：#115/#106 是同一个抖音解析报错
+  assert.deepEqual(await listed(115), [106])
+  assert.deepEqual(await listed(106), [115])
+
+  // 不许命中：这几条只共用模板前缀，语义无关
+  for (const number of [109, 100, 84]) {
+    assert.deepEqual(await listed(number), [], `#${number} 不该被判定为有相似 issue`)
+  }
+
+  // 剥掉模板前缀后内容为空/过短的标题不参与比较，否则它和谁都「相似」
+  assert.deepEqual(await listed(73), [], '空标题不该匹配任何 issue')
+  assert.deepEqual(await listed(127), [], '过短标题不该匹配任何 issue')
+})
+
 test('development branch does not enforce generated lib drift', () => {
   const packageJson = readJson('package.json')
   const ci = readWorkflow(ciPath)
