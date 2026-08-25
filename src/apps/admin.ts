@@ -146,7 +146,7 @@ const findSwitchTarget = (key: string): { file: ConfigName, field: string } | un
   return undefined
 }
 
-export class kkkAdmin extends plugin {
+export class kkkAdmin extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkkkkk-10086-设置',

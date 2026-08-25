@@ -103,7 +103,7 @@ const generateRules = (): Array<{ reg: RegExp, fnc: PlatformConfig['handler'] }>
 const findPlatformConfig = (msg: string): PlatformConfig | undefined =>
   PLATFORM_CONFIG.find(config => config.enabled && config.reg.test(msg))
 const getEventUserId = (e: MessageEvent): string =>
-  String(e.user_id || e.userId || e.sender?.user_id || e.sender?.userId || 'unknown')
+  String(e.user_id || e.sender?.user_id || 'unknown')
 /** 事件所在群的群号；私聊没有群号，退回统一的私聊占位值 */
 const getEventGroupId = (e: MessageEvent): string => String(e.group_id || e.groupId || PRIVATE_GROUP_ID)
 const getSelectionKey = (e: MessageEvent): string => `${getEventGroupId(e)}:${getEventUserId(e)}`
@@ -132,7 +132,7 @@ const getParseTarget = (platform: Platform, message: string): ParseTarget => {
 }
 
 const createMessageParseIdentity = (platform: Platform, e: MessageEvent): ParseJobIdentity => {
-  const groupId = e.group_id ?? e.groupId
+  const groupId = e.group_id
   const hasGroup = groupId !== undefined && groupId !== null && String(groupId).trim() !== ''
 
   return {
@@ -192,7 +192,7 @@ const recordMediaMetrics = async (
   }
 }
 
-export class kkkTools extends plugin {
+export class kkkTools extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkkkkk-10086-视频功能',

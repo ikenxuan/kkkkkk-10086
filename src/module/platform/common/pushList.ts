@@ -26,10 +26,10 @@ const groupAvatarUrl = (groupId: string): string =>
 
 /** 组装 `userlist` 契约里的 groupInfo */
 export const buildPushListGroupInfo = (event: PushListGroupEvent) => {
-  const groupId = String(event.group_id ?? event.groupId ?? '')
+  const groupId = String(event.group_id ?? '')
   return {
     groupId,
-    groupName: event.group_name || event.groupName || groupId || '未知群聊',
+    groupName: event.group_name || groupId || '未知群聊',
     groupAvatar: groupAvatarUrl(groupId)
   }
 }

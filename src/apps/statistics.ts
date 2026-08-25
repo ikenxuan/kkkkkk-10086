@@ -29,7 +29,7 @@ const readGroupName = (info: unknown): string => {
 }
 
 /** 事件自身所在的群号；私聊时为空串 */
-const getEventGroupId = (e: MessageEvent): string => String(e.group_id || e.groupId || '')
+const getEventGroupId = (e: MessageEvent): string => String(e.group_id || '')
 
 /**
  * 造一个「群号 -> 群名」的同步查询函数。
@@ -89,7 +89,7 @@ const createGroupNameResolver = (e: MessageEvent): ((groupId: string) => string)
   }
 }
 
-export class kkkStatistics extends plugin {
+export class kkkStatistics extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkk解析统计',
@@ -110,7 +110,7 @@ export class kkkStatistics extends plugin {
   }
 
   async groupStatistics (e: CommandEvent): Promise<boolean> {
-    const groupId = e.group_id || e.groupId
+    const groupId = e.group_id
     if (!groupId) {
       await e.reply!('此命令仅支持在群聊中使用')
       return true

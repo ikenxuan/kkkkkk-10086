@@ -16,14 +16,14 @@ const getMessageId = (event?: MessageEvent): MessageId | undefined => {
   const nestedId = !Array.isArray(message) && typeof message === 'object' && message !== null
     ? message.id ?? message.message_id
     : undefined
-  return event?.message_id ?? event?.messageId ?? nestedId
+  return event?.message_id ?? nestedId
 }
 
 const getMessageSequence = (event?: MessageEvent): MessageId | undefined =>
   event?.message_seq ?? getMessageId(event)
 
 const getGroupId = (event?: MessageEvent): MessageId | undefined =>
-  event?.group_id ?? event?.groupId
+  event?.group_id
 
 const getContact = (event?: MessageEvent): unknown => event?.contact || event?.group || event?.friend
 

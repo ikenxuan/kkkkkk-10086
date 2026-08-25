@@ -56,7 +56,7 @@ const toGroupIds = (list: string[] | undefined): string[] => {
     .filter((groupId): groupId is string => Boolean(groupId))
 }
 
-export class kkkPush extends plugin {
+export class kkkPush extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkkkkk-10086-推送功能',

@@ -10,7 +10,7 @@ const HELP = [
   '#测试抖音推荐列表推送 <用户主页链接>'
 ].join('\n')
 
-export class kkkTestPush extends plugin {
+export class kkkTestPush extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkkkkk-10086-测试推送',

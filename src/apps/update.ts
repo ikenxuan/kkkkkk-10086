@@ -74,7 +74,7 @@ const commitsToMarkdown = (commits: Array<{ hash: string, date: string, subject:
   return lines.join('\n').trim()
 }
 
-export class kkkUpdate extends plugin {
+export class kkkUpdate extends plugin<'message'> {
   constructor () {
     super({
       name: '更新',

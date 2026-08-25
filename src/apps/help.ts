@@ -226,7 +226,7 @@ const buildMenuForRole = (role: HelpRole) => {
   }).filter(group => group.items.length > 0 || (group.subGroups && group.subGroups.length > 0))
 }
 
-export class kkkHelp extends plugin {
+export class kkkHelp extends plugin<'message'> {
   constructor () {
     super({
       name: 'kkk帮助',
