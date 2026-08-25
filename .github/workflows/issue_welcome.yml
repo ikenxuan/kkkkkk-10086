@@ -21,16 +21,24 @@ jobs:
             const { owner, repo } = context.repo
             const author = context.payload.issue.user.login
 
-            // issues-helper 的 welcome 动作只招呼「第一次提 issue 的人」，这里照样只查作者
-            // 历史 issue 数：搜索接口把 PR 也算成 issue，所以额外加 is:issue 把 PR 排掉。
-            const { data } = await github.rest.search.issuesAndPullRequests({
-              q: `repo:${owner}/${repo} is:issue author:${author}`,
-              per_page: 2
+            // issues-helper 的 welcome 动作只招呼「第一次提 issue 的人」，这里照样只看作者
+            // 的历史 issue 数。
+            //
+            // 用 listForRepo 而不是 search：search 走的是最终一致的索引，而这个流程在
+            // issues.opened 的瞬间就跑（实测 #128 创建于 05:34:17、workflow 05:34:19 触发，
+            // 只差 2 秒）。新 issue 还没进索引时，老作者会被算成「第一次」而收到欢迎。
+            // listForRepo 读主库，强一致。
+            //
+            // creator= 是精确匹配，但**会带上 PR**（PR 也是 issue），所以要自己剔掉；
+            // 不能靠 user.login 过滤 —— 机器人代开的 PR 那一项是 Copilot 而不是 creator。
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', creator: author, per_page: 100
             })
+            const authored = issues.filter(item => !item.pull_request)
 
             // 当前这条已经建好了，所以首次提 issue 的人这里恰好是 1 条
-            if (data.total_count > 1) {
-              core.info(`${author} 之前提过 ${data.total_count - 1} 个 issue，跳过欢迎`)
+            if (authored.length > 1) {
+              core.info(`${author} 之前提过 ${authored.length - 1} 个 issue，跳过欢迎`)
               return
             }
 

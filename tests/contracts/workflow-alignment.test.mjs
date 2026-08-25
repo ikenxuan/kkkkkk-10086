@@ -301,6 +301,29 @@ test('相似度算法能分开真重复对和仅共用模板前缀的无关对',
   assert.deepEqual(await listed(127), [], '过短标题不该匹配任何 issue')
 })
 
+test('欢迎流程用 listForRepo 判定首次提 issue，不用最终一致的 search', () => {
+  const script = readWorkflow('.github/workflows/issue_welcome.yml')
+    .jobs['issue-welcome'].steps[0].with.script
+
+  // search 走最终一致的索引，而这个流程在 issues.opened 的瞬间就跑（实测 #128 创建于
+  // 05:34:17、workflow 05:34:19 触发，只差 2 秒）。新 issue 还没进索引时，老作者会被算成
+  // 「第一次」而重复收到欢迎。listForRepo 读主库，强一致。
+  assert.doesNotMatch(
+    script,
+    /search\.issuesAndPullRequests/,
+    '不要用 search 判定首次：索引是最终一致的，开 issue 当场查不到自己'
+  )
+  assert.match(script, /issues\.listForRepo/)
+  assert.match(script, /creator:\s*author/)
+  // creator= 会把 PR 一起带回来（PR 也是 issue），必须自己剔掉；且不能靠 user.login
+  // 过滤 —— 机器人代开的 PR 那一项是 Copilot 而不是 creator。
+  assert.match(
+    script,
+    /filter\(\s*item\s*=>\s*!item\.pull_request\s*\)/,
+    'listForRepo 的结果含 PR，必须按 pull_request 字段剔掉'
+  )
+})
+
 test('development branch does not enforce generated lib drift', () => {
   const packageJson = readJson('package.json')
   const ci = readWorkflow(ciPath)
