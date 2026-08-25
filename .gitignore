@@ -23,3 +23,8 @@ test/
 graphify-out/
 .graphifyignore
 AGENTS.md
+# docs/superpowers/ 是 agent 写方案时的草稿目录（writing-plans 那套），
+# 和 .claude/ 、AGENTS.md 同类：只对当时那次改动有意义，进了仓库既没人读也会越堆越多。
+# 它是在 0471487 那个大迁移提交里被整棵工作树一起扫进来的，不是有意提交。
+# docs/ 下手写的文档（actions-local-validation.md）继续跟踪，所以只忽略这一层。
+docs/superpowers/
