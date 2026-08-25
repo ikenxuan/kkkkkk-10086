@@ -31,7 +31,7 @@ jobs:
       - name: ⚙️ 设置 Node.js 环境
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 'lts/*'
           cache: pnpm
 
       - name: 📦 安装依赖

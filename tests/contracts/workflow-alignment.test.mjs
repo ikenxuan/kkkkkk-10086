@@ -172,7 +172,7 @@ test('build workflow command layers stay aligned with local validation', () => {
     findStep(ci, 'check', step => step.uses === 'actions/setup-node@v7').with[
       'node-version'
     ],
-    24
+    'lts/*'
   )
   assert.equal(
     findStep(ci, 'check', step => step.run?.startsWith('pnpm install')).run,
@@ -192,7 +192,7 @@ test('build workflow command layers stay aligned with local validation', () => {
     assert.equal(
       findStep(workflow, jobName, step => step.uses === 'actions/setup-node@v7')
         .with['node-version'],
-      24
+      'lts/*'
     )
     assert.equal(
       findStep(workflow, jobName, step => step.run?.startsWith('pnpm install')).run,
