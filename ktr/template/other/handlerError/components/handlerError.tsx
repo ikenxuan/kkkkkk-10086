@@ -214,7 +214,9 @@ const ADAPTER_LOGO_RULES: Array<{ pattern: RegExp; path: string }> = [
   { pattern: /lagrange/i, path: '/image/other/handlerError/lagrange.webp' },
   { pattern: /chronocat/i, path: '/image/other/handlerError/chronocat.svg' },
   { pattern: /llonebot|lltwo(bot)?/i, path: '/image/other/handlerError/llonebot.webp' },
-  { pattern: /conwechat/i, path: '/image/other/handlerError/conwechat.webp' },
+  // 资源名沿用 Karin 的 conwechat 拼写，但宿主适配器自称 ComWeChat（plugins/adapter/ComWeChat.js
+  // 里 name = "ComWeChat"），只写 conwechat 的话这条规则在 Yunzai 上一次都命中不到。
+  { pattern: /co[mn]wechat/i, path: '/image/other/handlerError/conwechat.webp' },
   { pattern: /go[-_ ]?cq|gocq[-_ ]?http/i, path: '/image/other/handlerError/gocq-http.webp' },
   { pattern: /milky/i, path: '/image/other/handlerError/Milky.png' },
   { pattern: /satori/i, path: '/image/other/handlerError/satori.png' },
@@ -698,10 +700,21 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
                         Adapter / 适配器
                       </p>
                       <div className="flex items-center gap-4 flex-wrap">
-                        <p className="text-3xl font-bold truncate" style={{ color: accentColor }}>
+                        {/*
+                          这格原来是 `truncate`（overflow:hidden + nowrap + ellipsis），是这张图上
+                          唯一一个会裁字的字段 —— 同一张卡片里 Platform / Standard / Protocol /
+                          Communication 四格用的都是 `break-all`（换行不裁）。
+
+                          `truncate` 的省略号只在「元素自己溢出自己的盒子」时才画得出来；
+                          外层 `min-w-0` 把盒子压窄、再叠上截图时的亚像素取整，结果就是最后一个字母
+                          被从中间切掉而且连省略号都没有 —— 正是「字母有一部分被截断」的样子。
+                          适配器名现在取的是协议端真名（LLOneBot / NapCat.Onebot 这类），
+                          长度不受控，更不该裁。这一格所在的容器是 col-span-2 整行宽，换行有地方放。
+                        */}
+                        <p className="text-3xl font-bold break-all min-w-0" style={{ color: accentColor }}>
                           {data.adapterInfo.name}
                         </p>
-                        <Chip size="lg" variant="soft" color="danger" className="h-8 text-lg">
+                        <Chip size="lg" variant="soft" color="danger" className="text-lg">
                           {data.adapterInfo.version.startsWith('v') ? data.adapterInfo.version : `v${data.adapterInfo.version}`}
                         </Chip>
                       </div>

@@ -121,15 +121,36 @@ export const getLocalChangelog = (length: number): string => {
   }
 }
 
-/** 适配器连上多久了。Yunzai 各适配器不一定挂 connectTime，取不到就返回未知。 */
-const getConnectedFor = (event: MessageEvent): string => {
+/**
+ * 适配器连上多久了。
+ *
+ * 导出是为了单测：这个函数里有个「秒 / 毫秒纪元」的单位判定，是最容易悄悄烂掉的那类逻辑，
+ * 而它此前一个用例都没有 —— 正因如此，读一个宿主里根本不存在的字段这件事一直没人发现。
+ */
+export const getConnectedFor = (event: MessageEvent): string => {
   const adapter = event.bot?.adapter
-  const connectTime = typeof adapter === 'object' && adapter !== null
-    ? (adapter as { connectTime?: unknown }).connectTime
-    : undefined
-  const stamp = Number(connectTime)
-  if (!Number.isFinite(stamp) || stamp <= 0) return '未知'
-  return formatDuration(Math.max(0, (Date.now() - stamp) / 1000))
+  const adapterRecord = typeof adapter === 'object' && adapter !== null
+    ? adapter as Record<string, unknown>
+    : {}
+  const stat = typeof event.bot?.stat === 'object' && event.bot.stat !== null
+    ? event.bot.stat as Record<string, unknown>
+    : {}
+
+  // `adapter.connectTime` 是 Karin 侧的字段；宿主 TRSS-Yunzai 里**根本不存在**这个键
+  // （全量搜 plugins/adapter 和 lib 只有 Satori 的 reconnectTimer，无关），
+  // 所以这一格在 Yunzai 上恒为「未知」。Yunzai 的连接时刻在 `bot.stat.start_time`：
+  // OneBotv11 用事件的 `data.time`，ComWeChat / GSUIDCore / Milky / OPQBot 用
+  // `Date.now() / 1000` —— 七个适配器里六个有，单位都是**秒**。
+  const stamp = [stat.start_time, adapterRecord.connectTime]
+    .map(Number)
+    .find(value => Number.isFinite(value) && value > 0)
+  if (stamp === undefined) return '未知'
+
+  // 单位归一：秒级纪元约 1.7e9，毫秒级约 1.7e12。1e11 这条线把两者分得干干净净
+  // （对毫秒时间戳而言它对应 1973 年，对秒时间戳而言对应公元 5138 年）。
+  // 不归一就会把秒当毫秒算，得出「一万多天」这种离谱时长。
+  const startedAtMs = stamp < 1e11 ? stamp * 1000 : stamp
+  return formatDuration(Math.max(0, (Date.now() - startedAtMs) / 1000))
 }
 
 /** 插件 package.json 里声明的运行要求，读失败不影响出图 */
