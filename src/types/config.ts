@@ -13,11 +13,20 @@ export interface AmbientCoverConfig {
   overlayEdgeOpacity?: number
   overlayMiddleOpacity?: number
 }
+/**
+ * 四个平台的 Cookie。
+ *
+ * 全部是 `string`（可能为空串）而不是 `string | null`：yaml 里留空会解析成 null、
+ * 锅巴或手改 yaml 还能塞进数字（`xiaohongshu: 114514` 就是个 number），
+ * 而下游 amagi 对 cookie 只有两种处理——`cookie === ''` 判未登录、`cookie?.trim()` 拼请求头，
+ * 两者都只认字符串。所以归一化在 `Config.cookies` getter 里一次做完，
+ * 「没配置」在插件内部只有空串这一种表示。
+ */
 export interface CookiesConfig {
-  bilibili?: string | null
-  douyin?: string | null
-  kuaishou?: string | null
-  xiaohongshu?: string | null
+  bilibili: string
+  douyin: string
+  kuaishou: string
+  xiaohongshu: string
 }
 
 export interface AppConfig {

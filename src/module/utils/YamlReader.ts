@@ -43,13 +43,21 @@ export default class YamlReader {
     }
   }
 
-  set (key: string, value: unknown): void {
+  /**
+   * 写入一个键。
+   *
+   * 返回值是「到底写进磁盘了没有」—— 与同类的 `rm()` 一个约定。原来这里是 `void`，
+   * 把 `write()` 的 false 和 catch 里的异常一起吞掉了，于是「解析失败 → 拒绝写入」
+   * 这条保护路径对调用方完全不可见：锅巴面板照样回「保存成功」，磁盘上一个字没变。
+   */
+  set (key: string, value: unknown): boolean {
     try {
       if (key.includes('.')) this.document.setIn(key.split('.'), value)
       else this.document.set(key, value)
-      this.write()
+      return this.write()
     } catch (error: unknown) {
       logger.error(`设置YAML配置失败 [${key}]:`, error)
+      return false
     }
   }
 

@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from 'vitest'
 const modifyCalls: Array<[string, string, unknown]> = []
 const modifyProCalls: Array<[string, Record<string, unknown>]> = []
 const syncCalls: number[] = []
-const configWriteState = vi.hoisted(() => ({ modifyProResult: true }))
+const configWriteState = vi.hoisted(() => ({ modifyProResult: true, modifyResult: true }))
 
 const configDouble = vi.hoisted(() => ({
   app: { videotool: true },
@@ -45,6 +45,9 @@ vi.mock('../../src/module/utils/Config.js', () => ({
     ...configDouble,
     modify: (name: string, key: string, value: unknown) => {
       modifyCalls.push([name, key, value])
+      // 必须照真实签名返回 boolean：Config.modify 报「写进去了没有」，
+      // 保存路径现在会看这个值。桩返回 undefined 的话每次保存都被判成失败。
+      return configWriteState.modifyResult
     },
     ModifyPro: (name: string, value: Record<string, unknown>) => {
       modifyProCalls.push([name, value])
@@ -279,9 +282,11 @@ describe('guoba setConfigData', () => {
 
   const save = async (
     data: Record<string, unknown>,
-    modifyProResult = true
+    modifyProResult = true,
+    modifyResult = true
   ): Promise<unknown> => {
     configWriteState.modifyProResult = modifyProResult
+    configWriteState.modifyResult = modifyResult
     modifyCalls.length = 0
     modifyProCalls.length = 0
     syncCalls.length = 0
@@ -298,6 +303,26 @@ describe('guoba setConfigData', () => {
     expect(modifyCalls).toEqual([['douyin', 'push.cron', '0 */5 * * * *']])
     expect(modifyProCalls).toEqual([])
     expect(result).toMatchObject({ ok: true, message: '保存成功' })
+  })
+
+  it('saves an empty value like any other write', async () => {
+    // 「有些配置本来就是空的」：清空一个 ck 是正常写入，write() 照样返回 true，
+    // 不该被下面那条失败上报误伤。degraded 只在 yaml 解析不动/根不是对象时才为真。
+    const result = await save({ 'cookies.bilibili': '' })
+
+    expect(modifyCalls).toEqual([['cookies', 'bilibili', '']])
+    expect(result).toMatchObject({ ok: true, message: '保存成功' })
+  })
+
+  it('reports a failure instead of a fake success when the write is refused', async () => {
+    // 用户 yaml 有语法错误时 YamlReader 会拒写以免拿空文档覆盖原文件。
+    // 之前这里丢掉返回值无条件回「保存成功」——面板说存好了、磁盘一个字没动，
+    // 用户于是以为 ck 配好了，解析时却被告知未配置。
+    const result = await save({ 'cookies.bilibili': 'SESSDATA=abc' }, true, false)
+
+    // 沿用本文件既有的失败形状：message 是统一的「保存失败」，细节挂在 error 上
+    expect(result).toMatchObject({ ok: false, message: '保存失败' })
+    expect(String((result as { error?: unknown }).error)).toContain('配置写入失败')
   })
 
   it('routes bare object keys to Config.ModifyPro', async () => {
