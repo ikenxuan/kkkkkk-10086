@@ -366,14 +366,38 @@ export const GroupStatistics: React.FC<PosterProps<GroupStatisticsData>> = (prop
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-4 mb-3">
-                      <div className="text-4xl font-black text-foreground/90 truncate">{user.nickname}</div>
+                      {/*
+                        昵称这格原来是 `truncate`（overflow:hidden + white-space:nowrap +
+                        text-overflow:ellipsis），它就是「名字被从中间切掉」的来源。
+                        `text-overflow: ellipsis` 的省略号只在「元素自己溢出自己的盒子」时才画得出来，
+                        而这格的盒子宽度是外层 `flex-1 min-w-0` 被 flex 压出来的分数值；
+                        再叠上截图时的亚像素取整，Chrome 会判成「刚好装得下」而不画省略号，
+                        绘制却仍停在那条分数边界上 —— 于是最后一个字符只画了一半，连省略号都没有。
+                        handlerError 那张卡的适配器名是同一个毛病，那边也是换成 break-all 解决的。
+
+                        换 `break-all`（word-break: break-all）而不是别的写法：
+                        - 换行最坏只是把一个字符挪到下一行，画不出半个字形；只有裁切会。
+                        - 它会真正压低 min-content 宽度，所以这个 flex item 能缩到一个字符宽，
+                          不会反过来把行顶爆。`break-words`（overflow-wrap: break-word）做不到这点 ——
+                          Chrome 算 min-content 时当它不存在，一长串没有空格的名字照样溢出。
+                        - 断点按字形簇走，中英混排、emoji（含 ZWJ 序列）都不会被劈成两半。
+                        不用担心竖直方向：这一行是 p-12 的 items-center flex 行、卡片高度由内容撑，
+                        名字长到换行只是这行变高，没有固定高度会把行盒挤掉一截。
+                      */}
+                      <div className="text-4xl font-black text-foreground/90 break-all">{user.nickname}</div>
                       {/* 前三名奖杯，配色与 global 群组排行一致 */}
                       {index === 0 && <RiTrophyFill size={48} className="text-yellow-400 shrink-0" />}
                       {index === 1 && <RiTrophyFill size={48} className="text-gray-400 shrink-0" />}
                       {index === 2 && <RiTrophyFill size={48} className="text-orange-400 shrink-0" />}
                     </div>
-                    {/* truncate：QQBot 的 userId 是几十位 openid，不裁会把这一行顶出容器 */}
-                    <div className="text-2xl text-foreground/80 mb-4 truncate">{user.userId}</div>
+                    {/*
+                      QQBot 的 userId 是几十位 openid、中间没有空格可断，放任它排一行会顶出容器 ——
+                      但这该用换行解决，不该用裁。原来的 `truncate` 和上面昵称那格是同一个毛病：
+                      省略号画不出来，末尾字符被切掉一半。`break-all` 让长串就地折行，
+                      「不顶出容器」照样成立，而且 ID 是完整的 —— 这一行本来就是给人核对身份用的，
+                      裁掉尾巴等于这格白显示。
+                    */}
+                    <div className="text-2xl text-foreground/80 mb-4 break-all">{user.userId}</div>
                     {user.platforms && (
                       <div className="flex gap-6 flex-wrap">
                         {Object.entries(user.platforms).map(([platform, count]) => {

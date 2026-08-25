@@ -615,13 +615,23 @@ export const GlobalStatistics: React.FC<PosterProps<GlobalStatisticsData>> = (pr
                   {/* 群组信息 */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-4 mb-3">
-                      <div className="text-4xl font-black text-foreground/90">{group.groupName || `群组 ${group.groupId}`}</div>
+                      {/*
+                        群名与下面那行群号加 `break-all`，跟 statistics/group 的「用户排行」保持一致
+                        （那块排版本来就是照这里抄的，两边对长名字的行为不该分叉）。
+                        这里原本没有 `truncate`，但同样会被裁，只是路径不同：群名可以是一整串
+                        没有空格的字母 / emoji，默认的 overflow-wrap:normal 断不开它，
+                        这个 flex item 的 min-width:auto 于是等于整串宽度、缩不下去，
+                        把行顶到卡片 1440px 之外，再被根节点的 overflow-hidden 从字符中间切断。
+                        break-all 让它就地折行，行高跟着涨，不会留下半个字形。
+                      */}
+                      <div className="text-4xl font-black text-foreground/90 break-all">{group.groupName || `群组 ${group.groupId}`}</div>
                       {/* 前三名奖杯图标 */}
                       {index === 0 && <RiTrophyFill size={48} className="text-yellow-400 shrink-0" />}
                       {index === 1 && <RiTrophyFill size={48} className="text-gray-400 shrink-0" />}
                       {index === 2 && <RiTrophyFill size={48} className="text-orange-400 shrink-0" />}
                     </div>
-                    <div className="text-2xl text-foreground/80 mb-4">
+                    {/* break-all 同上：QQBot 频道的 groupId 也是不可断的长串，会把这行顶出卡片 */}
+                    <div className="text-2xl text-foreground/80 mb-4 break-all">
                       {group.groupId} · {formatWithCommas(group.uniqueUsers)} 人使用
                     </div>
                     <div className="flex gap-6 flex-wrap">

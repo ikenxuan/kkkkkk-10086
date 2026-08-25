@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { buildGroupUserRanking } from '../../src/module/platform/common/userRanking.js'
@@ -95,5 +97,67 @@ describe('buildGroupUserRanking', () => {
 
   it('空输入返回空数组', () => {
     expect(buildGroupUserRanking({} as MessageEvent, '10086', [])).toEqual([])
+  })
+})
+
+/**
+ * 排行区块里「名字」那几格的裁字回归。
+ *
+ * 为什么读源码而不是渲染组件：出问题的是 CSS 裁切，而裁没裁只有真正出图
+ * （puppeteer 的布局 + 亚像素取整）时才看得出来；jsdom 没有布局引擎，
+ * 渲染出 DOM 也测不到「字符被切掉一半」。所以这里钉的是唯一那条复发入口 ——
+ * 「别再把裁切类名加回这几格」。
+ */
+const templateSource = (path: string): string => readFileSync(resolve(import.meta.dirname, '..', '..', path), 'utf8')
+
+const GROUP_STATISTICS = 'ktr/template/statistics/group/components/GroupStatistics.tsx'
+const GLOBAL_STATISTICS = 'ktr/template/statistics/global/components/GlobalStatistics.tsx'
+
+/**
+ * 会把字形裁掉一半的类名。
+ *
+ * `truncate` 是 overflow:hidden + white-space:nowrap + text-overflow:ellipsis 三件套，
+ * 后面几个是把它拆开写时的等价物 —— 只要盒子宽度是 flex 压出来的分数值，
+ * 省略号就可能画不出来而绘制照样停在边界上，也就是「最后一个字符只剩一半」。
+ */
+const CLIPPING_CLASSES = ['truncate', 'overflow-hidden', 'text-ellipsis', 'whitespace-nowrap', 'line-clamp']
+
+/**
+ * 取「直接渲染 `{expr}...` 的那个元素」的 className 串。
+ *
+ * 不用正则整段匹配：昵称这类表达式在同一个组件里还会出现在 `alt=` / `key=` 上，
+ * 靠「紧挨在 `">` 后面」这个位置关系筛出真正带样式的那一个，比堆转义可靠。
+ */
+const classNameRendering = (source: string, expr: string): string => {
+  const needle = `{${expr}`
+  for (let at = source.indexOf(needle); at !== -1; at = source.indexOf(needle, at + 1)) {
+    // JSX 里标签和表达式之间可能换行缩进，先把这段空白去掉再看是不是标签结尾
+    const before = source.slice(0, at).replace(/\s+$/, '')
+    if (!before.endsWith('">')) continue
+    const opens = before.lastIndexOf('className="')
+    if (opens === -1) continue
+    const className = before.slice(opens + 'className="'.length, before.length - 2)
+    // 收尾的 `">` 也可能是别的属性（alt= 之类）的，那种情况下切出来会跨过引号
+    if (className.includes('"')) continue
+    return className
+  }
+  throw new Error(`模板里找不到渲染 ${expr} 的元素，这条断言要跟着模板一起更新`)
+}
+
+describe('排行区块的名字不能被裁', () => {
+  it.each([
+    ['用户排行 · 昵称', GROUP_STATISTICS, 'user.nickname'],
+    ['用户排行 · userId', GROUP_STATISTICS, 'user.userId'],
+    ['群组排行 · 群名', GLOBAL_STATISTICS, 'group.groupName'],
+    ['群组排行 · 群号', GLOBAL_STATISTICS, 'group.groupId']
+  ])('%s 用 break-all 换行，不带任何裁切类名', (_name, template, expr) => {
+    const className = classNameRendering(templateSource(template), expr)
+
+    // 必须是 break-all 而不是 break-words：只有它会压低 min-content 宽度，
+    // 长昵称 / openid 才缩得进被 flex 压窄的那一列，理由详见模板里的注释
+    expect(className.split(/\s+/)).toContain('break-all')
+    for (const clipping of CLIPPING_CLASSES) {
+      expect(className).not.toContain(clipping)
+    }
   })
 })
