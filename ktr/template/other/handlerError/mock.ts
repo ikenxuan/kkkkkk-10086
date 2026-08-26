@@ -8,10 +8,11 @@
  *
  * 关于不用 `defineMock`、以及导出名为什么带模板前缀，见 other/runtime/mock.ts 顶部的说明。
  *
- * 两个导出覆盖的是这张卡片真正会分叉的两条路径：
+ * 三个导出覆盖的是这张卡片真正会分叉的路径：
  * - errorBusinessPlain：ErrorHandler/render.ts 那条「JS 业务异常」，有真调用栈、无诊断字段
  * - errorVerificationWithDiagnostics：Base.ts 那条「接口错误」，没有 JS 调用栈、改用结构化诊断，
  *   同时带上 B站风控的人机验证二维码
+ * - errorQQBotAdapter：QQBot 适配器，专盯「协议标准」那格的出字
  */
 import type { ApiErrorData } from './components/types'
 
@@ -132,4 +133,54 @@ export const errorVerificationWithDiagnostics: ApiErrorData = {
   // 二维码那块的门是 `isVerification && verificationUrl`，两个都得给。
   // URL 形状照抄 riskControl.ts:156，极验的 gt / challenge 都是 32 位 hex
   verificationUrl: 'https://karin-plugin-kkk-docs.vercel.app/geetest?v=3&gt=ac597a4506fc1ac0e0a1e5e9a4c3e1b2&challenge=7f3c9d18b25e4a6f80d1c2b3a4958607'
+}
+
+/**
+ * QQBot（官方 Bot 开放平台）适配器下的错误卡。
+ *
+ * 存在意义是盯「协议标准」那格的出字：`standard` 存的是小写 `qqbot`（角标判定
+ * `includes('onebot')` 大小写敏感，不能为了好看改它），模板的 `formatStandard`
+ * 负责查表出 `QQBot`。这里曾经渲染成 `Qqbot` —— `_.upperFirst(_.camelCase('qqbot'))`
+ * 把品牌名里的连续大写压掉了，卡片上大小写不一。
+ *
+ * QQBot 走官方 API，不属于任何 OneBot 标准，所以三格互不相同：
+ * platform=QQBot（对接平台）、standard=qqbot（协议标准）、protocol=qqbot（协议实现）。
+ */
+export const errorQQBotAdapter: ApiErrorData = {
+  type: 'business_error',
+  platform: 'douyin',
+  error: {
+    name: 'Error',
+    message: '主动消息发送失败：主动消息推送数量已达上限',
+    stack: '',
+    businessName: '抖音推送',
+    diagnostics: [
+      { label: '接口', value: '/v2/groups/{group_openid}/messages' },
+      { label: '响应码', value: '22009' },
+      { label: '错误描述', value: 'push message is limited' },
+      { label: '建议', value: '官方 Bot 的主动推送有每月配额，超出后需等次月重置或申请提额' }
+    ]
+  },
+  method: '抖音推送',
+  timestamp: '2026-08-26T02:14:52.881Z',
+  logs: [
+    { timestamp: '10:14:52.878', level: 'ERRO', message: '[抖音] 推送失败：push message is limited (22009)', raw: '[10:14:52.878][ERRO] [抖音] 推送失败：push message is limited (22009)' },
+    { timestamp: '10:14:52.104', level: 'INFO', message: '[抖音] 正在向 2 个群推送 @柴犬阿柴 的新作品', raw: '[10:14:52.104][INFO] [抖音] 正在向 2 个群推送 @柴犬阿柴 的新作品' },
+    { timestamp: '10:14:51.663', level: 'MARK', message: '[抖音] 检测到新作品 7412963855104871234', raw: '[10:14:51.663][MARK] [抖音] 检测到新作品 7412963855104871234' },
+    // 主动推送没有事件对象，群号来自推送配置；用户那行本来就不存在
+    { timestamp: '', level: 'INFO', message: '群: 8A3F2C91D7E64B05', raw: '群: 8A3F2C91D7E64B05' }
+  ],
+  frameworkVersion: '3.1.6',
+  pluginVersion: '2.39.3',
+  buildTime: '2026年08月26日 09:52',
+  commitHash: '50d2e8b',
+  adapterInfo: {
+    name: 'QQBot',
+    version: '1.0.32',
+    platform: 'QQBot',
+    protocol: 'qqbot',
+    standard: 'qqbot',
+    // QQBot 主动外连官方网关（wss://api.sgroup.qq.com/websocket），是客户端方向
+    communication: 'webSocketClient'
+  }
 }

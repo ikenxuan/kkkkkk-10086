@@ -162,6 +162,40 @@ describe('adapter metadata', () => {
     expect(info?.standard).toBe('qqbot')
   })
 
+  it('finds the QQBot socket inside the SDK instead of reporting unknown', () => {
+    // QQBot-Plugin 的 socket 不在 `bot.ws`（那个键从头到尾没被赋值过），而在 SDK 里：
+    // @windtrace/qq-group-bot 的 SessionManager.connect 写的是 `this.bot.ws = new WebSocket(...)`，
+    // 那个 `this.bot` 指的是 sdk 自己，所以路径是 `bot.sdk.ws`。少探这一位，
+    // 「通信方式」那格在 QQBot 上永远是 unknown —— 这就是卡片上那个 unknown 的来历。
+    //
+    // 版本字段形状也照抄宿主：QQBot-Plugin 的 bot.version 只有 id/name/version，
+    // 没有 app_name（那几乎是 OneBotv11 独有的），所以名字得落到 adapter.name。
+    const info = getAdapterInfo({
+      adapter_id: 'QQBot',
+      adapter_name: 'QQBot',
+      bot: {
+        adapter: { id: 'QQBot', name: 'QQBot' },
+        version: { id: 'QQBot', name: 'QQBot', version: '@windtrace/qq-group-bot v1.0.32' },
+        // 官方网关是 bot 主动外连（gateway 地址还是先 GET /gateway/bot 问来的）
+        sdk: { ws: { readyState: 1, send: () => {}, _isServer: false, url: 'wss://api.sgroup.qq.com/websocket' } }
+      }
+    })
+
+    expect(info?.communication).toBe('webSocketClient')
+    expect(info?.name).toBe('QQBot')
+    expect(info?.standard).toBe('qqbot')
+  })
+
+  it('prefers the _isServer flag over the presence of url when telling direction apart', () => {
+    // `ws` 包两侧都会写 `_isServer`（lib/websocket.js 客户端 false、服务端 true），
+    // 而 `_url` 只在 initAsClient 里赋值（同文件 719 行）—— 是个单向信号。
+    // 一个还没连上的客户端 socket 此刻没有 url，只看 url 会把它误报成服务端连接。
+    const connectingClient = { readyState: 0, send: () => {}, _isServer: false }
+    const info = getAdapterInfo({ bot: { adapter: { id: 'QQ' }, ws: connectingClient } })
+
+    expect(info?.communication).toBe('webSocketClient')
+  })
+
   it('never lets adapter credentials or endpoints into labels', () => {
     // 这条不变量原先只有仓库根一个临时探针脚本在验，没进测试树。
     // 为什么重要：labels 是 getAdapterInfo 的返回字段，会跟着 adapterInfo 一起进错误卡片，

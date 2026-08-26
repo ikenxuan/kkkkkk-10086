@@ -100,6 +100,14 @@ export interface MessageBot {
    */
   ws?: unknown
   /**
+   * 协议端 SDK 实例。
+   *
+   * 有的适配器不把 socket 挂在 bot 上，而是留在自己封装的 SDK 里：QQBot-Plugin 用的
+   * @windtrace/qq-group-bot 就是由 SessionManager 写 `sdk.ws`（lib/sessionManager.js 的
+   * connect），`Bot[uin].ws` 从头到尾没被赋值过。同样只用于判「通信方式」，按 unknown 收。
+   */
+  sdk?: unknown
+  /**
    * 连接统计。`start_time` 是连接建立时刻，**单位是秒**
    * （OneBotv11 取事件的 `data.time`，其余适配器多是 `Date.now() / 1000`）。
    * Karin 那边对应的是 `adapter.connectTime`（毫秒），宿主 Yunzai 没有那个键。

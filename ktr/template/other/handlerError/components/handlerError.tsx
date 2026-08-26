@@ -15,6 +15,26 @@ import type { AdapterInfo, BusinessError, LogLevel } from './types'
 import type { ApiErrorData } from './types'
 
 /**
+ * 协议标准的显示名。
+ *
+ * 存储值一律小写（`qqbot` / `onebot11` …）—— 下面 OneBot 角标的判定写的是
+ * `standard.includes('onebot')`，大小写敏感，所以这个值不能为了好看去改。
+ * 但 `_.upperFirst(_.camelCase('qqbot'))` 出的是 `Qqbot`：品牌名里的连续大写
+ * 被 camelCase 压掉了，卡片上就成了大小写不一的 `Qqbot`。
+ * 有正规写法的值在这里显式列出，其余仍走 camelCase 兜底（`onebot11` → `Onebot11`）。
+ */
+const STANDARD_DISPLAY_NAMES: Record<string, string> = {
+  qqbot: 'QQBot',
+  onebot11: 'OneBot11',
+  onebot12: 'OneBot12'
+}
+
+const formatStandard = (standard: unknown): string => {
+  const text = String(standard)
+  return STANDARD_DISPLAY_NAMES[text.toLowerCase()] || _.upperFirst(_.camelCase(text))
+}
+
+/**
  * ANSI 颜色代码映射
  */
 const ansiColorMap: Record<number, string> = {
@@ -737,7 +757,7 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
                     style={{ backgroundColor: isDark ? 'rgba(248,113,113,0.08)' : 'rgba(220,38,38,0.05)' }}
                   >
                     <p className="text-sm mb-1 opacity-75">Standard / 协议标准</p>
-                    <p className="font-semibold break-all text-2xl">{_.upperFirst(_.camelCase(String(data.adapterInfo.standard)))}</p>
+                    <p className="font-semibold break-all text-2xl">{formatStandard(data.adapterInfo.standard)}</p>
                     {String(data.adapterInfo.standard).toLowerCase() === 'milky' && (
                       <div className="absolute inset-0 pointer-events-none">
                         <img
