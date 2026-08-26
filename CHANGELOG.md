@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.40.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.3...v2.40.0) (2026-08-26)
+
+
+### ✨ 新功能
+
+* **dev:** 补运行诊断/错误卡/群统计三个模板的开发面板 mock ([50d2e8b](https://github.com/ikenxuan/kkkkkk-10086/commit/50d2e8b4a616230d82565ccd27423332d6d2ae8b))
+
+
+### 🐛 Bug 修复
+
+* **card:** 协议标准出字修正，并补上 QQBot 的通信方式探测 ([ffed104](https://github.com/ikenxuan/kkkkkk-10086/commit/ffed104798ad4615a0f2b0615768311e9e2ebff2))
+* **ci:** 欢迎流程改用 listForRepo 判定首次提 issue ([9ea1fa3](https://github.com/ikenxuan/kkkkkk-10086/commit/9ea1fa3fd56cd17f87bb51214dc55d2f4acc94af))
+* **dev:** 开发面板 host 钉成 IPv4，localhost 解析到 ::1 导致打不开 ([77e7636](https://github.com/ikenxuan/kkkkkk-10086/commit/77e7636c485e2924510363a95f20950378912809))
+* **push:** 主动推送的错误卡片补上目标群号和适配器信息 ([2c06ef3](https://github.com/ikenxuan/kkkkkk-10086/commit/2c06ef35a65ffd507d4f8a972b2ced5ba1d69444))
+
+
+### 🤖 CI/CD 配置
+
+* **issue:** 相似度分析换成 github-script 自实现 ([80d094d](https://github.com/ikenxuan/kkkkkk-10086/commit/80d094da9fabf2a7fd34b10a78d0578f54fd340b))
+* node-version 改用 lts/* 别名，不再钉死大版本 ([5314227](https://github.com/ikenxuan/kkkkkk-10086/commit/53142275965c75d580e46f964e56d06c80d6304e))
+
 ## [2.39.3](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.2...v2.39.3) (2026-08-25)
 
 
