@@ -715,6 +715,9 @@ export class DouYinpush extends Base {
 
           const pushTypes = normalizePushTypes(item.pushTypes)
           logger.debug(`开始获取用户：${item.remark}（${sec_uid}）的抖音内容，推送类型：${pushTypes.join(', ')}`)
+          // 下面这个接口调用挂掉时，错误卡片是从 amagi 的 Proxy 里出的，那里够不到 item。
+          // 先把订阅的 `群号:机器人账号` 记到实例上，卡片才能显示目标群号和推送用的适配器。
+          this.pushContext = { groupWithBot: item.group_id }
           const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
 
           const targets = item.group_id.map(groupWithBot => {
@@ -777,6 +780,10 @@ export class DouYinpush extends Base {
             `[抖音推送] 用户 ${item.remark || item.short_id || item.sec_uid || '未知'}本轮跳过：${getErrorMessage(error)}`
           )
           continue
+        } finally {
+          // 必须清掉：这个循环里有多个 continue，留着的话下一个订阅（乃至这一轮之后
+          // 任何走同一实例的接口调用）出错时，卡片会挂上上一个订阅的群号。
+          this.pushContext = undefined
         }
       }
     } catch (error) {
