@@ -10,6 +10,8 @@
  * - `Root.*` -> `Version.*`
  * - `formatBytes` 上游在 `./Network/helpers`，本仓库没有，就近实现
  * - `event.bot.adapter` 的字段抹平交给 `getAdapterInfo()`（错误卡片那套表）
+ * - 「并发与缓存」那一段是本仓库**独有**的（上游没有接口缓存和下载额度这两套设施），
+ *   数据从 `ApiCache` / `DownloadBudget` 的只读快照来，本文件只做展示格式化
  * - `releaseType` 上游用「版本号是不是 x.y.z」判断，本仓库改用
  *   `getReleaseChannel()` 按 git 分支判断：release-please 配的是 `prerelease: false`，
  *   永远产不出带 `-` 的版本号，上游那个正则恒为 Stable。本仓库的契约也因此把
@@ -23,7 +25,9 @@ import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metada
 import { getReleaseChannel } from '@/module/tooling/release-channel'
 import type { MessageEvent } from '@/types/message'
 
+import { getApiCacheSnapshot, type ApiCacheTier } from './ApiCache.js'
 import Config from './Config.js'
+import { getDownloadBudgetSnapshot } from './DownloadBudget.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
 import Version from './Version.js'
 
@@ -153,6 +157,40 @@ export const getConnectedFor = (event: MessageEvent): string => {
   return formatDuration(Math.max(0, (Date.now() - startedAtMs) / 1000))
 }
 
+/**
+ * 下载桶名到卡上中文措辞的映射。
+ *
+ * 桶名就是解析上下文里的平台标识（`DownloadBudget` 的 `withDownloadBucket`），
+ * 是英文的；诊断卡是给用户看的，不该出现 `xiaohongshu` 这种字段名。
+ * 认不出的桶名**原样显示** —— 以后多一个平台时卡上会出现英文桶名，比消失好。
+ */
+const DOWNLOAD_BUCKET_LABELS: Readonly<Record<string, string>> = {
+  bilibili: '哔哩哔哩',
+  douyin: '抖音',
+  kuaishou: '快手',
+  xiaohongshu: '小红书',
+  default: '默认'
+}
+
+/** 缓存 TTL 档位到卡上中文措辞的映射 */
+const API_CACHE_TIER_LABELS: Readonly<Record<ApiCacheTier, string>> = {
+  static: '准静态接口',
+  detail: '作品详情'
+}
+
+/**
+ * 比率排成百分数文本。
+ *
+ * 夹到 0~1 再乘 100：这个字符串会被模板**直接当 CSS `width` 用**（和内存占用那根条同一套做法），
+ * 越界值会画出一条溢出容器的进度条。
+ *
+ * @param ratio 0~1 的比率
+ */
+const formatPercent = (ratio: number): string => {
+  const safe = Number.isFinite(ratio) ? Math.min(1, Math.max(0, ratio)) : 0
+  return `${(safe * 100).toFixed(1)}%`
+}
+
 /** 插件 package.json 里声明的运行要求，读失败不影响出图 */
 const readEngines = (): { node?: string, karin?: string } => {
   try {
@@ -186,6 +224,9 @@ export const collectRuntimeReport = (event: MessageEvent) => {
   const totalMemory = os.totalmem()
   const usedMemory = Math.max(0, totalMemory - os.freemem())
   const buildMetadata = getBuildMetadata()
+  const cacheSnapshot = getApiCacheSnapshot()
+  const downloadSnapshot = getDownloadBudgetSnapshot()
+  const cacheLookups = cacheSnapshot.hits + cacheSnapshot.coalesced + cacheSnapshot.misses
   const currentChangelog = getLocalChangelog(1)
   const rawScale = Number(Config.app.renderScale) / 100
   const renderScale = Number.isFinite(rawScale) ? Math.min(2, Math.max(0.5, rawScale)) : 1
@@ -252,6 +293,39 @@ export const collectRuntimeReport = (event: MessageEvent) => {
       memoryUsagePercent: totalMemory > 0 ? `${((usedMemory / totalMemory) * 100).toFixed(1)}%` : '未知',
       processRss: formatBytes(memory.rss),
       heapUsed: formatBytes(memory.heapUsed)
+    },
+    concurrency: {
+      cache: {
+        enabled: cacheSnapshot.enabled,
+        // 一次查询都还没发生时，命中率是 0/0。报「0.0%」会被读成「缓存不工作」，
+        // 所以单独给模板一个标记，让它显示「尚未产生请求」而不是一个假的坏指标。
+        sampled: cacheLookups > 0,
+        hitRate: formatPercent(cacheSnapshot.hitRate),
+        hits: cacheSnapshot.hits,
+        coalesced: cacheSnapshot.coalesced,
+        misses: cacheSnapshot.misses,
+        entries: cacheSnapshot.entries,
+        capacity: cacheSnapshot.capacity,
+        negativeEntries: cacheSnapshot.negativeEntries,
+        inflight: cacheSnapshot.inflight,
+        tiers: cacheSnapshot.tiers.map(tier => {
+          const lookups = tier.hits + tier.coalesced + tier.misses
+          return {
+            label: API_CACHE_TIER_LABELS[tier.tier],
+            hitRate: formatPercent(lookups === 0 ? 0 : (tier.hits + tier.coalesced) / lookups),
+            detail: `命中 ${tier.hits} · 合并 ${tier.coalesced} · 未命中 ${tier.misses} · 缓存 ${tier.entries} 条`
+          }
+        })
+      },
+      download: {
+        limit: downloadSnapshot.limit,
+        // 桶是懒创建的：一次下载都没跑过时这里是空数组，模板要能画出「暂无下载任务」
+        buckets: downloadSnapshot.buckets.map(bucket => ({
+          label: DOWNLOAD_BUCKET_LABELS[bucket.bucket] ?? bucket.bucket,
+          running: bucket.running,
+          queued: bucket.queued
+        }))
+      }
     },
     releaseNotes: {
       markdown: currentChangelog,

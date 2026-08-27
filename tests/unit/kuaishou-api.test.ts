@@ -9,6 +9,7 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: configMock
 }))
 
+const { resetApiCache, setApiCacheEnabledResolver } = await import('../../src/module/utils/ApiCache.js')
 const { getKuaishouData } = await import('../../src/module/platform/kuaishou/api.js')
 
 const fetchVideoWork = vi.fn()
@@ -41,7 +42,16 @@ const dependencies = {
 const GUEST_COOKIE =
   'did=web_50424132d556424eb8fa8d27a612fda9; didv=1720860549000; kpf=PC_WEB; clientid=3; kpn=KUAISHOU_VISION'
 
+/**
+ * 这些用例断言的是 wrapper 的**分发语义**（方法名解析、cookie 兜底、请求配置、重试），
+ * 逐条数底层 fetcher 被调了几次。接口响应缓存挂在 wrapper 最外层，且缓存是进程内单例，
+ * 所以这里显式把它关掉：不关的话，两个用例只要调了同一个白名单方法 + 同一份参数 + 同一个 ck，
+ * 后一个就会命中前一个留下的缓存，fetcher 一次都不被调，用例读起来像「wrapper 坏了」。
+ * 缓存本身的行为在 tests/unit/api-cache.test.ts，接线在 tests/unit/api-cache-wiring.test.ts。
+ */
 beforeEach(() => {
+  resetApiCache()
+  setApiCacheEnabledResolver(() => false)
   configMock.request = {}
   configMock.cookies = {}
   fetchVideoWork.mockReset()
@@ -53,6 +63,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  resetApiCache()
   vi.useRealTimers()
 })
 

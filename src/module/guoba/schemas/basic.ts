@@ -23,6 +23,7 @@ export const basic: GuobaSchema[] = [
   num('app.priority', '解析优先级', 0, 114514, '', '默认解析关闭后生效，修改后重启生效'),
   sw('app.parseTip', '解析提示', '发送“检测到链接，开始解析”提示'),
   num('app.parseConcurrency', '解析并发数', 1, 16, '路', '控制同时解析任务数，建议保持默认 2 路'),
+  sw('app.cacheEnabled', '接口响应缓存', '缓存平台接口响应：表情列表等准静态数据长期复用，作品详情短期复用，多个群同时解析同一条链接只请求一次。登录、扫码、风控验证等接口永不缓存'),
   sw('app.EmojiReply', '表情回应', '适配器或平台不支持时可关闭'),
   sw('app.removeCache', '删除视频缓存', '自动删除下载到本地的视频缓存。保存目录云崽下的temp/kkkkkk-10086/kkkdownload，若要关闭请随时留意硬盘容量'),
   sw('app.sendforwardmsg', '发送合并转发消息', '发送合并转发消息，可能多用于抖音解析'),

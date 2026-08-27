@@ -13,10 +13,29 @@ import type { RuntimeReportData } from './types'
  * 面向手机端看图场景：整幅统一底色 + 多色弥散光 + 高对比离散噪点层，内容单列纵向排布、
  * 不使用卡片容器，靠大留白与字号层级分区，超大实心版本号作为第一视觉中心。
  * 深色主题为紫罗兰 → 品红 → 琥珀橙弥散；浅色主题为 #271151 / #9754c7 / #deacf5 同色系紫，避免多色对撞。
+ *
+ * 「并发与缓存」那一段的数字全部由 core 预先格式化（`hitRate` 已是可直接当 CSS width 用的
+ * 百分数文本、桶名已换成中文、档位明细已拼好），本组件只排版。
  */
+
+/**
+ * 下载桶占用条的宽度。
+ *
+ * 额度上限为 0（配置异常）时给 0%，不给 `NaN%` —— 后者会让整根条按 auto 宽度铺满，
+ * 看起来像「这个桶满了」，正好和真相相反。
+ *
+ * @param running 当前占用的额度数
+ * @param limit 该桶的额度上限
+ */
+const bucketWidth = (running: number, limit: number): string => {
+  if (!(limit > 0)) return '0%'
+  return `${Math.min(100, Math.max(0, (running / limit) * 100))}%`
+}
 export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.memo((props) => {
   const { data } = props
   const isDark = isDarkMode(props.ctx)
+  const cache = data.concurrency.cache
+  const download = data.concurrency.download
   const releaseLabel =
     data.identity.releaseType.toLowerCase() === 'stable'
       ? '正式版'
@@ -251,6 +270,96 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
                 {data.resources.cpuCores} 核心
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="relative mt-32.5">
+          <div className="relative flex items-center gap-5">
+            <span className="h-3 w-3 rounded-full" style={{ background: palette.statusDot }} />
+            <span className="text-[24px] font-black tracking-[0.28em]" style={{ color: palette.accentText }}>
+              并发与缓存
+            </span>
+            <span className="ml-2 h-2 w-22 rounded-full" style={{ background: palette.barAccent }} />
+          </div>
+
+          <div className="relative mt-16 grid grid-cols-2 gap-x-18 gap-y-16">
+            <div>
+              <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">接口缓存命中率</div>
+              {cache.enabled && cache.sampled ? (
+                <>
+                  <div className="mt-3 flex items-end gap-5">
+                    <span className="whitespace-nowrap font-mono text-[72px] font-black leading-none tracking-[-0.04em] text-foreground">
+                      {cache.hitRate}
+                    </span>
+                    <span className="whitespace-nowrap pb-2 font-mono text-[24px] font-bold text-foreground/40">
+                      命中 {cache.hits} · 合并 {cache.coalesced} · 未命中 {cache.misses}
+                    </span>
+                  </div>
+                  <div className="mt-5 h-3 w-full max-w-105 overflow-hidden rounded-full bg-foreground/8">
+                    <div className="h-full rounded-full" style={{ width: cache.hitRate, background: palette.meterGradient }} />
+                  </div>
+                </>
+              ) : (
+                <div className="mt-3 whitespace-nowrap text-[44px] font-black leading-none text-foreground/48">
+                  {cache.enabled ? '尚未产生请求' : '已关闭'}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">缓存条目</div>
+              <div className="mt-3 whitespace-nowrap font-mono text-[48px] font-black leading-none tracking-[-0.02em] text-foreground">
+                {cache.entries} / {cache.capacity}
+              </div>
+              <div className="mt-4 whitespace-nowrap font-mono text-[24px] font-bold text-foreground/40">
+                失败缓存 {cache.negativeEntries} · 进行中 {cache.inflight}
+              </div>
+            </div>
+          </div>
+
+          {cache.enabled && cache.sampled ? (
+            <div className="relative mt-15 space-y-8">
+              {cache.tiers.map(tier => (
+                <div key={tier.label} className="flex items-center justify-between gap-12">
+                  <span className="whitespace-nowrap text-[30px] font-black text-foreground/72">{tier.label}</span>
+                  <span className="grow truncate whitespace-nowrap text-right font-mono text-[24px] font-bold text-foreground/38">
+                    {tier.detail}
+                  </span>
+                  <span
+                    className="w-38 shrink-0 whitespace-nowrap text-right font-mono text-[32px] font-black"
+                    style={{ color: palette.accentText }}
+                  >
+                    {tier.hitRate}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="relative mt-20">
+            <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">下载额度占用 · 每桶上限 {download.limit}</div>
+            {download.buckets.length > 0 ? (
+              <div className="mt-9 space-y-9">
+                {download.buckets.map(bucket => (
+                  <div key={bucket.label}>
+                    <div className="flex items-end justify-between gap-10">
+                      <span className="whitespace-nowrap text-[30px] font-black text-foreground/72">{bucket.label}</span>
+                      <span className="whitespace-nowrap font-mono text-[24px] font-bold text-foreground/40">
+                        占用 {bucket.running} · 排队 {bucket.queued}
+                      </span>
+                    </div>
+                    <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-foreground/8">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: bucketWidth(bucket.running, download.limit), background: palette.meterGradient }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 whitespace-nowrap text-[34px] font-black text-foreground/45">暂无下载任务</div>
+            )}
           </div>
         </section>
 

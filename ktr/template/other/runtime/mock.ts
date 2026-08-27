@@ -74,6 +74,37 @@ export const runtimeStable: RuntimeReportData = {
     processRss: '412.68 MB',
     heapUsed: '186.24 MB'
   },
+  concurrency: {
+    // 这一格照抄 getApiCacheSnapshot() 经 collectRuntimeReport 格式化后的形状：
+    // hitRate 已经是能直接当 CSS width 用的百分数文本，tiers[].detail 已经在 core 拼好，
+    // 模板只排版、不算数。给一组「有合并、有失败缓存、有排队」的值，
+    // 因为这三格恰好是全 0 时看不出排版问题的地方。
+    cache: {
+      enabled: true,
+      sampled: true,
+      hitRate: '78.4%',
+      hits: 132,
+      coalesced: 47,
+      misses: 49,
+      entries: 63,
+      capacity: 128,
+      negativeEntries: 2,
+      inflight: 1,
+      tiers: [
+        { label: '准静态接口', hitRate: '96.2%', detail: '命中 48 · 合并 2 · 未命中 2 · 缓存 4 条' },
+        { label: '作品详情', hitRate: '73.1%', detail: '命中 84 · 合并 45 · 未命中 47 · 缓存 59 条' }
+      ]
+    },
+    download: {
+      limit: 8,
+      // 桶名在 core 就换成中文了，模板拿到的已经是「抖音」而不是 douyin
+      buckets: [
+        { label: '抖音', running: 3, queued: 0 },
+        { label: '哔哩哔哩', running: 2, queued: 5 },
+        { label: '小红书', running: 0, queued: 0 }
+      ]
+    }
+  },
   releaseNotes: {
     // 这块是按 markdown 渲染的，所以给真实的 release-please 切片形状：
     // 一个 `##` 版本标题 + 若干 `###` 分类小标题 + 带 commit 链接的列表项。

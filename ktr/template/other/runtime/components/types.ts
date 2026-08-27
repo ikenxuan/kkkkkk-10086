@@ -62,6 +62,55 @@ export interface RuntimeReportData {
     processRss: string
     heapUsed: string
   }
+  /** 接口缓存与下载额度的并发快照 */
+  concurrency: {
+    /** amagi 接口响应缓存 */
+    cache: {
+      /** `app.cacheEnabled` 的当前值 */
+      enabled: boolean
+      /** 是否已经产生过至少一次可缓存的查询。false 时命中率无意义，模板应改写文案 */
+      sampled: boolean
+      /** 已格式化的百分数，例如 `87.5%`。模板会直接当进度条宽度用 */
+      hitRate: string
+      /** 直接命中缓存的次数 */
+      hits: number
+      /** 并发合并到别人的请求上、因此没有打接口的次数 */
+      coalesced: number
+      /** 真的打了接口的次数 */
+      misses: number
+      /** 当前缓存条目数 */
+      entries: number
+      /** 条目上限 */
+      capacity: number
+      /** 当前持有的失败缓存条目数，风控期间会抬头 */
+      negativeEntries: number
+      /** 当前正在飞的请求数 */
+      inflight: number
+      /** 按 TTL 档位分开的命中情况 */
+      tiers: Array<{
+        /** 档位中文名，例如「准静态接口」 */
+        label: string
+        /** 该档位的命中率百分数 */
+        hitRate: string
+        /** 该档位的明细文本，已在 core 拼好 */
+        detail: string
+      }>
+    }
+    /** 下载额度占用 */
+    download: {
+      /** 每个桶共用的额度上限 */
+      limit: number
+      /** 已经出现过的桶。一次下载都没跑过时为空数组 */
+      buckets: Array<{
+        /** 桶的中文名，例如「抖音」 */
+        label: string
+        /** 当前占用的额度数 */
+        running: number
+        /** 正在排队等额度的数量 */
+        queued: number
+      }>
+    }
+  }
   /** 当前插件版本的变更日志 */
   releaseNotes: {
     markdown: string

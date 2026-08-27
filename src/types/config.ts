@@ -47,6 +47,7 @@ export interface AppConfig {
   EmojiReply?: boolean
   parseTip?: boolean
   parseConcurrency?: number
+  cacheEnabled?: boolean
   fakeForward?: boolean
   errorLogSendTo?: string[]
   multiPageRender?: boolean

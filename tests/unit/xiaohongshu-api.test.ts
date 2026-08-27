@@ -9,6 +9,8 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: configMock
 }))
 
+const { resetApiCache, setApiCacheEnabledResolver } = await import('../../src/module/utils/ApiCache.js')
+
 const fetchNoteDetail = vi.fn()
 const dependencies = {
   methodMap: {
@@ -19,7 +21,16 @@ const dependencies = {
   }
 }
 
+/**
+ * 这些用例断言的是 wrapper 的**分发语义**（请求配置、硬超时），逐条数底层 fetcher 的调用次数。
+ * 接口响应缓存挂在 wrapper 最外层，且缓存是进程内单例，所以这里显式关掉：不关的话，
+ * 前一个用例用 `{ note_id: 'note-1' }` 调过 `单个笔记数据` 之后，后一个用例会命中缓存、
+ * fetcher 一次都不被调，硬超时那条就变成「promise 直接 resolve 了」——读起来像 RequestGuard 坏了。
+ * 缓存本身的行为在 tests/unit/api-cache.test.ts，接线在 tests/unit/api-cache-wiring.test.ts。
+ */
 beforeEach(() => {
+  resetApiCache()
+  setApiCacheEnabledResolver(() => false)
   configMock.request = {}
   configMock.cookies = {}
   fetchNoteDetail.mockReset()
@@ -27,6 +38,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  resetApiCache()
   vi.useRealTimers()
 })
 

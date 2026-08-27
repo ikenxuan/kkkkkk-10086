@@ -3,6 +3,7 @@ import type { XiaohongshuMethodToFetcher as XiaohongshuMethodToFetcherType } fro
 import Config from '@/module/utils/Config'
 import { buildUserAgentHeader } from '@/module/platform/common/userAgent'
 import { SOFT_ERROR_CODES, softFetch } from '@/module/platform/common/softError'
+import { withApiCache } from '@/module/utils/ApiCache'
 import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '@/module/utils/RequestGuard'
 
 /** 旧版 amagi v5 使用的中文方法名 */
@@ -103,17 +104,22 @@ export const getXiaohongshuData = async (
   }
 
   const { cookie, options } = normalizeArgs(arg1, arg2)
-  return await softFetch(
-    async () => await runWithRequestGuard(
-      async signal => await fetcher(options, cookie, {
-        ...buildRequestConfig(),
-        signal
-      }),
-      {
-        timeoutMs: Math.min(Config.request?.amagiTimeout ?? DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS),
-        maxRetries: Config.request?.amagiMaxRetries
-      }
-    ),
-    SOFT_ERROR_CODES.xiaohongshu
+  // 缓存在最外层：命中直接返回，不进 softFetch / RequestGuard。白名单外的方法、
+  // 关掉 cacheEnabled、参数序列化不了这三种情况下 withApiCache 就是一层透传。
+  return await withApiCache(
+    { platform: 'xiaohongshu', method, cookie, options },
+    async () => await softFetch(
+      async () => await runWithRequestGuard(
+        async signal => await fetcher(options, cookie, {
+          ...buildRequestConfig(),
+          signal
+        }),
+        {
+          timeoutMs: Math.min(Config.request?.amagiTimeout ?? DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS),
+          maxRetries: Config.request?.amagiMaxRetries
+        }
+      ),
+      SOFT_ERROR_CODES.xiaohongshu
+    )
   )
 }
