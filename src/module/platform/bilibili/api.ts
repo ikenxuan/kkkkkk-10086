@@ -2,6 +2,7 @@ import { createRequire } from 'node:module'
 import type { BilibiliMethodToFetcher as BilibiliMethodToFetcherType } from '@ikenxuan/amagi'
 import Config from '@/module/utils/Config'
 import { buildUserAgentHeader } from '@/module/platform/common/userAgent'
+import { SOFT_ERROR_CODES, softFetch } from '@/module/platform/common/softError'
 import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from '@/module/utils/RequestGuard'
 
 /** 旧版 amagi v5 使用的中文方法名 */
@@ -112,14 +113,17 @@ export const getBilibiliData = async (
   }
 
   const { cookie, options } = normalizeArgs(arg1, arg2)
-  return await runWithRequestGuard(
-    async signal => await fetcher(options, cookie, {
-      ...buildRequestConfig(),
-      signal
-    }),
-    {
-      timeoutMs: Math.min(Config.request?.amagiTimeout ?? DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS),
-      maxRetries: Config.request?.amagiMaxRetries
-    }
+  return await softFetch(
+    async () => await runWithRequestGuard(
+      async signal => await fetcher(options, cookie, {
+        ...buildRequestConfig(),
+        signal
+      }),
+      {
+        timeoutMs: Math.min(Config.request?.amagiTimeout ?? DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS),
+        maxRetries: Config.request?.amagiMaxRetries
+      }
+    ),
+    SOFT_ERROR_CODES.bilibili
   )
 }

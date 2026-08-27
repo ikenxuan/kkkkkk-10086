@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from 'axios'
 import { Base, Config, Render, Networks, downloadVideo } from '@/module/utils/index'
 import comments, { type KuaishouEmoji } from './comments.js'
 
@@ -31,6 +32,29 @@ export interface KuaishouActionPayload {
   }
 }
 
+/**
+ * 探测视频体积用的请求头。
+ *
+ * 迁移前 `KuaishouData` 的构造函数会把 `Referer` / `Origin` / `Host` / `X-Requested-With`
+ * 以及快手 ck **直接写进 `this.headers`** —— 而 `Base` 的 `this.headers` 就是
+ * `Networks.ts` 里那个**模块级共享**的 `baseHeaders` 对象，赋值等于全局修改：
+ * 一次快手解析之后，抖音 / B站 / 小红书的默认请求头里也带上了 `Host: www.kuaishou.com`
+ * 和用户的快手 Cookie。
+ *
+ * 迁移到 amagi 后 cookie 与业务请求头都由 amagi 自己组装（`getKuaishouDefaultConfig`），
+ * 那段污染代码随 `getdata.ts` 一起删掉了。但**下面这次 HEAD 探测不走 amagi**，
+ * 它是本仓库自己用 `Networks` 发的；而它之前恰好是靠那份污染拿到 `Referer` 的。
+ * 所以在这里显式补上，免得把污染删掉的同时静默丢掉防盗链头。
+ *
+ * 只补 `Referer` / `Origin`：`Host` 由 axios 按 URL 自己算（写死会指错 CDN 域名），
+ * Cookie 对取 `content-length` 没有必要，也不该把 ck 发给视频 CDN。
+ */
+const kuaishouMediaHeaders = (base: AxiosRequestConfig['headers']): AxiosRequestConfig['headers'] => ({
+  ...(base as Record<string, unknown>),
+  Referer: 'https://www.kuaishou.com/',
+  Origin: 'https://www.kuaishou.com'
+})
+
 export default class KuaiShou extends Base {
   constructor (e: ConstructorParameters<typeof Base>[0] = {}, _Iddata?: unknown) {
     super()
@@ -52,7 +76,7 @@ export default class KuaiShou extends Base {
       return { name, url: `https:${path}` }
     })
     const CommentsData = await comments(commentsData as Parameters<typeof comments>[0], transformedData)
-    const videoheaders = await new Networks({ url: video_url as string, headers: this.headers }).getHeaders()
+    const videoheaders = await new Networks({ url: video_url as string, headers: kuaishouMediaHeaders(this.headers) }).getHeaders()
     const Size = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
     const videoSizeInMB = (Size / (1024 * 1024)).toFixed(2)
     const img = await Render(
