@@ -11,6 +11,7 @@ import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import {
   ParseCoordinator,
   type ParseJobIdentity,
+  type ParseScope,
   type ParseTarget
 } from '@/module/utils/ParseCoordinator'
 import { createEmojiParseReactionPort } from '@/module/utils/ParseReactionAdapter'
@@ -131,18 +132,66 @@ const getParseTarget = (platform: Platform, message: string): ParseTarget => {
   return { type: 'work-id', value: normalizedMessage }
 }
 
-const createMessageParseIdentity = (platform: Platform, e: MessageEvent): ParseJobIdentity => {
+/**
+ * 指纹的作用域：有群号就按群共享（同群里的重复链接互相去重），
+ * 私聊没有群号，退回按用户各自一份。
+ *
+ * 单独抽出来是为了让「从消息文本推目标」和「显式给目标」两条构造路径共用同一份
+ * 作用域口径——抄第二份的话两边迟早漂移，届时同一个请求在两条路径上会算出不同指纹。
+ */
+const getParseScope = (e: MessageEvent): ParseScope => {
   const groupId = e.group_id
   const hasGroup = groupId !== undefined && groupId !== null && String(groupId).trim() !== ''
 
-  return {
-    platform,
-    target: getParseTarget(platform, e.msg || ''),
-    scope: hasGroup
-      ? { type: 'group', id: String(groupId) }
-      : { type: 'private', id: getEventUserId(e) }
-  }
+  return hasGroup
+    ? { type: 'group', id: String(groupId) }
+    : { type: 'private', id: getEventUserId(e) }
 }
+
+/**
+ * 显式目标的指纹构造。调用方已经握着真实的作品标识（选集入口就是这种情况）时用它，
+ * 不要再走 getParseTarget 从消息文本反推。
+ */
+const createParseIdentity = (
+  platform: Platform,
+  e: MessageEvent,
+  target: ParseTarget
+): ParseJobIdentity => ({
+  platform,
+  target,
+  scope: getParseScope(e)
+})
+
+/** 从消息文本推目标的指纹构造，供「用户直接发链接」的主入口使用。 */
+const createMessageParseIdentity = (platform: Platform, e: MessageEvent): ParseJobIdentity =>
+  createParseIdentity(platform, e, getParseTarget(platform, e.msg || ''))
+
+/**
+ * 参与 B站选集去重的作品定位字段，取自 getBilibiliID 的解析结果
+ * （见 module/platform/bilibili/getid.ts 的 BilibiliIdData）：
+ * 番剧走 `realid`（ss/ep 号）+ `type`，普通视频走 `bvid`/`p`，
+ * 活动页走 `id`，动态走 `dynamic_id`，直播走 `room_id`。
+ */
+const BILIBILI_WORK_ID_FIELDS = ['realid', 'bvid', 'id', 'dynamic_id', 'room_id', 'p'] as const
+
+/**
+ * B站选集的作品标识。
+ *
+ * 只拿集号当目标是不够的：不同番剧的第 1 集会算出同一个指纹，于是同群两个人分别在
+ * 不同番剧里回「第1集」时会被错误地去重成一个任务，其中一个拿到另一个的结果。
+ * 这里把上一次解析出的作品定位字段一起编进目标，集号只作为最后一段。
+ */
+const createBilibiliEpisodeTarget = (stored: BilibiliIdData, episode: string): ParseTarget => ({
+  type: 'work-id',
+  value: [
+    stored.type,
+    ...BILIBILI_WORK_ID_FIELDS.map(field => {
+      const value = stored[field]
+      return value === undefined || value === null ? '' : String(value)
+    }),
+    episode
+  ].join('|')
+})
 
 const isDouyinSelectionResult = (value: unknown): value is DouyinSelectionResult => {
   if (!isRecord(value) || value.type !== 'douyin_user_selection' || typeof value.timeoutSeconds !== 'number') return false
@@ -289,11 +338,21 @@ export class kkkTools extends plugin<'message'> {
     return await handler(e) as boolean
   }
 
+  /**
+   * 让一次解析进入并发队列、按指纹去重，并驱动表情回应状态。
+   *
+   * @param target 可选的显式指纹目标。缺省时从 `e.msg` 反推（用户直接发链接的主入口
+   *   就是这样）；二级入口（选集）收到的消息是「1」「第3集」这种序号，反推只能拿到
+   *   垃圾值且不同作品会互相撞车，必须自己把真实作品标识传进来。
+   *   这里只收目标、不收整个 identity：平台和作用域仍由本方法统一推导，
+   *   免得调用点传进来的平台和 businessName 走的平台对不上。
+   */
   async runCoordinatedParse (
     e: CommandEvent,
     platform: Platform,
     businessName: string,
-    fn: ToolsHandler
+    fn: ToolsHandler,
+    target?: ParseTarget
   ): Promise<boolean> {
     const pluginContext = this as unknown as ErrorHandlerPlugin
     const handler = wrapWithErrorHandler(() => fn.call(this, e), {
@@ -304,10 +363,13 @@ export class kkkTools extends plugin<'message'> {
       rethrowAfterHandle: true
     })
     const reaction = createEmojiParseReactionPort(new EmojiReactionManager(e))
+    const identity = target === undefined
+      ? createMessageParseIdentity(platform, e)
+      : createParseIdentity(platform, e, target)
 
     try {
       const result = await parseCoordinator.submit(
-        createMessageParseIdentity(platform, e),
+        identity,
         // 媒体度量的作用域包在协调器**里面**、而不是外面：submit 会对重复请求去重，
         // 只有胜出的那个任务真的跑 handler。开在外面的话，被去重掉的请求也会开一个
         // 空作用域、并在结束时写一条全 0 的耗时记录，把成功率和平均耗时都掺水。
@@ -388,10 +450,23 @@ export class kkkTools extends plugin<'message'> {
       type: 'one_work',
       aweme_id: target.aweme_id
     }
-    await this.runWithErrorHandler(e, '抖音主页作品选择解析', async event => {
-      await new DouYin(event, iddata, {}).RESOURCES(iddata)
-      await recordParseStatistics(event, 'douyin')
-    })
+    // 走协调器而不是裸 runWithErrorHandler：这个入口以前不进并发队列（一次完整解析
+    // 会插到 parseConcurrency 的限流外面），也没有表情回应。
+    // 至于「连点两次」，上面那句 douyinSelections.delete 已经让第二次点击拿不到选集，
+    // 所以去重在这里主要防的是同群多人并发选到同一个作品。
+    // 指纹目标必须显式给：用户发的是「1」「2」这种序号，从 e.msg 反推会拿到垃圾值，
+    // 而且不同用户选的不同作品会算出相同指纹、被错误地去重成同一个任务。
+    await this.runCoordinatedParse(
+      e,
+      'douyin',
+      '抖音主页作品选择解析',
+      async event => {
+        await new DouYin(event, iddata, {}).RESOURCES(iddata)
+        await recordParseStatistics(event, 'douyin')
+        return true
+      },
+      { type: 'work-id', value: target.aweme_id }
+    )
     return true
   }
 
@@ -536,12 +611,22 @@ export class kkkTools extends plugin<'message'> {
     if (!stored || !episode) return true
 
     const iddata: BilibiliIdData = { ...stored, Episode: episode }
-    // 唯一一个曾经裸调 RESOURCES 的解析入口。其余入口都经过 runCoordinatedParse /
-    // runWithErrorHandler，只有这里没有，于是 RESOURCES 改成向上抛之后异常会直接漏进
-    // Yunzai 的插件派发层——既拿不到错误卡片，也绕过了本插件的日志上下文采集。
-    return await this.runWithErrorHandler(e, 'B站番剧选集解析', async event => {
-      await new Bilibili(event, iddata).RESOURCES(iddata)
-      return true
-    })
+    // 这个入口曾经裸调 RESOURCES：RESOURCES 改成向上抛之后异常会直接漏进 Yunzai 的
+    // 插件派发层——既拿不到错误卡片，也绕过了本插件的日志上下文采集。后来补了
+    // runWithErrorHandler 兜住异常，但仍然不进并发队列、不去重、没有表情回应，
+    // 同一集连点两次会真的跑两遍完整解析。现在和主入口一样走 runCoordinatedParse。
+    //
+    // 指纹目标必须显式给：用户发的是「第3集」，从 e.msg 反推只能拿到集号，
+    // 不同番剧的同一集号会撞成同一个任务，其中一个会拿到另一个的结果。
+    return await this.runCoordinatedParse(
+      e,
+      'bilibili',
+      'B站番剧选集解析',
+      async event => {
+        await new Bilibili(event, iddata).RESOURCES(iddata)
+        return true
+      },
+      createBilibiliEpisodeTarget(stored, episode)
+    )
   }
 }
