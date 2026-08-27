@@ -9,7 +9,7 @@ import { getDouyinID, douyinProcessVideos, pickDouyinPlayUrl } from './index.js'
 import { getDouyinData } from './api.js'
 import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { withDownloadBucket } from '@/module/utils/DownloadBudget'
-import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
+import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo, type DouyinLiveImageVideo } from './workType.js'
@@ -367,49 +367,69 @@ export class DouYinpush extends Base {
 
   /**
    * 补全新版推送字段，保持旧配置可直接运行。
-   * @param {douyinPushItem[]} pushList 推送配置列表
+   *
+   * 分两段：先把要联网的搜索做完，再一次性同步落盘。之前是边 await 边原地改
+   * `Config.pushlist.douyin`（那时候拿到的就是缓存原件），最后整份数组覆盖写 ——
+   * 这个方法每个推送周期都跑，中间任意一次超时都会留下「内存改了、磁盘没改」的状态。
+   *
+   * @param {douyinPushItem[]} pushList 推送配置列表，只用来决定要查哪些短号
    */
   async ensureConfigFields (pushList: DouyinPushConfigItem[]): Promise<void> {
     if (!pushList.length) return
 
-    let hasChanges = false
+    // 联网阶段：老配置只有抖音号没有 sec_uid，得走搜索接口换。
+    // 结果先攒在 map 里，落盘那一步才能保持同步、中间没有 await 的余地。
+    const resolved = new Map<string, { sec_uid: string, nickname?: string }>()
     for (const item of pushList) {
-      if (!item.sec_uid && item.short_id) {
-        try {
-          const searchResult = await this.amagi.getDouyinData('搜索数据', {
-            query: item.short_id,
-            type: 'user',
-            typeMode: 'strict'
-          }) as DouyinSearchResponse
-          const users = this.getSearchUsers(searchResult)
-          const matchedUser = users.find(userItem => {
-            const user = userItem.user_info || userItem
-            return [user.unique_id, user.short_id].filter(Boolean).includes(item.short_id)
-          }) || users[0]
-          const user = matchedUser?.user_info || matchedUser
-          if (user?.sec_uid) {
-            item.sec_uid = user.sec_uid
-            item.remark ||= user.nickname
-            hasChanges = true
-            logger.info(`已为 ${item.remark || item.short_id} 补全 sec_uid: ${item.sec_uid}`)
-          }
-        } catch (error) {
-          logger.warn(`自动补全 ${item.short_id} 的 sec_uid 失败: ${error}`)
+      if (item.sec_uid || !item.short_id) continue
+      try {
+        const searchResult = await this.amagi.getDouyinData('搜索数据', {
+          query: item.short_id,
+          type: 'user',
+          typeMode: 'strict'
+        }) as DouyinSearchResponse
+        const users = this.getSearchUsers(searchResult)
+        const matchedUser = users.find(userItem => {
+          const user = userItem.user_info || userItem
+          return [user.unique_id, user.short_id].filter(Boolean).includes(item.short_id)
+        }) || users[0]
+        const user = matchedUser?.user_info || matchedUser
+        if (user?.sec_uid) {
+          resolved.set(item.short_id, { sec_uid: user.sec_uid, nickname: user.nickname })
+          logger.info(`已为 ${item.remark || item.short_id} 补全 sec_uid: ${user.sec_uid}`)
         }
-      }
-
-      const pushTypes = normalizePushTypes(item.pushTypes)
-      if (!Array.isArray(item.pushTypes) || item.pushTypes.join(',') !== pushTypes.join(',')) {
-        item.pushTypes = pushTypes
-        hasChanges = true
-      }
-      if (item.switch === undefined) {
-        item.switch = true
-        hasChanges = true
+      } catch (error) {
+        logger.warn(`自动补全 ${item.short_id} 的 sec_uid 失败: ${error}`)
       }
     }
 
-    if (hasChanges) Config.modify('pushlist', 'douyin', pushList)
+    Config.update('pushlist', 'douyin', (current: DouyinPushConfigItem[] | undefined) => {
+      const list = Array.isArray(current) ? current : []
+      let hasChanges = false
+      for (const item of list) {
+        if (!item.sec_uid && item.short_id) {
+          const found = resolved.get(item.short_id)
+          if (found) {
+            item.sec_uid = found.sec_uid
+            item.remark ||= found.nickname
+            hasChanges = true
+          }
+        }
+
+        const pushTypes = normalizePushTypes(item.pushTypes)
+        if (!Array.isArray(item.pushTypes) || item.pushTypes.join(',') !== pushTypes.join(',')) {
+          item.pushTypes = pushTypes
+          hasChanges = true
+        }
+        if (item.switch === undefined) {
+          item.switch = true
+          hasChanges = true
+        }
+      }
+      // 没改动就不写：这个方法每轮推送都跑，无条件写会白白触发
+      // 文件监听 → 缓存失效 → 下次读重新解析，还会反复重排 yaml
+      return hasChanges ? list : undefined
+    })
   }
 
   /**
@@ -1038,7 +1058,6 @@ export class DouYinpush extends Base {
       self_id: string | number
       reply: NonNullable<BaseEvent['reply']>
     }
-    const config = Config.pushlist // 读取配置文件
     const groupId = String(event.group_id)
     const botId = String(event.self_id)
     // 使用数组find方法快速定位用户信息卡片，避免循环遍历导致的性能问题
@@ -1067,62 +1086,18 @@ export class DouYinpush extends Base {
       throw new Error('无法获取用户抖音号')
     }
 
-    // 初始化 douyin 数组：确保配置中存在douyin数组
-    config.douyin = config.douyin || []
+    // 这条命令是开关式的：群里已经订阅了就取消，没订阅就添加。判断用快照就够 ——
+    // 真正落盘时会拿磁盘上的最新值重新定位一次，所以快照过期不影响写入的正确性。
+    const snapshotItem = (Config.pushlist.douyin ?? []).find(item => item.sec_uid === sec_uid)
+    const isRemove = Boolean(snapshotItem?.group_id.some(entry => matchesGroup(entry, groupId)))
 
-    // 查找用户配置：检查是否已存在该用户的订阅配置
-    const existingItem = config.douyin.find((item) => item.sec_uid === sec_uid)
-
-    if (existingItem) {
-      // 使用findIndex快速定位群组配置，提高查找效率
-      const groupIndex = existingItem.group_id.findIndex(item => {
-        const existingGroupId = item?.split(':')[0]
-        return existingGroupId === String(groupId)
-      })
-
-      if (groupIndex >= 0) {
-        // 删除订阅：移除群组配置并更新数据库
-        existingItem.group_id.splice(groupIndex, 1)
-
-        // 顺序执行数据库操作和消息发送
-        if (isSubscribed) {
-          await douyinDB?.unsubscribeDouyinUser(groupId, sec_uid)
-        }
-        await event.reply(`群：${event.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-
-        // 清理空配置：如果用户没有群组订阅了，删除整个用户配置
-        if (existingItem.group_id.length === 0) {
-          const index = config.douyin.indexOf(existingItem)
-          config.douyin.splice(index, 1)
-        }
-      } else {
-        // 添加订阅：向现有用户配置添加新群组
-        existingItem.group_id.push(`${groupId}:${botId}`)
-        existingItem.pushTypes = normalizePushTypes(existingItem.pushTypes)
-
-        // 顺序执行数据库操作和消息发送
-        if (!isSubscribed) {
-          await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
-        }
-        await event.reply(`群：${event.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
-
-        // 检查推送状态：如果推送未开启，发送提示消息
-        if (Config.douyin.push && Config.douyin.push.switch === false) {
-          await event.reply('请发送「#kkk设置抖音推送开启」以进行推送')
-        }
+    // 顺序执行数据库操作和消息发送
+    if (isRemove) {
+      if (isSubscribed) {
+        await douyinDB?.unsubscribeDouyinUser(groupId, sec_uid)
       }
+      await event.reply(`群：${event.group_name}(${groupId})\n删除成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
     } else {
-      // 新增用户：创建新的用户订阅配置
-      config.douyin.push({
-        switch: true,
-        sec_uid,
-        group_id: [`${groupId}:${botId}`],
-        remark: UserInfoData.data.user.nickname,
-        short_id: user_shortid,
-        pushTypes: [...DEFAULT_DOUYIN_PUSH_TYPES]
-      })
-
-      // 顺序执行数据库操作和消息发送
       if (!isSubscribed) {
         await douyinDB?.subscribeDouyinUser(groupId, botId, sec_uid, user_shortid, UserInfoData.data.user.nickname)
       }
@@ -1134,10 +1109,46 @@ export class DouYinpush extends Base {
       }
     }
 
-    // 顺序执行配置保存和界面渲染
-    if (config.douyin) {
-      Config.modify('pushlist', 'douyin', config.douyin)
-    }
+    // 落盘：从磁盘上的最新值重新定位条目，改动写成幂等的（有则删 / 无则加）。
+    // 这样即使这期间别的群也在订阅同一个博主，两边的改动都能留下来 —— 换成整份数组
+    // 覆盖写就会用一份过期快照把对方抹掉。
+    Config.update('pushlist', 'douyin', (current: DouyinPushConfigItem[] | undefined) => {
+      const list = Array.isArray(current) ? current : []
+      const index = list.findIndex(item => item.sec_uid === sec_uid)
+
+      const item = index >= 0 ? list[index] : undefined
+
+      if (isRemove) {
+        // 条目已经不在了：别处已经删过，直接认账
+        if (!item) return list
+        const groupIndex = item.group_id.findIndex(entry => matchesGroup(entry, groupId))
+        if (groupIndex >= 0) item.group_id.splice(groupIndex, 1)
+        // 清理空配置：如果用户没有群组订阅了，删除整个用户配置
+        if (item.group_id.length === 0) list.splice(index, 1)
+        return list
+      }
+
+      if (item) {
+        // 添加订阅：向现有用户配置添加新群组
+        if (!item.group_id.some(entry => matchesGroup(entry, groupId))) {
+          item.group_id.push(`${groupId}:${botId}`)
+        }
+        item.pushTypes = normalizePushTypes(item.pushTypes)
+        return list
+      }
+
+      // 新增用户：创建新的用户订阅配置
+      list.push({
+        switch: true,
+        sec_uid,
+        group_id: [`${groupId}:${botId}`],
+        remark: UserInfoData.data.user.nickname,
+        short_id: user_shortid,
+        pushTypes: [...DEFAULT_DOUYIN_PUSH_TYPES]
+      })
+      return list
+    })
+
     await this.renderPushList()
   }
 
@@ -1234,41 +1245,39 @@ export class DouYinpush extends Base {
    * 检查并更新备注信息
    */
   async checkremark (): Promise<boolean> {
-    // 读取配置文件内容
-    /** @type {import('../../utils/Config.js').PushlistConfig} */
-    const config = Config.pushlist
-    /** @type {{ sec_uid: string }[]} */
-    const updateList = []
+    const pushList = Config.pushlist.douyin
+    if (!pushList || pushList.length === 0) return true
 
-    if (!Config.pushlist?.douyin || Config.pushlist.douyin.length === 0) return true
+    // 先收集缺备注的用户，取备注要走网络，不能在落盘的改动函数里做。
+    // 没有 sec_uid 的条目查不了，跳过 —— 那种旧配置由 ensureConfigFields 负责补全
+    const pending = pushList
+      .filter(item => !item.remark)
+      .map(item => item.sec_uid)
+      .filter((sec_uid): sec_uid is string => Boolean(sec_uid))
+    if (pending.length === 0) return false
 
-    // 遍历配置文件中的用户列表，收集需要更新备注信息的用户
-    for (const i of Config.pushlist.douyin) {
-      const remark = i.remark
-      const sec_uid = i.sec_uid
-
-      if (remark === undefined || remark === '') {
-        updateList.push({ sec_uid })
-      }
+    const remarks = new Map<string, string>()
+    for (const sec_uid of pending) {
+      const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
+      const remark = userinfo.data.user.nickname
+      if (remark) remarks.set(sec_uid, remark)
     }
+    if (remarks.size === 0) return false
 
-    // 如果有需要更新备注的用户，则逐个获取备注信息并更新到配置文件中
-    if (updateList.length > 0) {
-      for (const i of updateList) {
-        // 从外部数据源获取用户备注信息
-        const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid: i.sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
-        const remark = userinfo.data.user.nickname
-
-        // 在配置文件中找到对应的用户，并更新其备注信息
-        const matchingItemIndex = config.douyin?.findIndex((item) => item.sec_uid === i.sec_uid) || 0
-        if (matchingItemIndex !== -1 && config.douyin && config.douyin[matchingItemIndex]) {
-          config.douyin[matchingItemIndex].remark = remark
+    // 只补备注这一个字段，其余按磁盘上的现状原样留下。原来是整份数组覆盖写，
+    // 期间有人订阅 / 退订就会被这份快照抹掉。
+    Config.update('pushlist', 'douyin', (current: DouyinPushConfigItem[] | undefined) => {
+      if (!Array.isArray(current)) return undefined
+      let changed = false
+      for (const item of current) {
+        const remark = item.sec_uid ? remarks.get(item.sec_uid) : undefined
+        if (remark && !item.remark) {
+          item.remark = remark
+          changed = true
         }
       }
-
-      // 将更新后的配置文件内容写回文件
-      Config.modify('pushlist', 'douyin', config.douyin)
-    }
+      return changed ? current : undefined
+    })
 
     return false
   }

@@ -15,7 +15,7 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { withDownloadBucket } from '@/module/utils/DownloadBudget'
-import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
+import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'
 import common from '@/runtime/host/common'
@@ -476,20 +476,31 @@ export class Bilibilipush extends Base {
   ensureConfigFields (pushList: BilibiliPushConfigItem[]): void {
     if (!pushList.length) return
 
-    let hasChanges = false
-    for (const item of pushList) {
-      const pushTypes = normalizeBilibiliPushTypes(item.pushTypes)
-      if (!Array.isArray(item.pushTypes) || item.pushTypes.join(',') !== pushTypes.join(',')) {
-        item.pushTypes = pushTypes
-        hasChanges = true
-      }
-      if (item.switch === undefined) {
-        item.switch = true
-        hasChanges = true
-      }
-    }
+    // 改动直接算在磁盘上的最新值上，不用参数里那份快照落盘（那样会覆盖掉这期间别处的写入）。
+    // 参数只用来判断「值不值得开一次读写」，省掉每轮推送都读一遍 yaml。
+    const needsFix = pushList.some(item =>
+      item.switch === undefined ||
+      !Array.isArray(item.pushTypes) ||
+      item.pushTypes.join(',') !== normalizeBilibiliPushTypes(item.pushTypes).join(',')
+    )
+    if (!needsFix) return
 
-    if (hasChanges) Config.modify('pushlist', 'bilibili', pushList)
+    Config.update('pushlist', 'bilibili', (current: BilibiliPushConfigItem[] | undefined) => {
+      const list = Array.isArray(current) ? current : []
+      let changed = false
+      for (const item of list) {
+        const pushTypes = normalizeBilibiliPushTypes(item.pushTypes)
+        if (!Array.isArray(item.pushTypes) || item.pushTypes.join(',') !== pushTypes.join(',')) {
+          item.pushTypes = pushTypes
+          changed = true
+        }
+        if (item.switch === undefined) {
+          item.switch = true
+          changed = true
+        }
+      }
+      return changed ? list : undefined
+    })
   }
 
   /**
@@ -1429,56 +1440,24 @@ export class Bilibilipush extends Base {
     const event = this.e
     if (!event) return
     const host_mid = Number(data.data.card.mid)
-    const config = Config.pushlist // 读取配置文件
     const groupId = String(event.group_id ?? '')
     const botId = String(event.self_id ?? '')
-
-    // 初始化或确保 bilibilipushlist 数组存在
-    config.bilibili = config.bilibili || []
-
-    // 检查是否存在相同的 host_mid
-    const existingItem = config.bilibili.find((item) => item.host_mid === host_mid)
 
     // 检查该群组是否已订阅该UP主
     const isSubscribed = await bilibiliDB?.isSubscribed(host_mid, groupId)
 
-    if (existingItem) {
-      // 使用 findIndex 替代循环，提高查找效率
-      const groupIndex = existingItem.group_id.findIndex(item => {
-        const existingGroupId = item?.split(':')[0] || ''
-        return existingGroupId === String(groupId)
-      })
+    // 这条命令是开关式的：群里已经订阅了就取消，没订阅就添加。判断用快照就够 ——
+    // 真正落盘时会拿磁盘上的最新值重新定位一次，所以快照过期不影响写入的正确性。
+    const snapshotItem = (Config.pushlist.bilibili ?? []).find(item => item.host_mid === host_mid)
+    const isRemove = Boolean(snapshotItem?.group_id.some(entry => matchesGroup(entry, groupId)))
 
-      if (groupIndex >= 0) {
-        // 删除订阅
-        existingItem.group_id.splice(groupIndex, 1)
-
-        // 顺序执行数据库操作和消息发送
-        if (isSubscribed) {
-          await bilibiliDB?.unsubscribeBilibiliUser(groupId, host_mid)
-        }
-        await event.reply?.(`群：${event.group_name ?? ''}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
-
-        // 如果删除后 group_id 数组为空，则删除整个属性
-        if (existingItem.group_id.length === 0) {
-          const index = config.bilibili.indexOf(existingItem)
-          config.bilibili.splice(index, 1)
-        }
-      } else {
-        // 顺序执行数据库操作和消息发送
-        await bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name)
-        await event.reply?.(`群：${event.group_name ?? ''}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
-
-        // 检查推送状态
-        if (Config.bilibili?.push?.switch === false) {
-          await event.reply?.('请发送「#kkk设置B站推送开启」以进行推送')
-        }
-
-        existingItem.group_id.push(`${groupId}:${botId}`)
-        existingItem.pushTypes = normalizeBilibiliPushTypes(existingItem.pushTypes)
+    // 顺序执行数据库操作和消息发送
+    if (isRemove) {
+      if (isSubscribed) {
+        await bilibiliDB?.unsubscribeBilibiliUser(groupId, host_mid)
       }
+      await event.reply?.(`群：${event.group_name ?? ''}(${groupId})\n删除成功！${data.data.card.name}\nUID：${host_mid}`)
     } else {
-      // 顺序执行数据库操作和消息发送
       await bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name)
       await event.reply?.(`群：${event.group_name ?? ''}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
 
@@ -1486,21 +1465,46 @@ export class Bilibilipush extends Base {
       if (Config.bilibili?.push?.switch === false) {
         await event.reply?.('请发送「#kkk设置B站推送开启」以进行推送')
       }
+    }
+
+    // 落盘：从磁盘上的最新值重新定位条目，改动写成幂等的（有则删 / 无则加）。
+    // 这样即使这期间别的群也在订阅同一个 UP，两边的改动都能留下来 —— 换成整份数组
+    // 覆盖写就会用一份过期快照把对方抹掉。
+    Config.update('pushlist', 'bilibili', (current: BilibiliPushConfigItem[] | undefined) => {
+      const list = Array.isArray(current) ? current : []
+      const index = list.findIndex(item => item.host_mid === host_mid)
+
+      const item = index >= 0 ? list[index] : undefined
+
+      if (isRemove) {
+        // 条目已经不在了：别处已经删过，直接认账
+        if (!item) return list
+        const groupIndex = item.group_id.findIndex(entry => matchesGroup(entry, groupId))
+        if (groupIndex >= 0) item.group_id.splice(groupIndex, 1)
+        // 如果删除后 group_id 数组为空，则删除整个条目
+        if (item.group_id.length === 0) list.splice(index, 1)
+        return list
+      }
+
+      if (item) {
+        if (!item.group_id.some(entry => matchesGroup(entry, groupId))) {
+          item.group_id.push(`${groupId}:${botId}`)
+        }
+        item.pushTypes = normalizeBilibiliPushTypes(item.pushTypes)
+        return list
+      }
 
       // 不存在相同的 host_mid，新增一个配置项
-      config.bilibili.push({
+      list.push({
         switch: true,
         host_mid,
         group_id: [`${groupId}:${botId}`],
         remark: data.data.card.name,
         pushTypes: [...DEFAULT_BILIBILI_PUSH_TYPES]
       })
-    }
+      return list
+    })
 
-    // 顺序执行配置保存和渲染操作
-    if (config.bilibili) {
-      Config.modify('pushlist', 'bilibili', config.bilibili)
-    }
     await this.renderPushList()
   }
 
@@ -1509,39 +1513,35 @@ export class Bilibilipush extends Base {
    * 该函数会遍历配置文件中的用户列表，对于没有备注或备注为空的用户，会从外部数据源获取其备注信息，并更新到配置文件中。
    */
   async checkremark (): Promise<boolean> {
-    // 读取配置文件内容
-    /** @type {import('../../utils/Config.js').PushlistConfig} */
-    const config = Config.pushlist
-    const abclist = []
-    if (!Config.pushlist.bilibili || Config.pushlist.bilibili.length === 0) return true
-    // 遍历配置文件中的用户列表，收集需要更新备注信息的用户
-    for (const i of Config.pushlist.bilibili) {
-      const remark = i.remark
-      const group_id = i.group_id
-      const host_mid = i.host_mid
+    const pushList = Config.pushlist.bilibili
+    if (!pushList || pushList.length === 0) return true
 
-      if (remark === undefined || remark === '') {
-        abclist.push({ host_mid, group_id })
-      }
+    // 先把要补的备注全查回来，再一次性落盘。中间隔着网络请求，不能拿着配置快照原地改 ——
+    // 那样最后整份覆盖写会把这期间别处的订阅改动抹掉。
+    const remarks = new Map<number, string>()
+    for (const item of pushList) {
+      if (item.remark !== undefined && item.remark !== '') continue
+      // 从外部数据源获取用户备注信息
+      const resp = asAmagiResponse<BiliUserProfile>(await this.amagi.getBilibiliData('用户主页数据', { host_mid: item.host_mid, typeMode: 'strict' }))
+      remarks.set(item.host_mid, resp.data.data.card.name)
     }
 
-    // 如果有需要更新备注的用户，则逐个获取备注信息并更新到配置文件中
-    if (abclist.length > 0) {
-      for (const i of abclist) {
-        // 从外部数据源获取用户备注信息
-        const resp = asAmagiResponse<BiliUserProfile>(await this.amagi.getBilibiliData('用户主页数据', { host_mid: i.host_mid, typeMode: 'strict' }))
-        const remark = resp.data.data.card.name
-        // 在配置文件中找到对应的用户，并更新其备注信息
-        const matchingItemIndex = config.bilibili?.findIndex(item => item.host_mid === i.host_mid) || 0
-        if (matchingItemIndex !== -1 && config.bilibili && config.bilibili[matchingItemIndex]) {
-          config.bilibili[matchingItemIndex].remark = remark
+    if (remarks.size === 0) return true
+
+    Config.update('pushlist', 'bilibili', (current: BilibiliPushConfigItem[] | undefined) => {
+      const list = Array.isArray(current) ? current : []
+      let changed = false
+      for (const item of list) {
+        const remark = remarks.get(item.host_mid)
+        // 只补空备注：这期间用户可能已经自己改了名字，别用查来的昵称盖掉
+        if (remark && (item.remark === undefined || item.remark === '')) {
+          item.remark = remark
+          changed = true
         }
       }
-      // 将更新后的配置文件内容写回文件
-      if (config.bilibili) {
-        Config.modify('pushlist', 'bilibili', config.bilibili)
-      }
-    }
+      return changed ? list : undefined
+    })
+
     return true
   }
 

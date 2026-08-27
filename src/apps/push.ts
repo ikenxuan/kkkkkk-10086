@@ -260,9 +260,10 @@ export class kkkPush extends plugin<'message'> {
       }))
     }
 
-    // 更新配置，提供默认空数组
-    Config.modify('pushlist', 'douyin', updateGroupIds(Config.pushlist.douyin || []))
-    Config.modify('pushlist', 'bilibili', updateGroupIds(Config.pushlist.bilibili || []))
+    // 走 update 而不是「读 Config.pushlist 再 modify」：这条命令要改的是每一条订阅的
+    // 机器人账号，拿快照算完再整份覆盖，会把这期间新订阅的博主直接抹掉。
+    Config.update('pushlist', 'douyin', (current: DouyinPushItem[] | undefined) => updateGroupIds(current))
+    Config.update('pushlist', 'bilibili', (current: BilibiliPushItem[] | undefined) => updateGroupIds(current))
 
     await e.reply!(`推送机器人已修改为${newBotId}`)
     return true

@@ -17,6 +17,18 @@ export default class YamlReader {
    */
   private readonly degraded: boolean
 
+  /**
+   * 这份文件当前能不能写。
+   *
+   * 给「先读现状、改完再写回」那类调用方用：解析失败时 `document` 是空文档，
+   * 读出来的现状会是「什么都没有」，照着它算增量等于拿空白覆盖用户配置。
+   * `write()` 最后会拦住，但改动函数可能带副作用（发消息、写库），
+   * 所以要能在跑它之前就问出来。
+   */
+  get writable (): boolean {
+    return !this.degraded
+  }
+
   constructor (filePath: string) {
     this.filePath = filePath
     try {
