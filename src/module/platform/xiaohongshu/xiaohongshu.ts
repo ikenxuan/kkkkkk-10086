@@ -30,6 +30,13 @@ import type { XiaohongshuNoteId } from './getid.js'
 import { getXiaohongshuData } from './api.js'
 import { buildXiaohongshuShareUrl } from './link.js'
 import { getErrorMessage } from '@/module/utils/error-message'
+import {
+  livePhotoBatchTimeoutMs,
+  runMediaTasks,
+  VIDEO_DOWNLOAD_TIMEOUT_MS,
+  type MediaTaskName
+} from '@/module/utils/MediaTasks'
+import { reportMedia } from '@/module/utils/media-metrics'
 
 /** 笔记卡片中被解析逻辑读取的字段 */
 interface XiaohongshuNoteCard {
@@ -63,6 +70,17 @@ export interface NoteCommentsResponse {
       has_more?: boolean
     }
   }
+}
+
+/**
+ * `onTaskFailure` 的日志文案。用 `Record<MediaTaskName, string>` 而不是四层三元：
+ * 小红书四条支线把 union 用满了，Record 能让漏掉一条直接编译不过。
+ */
+const MEDIA_TASK_LABELS: Record<MediaTaskName, string> = {
+  poster: '笔记信息卡渲染与发送',
+  video: '视频下载与发送',
+  image: '图集/实况图发送',
+  comment: '评论图渲染与发送'
 }
 
 const buildShareUrl = (data: XiaohongshuNoteId): string =>
@@ -232,35 +250,58 @@ export class Xiaohongshu extends Base {
       }
     }
 
-    if (sendContent.includes('info')) {
-      const noteInfoImg = await Render('xiaohongshu/noteInfo', {
-        title: card.title || '无标题',
-        desc: buildXiaohongshuRichText(card.desc, emojiData, [], { stripTopicMarker: true }),
-        statistics: buildNoteStatistics(card.interact_info),
-        note_id: card.note_id || data.note_id,
-        author: {
-          avatar: card.user?.avatar || card.user?.image || '',
-          nickname: card.user?.nickname || card.user?.nick_name || '未知用户',
-          user_id: card.user?.user_id || card.user?.id || ''
-        },
-        image_url: pickXiaohongshuImageUrl(card.image_list?.[0]) || card.video?.image?.url_default || card.video?.cover?.url_default || '',
-        time: formatTime(card.time),
-        ip_location: card.ip_location || '',
-        share_url: buildShareUrl(data),
-        image_list: card.video
-          ? [card.video.image?.url_default || card.video.cover?.url_default || pickXiaohongshuImageUrl(card.image_list?.[0]) || ''].filter(Boolean)
-          : (card.image_list || []).map(item => pickXiaohongshuImageUrl(item)).filter((item): item is string => Boolean(item)),
-        is_video: Boolean(card.video)
-      })
-      await this.e!.reply!(noteInfoImg)
-    }
+    /**
+     * image 与 video 两条支线的互斥判据，只在这里读一次。
+     *
+     * 有 `video` 字段就只跑 video 支线，没有就只跑 image 支线 —— 视频笔记不该跑
+     * 图片循环，图文笔记也没有视频可下。所以下面虽然挂了四条支线，一次解析里
+     * 实际同时在跑的最多三条。
+     */
+    const noteVideo = card.video
 
-    if (sendContent.includes('comment')) {
-      const commentData = await fetchConfiguredNoteComments(data)
-      const comments = commentData?.data?.data?.comments || []
-      if (!comments.length) {
-        await this.e!.reply!('这个笔记没有评论 ~')
-      } else {
+    /**
+     * 笔记信息卡支线：只依赖上面已经取好的 `card` 和共享的 `emojiData`。
+     */
+    const sendNoteInfo = sendContent.includes('info')
+      ? async (): Promise<void> => {
+        const noteInfoImg = await Render('xiaohongshu/noteInfo', {
+          title: card.title || '无标题',
+          desc: buildXiaohongshuRichText(card.desc, emojiData, [], { stripTopicMarker: true }),
+          statistics: buildNoteStatistics(card.interact_info),
+          note_id: card.note_id || data.note_id,
+          author: {
+            avatar: card.user?.avatar || card.user?.image || '',
+            nickname: card.user?.nickname || card.user?.nick_name || '未知用户',
+            user_id: card.user?.user_id || card.user?.id || ''
+          },
+          image_url: pickXiaohongshuImageUrl(card.image_list?.[0]) || card.video?.image?.url_default || card.video?.cover?.url_default || '',
+          time: formatTime(card.time),
+          ip_location: card.ip_location || '',
+          share_url: buildShareUrl(data),
+          image_list: card.video
+            ? [card.video.image?.url_default || card.video.cover?.url_default || pickXiaohongshuImageUrl(card.image_list?.[0]) || ''].filter(Boolean)
+            : (card.image_list || []).map(item => pickXiaohongshuImageUrl(item)).filter((item): item is string => Boolean(item)),
+          is_video: Boolean(card.video)
+        })
+        await this.e!.reply!(noteInfoImg)
+      }
+      : undefined
+
+    /**
+     * 评论图支线：自己分页取数、自己渲染、自己发送。
+     *
+     * 原来它排在笔记信息卡之后，信息卡渲染多久评论图就得等多久 —— 而两者之间只有
+     * `emojiData` 这个已经在上面取好的共享输入，没有别的数据依赖。
+     * 「这个笔记没有评论」那句用户可见的反馈留在支线内部，别跟着挪走。
+     */
+    const sendComment = sendContent.includes('comment')
+      ? async (): Promise<void> => {
+        const commentData = await fetchConfiguredNoteComments(data)
+        const comments = commentData?.data?.data?.comments || []
+        if (!comments.length) {
+          await this.e!.reply!('这个笔记没有评论 ~')
+          return
+        }
         // 分页取数为了凑够 numcomment 条会多抓一整页，comments 里往往比实际渲染的多。
         // CommentLength 是模板头部那句「评论数量：N条」，要跟下面真正渲染出来的卡片数一致，
         // 所以取切片后的长度，而不是 comments.length 这个取数过程的中间量。
@@ -274,70 +315,124 @@ export class Xiaohongshu extends Base {
         })
         await this.e!.reply!(commentListImg)
       }
-    }
+      : undefined
 
-    if (!card.video && sendContent.includes('image')) {
-      const imageMessages: unknown[] = []
-      const tempFiles: FileInfo[] = []
-      let hasGeneratedLivePhoto = false
+    /**
+     * 图集/实况图支线：自己下载、自己合并转发、自己清理临时文件。
+     *
+     * `!noteVideo` 这个前置条件不能丢：视频笔记不该跑图片循环。
+     * `finally` 里的清理留在支线内部 —— 它只清这条支线自己生成的那批临时文件。
+     */
+    const sendImages = !noteVideo && sendContent.includes('image')
+      ? async (): Promise<void> => {
+        const imageMessages: unknown[] = []
+        const tempFiles: FileInfo[] = []
+        let hasGeneratedLivePhoto = false
 
-      const images = card.image_list || []
-      // 先把整批的下载在窗口里滚起来（ffmpeg 仍然按序串行），再按下标消费。
-      // 逐位对齐是关键：imageMessages 的顺序就是转发消息里图片的顺序。
-      const livePhotoBatch = await buildLivePhotoMessagesBatch(images)
-      tempFiles.push(...livePhotoBatch.tempFiles)
-      hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+        const images = card.image_list || []
+        // 先把整批的下载在窗口里滚起来（ffmpeg 仍然按序串行），再按下标消费。
+        // 逐位对齐是关键：imageMessages 的顺序就是转发消息里图片的顺序。
+        const livePhotoBatch = await buildLivePhotoMessagesBatch(images)
+        tempFiles.push(...livePhotoBatch.tempFiles)
+        hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
 
-      for (const [index, item] of images.entries()) {
-        const livePhoto = livePhotoBatch.results[index]
-        if (livePhoto !== undefined && livePhoto.messages.length > 0) {
-          imageMessages.push(...livePhoto.messages)
-          continue
+        for (const [index, item] of images.entries()) {
+          const livePhoto = livePhotoBatch.results[index]
+          if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+            imageMessages.push(...livePhoto.messages)
+            continue
+          }
+
+          const imageUrl = await processImageUrl(pickXiaohongshuImageUrl(item) ?? '', card.title || '小红书图片', index, {
+            Referer: 'https://www.xiaohongshu.com',
+            Cookie: Config.cookies.xiaohongshu
+          } as AxiosRequestConfig['headers'])
+          if (imageUrl) imageMessages.push(segment.image(imageUrl))
         }
 
-        const imageUrl = await processImageUrl(pickXiaohongshuImageUrl(item) ?? '', card.title || '小红书图片', index, {
-          Referer: 'https://www.xiaohongshu.com',
-          Cookie: Config.cookies.xiaohongshu
-        } as AxiosRequestConfig['headers'])
-        if (imageUrl) imageMessages.push(segment.image(imageUrl))
-      }
+        if (hasGeneratedLivePhoto) imageMessages.push(await buildLivePhotoTipMessage())
 
-      if (hasGeneratedLivePhoto) imageMessages.push(await buildLivePhotoTipMessage())
-
-      try {
-        if (imageMessages.length === 1) {
-          await this.e!.reply!(imageMessages[0])
-        } else if (imageMessages.length > 1) {
-          await this.e!.reply!(await common.makeForwardMsg(this.e, imageMessages, '小红书图集解析结果'))
-        }
-      } finally {
-        for (const item of tempFiles) {
-          if (item?.filepath) await Common.removeFile(item.filepath, true)
+        try {
+          if (imageMessages.length === 1) {
+            await this.e!.reply!(imageMessages[0])
+          } else if (imageMessages.length > 1) {
+            await this.e!.reply!(await common.makeForwardMsg(this.e, imageMessages, '小红书图集解析结果'))
+          }
+        } finally {
+          for (const item of tempFiles) {
+            if (item?.filepath) await Common.removeFile(item.filepath, true)
+          }
         }
       }
-    }
+      : undefined
 
-    if (card.video && sendContent.includes('video')) {
-      const stream = selectVideoStream(card.video.media?.stream)
-      const videoUrl = stream?.master_url || card.video.url_default
-      if (!videoUrl) {
-        await this.e!.reply!('未找到可用的视频地址')
-        return true
+    /**
+     * 视频下载支线：只依赖 `noteVideo`，不等两张卡片渲染完。
+     *
+     * 「未找到可用的视频地址」原来是 `return true` 提前结束整个 handler；挪进支线后
+     * 变成这条支线自己 return —— 那句用户可见的反馈照发，handler 仍然返回 true，
+     * 另外几条支线也不该被它掐断（它们跟视频地址没关系）。
+     */
+    const sendNoteVideo = noteVideo && sendContent.includes('video')
+      ? async (): Promise<void> => {
+        const stream = selectVideoStream(noteVideo.media?.stream)
+        const videoUrl = stream?.master_url || noteVideo.url_default
+        if (!videoUrl) {
+          await this.e!.reply!('未找到可用的视频地址')
+          return
+        }
+
+        /*
+          媒体度量上报（和 douyin / bilibili 的视频分支同一位置：真要发视频了才记一条），
+          补齐小红书的统计口径 —— 在这之前它开着度量作用域却从不上报，媒体数恒为 0。
+
+          不带 `durationMs`：小红书当前的解析路径上没有时长字段（选流只看 width/height/size），
+          media-metrics 对此的约定就是留 undefined，写库端只累加条数、不动时长分母。
+          `bytes` 用选中那条流自报的 size，拿不到就是 undefined（上报处自己会归一）。
+        */
+        reportMedia({ kind: 'video', bytes: stream?.size })
+        await downloadVideo(this.e as Parameters<typeof downloadVideo>[0], {
+          video_url: videoUrl,
+          title: {
+            timestampTitle: `tmp_${Date.now()}.mp4`,
+            originTitle: `${card.title || '小红书视频'}.mp4`
+          },
+          headers: {
+            ...baseHeaders,
+            Referer: 'https://www.xiaohongshu.com',
+            Cookie: Config.cookies.xiaohongshu
+          } as AxiosRequestConfig['headers']
+        })
       }
+      : undefined
 
-      await downloadVideo(this.e as Parameters<typeof downloadVideo>[0], {
-        video_url: videoUrl,
-        title: {
-          timestampTitle: `tmp_${Date.now()}.mp4`,
-          originTitle: `${card.title || '小红书视频'}.mp4`
-        },
-        headers: {
-          ...baseHeaders,
-          Referer: 'https://www.xiaohongshu.com',
-          Cookie: Config.cookies.xiaohongshu
-        } as AxiosRequestConfig['headers']
-      })
-    }
+    /*
+      四条支线并发跑：谁先好谁先发，顺序不再保证（笔记正文卡可能比评论卡晚到），
+      和 douyin / bilibili 一致。共享前置（笔记取数、`emojiData` 表情表、`noteVideo`）
+      都在 fan-out 之前跑完，所以四条支线里没有任何一条会再去取一次表情列表。
+      image / video 靠 `noteVideo` 互斥，实际同时在跑的最多三条。
+    */
+    await runMediaTasks({
+      poster: sendNoteInfo,
+      video: sendNoteVideo,
+      image: sendImages,
+      comment: sendComment
+    }, {
+      /*
+        只放宽两条重支线，两张卡片继续吃 60s 的默认兜底 —— 渲染卡死不该多挂 9 分钟。
+
+        image 按图数算（`livePhotoBatchTimeoutMs`）：整批实况图的工作量线性于图数，
+        而这里能拿到的图数就是 `card.image_list` 的长度。视频笔记走不到 image 支线，
+        此时这个值算出来也没人用，留着比加个分支判断干净。
+      */
+      taskTimeoutMs: {
+        image: livePhotoBatchTimeoutMs(card.image_list?.length ?? 0),
+        video: VIDEO_DOWNLOAD_TIMEOUT_MS
+      },
+      onTaskFailure: ({ task, error }) => {
+        logger.error(`[小红书] ${MEDIA_TASK_LABELS[task]}任务失败`, error)
+      }
+    })
 
     return true
   }
