@@ -164,6 +164,11 @@ interface SubjectOptions {
   videoGate?: Deferred<void>
   posterError?: Error
   videoError?: Error
+  /**
+   * 让「评论数据」返回一个软失败 Result（UP 主关了评论区）而不是正常数据。
+   * 形状照 amagi 的失败 Result：softError.ts 的 readAmagiFailureCode 读的就是这个 code。
+   */
+  commentsSoftFailureCode?: number
 }
 
 const createSubject = (options: SubjectOptions = {}) => {
@@ -184,6 +189,14 @@ const createSubject = (options: SubjectOptions = {}) => {
     if (method === '单个视频下载信息数据') return playUrlData
     if (method === '评论数据') {
       mocks.events.push('comment:fetch')
+      if (options.commentsSoftFailureCode !== undefined) {
+        return {
+          success: false,
+          code: options.commentsSoftFailureCode,
+          message: 'UP主已关闭评论区',
+          data: null
+        }
+      }
       return { data: { replies: [{ rpid: 1 }] } }
     }
     throw new Error(`Unexpected Bilibili API method: ${method}`)
@@ -339,5 +352,59 @@ describe('Bilibili one_video media tasks', () => {
       expect.stringContaining('解析失败'),
       expect.any(AggregateError)
     )
+  })
+
+  describe('Bilibili 软错误码：UP 主已关闭评论区', () => {
+    beforeEach(() => {
+      mocks.config.bilibili.sendContent = ['comment']
+    })
+
+    /*
+      12061 / 12002 不在 amagi 的 bilibiliErrorCodeMap 里，所以 Base 的 Proxy 不会拦成错误卡，
+      失败 Result 会一路交到业务层；而 bilibiliComments 对它只能给出空数组。
+      改动前的表现是「评论图静默不出」——用户分不清是 UP 关了评论区还是解析坏了。
+    */
+    it.each([
+      ['12061 UP主已关闭评论区', 12061],
+      ['12002 评论区已关闭', 12002]
+    ])('%s：明确告知一句，且不渲染评论图', async (_label, code) => {
+      const { subject, reply } = createSubject({ commentsSoftFailureCode: code })
+
+      await expect(subject.RESOURCES({ type: 'one_video', bvid: 'BV1test', p: 1 }))
+        .resolves.not.toThrow()
+
+      // 取数发生了，但渲染没有——软失败不该走到 Render
+      expect(mocks.events).toContain('comment:fetch')
+      expect(mocks.events).not.toContain('comment:render')
+      expect(mocks.render).not.toHaveBeenCalled()
+
+      // 用户拿到的是一句人话，而不是什么都没有
+      const texts = reply.mock.calls.map(call => call[0]).filter(arg => typeof arg === 'string')
+      expect(texts).toContain('UP主已关闭评论区，无法获取评论')
+
+      // 软失败是业务上的正常拒绝，不该记 error、更不该上抛
+      expect(mocks.logger.error).not.toHaveBeenCalled()
+    })
+
+    it('白名单外的失败码不当软失败处理，照旧走原有路径', async () => {
+      // 12009（评论主体 type 不合法）是我们自己传错参，刻意没进白名单：
+      // 软化它会把自家 bug 伪装成「这条视频没有评论」，是最难查的一类问题。
+      const { subject, reply } = createSubject({ commentsSoftFailureCode: 12009 })
+
+      await subject.RESOURCES({ type: 'one_video', bvid: 'BV1test', p: 1 })
+
+      const texts = reply.mock.calls.map(call => call[0]).filter(arg => typeof arg === 'string')
+      expect(texts).not.toContain('UP主已关闭评论区，无法获取评论')
+    })
+
+    it('评论数据正常时不受影响，照旧渲染评论图', async () => {
+      const { subject, reply } = createSubject()
+
+      await subject.RESOURCES({ type: 'one_video', bvid: 'BV1test', p: 1 })
+
+      expect(mocks.events).toContain('comment:render')
+      const texts = reply.mock.calls.map(call => call[0]).filter(arg => typeof arg === 'string')
+      expect(texts).not.toContain('UP主已关闭评论区，无法获取评论')
+    })
   })
 })

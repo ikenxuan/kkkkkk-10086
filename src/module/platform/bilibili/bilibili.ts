@@ -21,6 +21,7 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
+import { isSoftFailure, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/Base'
@@ -826,6 +827,13 @@ export class Bilibili extends Base {
                 oid: infoData.data.data.aid.toString(),
                 typeMode: 'strict'
               }) as CommentsResponse
+              // UP 主关了评论区是业务上的正常拒绝，不是故障：软错误码不会弹错误卡，
+              // 而 bilibiliComments 对它只会返回空数组，于是原来表现成「评论图静默不出」，
+              // 用户看不出是关了评论区还是解析坏了。这里明确告知一句再收工。
+              if (isSoftFailure(commentsData, SOFT_ERROR_CODES.bilibili)) {
+                await this.e.reply('UP主已关闭评论区，无法获取评论')
+                return
+              }
               const commentsdata = commentLimit > 0
                 ? bilibiliComments(commentsData.data)
                 : null
@@ -961,7 +969,7 @@ export class Bilibili extends Base {
           // 整个 dynamic_info 分支共用这一个有效数量：下面取数、以及各动态类型里
           // 「要不要发评论图」的判断都得用它，不能一半读新键一半读旧键。
           const commentLimit = bilibiliCommentLimit()
-          const commentsData: CommentsResponse | false = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
+          const rawCommentsData: CommentsResponse | false = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
             commentLimit > 0
             ? await this.amagi.getBilibiliData('评论数据', '', {
               type: mapping_table(dynamicInfo.data.data.item.type),
@@ -970,6 +978,16 @@ export class Bilibili extends Base {
               typeMode: 'strict'
             }) as CommentsResponse
             : false
+          /*
+            软失败（UP 主关了评论区）塌回 `false` 这个既有哨兵，下面各动态类型里
+            `&& commentsData` 那几处守卫就会照原样跳过评论块 —— 不塌的话它是个真对象，
+            守卫放行、bilibiliComments 又只能给出空数组，结果是**发出一张空评论卡**。
+            视频分支那边表现为静默不发，这里比它更糟，所以要单独处理。
+          */
+          const commentsSoftClosed = rawCommentsData !== false &&
+            isSoftFailure(rawCommentsData, SOFT_ERROR_CODES.bilibili)
+          if (commentsSoftClosed) await this.e.reply('UP主已关闭评论区，无法获取评论')
+          const commentsData: CommentsResponse | false = commentsSoftClosed ? false : rawCommentsData
           const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' }) as UserProfileResponse
 
           switch (dynamicInfo.data.data.item.type) {

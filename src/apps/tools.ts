@@ -9,6 +9,7 @@ import type { BilibiliIdData } from '@/module/platform/bilibili/getid'
 import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/strategy'
 import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import {
+  createParseFingerprint,
   ParseCoordinator,
   type ParseJobIdentity,
   type ParseScope,
@@ -329,15 +330,6 @@ export class kkkTools extends plugin<'message'> {
     return true
   }
 
-  async runWithErrorHandler (e: CommandEvent, businessName: string, fn: ToolsHandler): Promise<boolean> {
-    // 包装器回传的就是当前命令事件；闭包引用可保留 `msg: string` 的收窄结果。
-    // ErrorHandler 只读取插件的 awaitContext；保留旧实现传入当前 app 实例的行为。
-    const pluginContext = this as unknown as ErrorHandlerPlugin
-    const handler = wrapWithErrorHandler(() => fn.call(this, e), { businessName, plugin: pluginContext })
-    // 旧 JS 在业务函数返回 undefined 时也会原样返回；这里只收窄声明，不改变运行值。
-    return await handler(e) as boolean
-  }
-
   /**
    * 让一次解析进入并发队列、按指纹去重，并驱动表情回应状态。
    *
@@ -363,9 +355,26 @@ export class kkkTools extends plugin<'message'> {
       rethrowAfterHandle: true
     })
     const reaction = createEmojiParseReactionPort(new EmojiReactionManager(e))
-    const identity = target === undefined
-      ? createMessageParseIdentity(platform, e)
-      : createParseIdentity(platform, e, target)
+
+    // 指纹构造要在进队列**之前**单独兜住，不能让它掉进下面那个 catch。
+    // 下面的 catch 是给「已经过 wrapWithErrorHandler 弹过错误卡」的业务异常准备的，
+    // 吞掉它是对的；但指纹构造抛的 TypeError 谁都没处理过 —— e.msg 为空时
+    // getParseTarget 会返回 { type: 'work-id', value: '' }，normalizeTarget 的非空
+    // 校验就抛在这里。混在一起的后果是解析静默跳过、连一行日志都没有。
+    let identity: ParseJobIdentity
+    try {
+      identity = target === undefined
+        ? createMessageParseIdentity(platform, e)
+        : createParseIdentity(platform, e, target)
+      // 提前算一次把校验前移。submit() 内部还会再算一次，但它是纯字符串拼接，
+      // 比让异常穿到 catch 里被当成业务失败便宜得多。
+      createParseFingerprint(identity)
+    } catch (error) {
+      // 返回 true 保持原有的派发语义（声称已处理、不再往后传），只是不再静默：
+      // 走到这里说明输入本身不该触发解析，日志是唯一的排查线索。
+      logger.error(`[${platform}] ${businessName}的解析指纹构造失败，已跳过本次解析`, error)
+      return true
+    }
 
     try {
       const result = await parseCoordinator.submit(
@@ -392,7 +401,9 @@ export class kkkTools extends plugin<'message'> {
       )
       return result === undefined ? true : result as boolean
     } catch {
-      // The winning task already passed through the unified error handler.
+      // 只吞业务异常：handler 配的是 rethrowAfterHandle，走到这里的异常
+      // 已经过统一错误处理、错误卡也弹过了，再抛一遍只会在派发层重复一次。
+      // 指纹构造那类「没人处理过」的异常在上面单独兜住，不会落到这里。
       return true
     }
   }

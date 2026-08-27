@@ -496,3 +496,55 @@ describe('kkkTools douyin work selection coordination', () => {
     await expect(Promise.all([winner, duplicate])).resolves.toEqual([true, true])
   })
 })
+
+describe('kkkTools 指纹构造失败不再静默', () => {
+  /*
+    e.msg 为空时 getParseTarget 会一路落到 `{ type: 'work-id', value: '' }`，
+    normalizeTarget 的非空校验就在指纹构造里抛 TypeError。这个异常谁都没处理过，
+    以前它掉进 runCoordinatedParse 末尾那个「吞掉业务异常」的 catch 里，
+    表现成解析静默跳过、连一行日志都没有。
+  */
+  it('e.msg 为空时记一条 error 日志，且不进并发队列、不跑 handler', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    bilibiliResourcesMock.mockResolvedValue(true)
+
+    await expect(
+      tools.bilibili(createEvent({ msg: '', group_id: 30001, user_id: 7, message_id: 'blank-msg' }))
+    ).resolves.toBe(true)
+
+    // 没进队列：submit 一次都没被调用，所以也不占并发额度、不产生表情回应。
+    expect(submittedIdentities).toHaveLength(0)
+    expect(reactionStates.get('blank-msg')).toBeUndefined()
+    // 更重要的是 handler 根本没跑 —— 校验前移到了进队列之前。
+    expect(getBilibiliIdMock).not.toHaveBeenCalled()
+    expect(bilibiliResourcesMock).not.toHaveBeenCalled()
+
+    // 唯一的排查线索必须真的留下来，而且带上平台和业务名。
+    const errorMock = globalThis.logger.error as unknown as ReturnType<typeof vi.fn>
+    expect(errorMock).toHaveBeenCalledTimes(1)
+    const [message, cause] = errorMock.mock.calls[0] as [string, unknown]
+    expect(message).toContain('bilibili')
+    expect(message).toContain('B站视频解析')
+    expect(cause).toBeInstanceOf(TypeError)
+  })
+
+  it('目标正常时不会误报，照旧进队列并跑 handler', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    getBilibiliIdMock.mockResolvedValue({ type: 'one_video', bvid: 'BV1xx411c7mD' })
+    bilibiliResourcesMock.mockResolvedValue(true)
+
+    await expect(
+      tools.bilibili(createEvent({ msg: 'BV1xx411c7mD', group_id: 30002, user_id: 8, message_id: 'ok-msg' }))
+    ).resolves.toBe(true)
+
+    expect(submittedIdentities).toHaveLength(1)
+    expect(bilibiliResourcesMock).toHaveBeenCalledTimes(1)
+    // 只断言「没报指纹构造失败」，不断言「一条 error 都没有」：
+    // 正常路径上别处（统计落库等）也可能记 error，那与本用例无关，
+    // 用全局计数会让这条测试因为无关改动而脆断。
+    const errorMock = globalThis.logger.error as unknown as ReturnType<typeof vi.fn>
+    const fingerprintErrors = errorMock.mock.calls
+      .filter(call => String(call[0]).includes('解析指纹构造失败'))
+    expect(fingerprintErrors).toHaveLength(0)
+  })
+})
