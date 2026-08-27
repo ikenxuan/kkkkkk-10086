@@ -13,20 +13,26 @@ const HANDLER_ERROR = 'ktr/template/other/handlerError/components/handlerError.t
 const VERSION_WARNING = 'ktr/template/other/version_warning/components/VersionWarning.tsx'
 const QR_LOGIN = 'ktr/template/other/qrlogin/components/qrlogin.tsx'
 const LIVE_PHOTO_TIP = 'ktr/template/other/live-photo-tip/components/LivePhotoTip.tsx'
+const KKK_LOGO = 'ktr/template/components/KkkLogo.tsx'
 const CHANGELOG = 'ktr/template/other/changelog/components/changelog.tsx'
 const RUNTIME = 'ktr/template/other/runtime/components/runtime.tsx'
 
-/** 插件品牌图（PNG）：页脚改用内联矢量图后，只有自绘品牌的那几张海报还在用 */
+/** 插件品牌图（PNG）：页脚改用矢量图后，只剩 version_warning 和 qrlogin 两张自绘页脚的海报还在用 */
 const PLUGIN_LOGO = '/image/logo.png'
 /** 云崽框架品牌图 */
 const FRAMEWORK_LOGO = '/image/frame-logo.png'
 /** 页脚改版前用过的矢量品牌图文件，现在已经零引用 */
 const RETIRED_LOGOS = ['kkkkkk-logo.svg', 'yunzai-logo.svg']
 /**
- * 共享页脚里内联的 kkk 矢量品牌图的路径数据（照搬上游 DefaultLayout）。
- * 只允许出现在 DefaultLayout 一处：别的模板自绘会让同一张图上出现两组品牌。
+ * kkk 矢量品牌图的路径数据（照搬上游 DefaultLayout）。
+ *
+ * 整个 ktr/ 里只允许出现在 components/KkkLogo.tsx 这一个文件：需要它的模板一律 import
+ * 那个共享组件（现在是 DefaultLayout 的共享页脚和 live-photo-tip 的自绘页脚两处）。
+ * 路径数据一旦散落到多个文件，以后换 logo 就得改多处，必然漏一处、图上出现两个版本的品牌。
  */
 const INLINE_PLUGIN_LOGO_PATH_DATA = 'M132.75,87.37l-53.72-53.37'
+/** 共享矢量品牌组件的渲染点：路径数据搬走以后，用它来定位「这里画了 kkk 的 logo」 */
+const KKK_LOGO_TAG = '<KkkLogo'
 /** 自绘品牌的模板用这个 ctx 覆写关掉 DefaultLayout 的页脚 */
 const FOOTER_SUPPRESSION = /ctx=\{\{\s*\.\.\.props\.ctx,\s*version:\s*undefined\s*\}\}/
 
@@ -89,9 +95,12 @@ const resolveExactly = (segments: string[]) => {
 
 describe('React template branding contract', () => {
   it('keeps the plugin and framework brand pair exclusive to the shared layout footer', () => {
-    // 页脚的插件品牌图已从 /image/logo.png 换成内联矢量图（页脚整段照搬上游 DefaultLayout，
-    // 同时满足「页脚换成 kkkk 的 svg」这条要求），PNG 只留给自绘品牌的那三张海报。
-    expect(countOf(defaultLayout, INLINE_PLUGIN_LOGO_PATH_DATA)).toBe(1)
+    // 页脚的插件品牌图已从 /image/logo.png 换成矢量图（页脚整段照搬上游 DefaultLayout，
+    // 同时满足「页脚换成 kkkk 的 svg」这条要求），PNG 只留给自绘品牌的那两张海报。
+    // 矢量图走共享组件，路径数据不再内联在这里。
+    expect(defaultLayout).not.toContain(INLINE_PLUGIN_LOGO_PATH_DATA)
+    expect(defaultLayout).toContain("from './KkkLogo'")
+    expect(countOf(defaultLayout, KKK_LOGO_TAG)).toBe(1)
     expect(defaultLayout).not.toContain(PLUGIN_LOGO)
 
     expect(defaultLayout).toContain(`src="${FRAMEWORK_LOGO}"`)
@@ -115,13 +124,13 @@ describe('React template branding contract', () => {
     expect(footerEnd).toBeGreaterThan(footerStart)
 
     const footer = defaultLayout.slice(footerStart, footerEnd)
-    expect(footer).toContain(INLINE_PLUGIN_LOGO_PATH_DATA)
+    expect(footer).toContain(KKK_LOGO_TAG)
     expect(footer).toContain(FRAMEWORK_LOGO)
 
     // ctx.version 为空时走的分支只放水印 ID，任何品牌图形出现在这里都说明页脚没被真正关掉
     const fallback = defaultLayout.slice(footerEnd)
     expect(fallback).not.toContain('/image/')
-    expect(fallback).not.toContain(INLINE_PLUGIN_LOGO_PATH_DATA)
+    expect(fallback).not.toContain(KKK_LOGO_TAG)
   })
 
   it('never draws a second brand pair inside the error poster', () => {
@@ -140,12 +149,23 @@ describe('React template branding contract', () => {
   })
 
   it('lets self-branded posters draw the plugin mark only while suppressing the footer', () => {
+    // PNG 品牌图只剩这两张自绘页脚的海报在用
     expect(filesReferencing(PLUGIN_LOGO)).toEqual(
-      [VERSION_WARNING, QR_LOGIN, LIVE_PHOTO_TIP].sort()
+      [VERSION_WARNING, QR_LOGIN].sort()
     )
 
-    for (const source of [versionWarning, qrLogin, livePhotoTip]) {
+    for (const source of [versionWarning, qrLogin]) {
       expect(source).toContain(PLUGIN_LOGO)
+    }
+
+    // live-photo-tip 的页脚换成了共享的矢量组件：既不引 PNG，也不自己内联一份路径数据
+    expect(livePhotoTip).not.toContain(PLUGIN_LOGO)
+    expect(livePhotoTip).not.toContain(INLINE_PLUGIN_LOGO_PATH_DATA)
+    expect(livePhotoTip).toContain("from '../../../components/KkkLogo'")
+    expect(livePhotoTip).toContain(KKK_LOGO_TAG)
+
+    // 自绘页脚的模板必须同时用 ctx 覆写关掉 DefaultLayout 的页脚，否则同一张图上出现两组品牌
+    for (const source of [versionWarning, qrLogin, livePhotoTip]) {
       expect(source).toMatch(FOOTER_SUPPRESSION)
       expect(source).not.toContain(FRAMEWORK_LOGO)
     }
@@ -157,9 +177,9 @@ describe('React template branding contract', () => {
       expect(templateSources.filter(({ source }) => source.includes(logo)).map(({ file }) => file)).toEqual([])
     }
 
-    // 内联的 kkk 矢量图只允许待在共享页脚里，别的模板自绘就会出现两组品牌
+    // kkk 矢量图的路径数据只允许待在共享组件 KkkLogo.tsx 里，抄第二份出去就等于埋下两版品牌
     expect(templateSources.filter(({ source }) => source.includes(INLINE_PLUGIN_LOGO_PATH_DATA)).map(({ file }) => file))
-      .toEqual([DEFAULT_LAYOUT])
+      .toEqual([KKK_LOGO])
   })
 
   it('resolves every template image path to a real file under resources/image', () => {

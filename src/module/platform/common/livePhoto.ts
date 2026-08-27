@@ -85,14 +85,17 @@ const getMotionPhotoSystem = (): MotionPhotoSystem => {
 }
 
 const getTimestampName = (): string => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-const livePhotoTipText = '实况照片已生成，保存原图到相册后可识别为实况图'
+/**
+ * 渲染失败时的纯文本回退。措辞照抄提示图上写死的那两句（标题 + 说明），
+ * 让收到图和收到文本的人被告知的是同一件事 —— 图上说「点击查看原图」，
+ * 回退文本却说「保存原图到相册」，用户会按错的那条做。
+ */
+const livePhotoTipText = '保存原图：点击「查看原图」后保存到相册即可识别为实况照片'
 
 export const buildLivePhotoTipMessage = async (): Promise<ImageMessage[] | false | string> => {
   try {
-    return await Render('other/live-photo-tip', {
-      title: '保存原图',
-      description: '点击「查看原图」后保存到相册即可识别为实况照片'
-    })
+    // 不传 payload：这张图是纯静态的，文案写死在组件 JSX 里（见 components/types.ts）。
+    return await Render('other/live-photo-tip')
   } catch (error: unknown) {
     logger.warn(`[实况图] 提示图渲染失败，使用文本回退: ${getErrorMessage(error)}`)
     return livePhotoTipText

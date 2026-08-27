@@ -5,6 +5,7 @@ import type { PosterContext } from '../types/ctx'
 import { cn } from '../../utils/cn'
 import { isDark } from '../../utils/theme'
 import { GlowImage } from './GlowImage'
+import { KkkLogo } from './KkkLogo'
 import { RolldownLogo } from './RolldownLogo'
 import { ViteLogo } from './ViteLogo'
 
@@ -66,31 +67,8 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
             {/* 插件信息 */}
             <div className="flex items-end space-x-8">
               <GlowImage glowStrength={useDarkTheme ? 1 : 0} blurRadius={20}>
-                {/*
-                  viewBox 从上游的 `0 0 230 221` 收到墨迹本身的包围盒。
-                  实测（浏览器 getBBox）路径墨迹是 x=28.5 y=21.4 w=178.3 h=178.3，
-                  也就是四周各留了约 9.7% 的空白，上下对称、并没有偏移。
-                  但框架那个 logo 是 PNG 且墨迹铺满整张图（398×398 全不透明），
-                  同样给 h-18 时插件 logo 的实际图形只有它的 80.6%，看着小一圈、
-                  在视觉上就读成了「偏上、没对齐」。
-                  裁掉留白之后两个 logo 的墨迹等高，观感才真正齐平。
-                */}
-                <svg id="114514" xmlns="http://www.w3.org/2000/svg" viewBox="28.5 21.4 178.3 178.3" className="w-auto h-18">
-                  <path
-                    id="_1"
-                    d="M132.75,87.37l-53.72-53.37c-4.66-4.63-1.38-12.58,5.18-12.58h115.13c6.57,0,9.84,7.95,5.18,12.58l-53.72,53.37c-4.99,4.96-13.06,4.96-18.05,0Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    id="_2"
-                    d="M28.49,186.89l.03-51.42c-.02-6.57,7.92-9.87,12.56-5.23l57.02,57.02c4.64,4.64,1.34,12.41-5.23,12.39h-51.42c-7.04-.02-12.94-5.72-12.96-12.76Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M41.54,23.68l163.04,163.05c4.78,4.78,1.39,12.95-5.36,12.94h-47.88c-9.69,0-18.99-3.86-25.84-10.71L39.3,102.75c-6.85-6.85-10.7-16.15-10.7-25.84V29.04c0-6.76,8.16-10.14,12.94-5.36Z"
-                    fill="currentColor"
-                  />
-                </svg>
+                {/* 路径数据与 viewBox 收窄的实测依据都在 KkkLogo.tsx 里，这里只决定尺寸 */}
+                <KkkLogo className="w-auto h-18" />
               </GlowImage>
 
               <div className="flex flex-col items-start opacity-90">

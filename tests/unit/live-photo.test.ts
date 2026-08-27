@@ -267,15 +267,15 @@ describe('buildLivePhotoTipMessage', () => {
     renderMock.mockResolvedValue(['rendered-tip'])
 
     expect(await buildLivePhotoTipMessage()).toEqual(['rendered-tip'])
-    expect(renderMock).toHaveBeenCalledWith('other/live-photo-tip', {
-      title: '保存原图',
-      description: '点击「查看原图」后保存到相册即可识别为实况照片'
-    })
+    // 不带 payload 是契约的一部分：这张图纯静态，组件不读 props.data。
+    // 传了字段就会让调用方以为能改文案，而实际改不动（见 components/types.ts）。
+    expect(renderMock).toHaveBeenCalledWith('other/live-photo-tip')
   })
 
   it('falls back to plain text when rendering throws', async () => {
     renderMock.mockRejectedValue(new Error('render down'))
 
-    expect(await buildLivePhotoTipMessage()).toBe('实况照片已生成，保存原图到相册后可识别为实况图')
+    // 回退文本要跟图上写死的那两句说同一件事，别一个让点「查看原图」、一个让直接存相册。
+    expect(await buildLivePhotoTipMessage()).toBe('保存原图：点击「查看原图」后保存到相册即可识别为实况照片')
   })
 })

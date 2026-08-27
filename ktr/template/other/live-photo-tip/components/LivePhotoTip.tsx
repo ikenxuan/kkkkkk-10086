@@ -4,6 +4,7 @@ import React from 'react'
 
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import { GlowImage } from '../../../components/GlowImage'
+import { KkkLogo } from '../../../components/KkkLogo'
 import type { PosterProps } from '../../../types/ctx'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import type { LivePhotoTipData } from './types'
@@ -127,6 +128,7 @@ export const LivePhotoTip: React.FC<PosterProps<LivePhotoTipData>> = React.memo(
 
   return (
     <DefaultLayout
+      {...props}
       ctx={{ ...props.ctx, version: undefined }}
       className="relative overflow-hidden"
       style={{ backgroundColor: bgColor, minHeight: '1440px' }}
@@ -260,7 +262,12 @@ export const LivePhotoTip: React.FC<PosterProps<LivePhotoTipData>> = React.memo(
               </span>
             </div>
             <GlowImage glowStrength={1} blurRadius={25}>
-              <img src="/image/logo.png" alt="kkkkkk-10086" className="w-auto h-20" />
+              {/*
+                h-20 照抄上游，但 KkkLogo 用的是裁过四周留白的 viewBox，
+                所以这里画出来的墨迹比上游渲染的大约 24% —— 这是刻意保留的，
+                别为了对齐上游观感把尺寸调小（依据见 components/KkkLogo.tsx）。
+              */}
+              <KkkLogo className="w-auto h-20" color={accentColor} />
             </GlowImage>
           </div>
         </div>
