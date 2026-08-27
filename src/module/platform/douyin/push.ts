@@ -156,7 +156,13 @@ interface DouyinVideoAddress {
 }
 
 interface DouyinBitRate {
-  play_addr: DouyinVideoAddress
+  format?: string
+  gear_name?: string
+  HDR_bit?: string
+  HDR_type?: string
+  video_extra?: string
+  /** 挑源要按体积排序，所以这一层必须带上 data_size */
+  play_addr: DouyinVideoAddress & { data_size: number }
 }
 
 interface DouyinAweme {
@@ -583,7 +589,11 @@ export class DouYinpush extends Base {
                       视频ID：${logger.green(workData.aweme_id)}\n
                       分享链接：${logger.green(workData.share_url)}
                       `)
-                      const videoObj = douyinProcessVideos(workData.video.bit_rate as never, Config.upload.filelimit || 100)
+                      const videoObj = douyinProcessVideos(workData.video.bit_rate, {
+                        videoQuality: Config.douyin.push?.pushVideoQuality,
+                        maxAutoVideoSize: Config.douyin.push?.pushMaxAutoVideoSize,
+                        filelimit: Config.upload.filelimit || 100
+                      })
                       downloadUrl = pickDouyinPlayUrl(videoObj?.[0]?.play_addr)
                     } else {
                       downloadUrl = pickDouyinPlayUrl(workData.video.bit_rate[0]?.play_addr) ||

@@ -62,14 +62,14 @@ export const douyin: GuobaSchema[] = [
   sw('douyin.realCommentCount', '显示真实评论数量', '评论图是否显示真实评论数量，关闭则显示解析到的评论数量'),
   sw('douyin.commentImageCollection', '收集评论区图片', '是否收集评论区的图片'),
   sw('douyin.sendHDrecord', '图集 BGM 使用高清语音', '高清语音「ios/PC」系统均无法播放，自行衡量开关'),
-  sw('douyin.autoResolution', '自动解析分辨率', '根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载'),
+  sw('douyin.autoResolution', '按画质偏好挑选视频源', '开启后按「视频画质偏好」定档、档内取体积装得下的最高码率并跳过 HDR；关闭则直接用接口的 H.264 单档地址，实测最高只有 1080p'),
   radio('douyin.liveImageMergeMode', 'Live 图 BGM 合并模式', [
     option('连续合并', 'continuous'),
     option('独立发送', 'independent')
   ], '合辑 Live 图 BGM 合并模式，可选值：continuous、independent'),
   sw('douyin.textMode', '文本模式', '开启后直接输出文本，关闭后渲染为图片'),
-  radio('douyin.videoQuality', '视频画质偏好', videoQualityOptions, '视频画质偏好设置，可选值：adapt、540p、720p、1080p、2k、4k'),
-  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '自动画质模式下可接受的最大视频大小（单位：MB）'),
+  radio('douyin.videoQuality', '视频画质偏好', videoQualityOptions, '目标档装不下时先向下降档，全都装不下才退回体积最小的那条；需要「按画质偏好挑选视频源」为开'),
+  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '仅画质偏好为 adapt 时生效；固定档位时改由「视频拦截阈值」限体积'),
   radio('douyin.loginPerm', '扫码登录权限', permissionOptions, '谁可以触发扫码登录'),
   radio('douyin.videoInfoMode', '视频信息返回形式', [
     option('文本', 'text'),
@@ -94,7 +94,7 @@ export const douyin: GuobaSchema[] = [
     option('抖音网页', 'web'),
     option('视频下载直链', 'download')
   ], 'web为跳转到抖音网页，download为视频下载直链'),
-  radio('douyin.push.pushVideoQuality', '推送视频画质偏好', videoQualityOptions, '推送解析时视频画质偏好设置'),
-  num('douyin.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB', '推送解析时视频体积上限'),
+  radio('douyin.push.pushVideoQuality', '推送视频画质偏好', videoQualityOptions, '推送路径单独的画质偏好，不受解析路径的「视频画质偏好」影响；仅「一同发送作品视频」为开时生效'),
+  num('douyin.push.pushMaxAutoVideoSize', '推送视频体积上限', 0, 9999, 'MB', '仅推送画质偏好为 adapt 时生效；固定档位时改由「视频拦截阈值」限体积'),
   douyinPushListSchema
 ]

@@ -1,4 +1,5 @@
 export * from './douyin.js'
+export * from './videoQuality.js'
 export * from './comments.js'
 export * from './login.js'
 export * from './push.js'

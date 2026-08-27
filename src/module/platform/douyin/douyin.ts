@@ -13,6 +13,7 @@ import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
+import { douyinProcessVideos } from './videoQuality.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
@@ -34,6 +35,13 @@ interface DyVideo {
   FPS?: number
   format: string
   play_addr: PlayAddress
+  /** 梯级名，`definition` 缺失时的兜底判据，也是 HDR 标记的所在 */
+  gear_name?: string
+  /** 位深，HDR 档为 `'10'` */
+  HDR_bit?: string
+  HDR_type?: string
+  /** JSON 字符串，里面的 `definition` 是官方档位名，挑清晰度的主判据 */
+  video_extra?: string
 }
 
 interface DouyinMusic {
@@ -607,7 +615,11 @@ export class DouYin extends Base {
               视频ID：${logger.green(VideoData.data.aweme_detail.aweme_id)}\n
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
-              video.bit_rate = douyinProcessVideos(video.bit_rate, Config.upload.filelimit || 100)
+              video.bit_rate = douyinProcessVideos(video.bit_rate, {
+                videoQuality: Config.douyin.videoQuality,
+                maxAutoVideoSize: Config.douyin.maxAutoVideoSize,
+                filelimit: Config.upload.filelimit || 100
+              })
               g_video_url = pickDouyinPlayUrl(video.bit_rate[0].play_addr)
             } else {
               g_video_url = pickDouyinPlayUrl(video.play_addr_h264)
@@ -1028,32 +1040,6 @@ export class DouYin extends Base {
       logger.error(`[抖音] ${this.type} 解析失败`, error)
       throw error
     }
-  }
-}
-
-/**
- * 处理抖音视频数据，根据大小限制筛选合适的视频
- * @param {dyVideo[]} videos - 视频数组
- * @param {number} filelimit - 文件大小限制(MB)
- * @returns {dyVideo[]} 处理后的视频数组，只包含一个最合适的视频
- */
-export const douyinProcessVideos = (videos: DyVideo[], filelimit: number): [DyVideo] => {
-  const sizeLimitBytes = filelimit * 1024 * 1024 // 将 MB 转换为字节
-  logger.debug(videos)
-  // 过滤掉 format 为 'dash' 的视频，并且过滤出小于等于大小限制的视频
-  const validVideos = videos.filter(video => video.format !== 'dash' && video.play_addr.data_size <= sizeLimitBytes)
-
-  if (validVideos.length > 0) {
-    // 如果有符合条件的视频，找到 data_size 最大的视频
-    return [validVideos.reduce((maxVideo, currentVideo) => {
-      return currentVideo.play_addr.data_size > maxVideo.play_addr.data_size ? currentVideo : maxVideo
-    })]
-  } else {
-    // 如果没有符合条件的视频，返回 data_size 最小的那个视频（排除 'dash' 格式）
-    const allValidVideos = videos.filter(video => video.format !== 'dash')
-    return [allValidVideos.reduce((minVideo, currentVideo) => {
-      return currentVideo.play_addr.data_size < minVideo.play_addr.data_size ? currentVideo : minVideo
-    })]
   }
 }
 
