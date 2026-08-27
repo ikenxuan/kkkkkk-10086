@@ -13,7 +13,8 @@ import {
 import type { BilibiliArticleCategoryInput, BilibiliDescV2Item } from './dynamicText.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
-import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
+import { withDownloadBucket } from '@/module/utils/DownloadBudget'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
 import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'
@@ -422,29 +423,38 @@ export class Bilibilipush extends Base {
   /**
    * 执行主要的操作流程
    */
+  /**
+   * 执行主要的操作流程。
+   *
+   * 整段包在 `withDownloadBucket()` 里，是因为主动推送**不走** `runCoordinatedParse`，
+   * 于是 ParseCoordinator 铺的下载桶上下文在这条路上是空的 —— 不套的话这一轮推送里
+   * 所有下载都会落到 default 兜底桶，和别的平台抢同一份额度。
+   */
   async action (): Promise<boolean | void> {
-    try {
-      await this.syncConfigToDatabase()
-      this.ensureConfigFields(Config.pushlist.bilibili || [])
-      // 清理旧的动态缓存记录
-      const deletedCount = await cleanOldDynamicCache('bilibili', 1)
-      if (deletedCount > 0) {
-        logger.info(`已清理 ${deletedCount} 条过期的B站动态缓存记录`)
+    return await withDownloadBucket('bilibili', async () => {
+      try {
+        await this.syncConfigToDatabase()
+        this.ensureConfigFields(Config.pushlist.bilibili || [])
+        // 清理旧的动态缓存记录
+        const deletedCount = await cleanOldDynamicCache('bilibili', 1)
+        if (deletedCount > 0) {
+          logger.info(`已清理 ${deletedCount} 条过期的B站动态缓存记录`)
+        }
+
+        const data = await this.getDynamicList(Config.pushlist.bilibili || [])
+        const pushdata = await this.excludeAlreadyPushed(data.willbepushlist)
+
+        if (Object.keys(pushdata).length === 0) return true
+
+        if (this.force) {
+          return await this.forcepush(pushdata)
+        } else {
+          return await this.getdata(pushdata)
+        }
+      } catch (error) {
+        logger.error(error)
       }
-
-      const data = await this.getDynamicList(Config.pushlist.bilibili || [])
-      const pushdata = await this.excludeAlreadyPushed(data.willbepushlist)
-
-      if (Object.keys(pushdata).length === 0) return true
-
-      if (this.force) {
-        return await this.forcepush(pushdata)
-      } else {
-        return await this.getdata(pushdata)
-      }
-    } catch (error) {
-      logger.error(error)
-    }
+    })
   }
 
   /**
@@ -1044,27 +1054,32 @@ export class Bilibilipush extends Base {
                     ) || dynamicItem.Dynamic_Data.modules.module_dynamic?.major?.opus?.pics || []
 
                     try {
+                      // 非实况图的位置传空条目，让结果和 images 逐位对齐 ——
+                      // imgArray 的顺序就是转发消息里图片的顺序。
+                      const livePhotoItems: LivePhotoBatchItem[] = images.map(img2 => {
+                        const imageSrc = img2.src ?? img2.url
+                        return imageSrc && img2.live_url
+                          ? { staticUrl: imageSrc, liveVideoUrl: img2.live_url }
+                          : {}
+                      })
+                      const livePhotoBatch = await buildCommonLivePhotoMessagesBatch(livePhotoItems, {
+                        platform: 'bilibili',
+                        headers: {
+                          ...bilibiliBaseHeaders,
+                          Referer: 'https://www.bilibili.com/'
+                        }
+                      })
+                      tempFiles.push(...livePhotoBatch.tempFiles)
+                      hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+
                       for (const [imageIndex, img2] of images.entries()) {
                         const imageSrc = img2.src ?? img2.url
                         if (!imageSrc) continue
 
-                        if (img2.live_url) {
-                          const livePhoto = await buildCommonLivePhotoMessages({
-                            platform: 'bilibili',
-                            staticUrl: imageSrc,
-                            liveVideoUrl: img2.live_url,
-                            index: imageIndex,
-                            headers: {
-                              ...bilibiliBaseHeaders,
-                              Referer: 'https://www.bilibili.com/'
-                            }
-                          })
-                          tempFiles.push(...livePhoto.tempFiles)
-                          hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-                          if (livePhoto.messages.length > 0) {
-                            imgArray.push(...livePhoto.messages)
-                            continue
-                          }
+                        const livePhoto = livePhotoBatch.results[imageIndex]
+                        if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                          imgArray.push(...livePhoto.messages)
+                          continue
                         }
 
                         const imageUrl = await processImageUrl(imageSrc, dynamicItem.remark || 'B站动态图片', imageIndex, bilibiliBaseHeaders)

@@ -1,3 +1,4 @@
+import { withDownloadBucket } from './DownloadBudget.js'
 import {
   ParseScheduler,
   type ParseSchedulerSnapshot,
@@ -129,7 +130,15 @@ export class ParseCoordinator {
   ): Promise<T> {
     const fingerprint = createParseFingerprint(identity)
 
-    return this.scheduler.submit(fingerprint, async () => {
+    // 下载连接预算的桶标签就在这里落地：identity.platform 是全仓库唯一一处
+    // 「一次解析属于哪个平台」的权威来源，而 withDownloadBucket 用 AsyncLocalStorage
+    // 把它铺到整条调用链上 —— downloadFile / downloadVideo / processImageUrl /
+    // buildLivePhotoMessages 这些深层 helper 因此不用改签名就能记入正确的桶。
+    //
+    // 套在 scheduler.submit 的任务闭包**里面**而不是外面：run() 必须在任务真的开始
+    // 执行时进入，这样任务内部创建的所有异步资源才继承得到上下文。套在外面的话，
+    // 排队期间上下文早就退出了，被调度器延后启动的任务会落到 default 桶。
+    return this.scheduler.submit(fingerprint, async () => await withDownloadBucket(identity.platform, async () => {
       notifyReaction(reaction, 'processing')
 
       try {
@@ -140,7 +149,7 @@ export class ParseCoordinator {
         notifyReaction(reaction, 'failed')
         throw error
       }
-    })
+    }))
   }
 
   getSnapshot (): ParseSchedulerSnapshot {

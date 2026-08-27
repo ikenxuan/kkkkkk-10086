@@ -7,6 +7,7 @@ import type { ImageMessage } from '@/module/utils/Watermark'
 import { Networks, baseHeaders } from '@/module/utils/Networks'
 import Common from '@/module/utils/Common'
 import Config from '@/module/utils/Config'
+import { getDownloadBudgetLimit } from '@/module/utils/DownloadBudget'
 import { Render } from '@/module/utils/Render'
 import { ffmpeg, loopVideoWithTransition } from '@/module/utils/FFmpeg'
 import { getErrorMessage } from '@/module/utils/error-message'
@@ -21,32 +22,67 @@ export type MotionPhotoSystem = 'google' | 'xiaomi' | 'oppo' | 'huawei_honor'
 /** BGM 合并模式 */
 export type LivePhotoMergeMode = 'independent' | 'continuous'
 
-/** 实况图消息构建选项 */
-export interface BuildLivePhotoOptions {
-  /** 日志与临时文件前缀 */
-  platform?: string
+/** 一张图自己的实况图参数。缺 staticUrl / liveVideoUrl 表示这张图不做实况图。 */
+export interface LivePhotoBatchItem {
   /** 静态图地址 */
   staticUrl?: string
   /** 实况图视频地址 */
   liveVideoUrl?: string
-  /** 当前图片序号 */
+  /** 当前图片序号，只用于临时文件名 */
   index?: number
+  /** 视频循环次数。抖音的 clip_type === 4 要 1、其余 3，是按图区分的参数 */
+  loopCount?: number
+}
+
+/** 整批图共用的实况图参数 */
+export interface BuildLivePhotoBatchOptions {
+  /** 日志与临时文件前缀 */
+  platform?: string
   headers?: AxiosRequestConfig['headers']
   /** 本地 BGM 文件路径 */
   bgmPath?: string
   /** BGM 合并模式 */
   mergeMode?: LivePhotoMergeMode
-  /** 连续模式上下文 */
+  /** 连续模式上下文。批量入口把它当成整批的起点，之后按序在批内自己串下去 */
   context?: LoopVideoContext
-  /** 视频循环次数 */
-  loopCount?: number
+  /**
+   * 滑动窗口大小：同时处于「已开始下载但还没被 ffmpeg 消费」状态的图片数上限。
+   * 缺省取所属平台桶的下载额度。它决定磁盘峰值 —— 临时文件要到整批发完才删，
+   * 全量预下载会让一个 30 图图集峰值涨到上百 MB。
+   */
+  windowSize?: number
 }
+
+/** 实况图消息构建选项（单张入口） */
+export interface BuildLivePhotoOptions extends LivePhotoBatchItem, BuildLivePhotoBatchOptions {}
 
 /** 实况图消息构建结果 */
 export interface BuildLivePhotoResult {
   messages: unknown[]
   tempFiles: FileInfo[]
   generatedLivePhoto: boolean
+  context?: LoopVideoContext
+}
+
+/** 批量入口里单张图的结果。临时文件只在批结果上汇总一份，见 BuildLivePhotoBatchResult。 */
+export interface LivePhotoBatchItemResult {
+  /** 该图生成的消息段。空数组表示调用方要回退成普通图片 */
+  messages: unknown[]
+  generatedLivePhoto: boolean
+}
+
+/** 批量入口的结果 */
+export interface BuildLivePhotoBatchResult {
+  /** 与输入 items 一一对应、顺序完全一致 */
+  results: LivePhotoBatchItemResult[]
+  /**
+   * 整批产生的全部临时文件，含失败图已经落盘的那一半。
+   * 清理只看这一份 —— 逐图结果里刻意不再重复带一遍，免得调用方两处都收、删两次。
+   */
+  tempFiles: FileInfo[]
+  /** 任意一张生成了实况图即为 true，决定要不要追加提示图 */
+  generatedLivePhoto: boolean
+  /** 整批结束时的 BGM 上下文 */
   context?: LoopVideoContext
 }
 
@@ -320,59 +356,145 @@ const buildGoogleMotionPhoto = async ({
 }
 
 /**
- * 生成实况图相关消息元素。
+ * 一张图的下载产物。
+ *
+ * 下载（网络 I/O，可以并发）和转码（ffmpeg，必须串行）在这里被切成两半，
+ * 批量入口才能让二者重叠：下载在信号量额度内滑动窗口推进，ffmpeg 按序单线程消费。
  */
-export const buildLivePhotoMessages = async (
-  options: BuildLivePhotoOptions
-): Promise<BuildLivePhotoResult> => {
-  const messages: unknown[] = []
-  const tempFiles: FileInfo[] = []
-  const mode = getLivePhotoMode()
-  const shouldGenerateVideo = mode === 'video_and_livephoto' || mode === 'video_only'
-  const shouldGenerateLivePhoto = mode === 'video_and_livephoto' || mode === 'livephoto_only'
-
-  if (!options?.staticUrl || !options?.liveVideoUrl || (!shouldGenerateVideo && !shouldGenerateLivePhoto)) {
-    return { messages, tempFiles, generatedLivePhoto: false }
+type LivePhotoDownload =
+  | {
+    /** 这张图不做实况图（缺地址，或生成模式两项都关了） */
+    kind: 'skipped'
+  }
+  | {
+    kind: 'failed'
+    tempFiles: FileInfo[]
+    error: unknown
+  }
+  | {
+    kind: 'ready'
+    tempFiles: FileInfo[]
+    staticFile: FileInfo
+    liveVideo: FileInfo
+    loopPath: string
+    motionPath: string
   }
 
-  const platform = options.platform || 'livephoto'
-  const headers = options.headers || baseHeaders
+/** 当前生成模式下要产出哪些东西 */
+const getGenerationPlan = (): { video: boolean, livePhoto: boolean } => {
+  const mode = getLivePhotoMode()
+  return {
+    video: mode === 'video_and_livephoto' || mode === 'video_only',
+    livePhoto: mode === 'video_and_livephoto' || mode === 'livephoto_only'
+  }
+}
+
+/**
+ * 下载一张图的静态图和实况视频。**不抛异常**：失败也返回结果对象。
+ *
+ * 批量入口会先把若干张的下载并发跑起来、之后才逐个 await，任何一个 reject 都会变成
+ * unhandled rejection，所以失败必须走返回值而不是异常。
+ */
+const downloadLivePhotoSources = async (
+  item: LivePhotoBatchItem,
+  shared: BuildLivePhotoBatchOptions
+): Promise<LivePhotoDownload> => {
+  const plan = getGenerationPlan()
+  if (!item.staticUrl || !item.liveVideoUrl || (!plan.video && !plan.livePhoto)) {
+    return { kind: 'skipped' }
+  }
+
+  const platform = shared.platform || 'livephoto'
+  const headers = shared.headers || baseHeaders
   const name = getTimestampName()
-  const index = options.index || 0
+  const index = item.index || 0
   const staticPath = path.join(Common.tempDri.images, `${platform}_static_${name}_${index}.jpg`)
   const liveVideoPath = path.join(Common.tempDri.video, `${platform}_live_src_${name}_${index}.mp4`)
+  const tempFiles: FileInfo[] = []
+
+  // 静态图和实况视频之间没有任何依赖，原先两个连续 await 是纯白等。
+  //
+  // 用 allSettled 而不是 all：半边失败时另一边可能已经落盘，那个文件必须被收进
+  // tempFiles，否则临时文件泄漏 —— 改造前就是这样，旧代码在两个下载都成功后才
+  // `push(staticFile, liveVideo)`，视频下载失败时静态图就永远留在磁盘上了。
+  const [staticResult, videoResult] = await Promise.allSettled([
+    downloadToFile(item.staticUrl, staticPath, headers),
+    downloadToFile(item.liveVideoUrl, liveVideoPath, headers)
+  ])
+  if (staticResult.status === 'fulfilled') tempFiles.push(staticResult.value)
+  if (videoResult.status === 'fulfilled') tempFiles.push(videoResult.value)
+
+  // 两个分支分开写而不是三元：TS 只在各自的 if 里才把 PromiseSettledResult
+  // 收窄成 rejected，合成一条三元的话 else 侧读不到 .reason。
+  if (staticResult.status === 'rejected') {
+    return { kind: 'failed', tempFiles, error: staticResult.reason }
+  }
+  if (videoResult.status === 'rejected') {
+    return { kind: 'failed', tempFiles, error: videoResult.reason }
+  }
+
+  return {
+    kind: 'ready',
+    tempFiles,
+    staticFile: staticResult.value,
+    liveVideo: videoResult.value,
+    loopPath: path.join(Common.tempDri.video, `${platform}_live_loop_${name}_${index}.mp4`),
+    motionPath: path.join(Common.tempDri.images, `MVIMG_${name}_${index}.jpg`)
+  }
+}
+
+/**
+ * 把一张图的下载产物转码成消息段。**必须串行调用**，两条独立理由：
+ *
+ * 1. `mergeMode === 'continuous'` 时 `context` 是每轮输出喂下一轮输入的串行数据依赖 ——
+ *    第 N 张图的视频要知道 BGM 在第 N-1 张结束时播到哪。并发跑就断了这条链。
+ * 2. ffmpeg 是 CPU 密集型，并发只会互相抢资源。
+ *
+ * 同样**不抛异常**：失败时返回空 messages。`tempFiles` 是函数级累加器而不是 return
+ * 时才拼的，所以 catch 里也能把已经产出的临时文件带回去。
+ */
+const composeLivePhoto = async (
+  download: Extract<LivePhotoDownload, { kind: 'ready' }>,
+  item: LivePhotoBatchItem,
+  shared: BuildLivePhotoBatchOptions,
+  context: LoopVideoContext | undefined
+): Promise<BuildLivePhotoResult> => {
+  const platform = shared.platform || 'livephoto'
+  const plan = getGenerationPlan()
+  const messages: unknown[] = []
+  const tempFiles: FileInfo[] = []
+  let nextContext = context
 
   try {
-    const staticFile = await downloadToFile(options.staticUrl, staticPath, headers)
-    const liveVideo = await downloadToFile(options.liveVideoUrl, liveVideoPath, headers)
-    tempFiles.push(staticFile, liveVideo)
-
-    if (shouldGenerateVideo) {
-      const loopPath = path.join(Common.tempDri.video, `${platform}_live_loop_${name}_${index}.mp4`)
-      const loopResult = await loopVideo(liveVideo.filepath, loopPath, {
-        staticImagePath: staticFile.filepath,
-        bgmPath: options.bgmPath,
-        mergeMode: options.mergeMode,
-        context: options.context,
-        loopCount: options.loopCount
+    if (plan.video) {
+      const loopResult = await loopVideo(download.liveVideo.filepath, download.loopPath, {
+        staticImagePath: download.staticFile.filepath,
+        bgmPath: shared.bgmPath,
+        mergeMode: shared.mergeMode,
+        context: nextContext,
+        loopCount: item.loopCount
       })
       if (loopResult.success) {
-        tempFiles.push({ filepath: loopPath, totalBytes: 0 })
+        tempFiles.push({ filepath: download.loopPath, totalBytes: 0 })
         const videoPath = Config.upload.videoSendMode === 'base64'
-          ? `base64://${fs.readFileSync(loopPath).toString('base64')}`
-          : `file://${loopPath}`
+          ? `base64://${fs.readFileSync(download.loopPath).toString('base64')}`
+          : `file://${download.loopPath}`
         messages.push(segment.video(videoPath))
-        options.context = loopResult.context || options.context
+        nextContext = loopResult.context || nextContext
       }
     }
 
-    if (shouldGenerateLivePhoto) {
-      const motionPath = path.join(Common.tempDri.images, `MVIMG_${name}_${index}.jpg`)
-      if (await buildGoogleMotionPhoto({ imagePath: staticFile.filepath, videoPath: liveVideo.filepath, outputPath: motionPath })) {
-        tempFiles.push({ filepath: motionPath, totalBytes: 0 })
+    if (plan.livePhoto) {
+      const built = await buildGoogleMotionPhoto({
+        imagePath: download.staticFile.filepath,
+        videoPath: download.liveVideo.filepath,
+        outputPath: download.motionPath
+      })
+      if (built) {
+        tempFiles.push({ filepath: download.motionPath, totalBytes: 0 })
         const imagePath = Config.upload.imageSendMode === 'base64'
-          ? `base64://${fs.readFileSync(motionPath).toString('base64')}`
-          : `file://${motionPath}`
+          ? `base64://${fs.readFileSync(download.motionPath).toString('base64')}`
+          : `file://${download.motionPath}`
         messages.push(segment.image(imagePath))
       }
     }
@@ -380,11 +502,125 @@ export const buildLivePhotoMessages = async (
     return {
       messages,
       tempFiles,
-      generatedLivePhoto: messages.some(item => isRecord(item) && item.type === 'image'),
-      context: options.context
+      generatedLivePhoto: messages.some(message => isRecord(message) && message.type === 'image'),
+      context: nextContext
     }
   } catch (error: unknown) {
     logger.warn(`[${platform}] 实况图处理失败，将回退普通图片`, error)
     return { messages: [], tempFiles, generatedLivePhoto: false }
   }
+}
+
+/**
+ * 生成一张图的实况图相关消息元素。
+ *
+ * 契约不变：失败时返回 `messages: []`，调用方看到空数组就回退成普通图片；
+ * `tempFiles` 在失败路径下也照样带回来。
+ */
+export const buildLivePhotoMessages = async (
+  options: BuildLivePhotoOptions
+): Promise<BuildLivePhotoResult> => {
+  const download = await downloadLivePhotoSources(options, options)
+  if (download.kind === 'skipped') {
+    return { messages: [], tempFiles: [], generatedLivePhoto: false }
+  }
+  if (download.kind === 'failed') {
+    logger.warn(`[${options.platform || 'livephoto'}] 实况图处理失败，将回退普通图片`, download.error)
+    return { messages: [], tempFiles: download.tempFiles, generatedLivePhoto: false }
+  }
+
+  const composed = await composeLivePhoto(download, options, options, options.context)
+  return {
+    messages: composed.messages,
+    tempFiles: [...download.tempFiles, ...composed.tempFiles],
+    generatedLivePhoto: composed.generatedLivePhoto,
+    context: composed.context
+  }
+}
+
+/**
+ * 批量生成实况图消息：下载滑动窗口并发推进，ffmpeg 严格按序单线程消费。
+ *
+ * 为什么不是「全量下完再转码」：临时文件要到整批发完才删，一个 30 图图集每对
+ * static + video 约 1-3MB，全量落盘峰值约 100MB。窗口让「已下载但还没被消费」的
+ * 数量恒定，磁盘峰值因此和图集大小无关。
+ *
+ * 为什么不是「一张一张下完就转」（改造前的样子）：那样下载和转码互相白等，
+ * 而这两件事一个是网络 I/O、一个是 CPU，本该重叠。
+ *
+ * `items` 里不做实况图的位置传 `{}` 即可 —— 结果数组和输入**逐位对齐**，
+ * 调用方按同一个下标取回退分支，输出顺序天然等于原图顺序。
+ */
+export const buildLivePhotoMessagesBatch = async (
+  items: readonly LivePhotoBatchItem[],
+  shared: BuildLivePhotoBatchOptions = {}
+): Promise<BuildLivePhotoBatchResult> => {
+  const results: LivePhotoBatchItemResult[] = []
+  const tempFiles: FileInfo[] = []
+  let generatedLivePhoto = false
+  let context = shared.context
+  if (items.length === 0) return { results, tempFiles, generatedLivePhoto, context }
+
+  const requestedWindow = Math.trunc(Number(shared.windowSize))
+  const windowSize = Number.isFinite(requestedWindow) && requestedWindow > 0
+    ? requestedWindow
+    : Math.max(1, getDownloadBudgetLimit())
+  const platform = shared.platform || 'livephoto'
+  const pending = new Map<number, Promise<LivePhotoDownload>>()
+  let nextToStart = 0
+
+  const itemAt = (index: number): LivePhotoBatchItem => {
+    const item = items[index] ?? {}
+    // index 只进临时文件名；调用方没显式给序号时用数组下标，保证同一批里不重名。
+    return item.index === undefined ? { ...item, index } : item
+  }
+
+  const ensureStarted = (index: number): Promise<LivePhotoDownload> => {
+    const existing = pending.get(index)
+    if (existing !== undefined) return existing
+    const task = downloadLivePhotoSources(itemAt(index), shared)
+    pending.set(index, task)
+    if (nextToStart <= index) nextToStart = index + 1
+    return task
+  }
+
+  // pending 里装的正是「已开始下载、但还没被 ffmpeg 消费」的那些图，
+  // 所以 `pending.size <= windowSize` 这条不变式就等价于磁盘峰值受窗口约束。
+  const fillWindow = (): void => {
+    while (nextToStart < items.length && pending.size < windowSize) ensureStarted(nextToStart)
+  }
+
+  fillWindow()
+
+  for (let index = 0; index < items.length; index += 1) {
+    const download = await ensureStarted(index)
+    pending.delete(index)
+    // 先补窗口再交给 ffmpeg：转码是串行的 CPU 活，下载要在它跑的时候继续推进，
+    // 否则窗口就退化成「下一张、转一张」的白等。
+    fillWindow()
+
+    if (download.kind === 'skipped') {
+      results[index] = { messages: [], generatedLivePhoto: false }
+      continue
+    }
+
+    tempFiles.push(...download.tempFiles)
+
+    if (download.kind === 'failed') {
+      // 单张失败只影响这一张：调用方看到空 messages 就把它回退成普通图片。
+      logger.warn(`[${platform}] 实况图处理失败，将回退普通图片`, download.error)
+      results[index] = { messages: [], generatedLivePhoto: false }
+      continue
+    }
+
+    const composed = await composeLivePhoto(download, itemAt(index), shared, context)
+    tempFiles.push(...composed.tempFiles)
+    // 连续 BGM 模式靠这一行串成一条链，所以上面那个 await 不能改成并发。
+    context = composed.context ?? context
+    generatedLivePhoto = generatedLivePhoto || composed.generatedLivePhoto
+    // 按下标回填、不是按完成顺序 push —— 转发消息里图片的顺序就是这个数组的顺序。
+    results[index] = { messages: composed.messages, generatedLivePhoto: composed.generatedLivePhoto }
+  }
+
+  return { results, tempFiles, generatedLivePhoto, context }
 }

@@ -7,7 +7,7 @@ import Common from '@/module/utils/Common'
 import { processImageUrl } from '@/module/utils/ImageHelper'
 import common from '@/runtime/host/common'
 import {
-  buildLivePhotoMessages,
+  buildLivePhotoMessagesBatch,
   buildLivePhotoTipMessage,
   pickXiaohongshuImageUrl,
   type XiaohongshuImageItem,
@@ -281,15 +281,18 @@ export class Xiaohongshu extends Base {
       const tempFiles: FileInfo[] = []
       let hasGeneratedLivePhoto = false
 
-      for (const [index, item] of (card.image_list || []).entries()) {
-        if (item?.live_photo && item?.stream) {
-          const livePhoto = await buildLivePhotoMessages(item, index)
-          tempFiles.push(...livePhoto.tempFiles)
-          hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-          if (livePhoto.messages.length > 0) {
-            imageMessages.push(...livePhoto.messages)
-            continue
-          }
+      const images = card.image_list || []
+      // 先把整批的下载在窗口里滚起来（ffmpeg 仍然按序串行），再按下标消费。
+      // 逐位对齐是关键：imageMessages 的顺序就是转发消息里图片的顺序。
+      const livePhotoBatch = await buildLivePhotoMessagesBatch(images)
+      tempFiles.push(...livePhotoBatch.tempFiles)
+      hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+
+      for (const [index, item] of images.entries()) {
+        const livePhoto = livePhotoBatch.results[index]
+        if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+          imageMessages.push(...livePhoto.messages)
+          continue
         }
 
         const imageUrl = await processImageUrl(pickXiaohongshuImageUrl(item) ?? '', card.title || '小红书图片', index, {

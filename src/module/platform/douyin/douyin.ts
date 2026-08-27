@@ -7,7 +7,7 @@ import {
   type DouyinDanmakuElem,
   type DouyinEmojiInfo
 } from './danmaku.js'
-import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { douyinCommentLimit } from '@/module/platform/common/commentLimit'
 import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
@@ -374,7 +374,6 @@ export class DouYin extends Base {
                   const processedImages = []
                   const temp = []
                   let hasGeneratedLivePhoto = false
-                  let bgmContext
                   const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
                   const musicUrl = getDouyinMusicUrl(VideoData.data.aweme_detail.music)
                   const liveimgbgm = musicUrl
@@ -389,8 +388,39 @@ export class DouYin extends Base {
                     : null
                   if (liveimgbgm?.filepath) temp.push(liveimgbgm)
 
+                  // 静态图的位置传空条目，让结果和 images 逐位对齐；
+                  // 连续 BGM 模式的 context 链由批量入口在内部按序串下去。
+                  const livePhotoItems: LivePhotoBatchItem[] = images.map(imageItem => {
+                    if (imageItem.clip_type === 2 || imageItem.clip_type === undefined) return {}
+                    return {
+                      staticUrl: imageItem.url_list?.[0] || imageItem.url_list?.[2] || imageItem.url_list?.[1],
+                      liveVideoUrl: getDouyinLiveVideoUrl(imageItem),
+                      loopCount: imageItem.clip_type === 4 ? 1 : 3
+                    }
+                  })
+                  const livePhotoBatch = await buildLivePhotoMessagesBatch(livePhotoItems, {
+                    platform: 'douyin',
+                    headers: {
+                      ...this.headers,
+                      Referer: 'https://www.douyin.com/',
+                      Cookie: ''
+                    },
+                    bgmPath: liveimgbgm?.filepath,
+                    mergeMode
+                  })
+                  temp.push(...livePhotoBatch.tempFiles)
+                  hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+
                   for (const [index, imageItem] of images.entries()) {
                     imagenum++
+                    const livePhoto = livePhotoBatch.results[index]
+                    if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                      processedImages.push(...livePhoto.messages)
+                      continue
+                    }
+
+                    // 静态图和「实况图失败后的回退」挑的 url_list 下标不一样
+                    // （静态图优先 [2]，实况图回退只认 [0]），这个区分不能合并掉。
                     if (imageItem.clip_type === 2 || imageItem.clip_type === undefined) {
                       image_url = imageItem.url_list?.[2] || imageItem.url_list?.[1] || imageItem.url_list?.[0] || ''
                       const processedImageUrl = await processImageUrl(image_url, g_title, index, {
@@ -401,28 +431,7 @@ export class DouYin extends Base {
                       continue
                     }
 
-                    const livePhoto = await buildLivePhotoMessages({
-                      platform: 'douyin',
-                      staticUrl: imageItem.url_list?.[0] || imageItem.url_list?.[2] || imageItem.url_list?.[1],
-                      liveVideoUrl: getDouyinLiveVideoUrl(imageItem),
-                      index,
-                      headers: {
-                        ...this.headers,
-                        Referer: 'https://www.douyin.com/',
-                        Cookie: ''
-                      },
-                      bgmPath: liveimgbgm?.filepath,
-                      mergeMode,
-                      context: bgmContext,
-                      loopCount: imageItem.clip_type === 4 ? 1 : 3
-                    })
-                    bgmContext = livePhoto.context || bgmContext
-                    temp.push(...livePhoto.tempFiles)
-                    hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-
-                    if (livePhoto.messages.length > 0) {
-                      processedImages.push(...livePhoto.messages)
-                    } else if (imageItem.url_list?.[0]) {
+                    if (imageItem.url_list?.[0]) {
                       const imageUrl = await processImageUrl(imageItem.url_list[0], g_title, index, {
                         Referer: 'https://www.douyin.com/',
                         Cookie: Config.cookies.douyin || ''
@@ -477,7 +486,6 @@ export class DouYin extends Base {
                 const images = []
                 const temp = []
                 let hasGeneratedLivePhoto = false
-                let bgmContext
                 const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
                 const musicUrl = getDouyinMusicUrl(VideoData.data.aweme_detail.music)
                 const liveimgbgm = musicUrl
@@ -497,8 +505,36 @@ export class DouYin extends Base {
                   logger.debug('未获取到合辑的图片数据')
                 }
                 g_title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 50, '抖音图集')
+
+                const mixLivePhotoItems: LivePhotoBatchItem[] = images1.map(item => {
+                  if (item.clip_type === 2 || item.clip_type === undefined) return {}
+                  return {
+                    staticUrl: item.url_list?.[0] || item.url_list?.[2] || item.url_list?.[1],
+                    liveVideoUrl: getDouyinLiveVideoUrl(item),
+                    loopCount: item.clip_type === 4 ? 1 : 3
+                  }
+                })
+                const mixLivePhotoBatch = await buildLivePhotoMessagesBatch(mixLivePhotoItems, {
+                  platform: 'douyin',
+                  headers: {
+                    ...this.headers,
+                    Referer: 'https://www.douyin.com/',
+                    Cookie: ''
+                  },
+                  bgmPath: liveimgbgm?.filepath,
+                  mergeMode
+                })
+                temp.push(...mixLivePhotoBatch.tempFiles)
+                hasGeneratedLivePhoto = mixLivePhotoBatch.generatedLivePhoto
+
                 for (const [index, item] of images1.entries()) {
                   imagenum++
+                  const livePhoto = mixLivePhotoBatch.results[index]
+                  if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                    images.push(...livePhoto.messages)
+                    continue
+                  }
+
                   // 静态图片，clip_type为2或undefined
                   if (item.clip_type === 2 || item.clip_type === undefined) {
                     if (item.url_list[0]) {
@@ -511,28 +547,7 @@ export class DouYin extends Base {
                     continue
                   }
 
-                  const livePhoto = await buildLivePhotoMessages({
-                    platform: 'douyin',
-                    staticUrl: item.url_list?.[0] || item.url_list?.[2] || item.url_list?.[1],
-                    liveVideoUrl: getDouyinLiveVideoUrl(item),
-                    index,
-                    headers: {
-                      ...this.headers,
-                      Referer: 'https://www.douyin.com/',
-                      Cookie: ''
-                    },
-                    bgmPath: liveimgbgm?.filepath,
-                    mergeMode,
-                    context: bgmContext,
-                    loopCount: item.clip_type === 4 ? 1 : 3
-                  })
-                  bgmContext = livePhoto.context || bgmContext
-                  temp.push(...livePhoto.tempFiles)
-                  hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-
-                  if (livePhoto.messages.length > 0) {
-                    images.push(...livePhoto.messages)
-                  } else if (item.url_list?.[0]) {
+                  if (item.url_list?.[0]) {
                     const imageUrl = await processImageUrl(item.url_list[0], g_title, index, {
                       Referer: 'https://www.douyin.com/',
                       Cookie: Config.cookies.douyin || ''

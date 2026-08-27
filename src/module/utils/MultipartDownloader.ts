@@ -6,6 +6,7 @@ import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { FileInfo } from '@/types/platform'
+import { clampConcurrency, tryAcquireDownloadSlots } from './DownloadBudget.js'
 import { isRecord } from './record.js'
 
 const MB = 1024 * 1024
@@ -41,15 +42,13 @@ interface MultipartDownloadOptions {
   headers: AxiosRequestConfig['headers']
   total: number
   validator: ResourceValidator | null
+  /** 该平台桶的额度上限；分片只能在这个上限内、且要扣掉文件级已占的那一格 */
   concurrency: number
+  /** 显式桶名，缺省时由 AsyncLocalStorage 的解析上下文决定 */
+  bucket?: string
   maxRetries: number
   maxSpeed?: number
   onProgress: (downloaded: number, total: number, isLive: boolean) => void
-}
-
-export const clampConcurrency = (value: unknown): number => {
-  const parsed = Math.trunc(Number(value))
-  return Number.isFinite(parsed) ? Math.min(8, Math.max(2, parsed)) : 4
 }
 
 export const parseContentRange = (value: unknown): ContentRange | null => {
@@ -62,8 +61,13 @@ export const parseContentRange = (value: unknown): ContentRange | null => {
   return { start, end, total }
 }
 
-export const createRanges = (total: number, concurrency: unknown): ByteRange[] => {
-  const count = Math.min(clampConcurrency(concurrency), total)
+/**
+ * 切分片区间。`concurrency` 是**已经和桶额度对齐过**的实际分片数，这里不再夹一次：
+ * 抢不到额度时它就是 1，而旧的 clamp 会把 1 抬回 2，等于让「退化成单线程」失效。
+ */
+export const createRanges = (total: number, concurrency: number): ByteRange[] => {
+  const requested = Math.trunc(Number(concurrency))
+  const count = Math.max(1, Math.min(Number.isFinite(requested) ? requested : 1, total))
   const size = Math.ceil(total / count)
   return Array.from({ length: count }, (_, index) => {
     const start = index * size
@@ -142,7 +146,13 @@ export const probeRangeSupport = async (options: ProbeOptions): Promise<{
 }
 
 export const downloadMultipart = async (options: MultipartDownloadOptions): Promise<FileInfo> => {
-  const concurrency = clampConcurrency(options.concurrency)
+  const budget = clampConcurrency(options.concurrency)
+  // 文件级下载已经占了这个桶的一格额度，所以分片最多再要 budget - 1 格。
+  // 用非阻塞的 tryAcquire：分片排队等额度会互相等死（桶里的额度全被这些
+  // 等着开分片的文件本身占着）。一格都抢不到就只开一条 range，退化成
+  // 单线程下载 —— 那是正确的降级，不是错误。
+  const shardSlots = tryAcquireDownloadSlots(budget - 1, { bucket: options.bucket })
+  const concurrency = 1 + shardSlots.length
   const ranges = createRanges(options.total, concurrency)
   const stagingPath = path.join(
     path.dirname(options.filepath),
@@ -233,6 +243,8 @@ export const downloadMultipart = async (options: MultipartDownloadOptions): Prom
     controller.abort()
     await fs.promises.rm(stagingPath, { force: true }).catch(() => {})
     throw error
+  } finally {
+    for (const slot of shardSlots) slot.release()
   }
 }
 

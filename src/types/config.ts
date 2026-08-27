@@ -225,6 +225,13 @@ export interface UploadConfig {
   groupfilevalue?: number
   imageSendMode?: 'url' | 'file' | 'base64'
   downloadMultiThread?: boolean
+  /**
+   * 下载连接预算：同一个平台同时最多开几条下载连接，2-16，默认 8。
+   *
+   * 不是「单文件分片数」——文件级下载和多线程分片共享同一份额度，见
+   * `module/utils/DownloadBudget.ts`。运行时一律经 `clampConcurrency()` 收敛，
+   * 所以这里读到的原始值可能超出区间。
+   */
   downloadConcurrency?: number
   downloadThrottle?: boolean
   downloadMaxSpeed?: number

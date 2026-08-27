@@ -13,6 +13,8 @@ vi.mock('../../src/module/utils/ImageHelper.js', () => ({ processImageUrl: vi.fn
 vi.mock('../../src/runtime/host/common.js', () => ({ default: { makeForwardMsg: vi.fn() } }))
 vi.mock('../../src/module/platform/xiaohongshu/livePhoto.js', () => ({
   buildLivePhotoMessages: vi.fn(),
+  // 批量入口的默认返回：results 为空 => 每张图都走普通图片回退分支。
+  buildLivePhotoMessagesBatch: vi.fn(async () => ({ results: [], tempFiles: [], generatedLivePhoto: false })),
   buildLivePhotoTipMessage: vi.fn(),
   pickXiaohongshuImageUrl: vi.fn()
 }))

@@ -27,7 +27,9 @@ export const upload: GuobaSchema[] = [
     option('Base64', 'base64')
   ], '网络图片发送方式，可选值：url / file / base64'),
   sw('upload.downloadMultiThread', '启用多线程下载', '仅对支持 Range 的大文件生效，不支持时自动回退单线程'),
-  num('upload.downloadConcurrency', '下载并发数', 2, 8, '路', '建议保持默认 4 路，过高可能触发服务器限流'),
+  // min/max 必须和 DownloadBudget 的 clampConcurrency 区间逐字对齐（2-16），
+  // 否则面板允许填的值会被运行时静默夹掉，用户看到的和生效的不是一回事。
+  num('upload.downloadConcurrency', '下载连接预算', 2, 16, '路', '同一个平台**同时**最多开几条下载连接，默认 8 路。文件级下载和多线程分片共享这一份额度，所以它是平台级的连接总上限，不是「一个文件切成几片」。按平台分桶（抖音 / B站 / 快手 / 小红书互不影响），调高会更快但更容易触发平台限流'),
   sw('upload.downloadThrottle', '下载限速', '下载限速开关，开启后会限制下载速度，避免触发服务器风控导致连接被重置'),
   num('upload.downloadMaxSpeed', '下载速度限制', 1, 1024, 'MB/s', '下载速度限制，单位：MB/s，仅在 downloadThrottle 开启后生效'),
   sw('upload.downloadAutoReduce', '断流自动降速', '断流自动降速，检测到连接被重置时自动降低下载速度'),

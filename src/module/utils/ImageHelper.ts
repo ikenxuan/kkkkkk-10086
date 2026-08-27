@@ -3,6 +3,7 @@ import path from 'node:path'
 import axios, { type AxiosRequestConfig } from 'axios'
 import Common from './Common.js'
 import Config from './Config.js'
+import { runWithDownloadSlot } from './DownloadBudget.js'
 import { getErrorMessage } from './error-message.js'
 import { sanitizeFilenameSegment } from './filename.js'
 import { baseHeaders } from './Networks.js'
@@ -42,7 +43,9 @@ const downloadImageBuffer = async (
   }
   if (fs.existsSync(imageUrl)) return await fs.promises.readFile(imageUrl)
 
-  const response = await axios.get<ArrayBuffer>(imageUrl, {
+  // 记入所属平台的连接预算：processImageUrls 是 Promise.all 全量展开的，
+  // 一个 30 图的图集在这里会一次性开 30 条连接。额度由桶统一压住。
+  const response = await runWithDownloadSlot(async () => await axios.get<ArrayBuffer>(imageUrl, {
     responseType: 'arraybuffer',
     timeout: Config.request?.timeout || 30000,
     maxRedirects: 5,
@@ -50,7 +53,7 @@ const downloadImageBuffer = async (
     proxy: Config.request?.proxy?.switch
       ? { host: Config.request.proxy.host, port: Number(Config.request.proxy.port), protocol: Config.request.proxy.protocol, auth: Config.request.proxy.auth }
       : false
-  })
+  }))
   return Buffer.from(response.data)
 }
 

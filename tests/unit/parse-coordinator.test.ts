@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import {
+  acquireDownloadSlot,
+  getCurrentDownloadBucket,
+  resetDownloadBudget,
+  setDownloadBudgetLimitResolver
+} from '../../src/module/utils/DownloadBudget.js'
+import {
   ParseCoordinator,
   createParseFingerprint,
   type ParseJobIdentity,
@@ -262,5 +268,47 @@ describe('ParseCoordinator', () => {
     await expect(first).resolves.toBe('first-result')
     await expect(second).resolves.toBe('second-result')
     expect(starts).toEqual(['first', 'second'])
+  })
+})
+
+describe('ParseCoordinator 下载桶上下文', () => {
+  it('把 identity.platform 铺成下载桶，跨调度延迟与 await 都不丢', async () => {
+    resetDownloadBudget()
+    setDownloadBudgetLimitResolver(() => 4)
+    try {
+      // 并发 1：第二个任务一定被排队、延后到另一个 tick 才启动。
+      // 上下文如果套在 submit 外面，它就会落到 default 桶。
+      const coordinator = new ParseCoordinator({ concurrency: 1 })
+      const firstGate = createDeferred<string>()
+
+      const observe = async (): Promise<{ inherited: string | undefined, slot: string }> => {
+        await new Promise(resolve => setTimeout(resolve, 1))
+        const slot = await acquireDownloadSlot()
+        slot.release()
+        return { inherited: getCurrentDownloadBucket(), slot: slot.bucket }
+      }
+
+      const first = coordinator.submit(
+        { platform: 'douyin', target: { type: 'work-id', value: 'first' }, scope: { type: 'group', id: '10001' } },
+        async () => {
+          await firstGate.promise
+          return await observe()
+        }
+      )
+      const second = coordinator.submit(
+        { platform: 'bilibili', target: { type: 'work-id', value: 'second' }, scope: { type: 'group', id: '10001' } },
+        observe
+      )
+
+      await flushMicrotasks()
+      firstGate.resolve('go')
+
+      await expect(first).resolves.toEqual({ inherited: 'douyin', slot: 'douyin' })
+      await expect(second).resolves.toEqual({ inherited: 'bilibili', slot: 'bilibili' })
+      // 上下文只在任务内部有效，不该泄漏到协调器外面
+      expect(getCurrentDownloadBucket()).toBeUndefined()
+    } finally {
+      resetDownloadBudget()
+    }
   })
 })

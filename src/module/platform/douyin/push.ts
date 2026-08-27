@@ -7,7 +7,8 @@ import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
 import { getDouyinID, douyinProcessVideos } from './index.js'
 import { getDouyinData } from './api.js'
-import { buildLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
+import { withDownloadBucket } from '@/module/utils/DownloadBudget'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
 import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
@@ -313,32 +314,38 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 执行主要的操作流程
+   * 执行主要的操作流程。
+   *
+   * 整段包在 `withDownloadBucket()` 里，是因为主动推送**不走** `runCoordinatedParse`，
+   * 于是 ParseCoordinator 铺的下载桶上下文在这条路上是空的 —— 不套的话这一轮推送里
+   * 所有下载都会落到 default 兜底桶，和别的平台抢同一份额度。
    */
   async action (): Promise<boolean | void> {
-    try {
-      await this.syncConfigToDatabase()
+    return await withDownloadBucket('douyin', async () => {
+      try {
+        await this.syncConfigToDatabase()
 
-      // 清理旧的作品缓存记录
-      const deletedCount = await cleanOldDynamicCache('douyin', 1)
-      if (deletedCount > 0) {
-        logger.info(`已清理 ${deletedCount} 条过期的抖音作品缓存记录`)
+        // 清理旧的作品缓存记录
+        const deletedCount = await cleanOldDynamicCache('douyin', 1)
+        if (deletedCount > 0) {
+          logger.info(`已清理 ${deletedCount} 条过期的抖音作品缓存记录`)
+        }
+
+        await this.ensureConfigFields(Config.pushlist.douyin || [])
+
+        // 检查备注信息
+        if (await this.checkremark()) return true
+
+        const data = await this.getDynamicList(Config.pushlist.douyin || [])
+
+        if (Object.keys(data).length === 0) return true
+
+        if (this.force) return await this.forcepush(data)
+        else return await this.getdata(data)
+      } catch (error) {
+        logger.error(error)
       }
-
-      await this.ensureConfigFields(Config.pushlist.douyin || [])
-
-      // 检查备注信息
-      if (await this.checkremark()) return true
-
-      const data = await this.getDynamicList(Config.pushlist.douyin || [])
-
-      if (Object.keys(data).length === 0) return true
-
-      if (this.force) return await this.forcepush(data)
-      else return await this.getdata(data)
-    } catch (error) {
-      logger.error(error)
-    }
+    })
   }
 
   /**
@@ -605,7 +612,6 @@ export class DouYinpush extends Base {
                   /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
                   const imageres = []
                   const temp = []
-                  let bgmContext: Parameters<typeof buildLivePhotoMessages>[0]['context']
                   let hasGeneratedLivePhoto = false
                   const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
                   const musicUrl = getDouyinMusicUrl(workData.music)
@@ -618,26 +624,29 @@ export class DouYinpush extends Base {
                   if (liveimgbgm?.filepath) temp.push(liveimgbgm)
 
                   try {
-                    for (const [imageIndex, item] of (workData.images || []).entries()) {
-                      if ((item.clip_type ?? 2) !== 2) {
-                        const livePhoto = await buildLivePhotoMessages({
-                          platform: 'douyin',
-                          staticUrl: item.url_list?.[0] || item.url_list?.[2] || item.url_list?.[1],
-                          liveVideoUrl: getDouyinLiveVideoUrl(item),
-                          index: imageIndex,
-                          headers: douyinBaseHeaders,
-                          bgmPath: liveimgbgm?.filepath,
-                          mergeMode,
-                          context: bgmContext,
-                          loopCount: item.clip_type === 4 ? 1 : 3
-                        })
-                        bgmContext = livePhoto.context || bgmContext
-                        temp.push(...livePhoto.tempFiles)
-                        hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-                        if (livePhoto.messages.length > 0) {
-                          imageres.push(...livePhoto.messages)
-                          continue
-                        }
+                    const pushImages = workData.images || []
+                    const livePhotoItems: LivePhotoBatchItem[] = pushImages.map(item => {
+                      if ((item.clip_type ?? 2) === 2) return {}
+                      return {
+                        staticUrl: item.url_list?.[0] || item.url_list?.[2] || item.url_list?.[1],
+                        liveVideoUrl: getDouyinLiveVideoUrl(item),
+                        loopCount: item.clip_type === 4 ? 1 : 3
+                      }
+                    })
+                    const livePhotoBatch = await buildLivePhotoMessagesBatch(livePhotoItems, {
+                      platform: 'douyin',
+                      headers: douyinBaseHeaders,
+                      bgmPath: liveimgbgm?.filepath,
+                      mergeMode
+                    })
+                    temp.push(...livePhotoBatch.tempFiles)
+                    hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+
+                    for (const [imageIndex, item] of pushImages.entries()) {
+                      const livePhoto = livePhotoBatch.results[imageIndex]
+                      if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                        imageres.push(...livePhoto.messages)
+                        continue
                       }
 
                       const imageUrl = item.url_list?.[2] || item.url_list?.[1] || item.url_list?.[0]

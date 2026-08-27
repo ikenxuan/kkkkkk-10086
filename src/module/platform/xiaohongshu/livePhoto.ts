@@ -1,9 +1,13 @@
+import type { AxiosRequestConfig } from 'axios'
 import { baseHeaders } from '@/module/utils/Networks'
 import Config from '@/module/utils/Config'
 import {
   buildLivePhotoMessages as buildCommonLivePhotoMessages,
+  buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch,
   buildLivePhotoTipMessage,
-  type BuildLivePhotoResult
+  type BuildLivePhotoBatchResult,
+  type BuildLivePhotoResult,
+  type LivePhotoBatchItem
 } from '@/module/platform/common/livePhoto'
 
 export { buildLivePhotoTipMessage }
@@ -47,26 +51,47 @@ export const getXiaohongshuLivePhotoVideo = (
   return null
 }
 
+/** 整批小红书图片共用的请求头 */
+const xiaohongshuLivePhotoHeaders = (): AxiosRequestConfig['headers'] => ({
+  ...baseHeaders,
+  Referer: 'https://www.xiaohongshu.com',
+  Cookie: Config.cookies.xiaohongshu
+})
+
+/** 把一张小红书图片翻译成实况图批量入口认识的条目。不是实况图就返回空条目。 */
+const toLivePhotoBatchItem = (image: XiaohongshuImageItem | undefined): LivePhotoBatchItem => {
+  const staticUrl = pickXiaohongshuImageUrl(image)
+  const livePhotoVideo = getXiaohongshuLivePhotoVideo(image?.stream)
+  if (!image?.live_photo || !staticUrl || !livePhotoVideo?.master_url) return {}
+  return { staticUrl, liveVideoUrl: livePhotoVideo.master_url }
+}
+
 export const buildLivePhotoMessages = async (
   image: XiaohongshuImageItem | undefined,
   index: number
 ): Promise<BuildLivePhotoResult> => {
-  const staticUrl = pickXiaohongshuImageUrl(image)
-  const livePhotoVideo = getXiaohongshuLivePhotoVideo(image?.stream)
-
-  if (!image?.live_photo || !staticUrl || !livePhotoVideo?.master_url) {
+  const item = toLivePhotoBatchItem(image)
+  if (item.staticUrl === undefined) {
     return { messages: [], tempFiles: [], generatedLivePhoto: false }
   }
 
   return await buildCommonLivePhotoMessages({
     platform: 'xiaohongshu',
-    staticUrl,
-    liveVideoUrl: livePhotoVideo.master_url,
+    ...item,
     index,
-    headers: {
-      ...baseHeaders,
-      Referer: 'https://www.xiaohongshu.com',
-      Cookie: Config.cookies.xiaohongshu
-    }
+    headers: xiaohongshuLivePhotoHeaders()
+  })
+}
+
+/**
+ * 整篇笔记的图片一次过：下载滑动窗口并发，ffmpeg 按序串行。
+ * 结果和输入 `images` 逐位对齐，非实况图的位置是空 messages。
+ */
+export const buildLivePhotoMessagesBatch = async (
+  images: ReadonlyArray<XiaohongshuImageItem | undefined>
+): Promise<BuildLivePhotoBatchResult> => {
+  return await buildCommonLivePhotoMessagesBatch(images.map(toLivePhotoBatchItem), {
+    platform: 'xiaohongshu',
+    headers: xiaohongshuLivePhotoHeaders()
   })
 }

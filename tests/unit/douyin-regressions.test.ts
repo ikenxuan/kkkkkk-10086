@@ -48,6 +48,8 @@ vi.mock('@karinjs/md-html', () => ({ markdown: vi.fn((value: string) => value) }
 vi.mock('../../src/module/platform/common/danmaku.js', () => ({ burnDanmaku: vi.fn() }))
 vi.mock('../../src/module/platform/common/livePhoto.js', () => ({
   buildLivePhotoMessages: vi.fn(),
+  // 批量入口的默认返回：results 为空 => 每张图都走普通图片回退分支。
+  buildLivePhotoMessagesBatch: vi.fn(async () => ({ results: [], tempFiles: [], generatedLivePhoto: false })),
   buildLivePhotoTipMessage: vi.fn()
 }))
 vi.mock('../../src/module/platform/douyin/index.js', () => ({

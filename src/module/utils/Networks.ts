@@ -23,9 +23,13 @@ import type {
   NormalizedThrottleOptions
 } from '@/types/platform'
 import Config from './Config.js'
-import { getErrorMessage } from './error-message.js'
 import {
   clampConcurrency,
+  getDownloadBudgetLimit,
+  runWithDownloadSlot
+} from './DownloadBudget.js'
+import { getErrorMessage } from './error-message.js'
+import {
   downloadMultipart,
   MULTIPART_MIN_SIZE,
   probeRangeSupport
@@ -151,6 +155,14 @@ export interface NetworkRequestOptions {
   maxRetries?: number
   filepath?: string
   proxy?: AxiosProxyConfig | false
+  /**
+   * 显式指定这次下载记入哪个平台的连接预算桶。
+   *
+   * 缺省时由 `withDownloadBucket()` 铺的 AsyncLocalStorage 上下文决定（解析走
+   * ParseCoordinator、主动推送走各平台 push 的 action()）。只有拿不到上下文、
+   * 又不方便套 wrapper 的调用点才需要自己填。
+   */
+  downloadBucket?: string
 }
 
 export class Networks {
@@ -167,6 +179,7 @@ export class Networks {
   readonly userAgent: string
   readonly httpAgent: http.Agent
   readonly httpsAgent: https.Agent
+  readonly downloadBucket: string | undefined
 
   constructor (data: NetworkRequestOptions) {
     this.headers = data.headers || {}
@@ -177,6 +190,7 @@ export class Networks {
     this.timeout = data.timeout || 30000
     this.filepath = data.filepath
     this.maxRetries = data.maxRetries || 3
+    this.downloadBucket = data.downloadBucket
     this.userAgent = getRandomUserAgent()
     this.proxy = Config.request?.proxy?.switch
       ? { host: Config.request.proxy.host, port: parseInt(Config.request.proxy.port), protocol: Config.request.proxy.protocol, auth: Config.request.proxy.auth }
@@ -324,10 +338,30 @@ export class Networks {
     }
   }
 
+  /**
+   * 下载到 `filepath`，整个过程占用一格所属平台桶的连接额度。
+   *
+   * 额度只在最外层那一次调用申请：重试是这个方法自己递归调用的（下面 catch 里
+   * `this.downloadStream(progressCallback, retryCount + 1, ...)`），如果每层都申请，
+   * 重试就会在持有额度的同时再抢一格 —— 一个桶被同平台的下载占满时，
+   * 所有重试都在等着永远不会释放的额度，整批下载互相等死。
+   */
   async downloadStream (
     progressCallback: (downloadedBytes: number, totalBytes: number, isLiveStream: boolean) => void,
     retryCount = 0,
     options: DownloadOptions = {}
+  ): Promise<FileInfo> {
+    if (retryCount > 0) return await this.attemptDownloadStream(progressCallback, retryCount, options)
+    return await runWithDownloadSlot(
+      async () => await this.attemptDownloadStream(progressCallback, 0, options),
+      { bucket: this.downloadBucket }
+    )
+  }
+
+  private async attemptDownloadStream (
+    progressCallback: (downloadedBytes: number, totalBytes: number, isLiveStream: boolean) => void,
+    retryCount: number,
+    options: DownloadOptions
   ): Promise<FileInfo> {
     const { isLiveStream = false, liveStreamMaxSize = 10 * MB } = options
     const throttle = getThrottleOptions(options)
@@ -366,14 +400,17 @@ export class Networks {
         logger.debug(`服务器不满足多线程下载条件，自动回退单线程: ${getErrorMessage(error)}`)
       }
       if (probe?.total && probe.total >= MULTIPART_MIN_SIZE) {
-        logger.debug(`启用多线程下载: ${Config.upload.downloadConcurrency || 4} 路, ${formatBytes(probe.total)}`)
+        // 这里报的是「桶的额度上限」，不是实际分片数：分片要在这个上限内、
+        // 扣掉本次文件级已占的那一格之后再抢，抢到几格由 downloadMultipart 决定。
+        logger.debug(`启用多线程下载: 平台额度上限 ${getDownloadBudgetLimit()} 路, ${formatBytes(probe.total)}`)
         return await downloadMultipart({
           filepath,
           request,
           headers: this.headers,
           total: probe.total,
           validator: probe.validator,
-          concurrency: Config.upload.downloadConcurrency || 4,
+          concurrency: getDownloadBudgetLimit(),
+          bucket: this.downloadBucket,
           maxRetries: this.maxRetries,
           maxSpeed: throttle.enabled ? throttle.currentSpeed : 0,
           onProgress: progressCallback

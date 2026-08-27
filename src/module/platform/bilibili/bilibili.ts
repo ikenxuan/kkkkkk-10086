@@ -18,7 +18,7 @@ import {
 import type { BilibiliArticleCategoryInput } from './dynamicText.js'
 import { extractBilibiliArticleImages } from './article.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
-import { buildLivePhotoMessages as buildCommonLivePhotoMessages, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
+import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
@@ -980,27 +980,31 @@ export class Bilibili extends Base {
               let hasGeneratedLivePhoto = false
               const pics = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.pics || []
 
+              // 非实况图的位置传空条目，让结果和 pics 逐位对齐 ——
+              // imgArray 的顺序就是转发消息里图片的顺序。
+              const livePhotoItems: LivePhotoBatchItem[] = pics.map(item => (
+                item?.url && item.live_url
+                  ? { staticUrl: item.url, liveVideoUrl: item.live_url }
+                  : {}
+              ))
+              const livePhotoBatch = await buildCommonLivePhotoMessagesBatch(livePhotoItems, {
+                platform: 'bilibili',
+                headers: {
+                  ...baseHeaders,
+                  Referer: 'https://www.bilibili.com/'
+                }
+              })
+              tempFiles.push(...livePhotoBatch.tempFiles)
+              hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+
               for (const [index, item] of pics.entries()) {
                 const itemUrl = item?.url
                 if (!itemUrl) continue
 
-                if (item.live_url) {
-                  const livePhoto = await buildCommonLivePhotoMessages({
-                    platform: 'bilibili',
-                    staticUrl: itemUrl,
-                    liveVideoUrl: item.live_url,
-                    index,
-                    headers: {
-                      ...baseHeaders,
-                      Referer: 'https://www.bilibili.com/'
-                    }
-                  })
-                  tempFiles.push(...livePhoto.tempFiles)
-                  hasGeneratedLivePhoto = hasGeneratedLivePhoto || livePhoto.generatedLivePhoto
-                  if (livePhoto.messages.length > 0) {
-                    imgArray.push(...livePhoto.messages)
-                    continue
-                  }
+                const livePhoto = livePhotoBatch.results[index]
+                if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                  imgArray.push(...livePhoto.messages)
+                  continue
                 }
 
                 const imageUrl = await processImageUrl(itemUrl, dynamicInfo.data.data.item.modules.module_author?.name || 'B站动态图片', index, {
