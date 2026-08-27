@@ -28,3 +28,6 @@ AGENTS.md
 # 它是在 0471487 那个大迁移提交里被整棵工作树一起扫进来的，不是有意提交。
 # docs/ 下手写的文档（actions-local-validation.md）继续跟踪，所以只忽略这一层。
 docs/superpowers/
+# 抖音清晰度参数实测对照：一次性调查的产物，只对当时那次排查有意义，
+# 而且里面的签名 URL / cdn_url_expired 会过期。留在本地当参考，不进仓库。
+docs/douyin-video-quality.md
