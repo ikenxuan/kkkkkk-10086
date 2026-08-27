@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getDouyinWorkCoverUrl } from '../../src/module/platform/douyin/workType.js'
+import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl } from '../../src/module/platform/douyin/workType.js'
 
 /**
  * 抖音图床会把封面套上 `~tplv-dy-360p` 这类降质模板，签名绑在路径上，改 URL 换不回原图。
@@ -81,5 +81,75 @@ describe('getDouyinWorkCoverUrl 视频封面降质规避', () => {
     }))
 
     expect(cover).toBe('https://p9.douyinpic.com/real-cover.jpeg?ratio=360p')
+  })
+})
+
+/**
+ * 实况图取地址：必须走 `url_list` 的签名直链，不能自己拼 `aweme.snssdk.com`。
+ *
+ * 实测三条代价（都拿真实作品量过）：snssdk 在这条路上冷握手 5.7 秒而直链 0.3 秒
+ * （线上表现是一个五张图的作品五张全 ECONNRESET，全部退化成静态图）；
+ * `ratio=1080p` 会覆盖已选中的档位；302 会落到 `*.ctydoh.cn:20080` 这类随机字串域名。
+ */
+const DIRECT_H264 = 'https://v26-web.douyinvod.com/abc/?a=1128&sign=h264sig'
+const DIRECT_FALLBACK = 'https://v11-weba.douyinvod.com/def/?a=1128&sign=fallbacksig'
+
+describe('getDouyinLiveVideoUrl 实况图取地址', () => {
+  it('优先返回 play_addr_h264 的签名直链', () => {
+    const url = getDouyinLiveVideoUrl({
+      video: {
+        play_addr_h264: { uri: 'v0300fg10000abcdef', url_list: [DIRECT_H264, DIRECT_FALLBACK] },
+        play_addr: { uri: 'v0300fg10000abcdef', url_list: ['https://v11-weba.douyinvod.com/other/'] }
+      }
+    })
+
+    expect(url).toBe(DIRECT_H264)
+  })
+
+  it('h264 缺 url_list 时退到 play_addr 的直链，而不是就地拼 snssdk', () => {
+    // 关键点：play_addr_h264 存在但只有 uri，旧实现会立刻拿这个 uri 拼 snssdk，
+    // 白白放掉 play_addr 上现成的直链
+    const url = getDouyinLiveVideoUrl({
+      video: {
+        play_addr_h264: { uri: 'v0300fg10000abcdef' },
+        play_addr: { uri: 'v0300fg10000abcdef', url_list: [DIRECT_FALLBACK] }
+      }
+    })
+
+    expect(url).toBe(DIRECT_FALLBACK)
+  })
+
+  it('同一个 url_list 里跳过空串，取第一条真地址', () => {
+    const url = getDouyinLiveVideoUrl({
+      video: { play_addr_h264: { url_list: ['', DIRECT_H264] } }
+    })
+
+    expect(url).toBe(DIRECT_H264)
+  })
+
+  it('两个字段都没有 url_list 时才兜底拼 snssdk', () => {
+    // 兜底不能删：老数据或异常响应确实可能只给 uri。但它必须是最后一步。
+    const url = getDouyinLiveVideoUrl({
+      video: { play_addr: { uri: 'v0300fg10000abcdef' } }
+    })
+
+    expect(url).toBe('https://aweme.snssdk.com/aweme/v1/play/?video_id=v0300fg10000abcdef&ratio=1080p&line=0')
+  })
+
+  it('拿到直链时绝不含 snssdk / ratio 参数', () => {
+    // ratio=1080p 会让服务端按 ratio 重新给流，覆盖挑好的档位
+    const url = getDouyinLiveVideoUrl({
+      video: { play_addr_h264: { uri: 'v0300fg10000abcdef', url_list: [DIRECT_H264] } }
+    })
+
+    expect(url).not.toContain('aweme.snssdk.com')
+    expect(url).not.toContain('ratio=')
+  })
+
+  it('没有 video 节点或整个入参缺失时返回空串', () => {
+    expect(getDouyinLiveVideoUrl({})).toBe('')
+    expect(getDouyinLiveVideoUrl(undefined)).toBe('')
+    expect(getDouyinLiveVideoUrl({ video: {} })).toBe('')
+    expect(getDouyinLiveVideoUrl({ video: { play_addr_h264: { url_list: [] } } })).toBe('')
   })
 })

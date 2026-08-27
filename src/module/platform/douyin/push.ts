@@ -5,14 +5,14 @@ import type { DouyinFilterPushItem } from '@/module/db/douyin'
 import type { DouyinPushType } from '@/types/database'
 import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
-import { getDouyinID, douyinProcessVideos } from './index.js'
+import { getDouyinID, douyinProcessVideos, pickDouyinPlayUrl } from './index.js'
 import { getDouyinData } from './api.js'
 import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { withDownloadBucket } from '@/module/utils/DownloadBudget'
 import { buildPushListGroupInfo } from '@/module/platform/common/pushList'
 import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
-import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
+import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo, type DouyinLiveImageVideo } from './workType.js'
 import common from '@/runtime/host/common'
 import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
@@ -89,10 +89,7 @@ interface DouyinMusic {
 interface DouyinLiveImageItem {
   clip_type?: number
   url_list?: string[]
-  video?: {
-    play_addr_h264?: { uri?: string }
-    play_addr?: { uri?: string }
-  }
+  video?: DouyinLiveImageVideo
 }
 
 interface DouyinPushEvent extends BaseEvent {
@@ -285,11 +282,13 @@ export const getDouyinMusicUrl = (music: DouyinMusic | undefined): string => {
   }
 }
 
-/** 取 Live 图的视频地址，优先 h264 */
-export const getDouyinLiveVideoUrl = (imageItem: DouyinLiveImageItem | undefined): string => {
-  const uri = imageItem?.video?.play_addr_h264?.uri || imageItem?.video?.play_addr?.uri
-  return uri ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${uri}&ratio=1080p&line=0` : ''
-}
+/**
+ * 取 Live 图的视频地址。
+ *
+ * 实现在 `workType.ts`，这里只做 re-export 保持既有导入路径 ——
+ * 之前这里和 `douyin.ts` 各有一份自己拼 snssdk 地址的副本，两份都会踩同样的坑。
+ */
+export { getDouyinLiveVideoUrl }
 
 export class DouYinpush extends Base {
   declare e: DouyinPushEvent | undefined
@@ -569,8 +568,14 @@ export class DouYinpush extends Base {
                 // 如果新作品是视频
                 if (isVideo) {
                   try {
-                    /** 默认视频下载地址 */
-                    let downloadUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${workData.video.play_addr.uri}&ratio=1080p&line=0`
+                    /**
+                     * 视频下载地址：直接用 `url_list` 的签名直链，不再 `getLongLink()` 跟随跳转。
+                     *
+                     * 解析路径（`pickDouyinPlayUrl`）早就改成这样了，推送路径漏了。跟随跳转有两个代价：
+                     * 一是 302 会落到 cjjd14.com 这类 CDN，返回非 MP4 字节，下下来放不出来；
+                     * 二是 `getLongLink()` 用的是完整 GET，为了拿最终 URL 把整条视频缓冲了一遍。
+                     */
+                    let downloadUrl = ''
                     // 根据配置文件自动选择分辨率
                     if (Config.douyin.autoResolution) {
                       logger.debug(`开始排除不符合条件的视频分辨率；\n
@@ -579,22 +584,12 @@ export class DouYinpush extends Base {
                       分享链接：${logger.green(workData.share_url)}
                       `)
                       const videoObj = douyinProcessVideos(workData.video.bit_rate as never, Config.upload.filelimit || 100)
-                      downloadUrl = await new Networks({
-                        url: videoObj?.[0]?.play_addr?.url_list?.[0] || '',
-                        headers: {
-                          ...douyinBaseHeaders,
-                          Cookie: ''
-                        }
-                      }).getLongLink()
+                      downloadUrl = pickDouyinPlayUrl(videoObj?.[0]?.play_addr)
                     } else {
-                      downloadUrl = await new Networks({
-                        url: (workData.video.bit_rate[0]?.play_addr.url_list?.[0] || workData.video.play_addr_h264.url_list[0] || workData.video.play_addr_h264.url_list[0]) as string,
-                        headers: {
-                          ...douyinBaseHeaders,
-                          Cookie: ''
-                        }
-                      }).getLongLink()
+                      downloadUrl = pickDouyinPlayUrl(workData.video.bit_rate[0]?.play_addr) ||
+                        pickDouyinPlayUrl(workData.video.play_addr_h264)
                     }
+                    if (!downloadUrl) throw new Error('取不到可用的视频下载地址')
                     // 下载视频
                     await downloadVideo(this.e as BaseEvent, {
                       video_url: downloadUrl,

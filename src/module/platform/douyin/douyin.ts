@@ -12,7 +12,7 @@ import { douyinCommentLimit } from '@/module/platform/common/commentLimit'
 import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
-import { getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
+import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
@@ -243,7 +243,7 @@ const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean
  * 所以优先取 url_list[0] 的签名直链绕开这层跳转，拿不到再按下标往后退。
  * 之前这里取的是 [2] 并且还用 getLongLink 主动跟随那个 302，等于把落到坏 CDN 的概率全吃下来。
  */
-export const pickDouyinPlayUrl = (playAddr?: UrlResource): string =>
+export const pickDouyinPlayUrl = (playAddr?: { url_list?: string[] }): string =>
   playAddr?.url_list?.[0] || playAddr?.url_list?.[1] || playAddr?.url_list?.[2] || ''
 
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
@@ -272,11 +272,6 @@ const getDouyinMusicUrl = (music?: DouyinMusic): string => {
   } catch {
     return ''
   }
-}
-
-const getDouyinLiveVideoUrl = (imageItem?: DouyinLiveImageItem): string => {
-  const uri = imageItem?.video?.play_addr_h264?.uri || imageItem?.video?.play_addr?.uri
-  return uri ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${uri}&ratio=1080p&line=0` : ''
 }
 
 export class DouYin extends Base {
