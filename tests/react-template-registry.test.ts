@@ -2,6 +2,8 @@ import { access } from 'node:fs/promises'
 
 import { expect, test, vi } from 'vitest'
 
+import type { RuntimeReportData } from '../ktr/template/other/runtime/components/types'
+
 const state = vi.hoisted(() => ({
   failStandaloneLookup: true
 }))
@@ -21,7 +23,14 @@ vi.mock('node:fs', async () => {
   }
 })
 
-const runtimeData = {
+/*
+  标注成 RuntimeReportData 而不是让它自由推断：renderReactTemplate 的 data 形参是
+  `unknown`，所以这份 fixture 和模板契约之间原本没有任何编译期联系 —— 契约加字段时
+  这里不会红，只会在这个用例真的去渲染时炸成运行期 TypeError（`parse` 那次就是这样，
+  报错还落在 registry.ts 的 throw 行上，看不出是 fixture 缺字段）。
+  标上类型后，契约变动当场在 typecheck:test 里失败。
+*/
+const runtimeData: RuntimeReportData = {
   snapshotAt: '2026-08-19T00:00:00.000Z',
   identity: {
     pluginName: 'kkkkkk-10086',
@@ -84,6 +93,13 @@ const runtimeData = {
     download: {
       limit: 8,
       buckets: [{ label: '抖音', running: 3, queued: 0 }]
+    },
+    parse: {
+      available: true,
+      concurrency: 2,
+      running: 1,
+      queued: 0,
+      pending: 1
     }
   },
   releaseNotes: { markdown: 'Build works.', available: true }
