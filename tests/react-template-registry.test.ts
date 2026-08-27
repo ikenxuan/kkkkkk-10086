@@ -62,6 +62,30 @@ const runtimeData = {
     processRss: '100 MB',
     heapUsed: '50 MB'
   },
+  // 形状照抄 collectRuntimeReport() 的输出（src/module/utils/runtime-report.ts）。
+  // 这个用例只验「构建产物缺失后能重试加载」，但模板会真的读这些字段，
+  // 少一层就是渲染期 TypeError，而不是断言失败——所以这里必须给全。
+  concurrency: {
+    cache: {
+      enabled: true,
+      sampled: true,
+      hitRate: '78.4%',
+      hits: 132,
+      coalesced: 47,
+      misses: 49,
+      entries: 63,
+      capacity: 128,
+      negativeEntries: 2,
+      inflight: 1,
+      tiers: [
+        { label: '准静态接口', hitRate: '96.2%', detail: '命中 48 · 合并 2 · 未命中 2 · 缓存 4 条' }
+      ]
+    },
+    download: {
+      limit: 8,
+      buckets: [{ label: '抖音', running: 3, queued: 0 }]
+    }
+  },
   releaseNotes: { markdown: 'Build works.', available: true }
 }
 
