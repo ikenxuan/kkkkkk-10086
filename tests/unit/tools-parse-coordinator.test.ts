@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ParseCoordinator,
   createParseFingerprint,
+  getParseCoordinatorSnapshot,
   type ParseJobIdentity,
   type ParseReactionPort
 } from '../../src/module/utils/ParseCoordinator.js'
@@ -546,5 +547,44 @@ describe('kkkTools 指纹构造失败不再静默', () => {
     const fingerprintErrors = errorMock.mock.calls
       .filter(call => String(call[0]).includes('解析指纹构造失败'))
     expect(fingerprintErrors).toHaveLength(0)
+  })
+})
+
+describe('诊断卡能读到解析队列', () => {
+  /*
+    协调器实例是本文件模块级的 const，而诊断卡在 utils 层、引不到 apps，
+    所以靠 tools.ts 主动登记一次。这条链路没有类型约束：哪天那行登记被删掉，
+    编译、lint、别的测试全都照过，只有 `#kkk版本` 那一格悄悄变成「未初始化」。
+    这里读的是真实的登记结果（本文件已经 import 过真的 tools.ts）。
+  */
+  it('tools.ts 加载之后快照就能读到，并发上限跟着配置', () => {
+    const snapshot = getParseCoordinatorSnapshot()
+
+    expect(snapshot).toBeDefined()
+    expect(snapshot?.concurrency).toBe(configMock.app.parseConcurrency)
+  })
+
+  it('队列跑起来时快照里的数字跟着动', async () => {
+    let finishParse!: (value: boolean) => void
+    douyinResourcesMock.mockImplementation(async () => await new Promise<boolean>(resolve => {
+      finishParse = resolve
+    }))
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+
+    const parsing = tools.douyin(createEvent({
+      msg: 'https://www.douyin.com/video/7345',
+      group_id: 40001,
+      user_id: 9,
+      message_id: 'snapshot-running'
+    }))
+    await vi.waitFor(() => expect(douyinResourcesMock).toHaveBeenCalledTimes(1))
+
+    expect(getParseCoordinatorSnapshot()?.running).toBe(1)
+
+    finishParse(true)
+    await parsing
+
+    expect(getParseCoordinatorSnapshot()?.running).toBe(0)
+    expect(getParseCoordinatorSnapshot()?.pending).toBe(0)
   })
 })

@@ -103,6 +103,15 @@ export const runtimeStable: RuntimeReportData = {
         { label: '哔哩哔哩', running: 2, queued: 5 },
         { label: '小红书', running: 0, queued: 0 }
       ]
+    },
+    // 给「跑满 + 有排队」的一组值：满额那根条正好是最容易画溢出的地方，
+    // 而 queued > 0 时才看得出 pending 和 running 的差
+    parse: {
+      available: true,
+      concurrency: 2,
+      running: 2,
+      queued: 3,
+      pending: 5
     }
   },
   releaseNotes: {

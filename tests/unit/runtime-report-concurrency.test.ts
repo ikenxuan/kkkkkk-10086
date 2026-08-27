@@ -46,12 +46,19 @@ const cacheSnapshot = vi.hoisted(() => ({
 const budgetSnapshot = vi.hoisted(() => ({
   value: { limit: 8, buckets: [] as Array<Record<string, unknown>> } as Record<string, unknown>
 }))
+/** 协调器没登记时是 undefined，这一格要能区分「读不到」和「队列是空的」 */
+const parseSnapshot = vi.hoisted(() => ({
+  value: undefined as Record<string, unknown> | undefined
+}))
 
 vi.mock('../../src/module/utils/ApiCache.js', () => ({
   getApiCacheSnapshot: () => cacheSnapshot.value
 }))
 vi.mock('../../src/module/utils/DownloadBudget.js', () => ({
   getDownloadBudgetSnapshot: () => budgetSnapshot.value
+}))
+vi.mock('../../src/module/utils/ParseCoordinator.js', () => ({
+  getParseCoordinatorSnapshot: () => parseSnapshot.value
 }))
 
 const { collectRuntimeReport } = await import('../../src/module/utils/runtime-report.js')
@@ -76,6 +83,7 @@ beforeEach(() => {
     tiers: []
   }
   budgetSnapshot.value = { limit: 8, buckets: [] }
+  parseSnapshot.value = undefined
 })
 
 afterEach(() => {
@@ -196,5 +204,78 @@ describe('下载桶占用', () => {
   it('一次下载都没跑过时桶列表是空数组，让模板画「暂无下载任务」', () => {
     expect(collect().download.buckets).toEqual([])
     expect(collect().download.limit).toBe(8)
+  })
+})
+
+describe('解析队列占用', () => {
+  it('计数原样透传', () => {
+    parseSnapshot.value = {
+      concurrency: 2,
+      running: 2,
+      queued: 3,
+      pending: 5,
+      runningFingerprints: ['parse:v1:["douyin","url","https://www.douyin.com/video/1","group","114"]'],
+      queuedFingerprints: []
+    }
+
+    expect(collect().parse).toEqual({
+      available: true,
+      concurrency: 2,
+      running: 2,
+      queued: 3,
+      pending: 5
+    })
+  })
+
+  // 指纹是「平台 + 作品链接 + 群号」拼出来的。这张卡的前提是群里触发也不会把
+  // 用户数据画进图里，所以指纹一个都不能进 payload —— 光靠人看 collect() 的
+  // 字面量看不出漏没漏，这里按值扫一遍。
+  it('指纹一个都不带出来', () => {
+    const url = 'https://www.douyin.com/video/7123456789'
+    parseSnapshot.value = {
+      concurrency: 2,
+      running: 1,
+      queued: 1,
+      pending: 2,
+      runningFingerprints: [`parse:v1:["douyin","url","${url}","group","114514"]`],
+      queuedFingerprints: ['parse:v1:["bilibili","work-id","BV1xx411c7mD","private","2233"]']
+    }
+
+    const serialized = JSON.stringify(collect().parse)
+    expect(serialized).not.toContain(url)
+    expect(serialized).not.toContain('114514')
+    expect(serialized).not.toContain('BV1xx411c7mD')
+    expect(serialized).not.toContain('parse:v1:')
+  })
+
+  // 协调器实例归 apps/tools.ts 所有。只加载 utils 的场合读不到，
+  // 这时候画一排 0 会被读成「队列是空的」，得让模板改写文案。
+  it('协调器没登记时标成不可用，而不是报一排 0', () => {
+    expect(collect().parse).toEqual({
+      available: false,
+      concurrency: 0,
+      running: 0,
+      queued: 0,
+      pending: 0
+    })
+  })
+
+  it('队列真的空着时是可用 + 全 0，和「读不到」区分得开', () => {
+    parseSnapshot.value = {
+      concurrency: 4,
+      running: 0,
+      queued: 0,
+      pending: 0,
+      runningFingerprints: [],
+      queuedFingerprints: []
+    }
+
+    expect(collect().parse).toEqual({
+      available: true,
+      concurrency: 4,
+      running: 0,
+      queued: 0,
+      pending: 0
+    })
   })
 })

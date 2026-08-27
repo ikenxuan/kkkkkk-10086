@@ -156,3 +156,28 @@ export class ParseCoordinator {
     return this.scheduler.getSnapshot()
   }
 }
+
+/**
+ * 当前在用的那个协调器。
+ *
+ * 诊断卡要读解析队列的实时数字，但协调器实例是 `apps/tools.ts` 的模块级 const，
+ * 而 `runtime-report.ts` 不能反过来引 apps 层（apps 引 utils，反向引会成环，
+ * 且 tools.ts 一加载就会注册命令、读一遍配置）。所以由 tools.ts 主动登记，
+ * 报告侧只读这个引用 —— 和 ApiCache / DownloadBudget 那两套「模块级单例导出只读快照」
+ * 是同一个形状，只是实例的所有权在 apps 层，多一次登记动作。
+ */
+let activeCoordinator: ParseCoordinator | undefined
+
+/** 登记当前协调器，供诊断卡读取队列快照 */
+export const setActiveParseCoordinator = (coordinator: ParseCoordinator | undefined): void => {
+  activeCoordinator = coordinator
+}
+
+/**
+ * 解析队列的只读快照。
+ *
+ * 返回 undefined 表示还没有协调器登记（比如只加载了 utils 层的单元测试环境），
+ * 诊断卡据此写「未初始化」而不是画一排 0 —— 后者会被读成「队列是空的」。
+ */
+export const getParseCoordinatorSnapshot = (): ParseSchedulerSnapshot | undefined =>
+  activeCoordinator?.getSnapshot()

@@ -11,6 +11,7 @@ import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import {
   createParseFingerprint,
   ParseCoordinator,
+  setActiveParseCoordinator,
   type ParseJobIdentity,
   type ParseScope,
   type ParseTarget
@@ -67,6 +68,10 @@ const parseCoordinator = new ParseCoordinator({
     ? configuredParseConcurrency
     : 2
 })
+
+// 登记给诊断卡用。协调器实例的所有权在这里（并发数要读配置），而 runtime-report
+// 在 utils 层、引不到 apps，所以由这边主动登记一次。
+setActiveParseCoordinator(parseCoordinator)
 
 const PLATFORM_CONFIG: PlatformConfig[] = [
   {

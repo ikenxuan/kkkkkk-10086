@@ -110,6 +110,24 @@ export interface RuntimeReportData {
         queued: number
       }>
     }
+    /**
+     * 解析队列占用。
+     *
+     * 刻意没有指纹列表：指纹由平台 + 作品链接 + 群号拼成，而这张卡的前提是
+     * 群聊触发也不会把用户数据画进图里。
+     */
+    parse: {
+      /** 协调器有没有登记。false 时下面四个数都是 0，模板应写「未初始化」而不是画 0 */
+      available: boolean
+      /** 允许同时跑的解析数，来自 `app.parseConcurrency` */
+      concurrency: number
+      /** 正在跑的解析数 */
+      running: number
+      /** 在队列里等额度的解析数 */
+      queued: number
+      /** 在跑 + 排队，也是去重的判据（同一指纹再来会挂到已有的那个上） */
+      pending: number
+    }
   }
   /** 当前插件版本的变更日志 */
   releaseNotes: {

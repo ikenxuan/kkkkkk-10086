@@ -28,6 +28,7 @@ import type { MessageEvent } from '@/types/message'
 import { getApiCacheSnapshot, type ApiCacheTier } from './ApiCache.js'
 import Config from './Config.js'
 import { getDownloadBudgetSnapshot } from './DownloadBudget.js'
+import { getParseCoordinatorSnapshot } from './ParseCoordinator.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
 import Version from './Version.js'
 
@@ -226,6 +227,7 @@ export const collectRuntimeReport = (event: MessageEvent) => {
   const buildMetadata = getBuildMetadata()
   const cacheSnapshot = getApiCacheSnapshot()
   const downloadSnapshot = getDownloadBudgetSnapshot()
+  const parseSnapshot = getParseCoordinatorSnapshot()
   const cacheLookups = cacheSnapshot.hits + cacheSnapshot.coalesced + cacheSnapshot.misses
   const currentChangelog = getLocalChangelog(1)
   const rawScale = Number(Config.app.renderScale) / 100
@@ -325,6 +327,20 @@ export const collectRuntimeReport = (event: MessageEvent) => {
           running: bucket.running,
           queued: bucket.queued
         }))
+      },
+      // 刻意只给计数，不给 runningFingerprints / queuedFingerprints：指纹是
+      // 平台 + 作品链接 + 群号拼出来的，而这张卡的前提是「群里触发也不会把
+      // 机器身份和用户数据画进图里」。谁在解析什么不属于运行环境诊断。
+      parse: {
+        // 协调器实例归 apps/tools.ts 所有，没加载时读不到（诊断卡据此写「未初始化」，
+        // 而不是画一排 0 —— 那会被读成「队列是空的」）
+        available: parseSnapshot !== undefined,
+        concurrency: parseSnapshot?.concurrency ?? 0,
+        running: parseSnapshot?.running ?? 0,
+        queued: parseSnapshot?.queued ?? 0,
+        // pending = 排队 + 在跑，也是去重的判据（同一指纹再来会挂到已有的那个上）。
+        // 单独给出来是因为 pending > running + queued 说不通，一眼能看出数字出错
+        pending: parseSnapshot?.pending ?? 0
       }
     },
     releaseNotes: {

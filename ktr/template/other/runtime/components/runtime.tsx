@@ -36,6 +36,7 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
   const isDark = isDarkMode(props.ctx)
   const cache = data.concurrency.cache
   const download = data.concurrency.download
+  const parse = data.concurrency.parse
   const releaseLabel =
     data.identity.releaseType.toLowerCase() === 'stable'
       ? '正式版'
@@ -335,6 +336,32 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
               ))}
             </div>
           ) : null}
+
+          <div className="relative mt-20">
+            <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">
+              解析队列 · 并发上限 {parse.available ? parse.concurrency : '—'}
+            </div>
+            {parse.available ? (
+              <>
+                <div className="mt-3 flex items-end gap-5">
+                  <span className="whitespace-nowrap font-mono text-[48px] font-black leading-none tracking-[-0.02em] text-foreground">
+                    {parse.running} / {parse.concurrency}
+                  </span>
+                  <span className="whitespace-nowrap pb-2 font-mono text-[24px] font-bold text-foreground/40">
+                    排队 {parse.queued} · 在办 {parse.pending}
+                  </span>
+                </div>
+                <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-foreground/8">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: bucketWidth(parse.running, parse.concurrency), background: palette.meterGradient }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 whitespace-nowrap text-[34px] font-black text-foreground/45">未初始化</div>
+            )}
+          </div>
 
           <div className="relative mt-20">
             <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">下载额度占用 · 每桶上限 {download.limit}</div>
