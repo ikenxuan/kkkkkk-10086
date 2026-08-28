@@ -4,12 +4,35 @@ import { parseJsonSafely } from './workType.js'
 
 /**
  * 抖音清晰度档位，从高到低。
- * 与 `Config.douyin.videoQuality` 的取值域一致，只是不含 `adapt`（那是模式而不是档位）。
+ *
+ * 是 `Config.douyin.videoQuality` 取值域的**超集**：既不含 `adapt`（那是模式而不是档位），
+ * 又多一个 `480p`。抖音确实会给出整个作品只有 480p 的情况（实测样本「到洪崖洞了」两条
+ * `bit_rate` 的 `definition` 全是 `480p`），所以**识别域**必须认得 480p —— 认不出会让
+ * 整个作品一条档位都分不出来，直接掉进「取体积最小那条」的兜底分支，把更差的源发出去。
+ *
+ * **配置域**不开放选 480p：`VideoQuality` 是抖音和小红书共用的类型，而
+ * `xiaohongshu.ts` 的 `qualityPriority` 不认识 480p，放进去会让那边 `indexOf` 拿到 -1。
+ * 用户配 `540p` 遇到纯 480p 作品时，靠 `buildFallbackOrder` 向下回落照样能拿到 480p。
  */
-export type DouyinQualityLevel = '4k' | '2k' | '1080p' | '720p' | '540p'
+export type DouyinQualityLevel = '4k' | '2k' | '1080p' | '720p' | '540p' | '480p'
 
-/** 档位优先级，从高到低 */
-const QUALITY_PRIORITY: DouyinQualityLevel[] = ['4k', '2k', '1080p', '720p', '540p']
+/** 档位优先级，从高到低。480p 垫在最低档（480 < 540），是回落链的终点。 */
+const QUALITY_PRIORITY: DouyinQualityLevel[] = ['4k', '2k', '1080p', '720p', '540p', '480p']
+
+/**
+ * 档位 → 卡片上展示的标签，沿用抖音 Web 端播放器的说法。
+ *
+ * 比 `QUALITY_PRIORITY` 多担一层责任：这里是给人看的，所以 480p 也要有词条 ——
+ * 识别域认得 480p 却没有标签，纯 480p 作品的卡片会印出空清晰度。
+ */
+const QUALITY_LABEL: Record<DouyinQualityLevel, string> = {
+  '4k': '超清4K',
+  '2k': '超清2K',
+  '1080p': '高清1080P',
+  '720p': '高清720P',
+  '540p': '标清540P',
+  '480p': '标清480P'
+}
 
 /**
  * `video_extra.definition` → 内部档位名。
@@ -23,7 +46,8 @@ const DEFINITION_TO_LEVEL: Record<string, DouyinQualityLevel> = {
   '1440p': '2k',
   '1080p': '1080p',
   '720p': '720p',
-  '540p': '540p'
+  '540p': '540p',
+  '480p': '480p'
 }
 
 /** `bit_rate[]` 里挑源用得到的字段，只声明真正读的那几个 */
@@ -36,7 +60,70 @@ export interface DouyinBitRateItem {
   video_extra?: string
   play_addr: {
     data_size: number
+    /** 该档位的实际宽高，卡片上的「分辨率」印的就是这两个数 */
+    width?: number
+    height?: number
+    uri?: string
+    url_list?: string[]
   }
+}
+
+/** 拼播放地址用得到的 `play_addr` 字段 */
+export interface DouyinPlayAddrLike {
+  uri?: string
+  url_list?: string[]
+}
+
+/**
+ * 拼一条 `aweme.snssdk.com` 的播放地址，作为签名直链之外的**兜底**。
+ *
+ * 只在 `url_list` 为空、或者里面每一条都下载失败时才该被用到，
+ * 绝不能顶掉 `url_list[0]`：那条是带签名的 CDN 直链，
+ * `pickDouyinPlayUrl` 的注释里记了为什么它必须排在最前。
+ *
+ * **这条地址永远排在候选清单的最末尾。** 它不是「更差的画质」，而是更慢：
+ * 实测这个域名的冷启动握手要多花 ~5.7s（同一作品、同一网络下与签名直链对比），
+ * 因为它要先做一次抖音侧的负载均衡再 302 到真正的 CDN。
+ * 谁想把它挪前面「省一次 url_list 解析」，先把那 5.7s 补回来。
+ *
+ * 顺带修掉上游的一个拼串 bug：上游写的是 `?video_id=${uri}&&file_id=${fileId}`，
+ * 两个 `&` 会在 query 里夹出一个空参数。这里改用 `URLSearchParams`，
+ * 分隔符和转义都交给它，`uri` 里出现特殊字符也不会拼坏。
+ * @param playAddr - `bit_rate[]` 项或 `images[].video.play_addr_h264` 的 play_addr 对象
+ * @returns 完整播放地址；`uri` 缺失时返回空串，由调用方决定怎么兜
+ */
+export const buildDouyinPlayUrl = (playAddr?: DouyinPlayAddrLike | null): string => {
+  const uri = playAddr?.uri
+  if (!uri) return ''
+
+  const params = new URLSearchParams({ video_id: uri })
+  // url_list[2] 是 www.douyin.com 的包装地址，`file_id` 只在它的 query 里，
+  // 抖音靠这个参数把请求路由到与签名直链同一份文件。取不到就只带 video_id，
+  // 那样也能播，只是可能落到另一路转码结果。
+  const fileId = extractFileId(playAddr?.url_list)
+  if (fileId) params.set('file_id', fileId)
+
+  return `https://aweme.snssdk.com/aweme/v1/play/?${params.toString()}`
+}
+
+/**
+ * 从包装地址的 query 里取 `file_id`。
+ *
+ * 不写死下标 2：实测 `url_list` 的长度在 2~3 之间浮动，写死会在只有两条时漏掉。
+ * 逐条试到第一个带 `file_id` 的为止，都没有就返回 undefined。
+ * @param urlList - `play_addr.url_list`
+ * @returns file_id，取不到时 undefined
+ */
+const extractFileId = (urlList?: string[]): string | undefined => {
+  for (const url of urlList ?? []) {
+    try {
+      const fileId = new URL(url).searchParams.get('file_id')
+      if (fileId) return fileId
+    } catch {
+      // 不是合法 URL 就跳过，拼不出 file_id 不是致命错误
+    }
+  }
+  return undefined
 }
 
 /** 挑源参数 */
@@ -81,7 +168,55 @@ const guessLevelFromGearName = (gearName: string): DouyinQualityLevel | undefine
   if (gearName.includes('1080')) return '1080p'
   if (gearName.includes('720')) return '720p'
   if (gearName.includes('540')) return '540p'
+  // 480 排在 540 之后，跟着档位从高到低的顺序写。实测样本里 `normal_480_0` 与
+  // `comet_bvc1_r3_adapt_lowest_480_1` 走的都是 definition 主判据，这条只在 video_extra 消失时兜底。
+  if (gearName.includes('480')) return '480p'
   return undefined
+}
+
+/**
+ * 把选中的源格式化成卡片上展示的清晰度标签。
+ *
+ * 传入的必须是 {@link douyinProcessVideos} 选中的那一路源 —— 卡片写的清晰度要和实际下载的
+ * 那一路一致，否则会出现「卡片写 4K、实际下载 720p」的错位。
+ * @param video - 选中的视频源
+ * @returns 形如 `超清4K`；档位认不出时返回空串，交给调用方决定要不要展示
+ */
+export const formatDouyinQualityLabel = (video: DouyinBitRateItem | undefined | null): string => {
+  if (!video) return ''
+  const level = getDouyinQualityLevel(video)
+  return level ? QUALITY_LABEL[level] : ''
+}
+
+/**
+ * 卡片上「分辨率」那一栏要的三个字段。
+ *
+ * 宽高取自 `play_addr`（**选中那一路的**，不是顶层 `video.play_addr`）：抖音每个档位的
+ * `play_addr` 各带自己的宽高，顶层那份是默认档的，拿它会和卡片写的档位名对不上。
+ */
+export interface DouyinResolutionInfo {
+  height: number
+  width: number
+  name: string
+}
+
+/**
+ * 把选中的源整理成卡片上的分辨率信息。
+ * @param video - {@link douyinProcessVideos} 选中的那一路源
+ * @returns 三个字段齐了才返回对象；缺任何一个就返回 undefined，让卡片整块不渲染
+ */
+export const buildDouyinResolutionInfo = (
+  video: DouyinBitRateItem | undefined | null
+): DouyinResolutionInfo | undefined => {
+  const { width, height } = video?.play_addr ?? {}
+  // 宽高缺一个就整块不给：卡片第二行印的是「width × height px」，
+  // 少一半会印成「1080 × undefined px」，比不印更难看
+  if (!width || !height) return undefined
+  // 档位认不出时同样整块不给：第一行是档位名、第二行才是像素，
+  // 只留像素会印出一行空标签顶在上面，比不印更像渲染坏了
+  const name = formatDouyinQualityLabel(video)
+  if (!name) return undefined
+  return { width, height, name }
 }
 
 /**
@@ -90,10 +225,14 @@ const guessLevelFromGearName = (gearName: string): DouyinQualityLevel | undefine
  * 判据是逐条的，不是整个作品的：真 HDR 作品里 HDR 档与一条同分辨率的 SDR 档成对出现
  * （同 `quality_type`，只差 profile 和 pix_fmt），所以不能用顶层 `is_source_HDR` 排除，
  * 那会把整个作品的档位全清空。
+ *
+ * 导出是给卡片用的：`douyinProcessVideos` 会把 HDR 档排掉，所以选中的源通常不是 HDR，
+ * 只有「整个作品全是 HDR」那条放行分支才会是。卡片和选源判据必须是同一个函数，
+ * 否则会出现「选源认为是 HDR 所以排除、卡片认为不是所以不标」这种自相矛盾。
  * @param video - 视频源对象
  * @returns 是否为 HDR 源
  */
-const isHdrStream = (video: DouyinBitRateItem): boolean => {
+export const isDouyinHdrStream = (video: DouyinBitRateItem): boolean => {
   if (/hdr/i.test(video.gear_name ?? '')) return true
   if (video.HDR_type && video.HDR_type !== '0') return true
   return Number(video.HDR_bit) > 8
@@ -170,7 +309,7 @@ export const douyinProcessVideos = <T extends DouyinBitRateItem>(
   }
 
   // 全是 HDR 时不排除，否则会挑不出源
-  const sdrOnly = candidates.filter(video => !isHdrStream(video))
+  const sdrOnly = candidates.filter(video => !isDouyinHdrStream(video))
   const pool = sdrOnly.length > 0 ? sdrOnly : candidates
   if (sdrOnly.length !== candidates.length) {
     logger.debug(`[douyin] 排除 ${candidates.length - sdrOnly.length} 条 HDR 源，剩余 ${pool.length} 条`)

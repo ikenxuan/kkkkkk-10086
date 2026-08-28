@@ -88,3 +88,37 @@ export const formatPercent = (ratio: number): string => {
   if (!Number.isFinite(ratio)) return '0%'
   return `${trimDecimal(Math.min(Math.max(ratio, 0), 1) * 100)}%`
 }
+
+/**
+ * 「媒体统计」三张大卡的数值字号，按字符数降级。
+ *
+ * 为什么需要：卡片宽度是算出来的定值，而字号原来写死 `7rem`。三卡并排时
+ * 单张卡内可用宽只有 **261.3px**（1440 页宽 − 页面 `p-18` ×2 − 两个 `gap-16`
+ * − 卡片 `p-16` ×2），实测只有 3 字数值装得下：
+ *
+ * | 数值 | 宽度（7rem） | + 小时(72px) + gap(12px) | 余量 |
+ * |---|---|---|---|
+ * | `1.9`    | 153.6 | 237.6 | +23.7 |
+ * | `61.6`   | 217.4 | 301.4 | **−40.1** |
+ * | `347.7`  | 281.2 | 365.2 | **−103.9** |
+ * | `1232.6` | 345.1 | 429.1 | **−167.8** |
+ *
+ * 4 字起必然溢出，然后被根节点的 `overflow-hidden` 从字形中间切断。
+ *
+ * 阈值按「最宽的单位」定，也就是 `小时`（2 个 CJK = 2em = 72px）。CJK 字形
+ * 实测恒为 1em —— 字重 400 / 500 和回退到 Microsoft YaHei 量出来都是 72px，
+ * 所以这里不需要考虑合成粗体带来的字宽变化。数字同样是等宽的
+ * （每多一位恒 +63.8px，小数点 26px），因此这张表是确定的，不是估的。
+ *
+ * 只按字符数、不按具体单位分档：单位窄的时候（`分` 36px）本来余量就更大，
+ * 按最坏情况定档对它只是更保守，换来的是单变量映射、好测也好读。
+ * @param value - 已格式化的数值文本，如 `347.7`
+ * @returns Tailwind 任意值字号类名
+ */
+export const valueSizeClass = (value: string): string => {
+  const length = value.length
+  if (length <= 3) return 'text-[7rem]'
+  if (length === 4) return 'text-[5rem]'
+  if (length === 5) return 'text-[4rem]'
+  return 'text-[3rem]'
+}

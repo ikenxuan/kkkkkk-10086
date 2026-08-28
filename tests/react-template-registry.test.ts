@@ -94,6 +94,13 @@ const runtimeData: RuntimeReportData = {
       limit: 8,
       buckets: [{ label: '抖音', running: 3, queued: 0 }]
     },
+    cdn: {
+      resources: 2,
+      hosts: 2,
+      probedHosts: 1,
+      penalized: [{ host: 'upos-sz-mirror08c.bilivideo.com', failures: 1, reason: '持续低速', remaining: '4.2分钟' }],
+      probes: [{ host: 'upos-sz-mirrorcos.bilivideo.com', speed: '8.4MB/s', ttfb: '96ms', ok: true }]
+    },
     parse: {
       available: true,
       concurrency: 2,

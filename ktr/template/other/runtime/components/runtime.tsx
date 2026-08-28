@@ -36,6 +36,7 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
   const isDark = isDarkMode(props.ctx)
   const cache = data.concurrency.cache
   const download = data.concurrency.download
+  const cdn = data.concurrency.cdn
   const parse = data.concurrency.parse
   const releaseLabel =
     data.identity.releaseType.toLowerCase() === 'stable'
@@ -387,6 +388,63 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
             ) : (
               <div className="mt-4 whitespace-nowrap text-[34px] font-black text-foreground/45">暂无下载任务</div>
             )}
+          </div>
+
+          <div className="relative mt-20">
+            <div className="text-[22px] font-bold tracking-[0.18em] text-foreground/36">
+              CDN 地址簿 · 记着 {cdn.resources} 份资源 / {cdn.hosts} 个主机
+            </div>
+            {/*
+              两张小表分开判空：地址簿一直在记（只要下过东西就有主机），而测速缓存
+              只在开了 `bilibiliCdnProbe` 之后才有内容。合成一个判空会让「开着测速但
+              还没有节点坏过」画成一整块「暂无异常」，把测速结果一起藏掉。
+            */}
+            {cdn.penalized.length > 0 ? (
+              <div className="mt-9 space-y-6">
+                {cdn.penalized.map(entry => (
+                  <div key={entry.host} className="flex items-end justify-between gap-10">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[26px] font-black text-foreground/72">
+                      {entry.host}
+                    </span>
+                    <span className="whitespace-nowrap font-mono text-[24px] font-bold text-foreground/40">
+                      {entry.reason} ×{entry.failures} · 还避 {entry.remaining}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 whitespace-nowrap text-[34px] font-black text-foreground/45">没有节点在惩罚期</div>
+            )}
+
+            {cdn.probes.length > 0 ? (
+              <>
+                <div className="mt-14 text-[22px] font-bold tracking-[0.18em] text-foreground/36">
+                  CDN 测速缓存 · {cdn.probedHosts} 个主机
+                </div>
+                <div className="mt-9 space-y-6">
+                  {cdn.probes.map(probe => (
+                    <div key={probe.host} className="flex items-end justify-between gap-10">
+                      <span
+                        // 打底色写成 class 而不是留空：留空会让这一行去继承祖先的颜色，
+                        // 和上面惩罚期那张表的 `text-foreground/72` 对不齐。
+                        className="min-w-0 flex-1 truncate font-mono text-[26px] font-black text-foreground/72"
+                        // 测失败的那行整体压暗：它的 speed 是「不可用」而不是一个数，
+                        // 和上面几行同样的字重会被读成「这个节点很慢」而不是「测不通」
+                        style={probe.ok ? undefined : { color: 'rgba(127,127,127,0.55)' }}
+                      >
+                        {probe.host}
+                      </span>
+                      <span
+                        className="whitespace-nowrap font-mono text-[24px] font-bold"
+                        style={{ color: probe.ok ? palette.accentText : 'rgba(127,127,127,0.55)' }}
+                      >
+                        {probe.speed} · TTFB {probe.ttfb}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
           </div>
         </section>
 

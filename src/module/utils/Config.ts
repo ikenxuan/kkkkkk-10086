@@ -48,7 +48,12 @@ const APP_UPLOAD_KEYS = new Set([
   'downloadThrottle',
   'downloadMaxSpeed',
   'downloadAutoReduce',
-  'downloadMinSpeed'
+  'downloadMinSpeed',
+  'downloadSlowRestart',
+  'downloadSlowFloor',
+  'downloadSlowSustain',
+  'downloadExternalTool',
+  'downloadExternalMinSize'
 ])
 
 const CONFIG_NAMES: ConfigName[] = [

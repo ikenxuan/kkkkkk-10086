@@ -376,11 +376,24 @@ export class Xiaohongshu extends Base {
     const sendNoteVideo = noteVideo && sendContent.includes('video')
       ? async (): Promise<void> => {
         const stream = selectVideoStream(noteVideo.media?.stream)
-        const videoUrl = stream?.master_url || noteVideo.url_default
+        /*
+          两条地址都要带下去，而不是只把第二条当「第一条字段缺失时的替补」。
+
+          `stream.master_url` 和 `url_default` 是同一个作品的两条**不同**的下载地址
+          （前者出自选中那一路码流，后者是笔记自带的默认播放地址），原来的 `||` 只在
+          前者**字段不存在**时才会用到后者 —— 可实际故障是字段拿得到、地址却回 403 / 404，
+          那种情况下 `||` 一步也帮不上，整次解析就跟着那一条地址一起失败。
+
+          交给下载层当候选清单，坏地址才会走到「换一条重试」那条路上。
+          `resource` 是地址簿的键，带上它这批地址还能在 5 分钟内被同一作品的重试复用。
+        */
+        const videoCandidates = [stream?.master_url, noteVideo.url_default].filter((url): url is string => Boolean(url))
+        const videoUrl = videoCandidates[0]
         if (!videoUrl) {
           await this.e!.reply!('未找到可用的视频地址')
           return
         }
+        const noteId = card.note_id || data.note_id
 
         /*
           媒体度量上报（和 douyin / bilibili 的视频分支同一位置：真要发视频了才记一条），
@@ -401,7 +414,9 @@ export class Xiaohongshu extends Base {
             ...baseHeaders,
             Referer: 'https://www.xiaohongshu.com',
             Cookie: Config.cookies.xiaohongshu
-          } as AxiosRequestConfig['headers']
+          } as AxiosRequestConfig['headers'],
+          candidates: videoCandidates,
+          resource: noteId ? `xhs:${noteId}:video` : undefined
         })
       }
       : undefined

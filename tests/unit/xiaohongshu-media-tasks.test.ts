@@ -244,6 +244,29 @@ describe('Xiaohongshu media tasks', () => {
     expect(downloadVideoMock).toHaveBeenCalledTimes(1)
   })
 
+  // 两条地址都要交到下载层，而不是只用第一条。
+  //
+  // `master_url` 与 `url_default` 是同一个作品的两条**不同**地址，原来的写法是
+  // `stream?.master_url || noteVideo.url_default` —— 那个 `||` 只在前者字段缺失时
+  // 才会用到后者，而真实故障是字段拿得到、地址回 403 / 404。少了 candidates，
+  // 坏地址走不到下载层的「换一条重试」，整次解析跟着一条地址一起失败。
+  it('hands both note addresses to the download layer as candidates', async () => {
+    configMock.xiaohongshu.sendContent = ['info', 'comment', 'video']
+    respond({ video: true })
+    const reply = vi.fn(async () => undefined)
+
+    await expect(new Xiaohongshu({ reply } as never).XiaohongshuHandler(NOTE_ID)).resolves.toBe(true)
+
+    expect(downloadVideoMock).toHaveBeenCalledTimes(1)
+    expect(downloadVideoMock.mock.calls[0][1]).toMatchObject({
+      // 选中那一路码流的地址排第一，笔记自带的默认地址垫后
+      video_url: 'https://example.com/h264.mp4',
+      candidates: ['https://example.com/h264.mp4', 'https://example.com/note.mp4'],
+      // 地址簿的键，带上它这批地址才能在同一作品的重试里被复用
+      resource: 'xhs:note-1:video'
+    })
+  })
+
   it('keeps the other branches running when the note info branch fails', async () => {
     const posterError = new Error('noteInfo render failed')
     renderMock.mockImplementation(async (route: string) => {

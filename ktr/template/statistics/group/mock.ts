@@ -92,22 +92,41 @@ export const groupFull: GroupStatisticsData = {
       platforms: { douyin: 1, bilibili: 1, kuaishou: 0, xiaohongshu: 0 }
     }
   ],
+  /*
+    这三个大号数字刻意覆盖**三个不同的字号档**，别为了「好看」改回全短值。
+
+    原来这组是 `6.1小时 / 3.9分 / 3.4GB`，三个都是 3 字 —— 而 3 字恰好是卡内
+    261.3px 唯一装得下的一档，所以开发面板上永远看不到溢出。线上真实数据出现
+    `347.7MB`（5 字）时数值宽 281.2px，比整个可用宽还宽，被根节点的
+    overflow-hidden 从字形中间切断；单位 `小时` 则在 小/时 之间静默折成两行。
+
+    现在：总时长 `1.1小时`（3 字 → 7rem）、平均 `43.8秒`（4 字 → 5rem）、
+    体积 `347.7MB`（5 字 → 4rem，就是线上出问题的那一组）。面板一眼能看出
+    三档字号是否都排得下。字号映射见 ktr/utils/media-format.ts 的 valueSizeClass。
+
+    时长整体调小是为了跟体积自洽：347.7MB / 67.8 分 ≈ 717 kbps，是短视频的
+    正常码率。沿用原来的 6.07 小时会变成 134 kbps，那种数据生产端不会出现。
+  */
   mediaMetrics: {
     // 58 + 41 + 8 + 21，一次解析可能产出多条（图集里每张各算一条），所以比 95 次解析多
     mediaCount: 128,
     // 52（抖音视频）+ 37（B站视频）
     videoCount: 89,
     audioCount: 4,
-    // 2_184_000 + 19_680_000，快手/小红书两边都是 0
-    totalDurationMs: 21_864_000,
-    videoDurationMs: 20_956_000,
-    audioDurationMs: 908_000,
+    // 2_184_000 + 1_886_000，快手/小红书两边都是 0；= 67.8 分 → 显示 `1.1小时`
+    totalDurationMs: 4_070_000,
+    // 3_900_000 + 170_000 == totalDurationMs
+    videoDurationMs: 3_900_000,
+    audioDurationMs: 170_000,
     // 52 + 41 == videoCount + audioCount：只有视频和音频带时长，图片不带
     durationSamples: 93,
-    // 21_864_000 / 93
-    averageDurationMs: 235_097,
-    maxDurationMs: 2_845_000,
-    totalBytes: 3_657_330_608,
+    // 4_070_000 / 93 = 43_763.4，取整；= 43.8 秒 → 4 字档，验字号降到 5rem
+    averageDurationMs: 43_763,
+    // == bilibili 那条的 maxDurationMs（两个平台里更长的那个）
+    maxDurationMs: 214_000,
+    // == platforms 四项之和 155_189_248+167_772_160+12_582_912+29_040_640；
+    // 347.7MB → 5 字档，就是线上溢出的那一组，验字号降到 4rem
+    totalBytes: 364_584_960,
     averageProcessingMs: 3_180,
     successRate: 0.9474,
     platforms: {
@@ -116,17 +135,21 @@ export const groupFull: GroupStatisticsData = {
         totalDurationMs: 2_184_000,
         // 58 条里 6 条是图文作品，没有时长；分母只算真拿到时长的那 52 条
         durationSamples: 52,
+        // 2_184_000 / 52，整除
         averageDurationMs: 42_000,
         maxDurationMs: 186_000,
-        totalBytes: 731_284_912
+        // 148MB / 36.4 分 ≈ 568 kbps，抖音正常码率
+        totalBytes: 155_189_248
       },
       bilibili: {
         mediaCount: 41,
-        totalDurationMs: 19_680_000,
+        totalDurationMs: 1_886_000,
         durationSamples: 41,
-        averageDurationMs: 480_000,
-        maxDurationMs: 2_845_000,
-        totalBytes: 2_812_446_208
+        // 1_886_000 / 41，整除
+        averageDurationMs: 46_000,
+        maxDurationMs: 214_000,
+        // 160MB / 31.4 分 ≈ 712 kbps，B 站码率比抖音高一档，符合实际
+        totalBytes: 167_772_160
       },
       // 快手和小红书当前的解析路径上压根拿不到时长字段，所以 durationSamples 是 0，
       // 而 averageDurationMs / maxDurationMs 必须**整个缺省**、不能写 0。
@@ -136,13 +159,15 @@ export const groupFull: GroupStatisticsData = {
         mediaCount: 8,
         totalDurationMs: 0,
         durationSamples: 0,
-        totalBytes: 74_186_752
+        // 12MB / 8 条 = 1.5MB 每条
+        totalBytes: 12_582_912
       },
       xiaohongshu: {
         mediaCount: 21,
         totalDurationMs: 0,
         durationSamples: 0,
-        totalBytes: 39_412_736
+        // 27.7MB / 21 条 ≈ 1.32MB 每条，图文为主所以单条比快手小
+        totalBytes: 29_040_640
       }
     }
   }

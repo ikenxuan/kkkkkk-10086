@@ -72,6 +72,17 @@ export type DanmakuFontSize = 'small' | 'medium' | 'large'
 export type VerticalMode = 'off' | 'standard' | 'force'
 export type VideoCodec = 'h264' | 'h265' | 'av1'
 
+/**
+ * B站 CDN 选择策略。
+ *
+ * - `auto`：只在接口把地址指到 PCDN 时才改写成公网镜像站（默认）
+ * - `origin`：完全信接口给的地址，一个字都不改
+ * - `mirror`：一律改写到公网镜像站
+ *
+ * 判定与改写规则见 `platform/bilibili/cdn.ts`。
+ */
+export type BilibiliCdnMode = 'auto' | 'origin' | 'mirror'
+
 export interface DouyinConfig {
   douyintool?: boolean
   switch?: boolean
@@ -135,6 +146,23 @@ export interface BilibiliConfig {
   danmakuOpacity?: number
   verticalMode?: VerticalMode
   videoCodec?: VideoCodec
+  /**
+   * CDN 选择策略。默认 `auto`。
+   *
+   * - `auto`：只在接口把地址指到 PCDN 时改写成公网镜像站
+   * - `origin`：完全用接口给的地址
+   * - `mirror`：一律改写到公网镜像站
+   *
+   * 改写规则与理由见 `platform/bilibili/cdn.ts`。
+   */
+  bilibiliCdnMode?: BilibiliCdnMode
+  /**
+   * 下载前实测候选地址的速度，挑快的用。默认关。
+   *
+   * 测的是首字节延迟加一小段真实传输 —— 被限速的节点握手很快，只有拉数据才分得出来。
+   * 见 `module/utils/CdnProbe.ts`。
+   */
+  bilibiliCdnProbe?: boolean
   push?: BilibiliPushConfig
 }
 
@@ -238,6 +266,34 @@ export interface UploadConfig {
   downloadMaxSpeed?: number
   downloadAutoReduce?: boolean
   downloadMinSpeed?: number
+  /**
+   * 持续低速时自动换地址重下。默认开。
+   *
+   * 治的是 B站 那种「连接活着但被掐在 0.1MB/s」的限速：现有的断流看守判的是
+   * 完全没有数据，低速时它永远不会响。见 `module/utils/DownloadWatchdog.ts`。
+   */
+  downloadSlowRestart?: boolean
+  /**
+   * 低速判定的地板速，单位 KB/s，默认 256。
+   *
+   * 填 0 等于关掉判定（与 `downloadSlowRestart: false` 等效）。
+   */
+  downloadSlowFloor?: number
+  /**
+   * 低速要持续多少秒才动手，默认 20。
+   *
+   * 不做成即判即断：一次采样撞上对端的短暂停顿就重启，是把抖动当故障。
+   */
+  downloadSlowSustain?: number
+  /**
+   * 外部下载器：`auto` / `off` / `curl` / `wget`。默认 `off`。
+   *
+   * `auto` 表示按可用性自动挑（优先 curl，因为只有它有 `--speed-limit`），
+   * 但只用在**大文件**上 —— 判定与理由见 `module/utils/ExternalDownloader.ts`。
+   */
+  downloadExternalTool?: 'off' | 'auto' | 'curl' | 'wget'
+  /** 外部下载器的体积门槛，单位 MB，默认 64。小于它的文件仍走内置下载。 */
+  downloadExternalMinSize?: number
 }
 
 export interface PluginConfigMap {

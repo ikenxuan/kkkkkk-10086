@@ -27,6 +27,7 @@ import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/Base'
 import type { RichTextDocument } from '@kkk/richtext'
 import { isRecord } from '@/module/utils/record'
+import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
 
 const require = createRequire(import.meta.url)
 interface AmagiRuntime {
@@ -433,8 +434,21 @@ const BILIBILI_PCDN_HOST = /(^|\.)(mcdn\.bilivideo\.cn|szbdyd\.com)$/i
 /** 流对象上可用的地址：`base_url` 加接口给的备用地址（`backup_url` 通常是 upos / akamai 正常域名）。 */
 interface BilibiliStreamUrls {
   base_url?: string
+  /**
+   * `durl` 那一路流把地址放在这个键上（dash 用的是 `base_url`）。
+   *
+   * 两个键都认是必要的：未登录 / ck 失效时接口回的是 durl，而那条路恰恰最常撞上 PCDN
+   * （请求「看起来没有身份」时 B站 更倾向把地址指到 PCDN 节点）。只读 `base_url`
+   * 会让 durl 的主地址整条漏掉，只剩 `backup_url` 被当成候选。
+   */
+  url?: string
   backup_url?: string[]
 }
+
+/** 一路流上的全部地址，按「主地址在前」排好。两种流的键名不同，见 {@link BilibiliStreamUrls.url}。 */
+const readStreamUrls = (stream: BilibiliStreamUrls | undefined): string[] =>
+  [stream?.base_url, stream?.url, ...(stream?.backup_url ?? [])]
+    .filter((url): url is string => typeof url === 'string' && url.length > 0)
 
 const isPcdnUrl = (url: string): boolean => {
   try {
@@ -455,13 +469,44 @@ const isPcdnUrl = (url: string): boolean => {
  * @returns 可用于下载的地址；一个都没有时返回空串
  */
 export const pickBilibiliStreamUrl = (stream: BilibiliStreamUrls | undefined): string => {
-  const candidates = [stream?.base_url, ...(stream?.backup_url ?? [])]
-    .filter((url): url is string => typeof url === 'string' && url.length > 0)
+  const candidates = readStreamUrls(stream)
   if (candidates.length === 0) return ''
   const direct = candidates.find(url => !isPcdnUrl(url))
   if (direct) return direct
   logger.warn('[Bilibili] 播放地址只给到 PCDN 节点，本机若解析不了该域名下载会失败：' + candidates[0])
   return candidates[0]!
+}
+
+/**
+ * 取一路流的**全部**可用地址，按偏好排好。
+ *
+ * `pickBilibiliStreamUrl` 只返回一条，是为了兼容既有调用点（体积探测、直链发送那些
+ * 只需要一个地址的地方）。下载要用这一个：它把接口给的镜像**和**改写出来的地址
+ * 一起交给下载层，于是某个节点 403 / 404 / 被限速时还有下一条可以换。
+ *
+ * 三种模式的差别只在「要不要改写主机名」，见 `bilibili.yaml` 的 `bilibiliCdnMode`：
+ * - `origin`：一个字都不改，只做去重
+ * - `mirror`：把 upos 镜像顶到最前，接口给的地址退居备用
+ * - `auto`（默认）：接口给的地址在前，只在它指到 PCDN 时才补上改写地址
+ *
+ * @param stream 带 base_url / backup_url 的流对象
+ * @returns 排好序的候选地址；一条都没有时返回空数组
+ */
+export const collectBilibiliStreamUrls = (stream: BilibiliStreamUrls | undefined): string[] => {
+  const raw = readStreamUrls(stream)
+  if (raw.length === 0) return []
+
+  const mode = Config.bilibili.bilibiliCdnMode ?? 'auto'
+  if (mode === 'origin') return [...new Set(raw)]
+
+  const expanded = expandBilibiliCdnCandidates(raw)
+  if (mode !== 'mirror') return expanded
+
+  // mirror 模式：改写出来的镜像地址顶到最前，接口原地址留在后面当备用。
+  // 不把原地址丢掉 —— 万一镜像那边没有这份文件（404），还得靠它们兜底。
+  const mirrors = expanded.filter(url => isUposMirrorUrl(url))
+  const rest = expanded.filter(url => !isUposMirrorUrl(url))
+  return mirrors.length > 0 ? [...mirrors, ...rest] : expanded
 }
 
 /** 保留每个清晰度 ID 首次出现的视频流，不修改调用方数组。 */
@@ -1564,19 +1609,45 @@ export class Bilibili extends Base {
    * @param audioUrl dash 的音频流地址
    * @param danmakuList 需要烧进画面的弹幕；空数组表示不烧
    * @param tag 临时文件名里的区分段，取 bvid / season_id 这类；缺省用时间戳
+   * @param videoCandidates 视频流的备用地址（含镜像与改写地址），缺省表示只有 `videoUrl` 一条
+   * @param audioCandidates 音频流的备用地址
    */
-  private async downloadMergedStream ({ videoUrl, audioUrl, danmakuList, tag }: {
+  private async downloadMergedStream ({ videoUrl, audioUrl, danmakuList, tag, videoCandidates, audioCandidates, resourceKey }: {
     videoUrl: string
     audioUrl: string
     danmakuList: BilibiliDanmakuItem[]
     tag?: string
+    videoCandidates?: readonly string[]
+    audioCandidates?: readonly string[]
+    resourceKey?: string
   }): Promise<void> {
     const suffix = tag || String(Date.now())
     // 这两个流地址自带鉴权参数，再带 Cookie 反而会被判风控
     const streamHeaders = { Referer: this.headers?.Referer, Cookie: '' }
+    // 资源键带上流类型：视频和音频的候选地址不能混。两者的主机名往往相同，
+    // 只有路径不同，混在一起会把音频地址当成视频的备胎试一遍（下得到、但是错的文件）。
+    //
+    // 键由调用方给，不从 `tag` 推：`tag` 拿不到 bvid 时会退化成时间戳，
+    // 用它当键等于每次下载都造一个只用一次的条目，把地址簿填满却一次也命中不了。
+    const resourceBase = resourceKey ?? ''
+    // 测速只开给视频流。音频流一路才几兆，为它多等最多 3 秒握手不值得；
+    // 而且两路流的主机名基本相同，视频那一路测出来的结果已经进了按主机缓存的表，
+    // 音频真的换到同一批主机上时直接命中缓存，不必自己再测一遍。
+    const probeCdn = Config.bilibili.bilibiliCdnProbe === true
     const [bmp4, bmp3] = await Promise.all([
-      downloadFile(videoUrl, { title: `Bil_V_${suffix}.mp4`, headers: streamHeaders }),
-      downloadFile(audioUrl, { title: `Bil_A_${suffix}.mp3`, headers: streamHeaders })
+      downloadFile(videoUrl, {
+        title: `Bil_V_${suffix}.mp4`,
+        headers: streamHeaders,
+        candidates: videoCandidates,
+        resource: resourceBase ? `${resourceBase}:video` : undefined,
+        probeCdn
+      }),
+      downloadFile(audioUrl, {
+        title: `Bil_A_${suffix}.mp3`,
+        headers: streamHeaders,
+        candidates: audioCandidates,
+        resource: resourceBase ? `${resourceBase}:audio` : undefined
+      })
     ])
 
     const videoFilePath = bmp4.filepath
@@ -1661,18 +1732,23 @@ export class Bilibili extends Base {
     // 如果配置了视频优先，则设置为未登录状态
     if (Config.bilibili.videopriority === true) this.islogin = false
 
+    // 单个视频取 bvid，番剧取 season_id。两个用途：临时文件名的区分段，以及
+    // CDN 地址簿的资源键。提到分支外面是因为未登录那条路同样需要它当键——
+    // 它手里的 infoData 和已登录分支是同一个，只是以前没用过。
+    const isOneVideo = this.Type === 'one_video'
+    const videoId = isOneVideo
+      ? infoData && 'data' in infoData ? infoData.data.bvid : undefined
+      : infoData && 'result' in infoData ? infoData.result.season_id : undefined
+
     // 如果已登录
     if (this.islogin) {
-      // 获取视频和音频的基础URL和ID
-      const isOneVideo = this.Type === 'one_video'
-      // 单个视频取 bvid，番剧取 season_id；只用于临时文件名的区分段
-      const videoId = isOneVideo
-        ? infoData && 'data' in infoData ? infoData.data.bvid : undefined
-        : infoData && 'result' in infoData ? infoData.result.season_id : undefined
       const dash = getBilibiliDash(playUrlData)
-      // 优先非 PCDN 地址，否则挂代理 / 非国内 DNS 时会 getaddrinfo ENOENT
-      const videoUrl = pickBilibiliStreamUrl(dash?.video?.[0])
-      const audioUrl = pickBilibiliStreamUrl(dash?.audio?.[0])
+      // 全部候选地址，不只是第一条：某个节点 403 / 404 / 被限速时下载层才有下一条可换。
+      // 首位仍然是「优先非 PCDN」那条，所以正常情况下的行为和以前一致。
+      const videoCandidates = collectBilibiliStreamUrls(dash?.video?.[0])
+      const audioCandidates = collectBilibiliStreamUrls(dash?.audio?.[0])
+      const videoUrl = videoCandidates[0] ?? ''
+      const audioUrl = audioCandidates[0] ?? ''
       if (!videoUrl || !audioUrl) {
         const videoStream = getBilibiliVideoStream(playUrlData)
         if (videoStream?.url) {
@@ -1684,7 +1760,17 @@ export class Bilibili extends Base {
       }
 
       // 并行下载视频和音频
-      await this.downloadMergedStream({ videoUrl, audioUrl, danmakuList, tag: String(videoId ?? Date.now()) })
+      await this.downloadMergedStream({
+        videoUrl,
+        audioUrl,
+        videoCandidates,
+        audioCandidates,
+        // 资源键带上 bvid 与流别：视频和音频是两份不同的资源，
+        // 共用一个键会让它们互相污染候选清单
+        resourceKey: videoId ? `bili:${videoId}` : undefined,
+        danmakuList,
+        tag: String(videoId ?? Date.now())
+      })
     } else {
       /**
        * 没登录（或 ck 已失效、或配了视频优先）的情况下发直链。
@@ -1701,15 +1787,22 @@ export class Bilibili extends Base {
        * dash 的 video 流没有音轨，所以取到 dash 时优先和 audio 合流；
        * 只有 video 没有 audio 时才退化成发无声视频（好过什么都发不出去）。
        */
-      const durlUrl = getBilibiliDurl(playUrlData)[0]?.url
+      const durl = getBilibiliDurl(playUrlData)[0]
+      const durlUrl = durl?.url
       const dash = getBilibiliDash(playUrlData)
-      const dashVideoUrl = pickBilibiliStreamUrl(dash?.video?.[0])
-      const dashAudioUrl = pickBilibiliStreamUrl(dash?.audio?.[0])
+      const dashVideoCandidates = collectBilibiliStreamUrls(dash?.video?.[0])
+      const dashAudioCandidates = collectBilibiliStreamUrls(dash?.audio?.[0])
+
+      // durl 也给 backup_url，形状和 dash 的一样，所以能共用同一套候选逻辑。
+      // 这条路（未登录 / ck 失效）恰恰是最常撞上 PCDN 的：请求「看起来没有身份」时
+      // B站 更倾向于把地址指到 PCDN 节点上。
+      const durlCandidates = collectBilibiliStreamUrls(durl)
 
       // durl 是单文件直链（自带音轨），优先用；dash 需要合流，代价更高
-      const videoUrl = durlUrl || dashVideoUrl
+      const videoUrl = durlUrl || dashVideoCandidates[0] || ''
       // 只有走 dash 且拿到音频流时才需要合流
-      const audioUrl = durlUrl ? '' : dashAudioUrl
+      const audioUrl = durlUrl ? '' : (dashAudioCandidates[0] ?? '')
+      const videoCandidates = durlUrl ? durlCandidates : dashVideoCandidates
 
       if (!videoUrl) {
         logger.error('无法下载视频：B站没有返回任何可用的视频流（durl 与 dash 均为空）')
@@ -1726,14 +1819,26 @@ export class Bilibili extends Base {
       }
 
       if (audioUrl) {
-        await this.downloadMergedStream({ videoUrl, audioUrl, danmakuList })
+        // 走到这里必然是 dash（durlUrl 为空才会有 audioUrl），所以候选地址取 dash 那两路
+        await this.downloadMergedStream({
+          videoUrl,
+          audioUrl,
+          videoCandidates: dashVideoCandidates,
+          audioCandidates: dashAudioCandidates,
+          resourceKey: videoId ? `bili:${videoId}` : undefined,
+          danmakuList
+        })
         return
       }
 
       if ((this.forceBurnDanmaku || Config.bilibili.burnDanmaku) && danmakuList.length > 0) {
         const videoFile = await downloadFile(videoUrl, {
           title: `Bil_V_tmp_${Date.now()}.mp4`,
-          headers: this.headers
+          headers: this.headers,
+          candidates: videoCandidates,
+          // 单文件流（durl 自带音轨）用 `:full` 区别于 dash 的 `:video`——
+          // 同一个 bvid 下两者是不同的资源，共用键会互相污染候选清单
+          resource: videoId ? `bili:${videoId}:${durlUrl ? 'full' : 'video'}` : undefined
         })
         if (videoFile.filepath) {
           const resultPath = Common.tempDri.video + `Bil_Danmaku_${Date.now()}.mp4`
@@ -1750,7 +1855,12 @@ export class Bilibili extends Base {
           }
         }
       }
-      await downloadVideo(this.e, { video_url: videoUrl, title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${this.downloadfilename}.mp4` } })
+      await downloadVideo(this.e, {
+        video_url: videoUrl,
+        title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${this.downloadfilename}.mp4` },
+        candidates: videoCandidates,
+        resource: videoId ? `bili:${videoId}:${durlUrl ? 'full' : 'video'}` : undefined
+      })
     }
   }
 

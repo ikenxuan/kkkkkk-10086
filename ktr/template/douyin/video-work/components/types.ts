@@ -29,6 +29,17 @@ export interface DouyinVideoWorkData {
   }
   /** 视频时长（毫秒） */
   duration?: number
+  /** 选中那一路视频源是否为 HDR */
+  is_HDR?: boolean
+  /** 选中那一路视频源的分辨率，取不到宽高时整个字段缺省 */
+  resolution?: {
+    /** 视频高度 */
+    height: number
+    /** 视频宽度 */
+    width: number
+    /** 档位名称，形如 `超清4K` */
+    name: string
+  }
   /** 点赞数 */
   dianzan: string
   /** 评论数 */

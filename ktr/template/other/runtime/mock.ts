@@ -104,6 +104,26 @@ export const runtimeStable: RuntimeReportData = {
         { label: '小红书', running: 0, queued: 0 }
       ]
     },
+    // 这一格要同时画得出「惩罚期」和「测速结果」两张小表，所以给的值刻意覆盖
+    // 三种最容易画崩的情况：真实长度的 B站 镜像域名（最长的一种主机名）、
+    // 两种时长单位（秒 / 分钟），以及一条测速失败的行（模板要把它画成灰的）。
+    cdn: {
+      resources: 6,
+      hosts: 4,
+      probedHosts: 3,
+      penalized: [
+        // 真实域名照抄 upos 镜像那套，长度是这张表里的最坏情况
+        { host: 'upos-sz-mirror08c.bilivideo.com', failures: 3, reason: '持续低速', remaining: '4.2分钟' },
+        { host: 'v26-web.douyinvod.com', failures: 1, reason: '拒绝服务', remaining: '38.5秒' }
+      ],
+      probes: [
+        { host: 'upos-sz-mirrorcos.bilivideo.com', speed: '8.4MB/s', ttfb: '96ms', ok: true },
+        { host: 'upos-sz-mirrorali.bilivideo.com', speed: '742KB/s', ttfb: '210ms', ok: true },
+        // 测失败的那条：speed 是「不可用」而不是 0，模板不该拿它去算条宽；
+        // ttfb 是占位符 `—`，因为失败时那个耗时说不出任何有用的话（见 runtime-report 的说明）
+        { host: 'cn-hbcd-cu-01-11.bilivideo.com', speed: '不可用', ttfb: '—', ok: false }
+      ]
+    },
     // 给「跑满 + 有排队」的一组值：满额那根条正好是最容易画溢出的地方，
     // 而 queued > 0 时才看得出 pending 和 running 的差
     parse: {

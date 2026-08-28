@@ -13,7 +13,7 @@ import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo, type DouyinAweme as WorkTypeDouyinAweme } from './workType.js'
-import { douyinProcessVideos } from './videoQuality.js'
+import { buildDouyinPlayUrl, douyinProcessVideos } from './videoQuality.js'
 import type { DouyinDataType, DouyinIdData } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
@@ -254,6 +254,20 @@ const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean
 export const pickDouyinPlayUrl = (playAddr?: { url_list?: string[] }): string =>
   playAddr?.url_list?.[0] || playAddr?.url_list?.[1] || playAddr?.url_list?.[2] || ''
 
+/**
+ * 把 play_addr 的宽高折成评论图页头那行「分辨率」。
+ *
+ * 传的必须是**选中那一路**的 play_addr：抖音每个档位各带自己的宽高，
+ * 拿顶层 `video.play_addr` 或 `bit_rate[0]` 会和实际下载的那一路对不上。
+ * @param playAddr - 选中那一路的 play_addr
+ * @returns 形如 `1080 x 1920`；宽高缺任意一边时返回 null，让模板整行不印
+ */
+const formatResolution = (playAddr?: { width?: number, height?: number }): string | null => {
+  const { width, height } = playAddr ?? {}
+  if (!width || !height) return null
+  return `${width} x ${height}`
+}
+
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
   `\n点赞：${Common.count(statistics.digg_count)}`,
   `评论：${Common.count(statistics.comment_count)}`,
@@ -355,7 +369,16 @@ export class DouYin extends Base {
           }
           this.is_slides = VideoData.data.aweme_detail.is_slides === true
           let g_video_url = ''
+          /**
+           * 下载候选清单，顺序即优先级。
+           *
+           * `orderCdnCandidates` 刻意保留调用方给的顺序（只把近期失败过的主机往后挪），
+           * 所以这里排第几就是第几个被试。签名直链在前、拼出来的 snssdk 地址垫最后。
+           */
+          let g_video_candidates: string[] = []
           let g_title: string | undefined
+          /** 按画质配置选中、即将下载发送的那一路视频源，卡片上的清晰度从它派生 */
+          let selectedVideo: DyVideo | undefined
 
           /** 图集 */
           let imagenum = 0
@@ -620,16 +643,32 @@ export class DouYin extends Base {
                 maxAutoVideoSize: Config.douyin.maxAutoVideoSize,
                 filelimit: Config.upload.filelimit || 100
               })
-              g_video_url = pickDouyinPlayUrl(video.bit_rate[0].play_addr)
+              selectedVideo = video.bit_rate[0]
+              g_video_url = pickDouyinPlayUrl(selectedVideo.play_addr)
             } else {
               g_video_url = pickDouyinPlayUrl(video.play_addr_h264)
             }
+            /*
+              候选清单 = 该 play_addr 的全部签名直链 + 垫在最后的 snssdk 兜底。
+
+              前半段照抄 `pickDouyinPlayUrl` 的偏好顺序（[0] 优先），后半段是这次跟进
+              上游新加的 `buildDouyinPlayUrl`。它**只能垫最后**：那个域名要先过一次抖音
+              侧的负载均衡再 302，实测冷握手比签名直链多花 ~5.7s，而且 302 常落到
+              返回非 MP4 字节的坏 CDN。放前面等于把这两样代价都吃下来。
+            */
+            const primaryAddr = selectedVideo?.play_addr ?? video.play_addr_h264
+            g_video_candidates = [
+              ...(primaryAddr.url_list ?? []).filter(Boolean),
+              buildDouyinPlayUrl(primaryAddr)
+            ].filter(Boolean)
             cover = getFirstUrl(video.animated_cover) || getFirstUrl(video.dynamic_cover) || getFirstUrl(video.cover_original_scale) || getFirstUrl(video.cover) || getFirstUrl(video.origin_cover)
 
             const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 80, '抖音视频') // video title
             g_title = title
             mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
-            logger.info('视频地址', `https://aweme.snssdk.com/aweme/v1/play/?video_id=${VideoData.data.aweme_detail.video.play_addr.uri}&ratio=1080p&line=0`)
+            // 打真正要下载的那条地址。原来印的是顶层 play_addr 拼的 snssdk 串，
+            // 那条既不是实际下载的地址、也不是选中的档位，排查时会把人带偏。
+            logger.info('视频地址', g_video_url)
           }
 
           // 上游这里只看 sendContent 是否含 'info'，不看作品类型（up douyin.ts:568）。
@@ -681,12 +720,23 @@ export class DouYin extends Base {
                   // .data.user 了，所以按模板契约再包回去，render.ts 才读得到主页的高清头像和粉丝数。
                   Detail_Data: userProfile ? { ...aweme, user_info: { data: { user: userProfile } } } : aweme,
                   create_time: aweme.create_time,
-                  // 页脚二维码：视频指向播放直链；非视频作品用不带追踪参数的规范短链，
-                  // 免得二维码内容过长影响扫码识别（照搬上游 up douyin.ts:600-605）
+                  /*
+                    页脚二维码：视频指向播放地址；非视频作品用不带追踪参数的规范短链，
+                    免得二维码内容过长影响扫码识别（照搬上游 up douyin.ts:600-605）。
+
+                    从**选中那一路**的 play_addr 拼，不用顶层 `video.play_addr`：顶层那份是
+                    服务端默认档，而且旧写法带的 `ratio=1080p` 会让服务端按 ratio 重新给流，
+                    等于把选好的档位覆盖掉 —— 扫码看到的和实际下载的不是同一条。
+                    这也是上游 417ad3c 那条提交的主旨（「确保二维码与下载一致性」）。
+                  */
                   shareLink: isVideo
-                    ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
+                    ? buildDouyinPlayUrl(selectedVideo?.play_addr ?? aweme.video.play_addr) ||
+                      `https://www.douyin.com/video/${aweme.aweme_id}`
                     : `https://www.douyin.com/${isArticle ? 'article' : 'note'}/${aweme.aweme_id}`,
-                  dynamicTypeLabel: isArticle ? '文章作品' : isVideo ? '视频作品' : this.is_slides ? '合辑作品' : '图文作品'
+                  dynamicTypeLabel: isArticle ? '文章作品' : isVideo ? '视频作品' : this.is_slides ? '合辑作品' : '图文作品',
+                  // 卡片清晰度从选中那一路派生。关了 autoResolution 时没有「选中」这回事，
+                  // selectedVideo 保持 undefined，卡片就不印清晰度。
+                  videoSource: selectedVideo
                 })
                 if (workInfoImg.length) await this.e.reply(workInfoImg)
               }
@@ -720,7 +770,9 @@ export class DouYin extends Base {
                       ...baseHeaders,
                       Referer: g_video_url,
                       Cookies: ''
-                    }
+                    },
+                    candidates: g_video_candidates,
+                    resource: `douyin:${data.aweme_id}:video`
                   },
                   {
                     message_id: this.e.message_id === undefined ? undefined : String(this.e.message_id)
@@ -751,7 +803,9 @@ export class DouYin extends Base {
                     headers: {
                       ...baseHeaders,
                       Referer: 'https://www.douyin.com'
-                    }
+                    },
+                    candidates: g_video_candidates,
+                    resource: `douyin:${data.aweme_id}:video`
                   })
                   downloadedVideoPath = videoFile.filepath
                   if (downloadedVideoPath) {
@@ -814,19 +868,24 @@ export class DouYin extends Base {
                     CommentLength: Config.douyin.realCommentCount
                       ? aweme.statistics.comment_count ?? 0
                       : commentsResult.CommentsData.length,
-                    share_url: this.is_mp4
-                      ? `https://aweme.snssdk.com/aweme/v1/play/?video_id=${aweme.video.play_addr.uri}&ratio=1080p&line=0`
+                    // 同 renderWorkImage 的 shareLink：从选中那一路拼，别拿顶层默认档 + ratio=1080p，
+                    // 那会让服务端按 ratio 重新给流，扫码拿到的和实际下载的不是同一条。
                     // 契约必填 string，而模板把它塞进二维码 `value={props.share_url}`；
-                    // 拿不到分享链接时退回作品页地址，别让二维码收到 undefined
+                    // 拼不出来时退回作品页地址，别让二维码收到 undefined
+                    share_url: this.is_mp4
+                      ? buildDouyinPlayUrl(selectedVideo?.play_addr ?? aweme.video.play_addr) ||
+                        `https://www.douyin.com/video/${aweme.aweme_id}`
                       : aweme.share_url || `https://www.douyin.com/video/${aweme.aweme_id}`,
                     VideoSize: mp4size,
                     VideoFPS: FPS,
                     ImageLength: imagenum,
                     Region: aweme.region ?? '',
                     suggestWrod: suggest,
-                    Resolution: isVideo && video
-                      ? `${video.bit_rate[0].play_addr.width} x ${video.bit_rate[0].play_addr.height}`
-                      : null,
+                    // 同上：宽高取选中那一路的 play_addr。抖音每个档位各带自己的宽高，
+                    // 拿 `bit_rate[0]`（接口给的顺序）会和实际下载的那一路对不上。
+                    // 契约是 `string | null`，宽高缺一边就给 null —— 原写法会印出
+                    // 「undefined x undefined」，比不印更像渲染坏了。
+                    Resolution: isVideo ? formatResolution(selectedVideo?.play_addr ?? video?.bit_rate[0].play_addr) : null,
                     maxDepth: 6,
                     Author: aweme.author.nickname ?? '',
                     AuthorAvatar: aweme.author.avatar_thumb?.url_list[0] ?? '',

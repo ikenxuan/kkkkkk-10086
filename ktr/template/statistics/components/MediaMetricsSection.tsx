@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-import { formatBytes, formatDuration, formatDurationClock, formatPercent } from '../../../utils/media-format'
+import { formatBytes, formatDuration, formatDurationClock, formatPercent, valueSizeClass } from '../../../utils/media-format'
 import type { MediaMetricsPlatform, MediaMetricsPlatformView, MediaMetricsView } from '../../types/media-metrics'
 
 /**
@@ -107,9 +107,19 @@ export const MediaMetricsSection: React.FC<{
           <div key={card.titleEn} className="relative p-16 rounded-3xl bg-surface/40 backdrop-blur-md border-2 border-border/40">
             <div className="text-4xl font-black text-foreground/90 mb-3">{card.title}</div>
             <div className="text-xl font-medium tracking-widest uppercase text-muted/70 mb-8 opacity-60">{card.titleEn}</div>
+            {/*
+              字号按数值字符数降级（`valueSizeClass`，依据见那个函数的注释）：
+              卡内可用宽只有 261.3px，写死 7rem 时 4 字起就会溢出、被根节点的
+              overflow-hidden 从字形中间切断 —— `347.7 MB` 实测溢出 86.4px。
+
+              单位那两个类是另一条失效路径的保险，别删：它是 flex item，默认
+              `min-width:auto` 且 CJK 允许字间断行，空间一紧就在 小/时 之间折成
+              两行（实测高度从 48 变 88）。宁可整体溢出——那看得出是 bug——
+              也不要静默折行，后者看起来像「设计如此」。
+            */}
             <div className="flex items-baseline gap-3">
-              <div className="text-[7rem] font-black leading-none text-foreground/90">{card.value}</div>
-              <div className="text-4xl font-medium text-foreground/80 pb-2">{card.unit}</div>
+              <div className={`${valueSizeClass(card.value)} font-black leading-none text-foreground/90`}>{card.value}</div>
+              <div className="text-4xl font-medium text-foreground/80 pb-2 whitespace-nowrap shrink-0">{card.unit}</div>
             </div>
           </div>
         ))}
@@ -150,9 +160,14 @@ export const MediaMetricsSection: React.FC<{
                       })()}
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-2">
+                  {/*
+                    同上的折行保险。这一行左边是 `flex-1` 的平台名，会先让出空间，
+                    所以数值这块现在不挤（实测 146.7px）；但单位一旦被挤就同样会在
+                    小/时 之间折行，加 shrink-0 让它整块保住宽度。
+                  */}
+                  <div className="flex items-baseline gap-2 shrink-0">
                     <div className="text-[3.5rem] font-black text-foreground leading-none">{total.value}</div>
-                    <div className="text-3xl font-medium text-foreground/80">{total.unit}</div>
+                    <div className="text-3xl font-medium text-foreground/80 whitespace-nowrap">{total.unit}</div>
                   </div>
                 </div>
                 <div className="relative h-12 bg-surface-secondary rounded-full overflow-hidden">

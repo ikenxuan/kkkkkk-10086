@@ -1,9 +1,14 @@
 import { createRequire } from 'node:module'
-import type { AxiosRequestConfig } from 'axios'
+import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ProxyAuth, PushlistConfig } from '@/types/config'
 import type { FileInfo, FileTitle } from '@/types/platform'
 import { getBilibiliData as fetchBilibiliData } from '@/module/platform/bilibili/api'
 import { getDouyinData as fetchDouyinData } from '@/module/platform/douyin/api'
+import {
+  classifyCdnFailure,
+  reportCdnFailure,
+  resolveCdnCandidates
+} from './CdnRegistry.js'
 import { Networks, baseHeaders } from './Networks.js'
 import { mergeFile } from './FFmpeg.js'
 import cfg from '@/runtime/host/config'
@@ -104,6 +109,15 @@ interface VideoDownloadOptions {
   headers?: AxiosRequestConfig['headers']
   isLiveStream?: boolean
   liveStreamMaxSize?: number
+  /**
+   * 同一份资源的其它可用地址（镜像 / 备用 CDN），不含 `video_url` 也没关系 ——
+   * 下载层会把 `video_url` 排在最前再合并这批。
+   */
+  candidates?: readonly string[]
+  /** 资源键，例如 `bili:BV1xx:video`。给了才会跨次数记住这批地址，见 `utils/CdnRegistry.ts` */
+  resource?: string
+  /** 下载前实测候选地址速度，按结果重排。由平台层按自己的开关决定，见 `utils/CdnProbe.ts` */
+  probeCdn?: boolean
 }
 
 interface DownloadFileOptions {
@@ -111,6 +125,12 @@ interface DownloadFileOptions {
   headers?: AxiosRequestConfig['headers']
   isLiveStream?: boolean
   liveStreamMaxSize?: number
+  /** 备用地址，见 {@link VideoDownloadOptions.candidates} */
+  candidates?: readonly string[]
+  /** 资源键，见 {@link VideoDownloadOptions.resource} */
+  resource?: string
+  /** 测速开关，见 {@link VideoDownloadOptions.probeCdn} */
+  probeCdn?: boolean
 }
 
 interface ApiErrorRecord extends Record<string, unknown> {
@@ -1057,6 +1077,39 @@ export const uploadFile = async (
 }
 
 /**
+ * 逐个候选地址探一次体积，返回第一个答上来的响应头。
+ *
+ * 全都答不上时返回 `undefined` 而不是抛：体积只用来做上传前的准入判断，
+ * 探不到就当未知继续走下载 —— 真正的下载还有一轮自己的换地址重试。
+ *
+ * 顺手把失败的节点报进地址簿：这一次探测的结论对紧接着的下载有用，
+ * 下载层排序时就会把这些主机挪到队尾，不用再撞一遍。
+ *
+ * @param downloadOpt 下载参数，用它的 `video_url` / `candidates` / `resource`
+ */
+const probeVideoSize = async (
+  downloadOpt: VideoDownloadOptions
+): Promise<AxiosResponse['headers'] | undefined> => {
+  const candidates = resolveCdnCandidates(
+    downloadOpt.resource ?? '',
+    [downloadOpt.video_url, ...(downloadOpt.candidates ?? [])]
+  )
+  const targets = candidates.length > 0 ? candidates : [downloadOpt.video_url]
+  for (const url of targets) {
+    try {
+      const headers = await new Networks({ url, headers: downloadOpt.headers ?? baseHeaders }).getHeaders()
+      return headers
+    } catch (error: unknown) {
+      const kind = classifyCdnFailure(error)
+      if (kind !== null) reportCdnFailure(url, kind)
+      logger.debug(`[下载] 体积探测失败（${getErrorMessage(error)}），换下一个地址`)
+    }
+  }
+  logger.debug('[下载] 所有候选地址都没能探到体积，按未知体积继续')
+  return undefined
+}
+
+/**
  * 下载视频并上传到群
  * @param {*} e 事件
  * @param {downloadFileOptions} downloadOpt 下载参数
@@ -1068,9 +1121,18 @@ export const downloadVideo = async (
   downloadOpt: VideoDownloadOptions,
   uploadOpt?: UploadFileOptions
 ): Promise<boolean> => {
-  // 获取文件大小
-  const fileHeaders = await new Networks({ url: downloadOpt.video_url, headers: downloadOpt.headers ?? baseHeaders }).getHeaders()
-  const fileSizeContent = fileHeaders['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)[1], 10) : 0
+  // 获取文件大小。
+  //
+  // 这一步**不能**决定整次解析的生死：它只是为了拿体积做上传前的准入判断，而拿不到体积
+  // 下游本来就有「未知体积」这条分支（见下面 fileSizeContent === 0 的处理）。
+  // 以前这里是 `await ...getHeaders()` 裸调，节点回 403 时重试三次然后抛，
+  // 于是**连下载都没开始**整条就炸了 —— 用户看到的是「同一个链接有时能解析有时不能」，
+  // 实际是负载均衡把他随机分到了一个拒绝服务的节点。
+  //
+  // 现在换成逐个候选地址探：哪个能答就用它的体积，全都答不出就当体积未知继续走下载
+  // （下载层自己还有一轮换地址重试，见 `Networks.attemptDownloadStream`）。
+  const fileHeaders = await probeVideoSize(downloadOpt)
+  const fileSizeContent = fileHeaders?.['content-range']?.match(/\/(\d+)/) ? parseInt(fileHeaders['content-range']?.match(/\/(\d+)/)![1], 10) : 0
   const fileSizeInMB = (fileSizeContent / (1024 * 1024)).toFixed(2)
   const fileSize = parseInt(parseFloat(fileSizeInMB).toFixed(2))
 
@@ -1118,12 +1180,16 @@ export const downloadVideo = async (
     return true
   }
 
-  // 下载文件
+  // 下载文件。备用地址要一路带下去 —— 这里是绝大多数视频下载的入口，
+  // 漏了它就等于只有 downloadMergedStream 那一条路享受到换地址重试。
   let res = await downloadFile(downloadOpt.video_url, {
     title: Config.app.removeCache ? (downloadOpt.title.timestampTitle || 'temp') : processFilename(downloadOpt.title.originTitle || 'video', 50),
     headers: downloadOpt.headers || baseHeaders,
     isLiveStream: downloadOpt.isLiveStream,
-    liveStreamMaxSize: downloadOpt.liveStreamMaxSize
+    liveStreamMaxSize: downloadOpt.liveStreamMaxSize,
+    candidates: downloadOpt.candidates,
+    resource: downloadOpt.resource,
+    probeCdn: downloadOpt.probeCdn
   })
 
   res = { ...res, ...downloadOpt.title }
@@ -1192,7 +1258,10 @@ export const downloadFile = async (
     }
   }, 0, {
     isLiveStream: opt.isLiveStream,
-    liveStreamMaxSize: opt.liveStreamMaxSize
+    liveStreamMaxSize: opt.liveStreamMaxSize,
+    candidates: opt.candidates,
+    resource: opt.resource,
+    probeCdn: opt.probeCdn
   })
 
   return { filepath, totalBytes }

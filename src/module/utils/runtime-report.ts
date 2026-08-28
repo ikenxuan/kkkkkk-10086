@@ -26,6 +26,8 @@ import { getReleaseChannel } from '@/module/tooling/release-channel'
 import type { MessageEvent } from '@/types/message'
 
 import { getApiCacheSnapshot, type ApiCacheTier } from './ApiCache.js'
+import { getCdnProbeSnapshot } from './CdnProbe.js'
+import { type CdnFailureKind, getCdnRegistrySnapshot } from './CdnRegistry.js'
 import Config from './Config.js'
 import { getDownloadBudgetSnapshot } from './DownloadBudget.js'
 import { getParseCoordinatorSnapshot } from './ParseCoordinator.js'
@@ -180,6 +182,48 @@ const API_CACHE_TIER_LABELS: Readonly<Record<ApiCacheTier, string>> = {
 }
 
 /**
+ * CDN 失败性质到卡上中文措辞的映射。
+ *
+ * 四种性质在 `CdnRegistry` 里对惩罚的处理完全一样，区分开只为了让这张卡说得清
+ * 「这个节点是怎么坏的」—— 「被限速」和「403 拒绝」的排查方向完全不同。
+ */
+const CDN_FAILURE_LABELS: Readonly<Record<CdnFailureKind, string>> = {
+  blocked: '拒绝服务',
+  missing: '资源缺失',
+  slow: '持续低速',
+  network: '连接失败'
+}
+
+/**
+ * 惩罚剩余时长排成紧凑文本。
+ *
+ * 单独一个函数而不是复用上面的 `formatDuration`：那个的最小粒度是「秒」且不足
+ * 一分钟时印整秒，而惩罚期是分钟量级、看的人关心的是「还要避开多久」，
+ * 印成 `4.2分钟` 比 `252秒` 好读。
+ *
+ * @param ms 剩余毫秒数
+ */
+const formatPenaltyRemaining = (ms: number): string => {
+  if (!Number.isFinite(ms) || ms <= 0) return '即将解除'
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}秒`
+  return `${(ms / 60_000).toFixed(1)}分钟`
+}
+
+/**
+ * 实测速度排成人类可读文本。
+ *
+ * 入参单位是 KB/s（`getCdnProbeSnapshot` 已经在那边除过 1024 并取整），
+ * 所以这里只在超过 1024KB/s 时再进一档，不要再拿 `formatBytes` 从字节数算一遍。
+ *
+ * @param kbPerSecond 实测速度，KB/s
+ */
+const formatProbeSpeed = (kbPerSecond: number): string => {
+  if (!Number.isFinite(kbPerSecond) || kbPerSecond <= 0) return '不可用'
+  if (kbPerSecond < 1024) return `${kbPerSecond}KB/s`
+  return `${(kbPerSecond / 1024).toFixed(1)}MB/s`
+}
+
+/**
  * 比率排成百分数文本。
  *
  * 夹到 0~1 再乘 100：这个字符串会被模板**直接当 CSS `width` 用**（和内存占用那根条同一套做法），
@@ -228,6 +272,8 @@ export const collectRuntimeReport = (event: MessageEvent) => {
   const cacheSnapshot = getApiCacheSnapshot()
   const downloadSnapshot = getDownloadBudgetSnapshot()
   const parseSnapshot = getParseCoordinatorSnapshot()
+  const cdnSnapshot = getCdnRegistrySnapshot()
+  const probeSnapshot = getCdnProbeSnapshot()
   const cacheLookups = cacheSnapshot.hits + cacheSnapshot.coalesced + cacheSnapshot.misses
   const currentChangelog = getLocalChangelog(1)
   const rawScale = Number(Config.app.renderScale) / 100
@@ -326,6 +372,41 @@ export const collectRuntimeReport = (event: MessageEvent) => {
           label: DOWNLOAD_BUCKET_LABELS[bucket.bucket] ?? bucket.bucket,
           running: bucket.running,
           queued: bucket.queued
+        }))
+      },
+      /*
+        CDN 地址簿与测速缓存。这一格是「为什么这次下载特别慢」的排障入口：
+        被限速或返回 403 的节点会进惩罚期，画出来才看得见换过几次地址、现在避着谁。
+
+        只往外给主机名，完整地址一律不给：路径里带着鉴权签名，任何人拿到就能盗链，
+        而这张卡在群里也会被画出来。两个快照的 `host` 字段本来就只有主机名，
+        所以这里不需要额外裁剪，但新增字段时要守住这条线。
+      */
+      cdn: {
+        resources: cdnSnapshot.resources,
+        hosts: cdnSnapshot.hosts,
+        probedHosts: probeSnapshot.hosts,
+        // 快照那边已经按主机名排过序，这里不再动次序
+        penalized: cdnSnapshot.penalized.map(entry => ({
+          host: entry.host,
+          failures: entry.failures,
+          // lastKind 只在「记着这个主机但还没失败过」时为 null，而这个列表只收
+          // 惩罚期内的主机（必然失败过至少一次），所以那个分支实际到不了；
+          // 仍然给兜底，免得以后快照口径变了在卡上印出 undefined
+          reason: entry.lastKind === null ? '未知' : CDN_FAILURE_LABELS[entry.lastKind],
+          remaining: formatPenaltyRemaining(entry.penaltyRemainingMs)
+        })),
+        // 快照那边已经按实测速度从快到慢排过
+        probes: probeSnapshot.entries.map(entry => ({
+          host: entry.host,
+          speed: formatProbeSpeed(entry.kbPerSecond),
+          // 测不通时不印那个毫秒数。`ttfbMs` 在失败分支里是「失败前耗时」而不是首字节
+          // 时间（见 CdnProbe 的 `ok: false` 两处返回），照 TTFB 印出来会误导两次：
+          // 地址畸形那条是 0，印成 `0ms` 会被读成「快得测不出来」；而超时那条是整个
+          // 超时窗口，印出来又像是真握上了手。也不能一律写「超时」—— 403 同样是
+          // `ok: false`，它的耗时是真的。所以这里什么都不声称。
+          ttfb: entry.ok ? `${entry.ttfbMs}ms` : '—',
+          ok: entry.ok
         }))
       },
       // 刻意只给计数，不给 runningFingerprints / queuedFingerprints：指纹是

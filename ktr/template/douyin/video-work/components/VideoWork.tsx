@@ -6,7 +6,7 @@ import React from 'react'
 
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import { AmbientCover } from '../../../components/AmbientCover'
-import { GlowImage } from '../../../components/GlowImage'
+import { GlowImage, GlowText } from '../../../components/GlowImage'
 import { QRCodeWithAvatar } from '../../../components/QRCodeWithAvatar'
 import type { PosterProps } from '../../../types/ctx'
 import { isDark as isDarkMode } from '../../../../utils/theme'
@@ -109,9 +109,10 @@ const DouyinPosterHeader: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data, 
   )
 }
 
-const DouyinVideoCover: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data }) => {
-  const { image_url, music, duration } = data
+const DouyinVideoCover: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data, ctx }) => {
+  const { image_url, music, duration, resolution, is_HDR } = data
   const durationText = formatDuration(duration)
+  const useDarkTheme = isDarkMode(ctx)
 
   return (
     <section className="relative -mx-20 mt-12 overflow-visible">
@@ -141,8 +142,25 @@ const DouyinVideoCover: React.FC<PosterProps<DouyinVideoWorkData>> = ({ data }) 
         referrerPolicy="no-referrer"
         crossOrigin="anonymous"
       />
-      <div className="absolute left-24 top-10 z-30 flex items-center gap-5 text-foreground/85">
-        {durationText && <span className="text-[34px] font-black tabular-nums">时长: {durationText}</span>}
+      {/* 顶部信息行：时长靠左、分辨率靠右，两侧同一水平线对齐 */}
+      <div className="absolute inset-x-24 top-10 z-30 flex items-start justify-between text-foreground/85">
+        {durationText && <span className="text-[34px] font-black leading-none tabular-nums">时长: {durationText}</span>}
+
+        {resolution && (
+          <div className="ml-auto flex flex-col items-end gap-1.5">
+            {/* 档位名，HDR 作品在后面缀上标记；深色模式下让它发光 */}
+            <span className="text-3xl font-black leading-none tracking-[0.08em] select-text">
+              {resolution.name}
+              {is_HDR && (useDarkTheme
+                ? <GlowText glowStrength={1} blurRadius={10}>{' · HDR'}</GlowText>
+                : ' · HDR')}
+            </span>
+
+            <span className="text-2xl font-bold tracking-[0.08em] text-foreground/60 tabular-nums select-text">
+              {resolution.width} × {resolution.height} px
+            </span>
+          </div>
+        )}
       </div>
 
       <PlayIcon size={104} weight="fill" aria-label="播放" className="absolute bottom-12 right-24 z-30 text-white/50" />

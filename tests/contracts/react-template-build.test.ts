@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -165,6 +165,63 @@ describe('React template distribution contract', () => {
     expect(defaultLayoutSource).not.toContain('zoom: scale')
     expect(defaultLayoutSource).not.toContain("isolation: 'isolate'")
     expect(defaultLayoutSource).not.toContain('const { scale = 1')
+  })
+
+  it('scans every ktr source directory that writes class names, not just ktr/template', () => {
+    /*
+      Tailwind v4 的 `@source` 相对 CSS 文件自身解析，而 style.css 在 ktr/template/，
+      所以只写一条模板目录的 glob 时，ktr/utils、ktr/richtext 这些**兄弟目录**压根不被
+      扫描 —— 里面的类名对 Tailwind 不存在，任意值就不生成规则。
+
+      症状是「偶尔生效」，所以极难发现：只要 ktr/template 下**碰巧**有别的模板用了同一个
+      值，规则就已经生成了，兄弟目录白蹭一个。只有那个值在整个 ktr/template 里没人用过，
+      才会静默失效 —— 类名照样出现在 HTML 上，但没有规则，字号回落到继承值。
+      实测过的两处：ktr/utils 的 `text-[3rem]` 渲染成 16px（期望 48px）、
+      ktr/richtext 的 `text-[58px]` 和 `leading-[1.8]` 同样无规则。
+
+      因此断言「哪些目录被扫」而不是断言那几行 glob 的字面拼写：新增一个会写 className
+      的 ktr 子目录、却忘了补 @source 时，这条就红。
+    */
+    const styleSheet = readFileSync(resolve(root, 'ktr', 'template', 'style.css'), 'utf8')
+    const sourceGlobs = [...styleSheet.matchAll(/@source\s+'([^']+)'/g)].map((match) => match[1])
+    expect(sourceGlobs.length).toBeGreaterThan(0)
+
+    // @source 是相对 ktr/template/ 解析的，换算成 ktr/ 下的目录名
+    const scanned = new Set(sourceGlobs.map((glob) => {
+      const normalized = glob.replace(/^\.\//, '')
+      return normalized.startsWith('../') ? normalized.slice(3).split('/')[0] : 'template'
+    }))
+
+    /*
+      判定「这个目录贡献了类名」不能只看 `className=`：类名也可以是被**返回**的字符串，
+      由别处拼到 className 上。`ktr/utils/media-format.ts` 的 valueSizeClass 就是这样
+      —— 它是本条契约要防的那个真实 bug 的现场，却一个 `className=` 都没有。
+      只按属性名判定的话，这条断言对 ktr/utils **恒真**（集合里压根没有它），
+      测试绿着而 bug 照旧。所以同时认「任意值类名字面量」（`text-[3rem]` 这种
+      带方括号的形态，也正是缺了规则就静默失效的那一类）。
+    */
+    const writesClassNames = (source: string): boolean =>
+      /\bclassName\s*=|\bclass\s*=/.test(source) ||
+      /['"`][^'"`]*[a-z]-\[[^\]]+\]/.test(source)
+
+    const ktrRoot = resolve(root, 'ktr')
+    const hasClassNames = readdirSync(ktrRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .filter((entry) => {
+        const files = execFileSync(
+          'git',
+          ['ls-files', `ktr/${entry.name}`],
+          { cwd: root, encoding: 'utf8' }
+        ).split('\n').filter((file) => /\.(?:tsx?|jsx?)$/.test(file))
+        // ktr/font 全是 css，没有类名，不需要被扫
+        return files.some((file) => writesClassNames(readFileSync(resolve(root, file), 'utf8')))
+      })
+      .map((entry) => entry.name)
+
+    expect(hasClassNames).toContain('template')
+    for (const directory of hasClassNames) {
+      expect(scanned).toContain(directory)
+    }
   })
 
   it('keeps CSS and Tailwind out of the SSR registry entry', () => {

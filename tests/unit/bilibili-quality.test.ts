@@ -225,6 +225,87 @@ describe('getvideo 未登录分支的流兜底', () => {
   })
 })
 
+/**
+ * `bilibiliCdnMode` 的改写次序在 bilibili-cdn.test.ts 里逐条钉过了，那批用例测的是纯函数。
+ * 这里钉的是另一件事：面板上那两个开关到底有没有走到下载层。
+ *
+ * 分开测是因为两者的失效方式不一样 —— 改写函数算得再对，只要 `getvideo` 忘了把结果
+ * 往下传，开关在用户看来就是「开了没用」，而纯函数的用例全绿，一个字都不会报。
+ */
+describe('CDN 选路配置到下载层的交接', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  /** 跑未登录的 dash 合流分支：那条路要下两次（视频 + 音频），正好看得出两者的差别 */
+  const runDashMerge = async (): Promise<void> => {
+    const { downloadFile, mergeFile } = await import('../../src/module/utils/index.js')
+    vi.mocked(downloadFile).mockResolvedValue({ filepath: '/tmp/fake' } as never)
+    vi.mocked(mergeFile).mockResolvedValue(undefined as never)
+
+    const instance = new Bilibili({ reply: vi.fn() } as never, { type: 'one_video' })
+    instance.islogin = false
+    instance.downloadfilename = 'test-video'
+    await instance.getvideo({
+      infoData: { data: { bvid: 'BV1test' } },
+      playUrlData: {
+        data: {
+          data: {
+            durl: [],
+            dash: {
+              video: [{ id: 80, base_url: 'https://example.com/v.m4s', backup_url: [] }],
+              audio: [{ id: 30280, base_url: 'https://example.com/a.m4s', backup_url: [] }]
+            }
+          }
+        }
+      }
+    } as never)
+  }
+
+  it('开着测速时只有视频流带 probeCdn，音频流不带', async () => {
+    configMock.bilibili = { bilibiliCdnProbe: true }
+    const { downloadFile } = await import('../../src/module/utils/index.js')
+
+    await runDashMerge()
+
+    const [video, audio] = vi.mocked(downloadFile).mock.calls
+    expect(video?.[1]).toMatchObject({ probeCdn: true })
+    // 音频那一路刻意不测速：它只有几兆，为它多等一次握手不值得，而且两路流的主机名
+    // 基本相同，视频那次的结果已经进了按主机缓存的表，音频直接命中。
+    expect(audio?.[1]).not.toMatchObject({ probeCdn: true })
+  })
+
+  it('默认（配置里没有这一项）不测速，不给新主机的首次下载加等待', async () => {
+    configMock.bilibili = {}
+    const { downloadFile } = await import('../../src/module/utils/index.js')
+
+    await runDashMerge()
+
+    expect(vi.mocked(downloadFile).mock.calls[0]?.[1]).toMatchObject({ probeCdn: false })
+  })
+
+  // 读的是 `=== true`，所以 YAML 里被写成字符串 'false' 之类的脏值不会被当成开启。
+  it('只认布尔真值，字符串不算开', async () => {
+    configMock.bilibili = { bilibiliCdnProbe: 'true' }
+    const { downloadFile } = await import('../../src/module/utils/index.js')
+
+    await runDashMerge()
+
+    expect(vi.mocked(downloadFile).mock.calls[0]?.[1]).toMatchObject({ probeCdn: false })
+  })
+
+  it('视频与音频用不同的地址簿键，候选清单不会互相污染', async () => {
+    configMock.bilibili = {}
+    const { downloadFile } = await import('../../src/module/utils/index.js')
+
+    await runDashMerge()
+
+    const [video, audio] = vi.mocked(downloadFile).mock.calls
+    expect(video?.[1]).toMatchObject({ resource: 'bili:BV1test:video' })
+    expect(audio?.[1]).toMatchObject({ resource: 'bili:BV1test:audio' })
+  })
+})
+
 describe('bilibiliProcessVideos fixed quality strategy', () => {
   it('picks the exactly matching quality', async () => {
     configMock.bilibili = { videoQuality: 80 }

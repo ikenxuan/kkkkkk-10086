@@ -14,7 +14,32 @@
   --radius-8xl: calc(var(--radius) * 8);
 }
 
+/*
+ * 扫描根有三个，别只留第一行。
+ *
+ * Tailwind v4 的 `@source` 按**本文件所在目录**解析，而本文件在 `ktr/template`，
+ * 所以下面第一行那个相对 glob 只覆盖模板目录 —— 同为 ktr 源码的 `ktr/utils` 和
+ * `ktr/richtext` 是它的**兄弟目录**，压根不在扫描范围内。它们里面写的类名对
+ * Tailwind 等于不存在，任意值（`text-[3rem]` 这种要按实际用到的值现生成规则的）
+ * 就不会被生成。
+ *
+ * 这个坑的表现是「偶尔生效」，所以极难发现：只要模板目录里**碰巧**有别的模板
+ * 用了同一个值，规则就已经生成了，兄弟目录里的类名跟着白蹭一个。只有那个值在
+ * 整个模板目录里没人用过，才会静默失效 —— 类名照样出现在 HTML 上，但没有对应
+ * 规则，字号回落到继承值。加下面两行之前实测：
+ *   - `ktr/utils/media-format.ts` 的 `text-[3rem]`（6 字档）→ 无规则，
+ *     实测字号 16px（继承 body），期望 48px；同一文件里的 7rem/5rem/4rem 因为
+ *     statistics 模板里也用到而侥幸生效，所以只有最长的那一档是坏的；
+ *   - `ktr/richtext/react/index.tsx` 的 `text-[58px]`、`leading-[1.8]` → 同样无规则。
+ *
+ * 因此新增「不在 ktr/template 下、又要写 className」的目录时，这里必须补一行。
+ *
+ * 另外：注释里别写含 `**` 加斜杠的 glob 字面量，那个组合会提前闭合 CSS 注释，
+ * 整段文字会被当成声明解析，构建直接报 CssSyntaxError。
+ */
 @source './**/*.{js,ts,jsx,tsx,html}';
+@source '../utils/**/*.{js,ts,jsx,tsx}';
+@source '../richtext/**/*.{js,ts,jsx,tsx}';
 
 @custom-variant dark {
   &:is(

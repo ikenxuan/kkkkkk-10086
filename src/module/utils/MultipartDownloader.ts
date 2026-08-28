@@ -7,6 +7,11 @@ import { pipeline } from 'node:stream/promises'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { FileInfo } from '@/types/platform'
 import { clampConcurrency, tryAcquireDownloadSlots } from './DownloadBudget.js'
+import {
+  createSlowDownloadError,
+  createSlowSpeedGuard,
+  SAMPLE_INTERVAL_MS
+} from './DownloadWatchdog.js'
 import { isRecord } from './record.js'
 
 const MB = 1024 * 1024
@@ -48,6 +53,15 @@ interface MultipartDownloadOptions {
   bucket?: string
   maxRetries: number
   maxSpeed?: number
+  /**
+   * 低速中断的地板速，字节/秒。0 表示不判。
+   *
+   * 判的是**所有分片合起来**的速率，不是单个分片的：分片之间快慢不均是正常的
+   * （对端给每条连接的带宽本来就不一样），用户感知到的只有总速率。
+   */
+  slowFloorBytesPerSecond?: number
+  /** 低速判定的持续窗口，毫秒 */
+  slowSustainMs?: number
   onProgress: (downloaded: number, total: number, isLive: boolean) => void
 }
 
@@ -162,13 +176,46 @@ export const downloadMultipart = async (options: MultipartDownloadOptions): Prom
   const progress = new Array<number>(ranges.length).fill(0)
   let lastProgressAt = 0
 
+  const downloadedSoFar = (): number => progress.reduce((sum, value) => sum + value, 0)
+
   const updateProgress = (index: number, bytes: number): void => {
     progress[index] = bytes
     const now = Date.now()
     if (now - lastProgressAt >= 2000) {
-      options.onProgress(progress.reduce((sum, value) => sum + value, 0), options.total, false)
+      options.onProgress(downloadedSoFar(), options.total, false)
       lastProgressAt = now
     }
+  }
+
+  // 低速看守。这条路也得有：多线程命中时是直接 return 的，如果只有单线程那边判低速，
+  // 开了多线程等于把「限速自动重下」整个关掉 —— 而分片下载恰恰更容易撞上限速，
+  // 因为同一个节点上开几条连接本来就更招限。
+  //
+  // 判的是所有分片的**合计**速率：分片之间快慢不均是正常的（对端分给每条连接的带宽
+  // 本来就不一样），用户感知到的、也是我们要救的，只有总速率。
+  const slowFloor = Math.round(options.slowFloorBytesPerSecond ?? 0)
+  const slowGuard = slowFloor > 0
+    ? createSlowSpeedGuard({ floorBytesPerSecond: slowFloor, sustainMs: options.slowSustainMs })
+    : undefined
+  let slowAbort: Error | undefined
+  let slowCheckInterval: NodeJS.Timeout | undefined
+  if (slowGuard) {
+    slowGuard.reset(Date.now())
+    slowCheckInterval = setInterval(() => {
+      // 分片重试会把自己那格清零（`progress[index] = 0`），于是合计值会往回跳一下。
+      // 看守拿 `Math.max(0, delta)` 收下界，所以那一跳只会得到一次 0 速率采样，
+      // 而判定要连续低速满 sustainMs 才动手 —— 一次重试造成的凹陷吃不掉这个窗口。
+      const verdict = slowGuard.sample({
+        downloadedBytes: downloadedSoFar(),
+        totalBytes: options.total,
+        now: Date.now()
+      })
+      if (!verdict.triggered) return
+      slowAbort = createSlowDownloadError(verdict.bytesPerSecond, slowFloor)
+      logger.warn(`[下载] ${slowAbort.message}，掐掉分片下载重来并换一个地址`)
+      controller.abort()
+      if (slowCheckInterval) clearInterval(slowCheckInterval)
+    }, SAMPLE_INTERVAL_MS)
   }
 
   await fs.promises.mkdir(path.dirname(options.filepath), { recursive: true })
@@ -242,8 +289,13 @@ export const downloadMultipart = async (options: MultipartDownloadOptions): Prom
   } catch (error: unknown) {
     controller.abort()
     await fs.promises.rm(stagingPath, { force: true }).catch(() => {})
+    // 我们自己掐的要抛自己那份错误：abort() 之后每个分片抛的都是 axios 的 ERR_CANCELED，
+    // 直接往上扔的话上层只看到「请求被取消」，分不出是低速掐的还是别的原因取消的，
+    // 于是 Networks 那边既不会记地址簿也不会换地址 —— 正好把这道判定的目的抹掉。
+    if (slowAbort) throw slowAbort
     throw error
   } finally {
+    if (slowCheckInterval) clearInterval(slowCheckInterval)
     for (const slot of shardSlots) slot.release()
   }
 }

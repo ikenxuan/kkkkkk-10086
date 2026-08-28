@@ -186,18 +186,27 @@ export const GroupStatistics: React.FC<PosterProps<GroupStatisticsData>> = (prop
             <div className="relative p-16 rounded-3xl bg-surface/40 backdrop-blur-md border-2 border-border/40">
               <div className="text-4xl font-black text-foreground/90 mb-3">本群解析</div>
               <div className="text-xl font-medium tracking-widest uppercase text-muted/70 mb-8 opacity-60">GROUP TOTAL</div>
+              {/*
+                `whitespace-nowrap shrink-0` 是折行保险，跟 MediaMetricsSection 一致。
+                这两张卡目前不会溢出（`grid-cols-2` 卡宽 584、可用 456px，六位数
+                345px + 单字单位 36px 还余 63px），但结构与那边一模一样：单位是
+                flex item、默认 min-width:auto，挤到就会折行。哪天这排改成三列、
+                或者次数到七位（约 447px）就会复现，加两个类先把机制堵掉。
+                这里不做按字符数降字号 —— 宽卡还用不上。
+              */}
               <div className="flex items-baseline gap-3">
                 <div className="text-[7rem] font-black leading-none text-foreground/90">{props.data.groupTotalParses}</div>
-                <div className="text-4xl font-medium text-foreground/80 pb-2">次</div>
+                <div className="text-4xl font-medium text-foreground/80 pb-2 whitespace-nowrap shrink-0">次</div>
               </div>
             </div>
 
             <div className="relative p-16 rounded-3xl bg-surface/40 backdrop-blur-md border-2 border-border/40">
               <div className="text-4xl font-black text-foreground/90 mb-3">使用用户</div>
               <div className="text-xl font-medium tracking-widest uppercase text-muted/70 mb-8 opacity-60">UNIQUE USERS</div>
+              {/* 折行保险同上 */}
               <div className="flex items-baseline gap-3">
                 <div className="text-[7rem] font-black leading-none text-foreground/90">{props.data.groupUniqueUsers}</div>
-                <div className="text-4xl font-medium text-foreground/80 pb-2">人</div>
+                <div className="text-4xl font-medium text-foreground/80 pb-2 whitespace-nowrap shrink-0">人</div>
               </div>
             </div>
           </div>

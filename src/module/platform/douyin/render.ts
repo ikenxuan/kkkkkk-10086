@@ -30,6 +30,7 @@ import { Common, Render } from '@/module/utils/index'
 import type { ImageMessage } from '@/module/utils/Watermark'
 
 import { getDouyinData } from './api.js'
+import { buildDouyinResolutionInfo, type DouyinBitRateItem, isDouyinHdrStream } from './videoQuality.js'
 import {
   getDouyinWorkCoverUrl,
   isDouyinArticle,
@@ -482,6 +483,16 @@ export interface RenderWorkImageOptions {
   shareLink: string
   /** 作品类型标签，显示在图片头部 */
   dynamicTypeLabel?: string
+  /**
+   * 按画质配置选中、即将下载发送的那一路视频源，只有视频作品需要传。
+   *
+   * 卡片上的清晰度必须从**选中的那一路**派生，不能拿 `Detail_Data.video.bit_rate[0]`
+   * 顶替：`bit_rate[0]` 是接口给的顺序，而选档会按体积上限往下退档，
+   * 两者对不上就会出现「卡片写 4K、实际下载 720p」的错位。
+   *
+   * 不传（或传 undefined）时卡片不印清晰度，契约里这两个字段都是可选的。
+   */
+  videoSource?: DouyinBitRateItem | null
 }
 
 /**
@@ -571,6 +582,10 @@ export const renderWorkImage = async (options: RenderWorkImageOptions): Promise<
       suggest_word: extractSuggestWord(Detail_Data),
       music: buildMusicInfo(Detail_Data.music),
       duration: Detail_Data.duration,
+      resolution: buildDouyinResolutionInfo(options.videoSource),
+      // HDR 判据和选源用的是同一个函数：`douyinProcessVideos` 会把 HDR 档排掉，
+      // 所以这里通常是 false，只有「整个作品全是 HDR」那条放行分支才为 true。
+      is_HDR: options.videoSource ? isDouyinHdrStream(options.videoSource) : undefined,
       ...statFields,
       create_time,
       ...authorFields,

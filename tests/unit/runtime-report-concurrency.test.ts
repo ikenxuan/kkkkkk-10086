@@ -50,6 +50,19 @@ const budgetSnapshot = vi.hoisted(() => ({
 const parseSnapshot = vi.hoisted(() => ({
   value: undefined as Record<string, unknown> | undefined
 }))
+/**
+ * 地址簿与测速缓存的快照。
+ *
+ * 这两套的真实模块是**进程级单例**，状态只能靠 `resetCdnRegistry()` 之类的副作用推。
+ * 替成固定值是为了能直接钉「毫秒怎么排成人话」「失败性质怎么换中文」这些纯格式化的账，
+ * 不必先想办法把某个主机弄进惩罚期。
+ */
+const cdnRegistrySnapshot = vi.hoisted(() => ({
+  value: { resources: 0, hosts: 0, penalized: [] as Array<Record<string, unknown>> } as Record<string, unknown>
+}))
+const cdnProbeSnapshot = vi.hoisted(() => ({
+  value: { hosts: 0, entries: [] as Array<Record<string, unknown>> } as Record<string, unknown>
+}))
 
 vi.mock('../../src/module/utils/ApiCache.js', () => ({
   getApiCacheSnapshot: () => cacheSnapshot.value
@@ -59,6 +72,12 @@ vi.mock('../../src/module/utils/DownloadBudget.js', () => ({
 }))
 vi.mock('../../src/module/utils/ParseCoordinator.js', () => ({
   getParseCoordinatorSnapshot: () => parseSnapshot.value
+}))
+vi.mock('../../src/module/utils/CdnRegistry.js', () => ({
+  getCdnRegistrySnapshot: () => cdnRegistrySnapshot.value
+}))
+vi.mock('../../src/module/utils/CdnProbe.js', () => ({
+  getCdnProbeSnapshot: () => cdnProbeSnapshot.value
 }))
 
 const { collectRuntimeReport } = await import('../../src/module/utils/runtime-report.js')
@@ -84,6 +103,8 @@ beforeEach(() => {
   }
   budgetSnapshot.value = { limit: 8, buckets: [] }
   parseSnapshot.value = undefined
+  cdnRegistrySnapshot.value = { resources: 0, hosts: 0, penalized: [] }
+  cdnProbeSnapshot.value = { hosts: 0, entries: [] }
 })
 
 afterEach(() => {
@@ -277,5 +298,119 @@ describe('解析队列占用', () => {
       queued: 0,
       pending: 0
     })
+  })
+})
+
+describe('CDN 地址簿与测速缓存', () => {
+  it('失败性质换成中文，四种都有对应措辞', () => {
+    cdnRegistrySnapshot.value = {
+      resources: 4,
+      hosts: 4,
+      penalized: [
+        { host: 'a.example.com', failures: 1, lastKind: 'blocked', penaltyRemainingMs: 1000 },
+        { host: 'b.example.com', failures: 2, lastKind: 'missing', penaltyRemainingMs: 1000 },
+        { host: 'c.example.com', failures: 3, lastKind: 'slow', penaltyRemainingMs: 1000 },
+        { host: 'd.example.com', failures: 4, lastKind: 'network', penaltyRemainingMs: 1000 }
+      ]
+    }
+
+    expect(collect().cdn.penalized.map(entry => entry.reason)).toEqual([
+      '拒绝服务', '资源缺失', '持续低速', '连接失败'
+    ])
+  })
+
+  // lastKind 为 null 是真实形状：`HostHealth` 的初始值就是 null，
+  // 而 `penalized` 只筛「还在惩罚期」，不保证 lastKind 已经写过。
+  it('没记下性质时写「未知」，不印 undefined', () => {
+    cdnRegistrySnapshot.value = {
+      resources: 1,
+      hosts: 1,
+      penalized: [{ host: 'a.example.com', failures: 1, lastKind: null, penaltyRemainingMs: 1000 }]
+    }
+
+    expect(collect().cdn.penalized[0]?.reason).toBe('未知')
+  })
+
+  // 惩罚期是 10 分钟量级，看的人关心「还要避开多久」，所以不足一分钟印秒、
+  // 超过就印分钟。印成 `252秒` 要自己换算。
+  it('剩余惩罚时长按量级换单位', () => {
+    const remaining = (penaltyRemainingMs: number): string | undefined => {
+      cdnRegistrySnapshot.value = {
+        resources: 1,
+        hosts: 1,
+        penalized: [{ host: 'a.example.com', failures: 1, lastKind: 'slow', penaltyRemainingMs }]
+      }
+      return collect().cdn.penalized[0]?.remaining
+    }
+
+    expect(remaining(38_500)).toBe('38.5秒')
+    expect(remaining(252_000)).toBe('4.2分钟')
+    // 边界：正好一分钟归到分钟档
+    expect(remaining(60_000)).toBe('1.0分钟')
+    // 已经到点（快照筛过一遍，但两次读之间时钟会走）时不印负数
+    expect(remaining(0)).toBe('即将解除')
+    expect(remaining(-5)).toBe('即将解除')
+  })
+
+  it('测速速度按量级换单位，测不通的那条写「不可用」', () => {
+    cdnProbeSnapshot.value = {
+      hosts: 3,
+      entries: [
+        { host: 'fast.example.com', ok: true, kbPerSecond: 8602, ttfbMs: 96 },
+        { host: 'slow.example.com', ok: true, kbPerSecond: 742, ttfbMs: 210 },
+        { host: 'dead.example.com', ok: false, kbPerSecond: 0, ttfbMs: 0 }
+      ]
+    }
+
+    expect(collect().cdn.probes).toEqual([
+      { host: 'fast.example.com', speed: '8.4MB/s', ttfb: '96ms', ok: true },
+      { host: 'slow.example.com', speed: '742KB/s', ttfb: '210ms', ok: true },
+      // 测不通那条什么都不声称：`ttfbMs` 在失败分支里是「失败前耗时」，
+      // 印成 `0ms` 会被读成「快得测不出来」，写死「超时」又会冤枉 403 那种真握上手的失败
+      { host: 'dead.example.com', speed: '不可用', ttfb: '—', ok: false }
+    ])
+  })
+
+  // 上一条钉的是地址畸形（耗时 0）那种失败，这条钉的是「真的连上了、但被拒」：
+  // 两者都是 ok: false，可后者的耗时是有意义的 —— 一律照印就会把前者说成很快，
+  // 一律写「超时」又会把后者说成没连上。所以两种都不印。
+  it('失败原因不同但耗时都不印，免得把「测不通」说成一个速度指标', () => {
+    cdnProbeSnapshot.value = {
+      hosts: 1,
+      entries: [{ host: 'blocked.example.com', ok: false, kbPerSecond: 0, ttfbMs: 320 }]
+    }
+
+    expect(collect().cdn.probes).toEqual([
+      { host: 'blocked.example.com', speed: '不可用', ttfb: '—', ok: false }
+    ])
+  })
+
+  it('资源数、主机数与测速主机数原样透传', () => {
+    cdnRegistrySnapshot.value = { resources: 6, hosts: 4, penalized: [] }
+    cdnProbeSnapshot.value = { hosts: 3, entries: [] }
+
+    expect(collect().cdn).toMatchObject({ resources: 6, hosts: 4, probedHosts: 3 })
+  })
+
+  it('两套都空着时给空数组，让模板画「没有节点在惩罚期」而不是崩', () => {
+    expect(collect().cdn).toEqual({
+      resources: 0,
+      hosts: 0,
+      probedHosts: 0,
+      penalized: [],
+      probes: []
+    })
+  })
+
+  // 主机名是要画进图里的，但完整地址不能：路径带着鉴权签名，
+  // 那张图在群里是所有人可见的。
+  it('只带主机名，不把完整下载地址带出来', () => {
+    cdnRegistrySnapshot.value = {
+      resources: 1,
+      hosts: 1,
+      penalized: [{ host: 'upos-sz-mirror08c.bilivideo.com', failures: 1, lastKind: 'slow', penaltyRemainingMs: 1000 }]
+    }
+
+    expect(JSON.stringify(collect().cdn)).not.toContain('/')
   })
 })
