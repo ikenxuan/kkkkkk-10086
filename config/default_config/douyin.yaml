@@ -56,7 +56,9 @@ autoResolution: true
 videoQuality: 4k
 
 # 自动画质模式下可接受的最大视频大小（单位：MB），仅 videoQuality 为 adapt 时生效
-# 固定档位时改由「视频拦截阈值」upload.filelimit 限体积
+# 与「视频拦截阈值」upload.filelimit 同时生效，谁更严谁说话：填得比 filelimit 大不会放开体积，
+# 因为超过 filelimit 的视频在上传环节会被直接拒掉。填 0 表示这一路不设限，只受 filelimit 约束
+# 固定档位（非 adapt）时本项不生效，改由 filelimit 单独限体积
 maxAutoVideoSize: 50
 
 # 谁可以触发扫码登录

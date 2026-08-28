@@ -178,11 +178,22 @@ export const douyinProcessVideos = <T extends DouyinBitRateItem>(
 
   const quality = options.videoQuality || 'adapt'
   const filelimit = options.filelimit
-  // adapt 用自己的上限；固定档位模式仍受 filelimit 约束，免得配了 4k 就无视体积拉 700MB 的源
-  const limitMB = quality === 'adapt'
-    ? (options.maxAutoVideoSize || filelimit)
-    : filelimit
-  const sizeLimitBytes = limitMB && limitMB > 0 ? limitMB * 1024 * 1024 : Infinity
+  /*
+    两个上限**同时**生效，谁更严谁说话：`filelimit` 是上传通道的硬闸门
+    （`Base.ts` 里超了就 `return false` 并回「已取消上传」），`maxAutoVideoSize`
+    只是画质偏好。所以不能像原来那样在 adapt 模式下用 `maxAutoVideoSize || filelimit`
+    ——面板上前者能填到 9999、后者最低能填 5，一旦用户把前者调得比后者大，
+    挑源会选中一条注定被上传环节拒掉的流，而同一作品里更小的档本来发得出去。
+    固定档位模式只受 filelimit 约束（`maxAutoVideoSize` 按设计仅 adapt 生效）。
+
+    0 / undefined 都表示「这一路不设限」，靠 filter 滤掉后再取 min，
+    两个都没给就是 Infinity。
+  */
+  const limits = quality === 'adapt'
+    ? [options.maxAutoVideoSize, filelimit]
+    : [filelimit]
+  const effective = limits.filter((value): value is number => typeof value === 'number' && value > 0)
+  const sizeLimitBytes = effective.length > 0 ? Math.min(...effective) * 1024 * 1024 : Infinity
 
   const grouped = groupByQualityLevel(pool)
   const order = quality === 'adapt' ? QUALITY_PRIORITY : buildFallbackOrder(quality as DouyinQualityLevel)

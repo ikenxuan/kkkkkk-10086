@@ -69,7 +69,7 @@ export const douyin: GuobaSchema[] = [
   ], '合辑 Live 图 BGM 合并模式，可选值：continuous、independent'),
   sw('douyin.textMode', '文本模式', '开启后直接输出文本，关闭后渲染为图片'),
   radio('douyin.videoQuality', '视频画质偏好', videoQualityOptions, '目标档装不下时先向下降档，全都装不下才退回体积最小的那条；需要「按画质偏好挑选视频源」为开'),
-  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '仅画质偏好为 adapt 时生效；固定档位时改由「视频拦截阈值」限体积'),
+  num('douyin.maxAutoVideoSize', '自动画质最大视频大小', 0, 9999, 'MB', '仅画质偏好为 adapt 时生效，且与「视频上传拦截阈值」同时生效、谁更严谁说话：填得比它大不会放开体积，因为超过那个值的视频在上传环节会被直接拒掉。填 0 表示这一路不设限。固定档位时本项不生效，改由「视频上传拦截阈值」单独限体积'),
   radio('douyin.loginPerm', '扫码登录权限', permissionOptions, '谁可以触发扫码登录'),
   radio('douyin.videoInfoMode', '视频信息返回形式', [
     option('文本', 'text'),

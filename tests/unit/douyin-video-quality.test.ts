@@ -203,7 +203,7 @@ describe('douyinProcessVideos 固定档位模式', () => {
     expect(getDouyinQualityLevel(picked[0])).toBe('1080p')
   })
 
-  it('adapt 用 maxAutoVideoSize，与 filelimit 分开', () => {
+  it('adapt 下两个上限同时生效，取更严的那个', () => {
     const videos = [
       src({ definition: '4k', sizeMB: 80 }),
       src({ definition: '720p', sizeMB: 20 })
@@ -212,10 +212,31 @@ describe('douyinProcessVideos 固定档位模式', () => {
     expect(getDouyinQualityLevel(douyinProcessVideos(videos, {
       videoQuality: 'adapt', filelimit: 100
     })[0])).toBe('4k')
-    // 给了 maxAutoVideoSize 就以它为准，即便 filelimit 更宽
+    // maxAutoVideoSize 更严时以它为准
     expect(getDouyinQualityLevel(douyinProcessVideos(videos, {
       videoQuality: 'adapt', maxAutoVideoSize: 50, filelimit: 100
     })[0])).toBe('720p')
+  })
+
+  /*
+    面板上 maxAutoVideoSize 能填到 9999、filelimit 最低能填 5，所以「偏好比硬闸门宽」
+    是用户随手就能配出来的。原实现在 adapt 模式下写 `maxAutoVideoSize || filelimit`，
+    这种配置会挑中一条注定被 Base.ts 拒掉（「已取消上传」）的流。
+  */
+  it('adapt 下 maxAutoVideoSize 比 filelimit 宽时，仍不越过 filelimit', () => {
+    const picked = douyinProcessVideos([
+      src({ definition: '4k', sizeMB: 80 }),
+      src({ definition: '720p', sizeMB: 20 })
+    ], { videoQuality: 'adapt', maxAutoVideoSize: 500, filelimit: 50 })
+    expect(getDouyinQualityLevel(picked[0])).toBe('720p')
+  })
+
+  it('adapt 下 maxAutoVideoSize 为 0 表示不设限，仍受 filelimit 约束', () => {
+    const picked = douyinProcessVideos([
+      src({ definition: '4k', sizeMB: 80 }),
+      src({ definition: '720p', sizeMB: 20 })
+    ], { videoQuality: 'adapt', maxAutoVideoSize: 0, filelimit: 50 })
+    expect(getDouyinQualityLevel(picked[0])).toBe('720p')
   })
 })
 
