@@ -46,13 +46,19 @@ realCommentCount: false
 # 图集BGM是否使用高清语音发送，高清语音「ios/PC」系统均无法播放，自行衡量开关（仅icqq）
 sendHDrecord: true
 
-# 根据「视频拦截阈值」自动选择合适的分辨率，关闭后默认选择最大分辨率进行下载
+# 是否按「视频画质偏好」从多档视频源里挑一条
+# 开启：按 videoQuality 定档，档内取体积装得下的最高码率那条，并跳过 HDR 档（HDR 发到不做色调映射的通道会偏灰发白）
+# 关闭：直接用接口给的 H.264 单档地址。实测该地址最高只有 1080p，4K / 2K 只存在于多档列表里，所以关闭等于拿不到高于 1080p 的画质
 autoResolution: true
 
 # 视频画质偏好设置，可选值：adapt、540p、720p、1080p、2k、4k
+# 目标档装不下时先向下降档，全都装不下才退回体积最小的那条
 videoQuality: 4k
 
-# 自动画质模式下可接受的最大视频大小（单位：MB）
+# 自动画质模式下可接受的最大视频大小（单位：MB），仅 videoQuality 为 adapt 时生效
+# 与「视频拦截阈值」upload.filelimit 同时生效，谁更严谁说话：填得比 filelimit 大不会放开体积，
+# 因为超过 filelimit 的视频在上传环节会被直接拒掉。填 0 表示这一路不设限，只受 filelimit 约束
+# 固定档位（非 adapt）时本项不生效，改由 filelimit 单独限体积
 maxAutoVideoSize: 50
 
 # 谁可以触发扫码登录
@@ -96,7 +102,7 @@ push:
   log: true
   # 分享链接二维码的类型，web为跳转到抖音网页，download为视频下载直链
   shareType: 'web'
-  # 推送解析时视频画质偏好设置
+  # 推送解析时视频画质偏好设置，可选值同 videoQuality，仅 autoResolution 为 true 时生效
   pushVideoQuality: 4k
-  # 推送解析时视频体积上限
+  # 推送解析时视频体积上限（单位：MB），仅 pushVideoQuality 为 adapt 时生效
   pushMaxAutoVideoSize: 50
