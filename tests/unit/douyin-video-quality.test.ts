@@ -376,6 +376,23 @@ describe('buildDouyinPlayUrl', () => {
     expect([...new URL(url).searchParams.keys()]).toEqual(['video_id', 'file_id'])
   })
 
+  /*
+    上游 4772801 在修上面那个 `&&` 的同时，把主机从 `aweme.snssdk.com` 换成了 `https://c/`。
+    那半边不能跟：`https://c/` 的 hostname 就是 `c`，解析得出来但 DNS 必然 ENOTFOUND。
+
+    而且这条主机在本仓库是**契约**，不是偏好 —— 有两处消费方按它做匹配，主机一换两处一起哑掉：
+      - `Common.ts` 的 supportedLinkPatterns：认不出这是条可解析链接
+      - `tools.ts` 的直链解析入口：进不去那条分支，用户贴地址没反应
+    所以这里把主机单独钉住，别让日后某次跟进顺手同步了上游那半边。
+  */
+  it('主机固定是 aweme.snssdk.com，不跟上游换成 https://c/', () => {
+    const url = buildDouyinPlayUrl({ uri: 'v0300fg10000abcdef' })
+    expect(new URL(url).hostname).toBe('aweme.snssdk.com')
+
+    // 两处消费方的正则都得认得这条地址
+    expect(/https:\/\/aweme\.snssdk\.com\/aweme\/v1\/play/i.test(url)).toBe(true)
+  })
+
   it('拿不到 file_id 时只带 video_id', () => {
     expect(buildDouyinPlayUrl({ uri: 'v1', url_list: ['https://www.douyin.com/play?foo=bar'] }))
       .toBe('https://aweme.snssdk.com/aweme/v1/play/?video_id=v1')
