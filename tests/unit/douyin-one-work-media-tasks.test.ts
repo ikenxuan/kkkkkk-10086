@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   downloadFile: vi.fn(),
   downloadVideo: vi.fn(),
   getDouyinData: vi.fn(),
+  loggerError: vi.fn(),
   processImageUrl: vi.fn(),
   render: vi.fn(),
   uploadFile: vi.fn(),
@@ -205,7 +206,7 @@ describe('Douyin one_work media tasks', () => {
     vi.clearAllMocks()
     vi.stubGlobal('logger', {
       debug: vi.fn(),
-      error: vi.fn(),
+      error: mocks.loggerError,
       info: vi.fn(),
       mark: vi.fn(),
       warn: vi.fn(),
@@ -365,5 +366,76 @@ describe('Douyin one_work media tasks', () => {
       .find(([, , title]) => title === '评论图片收集')
     expect(forwarded).toBeDefined()
     expect(forwarded![1]).toHaveLength(2)
+  })
+
+  /**
+   * 回归：评论解析失败挡住视频发送。
+   *
+   * 「评论数据」的取数原来是 fan-out 之前的裸 await，narrowApiResponse 对接口挂掉、
+   * 超时、返回非对象三种情况一律当场抛 —— 抛在 runMediaTasks 之前，
+   * 于是 allSettled 的容错压根没机会生效，视频和海报跟着一起没了。
+   *
+   * 下面三条分别钉住：接口 reject、接口返回非对象、以及闸门关掉时压根不该发这个请求。
+   */
+  it('still sends the video when the comments API rejects', async () => {
+    mocks.getDouyinData.mockImplementation(async (method: string) => {
+      if (method === '聚合解析') return workResponse
+      if (method === '评论数据') throw new Error('comments endpoint down')
+      if (method === '弹幕数据') return { data: { danmaku_list: danmakuList } }
+      if (method === 'Emoji数据') return emojiResponse
+      throw new Error(`Unexpected Douyin API method: ${method}`)
+    })
+    const parser = new DouYin(
+      { reply: vi.fn(async () => undefined) },
+      { type: 'one_work', aweme_id: 'work-1', is_mp4: true },
+      {}
+    )
+
+    await expect(parser.RESOURCES({ type: 'one_work', aweme_id: 'work-1', is_mp4: true })).resolves.toBe(true)
+
+    // 视频支线照跑完
+    expect(mocks.downloadVideo).toHaveBeenCalledOnce()
+    // 评论图没渲染，但失败被记成「评论支线」而不是把整条解析带走
+    expect(mocks.render.mock.calls.find(([route]) => route === 'douyin/comment')).toBeUndefined()
+    expect(
+      mocks.loggerError.mock.calls.some(([message]) => String(message).includes('评论图渲染与发送'))
+    ).toBe(true)
+  })
+
+  it('still sends the video when the comments API returns a non-object', async () => {
+    mocks.getDouyinData.mockImplementation(async (method: string) => {
+      if (method === '聚合解析') return workResponse
+      // narrowApiResponse 的 isRecord 判据落空 => 抛「评论数据返回格式异常」
+      if (method === '评论数据') return null
+      if (method === '弹幕数据') return { data: { danmaku_list: danmakuList } }
+      if (method === 'Emoji数据') return emojiResponse
+      throw new Error(`Unexpected Douyin API method: ${method}`)
+    })
+    const parser = new DouYin(
+      { reply: vi.fn(async () => undefined) },
+      { type: 'one_work', aweme_id: 'work-1', is_mp4: true },
+      {}
+    )
+
+    await expect(parser.RESOURCES({ type: 'one_work', aweme_id: 'work-1', is_mp4: true })).resolves.toBe(true)
+
+    expect(mocks.downloadVideo).toHaveBeenCalledOnce()
+    expect(mocks.douyinComments).not.toHaveBeenCalled()
+  })
+
+  it('never requests comments data when the comment gate is off', async () => {
+    mocks.config.douyin.sendContent = ['info', 'video']
+    mocks.config.getConfig.mockReturnValue({ sendContent: mocks.config.douyin.sendContent })
+    const parser = new DouYin(
+      { reply: vi.fn(async () => undefined) },
+      { type: 'one_work', aweme_id: 'work-1', is_mp4: true },
+      {}
+    )
+
+    await expect(parser.RESOURCES({ type: 'one_work', aweme_id: 'work-1', is_mp4: true })).resolves.toBe(true)
+
+    // 用户把评论图关掉了，取数就该一次都不发（原来照发，还能炸掉整条解析）
+    expect(mocks.getDouyinData.mock.calls.filter(([method]) => method === '评论数据')).toHaveLength(0)
+    expect(mocks.downloadVideo).toHaveBeenCalledOnce()
   })
 })

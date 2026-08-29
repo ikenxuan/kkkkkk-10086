@@ -198,13 +198,6 @@ export class DouYin extends Base {
           const isArticle = isDouyinArticle(VideoData.data.aweme_detail)
           const isVideo = isDouyinVideo(VideoData.data.aweme_detail)
           if (typeof this.is_mp4 !== 'boolean') this.is_mp4 = isVideo
-          const CommentsData = narrowApiResponse<CommentsPayload>(await this.amagi.getDouyinData('评论数据', {
-            aweme_id: data.aweme_id,
-            // 面板上「评论解析数量」写的是新键 douyin.numcomment，这里原来只读旧键 numcomments，
-            // 于是用户在面板里改了数量却没有任何效果。走 helper 统一「新键优先、旧键兜底」。
-            number: douyinCommentLimit(),
-            typeMode: 'strict'
-          }), '评论数据')
           let emojiListPromise: Promise<DouyinEmojiInfo[]> | undefined
           const getEmojiList = (): Promise<DouyinEmojiInfo[]> => {
             emojiListPromise ??= (async () => {
@@ -735,6 +728,19 @@ export class DouYin extends Base {
            */
           const sendComment = hasDouyinContent('评论图', 'comment')
             ? async (): Promise<void> => {
+              /*
+                取数必须留在这个闭包里：原来它在 fan-out 之前裸 await，评论接口挂掉时
+                narrowApiResponse 当场抛，视频和海报还没启动就一起没了。搬进来之后
+                失败只由 runMediaTasks 记一条评论支线错误，视频照发。
+                放在表情表之前是为了失败时省掉那次没人要的 Emoji 请求（它自带降级，不会抛）。
+              */
+              const CommentsData = narrowApiResponse<CommentsPayload>(await this.amagi.getDouyinData('评论数据', {
+                aweme_id: data.aweme_id,
+                // 面板上「评论解析数量」写的是新键 douyin.numcomment，这里原来只读旧键 numcomments，
+                // 于是用户在面板里改了数量却没有任何效果。走 helper 统一「新键优先、旧键兜底」。
+                number: douyinCommentLimit(),
+                typeMode: 'strict'
+              }), '评论数据')
               const list = await getEmojiList()
               const commentsResult = await douyinComments(CommentsData, list)
               if (!commentsResult.CommentsData.length) {
