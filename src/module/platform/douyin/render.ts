@@ -27,6 +27,7 @@ import {
 import { format, fromUnixTime } from 'date-fns'
 
 import { Common, Render } from '@/module/utils/index'
+import { at } from '@/module/utils/record'
 import type { ImageMessage } from '@/module/utils/Watermark'
 
 import { getDouyinData } from './api.js'
@@ -166,7 +167,7 @@ const getImageMediaType = (image: { clip_type?: number } | null | undefined): Im
  * @returns 图片列表数据
  */
 const buildImageList = (
-  images: Array<{ url_list: string[], clip_type?: number }> | null | undefined,
+  images: Array<{ url_list?: string[], clip_type?: number }> | null | undefined,
   fallbackCover: string
 ): {
   images: Array<{ url: string, media_type: ImageMediaType }>
@@ -182,9 +183,11 @@ const buildImageList = (
   const usedUrls = new Set<string>()
   const imageItems = images
     .map((img, index) => ({
+      // 两支的下标偏好不同（封面 2 -> 1 -> 0，其余 1 -> 0 -> 2）且是刻意的，
+      // 所以这里不能换成 firstUrl —— 它固定取第一个可用地址，会改掉实际取到的图片。
       url: index === 0
-        ? (img.url_list[2] ?? img.url_list[1] ?? img.url_list[0] ?? fallbackCover)
-        : (img.url_list[1] ?? img.url_list[0] ?? img.url_list[2] ?? ''),
+        ? (at(img.url_list, 2) ?? at(img.url_list, 1) ?? at(img.url_list, 0) ?? fallbackCover)
+        : (at(img.url_list, 1) ?? at(img.url_list, 0) ?? at(img.url_list, 2) ?? ''),
       media_type: getImageMediaType(img)
     }))
     .filter(item => {
@@ -596,7 +599,10 @@ export const renderWorkImage = async (options: RenderWorkImageOptions): Promise<
   }
 
   if (isDouyinImage(aweme)) {
-    const cover = Detail_Data.images?.[0]?.url_list[2] ?? Detail_Data.images?.[0]?.url_list[1] ?? coverUrl
+    // Detail_Data 是 any，这里的下标越界 tsc 报不出来，只能手写安全取值。
+    // 下标偏好 2 -> 1 与 buildImageList 的封面支保持一致。
+    const coverUrlList = at<{ url_list?: string[] }>(Detail_Data.images, 0)?.url_list
+    const cover = at(coverUrlList, 2) ?? at(coverUrlList, 1) ?? coverUrl
     const rawDesc: string = Detail_Data.desc ?? ''
     const splitDesc = splitTitleAndBody(rawDesc)
     const titleOffset = rawDesc.length - splitDesc.body.length
