@@ -203,7 +203,7 @@
     "priority": "500",
     "rule": [
       {
-        "reg": "/.*((www|v|jx|jingxuan|m)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)).*/i",
+        "reg": "/.*((www|v|jx|jingxuan|m|live)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)|webcast\\.amemv\\.com).*/i",
         "regType": "RegExp",
         "fnc": "douyin",
         "permission": null

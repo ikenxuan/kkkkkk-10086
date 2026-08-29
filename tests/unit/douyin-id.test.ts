@@ -45,6 +45,19 @@ describe('getDouyinID link patterns', () => {
       expected: { type: 'live_room_detail', room_id: '987654321' }
     },
     {
+      // 真实样本：`live.douyin.com/26139686?unique_k=2333`。
+      // 旧实现取 `url.split('/').pop()`，会把整个 query 一起当成房间号
+      name: 'a direct live room link carrying a query string',
+      longLink: 'https://live.douyin.com/26139686?unique_k=2333',
+      expected: { type: 'live_room_detail', room_id: '26139686' }
+    },
+    {
+      // 旧实现在尾斜杠上 pop() 出空串，房间号静默变成 ''
+      name: 'a direct live room link with a trailing slash',
+      longLink: 'https://live.douyin.com/26139686/',
+      expected: { type: 'live_room_detail', room_id: '26139686' }
+    },
+    {
       name: 'a video work link',
       longLink: 'https://www.douyin.com/video/7412345678901234567',
       expected: { type: 'one_work', aweme_id: '7412345678901234567' }

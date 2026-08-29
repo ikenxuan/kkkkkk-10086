@@ -72,10 +72,20 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
       [
         'live_direct',
         url => url.includes('live.douyin.com'),
-        url => ({
-          type: 'live_room_detail',
-          room_id: url.split('/').pop()
-        })
+        url => {
+          // 用正则取路径首段，不能用 `url.split('/').pop()`：真实分享链接普遍带 query
+          // （`live.douyin.com/26139686?unique_k=2333` → `26139686?unique_k=2333`），
+          // 带尾斜杠时 pop() 更是直接得到空串。两种情况都会把脏值当房间号发出去。
+          //
+          // 注意这里取到的是 **web_rid**（可直接访问 live.douyin.com/{web_rid} 的展示号），
+          // 不是接口要的 room_id_str。字段名沿用 `room_id` 是为了兼容既有消费方
+          // （pushPreview.ts 就把它当 webRid 用），真正的 room_id 由消费方向接口反查。
+          const match = /live\.douyin\.com\/([A-Za-z\d_-]+)/.exec(url)
+          return {
+            type: 'live_room_detail',
+            room_id: match?.[1]
+          }
+        }
       ],
       // 视频作品链接
       [

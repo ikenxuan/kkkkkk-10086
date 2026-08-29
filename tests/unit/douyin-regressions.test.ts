@@ -208,6 +208,129 @@ describe('Douyin migration regressions', () => {
     })
   })
 
+  // live.douyin.com 直链只能提取出 web_rid，而卡片要的主播字段只有「用户主页数据」才给。
+  // 这条断言钉住那一跳：先用 web_rid 探直播间，从响应的 user.sec_uid 反查主播，
+  // 再带着主页的 room_id_str 取正式的直播间信息。
+  // 回归的是「room_id 分支根本没接上消费方」——原来这里只读 data.sec_uid，
+  // 直链解析出的 room_id 无人使用，且只传 sec_uid 会被 amagi 的 zod 校验直接拒掉。
+  it('resolves a live room from a web_rid-only direct link', async () => {
+    renderMock.mockResolvedValue(['rendered'])
+    const reply = vi.fn().mockResolvedValue(undefined)
+
+    const liveItem = {
+      cover: { url_list: ['cover'] },
+      title: '南方花园正在直播',
+      owner: { web_rid: '26139686' },
+      room_view_stats: { display_value: '12' },
+      stats: { total_user_str: '34' }
+    }
+
+    douyinDataMock.mockImplementation(async (method: string, options: Record<string, unknown>) => {
+      if (method === '直播间信息数据') {
+        // 第一次探测只有 web_rid；第二次才带上主页给的内部房间号
+        if (options.room_id === '26139686') {
+          return { data: { data: { user: { sec_uid: 'sec-live-1' } } } }
+        }
+        return {
+          data: {
+            data: {
+              data: [liveItem],
+              partition_road_map: { partition: { title: '户外' } }
+            }
+          }
+        }
+      }
+      return {
+        data: {
+          user: {
+            live_status: 1,
+            nickname: '南方花园',
+            sec_uid: 'sec-live-1',
+            room_id_str: '7632061670499617555',
+            room_data: JSON.stringify({ owner: { web_rid: '26139686' } }),
+            avatar_larger: { url_list: ['avatar'] }
+          }
+        }
+      }
+    })
+
+    const data = { type: 'live_room_detail', room_id: '26139686' }
+    expect(await new DouYin({ reply }, data).RESOURCES(data)).toBe(true)
+
+    // 用 web_rid 探一次直播间，拿到 sec_uid
+    expect(douyinDataMock).toHaveBeenNthCalledWith(1, '直播间信息数据', {
+      room_id: '26139686',
+      web_rid: '26139686',
+      typeMode: 'strict'
+    })
+    // 用探到的 sec_uid 反查主播主页
+    expect(douyinDataMock).toHaveBeenNthCalledWith(2, '用户主页数据', {
+      sec_uid: 'sec-live-1',
+      typeMode: 'strict'
+    })
+    // 正式取直播间信息时 room_id 换成主页给的内部房间号，web_rid 仍是展示号
+    expect(douyinDataMock).toHaveBeenNthCalledWith(3, '直播间信息数据', {
+      room_id: '7632061670499617555',
+      web_rid: '26139686',
+      typeMode: 'strict'
+    })
+    expect(renderMock).toHaveBeenCalledWith('douyin/live', expect.objectContaining({
+      image_url: 'cover',
+      text: '南方花园正在直播',
+      partition_title: '户外',
+      room_id: '26139686'
+    }))
+  })
+
+  // webcast 分享链接（抖音 App「复制链接」的真实形态）给的是 sec_uid，
+  // 这条确认它不再多探一次直播间，直接走主页 -> 直播间信息。
+  it('resolves a live room from a sec_uid-only webcast link', async () => {
+    renderMock.mockResolvedValue(['rendered'])
+    const reply = vi.fn().mockResolvedValue(undefined)
+
+    douyinDataMock.mockImplementation(async (method: string) => {
+      if (method === '直播间信息数据') {
+        return { data: { data: { data: [{ title: 'Live', cover: { url_list: ['cover'] } }] } } }
+      }
+      return {
+        data: {
+          user: {
+            live_status: 1,
+            nickname: '主播',
+            sec_uid: 'sec-webcast',
+            room_id_str: '7632061670499617555',
+            room_data: JSON.stringify({ owner: { web_rid: '26139686' } }),
+            avatar_larger: { url_list: ['avatar'] }
+          }
+        }
+      }
+    })
+
+    const data = { type: 'live_room_detail', sec_uid: 'sec-webcast' }
+    expect(await new DouYin({ reply }, data).RESOURCES(data)).toBe(true)
+
+    expect(douyinDataMock).toHaveBeenNthCalledWith(1, '用户主页数据', {
+      sec_uid: 'sec-webcast',
+      typeMode: 'strict'
+    })
+    expect(douyinDataMock).toHaveBeenNthCalledWith(2, '直播间信息数据', {
+      room_id: '7632061670499617555',
+      web_rid: '26139686',
+      typeMode: 'strict'
+    })
+  })
+
+  it('tells the user the anchor is offline instead of rendering a card', async () => {
+    const reply = vi.fn().mockResolvedValue(undefined)
+    douyinDataMock.mockResolvedValue({ data: { user: { live_status: 0, nickname: '主播' } } })
+
+    const data = { type: 'live_room_detail', sec_uid: 'sec-offline' }
+    expect(await new DouYin({ reply }, data).RESOURCES(data)).toBe(true)
+
+    expect(reply).toHaveBeenCalledWith('「主播」\n未开播，正在休息中~')
+    expect(renderMock).not.toHaveBeenCalled()
+  })
+
   it('fetches live room details through the guarded API wrapper', async () => {
     const liveData = { data: { data: [{ title: 'Live' }] } }
     guardedDouyinDataMock.mockResolvedValue(liveData)

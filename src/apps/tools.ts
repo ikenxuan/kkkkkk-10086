@@ -75,7 +75,7 @@ setActiveParseCoordinator(parseCoordinator)
 
 const PLATFORM_CONFIG: PlatformConfig[] = [
   {
-    reg: /.*((www|v|jx|jingxuan|m)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)).*/i,
+    reg: /.*((www|v|jx|jingxuan|m|live)\.(douyin|iesdouyin)\.com|douyin\.com\/(video|note)|webcast\.amemv\.com).*/i,
     handler: 'douyin',
     enabled: getConfigValue(Config.douyin?.switch, Config.douyin?.douyintool)
   },
@@ -424,7 +424,11 @@ export class kkkTools extends plugin<'message'> {
 
   async _douyin (e: CommandEvent): Promise<boolean> {
     const forceBurnDanmaku = /^#?弹幕解析/.test(e.msg)
-    const urlMatch = e.msg.match(/https?:\/\/(?:www\.|v\.|jx\.|m\.|jingxuan\.)?(douyin\.com|iesdouyin\.com)\/[^\s]+/g)
+    // 这条必须和上面 PLATFORM_CONFIG 里的抖音网关正则认同一批域名，否则链接能触发规则、
+    // 却在这里抽不出 URL，`urlMatch` 为 null 直接 `return true` —— 表现成「发了链接机器人不吭声」。
+    // `live.douyin.com`（直播间长链）和 `webcast.amemv.com`（App 分享的直播间 reflow 链接）
+    // 原来都漏在外面，前者过了网关后无声失败，后者连网关都进不来。
+    const urlMatch = e.msg.match(/https?:\/\/(?:(?:www|v|jx|m|jingxuan|live)\.)?(?:douyin\.com|iesdouyin\.com|webcast\.amemv\.com)\/[^\s]+/g)
     if (urlMatch && urlMatch[0]) {
       const iddata = await getDouyinID(urlMatch[0])
       const result = await new DouYin(e, iddata, { forceBurnDanmaku }).RESOURCES(iddata)
@@ -507,7 +511,11 @@ export class kkkTools extends plugin<'message'> {
     if (url.includes('b23.tv')) {
       url = url.match(/(http:|https:)\/\/b23.tv\/[-A-Za-z\d._?%&+=/#]*/)?.[0] || url
     } else if (/bilibili\.com|bili2233\.cn/.test(url)) {
-      url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|bili2233\.cn)\/[-A-Za-z\d._?%&+=/#]*/)?.[0] || url
+      // `live.` 必须在这一列里：外层条件是宽松的 `/bilibili\.com/`，直播间链接进得来，
+      // 但这条只认 www / m / bili2233，于是 `live.bilibili.com/26139686` 匹配不到、
+      // `?.[0]` 落到 `|| url` 保留整条消息文本 —— 后面 getBilibiliID 拿着带前后文的字符串
+      // 去请求长链接，直播间解析就断在这里。
+      url = url.match(/(?:https?:\/\/)?(?:www\.bilibili\.com|m\.bilibili\.com|live\.bilibili\.com|bili2233\.cn)\/[-A-Za-z\d._?%&+=/#]*/)?.[0] || url
     } else if (/^BV[1-9a-zA-Z]{10}$/i.test(url) || /^av\d+$/i.test(url)) {
       url = `https://www.bilibili.com/video/${url}`
     }

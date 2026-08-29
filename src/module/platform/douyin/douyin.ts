@@ -79,6 +79,8 @@ interface DouyinUser {
   mplatform_followers_count?: number
   nickname?: string
   room_data?: string
+  /** 直播间的内部房间号，「直播间信息数据」的 room_id 参数要用它（web_rid 是另一个号） */
+  room_id_str?: string
   sec_uid?: string
   short_id?: string
   signature?: string
@@ -226,9 +228,29 @@ const getUploadRecordEvent = (event: DouyinRuntimeEvent): UploadRecordEvent => {
   return event as unknown as UploadRecordEvent
 }
 
-const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], partition: LivePartition } => {
+/**
+ * 直播间信息数据的两种嵌套形态（`data.data` 与 `data`）在这里统一收口，
+ * 让读房间列表和读主播 sec_uid 走同一份判据，不会一边跟着改、另一边漏掉。
+ */
+const getLiveRoot = (response: LiveResponse): Record<string, unknown> => {
   const responseData = response.data
-  const payload = isRecord(responseData.data) ? responseData.data : responseData
+  return isRecord(responseData.data) ? responseData.data : responseData
+}
+
+/**
+ * 直播间响应里的主播 sec_uid。
+ *
+ * `live.douyin.com/{web_rid}` 直链只能提取出 web_rid，而卡片要的昵称、粉丝、签名、
+ * 作品数这些主播字段只有「用户主页数据」才给。web/enter 的响应里带 `user.sec_uid`，
+ * 正好当从「房间号」跳到「主播」的那一跳，省掉一次搜索反查。
+ */
+const getLiveAnchorSecUid = (response: LiveResponse): string => {
+  const user = getLiveRoot(response).user
+  return isRecord(user) && typeof user.sec_uid === 'string' ? user.sec_uid : ''
+}
+
+const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], partition: LivePartition } => {
+  const payload = getLiveRoot(response)
   const items = Array.isArray(payload.data)
     ? payload.data.filter((item): item is DouyinLiveItem => isRecord(item))
     : []
@@ -1060,23 +1082,51 @@ export class DouYin extends Base {
           return true
         }
         case 'live_room_detail': {
+          // 两条入口给的定位字段不一样：webcast 分享链接只有 sec_uid，
+          // live.douyin.com 直链只有 web_rid。所以先把手上有的那个补成另一个，
+          // 再走同一套「主页数据 + 直播间信息数据」流程。
+          //
+          // 注意 `直播间信息数据` 的 room_id 是内部房间号（用户主页的 room_id_str），
+          // 跟 URL 里的 web_rid 不是一个号；amagi 的 zod 校验要求两者都是非空 string，
+          // 少传一个会直接抛 invalid_type —— 原来这里只传 sec_uid，所以两条分支都是死路。
+          let secUid = data.sec_uid
+          let webRid = data.room_id ?? ''
+
+          if (!secUid) {
+            if (!webRid) throw new Error('直播间链接缺少 sec_uid 与房间号，无法解析')
+            // 只有 web_rid 时先探一次直播间：`web/enter` 认 web_rid，
+            // 响应里的 user.sec_uid 就是反查主播主页所需的钥匙。
+            const roomProbe = narrowApiResponse<LiveResponse>(await this.amagi.getDouyinData('直播间信息数据', {
+              room_id: webRid,
+              web_rid: webRid,
+              typeMode: 'strict'
+            }), '直播间信息数据')
+            secUid = getLiveAnchorSecUid(roomProbe)
+            if (!secUid) throw new Error('直播间信息数据未返回主播信息，可能已关播或抖音 Cookie 失效')
+          }
+
           const UserInfoData = narrowApiResponse<UserInfoResponse>(await this.amagi.getDouyinData('用户主页数据', {
-            sec_uid: data.sec_uid,
+            sec_uid: secUid,
             typeMode: 'strict'
           }), '用户主页数据')
           if (UserInfoData.data.user.live_status === 1) {
             // 直播中
-            const liveData = narrowApiResponse<LiveResponse>(await this.amagi.getDouyinData('直播间信息数据', { sec_uid: UserInfoData.data.user.sec_uid, typeMode: 'strict' }), '直播间信息数据')
+            const roomData = narrowApiResponse<DouyinRoomData>(JSON.parse(UserInfoData.data.user.room_data || '{}'), '直播间房间数据')
+            webRid = roomData.owner?.web_rid || webRid
+            const liveData = narrowApiResponse<LiveResponse>(await this.amagi.getDouyinData('直播间信息数据', {
+              room_id: UserInfoData.data.user.room_id_str || webRid,
+              web_rid: webRid,
+              typeMode: 'strict'
+            }), '直播间信息数据')
             const { items: liveItems, partition } = getLivePayload(liveData)
             const liveItem = liveItems[0]
             if (!liveItem) throw new Error('直播间信息数据返回格式异常')
-            const roomData = narrowApiResponse<DouyinRoomData>(JSON.parse(UserInfoData.data.user.room_data || '{}'), '直播间房间数据')
             const img = await Render('douyin/live', buildDouyinLivePayload({
               anchor: UserInfoData.data.user,
               dynamicTYPE: '直播间信息',
               liveItem,
               partitionTitle: partition.partition?.title || '',
-              webRid: roomData.owner?.web_rid || liveItem.owner?.web_rid || ''
+              webRid: webRid || liveItem.owner?.web_rid || ''
             }))
             await this.e.reply(img)
           } else {
