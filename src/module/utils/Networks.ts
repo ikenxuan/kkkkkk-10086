@@ -2,11 +2,9 @@ import { constants as cryptoConstants } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
-import os from 'node:os'
 import { Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import axios, {
-  AxiosError,
   type AxiosInstance,
   type AxiosProxyConfig,
   type AxiosRequestConfig,
@@ -55,39 +53,17 @@ import {
   probeRangeSupport
 } from './Network/MultipartDownloader.js'
 import { isRecord } from './record.js'
+import {
+  nextCdnCandidate,
+  nextCdnCandidates,
+  readUrlHost
+} from './Network/cdn-candidates.js'
+import { delay, isSslError, toAxiosError } from './Network/errors.js'
+import { ThrottleStream } from './Network/ThrottleStream.js'
+import { formatBytes, MB } from './Network/units.js'
+import { baseHeaders, getRandomUserAgent } from './Network/user-agent.js'
 
-class ThrottleStream extends Transform {
-  private readonly bytesPerSecond: number
-  private readonly startTime = Date.now()
-  private totalBytes = 0
-
-  constructor (bytesPerSecond: number) {
-    super()
-    this.bytesPerSecond = bytesPerSecond
-  }
-
-  override _transform (
-    chunk: Buffer,
-    _encoding: BufferEncoding,
-    callback: (error?: Error | null) => void
-  ): void {
-    this.totalBytes += chunk.length
-    const elapsed = (Date.now() - this.startTime) / 1000
-    const expectedTime = this.totalBytes / this.bytesPerSecond
-    const wait = Math.max(0, (expectedTime - elapsed) * 1000)
-    if (wait > 0) {
-      setTimeout(() => {
-        this.push(chunk)
-        callback()
-      }, wait)
-      return
-    }
-    this.push(chunk)
-    callback()
-  }
-}
-
-const MB = 1024 * 1024
+export { baseHeaders, toAxiosError }
 
 export const normalizeDownloadOptions = (
   options: DownloadOptions,
@@ -141,42 +117,6 @@ const normalizeSlowGuard = (uploadConfig: DownloadUploadConfig): NormalizedSlowG
   }
 }
 
-const formatBytes = (bytes: number): string => {
-  if (!Number.isFinite(bytes)) return 'unknown'
-  if (bytes >= MB) return `${(bytes / MB).toFixed(1)}MB`
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)}KB`
-  return `${bytes}B`
-}
-
-/**
- * 挑下一个还没试过的候选地址。
- *
- * 「试过」按**地址**算而不是按主机算：B站 的 `backup_url` 里同一个主机可能给出
- * 不同路径的两条地址，把主机拉黑会把还没试的那条也一起丢掉。
- *
- * @param candidates 排序后的候选地址
- * @param tried 已经试过的地址
- * @returns 下一个能试的地址；都试过了返回 undefined
- */
-const nextCdnCandidate = (
-  candidates: readonly string[],
-  tried: ReadonlySet<string>
-): string | undefined => candidates.find(url => !tried.has(url))
-
-/**
- * 剩下还没试过的候选地址，保持原有次序。
- *
- * 给测速用：已经试过并失败的地址没有测的价值，把它们一起交给测速等于花时间
- * 给已知的坏节点排名。
- *
- * @param candidates 排序后的候选地址
- * @param tried 已经试过的地址
- */
-const nextCdnCandidates = (
-  candidates: readonly string[],
-  tried: ReadonlySet<string>
-): string[] => candidates.filter(url => !tried.has(url))
-
 /**
  * 外部下载器的体积门槛，字节。配置里以 MB 计。
  *
@@ -186,60 +126,6 @@ const nextCdnCandidates = (
 const externalMinBytes = (uploadConfig: DownloadUploadConfig): number => {
   const configured = Number(uploadConfig.downloadExternalMinSize)
   return (Number.isFinite(configured) && configured > 0 ? configured : 64) * MB
-}
-
-/** 只取主机名给日志用。整条下载地址带着签名参数，打进日志既长又没有可读性。 */
-const readUrlHost = (url: string): string => {
-  try {
-    return new URL(url).hostname
-  } catch {
-    return url
-  }
-}
-
-interface WeightedUserAgent {
-  ua: string
-  pct: number
-}
-
-const userAgentsByPlatform: Record<'windows' | 'mac' | 'linux', WeightedUserAgent[]> = {
-  windows: [
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 17.34 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0', pct: 2.48 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0', pct: 2.48 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.0', pct: 2.48 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Trailer/93.3.8652.5', pct: 2.48 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0', pct: 1.24 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0', pct: 1.24 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36', pct: 1.24 },
-    { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19582', pct: 1.24 }
-  ],
-  mac: [
-    { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.15', pct: 43.03 },
-    { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36', pct: 21.05 }
-  ],
-  linux: [
-    { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', pct: 3.72 },
-    { ua: 'Mozilla/5.0 (X11; Linux i686; rv:136.0) Gecko/20100101 Firefox/136.0', pct: 3.6 }
-  ]
-}
-
-const getRandomUserAgent = (): string => {
-  const agents = os.platform() === 'win32'
-    ? userAgentsByPlatform.windows
-    : os.platform() === 'darwin'
-      ? userAgentsByPlatform.mac
-      : userAgentsByPlatform.linux
-  const totalWeight = agents.reduce((sum, agent) => sum + agent.pct, 0)
-  let random = Math.random() * totalWeight
-  const found = agents.find(agent => (random -= agent.pct) <= 0)
-  return found?.ua || agents[0]?.ua || ''
-}
-
-export const baseHeaders: AxiosRequestConfig['headers'] = {
-  Accept: '*/*',
-  'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-  'User-Agent': getRandomUserAgent()
 }
 
 export interface NetworkRequestOptions {
@@ -826,27 +712,4 @@ export class Networks {
       throw axiosError
     }
   }
-}
-
-export function toAxiosError (error: unknown): AxiosError {
-  if (axios.isAxiosError(error)) return error
-  if (error instanceof Error) {
-    return AxiosError.from(error, getErrorCode(error))
-  }
-  return new AxiosError(String(error))
-}
-
-function getErrorCode (error: Error): string | undefined {
-  const code = Reflect.get(error, 'code') as unknown
-  return typeof code === 'string' ? code : undefined
-}
-
-function isSslError (error: AxiosError): boolean {
-  return error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-    error.code === 'ERR_SSL_WRONG_VERSION_NUMBER' ||
-    Boolean(error.message?.includes('SSL'))
-}
-
-async function delay (ms: number): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, ms))
 }
