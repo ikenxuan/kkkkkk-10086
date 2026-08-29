@@ -378,10 +378,17 @@ export interface DouyinWorkDetailData extends DouyinDetailData {
   desc: string
   author: PushDouyinUser & { nickname: string }
   statistics: NonNullable<PushDouyinAweme['statistics']>
+  /**
+   * 这个接口只服务 `push.ts` 那一处 `Detail_Data as DouyinWorkDetailData`。
+   * 断言不做任何运行时检查，所以在这里把字段写成必填，等于凭空把
+   * `DouyinDetailData.video.bit_rate?` 的可选性洗掉 —— 推送路径因此拿到
+   * 「一定有」的假保证，上游删字段时在 `bit_rate.length` 上直接抛。
+   * 可选性必须与被断言的源类型一致。
+   */
   video: {
     play_addr: DouyinVideoAddress & { uri: string }
-    play_addr_h264: DouyinVideoAddress & { url_list: string[] }
-    bit_rate: DouyinBitRate[]
+    play_addr_h264?: DouyinVideoAddress
+    bit_rate?: DouyinBitRate[]
   }
 }
 

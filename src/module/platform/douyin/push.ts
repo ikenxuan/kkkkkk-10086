@@ -14,7 +14,7 @@ import { buildDouyinLivePayload, type DouyinRoomData } from './live.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
 import common from '@/runtime/host/common'
 import { getErrorMessage } from '@/module/utils/error-message'
-import { isRecord } from '@/module/utils/record'
+import { at, isRecord } from '@/module/utils/record'
 import type { PushDouyinAweme as DouyinAweme, DouyinDetailData, DouyinListResponse, DouyinLiveInfo, PushDouyinMusic as DouyinMusic, DouyinProfileResponse, DouyinPushEvent, DouyinPushItem, DouyinSearchResponse, DouyinSearchUser, DouyinSkipCheckItem, DouyinWorkDetailData, PushTarget, WillBePushList } from './types.js'
 
 /**
@@ -429,19 +429,22 @@ export class DouYinpush extends Base {
                     let downloadUrl = ''
                     // 根据配置文件自动选择分辨率
                     if (Config.douyin.autoResolution) {
+                      // 读 .length 不是守卫：bit_rate 缺失时这行日志自己就抛，
+                      // 而且抛在下面把它交给 douyinProcessVideos 之前。
+                      const bitRates = workData.video.bit_rate ?? []
                       logger.debug(`开始排除不符合条件的视频分辨率；\n
-                      共拥有${logger.yellow(workData.video.bit_rate.length)}个视频源\n
+                      共拥有${logger.yellow(bitRates.length)}个视频源\n
                       视频ID：${logger.green(workData.aweme_id)}\n
                       分享链接：${logger.green(workData.share_url)}
                       `)
-                      const videoObj = douyinProcessVideos(workData.video.bit_rate, {
+                      const videoObj = douyinProcessVideos(bitRates, {
                         videoQuality: Config.douyin.push?.pushVideoQuality,
                         maxAutoVideoSize: Config.douyin.push?.pushMaxAutoVideoSize,
                         filelimit: Config.upload.filelimit || 100
                       })
                       downloadUrl = pickDouyinPlayUrl(videoObj?.[0]?.play_addr)
                     } else {
-                      downloadUrl = pickDouyinPlayUrl(workData.video.bit_rate[0]?.play_addr) ||
+                      downloadUrl = pickDouyinPlayUrl(at(workData.video.bit_rate)?.play_addr) ||
                         pickDouyinPlayUrl(workData.video.play_addr_h264)
                     }
                     if (!downloadUrl) throw new Error('取不到可用的视频下载地址')
