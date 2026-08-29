@@ -245,7 +245,7 @@
         "permission": null
       },
       {
-        "reg": "/#?BGM(\\d+)/",
+        "reg": "/^#?BGM(\\d+)/",
         "regType": "RegExp",
         "fnc": "uploadRecord",
         "permission": null

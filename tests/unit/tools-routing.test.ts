@@ -123,4 +123,23 @@ describe('tools 平台路由回归', () => {
       { type: 'video', bvid: 'BV1xx411c7mD', Episode: '12' }
     )
   })
+
+  /**
+   * BGM 规则必须锚在行首。
+   *
+   * 「默认解析」开启时本 app 的 priority 是 -Infinity，比所有插件先拿到消息；
+   * 而 uploadRecord 不认的输入不会 `return false` 交还派发权，会直接回一句
+   * 「获取音乐数据失败」。所以少了 `^`，别的插件里任何带 `BGM<数字>` 的命令
+   * 都会被这里截走并收到那句报错。
+   */
+  it('BGM 规则只吃行首，不截走正文里带 BGM 编号的别家命令', () => {
+    const app = new KkkTools() as unknown as { rule: Array<{ reg: RegExp, fnc: string }> }
+    const bgmRule = app.rule.find(item => item.fnc === 'uploadRecord')
+
+    expect(bgmRule).toBeDefined()
+    expect(bgmRule!.reg.test('#BGM123')).toBe(true)
+    expect(bgmRule!.reg.test('BGM123')).toBe(true)
+    expect(bgmRule!.reg.test('#别家命令 BGM123')).toBe(false)
+    expect(bgmRule!.reg.test('这首歌的 BGM123 是什么')).toBe(false)
+  })
 })

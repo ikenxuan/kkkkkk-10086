@@ -260,7 +260,11 @@ export class kkkTools extends plugin<'message'> {
         // 且下面的 prefix() 无论有没有匹配到平台都返回 true，
         // 于是 `#kkk解析统计` 被静默截走、统计卡片从来没出过。
         { reg: /^#?(解析|kkk解析|弹幕解析)(?![一-龥])/, fnc: 'prefix' }, // 解析功能规则
-        { reg: /#?BGM(\d+)/, fnc: 'uploadRecord' }, // BGM上传功能规则
+        // 必须有 `^`：本 app 在「默认解析」开启时是 -Infinity，比任何插件都先派发，
+        // 而 uploadRecord 不像 imageQrCode / selectDouyinWork 那样不认就 `return false`
+        // 交还派发权——它直接去请求音乐数据并回「获取音乐数据失败」。没有锚点时
+        // 任何一条正文里带 `BGM123` 的消息（含别的插件的命令）都会被截走并收到这句报错。
+        { reg: /^#?BGM(\d+)/, fnc: 'uploadRecord' }, // BGM上传功能规则
         { reg: /^#?第(\d{1,3})集$/, fnc: 'next' } // 选集功能规则
       ]
     })
