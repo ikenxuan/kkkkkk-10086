@@ -18,9 +18,17 @@ import type { DyEmojiList } from '@ikenxuan/amagi'
 
 // ==================== 来自 douyin.ts ====================
 
+/**
+ * 抖音的「一份资源多个 CDN 地址」通用形状。
+ *
+ * `url_list` 声明成可选**不是**为了描述抖音文档，而是为了让类型系统承认一个事实：
+ * 它是随时可能被上游删掉的接口字段。声明成必填 `string[]` 时
+ * `noUncheckedIndexedAccess` 只会给 `url_list[0]` 补上 `| undefined`，
+ * 却拦不住 `url_list` 整个不存在时的 `reading '0'` —— 而线上崩的正是后者。
+ */
 export interface UrlResource {
   uri?: string
-  url_list: string[]
+  url_list?: string[]
 }
 
 export interface PlayAddress extends UrlResource {
@@ -55,7 +63,8 @@ export interface DouyinMusic {
 
 export interface DouyinLiveImageItem {
   clip_type?: number
-  url_list: string[]
+  /** 同 `UrlResource.url_list`：接口字段，可能整个不下发 */
+  url_list?: string[]
   video?: {
     play_addr_h264?: UrlResource
     play_addr?: UrlResource
@@ -106,7 +115,20 @@ export interface LivePartition {
 
 export interface DouyinVideo {
   animated_cover?: UrlResource
-  bit_rate: [DyVideo, ...DyVideo[]]
+  /**
+   * 码率梯级列表。
+   *
+   * 这里曾经是非空元组 `[DyVideo, ...DyVideo[]]`，那个形状让 `bit_rate[0].play_addr`
+   * 在类型上完全合法：`noUncheckedIndexedAccess` 对元组的 0 号位**不**补 `undefined`，
+   * 于是整条解析链上的裸下标访问穿过了 lint、4 道 typecheck 和全部单测，
+   * 直到上游改字段才在线上以 `Cannot read properties of undefined (reading '0')` 现形。
+   *
+   * 现在是**可选数组**，两处放宽各对应一个真实的线上形态：
+   * 去掉元组下限让 `[0]` 带上 `| undefined`（接口给了空数组），
+   * 加 `?` 让整个字段可缺（接口把这一层删了，也就是线上那条报错的直接成因）。
+   * 别为了少写几个可选链把它收回去 —— 那等于把这批修复的护栏拆掉。
+   */
+  bit_rate?: DyVideo[]
   cover?: UrlResource
   cover_original_scale?: UrlResource
   duration?: number

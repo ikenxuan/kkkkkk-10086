@@ -13,8 +13,8 @@ import { buildDouyinPlayUrl, douyinProcessVideos } from './videoQuality.js'
 import type { DouyinDataType } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
-import { isRecord } from '@/module/utils/record'
-import type { CommentsPayload, DanmakuList, DanmakuResponse, DouyinAweme, DouyinConstructorData, DouyinEvent, DouyinMusic, DouyinResourceType, DouyinRuntimeEvent, DouyinUser, DyVideo, EmojiResponse, LegacyContent, LivePartition, LiveResponse, ModernContent, MusicResponse, NullableWorkResponse, UploadRecordEvent, UrlResource, UserInfoResponse, UserVideoListResponse, WorkResponse } from './types.js'
+import { at, firstUrl, isRecord } from '@/module/utils/record'
+import type { CommentsPayload, DanmakuList, DanmakuResponse, DouyinAweme, DouyinConstructorData, DouyinEvent, DouyinMusic, DouyinResourceType, DouyinRuntimeEvent, DouyinUser, DyVideo, EmojiResponse, LegacyContent, LivePartition, LiveResponse, ModernContent, MusicResponse, NullableWorkResponse, UploadRecordEvent, UserInfoResponse, UserVideoListResponse, WorkResponse } from './types.js'
 
 const isDouyinDataType = (value: string): value is DouyinDataType => [
   'one_work',
@@ -76,8 +76,6 @@ const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], part
 let mp4size = ''
 let img: Awaited<ReturnType<typeof Render>>
 
-const getFirstUrl = (data?: UrlResource): string => data?.url_list?.find(Boolean) || ''
-
 /**
  * 从 play_addr 里挑真正能下载的视频直链。
  *
@@ -101,6 +99,29 @@ const formatResolution = (playAddr?: { width?: number, height?: number }): strin
   const { width, height } = playAddr ?? {}
   if (!width || !height) return null
   return `${width} x ${height}`
+}
+
+/**
+ * 把 play_addr 的字节数折成评论图页头那行「视频大小」。
+ *
+ * 接口给的多路 play_addr 里任意一路都可能缺 `data_size`，所以按
+ * 「选中那一路 -> h264 -> 顶层默认档」的顺序退，取到第一个正数就用它。
+ *
+ * 全都取不到时返回 `'0.00'` 而不是空串或 undefined：契约里 `VideoSize` 是
+ * 可选 string，但模板那句 `{props.VideoSize}MB` 没有守卫，空串/undefined 会印出
+ * 光秃秃的「MB」，看着像渲染坏了。`'0.00'` 也是同仓 B站 侧对「探不到体积」的既有取值
+ * （`bilibili.ts` 的 `(playUrlStream?.size || 0)`），两个平台的卡片对同一种失败
+ * 说同一句话比各自发明一个更好。
+ *
+ * @param addrs - 按优先级排好的 play_addr 候选，允许其中任意一项不存在
+ * @returns 保留两位小数的 MB 数字串
+ */
+const formatVideoSize = (...addrs: Array<{ data_size?: number } | undefined>): string => {
+  for (const addr of addrs) {
+    const size = Number(addr?.data_size)
+    if (Number.isFinite(size) && size > 0) return (size / (1024 * 1024)).toFixed(2)
+  }
+  return '0.00'
 }
 
 const formatVideoStats = (statistics: DouyinAweme['statistics'] = {}): string => [
@@ -313,7 +334,9 @@ export class DouYin extends Base {
 
                 for (const [index, imageItem] of images.entries()) {
                   // 获取图片地址，优先使用第三个URL，其次使用第二个URL
-                  image_url = imageItem.url_list[2] || imageItem.url_list[1] || ''
+                  // 同文件上方 `:257`/`:286` 两处同字段早就写的是 `url_list?.[2]`，
+                  // 只有这条漏了；`url_list` 整条缺失时它自己就是崩点。
+                  image_url = at(imageItem.url_list, 2) || at(imageItem.url_list, 1) || ''
 
                   // 处理标题，去除特殊字符
                   const processedImageUrl = await processImageUrl(image_url, title, index, {
@@ -398,8 +421,11 @@ export class DouYin extends Base {
 
                   // 静态图片，clip_type为2或undefined
                   if (item.clip_type === 2 || item.clip_type === undefined) {
-                    if (item.url_list[0]) {
-                      const processedImageUrl = await processImageUrl(item.url_list[0], VideoData.data.aweme_detail.preview_title || '抖音图集', imagenum, {
+                    // 这行原本是 `if (item.url_list[0])`，拿来当守卫的表达式自己会抛 ——
+                    // 而紧邻的 `:411` 同字段写的就是 `url_list?.[0]`。
+                    const staticUrl = at(item.url_list)
+                    if (staticUrl) {
+                      const processedImageUrl = await processImageUrl(staticUrl, VideoData.data.aweme_detail.preview_title || '抖音图集', imagenum, {
                         Referer: 'https://www.douyin.com/',
                         Cookie: Config.cookies.douyin || ''
                       })
@@ -408,8 +434,9 @@ export class DouYin extends Base {
                     continue
                   }
 
-                  if (item.url_list?.[0]) {
-                    const imageUrl = await processImageUrl(item.url_list[0], g_title, index, {
+                  const liveFallbackUrl = at(item.url_list)
+                  if (liveFallbackUrl) {
+                    const imageUrl = await processImageUrl(liveFallbackUrl, g_title, index, {
                       Referer: 'https://www.douyin.com/',
                       Cookie: Config.cookies.douyin || ''
                     })
@@ -464,21 +491,39 @@ export class DouYin extends Base {
           if (isVideo) {
             // 视频地址特殊判断：play_addr_h264、play_addr、
             video = VideoData.data.aweme_detail.video
+            /*
+              `bit_rate` 整条可能不下发（线上那条 `reading '0'` 就是它），所以先收成
+              一个本地数组再用。三处消费（FPS、日志里的条数、传给 douyinProcessVideos）
+              都读这个变量，不再各自去解 `video.bit_rate` —— 原来 FPS 那行排在最前面，
+              它一抛就把视频、封面、评论三条支线一起带走，而后面两处「看起来安全」
+              仅仅因为轮不到它们执行。
+            */
+            const bitRates = video.bit_rate ?? []
             // 契约里 VideoFPS 是 number；原来拿不到时给 '获取失败'，模板那句
             // `{props.VideoFPS}Hz` 没有守卫，会印成「获取失败Hz」
-            FPS = Number(video.bit_rate[0]?.FPS) || undefined
-            if (Config.douyin.autoResolution) {
+            FPS = Number(at(bitRates)?.FPS) || undefined
+            // 一条源都没有时 `douyinProcessVideos` 会抛「接口没有返回任何视频源」，
+            // 那是挑源函数的正常契约；但这条路径上我们还能退回顶层 play_addr_h264
+            // 把视频发出去，所以空列表时干脆不进自动画质分支。
+            if (Config.douyin.autoResolution && bitRates.length > 0) {
               logger.debug(`开始排除不符合条件的视频分辨率；\n
-              共拥有${logger.yellow(video.bit_rate.length)}个视频源\n
+              共拥有${logger.yellow(bitRates.length)}个视频源\n
               视频ID：${logger.green(VideoData.data.aweme_detail.aweme_id)}\n
               分享链接：${logger.green(VideoData.data.aweme_detail.share_url)}
               `)
-              video.bit_rate = douyinProcessVideos(video.bit_rate, {
+              /*
+                先接进局部再回写。`douyinProcessVideos` 返回 `[T]`（单元素元组）、
+                内部已保证非空，所以 `picked[0]` 是类型上真正的非空；而
+                `video.bit_rate` 现在是可选数组，赋值后再读回来会把这份非空信息丢掉，
+                逼出一句本不该有的可选链。
+              */
+              const picked = douyinProcessVideos(bitRates, {
                 videoQuality: Config.douyin.videoQuality,
                 maxAutoVideoSize: Config.douyin.maxAutoVideoSize,
                 filelimit: Config.upload.filelimit || 100
               })
-              selectedVideo = video.bit_rate[0]
+              video.bit_rate = picked
+              selectedVideo = picked[0]
               g_video_url = pickDouyinPlayUrl(selectedVideo.play_addr)
             } else {
               g_video_url = pickDouyinPlayUrl(video.play_addr_h264)
@@ -493,14 +538,24 @@ export class DouYin extends Base {
             */
             const primaryAddr = selectedVideo?.play_addr ?? video.play_addr_h264
             g_video_candidates = [
-              ...(primaryAddr.url_list ?? []).filter(Boolean),
+              ...(primaryAddr?.url_list ?? []).filter(Boolean),
               buildDouyinPlayUrl(primaryAddr)
             ].filter(Boolean)
-            cover = getFirstUrl(video.animated_cover) || getFirstUrl(video.dynamic_cover) || getFirstUrl(video.cover_original_scale) || getFirstUrl(video.cover) || getFirstUrl(video.origin_cover)
+            cover = firstUrl(video.animated_cover) || firstUrl(video.dynamic_cover) || firstUrl(video.cover_original_scale) || firstUrl(video.cover) || firstUrl(video.origin_cover)
 
             const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 80, '抖音视频') // video title
             g_title = title
-            mp4size = (video.bit_rate[0].play_addr.data_size / (1024 * 1024)).toFixed(2)
+            /*
+              这一行原来是 `video.bit_rate[0].play_addr.data_size` 裸取，而且它在
+              `if (Config.douyin.autoResolution)` **之外** —— 关掉自动画质时
+              `bit_rate` 没被 `douyinProcessVideos` 重写过，取的是接口原样下发的数组，
+              整条缺失时当场抛，视频/封面/评论三条支线一起没了。
+
+              取值顺序也跟着修正：优先选中那一路，其次真正要下载的 h264，
+              最后才是接口给的第一条。原写法恒取 `[0]`，在自动画质退档后
+              卡片上印的体积会比实际发出去的那条大。
+            */
+            mp4size = formatVideoSize(selectedVideo?.play_addr, video.play_addr_h264, at(bitRates)?.play_addr)
             // 打真正要下载的那条地址。原来印的是顶层 play_addr 拼的 snssdk 串，
             // 那条既不是实际下载的地址、也不是选中的档位，排查时会把人带偏。
             logger.info('视频地址', g_video_url)
@@ -520,10 +575,10 @@ export class DouYin extends Base {
                 // 图集/合辑/文章走到这里还是空串，segment.image('') 等于没有封面。
                 // 按上游 up douyin.ts:573-577 的三分支各自取封面。
                 const coverImageUrl = isArticle
-                  ? getFirstUrl(aweme.video?.origin_cover)
+                  ? firstUrl(aweme.video?.origin_cover)
                   : isVideo
                     ? cover
-                    : getFirstUrl(aweme.images?.[0])
+                    : firstUrl(at(aweme.images))
                 const processedCover = await processImageUrl(coverImageUrl, aweme.desc || g_title || '抖音作品封面', 0, {
                   Referer: 'https://www.douyin.com/',
                   Cookie: Config.cookies.douyin || ''
@@ -720,10 +775,10 @@ export class DouYin extends Base {
                     // 拿 `bit_rate[0]`（接口给的顺序）会和实际下载的那一路对不上。
                     // 契约是 `string | null`，宽高缺一边就给 null —— 原写法会印出
                     // 「undefined x undefined」，比不印更像渲染坏了。
-                    Resolution: isVideo ? formatResolution(selectedVideo?.play_addr ?? video?.bit_rate[0].play_addr) : null,
+                    Resolution: isVideo ? formatResolution(selectedVideo?.play_addr ?? at(video?.bit_rate)?.play_addr) : null,
                     maxDepth: 6,
                     Author: aweme.author.nickname ?? '',
-                    AuthorAvatar: aweme.author.avatar_thumb?.url_list[0] ?? '',
+                    AuthorAvatar: firstUrl(aweme.author.avatar_thumb),
                     // 线上 SSR 崩溃就是缺了这一个字段：VideoInfoHeader 直接读
                     // props.Statistics.digg_count（Comment.tsx:147），拿 undefined 解属性当场抛。
                     // 拿 HEAD 上的旧 payload 实测复现过，报错正是 reading 'digg_count'。
@@ -862,12 +917,12 @@ export class DouYin extends Base {
           }
           img = await Render('douyin/musicinfo',
             {
-              image_url: MusicData.data.music_info.cover_hd.url_list[0],
+              image_url: firstUrl(MusicData.data.music_info.cover_hd),
               desc: MusicData.data.music_info.title,
               music_id: MusicData.data.music_info.id,
               create_time: Time(0),
               user_count: Common.count(MusicData.data.music_info.user_count),
-              avater_url: MusicData.data.music_info.avatar_large?.url_list[0] || UserData.data.user.avatar_larger.url_list[0],
+              avater_url: firstUrl(MusicData.data.music_info.avatar_large) || firstUrl(UserData.data.user.avatar_larger),
               // 契约里这三个是必填 number、下面两个是必填 string，
               // 接口这几个字段都可选，模板又是直接印（`粉丝: {fans}`），漏出来就是 undefined
               fans: Number(UserData.data.user.mplatform_followers_count || UserData.data.user.follower_count) || 0,
@@ -994,7 +1049,10 @@ export const Emoji = (data: DyEmojiList): Array<{ name: string, url: string | un
 
   for (const i of data.emoji_list) {
     const display_name = i.display_name
-    const url = i.emoji_url.url_list[0]
+    // `emoji_url` 的形状来自 amagi 的 DyEmojiList，那边声明成必填，所以 tsc 不会在
+    // 这里报错 —— 但接口真缺这一层时照样抛。返回类型的 url 本来就是 `string | undefined`，
+    // 取不到给 undefined 正好是它承诺的形状，不用另造兜底值。
+    const url = at(i.emoji_url?.url_list)
 
     const Objject = {
       name: display_name,
