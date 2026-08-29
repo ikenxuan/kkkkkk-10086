@@ -11,6 +11,7 @@ import {
   type RichTextNode
 } from '@kkk/richtext'
 import { Config, Networks, baseHeaders } from '@/module/utils/index'
+import { firstUrl } from '@/module/utils/record'
 import { getDouyinData } from './api.js'
 
 /** 表情项 */
@@ -41,13 +42,13 @@ interface RawTextExtra {
 interface RawDouyinComment {
   cid?: string
   aweme_id?: string
-  user: { nickname?: string, avatar_thumb: { url_list: string[] } }
+  user: { nickname?: string, avatar_thumb?: { url_list?: string[] } }
   text: string
   ip_label?: string
   create_time: number
   label_type?: number
   label_text?: string
-  sticker?: { animate_url: { url_list: string[] } }
+  sticker?: { animate_url?: { url_list?: string[] } }
   digg_count: number
   image_list?: Array<{ origin_url?: { url_list?: string[] } }>
   label_list?: Array<{ text?: string }>
@@ -446,7 +447,7 @@ const fetchReplyComments = async (
     replyComments.push({
       create_time: reply.create_time,
       nickname: reply.user.nickname ?? '',
-      userimageurl: reply.user.avatar_thumb.url_list[0] ?? '',
+      userimageurl: firstUrl(reply.user.avatar_thumb),
       text: replyRichText,
       digg_count: reply.digg_count,
       ip_label: reply.ip_label ?? '未知',
@@ -478,7 +479,10 @@ export async function douyinComments (
   let id = 1
   for (const comment of data.data.comments) {
     const text = comment.text
-    const sticker = comment.sticker ? comment.sticker.animate_url.url_list[0] : null
+    // `|| null` 不是多余的：下游 `sticker ?? undefined` 与 `if (sticker)` 都按
+    // 「有没有贴纸」分支，而 firstUrl 取不到时给的是空串 —— 空串会作为一个
+    // 存在的值落进渲染数据里，所以这里要收回 null。
+    const sticker = firstUrl(comment.sticker?.animate_url) || null
     const imageurl = comment.image_list?.[0]?.origin_url?.url_list?.[0] ?? null
     const userintextlongid = extractMentionSecUids(comment.text_extra)
     const search_text = extractSearchText(comment.text_extra)
@@ -499,7 +503,7 @@ export async function douyinComments (
       cid: comment.cid,
       aweme_id: comment.aweme_id,
       nickname: comment.user.nickname ?? '',
-      userimageurl: comment.user.avatar_thumb.url_list[0] ?? '',
+      userimageurl: firstUrl(comment.user.avatar_thumb),
       text: richText,
       digg_count: comment.digg_count,
       ip_label: comment.ip_label ?? '未知',
