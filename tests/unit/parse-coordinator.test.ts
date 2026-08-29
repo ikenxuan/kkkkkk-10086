@@ -305,6 +305,36 @@ describe('ParseCoordinator 解析预算', () => {
       vi.useRealTimers()
     }
   })
+
+  it('把取消信号从 guard 一路透传到 submit 的调用方', async () => {
+    vi.useFakeTimers()
+    const stuckGate = createDeferred<string>()
+    let observed: AbortSignal | undefined
+    const coordinator = new ParseCoordinator({ concurrency: 1, timeoutMs: 50 })
+    const parse = coordinator.submit(workIdentity('stuck-work'), async signal => {
+      observed = signal
+      return await stuckGate.promise
+    })
+    const assertion = expect(parse).rejects.toMatchObject({
+      code: 'ERR_REQUEST_TIMEOUT'
+    })
+
+    try {
+      await flushMicrotasks()
+      expect(observed).toBeInstanceOf(AbortSignal)
+      expect(observed?.aborted).toBe(false)
+
+      await vi.advanceTimersByTimeAsync(50)
+      await flushMicrotasks()
+
+      expect(observed?.aborted).toBe(true)
+      await assertion
+    } finally {
+      stuckGate.resolve('late')
+      await Promise.allSettled([parse])
+      vi.useRealTimers()
+    }
+  })
 })
 
 describe('ParseCoordinator 下载桶上下文', () => {

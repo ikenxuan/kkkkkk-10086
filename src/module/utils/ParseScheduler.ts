@@ -44,7 +44,19 @@ export interface ParseSchedulerOptions {
   onState?: (event: ParseSchedulerStateEvent) => void
 }
 
-export type ParseTask<T> = () => T | PromiseLike<T>
+/**
+ * 一次解析。收到的 `signal` 就是外层守卫的取消信号：超时或调用方取消时它会 abort。
+ *
+ * 为什么参数是可选着用的：TypeScript 里零参函数可以赋值给收参数的函数类型，
+ * 所以现有那一批 `() => ...` 调用点（`apps/tools.ts` 的各平台分派）一个都不用改。
+ * 这是**放宽**契约，不是收紧。
+ *
+ * 管道目前只铺到这里：signal 从 `runWithRequestGuard` 一路传到任务闭包，
+ * 但各平台解析内部还没有人真的去 `signal.aborted` / 把它交给 axios ——
+ * 那是独立的一步。在那之前超时仍然只是让外层 Promise reject，
+ * 真实的取消要等消费方接上才生效。
+ */
+export type ParseTask<T> = (signal: AbortSignal) => T | PromiseLike<T>
 
 type PendingState = 'queued' | 'running'
 
@@ -156,7 +168,7 @@ export class ParseScheduler {
 
     Promise.resolve()
       .then(() => runWithRequestGuard(
-        () => task.task(),
+        signal => task.task(signal),
         { timeoutMs: this.timeoutMs, maxRetries: 0 }
       ))
       .then(

@@ -256,4 +256,37 @@ describe('ParseScheduler', () => {
     expect(() => new ParseScheduler({ concurrency: 0 })).toThrow(RangeError)
     expect(() => new ParseScheduler({ concurrency: 1.5 })).toThrow(RangeError)
   })
+
+  it('把 guard 的取消信号交到任务手里，超时后任务侧看得见 aborted', async () => {
+    vi.useFakeTimers()
+    const stuckGate = createDeferred<void>()
+    let observed: AbortSignal | undefined
+    const scheduler = new ParseScheduler({ concurrency: 1, timeoutMs: 50 })
+    const stuck = scheduler.submit('stuck-link', async signal => {
+      observed = signal
+      await stuckGate.promise
+    })
+    const stuckAssertion = expect(stuck).rejects.toMatchObject({
+      code: 'ERR_REQUEST_TIMEOUT'
+    })
+
+    try {
+      await flushMicrotasks()
+      // 任务一开始就该拿到一个还没触发的信号，而不是 undefined。
+      expect(observed).toBeInstanceOf(AbortSignal)
+      expect(observed?.aborted).toBe(false)
+
+      await vi.advanceTimersByTimeAsync(50)
+      await flushMicrotasks()
+
+      // 超时不只是让外面的 Promise reject：任务侧必须真的被通知到，
+      // 否则它会带着连接和内存一路跑到底。
+      expect(observed?.aborted).toBe(true)
+      await stuckAssertion
+    } finally {
+      stuckGate.resolve()
+      await Promise.allSettled([stuck])
+      vi.useRealTimers()
+    }
+  })
 })

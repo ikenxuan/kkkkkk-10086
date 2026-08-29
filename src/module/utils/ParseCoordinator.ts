@@ -179,11 +179,14 @@ export class ParseCoordinator {
     // 套在 scheduler.submit 的任务闭包**里面**而不是外面：run() 必须在任务真的开始
     // 执行时进入，这样任务内部创建的所有异步资源才继承得到上下文。套在外面的话，
     // 排队期间上下文早就退出了，被调度器延后启动的任务会落到 default 桶。
-    return this.scheduler.submit(fingerprint, async () => await withDownloadBucket(identity.platform, async () => {
+    // 两层闭包都得把 signal 接住再往里递。以前这里是两个零参箭头函数，
+    // guard 递进来的取消信号直接掉在地上：超时点上外层 Promise reject 了，
+    // 真实任务却毫无察觉地跑到底，继续占着连接和内存。
+    return this.scheduler.submit(fingerprint, async signal => await withDownloadBucket(identity.platform, async () => {
       notifyReaction(reaction, 'processing')
 
       try {
-        const result = await task()
+        const result = await task(signal)
         notifyReaction(reaction, 'succeeded')
         return result
       } catch (error) {
