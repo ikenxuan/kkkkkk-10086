@@ -25,7 +25,7 @@ import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/types'
 import type { RichTextDocument } from '@kkk/richtext'
-import { isRecord } from '@/module/utils/record'
+import { at, isRecord } from '@/module/utils/record'
 import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
 import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliDecorationCard, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
 
@@ -595,10 +595,10 @@ export class Bilibili extends Base {
             playUrlData.result.dash.video = simplify
             /** 给视频信息对象删除不符合条件的视频流 */
             const correctList = await bilibiliProcessVideos({
-              accept_description: playUrlData.result.accept_description,
+              accept_description: playUrlData.result.accept_description || [],
               bvid: videoInfo.data.result.season_id.toString(),
               qn: Config.bilibili.videoQuality
-            }, simplify, pickBilibiliStreamUrl(playUrlData.result.dash.audio[0]))
+            }, simplify, pickBilibiliStreamUrl(at(playUrlData.result.dash.audio)))
             playUrlData.result.dash.video = correctList.videoList
             playUrlData.result.cept_description = correctList.accept_description
             await this.getvideo({

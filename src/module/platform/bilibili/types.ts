@@ -226,11 +226,17 @@ export interface BangumiInfoResponse {
 
 export interface BangumiPlayResponse {
   result: {
-    dash: {
-      video: Array<BilibiliVideoStream & { base_url: string }>
-      audio: [{ base_url: string }, ...Array<{ base_url: string }>]
-    }
-    accept_description: string[]
+    /**
+     * 复用 `BilibiliDash`，不再自己写一份。
+     *
+     * 这里曾经是 `audio: [{ base_url: string }, ...]` 这个非空元组，于是
+     * `dash.audio[0]` 在类型上完全合法（`noUncheckedIndexedAccess` 不给元组 0 号位
+     * 补 `undefined`），而番剧这条分支没有 fan-out，取不到音轨就是整条解析失败。
+     * 普通视频路径走的一直是 `BilibiliDash`（audio 可选），两条路对同一个接口
+     * 给出两种形状本身就是 bug 源。
+     */
+    dash: BilibiliDash
+    accept_description?: string[]
     cept_description?: string[]
   }
 }
