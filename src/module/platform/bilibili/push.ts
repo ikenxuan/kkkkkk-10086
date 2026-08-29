@@ -1,5 +1,4 @@
 import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
-import { createRequire } from 'node:module'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getBilibiliDash, getBilibiliPayload, getvideosize, replacetext } from './bilibili.js'
 import { buildBilibiliLiveSessionId, parseBilibiliLiveStartedAt } from './live-status.js'
 import {
@@ -21,33 +20,8 @@ import common from '@/runtime/host/common'
 import type { BilibiliPushItem as BilibiliPushConfigItem } from '@/types/config'
 import fs from 'node:fs'
 import { getErrorMessage } from '@/module/utils/error-message'
-import type { AmagiResponse, PushAmagiRuntime as AmagiRuntime, BiliUserDynamic, BiliUserProfile, BilibiliArticleContent, BilibiliArticleInfo, BilibiliDynamicItem, BilibiliDynamicPayload, BilibiliLiveCard, BilibiliLiveRoomInfo, BilibiliPushEvent, BilibiliPushTarget, BilibiliUserLiveStatus, BilibiliVideoInfo, ForwardNodes, GroupSendable, RenderResult, WillBePushList } from './types.js'
-
-const require = createRequire(import.meta.url)
-
-const fallbackAmagiRuntime: AmagiRuntime = {
-  DynamicType: {
-    AV: 'DYNAMIC_TYPE_AV',
-    DRAW: 'DYNAMIC_TYPE_DRAW',
-    WORD: 'DYNAMIC_TYPE_WORD',
-    LIVE_RCMD: 'DYNAMIC_TYPE_LIVE_RCMD',
-    FORWARD: 'DYNAMIC_TYPE_FORWARD',
-    ARTICLE: 'DYNAMIC_TYPE_ARTICLE'
-  },
-  MajorType: {
-    DRAW: 'MAJOR_TYPE_DRAW',
-    OPUS: 'MAJOR_TYPE_OPUS',
-    LIVE_RCMD: 'MAJOR_TYPE_LIVE_RCMD'
-  }
-}
-
-const loadAmagiRuntime = (): AmagiRuntime => {
-  try {
-    return require('@ikenxuan/amagi') as AmagiRuntime
-  } catch {
-    return fallbackAmagiRuntime
-  }
-}
+import { loadAmagiRuntime } from './amagi-runtime.js'
+import type { AmagiResponse, BiliUserDynamic, BiliUserProfile, BilibiliArticleContent, BilibiliArticleInfo, BilibiliDynamicItem, BilibiliDynamicPayload, BilibiliLiveCard, BilibiliLiveRoomInfo, BilibiliPushEvent, BilibiliPushTarget, BilibiliUserLiveStatus, BilibiliVideoInfo, ForwardNodes, GroupSendable, RenderResult, WillBePushList } from './types.js'
 
 const { DynamicType, MajorType } = loadAmagiRuntime()
 
