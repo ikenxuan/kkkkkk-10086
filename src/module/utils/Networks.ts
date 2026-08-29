@@ -648,7 +648,7 @@ export class Networks {
       }
       if (url.startsWith('https:')) downloadConfig.httpsAgent = httpsAgent
       else if (url.startsWith('http:')) downloadConfig.httpAgent = httpAgent
-      const response = await axios<Readable>(downloadConfig)
+      const response = await this.axiosInstance<Readable>(downloadConfig)
       clearTimeout(timeoutId)
       if (response.status < 200 || response.status >= 300) throw new Error(`下载失败，状态码: ${response.status}`)
       if (startByte > 0 && response.status !== 206) {
