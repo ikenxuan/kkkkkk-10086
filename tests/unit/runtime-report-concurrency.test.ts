@@ -67,16 +67,16 @@ const cdnProbeSnapshot = vi.hoisted(() => ({
 vi.mock('../../src/module/utils/ApiCache.js', () => ({
   getApiCacheSnapshot: () => cacheSnapshot.value
 }))
-vi.mock('../../src/module/utils/DownloadBudget.js', () => ({
+vi.mock('../../src/module/utils/Network/DownloadBudget.js', () => ({
   getDownloadBudgetSnapshot: () => budgetSnapshot.value
 }))
 vi.mock('../../src/module/utils/ParseCoordinator.js', () => ({
   getParseCoordinatorSnapshot: () => parseSnapshot.value
 }))
-vi.mock('../../src/module/utils/CdnRegistry.js', () => ({
+vi.mock('../../src/module/utils/Network/CdnRegistry.js', () => ({
   getCdnRegistrySnapshot: () => cdnRegistrySnapshot.value
 }))
-vi.mock('../../src/module/utils/CdnProbe.js', () => ({
+vi.mock('../../src/module/utils/Network/CdnProbe.js', () => ({
   getCdnProbeSnapshot: () => cdnProbeSnapshot.value
 }))
 

@@ -32,7 +32,7 @@ const {
   probeAndOrderCdnUrls,
   probeCdnUrl,
   resetCdnProbe
-} = await import('../../src/module/utils/CdnProbe.js')
+} = await import('../../src/module/utils/Network/CdnProbe.js')
 
 const T0 = 1_700_000_000_000
 

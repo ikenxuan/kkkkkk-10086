@@ -13,7 +13,7 @@ import {
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
-import { withDownloadBucket } from '@/module/utils/DownloadBudget'
+import { withDownloadBucket } from '@/module/utils/Network/DownloadBudget'
 import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'

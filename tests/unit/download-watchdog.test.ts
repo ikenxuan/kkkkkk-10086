@@ -10,8 +10,8 @@ import {
   MIN_REMAINING_BYTES,
   SAMPLE_INTERVAL_MS,
   SLOW_DOWNLOAD_ABORT_CODE
-} from '../../src/module/utils/DownloadWatchdog.js'
-import type { SlowSpeedGuard, SlowSpeedVerdict } from '../../src/module/utils/DownloadWatchdog.js'
+} from '../../src/module/utils/Network/DownloadWatchdog.js'
+import type { SlowSpeedGuard, SlowSpeedVerdict } from '../../src/module/utils/Network/DownloadWatchdog.js'
 
 // 凡是会碰 Config / 宿主日志的模块都要先备一个 logger：vitest 并行跑多个 worker 时
 // 少了它会炸成 `ReferenceError: logger is not defined`，把别的问题伪装成本文件的断言失败。

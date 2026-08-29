@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Networks, normalizeDownloadOptions, toAxiosError } from '../../src/module/utils/Networks.js'
-import { clampConcurrency } from '../../src/module/utils/DownloadBudget.js'
+import { clampConcurrency } from '../../src/module/utils/Network/DownloadBudget.js'
 // 默认值从源头 import，不抄字面量：抄了之后改常量测试照样绿，这组用例的意义就没了
 import {
   DEFAULT_SLOW_FLOOR_BYTES,
   DEFAULT_SUSTAIN_MS,
   SAMPLE_INTERVAL_MS
-} from '../../src/module/utils/DownloadWatchdog.js'
+} from '../../src/module/utils/Network/DownloadWatchdog.js'
 
 // `new Networks()` 会读 Config.request，第一次读就触发 Config 单例初始化 ——
 // 而 initCfg 里的 YamlReader 在解析失败时走 logger.error。vitest 并行跑多个文件时

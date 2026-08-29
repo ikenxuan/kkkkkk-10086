@@ -1,4 +1,4 @@
-import { withDownloadBucket } from './DownloadBudget.js'
+import { withDownloadBucket } from './Network/DownloadBudget.js'
 import {
   ParseScheduler,
   type ParseSchedulerSnapshot,

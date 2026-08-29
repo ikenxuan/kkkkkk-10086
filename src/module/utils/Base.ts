@@ -8,7 +8,7 @@ import {
   classifyCdnFailure,
   reportCdnFailure,
   resolveCdnCandidates
-} from './CdnRegistry.js'
+} from './Network/CdnRegistry.js'
 import { Networks, baseHeaders } from './Networks.js'
 import { mergeFile } from './FFmpeg.js'
 import cfg from '@/runtime/host/config'

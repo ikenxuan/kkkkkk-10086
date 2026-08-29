@@ -27,14 +27,14 @@ import {
   reportCdnFailure,
   reportCdnSuccess,
   resolveCdnCandidates
-} from './CdnRegistry.js'
-import { probeAndOrderCdnUrls } from './CdnProbe.js'
+} from './Network/CdnRegistry.js'
+import { probeAndOrderCdnUrls } from './Network/CdnProbe.js'
 import Config from './Config.js'
 import {
   clampConcurrency,
   getDownloadBudgetLimit,
   runWithDownloadSlot
-} from './DownloadBudget.js'
+} from './Network/DownloadBudget.js'
 import {
   createSlowDownloadError,
   createSlowSpeedGuard,
@@ -42,18 +42,18 @@ import {
   DEFAULT_SUSTAIN_MS,
   isSlowDownloadAbort,
   SAMPLE_INTERVAL_MS
-} from './DownloadWatchdog.js'
+} from './Network/DownloadWatchdog.js'
 import { getErrorMessage } from './error-message.js'
 import {
   downloadWithTool,
   isRetryableExternalFailure,
   resolveDownloadTool
-} from './ExternalDownloader.js'
+} from './Network/ExternalDownloader.js'
 import {
   downloadMultipart,
   MULTIPART_MIN_SIZE,
   probeRangeSupport
-} from './MultipartDownloader.js'
+} from './Network/MultipartDownloader.js'
 import { isRecord } from './record.js'
 
 class ThrottleStream extends Transform {

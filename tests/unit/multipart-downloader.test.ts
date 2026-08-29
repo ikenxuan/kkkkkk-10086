@@ -8,7 +8,7 @@ import {
   acquireDownloadSlot,
   resetDownloadBudget,
   setDownloadBudgetLimitResolver
-} from '../../src/module/utils/DownloadBudget.js'
+} from '../../src/module/utils/Network/DownloadBudget.js'
 import {
   DEFAULT_GRACE_MS,
   DEFAULT_SUSTAIN_MS,
@@ -16,13 +16,13 @@ import {
   SAMPLE_INTERVAL_MS,
   SLOW_DOWNLOAD_ABORT_CODE,
   isSlowDownloadAbort
-} from '../../src/module/utils/DownloadWatchdog.js'
+} from '../../src/module/utils/Network/DownloadWatchdog.js'
 import {
   createRanges,
   downloadMultipart,
   parseContentRange,
   probeRangeSupport
-} from '../../src/module/utils/MultipartDownloader.js'
+} from '../../src/module/utils/Network/MultipartDownloader.js'
 
 globalThis.logger = {
   warn: vi.fn(),

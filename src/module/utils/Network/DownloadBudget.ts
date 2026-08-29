@@ -19,7 +19,7 @@
  */
 import { AsyncLocalStorage } from 'node:async_hooks'
 
-import Config from './Config.js'
+import Config from '@/module/utils/Config'
 
 /**
  * 额度下限。低于 2 时一个图集会退化成纯串行下载，多线程分片也失去意义。

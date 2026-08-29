@@ -24,13 +24,13 @@ import { upload as uploadSchemas } from '../../src/module/guoba/schemas/upload.j
 import {
   MAX_DOWNLOAD_CONCURRENCY,
   MIN_DOWNLOAD_CONCURRENCY
-} from '../../src/module/utils/DownloadBudget.js'
+} from '../../src/module/utils/Network/DownloadBudget.js'
 import {
   DEFAULT_SLOW_FLOOR_BYTES,
   DEFAULT_SUSTAIN_MS,
   SAMPLE_INTERVAL_MS
-} from '../../src/module/utils/DownloadWatchdog.js'
-import { MULTIPART_MIN_SIZE } from '../../src/module/utils/MultipartDownloader.js'
+} from '../../src/module/utils/Network/DownloadWatchdog.js'
+import { MULTIPART_MIN_SIZE } from '../../src/module/utils/Network/MultipartDownloader.js'
 import { Cfg } from '../../src/module/utils/Config.js'
 import type { UploadConfig } from '../../src/types/config.js'
 

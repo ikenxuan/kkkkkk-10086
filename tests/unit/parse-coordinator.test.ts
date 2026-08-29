@@ -5,7 +5,7 @@ import {
   getCurrentDownloadBucket,
   resetDownloadBudget,
   setDownloadBudgetLimitResolver
-} from '../../src/module/utils/DownloadBudget.js'
+} from '../../src/module/utils/Network/DownloadBudget.js'
 import {
   ParseCoordinator,
   createParseFingerprint,

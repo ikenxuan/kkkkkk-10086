@@ -40,7 +40,7 @@ import { promisify } from 'node:util'
 import type { AxiosProxyConfig, AxiosRequestConfig } from 'axios'
 import type { FileInfo } from '@/types/platform'
 import { createSlowDownloadError, createSlowSpeedGuard } from './DownloadWatchdog.js'
-import { isRecord } from './record.js'
+import { isRecord } from '@/module/utils/record'
 
 const execFileAsync = promisify(execFile)
 

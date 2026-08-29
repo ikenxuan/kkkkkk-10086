@@ -14,8 +14,8 @@ import {
   setDownloadBudgetLimitResolver,
   tryAcquireDownloadSlots,
   withDownloadBucket
-} from '../../src/module/utils/DownloadBudget.js'
-import { createRanges, downloadMultipart } from '../../src/module/utils/MultipartDownloader.js'
+} from '../../src/module/utils/Network/DownloadBudget.js'
+import { createRanges, downloadMultipart } from '../../src/module/utils/Network/MultipartDownloader.js'
 
 globalThis.logger = {
   warn: vi.fn(),

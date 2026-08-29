@@ -16,7 +16,7 @@ import {
   reportCdnSuccess,
   resetCdnRegistry,
   resolveCdnCandidates
-} from '../../src/module/utils/CdnRegistry.js'
+} from '../../src/module/utils/Network/CdnRegistry.js'
 
 // 这个文件不备 globalThis.logger：CdnRegistry 只 import 零依赖的 record.js，
 // 整条链上碰不到宿主日志和 Config，所以不存在别的单测里那个

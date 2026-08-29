@@ -51,15 +51,15 @@ const {
   resetToolAvailability,
   resolveDownloadTool,
   setToolAvailability
-} = await import('../../src/module/utils/ExternalDownloader.js')
-import type { ExternalDownloadOptions, ExternalToolName } from '../../src/module/utils/ExternalDownloader.js'
+} = await import('../../src/module/utils/Network/ExternalDownloader.js')
+import type { ExternalDownloadOptions, ExternalToolName } from '../../src/module/utils/Network/ExternalDownloader.js'
 import {
   DEFAULT_GRACE_MS,
   DEFAULT_SUSTAIN_MS,
   MIN_REMAINING_BYTES,
   SAMPLE_INTERVAL_MS,
   SLOW_DOWNLOAD_ABORT_CODE
-} from '../../src/module/utils/DownloadWatchdog.js'
+} from '../../src/module/utils/Network/DownloadWatchdog.js'
 
 // ---------------------------------------------------------------------------
 // 假子进程

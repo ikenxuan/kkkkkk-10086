@@ -29,7 +29,7 @@
  * 发给 B 作品。所以键必须由调用方给（它们手上都有 bvid / aweme_id），
  * 给不出键的调用点就只享受主机健康那一层。
  */
-import { isRecord } from './record.js'
+import { isRecord } from '@/module/utils/record'
 
 /**
  * 候选清单的存活时间：5 分钟。

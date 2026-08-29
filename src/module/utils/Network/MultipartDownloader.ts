@@ -12,7 +12,7 @@ import {
   createSlowSpeedGuard,
   SAMPLE_INTERVAL_MS
 } from './DownloadWatchdog.js'
-import { isRecord } from './record.js'
+import { isRecord } from '@/module/utils/record'
 
 const MB = 1024 * 1024
 export const MULTIPART_MIN_SIZE = 8 * MB
