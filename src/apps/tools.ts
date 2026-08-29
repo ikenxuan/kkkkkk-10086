@@ -22,6 +22,7 @@ import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
 import { isRecord } from '@/module/utils/record'
+import { getConfigValue, isDefaultTool, isVideoToolEnabled } from '@/module/utils/app-config'
 
 interface PlatformConfig {
   reg: RegExp
@@ -57,10 +58,6 @@ type ToolsHandler = (event: CommandEvent) => Promise<boolean | void>
 
 const bilibiliSelections = new Map<string, BilibiliIdData>()
 const douyinSelections = new Map<string, DouyinSelection>()
-
-const getConfigValue = <T>(value: T | undefined, fallback: T | undefined): T | undefined => value ?? fallback
-const isVideoToolEnabled = () => getConfigValue(Config.app?.videoTool, Config.app?.videotool) !== false
-const isDefaultTool = () => getConfigValue(Config.app?.defaulttool, Config.app?.videoTool) !== false
 
 const configuredParseConcurrency = Number(Config.app.parseConcurrency)
 const parseCoordinator = new ParseCoordinator({
@@ -101,7 +98,7 @@ const PLATFORM_CONFIG: PlatformConfig[] = [
  * @returns {Array} 返回启用的平台规则数组
  */
 const generateRules = (): Array<{ reg: RegExp, fnc: PlatformConfig['handler'] }> => {
-  if (!isVideoToolEnabled()) return []
+  if (!isVideoToolEnabled(Config.app)) return []
   return PLATFORM_CONFIG
     .filter(config => config.enabled)
     .map(({ reg, handler }) => ({ reg, fnc: handler }))
@@ -253,10 +250,10 @@ export class kkkTools extends plugin<'message'> {
       name: 'kkkkkk-10086-视频功能',
       dsc: '视频',
       event: 'message',
-      priority: isDefaultTool() ? -Infinity : Config.app.priority,
+      priority: isDefaultTool(Config.app) ? -Infinity : Config.app.priority,
       rule: [
         ...generateRules(), // 动态生成的平台规则
-        ...(isVideoToolEnabled() ? [{ reg: /^(\[图片\])?$/, fnc: 'imageQrCode' }] : []),
+        ...(isVideoToolEnabled(Config.app) ? [{ reg: /^(\[图片\])?$/, fnc: 'imageQrCode' }] : []),
         { reg: /^#?\d{1,2}$/, fnc: 'selectDouyinWork' },
         // 关键字后面不能紧跟汉字：这条规则没有结尾锚点，原来 `^#?kkk解析` 会把
         // `#kkk解析统计` 一起吃掉，而本 app 优先级 500 比 statistics 的 2000 靠前，

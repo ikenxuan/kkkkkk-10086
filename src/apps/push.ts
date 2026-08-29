@@ -9,6 +9,7 @@ import type { BilibiliPushItem, DouyinPushItem } from '@/types/config'
 import type { CommandEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
 import { isRecord } from '@/module/utils/record'
+import { isDefaultTool } from '@/module/utils/app-config'
 
 /**
  * 取 amagi 响应外层的 `data`。
@@ -62,7 +63,7 @@ export class kkkPush extends plugin<'message'> {
       name: 'kkkkkk-10086-推送功能',
       dsc: '推送',
       event: 'message',
-      priority: Config.app.defaulttool ? -Infinity : Config.app.priority,
+      priority: isDefaultTool(Config.app) ? -Infinity : Config.app.priority,
       rule: [
         { reg: /^#设置抖音推送/, fnc: 'setdyPush', permission: asRulePermission(Config.douyin.push?.permission) },
         { reg: /^#设置[bB]站推送/, fnc: 'setbiliPush', permission: asRulePermission(Config.bilibili.push?.permission) },
