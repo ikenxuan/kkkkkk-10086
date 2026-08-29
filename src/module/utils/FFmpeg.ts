@@ -16,6 +16,7 @@ import {
   type ExecFileException,
   type ExecFileOptions
 } from 'node:child_process'
+import { stat } from 'node:fs/promises'
 import Common from './Common.js'
 
 export interface FFmpegExecResult {
@@ -93,7 +94,7 @@ export interface NormalizedLoopVideoOptions extends LoopVideoOptions {
   context: LoopVideoContext | undefined
 }
 
-type OperationType = '二合一（视频 + 音频）' | '视频*3 + 音频' | '获取指定视频文件时长' | '压缩视频'
+type OperationType = '二合一（视频 + 音频）' | '视频*3 + 音频' | '获取指定视频文件时长' | '压缩视频' | '录制直播流'
 
 export const normalizeCompressionOptions = (
   options: CompressionOptions
@@ -610,6 +611,183 @@ export const loopVideoWithTransition = async (
   ])
   result.status ? logger.debug(`Live Photo 效果视频生成成功: ${outputPath}`) : logger.error('Live Photo 效果视频生成失败', result)
   return { success: result.status }
+}
+
+export interface RecordLiveStreamOptions {
+  /** 直播流地址，优先 flv（理由见 `recordLiveStream` 的注释） */
+  url: string
+  /** 输出文件绝对路径 */
+  outputPath: string
+  /** 最长录制时长（毫秒） */
+  maxDurationMs: number
+  /** 额外请求头，比如 Referer / User-Agent（B站直播必须带 Referer，否则 403） */
+  headers?: Record<string, string>
+}
+
+export interface RecordLiveStreamResult {
+  success: boolean
+  filePath: string
+  /** 实际录了多久（毫秒），从发起 ffmpeg 到进程退出的墙上时间 */
+  durationMs: number
+  /** 落盘字节数，失败时是 0 */
+  bytes: number
+}
+
+/**
+ * 录制进程 stdout/stderr 的缓冲上限。
+ *
+ * `exec` 里那句「maxBuffer 保持 Node 默认的 1MB」是给 `-version` 这类短命令定的，
+ * 长任务不能沿用：`execFile` 的 maxBuffer 一满就直接 kill 进程，表现出来是
+ * 「录了几分钟以后神秘失败」，而不是任何一条能搜到的报错。
+ *
+ * 导出是为了让测试断言同一个数字，而不是在两边各抄一遍字面量。
+ */
+export const RECORD_LIVE_STREAM_MAX_BUFFER = 16 * 1024 * 1024
+
+/**
+ * 外层 `timeout` 相对 `-t` 留出的余量。
+ *
+ * 正常情况下永远是 `-t` 先到、ffmpeg 自己干净退出（`error === null`）；
+ * 这个余量让 `timeout` 只在 ffmpeg 卡死（比如上游 TCP 半开、既不发数据也不断开）
+ * 时才兜底开枪。余量太小的话，收尾写 index 的那一两秒就会被误杀成半成品。
+ */
+export const RECORD_LIVE_STREAM_TIMEOUT_GRACE_MS = 30_000
+
+/**
+ * 把请求头拼成 ffmpeg 的输入侧选项。
+ *
+ * 为什么 User-Agent 单独走 `-user_agent` 而不是塞进 `-headers`：ffmpeg 的 http
+ * 协议自带一个 `user_agent` 选项，默认值 `Lavf/<版本>` 是**一定会发**的。
+ * 如果再往 `-headers` 里写一行 `User-Agent:`，请求上就出现两个 UA 头，
+ * 而做 UA 校验的 CDN 认哪一个取决于它自己的实现 —— 表现成「同样的头，浏览器能拉、
+ * ffmpeg 随机 403」。`-user_agent` 是覆盖那个内置值，不会重复。
+ *
+ * 其余头统一走 `-headers`（CRLF 分隔的多行）而不是逐个映射成 ffmpeg 专用 flag：
+ * 调用方传进来的是任意 Record，做名字到 flag 的映射表就意味着表里没有的头会被
+ * 静默丢掉，而 Referer 这种「丢了就 403」的头最不该静默丢。
+ *
+ * 头名/头值里的 CR、LF 一律剔除：这些值来自远端页面（房间 URL 拼出来的 Referer），
+ * 放任换行进去等于让远端往 header 块里插任意头。和 `exec` 用 execFile 挡 shell 注入
+ * 是同一类防线，只是这次的注入面在 HTTP 协议层。
+ */
+const buildLiveStreamHeaderArgs = (headers?: Record<string, string>): string[] => {
+  if (!headers) return []
+  const args: string[] = []
+  const extraLines: string[] = []
+  const strip = (value: string): string => value.replace(/[\r\n]/g, '')
+
+  for (const [rawName, rawValue] of Object.entries(headers)) {
+    const name = strip(String(rawName ?? '')).trim()
+    if (!name) continue
+    const value = strip(String(rawValue ?? '')).trim()
+    if (!value) continue
+    if (name.toLowerCase() === 'user-agent') {
+      args.push('-user_agent', value)
+      continue
+    }
+    extraLines.push(`${name}: ${value}`)
+  }
+
+  // 末尾那个 CRLF 不是多余的：ffmpeg 把这串原样拼进请求头块，
+  // 少了它最后一行会和它后面的内容黏在一起。
+  if (extraLines.length > 0) args.push('-headers', `${extraLines.join('\r\n')}\r\n`)
+  return args
+}
+
+/**
+ * `stat` 出文件字节数，拿不到就算 0。
+ *
+ * 吞掉异常是有意的：这个函数只在判定「录出来的东西能不能用」时被调用，
+ * ENOENT（ffmpeg 压根没开始写）和 0 字节（开了文件但没拉到数据）在语义上
+ * 都是同一个结论 —— 没东西。
+ */
+const statRecordedBytes = async (filePath: string): Promise<number> => {
+  try {
+    const stats = await stat(filePath)
+    return stats.isFile() ? stats.size : 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * 录制直播流到本地文件。
+ *
+ * 为什么走 ffmpeg 而不复用 `Network/download-pipeline.ts` 的 `isLiveStream` 支路：
+ * 那条支路硬编码 120s abort、到 10MB 就 abort、关掉低速守卫、并把 `ERR_CANCELED`
+ * 当成功 —— 完整语义是「抓直播流的前 10MB 或前 120 秒」，是个探针而不是录制器。
+ *
+ * 三个关键取舍：
+ * - `-c copy` 不转码。直播流本来就是可用的编码，重编一遍只换来 CPU 开销和画质损失。
+ * - `-t` 交给 ffmpeg 自己按时长收口，外层不数字节。ffmpeg 是唯一知道「当前帧的
+ *   时间戳到哪了」的一方，靠外层按字节猜时长在码率波动的直播上必然偏。
+ * - `-loglevel error -nostats` 关掉进度刷屏。不关的话 ffmpeg 会持续往 stderr 写
+ *   进度行，把 `maxBuffer` 顶满，进程被 Node 杀掉（见 `RECORD_LIVE_STREAM_MAX_BUFFER`）。
+ *
+ * **容器限制**：优先传 flv 地址。flv 是流式容器，进程被 SIGTERM 打断后已写入的部分
+ * 仍然可播；mp4 的 moov atom 是收尾时才写的，中途被打断整个文件就废了，m3u8 同理
+ * （拿到的是残缺分片序列）。抖音的 `flv_pull_url` 和 B站直播的原生形态都是 flv，
+ * 所以不需要转封装。**如果调用方传的是 mp4/m3u8，下面那条「半成功」路径返回的
+ * `success: true` 只代表文件有字节，不代表它能播** —— 转封装不在这个函数的职责里。
+ *
+ * @param options 录制参数
+ * @returns 录制结果；`success` 为 true 时 `bytes` 一定大于 0
+ * @cspell:ignore nostats loglevel
+ */
+export const recordLiveStream = async (
+  options: RecordLiveStreamOptions
+): Promise<RecordLiveStreamResult> => {
+  const operation: OperationType = '录制直播流'
+  const { url, outputPath, maxDurationMs, headers } = options
+  const startedAt = Date.now()
+
+  // 前置校验用 checkFFmpegAvailable 而不是等 execFile 报 ENOENT：后者的错误里
+  // 只有 `code: 'ENOENT'` 和 spawnargs，日志上和「输出目录不存在」长得差不多。
+  if (!await checkFFmpegAvailable()) {
+    logger.error(`${operation}失败：FFmpeg 工具未安装或不可用`)
+    return { success: false, filePath: outputPath, durationMs: Date.now() - startedAt, bytes: 0 }
+  }
+
+  // 下限 1 秒：`-t 0` 是「什么都不录」，负数直接让 ffmpeg 报参数错。
+  // 调用方传了个 0 或负值时，让它录 1 秒然后按内容判定，比抛异常更贴合
+  // 「录多少算多少」的语义。小数是合法的（`-t 1.5`），不取整。
+  const durationSeconds = Math.max(1, maxDurationMs / 1000)
+
+  const result = await ffmpeg([
+    '-loglevel', 'error',
+    '-nostats',
+    '-y',
+    // 请求头必须排在 `-i` 前面：它们是**输入侧**（http 协议）选项，
+    // 放到 `-i` 后面会被当成输出选项，ffmpeg 不报错、头也不会发出去
+    ...buildLiveStreamHeaderArgs(headers),
+    '-i', url,
+    '-c', 'copy',
+    '-t', String(durationSeconds),
+    outputPath
+  ], {
+    maxBuffer: RECORD_LIVE_STREAM_MAX_BUFFER,
+    timeout: maxDurationMs + RECORD_LIVE_STREAM_TIMEOUT_GRACE_MS
+  })
+
+  const bytes = await statRecordedBytes(outputPath)
+  const durationMs = Date.now() - startedAt
+
+  if (result.status) {
+    logger.mark(`${operation}完成：${outputPath}（${bytes} 字节 / ${durationMs}ms）`)
+    return { success: true, filePath: outputPath, durationMs, bytes }
+  }
+
+  // 半成功。`exec` 那边 `status: !error`，而「录制被外层 timeout 的 SIGTERM 打断」
+  // 一定带 error —— 直接按失败处理会把一个能用的录像丢掉。
+  // 判据换成「盘上有没有内容」而不是「进程是怎么退出的」，flv 的流式特性让这个
+  // 判据成立（见函数注释里的容器限制）。
+  if (bytes > 0) {
+    logger.warn(`${operation}被中断，但文件可用：${outputPath}（${bytes} 字节 / ${durationMs}ms）`)
+    return { success: true, filePath: outputPath, durationMs, bytes }
+  }
+
+  logger.error(`${operation}失败：${outputPath} 没有任何内容`, result)
+  return { success: false, filePath: outputPath, durationMs, bytes }
 }
 
 /**
