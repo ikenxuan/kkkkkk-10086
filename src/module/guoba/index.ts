@@ -1,22 +1,28 @@
 /**
- * 锅巴（Guoba-Plugin）面板入口。
+ * 锅巴（Guoba-Plugin）面板入口，同时是 src/module/guoba/ 的 barrel。
  *
- * 仓库根的 `guoba.support.js` 只做一句 `export * from './lib/guoba.support.js'`，
- * 锅巴靠那条路径发现插件，所以本文件的位置和文件名都不能动。
+ * 锅巴靠仓库根的 `guoba.support.js` 发现插件，所以**那个文件**的位置和文件名不能动；
+ * 它只做一句 `export * from './lib/module/guoba/index.js'`，真正的入口是本文件，
+ * 本文件挪位置就必须同步改那一句转发。
  *
  * 这里只留三件事：按顺序拼装各配置节的 schema、把面板数据读出来、把面板改动写回
- * 对应的 yaml。表单本身拆在 src/module/guoba/ 下——helpers.ts 是控件构造器，
- * shared.ts 是跨节复用的候选项与片段，schemas/ 下一个面板分组一个文件。
+ * 对应的 yaml。表单本身拆在同目录下——helpers.ts 是控件构造器，shared.ts 是跨节
+ * 复用的候选项与片段，schemas/ 下一个面板分组一个文件。
  *
  * 这条路径是锅巴在框架启动后单独加载的，只能读写配置：一旦顺带初始化数据库、
  * 加载 app 或启动 API 服务，面板一打开就会重复执行插件的启动副作用。
+ * 下面的 barrel 转发受同一条约束——只能挂纯声明式的表单模块。
  */
-import * as sections from './module/guoba/schemas/index.js'
-import Config from './module/utils/Config.js'
+import * as sections from './schemas/index.js'
+import Config from '@/module/utils/Config'
+import { isRecord as isPlainRecord } from '@/module/utils/record'
 
-import type { ConfigName } from './types/config.js'
-import type { GuobaSchema, GuobaSupport } from './types/guoba.js'
-import { isRecord as isPlainRecord } from './module/utils/record.js'
+import type { ConfigName } from '@/types/config'
+import type { GuobaSchema, GuobaSupport } from '@/types/guoba'
+
+export * from './helpers.js'
+export * from './shared.js'
+export * from './schemas/index.js'
 
 /** 锅巴只允许写入 `getConfigData()` 暴露的九个配置域。 */
 const CONFIG_NAMES = [
@@ -43,6 +49,11 @@ const schemas: GuobaSchema[] = [
   sections.request
 ].flat()
 
+/**
+ * 锅巴面板的插件描述、表单结构与读写入口。
+ *
+ * @returns 锅巴约定的 support 对象（pluginInfo + configInfo）
+ */
 export function supportGuoba (): GuobaSupport {
   return {
     pluginInfo: {

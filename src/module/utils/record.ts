@@ -10,14 +10,14 @@
  * - `utils/YamlReader.ts` 和 `utils/Config.ts` 的错误文案字面写着
  *   `'YAML root must be a non-array record'`。换成宽松版，一个顶层是数组的
  *   YAML 就会被当成合法配置放过去，后面按键取值全是 undefined。
- * - `guoba.support.ts` 的注释写明「数组要走点分路径分支，所以排除数组」。
+ * - `module/guoba/index.ts` 的注释写明「数组要走点分路径分支，所以排除数组」。
  *
  * 反过来说，`Record<string, unknown>` 这个类型谓词本身就在撒谎如果放过数组：
  * 数组的键是数字下标，按 `value.someKey` 取值只会得到 undefined。
  * 所以严格版才是与类型签名相符的那个。
  *
  * 放在 `utils/` 下的独立文件、且**零 import**，是为了让
- * `runtime/host/screenshot-options.ts` 和 `guoba.support.ts` 这两个宿主适配层
+ * `runtime/host/screenshot-options.ts` 和 `module/guoba/index.ts` 这两个宿主适配层
  * 也能直接引它而不引入环。它们不能走 `utils/index.js` 那个 barrel ——
  * barrel 会把 `Render` 拉进来，而 Render 依赖 `runtime/host/puppeteer`，
  * 从宿主适配层引 barrel 就绕回自己了。

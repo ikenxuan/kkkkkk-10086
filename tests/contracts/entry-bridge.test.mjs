@@ -14,6 +14,6 @@ test('root entries are exact distribution bridges', async () => {
   )
   assert.equal(
     normalizeLineEndings(await readFile(join(repositoryRoot, 'guoba.support.js'), 'utf8')),
-    "export * from './lib/guoba.support.js'\n"
+    "export * from './lib/module/guoba/index.js'\n"
   )
 })

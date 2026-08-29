@@ -64,7 +64,7 @@ globalThis.logger = {
 } as unknown as typeof logger
 
 // 必须在替身安装之后导入，否则拿到的是真实的 Config
-const { supportGuoba } = await import('../../src/guoba.support.js')
+const { supportGuoba } = await import('../../src/module/guoba/index.js')
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null

@@ -8,7 +8,7 @@ import { isRecord } from '../../src/module/utils/record.js'
  *
  * 统一取严格版不是少数服从多数，而是有调用点把它当前提：
  * utils/YamlReader.ts 和 utils/Config.ts 的错误文案字面写着
- * 'YAML root must be a non-array record'，guoba.support.ts 的注释写着
+ * 'YAML root must be a non-array record'，module/guoba/index.ts 的注释写着
  * 「数组要走点分路径分支，所以排除数组」。
  */
 describe('isRecord', () => {
