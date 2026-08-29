@@ -29,7 +29,7 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: configMock
 }))
 
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   Networks: class {},
   baseHeaders: {}
 }))

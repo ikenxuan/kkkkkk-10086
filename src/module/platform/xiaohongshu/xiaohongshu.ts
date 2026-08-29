@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
 import { Base, downloadVideo } from '@/module/utils/Base'
-import { baseHeaders } from '@/module/utils/Networks'
+import { baseHeaders } from '@/module/utils/Network/index'
 import { Render } from '@/module/utils/Render'
 import Config from '@/module/utils/Config'
 import Common from '@/module/utils/Common'

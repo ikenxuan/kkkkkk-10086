@@ -5,7 +5,7 @@ export { default as Config } from './Config.js'
 export { default as Common } from './Common.js'
 
 // ==================== 网络相关模块 ====================
-export { Networks, baseHeaders } from './Networks.js'
+export { Networks, baseHeaders } from './Network/index.js'
 
 // ==================== 工具函数 ====================
 export { mergeFile, getMediaDuration, getMediaFrameRate, loopVideoWithTransition } from './FFmpeg.js'

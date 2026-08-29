@@ -38,7 +38,7 @@ vi.mock('../../src/module/utils/FFmpeg.js', async importOriginal => {
   }
 })
 
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   Networks: class {},
   baseHeaders: {}
 }))

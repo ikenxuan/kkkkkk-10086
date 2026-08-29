@@ -6,7 +6,7 @@ import Config from './Config.js'
 import { runWithDownloadSlot } from './Network/DownloadBudget.js'
 import { getErrorMessage } from './error-message.js'
 import { sanitizeFilenameSegment } from './filename.js'
-import { baseHeaders } from './Networks.js'
+import { baseHeaders } from './Network/index.js'
 
 const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)$/i
 

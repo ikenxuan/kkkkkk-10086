@@ -9,7 +9,7 @@ import {
   reportCdnFailure,
   resolveCdnCandidates
 } from './Network/CdnRegistry.js'
-import { Networks, baseHeaders } from './Networks.js'
+import { Networks, baseHeaders } from './Network/index.js'
 import { mergeFile } from './FFmpeg.js'
 import cfg from '@/runtime/host/config'
 import { Render } from './Render.js'

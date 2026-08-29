@@ -6,7 +6,7 @@ const configMock = vi.hoisted(() => ({
 }))
 
 vi.mock('../../src/module/utils/Config.js', () => ({ default: configMock }))
-vi.mock('../../src/module/utils/Networks.js', () => ({ baseHeaders: {} }))
+vi.mock('../../src/module/utils/Network/index.js', () => ({ baseHeaders: {} }))
 vi.mock('../../src/module/utils/Render.js', () => ({ Render: vi.fn() }))
 vi.mock('../../src/module/utils/Common.js', () => ({ default: { removeFile: vi.fn() } }))
 vi.mock('../../src/module/utils/ImageHelper.js', () => ({ processImageUrl: vi.fn() }))

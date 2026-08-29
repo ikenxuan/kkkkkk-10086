@@ -7,7 +7,7 @@ vi.mock('../src/module/utils/Base.js', () => ({ Base: class Base {} }))
 vi.mock('../src/module/utils/Config.js', () => ({
   default: { app: { removeCache: false, Theme: 0 } }
 }))
-vi.mock('../src/module/utils/Networks.js', () => ({
+vi.mock('../src/module/utils/Network/index.js', () => ({
   Networks: class Networks {}
 }))
 vi.mock('../src/module/utils/Version.js', () => ({

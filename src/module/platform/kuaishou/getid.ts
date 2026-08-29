@@ -1,4 +1,4 @@
-import { Networks } from '@/module/utils/Networks'
+import { Networks } from '@/module/utils/Network/index'
 
 /** 快手作品 ID 解析结果 */
 export interface KuaishouWorkId {

@@ -5,7 +5,7 @@ import type { MessageContent, MessageElement, MessageEvent, MessageMedia, Messag
 import { Base } from './Base.js'
 import Config from './Config.js'
 import { getErrorMessage } from './error-message.js'
-import { Networks } from './Networks.js'
+import { Networks } from './Network/index.js'
 import Version from './Version.js'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 import { isRecord } from './record.js'

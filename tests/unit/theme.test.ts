@@ -12,7 +12,7 @@ vi.mock('../../src/module/utils/Base.js', () => ({
 vi.mock('../../src/module/utils/Config.js', () => ({
   default: { app: { Theme: 0 } }
 }))
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   Networks: class NetworksMock {}
 }))
 vi.mock('../../src/module/utils/Version.js', () => ({

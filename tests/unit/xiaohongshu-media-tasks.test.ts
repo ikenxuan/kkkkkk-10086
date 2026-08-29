@@ -15,7 +15,7 @@ const buildLivePhotoTipMessageMock = vi.hoisted(() => vi.fn())
 const downloadVideoMock = vi.hoisted(() => vi.fn())
 
 vi.mock('../../src/module/utils/Config.js', () => ({ default: configMock }))
-vi.mock('../../src/module/utils/Networks.js', () => ({ baseHeaders: {} }))
+vi.mock('../../src/module/utils/Network/index.js', () => ({ baseHeaders: {} }))
 vi.mock('../../src/module/utils/Render.js', () => ({ Render: renderMock }))
 vi.mock('../../src/module/utils/Common.js', () => ({ default: { removeFile: removeFileMock } }))
 vi.mock('../../src/module/utils/ImageHelper.js', () => ({ processImageUrl: processImageUrlMock }))

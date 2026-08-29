@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getLongLink = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   Networks: class {
     getLongLink = getLongLink
   },

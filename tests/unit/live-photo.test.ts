@@ -24,7 +24,7 @@ const renderMock = vi.hoisted(() => vi.fn())
 const loopVideoWithTransitionMock = vi.hoisted(() => vi.fn())
 const ffmpegMock = vi.hoisted(() => vi.fn())
 
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   baseHeaders: {},
   Networks: class {
     private readonly filepath: string

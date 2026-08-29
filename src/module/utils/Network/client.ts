@@ -10,18 +10,21 @@ import axios, {
   type ResponseType
 } from 'axios'
 import type { DownloadOptions, FileInfo } from '@/types/platform'
-import Config from './Config.js'
-import { runWithDownloadSlot } from './Network/DownloadBudget.js'
+import Config from '@/module/utils/Config'
+import { runWithDownloadSlot } from './DownloadBudget.js'
 import {
   attemptDownloadStream,
   type DownloadProgressCallback
-} from './Network/download-pipeline.js'
-import { normalizeDownloadOptions } from './Network/download-options.js'
-import { delay, isSslError, toAxiosError } from './Network/errors.js'
-import { baseHeaders, getRandomUserAgent } from './Network/user-agent.js'
+} from './download-pipeline.js'
+import { delay, isSslError, toAxiosError } from './errors.js'
+import { getRandomUserAgent } from './user-agent.js'
 
-export { baseHeaders, normalizeDownloadOptions, toAxiosError }
-
+/**
+ * 一次请求 / 下载的构造参数。
+ *
+ * 不进 `index.ts` 的公开面：全仓库没有一个调用点显式标注这个类型，都是直接把
+ * 对象字面量交给 `new Networks({...})`，由构造函数的形参去约束。
+ */
 export interface NetworkRequestOptions {
   url: string
   headers?: AxiosRequestConfig['headers']

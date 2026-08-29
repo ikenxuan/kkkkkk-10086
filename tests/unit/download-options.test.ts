@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Networks, normalizeDownloadOptions, toAxiosError } from '../../src/module/utils/Networks.js'
+import { Networks, normalizeDownloadOptions, toAxiosError } from '../../src/module/utils/Network/index.js'
 import { clampConcurrency } from '../../src/module/utils/Network/DownloadBudget.js'
 // 默认值从源头 import，不抄字面量：抄了之后改常量测试照样绿，这组用例的意义就没了
 import {

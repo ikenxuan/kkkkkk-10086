@@ -40,7 +40,7 @@ const loop = vi.hoisted(() => ({
   chainContext: false
 }))
 
-vi.mock('../../src/module/utils/Networks.js', () => ({
+vi.mock('../../src/module/utils/Network/index.js', () => ({
   baseHeaders: {},
   Networks: class {
     private readonly filepath: string

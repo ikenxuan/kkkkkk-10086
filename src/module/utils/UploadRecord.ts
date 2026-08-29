@@ -1,6 +1,6 @@
 import { durationProbeArgs, ffmpeg, ffprobe } from './FFmpeg.js'
 import { fromSeconds, reportMedia } from './media-metrics.js'
-import { Networks } from './Networks.js'
+import { Networks } from './Network/index.js'
 import type { MessageElement, MessageEvent } from '@/types/message'
 import querystring from 'querystring'
 import crypto from 'crypto'

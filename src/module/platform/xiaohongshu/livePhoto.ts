@@ -1,5 +1,5 @@
 import type { AxiosRequestConfig } from 'axios'
-import { baseHeaders } from '@/module/utils/Networks'
+import { baseHeaders } from '@/module/utils/Network/index'
 import Config from '@/module/utils/Config'
 import {
   buildLivePhotoMessages as buildCommonLivePhotoMessages,
