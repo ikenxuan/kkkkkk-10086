@@ -1,3 +1,4 @@
+import { MAX_MEDIA_TASK_TIMEOUT_MS } from './MediaTasks.js'
 import { withDownloadBucket } from './Network/DownloadBudget.js'
 import {
   ParseScheduler,
@@ -36,7 +37,42 @@ export interface ParseReactionPort {
 
 export interface ParseCoordinatorOptions {
   concurrency?: number
+  /**
+   * 整次解析的硬预算。不传就走 {@link DEFAULT_PARSE_TIMEOUT_MS}。
+   *
+   * 传之前先想清楚：这是**最外层**的守卫，它必须比里面最慢的那条支线更能等。
+   * 传一个比 `MAX_MEDIA_TASK_TIMEOUT_MS` 小的值等于把内层预算作废。
+   */
+  timeoutMs?: number
 }
+
+/**
+ * 发送/上传那一段留出的余量。
+ *
+ * 视频下载支线自己就能合法跑满 `MAX_MEDIA_TASK_TIMEOUT_MS`（10 分钟），而下载完成
+ * **不等于**这次解析完成：字节落盘之后还要走上传（`Config.upload.filelimit` 默认
+ * 1536MB，这一步同样按分钟计），以及发送、临时文件清理。外层预算必须装得下
+ * 「下载跑满 + 上传」这个最坏情形，否则最重的那条支线永远走不到终点。
+ *
+ * 取 2 分钟而不是更多：这是余量而不是第二个业务预算 —— 内层每条支线都已经有
+ * 自己的守卫了，外层只负责兜「所有内层守卫都没能收场」的情况，留太多等于让一次
+ * 死掉的解析长时间占着并发位。
+ */
+const PARSE_DISPATCH_HEADROOM_MS = 120_000
+
+/**
+ * 一次解析的默认硬预算。
+ *
+ * **从内层最大预算推导，不是一个独立选定的数字**：外层守卫必须严格晚于内层最重的
+ * 支线放弃，否则两者赛跑 —— 外层先炸的话，表情反馈会在超时点翻 ERROR 而视频随后
+ * 照样发出去（用户看到「失败了但又成功了」）；同时指纹被提前从 pending 里摘掉，
+ * 同一条链接重发会再跑一整次完整解析，并发计数也提前释放，真实并发超过配置值。
+ *
+ * 所以这里只允许写成「内层上限 + 收尾余量」的形式。要调，调
+ * {@link PARSE_DISPATCH_HEADROOM_MS}，不要把这里换成字面量 —— 那样 MediaTasks
+ * 那边一改上限，这个不变量就会静默失效。
+ */
+export const DEFAULT_PARSE_TIMEOUT_MS = MAX_MEDIA_TASK_TIMEOUT_MS + PARSE_DISPATCH_HEADROOM_MS
 
 const FINGERPRINT_VERSION = 'parse:v1:'
 
@@ -120,7 +156,12 @@ export class ParseCoordinator {
   private readonly scheduler: ParseScheduler
 
   constructor (options: ParseCoordinatorOptions = {}) {
-    this.scheduler = new ParseScheduler({ concurrency: options.concurrency })
+    this.scheduler = new ParseScheduler({
+      concurrency: options.concurrency,
+      // 显式落一个默认值，而不是把 undefined 传下去让 ParseScheduler 退到
+      // guard 的 60s：那个 60s 是「一次网络请求」的尺度，装不下一次完整解析。
+      timeoutMs: options.timeoutMs ?? DEFAULT_PARSE_TIMEOUT_MS
+    })
   }
 
   submit<T> (

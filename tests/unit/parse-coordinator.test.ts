@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { MAX_MEDIA_TASK_TIMEOUT_MS } from '../../src/module/utils/MediaTasks.js'
 import {
   acquireDownloadSlot,
   getCurrentDownloadBucket,
@@ -7,6 +8,7 @@ import {
   setDownloadBudgetLimitResolver
 } from '../../src/module/utils/Network/DownloadBudget.js'
 import {
+  DEFAULT_PARSE_TIMEOUT_MS,
   ParseCoordinator,
   createParseFingerprint,
   type ParseJobIdentity,
@@ -268,6 +270,40 @@ describe('ParseCoordinator', () => {
     await expect(first).resolves.toBe('first-result')
     await expect(second).resolves.toBe('second-result')
     expect(starts).toEqual(['first', 'second'])
+  })
+})
+
+describe('ParseCoordinator 解析预算', () => {
+  it('默认预算严格大于最重的内层支线预算，两者不会赛跑', () => {
+    // 这条钉的是关系而不是数字：外层守卫的职责是「内层所有支线都放弃之后才收尾」，
+    // 一旦它小于等于 MAX_MEDIA_TASK_TIMEOUT_MS，外层就可能先炸，视频下载那 10 分钟
+    // 预算永远用不到 —— 那正是这次要修的缺陷。
+    expect(DEFAULT_PARSE_TIMEOUT_MS).toBeGreaterThan(MAX_MEDIA_TASK_TIMEOUT_MS)
+  })
+
+  it('内层支线跑满 10 分钟时外层还没放手', async () => {
+    vi.useFakeTimers()
+    const gate = createDeferred<string>()
+    let settled = false
+    // 不传 timeoutMs，走的就是线上 tools.ts 那个构造形状。
+    const coordinator = new ParseCoordinator({ concurrency: 1 })
+    const parse = coordinator.submit(workIdentity('slow-video'), async () => await gate.promise)
+    parse.then(() => { settled = true }, () => { settled = true })
+
+    try {
+      await flushMicrotasks()
+
+      // 走到视频下载支线自己的上限那一刻：内层刚好要放弃，外层必须还活着，
+      // 否则用户看到的是「表情翻 ERROR，视频随后照样发出来」。
+      await vi.advanceTimersByTimeAsync(MAX_MEDIA_TASK_TIMEOUT_MS)
+      await flushMicrotasks()
+
+      expect(settled).toBe(false)
+    } finally {
+      gate.resolve('done')
+      await Promise.allSettled([parse])
+      vi.useRealTimers()
+    }
   })
 })
 
