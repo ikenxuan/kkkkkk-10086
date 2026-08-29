@@ -20,10 +20,109 @@ export interface DouyinLiveItem {
   stream_url?: {
     default_resolution?: string
     extra?: { height?: number, width?: number }
+    /**
+     * 档位名 -> flv 拉流地址。
+     *
+     * 这里**不**直接 import amagi 的 `DatumStreamurl`：那个类型把 `resolution_name`
+     * 挂在 `AdditionalStreamurl` 上而不是 `DatumStreamurl` 上（d.ts:19673 vs 19401），
+     * 换过去会让下面 `liveResolution()` 的画质名兜底分支变成读一个「类型上不存在」的字段，
+     * 等于悄悄改掉那条兜底的含义。所以这里是纯加字段。
+     */
+    flv_pull_url?: Record<string, string>
+    /** 单条 hls 地址，与 `hls_pull_url_map` 是同一份流的两种给法 */
+    hls_pull_url?: string
+    /** 档位名 -> hls 拉流地址，键集合与 `flv_pull_url` 对齐 */
+    hls_pull_url_map?: Record<string, string>
+    /** SDK 拉流描述，本仓暂不解析，声明出来是为了不再被窄接口丢掉 */
+    live_core_sdk_data?: Record<string, unknown>
     resolution_name?: Record<string, string>
   }
   title?: string
   user_count_str?: number | string
+}
+
+/**
+ * flv 档位的偏好顺序。
+ *
+ * 只列 amagi `PurpleFlvPullurl`（d.ts:19434，即本仓 `stream_url` 真实走的那个类型）
+ * 声明了的三个键。`HD1` **故意不在这里** —— 它只出现在 `FluffyFlvPullurl`
+ * （d.ts:20045，那是 `similar_rooms` 里的房间用的），本仓这条路径上它属于
+ * 「上游可能给、类型没承诺」的档位，交给下面的兜底扫描去捡。
+ */
+const DOUYIN_FLV_QUALITY_PRIORITY = ['FULL_HD1', 'SD1', 'SD2'] as const
+
+/** {@link pickDouyinLiveStream} 的结果：地址 + 它对应的档位，供调用点显示给用户 */
+export interface DouyinLiveStreamPick {
+  /** 选中的 flv 拉流地址；一个可用档位都没有时为空串 */
+  url: string
+  /** 选中的档位键（如 `FULL_HD1`）；没选中时为空串 */
+  quality: string
+  /** 档位的中文名（取自 `resolution_name`），查不到时回落成档位键本身 */
+  qualityName: string
+}
+
+/**
+ * 从直播间信息里挑一个可播的 flv 地址。
+ *
+ * `douyin.ts` 那边**已经**在调「直播间信息数据」，流地址本来就在同一份响应里，
+ * 所以这个函数不发任何新请求，只做挑选。
+ *
+ * ## 为什么档位判定必须靠运行时判空
+ *
+ * `PurpleFlvPullurl` 和 `FluffyFlvPullurl` 都带 `[property: string]: any`，
+ * 于是写 `.HD1`、`.FOO_BAR` 都不会报编译错，只会静默拿到 `any` ——
+ * 类型检查在这件事上完全帮不上忙。而抖音的实际响应里，某个档位「存在但是空串」
+ * 是常态（未开播、或该档位没转码）。所以判据是「非空字符串」，
+ * 不是「键在不在」，也不是指望 TS 拦住不存在的档位。
+ *
+ * @param liveItem 直播间信息里的房间项，允许整个不存在
+ * @returns 选中的地址与档位；没有任何可用地址时三个字段都是空串
+ */
+export const pickDouyinLiveStream = (
+  liveItem: DouyinLiveItem | undefined
+): DouyinLiveStreamPick => {
+  const streamUrl = liveItem?.stream_url
+  const flv = streamUrl?.flv_pull_url
+  const empty: DouyinLiveStreamPick = { url: '', quality: '', qualityName: '' }
+  // stream_url 整个缺失、或 flv_pull_url 缺失，都在这里收口，不往下走取值
+  if (!flv || typeof flv !== 'object') return empty
+
+  const usable = (key: string): string => {
+    const value = (flv as Record<string, unknown>)[key]
+    return typeof value === 'string' && value.trim() !== '' ? value : ''
+  }
+
+  // 先按声明的优先级挑；`FULL_HD1` 给了空串就继续往下试，而不是认它选中
+  let chosen = ''
+  let quality = ''
+  for (const key of DOUYIN_FLV_QUALITY_PRIORITY) {
+    const url = usable(key)
+    if (url) {
+      chosen = url
+      quality = key
+      break
+    }
+  }
+
+  // 兜底：优先级表外的档位（HD1，以及上游将来新增的任何档位）按响应自身的键序取第一个可用的
+  if (!chosen) {
+    for (const key of Object.keys(flv)) {
+      if ((DOUYIN_FLV_QUALITY_PRIORITY as readonly string[]).includes(key)) continue
+      const url = usable(key)
+      if (url) {
+        chosen = url
+        quality = key
+        break
+      }
+    }
+  }
+
+  if (!chosen) return empty
+  return {
+    url: chosen,
+    quality,
+    qualityName: streamUrl?.resolution_name?.[quality] || quality
+  }
 }
 
 /** 用户主页数据里 `room_data` 反序列化后的形状 */
