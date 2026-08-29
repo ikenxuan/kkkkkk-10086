@@ -73,9 +73,6 @@ const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], part
   return { items, partition }
 }
 
-let mp4size = ''
-let img: Awaited<ReturnType<typeof Render>>
-
 /**
  * 从 play_addr 里挑真正能下载的视频直链。
  *
@@ -478,6 +475,15 @@ export class DouYin extends Base {
 
           /** 视频 */
           let FPS: number | undefined
+          /**
+           * 视频体积，评论图页头那行「视频大小」。
+           *
+           * 必须留在 `one_work` 这一层：原来它是模块级 `let`，两条抖音解析并发时
+           * 后进来的那条会把前一条的值覆盖掉，卡片上印出别人视频的体积。
+           * 这个作用域同时罩住下面 `if (isVideo)` 里的唯一写入和 `sendComment`
+           * 闭包里的唯一读取，所以挪进来不用改任何签名。
+           */
+          let mp4size = ''
           const sendvideofile = true
           let video = null
           let cover = ''
@@ -921,7 +927,7 @@ export class DouYin extends Base {
             await this.e.reply('解析错误！该音乐抖音未提供下载链接，无法下载', { reply: true })
             return true
           }
-          img = await Render('douyin/musicinfo',
+          const img = await Render('douyin/musicinfo',
             {
               image_url: firstUrl(MusicData.data.music_info.cover_hd),
               desc: MusicData.data.music_info.title,

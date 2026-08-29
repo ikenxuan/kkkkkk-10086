@@ -133,8 +133,6 @@ export const dedupeBilibiliVideoStreams = <T extends BilibiliVideoStream>(stream
  * @typedef {import('@ikenxuan/amagi').BiliVideoPlayurlIsLogin['data']['dash']['video']} videoDownloadUrlList - 视频下载地址列表
  */
 
-let img: Awaited<ReturnType<typeof Render>>
-
 const hasUserConfigKey = (key: 'sendContent'): boolean => Object.prototype.hasOwnProperty.call(Config.getConfig?.('bilibili') || {}, key)
 const hasBilibiliContent = (legacyKey: LegacyBilibiliContent, modernKey?: ModernBilibiliContent): boolean => {
   const sendContent = Config.bilibili.sendContent
@@ -548,7 +546,7 @@ export class Bilibili extends Base {
               this.botadapter !== 'QQBot' ? `\n> 🔗 分享链接: [🔗点击查看](${short_link})\r\r` : ''
             ])
           }
-          img = await Render('bilibili/bangumi', buildBangumiPayload(videoInfo.data.result))
+          const img = await Render('bilibili/bangumi', buildBangumiPayload(videoInfo.data.result))
           await this.e.reply(
             this.mkMsg(this.botadapter === 'QQBot' ? `# ${videoInfo.data.result.season_title}\n---\n${msg}\r\r---\n请在60秒内输入 第?集 选择集数` : img, [
               { text: '第1集', callback: '第1集' },
@@ -697,7 +695,7 @@ export class Bilibili extends Base {
 
               if (hasBilibiliContent('评论图', 'comment') && commentsData) {
                 const commentsdata = bilibiliComments(commentsData.data)
-                img = await Render('bilibili/comment', {
+                const img = await Render('bilibili/comment', {
                   Type: '动态',
                   CommentsData: commentsdata,
                   CommentLength: String(commentsdata?.length || 0),
@@ -951,7 +949,7 @@ export class Bilibili extends Base {
                   )
                 }
 
-                img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
+                const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
                   {
                     // 契约是单张封面字符串，不是数组
                     image_url: INFODATA.data.data.pic,
@@ -991,7 +989,7 @@ export class Bilibili extends Base {
             case DynamicType.LIVE_RCMD: {
               const dynamicCARD = JSON.parse(dynamicInfo.data.data.item.modules.module_dynamic.major.live_rcmd.content) as LiveCardData
               const userINFO = await getBilibiliData('用户主页数据', '', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' }) as UserProfileResponse
-              img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
+              const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
                 {
                   // 契约是单张封面字符串，不是数组
                   image_url: dynamicCARD.live_play_info.cover,
@@ -1061,7 +1059,7 @@ export class Bilibili extends Base {
               const stats = articleData.stats || {}
               const categories = buildBilibiliArticleCategories(articleData.categories)
 
-              img = await Render('bilibili/dynamic/DYNAMIC_TYPE_ARTICLE', {
+              const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_ARTICLE', {
                 usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
                 avatar_url: userProfileData.data.data.card.face,
                 frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
