@@ -16,4 +16,5 @@ export * from './EmojiReaction.js'
 export * from './ErrorHandler/index.js'
 
 // ==================== 基础类 ====================
+export * from './types.js'
 export * from './Base.js'

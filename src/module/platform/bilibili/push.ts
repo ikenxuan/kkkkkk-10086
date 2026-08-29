@@ -10,7 +10,6 @@ import {
   formatBilibiliVideoDescRichText,
   getUsernameMetadata
 } from './dynamicText.js'
-import type { BilibiliArticleCategoryInput, BilibiliDescV2Item } from './dynamicText.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { getBilibiliData } from './api.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
@@ -20,29 +19,11 @@ import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'
 import common from '@/runtime/host/common'
 import type { BilibiliPushItem as BilibiliPushConfigItem } from '@/types/config'
-import type { MessageEvent } from '@/types/message'
 import fs from 'node:fs'
 import { getErrorMessage } from '@/module/utils/error-message'
+import type { AmagiResponse, PushAmagiRuntime as AmagiRuntime, BiliUserDynamic, BiliUserProfile, BilibiliArticleContent, BilibiliArticleInfo, BilibiliDynamicItem, BilibiliDynamicPayload, BilibiliLiveCard, BilibiliLiveRoomInfo, BilibiliPushEvent, BilibiliPushTarget, BilibiliUserLiveStatus, BilibiliVideoInfo, ForwardNodes, GroupSendable, RenderResult, WillBePushList } from './types.js'
 
 const require = createRequire(import.meta.url)
-
-interface AmagiRuntime {
-  DynamicType: {
-    AV: string
-    DRAW: string
-    WORD: string
-    LIVE_RCMD: string
-    FORWARD: string
-    ARTICLE: string
-    [key: string]: string
-  }
-  MajorType: {
-    DRAW: string
-    OPUS: string
-    LIVE_RCMD: string
-    [key: string]: string
-  }
-}
 
 const fallbackAmagiRuntime: AmagiRuntime = {
   DynamicType: {
@@ -69,208 +50,6 @@ const loadAmagiRuntime = (): AmagiRuntime => {
 }
 
 const { DynamicType, MajorType } = loadAmagiRuntime()
-
-interface DynamicRichTextNode {
-  type?: string
-  orig_text?: string
-  text?: string
-  rid?: string
-}
-
-interface DynamicImage {
-  src?: string
-  url?: string
-  live_url?: string
-}
-
-interface DynamicDecoration {
-  card_url?: string
-  fan: {
-    color_format?: { colors?: string[] }
-    num_desc?: string
-    num_str?: string
-  }
-}
-
-interface DynamicMajor {
-  type?: string
-  archive?: {
-    bvid?: string
-    cover?: string
-    duration_text?: string
-    stat?: { danmaku?: number, play?: number }
-    title?: string
-  }
-  article?: { id?: string | number, title?: string }
-  draw?: { items?: DynamicImage[] }
-  live_rcmd?: { content?: string }
-  opus?: {
-    pics?: DynamicImage[]
-    summary?: { rich_text_nodes?: DynamicRichTextNode[], text?: string }
-  }
-}
-
-interface DynamicModule {
-  desc?: { rich_text_nodes?: DynamicRichTextNode[], text?: string }
-  major?: DynamicMajor
-  topic?: { id?: string | number, name?: string } | null
-}
-
-interface DynamicAuthor {
-  decoration_card?: DynamicDecoration
-  decorate?: DynamicDecoration
-  face: string
-  mid: number
-  name: string
-  pendant: { image: string }
-  pub_action?: string
-  pub_time?: string
-  pub_ts: number
-}
-
-interface DynamicStats {
-  comment: { count: number }
-  forward: { count: number }
-  like: { count: number }
-}
-
-interface BilibiliDynamicPayload {
-  basic?: { rid?: number, rid_str?: string }
-  id_str: string
-  modules: {
-    module_author: DynamicAuthor
-    module_dynamic: DynamicModule
-    module_stat: DynamicStats
-    module_tag?: { text?: string }
-  }
-  orig: BilibiliDynamicPayload
-  type: string
-}
-
-interface BiliUserDynamic {
-  data: { items: BilibiliDynamicPayload[] }
-}
-
-interface BiliUserProfile {
-  data: {
-    card: {
-      attention: number
-      face: string
-      mid: number
-      name: string
-      vip: { nickname_color?: string, status?: number }
-    }
-    follower: number
-    like_num: number
-  }
-}
-
-interface BilibiliUserLiveStatus {
-  data: {
-    roomStatus: number
-    liveStatus: number
-    roomid: number
-    cover?: string
-    title?: string
-  }
-}
-
-interface BilibiliLiveRoomInfo {
-  data: {
-    live_status: number
-    live_time: string
-    room_id: number
-    area_name?: string
-    user_cover?: string
-    title?: string
-    online?: number
-    watched_show?: { text_large?: string }
-  }
-}
-
-type BilibiliDynamicItem = BiliUserDynamic['data']['items'][number]
-type RenderResult = Awaited<ReturnType<typeof Render>>
-type BotClient = NonNullable<(typeof Bot)[string]>
-type BotGroup = ReturnType<BotClient['pickGroup']>
-type GroupSendable = Parameters<BotGroup['sendMsg']>[0]
-type ForwardNodes = Parameters<typeof Bot.makeForwardMsg>[0]
-
-interface BilibiliPushEvent extends MessageEvent {
-  group_name?: string
-}
-
-interface BilibiliPushTarget {
-  groupId: string
-  botId: string
-}
-
-type BilibiliPushEntry = Omit<BilibiliFilterPushItem, 'Dynamic_Data'> & {
-  remark: string
-  create_time: number
-  targets: BilibiliPushTarget[]
-  Dynamic_Data: BilibiliDynamicItem & BilibiliFilterPushItem['Dynamic_Data']
-  avatar_img: string
-  dynamic_type: string
-}
-
-type WillBePushList = Record<string, BilibiliPushEntry>
-
-interface AmagiResponse<T> {
-  data: T
-}
-
-interface BilibiliVideoInfo {
-  aid: number
-  bvid: string
-  cid: number
-  ctime: number
-  desc: string
-  /** 结构化简介，走 formatBilibiliVideoDescRichText；缺失时回落到 desc */
-  desc_v2?: BilibiliDescV2Item[]
-  /** 分P列表，模板只用它的长度 */
-  pages?: unknown[]
-  pic: string
-  redirect_url?: string
-  title: string
-  owner: { face: string, name: string }
-  stat: { coin: number, like: number, reply: number, share: number, view: number }
-}
-
-interface BilibiliArticleInfo {
-  banner_url?: string
-  categories?: BilibiliArticleCategoryInput[]
-  image_urls?: string[]
-  summary?: string
-  title?: string
-  words?: number
-  stats?: {
-    dynamic?: number
-    favorite?: number
-    like?: number
-    reply?: number
-    share?: number
-    view?: number
-    coin?: number
-  }
-}
-
-type BilibiliArticleContent = {
-  opus?: Parameters<typeof buildBilibiliArticleRichText>[0]
-  content?: string
-  dyn_id_str?: string
-  id?: string | number
-}
-
-interface BilibiliLiveCard {
-  live_play_info: {
-    area_name: string
-    cover: string
-    online: number
-    room_id: string | number
-    title: string
-    watched_show: { text_large: string }
-  }
-}
 
 const asAmagiResponse = <T>(value: unknown): AmagiResponse<T> => value as AmagiResponse<T>
 

@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ProxyAuth, PushlistConfig } from '@/types/config'
-import type { FileInfo, FileTitle } from '@/types/platform'
+import type { FileInfo } from '@/types/platform'
 import { getBilibiliData as fetchBilibiliData } from '@/module/platform/bilibili/api'
 import { getDouyinData as fetchDouyinData } from '@/module/platform/douyin/api'
 import {
@@ -26,20 +26,7 @@ import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
 import { getErrorMessage } from './error-message.js'
 import { isRecord } from './record.js'
-
-interface AmagiClient {
-  [key: string]: unknown
-}
-
-interface AmagiModule {
-  default: (options: unknown) => AmagiClient
-  bilibiliErrorCodeMap: Record<number, unknown>
-}
-
-interface AmagiDependencies extends AmagiModule {
-  getBilibiliData: typeof fetchBilibiliData
-  getDouyinData: typeof fetchDouyinData
-}
+import type { AmagiClient, AmagiDependencies, AmagiModule, AmagiProperty, AmagiProxyClient, ApiErrorRecord, BaseEvent, DownloadFileOptions, MessageTarget, UploadFileDependencies, UploadFileOptions, VideoDownloadOptions } from './types.js'
 
 const require = createRequire(import.meta.url)
 let defaultAmagiModule: AmagiModule | undefined
@@ -67,84 +54,6 @@ const getAmagiDependencies = (
     ...overrides
   }
 }
-
-/** `Base` 及其子类构造函数接受的事件对象 */
-export interface BaseEvent {
-  isGroup?: boolean
-  group?: object
-  friend?: object
-  bot?: {
-    online_status?: number
-    adapter?: string | { name?: string }
-    version?: { app_name?: string }
-    config?: { markdown?: { type?: number } }
-  }
-  reply?: (message: unknown) => Promise<unknown>
-}
-
-interface MessageTarget {
-  fs?: { upload?: (file: string) => Promise<unknown> }
-  sendFile?: (file: string) => Promise<unknown>
-  sendMsg?: (message: unknown) => Promise<unknown>
-}
-
-interface UploadFileOptions {
-  useGroupFile?: boolean
-  message_id?: string
-  active?: boolean
-  activeOption?: {
-    uin: string
-    group_id: string
-  }
-  forceLocal?: boolean
-}
-
-interface UploadFileDependencies {
-  resolveBotAdapter: (event: BaseEvent) => string
-}
-
-interface VideoDownloadOptions {
-  video_url: string
-  title: FileTitle
-  headers?: AxiosRequestConfig['headers']
-  isLiveStream?: boolean
-  liveStreamMaxSize?: number
-  /**
-   * 同一份资源的其它可用地址（镜像 / 备用 CDN），不含 `video_url` 也没关系 ——
-   * 下载层会把 `video_url` 排在最前再合并这批。
-   */
-  candidates?: readonly string[]
-  /** 资源键，例如 `bili:BV1xx:video`。给了才会跨次数记住这批地址，见 `utils/CdnRegistry.ts` */
-  resource?: string
-  /** 下载前实测候选地址速度，按结果重排。由平台层按自己的开关决定，见 `utils/CdnProbe.ts` */
-  probeCdn?: boolean
-}
-
-interface DownloadFileOptions {
-  title: string
-  headers?: AxiosRequestConfig['headers']
-  isLiveStream?: boolean
-  liveStreamMaxSize?: number
-  /** 备用地址，见 {@link VideoDownloadOptions.candidates} */
-  candidates?: readonly string[]
-  /** 资源键，见 {@link VideoDownloadOptions.resource} */
-  resource?: string
-  /** 测速开关，见 {@link VideoDownloadOptions.probeCdn} */
-  probeCdn?: boolean
-}
-
-interface ApiErrorRecord extends Record<string, unknown> {
-  code?: number
-  message?: string
-  error?: unknown
-  data?: unknown
-}
-
-type AmagiProxyClient = AmagiClient & {
-  getBilibiliData: typeof fetchBilibiliData
-  getDouyinData: typeof fetchDouyinData
-}
-type AmagiProperty = keyof AmagiProxyClient
 
 const getAmagiMethod = (
   target: AmagiClient,

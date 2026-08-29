@@ -16,7 +16,7 @@
  * - 契约放宽某字段（`string` → `string | null`）→ 仍可赋值，不报错 ✅（副本更窄，没问题）
  * - 契约删字段而副本还留着 → 不报错。这是死字段，不是 bug，不值得为它引入误报。
  */
-import type { BilibiliDecorationCard } from '@/module/platform/bilibili/bilibili'
+import type { BilibiliDecorationCard } from '@/module/platform/bilibili/types'
 import type { DouyinComment, DouyinReplyComment } from '@/module/platform/douyin/comments'
 import type { DecorationCardData } from '../ktr/template/bilibili/dynamic/types'
 import type { DouyinCommentData } from '../ktr/template/douyin/comment/components/types'

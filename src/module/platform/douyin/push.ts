@@ -1,7 +1,6 @@
 import { Base, baseHeaders, Networks, Render, Config, Common, downloadFile, downloadVideo, Version, processImageUrl } from '@/module/utils/index'
-import type { BaseEvent } from '@/module/utils/Base'
+import type { BaseEvent } from '@/module/utils/types'
 import { cleanOldDynamicCache, douyinDB } from '@/module/db/index'
-import type { DouyinFilterPushItem } from '@/module/db/douyin'
 import type { DouyinPushType } from '@/types/database'
 import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
@@ -11,11 +10,12 @@ import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBa
 import { withDownloadBucket } from '@/module/utils/DownloadBudget'
 import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
-import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
-import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo, type DouyinLiveImageVideo } from './workType.js'
+import { buildDouyinLivePayload, type DouyinRoomData } from './live.js'
+import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinImage, isDouyinVideo } from './workType.js'
 import common from '@/runtime/host/common'
 import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
+import type { PushDouyinAweme as DouyinAweme, DouyinDetailData, DouyinListResponse, DouyinLiveInfo, PushDouyinMusic as DouyinMusic, DouyinProfileResponse, DouyinPushEvent, DouyinPushItem, DouyinSearchResponse, DouyinSearchUser, DouyinSkipCheckItem, DouyinWorkDetailData, PushTarget, WillBePushList } from './types.js'
 
 /**
  * @typedef {import('@ikenxuan/amagi').ApiResponse} ApiResponse
@@ -72,181 +72,6 @@ const douyinBaseHeaders = {
 
 /** 抖音推送支持的类型，与数据库层共用同一套字面量 */
 export type { DouyinPushType } from '@/types/database'
-
-/** 作品里的话题标签 */
-interface DouyinTextExtra {
-  hashtag_name?: string
-}
-
-/** 作品背景音乐，取播放地址时用到的字段 */
-interface DouyinMusic {
-  play_url?: { uri?: string }
-  /** 原曲信息，抖音以 JSON 字符串下发 */
-  extra?: string
-}
-
-/** 图集中的单张 Live 图，取视频地址时用到的字段 */
-interface DouyinLiveImageItem {
-  clip_type?: number
-  url_list?: string[]
-  video?: DouyinLiveImageVideo
-}
-
-interface DouyinPushEvent extends BaseEvent {
-  group_id?: string | number
-  groupId?: string | number
-  self_id?: string | number
-  selfId?: string | number
-  group_name?: string
-  msg?: string
-}
-
-interface PushTarget {
-  groupId: string
-  botId: string
-}
-
-interface DouyinAvatar {
-  uri?: string
-  url_list?: string[]
-}
-
-interface DouyinUser {
-  sec_uid?: string
-  unique_id?: string
-  short_id?: string
-  nickname?: string
-  avatar_larger?: DouyinAvatar
-  follower_count?: number
-  total_favorited?: number
-  following_count?: number
-  live_status?: number
-  room_data?: string
-  room_id_str?: string
-}
-
-interface DouyinProfileUser extends DouyinUser {
-  nickname: string
-  avatar_larger: DouyinAvatar
-  /** 账号已注销/封禁时抖音返回 special_state=1，配合 user_deleted 判定 */
-  special_state_info?: { special_state?: number, title?: string }
-  user_deleted?: boolean
-}
-
-interface DouyinProfileResponse {
-  data: { user: DouyinProfileUser }
-}
-
-interface DouyinSearchUser extends DouyinUser {
-  user_info?: DouyinUser
-}
-
-interface DouyinSearchCard {
-  card_unique_name?: string
-  user_list?: DouyinSearchUser[]
-}
-
-interface DouyinSearchResponse {
-  data?: DouyinSearchCard[] | { user_list?: DouyinSearchUser[] }
-}
-
-interface DouyinVideoAddress {
-  uri?: string
-  url_list?: string[]
-}
-
-interface DouyinBitRate {
-  format?: string
-  gear_name?: string
-  HDR_bit?: string
-  HDR_type?: string
-  video_extra?: string
-  /** 挑源要按体积排序，所以这一层必须带上 data_size */
-  play_addr: DouyinVideoAddress & { data_size: number }
-}
-
-interface DouyinAweme {
-  aweme_id: string
-  create_time: number
-  is_top?: number
-  author?: DouyinUser
-  share_url?: string
-  desc?: string
-  statistics?: {
-    digg_count?: number
-    comment_count?: number
-    share_count?: number
-    collect_count?: number
-  }
-  video?: {
-    play_addr?: DouyinVideoAddress
-    play_addr_h264?: DouyinVideoAddress
-    bit_rate?: DouyinBitRate[]
-  }
-  music?: DouyinMusic
-  images?: DouyinLiveImageItem[]
-}
-
-interface DouyinLiveInfo {
-  data?: {
-    data?: DouyinLiveItem[] | DouyinLivePayload
-    partition_road_map?: { partition?: { title?: string } }
-  }
-}
-
-interface DouyinLivePayload {
-  data?: DouyinLiveItem[]
-  partition_road_map?: { partition?: { title?: string } }
-}
-
-interface DouyinDetailData extends Omit<DouyinAweme, 'aweme_id' | 'create_time'> {
-  aweme_id?: string
-  create_time?: number
-  user_info: DouyinProfileResponse
-  source_user_info?: DouyinProfileResponse
-  room_data?: DouyinRoomData
-  live_data?: DouyinLiveInfo
-  liveStatus?: { liveStatus: 'open' | 'close', isChanged?: boolean, isliving?: boolean }
-  text_extra?: DouyinTextExtra[]
-}
-
-interface DouyinWorkDetailData extends DouyinDetailData {
-  aweme_id: string
-  share_url: string
-  desc: string
-  author: DouyinUser & { nickname: string }
-  statistics: NonNullable<DouyinAweme['statistics']>
-  video: {
-    play_addr: DouyinVideoAddress & { uri: string }
-    play_addr_h264: DouyinVideoAddress & { url_list: string[] }
-    bit_rate: DouyinBitRate[]
-  }
-}
-
-interface DouyinPushItem extends DouyinFilterPushItem {
-  remark: string
-  sec_uid: string
-  create_time: number
-  targets: PushTarget[]
-  pushType?: DouyinPushType
-  Detail_Data: DouyinDetailData
-  avatar_img: string
-  living: boolean
-}
-
-type WillBePushList = Record<string, DouyinPushItem>
-
-interface DouyinListResponse {
-  data?: { aweme_list?: DouyinAweme[] }
-}
-
-/** `skipDynamic` 读取的推送项字段：数据库过滤所需字段 + 直播标记与话题标签 */
-export interface DouyinSkipCheckItem extends DouyinFilterPushItem {
-  Detail_Data: DouyinFilterPushItem['Detail_Data'] & {
-    liveStatus?: { liveStatus: 'open' | 'close', isChanged?: boolean, isliving?: boolean }
-    text_extra?: DouyinTextExtra[]
-  }
-}
 
 const DEFAULT_DOUYIN_PUSH_TYPES: DouyinPushType[] = ['post', 'live']
 const DOUYIN_PUSH_TYPE_LABELS: Record<DouyinPushType, string> = {

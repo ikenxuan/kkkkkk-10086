@@ -15,7 +15,6 @@ import {
   getHotBilibiliDanmaku,
   getUsernameMetadata
 } from './dynamicText.js'
-import type { BilibiliArticleCategoryInput } from './dynamicText.js'
 import { extractBilibiliArticleImages } from './article.js'
 import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
@@ -24,19 +23,13 @@ import { runMediaTasks } from '@/module/utils/MediaTasks'
 import { isSoftFailure, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
-import type { BaseEvent } from '@/module/utils/Base'
+import type { BaseEvent } from '@/module/utils/types'
 import type { RichTextDocument } from '@kkk/richtext'
 import { isRecord } from '@/module/utils/record'
 import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
+import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliDecorationCard, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
 
 const require = createRequire(import.meta.url)
-interface AmagiRuntime {
-  bilibiliApiUrls: {
-    getBangumiStream: (params: { cid: number, ep_id: string }) => string
-  }
-  DynamicType: Record<string, string>
-  AdditionalType: Record<string, string>
-}
 const loadAmagiRuntime = (): AmagiRuntime => {
   try {
     return require('@ikenxuan/amagi') as AmagiRuntime
@@ -47,377 +40,6 @@ const loadAmagiRuntime = (): AmagiRuntime => {
   }
 }
 const { bilibiliApiUrls, DynamicType, AdditionalType } = loadAmagiRuntime()
-
-export interface BilibiliVideoStream {
-  id: number
-  base_url?: string
-  url?: string
-  size?: number
-  [key: string]: unknown
-}
-
-type BilibiliDataType =
-  | 'one_video'
-  | 'bangumi_video_info'
-  | 'dynamic_info'
-  | 'live_room_detail'
-  | 'undefined'
-  | string
-
-interface BilibiliIdData {
-  type: BilibiliDataType
-  Episode?: string
-  bvid?: string
-  p?: number
-  isEpid?: boolean
-  realid?: string
-  dynamic_id?: string
-  room_id?: string
-}
-
-interface BilibiliConstructorData extends Partial<BilibiliIdData> {
-  USER?: { STATUS?: string }
-}
-
-type BilibiliEvent = BaseEvent & {
-  reply: (message: unknown, options?: unknown) => Promise<unknown>
-}
-
-interface BilibiliDash {
-  video?: Array<BilibiliVideoStream & { base_url: string }>
-  audio?: Array<{ base_url?: string }>
-}
-
-interface BilibiliPayload {
-  accept_description?: string[]
-  durl?: BilibiliVideoStream[]
-  dash?: BilibiliDash
-}
-
-interface ApiEnvelope<T> {
-  code?: number | string
-  message?: string
-  data: T
-}
-
-interface VideoPage {
-  cid: number
-  duration: number
-}
-
-interface VideoOwner {
-  mid: number | string
-  name: string
-  face: string
-  [key: string]: unknown
-}
-
-interface VideoStat {
-  coin: number
-  like: number
-  share: number
-  view: number
-  favorite: number
-  danmaku: number
-  reply: number
-  /**
-   * 下面这几个 view 接口也会返回，但模板只读上面 7 个。
-   * 声明成可选是为了让 `bilibili/videoInfo` 的契约（13 个必填）能在调用点补齐兜底值，
-   * 而不是假装接口一定给。
-   */
-  aid?: number
-  now_rank?: number
-  his_rank?: number
-  dislike?: number
-  evaluation?: string
-  vt?: number
-  [key: string]: unknown
-}
-
-interface VideoInfoData {
-  aid: number
-  bvid: string
-  cid: number
-  duration: number
-  pages: VideoPage[]
-  owner: VideoOwner
-  pic: string
-  title: string
-  stat: VideoStat
-  desc: string
-  desc_v2?: Parameters<typeof formatBilibiliVideoDescRichText>[0]
-  ctime: number
-}
-
-type VideoInfoResponse = ApiEnvelope<{ data: VideoInfoData }>
-
-interface UserCard {
-  name: string
-  face: string
-  mid: number | string
-  attention: number
-  fans: number
-  pendant: { image?: string }
-  vip: { status?: number, nickname_color?: string }
-  [key: string]: unknown
-}
-
-interface UserProfileData {
-  card: UserCard
-  follower: number
-  like_num: number
-}
-
-type UserProfileResponse = ApiEnvelope<{ data: UserProfileData, card: UserCard }>
-type CommentsPayload = NonNullable<Parameters<typeof bilibiliComments>[0]>
-type CommentsResponse = ApiEnvelope<CommentsPayload>
-
-interface BangumiEpisode {
-  long_title?: string
-  badge?: string
-  /** 徽章配色，pgc 接口原样给出，`bilibili/bangumi` 契约要求必填 */
-  badge_info?: { bg_color?: string, bg_color_night?: string, text?: string }
-  bvid?: string
-  cover?: string
-  link?: string
-  /** 发布时间戳（秒），模板按它把剧集分组到时间轴上 */
-  pub_time?: number
-  short_link?: string
-  share_copy?: string
-  cid?: number
-  ep_id: number | string
-}
-
-/** 番剧 UP 主信息，字段名与 pgc 接口的 `result.up_info` 对齐 */
-interface BangumiUpInfo {
-  avatar: string
-  avatar_subscript_url: string
-  follower: number
-  is_follow: number
-  mid: number
-  nickname_color: string
-  pendant: { image: string, name: string, pid: number }
-  theme_type: number
-  uname: string
-  verify_type: number
-  vip_label: { bg_color: string, bg_style: number, border_color: string, text: string, text_color: string }
-  vip_status: number
-  vip_type: number
-}
-
-/** 番剧统计，模板无守卫地读 views / favorites / danmakus / coins */
-interface BangumiStat {
-  coins?: number
-  danmakus?: number
-  favorite?: number
-  favorites?: number
-  follow_text?: string
-  likes?: number
-  reply?: number
-  share?: number
-  views?: number
-  vt?: number
-}
-
-interface BangumiInfoData {
-  episodes: BangumiEpisode[]
-  title: string
-  season_title: string
-  season_id: number | string
-  actors?: string
-  cover?: string
-  evaluate?: string
-  link?: string
-  new_ep?: { desc?: string, id?: number, is_new?: number, title?: string }
-  stat?: BangumiStat
-  styles?: string[]
-  subtitle?: string
-  /**
-   * pgc 接口对自制/独播番剧给 `up_info`，外购番剧可能整个缺失。
-   * 契约把 UPInfo 写成必填，但模板两处消费都带守卫
-   * （`props.upInfo && …` 和 `props.UPInfo ? … : props.mainCover`），
-   * 所以真缺了只是不显示这一块，不会炸。
-   */
-  up_info?: BangumiUpInfo
-}
-
-interface BangumiInfoResponse {
-  code?: number | string
-  message?: string
-  data?: { result: BangumiInfoData }
-}
-
-interface BangumiPlayResponse {
-  result: {
-    dash: {
-      video: Array<BilibiliVideoStream & { base_url: string }>
-      audio: [{ base_url: string }, ...Array<{ base_url: string }>]
-    }
-    accept_description: string[]
-    cept_description?: string[]
-  }
-}
-
-interface BilibiliDanmakuItem {
-  progress: number
-  mode: number
-  fontsize: number
-  color: number
-  content: string
-}
-
-interface GetVideoInput {
-  infoData?: { data: VideoInfoData } | { result: BangumiInfoData }
-  playUrlData: unknown
-  danmakuList?: BilibiliDanmakuItem[]
-}
-
-interface RichTextNode {
-  orig_text?: string
-  jump_url?: string
-  text?: string
-  type?: string
-  [key: string]: unknown
-}
-
-interface DynamicSummary {
-  text?: string
-  rich_text_nodes: RichTextNode[]
-}
-
-interface DynamicPicture {
-  url?: string
-  live_url?: string
-  img_src?: string
-  src?: string
-}
-
-interface DynamicDecoration {
-  card_url?: string
-  fan: {
-    color_format?: { colors?: string[] }
-    num_str?: string
-    num_desc?: string
-  }
-}
-
-interface DynamicAuthor extends UserCard {
-  pub_action?: string
-  pub_time: string
-  pub_ts: number
-  decoration_card?: DynamicDecoration
-  decorate?: DynamicDecoration
-}
-
-interface DynamicMajor {
-  type?: string
-  opus: { pics: DynamicPicture[], summary: DynamicSummary }
-  draw?: { items?: DynamicPicture[] }
-  archive: {
-    bvid: string
-    duration_text: string
-    title: string
-    cover: string
-    stat: { danmaku: number, view: number, play: number }
-  }
-  live_rcmd: { content: string }
-  article?: { id?: number | string, title?: string }
-}
-
-interface DynamicModules {
-  module_author: DynamicAuthor
-  module_dynamic: {
-    major: DynamicMajor
-    desc: { text: string, rich_text_nodes: RichTextNode[] }
-    topic?: { name?: string } | null
-    additional?: { type: string }
-  }
-  module_stat: {
-    like: { count: number }
-    comment: { count: number }
-    forward: { count: number }
-  }
-}
-
-interface DynamicItem {
-  type: string
-  id_str: string
-  basic?: {
-    comment_id_str?: string
-    rid_str?: string
-    rid?: number | string
-  }
-  modules: DynamicModules
-  orig: DynamicItem
-}
-
-interface DynamicDetailData {
-  item: DynamicItem
-  card?: UserCard
-  follower: number
-}
-
-type DynamicInfoResponse = ApiEnvelope<{
-  data: DynamicDetailData
-  /** 兼容旧版 Amagi 转发动态的少一层 data 结构 */
-  item: DynamicItem
-}>
-
-interface LiveCardData {
-  live_play_info: {
-    cover: string
-    title: string
-    area_name: string
-    room_id: number | string
-    online: number
-    watched_show: { text_large: string }
-  }
-}
-
-interface ArticleStats {
-  view?: number
-  like?: number
-  favorite?: number
-  reply?: number
-  dynamic?: number
-  share?: number
-  coin?: number
-}
-
-interface ArticleData {
-  title?: string
-  summary?: string
-  banner_url?: string
-  image_urls?: string[]
-  categories?: BilibiliArticleCategoryInput[]
-  words?: number
-  stats?: ArticleStats
-}
-
-type ArticleContent = {
-  opus?: NonNullable<Parameters<typeof buildBilibiliArticleRichText>[0]>
-  content?: string
-  dyn_id_str?: string
-  id?: number | string
-}
-type ArticleInfoResponse = ApiEnvelope<{ data: ArticleData }>
-type ArticleContentResponse = ApiEnvelope<{ data: ArticleContent }>
-
-interface LiveInfoData {
-  user_cover: string
-  title: string
-  area_name: string
-  room_id: number | string
-  live_time: string
-}
-
-interface RoomInitData {
-  uid: number | string
-  live_status: number
-}
-
-type LiveInfoResponse = ApiEnvelope<{ data: LiveInfoData }>
-type RoomInitResponse = ApiEnvelope<{ data: RoomInitData }>
 
 /**
  * B站 PCDN 主机名。
@@ -430,20 +52,6 @@ type RoomInitResponse = ApiEnvelope<{ data: RoomInitData }>
  * `szbdyd.com` 是另一个 PCDN 域，判定方式相同。
  */
 const BILIBILI_PCDN_HOST = /(^|\.)(mcdn\.bilivideo\.cn|szbdyd\.com)$/i
-
-/** 流对象上可用的地址：`base_url` 加接口给的备用地址（`backup_url` 通常是 upos / akamai 正常域名）。 */
-interface BilibiliStreamUrls {
-  base_url?: string
-  /**
-   * `durl` 那一路流把地址放在这个键上（dash 用的是 `base_url`）。
-   *
-   * 两个键都认是必要的：未登录 / ck 失效时接口回的是 durl，而那条路恰恰最常撞上 PCDN
-   * （请求「看起来没有身份」时 B站 更倾向把地址指到 PCDN 节点）。只读 `base_url`
-   * 会让 durl 的主地址整条漏掉，只剩 `backup_url` 被当成候选。
-   */
-  url?: string
-  backup_url?: string[]
-}
 
 /** 一路流上的全部地址，按「主地址在前」排好。两种流的键名不同，见 {@link BilibiliStreamUrls.url}。 */
 const readStreamUrls = (stream: BilibiliStreamUrls | undefined): string[] =>
@@ -526,9 +134,6 @@ export const dedupeBilibiliVideoStreams = <T extends BilibiliVideoStream>(stream
  */
 
 let img: Awaited<ReturnType<typeof Render>>
-
-type LegacyBilibiliContent = '提示信息' | '评论图' | '视频' | '简介' | '动态'
-type ModernBilibiliContent = 'info' | 'comment' | 'video'
 
 const hasUserConfigKey = (key: 'sendContent'): boolean => Object.prototype.hasOwnProperty.call(Config.getConfig?.('bilibili') || {}, key)
 const hasBilibiliContent = (legacyKey: LegacyBilibiliContent, modernKey?: ModernBilibiliContent): boolean => {
@@ -1990,19 +1595,6 @@ export const cover = (pic: DynamicPicture[]): Array<{ image_src: string }> => {
 }
 
 /**
- * 粉丝装饰卡片数据。
- *
- * 这是 `ktr/template/bilibili/dynamic/types.ts` 里 `DecorationCardData` 的手抄副本
- * （`ktr/**` 的 .ts 进不了根 program，理由见 contracts/template-data-map.ts）。
- * 两边由 contracts/hand-copied-contracts.ts 的断言钉住，形状对不上就编译报错。
- */
-export interface BilibiliDecorationCard {
-  card_url: string
-  colors: string[]
-  text: string
-}
-
-/**
  * 把 B 站粉丝装饰卡片整理成模板要的数据。
  *
  * 旧版返回的是一整段 HTML `<div>`，React 模板的 `DecorationCard` 拿到字符串会在
@@ -2059,20 +1651,6 @@ function mapping_table (type: string): number {
   return 1
 }
 
-/**
- * @param {import ('@ikenxuan/amagi').BiliDynamicInfo<DynamicType>} dynamicINFO
- * @returns
- */
-interface DynamicOidData {
-  data: {
-    item: {
-      type: string
-      id_str: string
-      basic?: { comment_id_str?: string, rid_str?: string }
-    }
-  }
-}
-
 const oid = (dynamicINFO: DynamicOidData): string => {
   switch (dynamicINFO.data.item.type) {
     case 'DYNAMIC_TYPE_WORD':
@@ -2085,39 +1663,6 @@ const oid = (dynamicINFO: DynamicOidData): string => {
         dynamicINFO.data.item.id_str
     }
   }
-}
-
-/**
- * 检出符合大小的视频流信息对象
- * @param {Object} qualityOptions - 视频质量选项
- * @param {number} [qualityOptions.qn] - qn值，视频清晰度标识
- * @param {number} [qualityOptions.maxAutoVideoSize] - 可接受的最大视频文件大小，单位：MB
- * @param {string} qualityOptions.bvid - 视频BV号
- * @param {string[]} qualityOptions.accept_description - 视频流清晰度列表
- * @param {videoDownloadUrlList} videoList - 包含所有清晰度的视频流信息对象
- * @param {string} audioUrl - 音频流地址
- * @returns {Promise<{ accept_description: string[]; videoList: videoDownloadUrlList; selectedQuality: string }>} 包含处理后的视频列表和清晰度描述的对象
- * @property {string[]} returns.accept_description - 处理后的清晰度描述列表
- * @property {Object[]} returns.videoList - 处理后的视频流信息对象列表
- * @property {string} returns.selectedQuality - 选中的视频画质值
- */
-interface BilibiliQualityOptions {
-  qn?: number
-  maxAutoVideoSize?: number
-  bvid: string
-  accept_description: string[]
-}
-
-interface BilibiliQualityResult<T extends BilibiliVideoStream> {
-  accept_description: string[]
-  videoList: T[]
-  /**
-   * 本仓库比上游多返回的字段。上游只返回 accept_description + videoList，
-   * 调用方要显示「实际发出去的画质」就得自己再从 accept_description[0] 反推，
-   * 而自动挡下 accept_description 被 filter 改写过、可能与真正选中的流不一致。
-   * 这里直接把选中的那一档带出来，供视频信息卡片的 Clarity 字段使用。
-   */
-  selectedQuality: string
 }
 
 export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { base_url: string }> (
