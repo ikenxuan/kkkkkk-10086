@@ -340,14 +340,6 @@ export class Networks {
     return config
   }
 
-  async getfetch (): Promise<AxiosResponse | false> {
-    try {
-      return await this.request()
-    } catch {
-      return false
-    }
-  }
-
   async request (retryCount = 0): Promise<AxiosResponse> {
     try {
       return await this.axiosInstance(this.getConfig(retryCount))
@@ -460,8 +452,11 @@ export class Networks {
     retryCount: number,
     options: DownloadOptions
   ): Promise<FileInfo> {
-    const { isLiveStream = false, liveStreamMaxSize = 10 * MB } = options
+    const { isLiveStream = false } = options
     const normalized = normalizeDownloadOptions(options, Config.upload)
+    // 直播上限只认归一化后的那一份。之前这里自己写了一遍 `?? 10 * MB` 默认值，
+    // 和 `normalizeDownloadOptions` 里的那份是两个独立的字面量，改一处漏一处。
+    const liveStreamMaxSize = normalized.liveStreamMaxSize
     const throttle = normalized.throttle
     const filepath = this.filepath
     if (!filepath) throw new TypeError('下载文件路径不能为空')
