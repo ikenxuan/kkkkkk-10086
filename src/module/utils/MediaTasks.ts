@@ -39,7 +39,7 @@ export const MIN_MEDIA_TASK_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MS
  * 重支线的预算上限，也是视频下载支线直接采用的值。
  *
  * 为什么需要一个远大于 60s 的值：视频字节流那条路上本仓给 axios 的是 `timeout: 0`
- * （Networks.ts:378/446），也就是**下载本身没有壁钟上限**，只有 socket 级的兜底。
+ * （`Network/download-pipeline.ts`），也就是**下载本身没有壁钟上限**，只有 socket 级的兜底。
  * 而 `Config.upload.filelimit` 默认 1536(MB) 才是「允许多大」的闸门，60s 根本装不下
  * 一条正常体积的短视频在慢线路上的下载 + 上传。
  *

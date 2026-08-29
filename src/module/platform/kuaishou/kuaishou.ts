@@ -39,7 +39,7 @@ export interface KuaishouActionPayload {
  *
  * 迁移前 `KuaishouData` 的构造函数会把 `Referer` / `Origin` / `Host` / `X-Requested-With`
  * 以及快手 ck **直接写进 `this.headers`** —— 而 `Base` 的 `this.headers` 就是
- * `Networks.ts` 里那个**模块级共享**的 `baseHeaders` 对象，赋值等于全局修改：
+ * `Network/user-agent.ts` 里那个**模块级共享**的 `baseHeaders` 对象，赋值等于全局修改：
  * 一次快手解析之后，抖音 / B站 / 小红书的默认请求头里也带上了 `Host: www.kuaishou.com`
  * 和用户的快手 Cookie。
  *
