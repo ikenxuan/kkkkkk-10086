@@ -7,14 +7,15 @@ import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBa
 import { douyinCommentLimit } from '@/module/platform/common/commentLimit'
 import { douyinComments } from './index.js'
 import { renderWorkImage } from './render.js'
-import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
+import { buildDouyinLivePayload } from './live.js'
+import { resolveDouyinLiveRoom } from './live-room.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo } from './workType.js'
 import { buildDouyinPlayUrl, douyinProcessVideos } from './videoQuality.js'
 import type { DouyinDataType } from './getid.js'
 import type { DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
 import { at, firstUrl, isRecord } from '@/module/utils/record'
-import type { CommentsPayload, DanmakuList, DanmakuResponse, DouyinAweme, DouyinConstructorData, DouyinEvent, DouyinMusic, DouyinResourceType, DouyinRuntimeEvent, DouyinUser, DyVideo, EmojiResponse, LegacyContent, LivePartition, LiveResponse, ModernContent, MusicResponse, NullableWorkResponse, UploadRecordEvent, UserInfoResponse, UserVideoListResponse, WorkResponse } from './types.js'
+import type { CommentsPayload, DanmakuList, DanmakuResponse, DouyinAweme, DouyinConstructorData, DouyinEvent, DouyinMusic, DouyinResourceType, DouyinRuntimeEvent, DouyinUser, DyVideo, EmojiResponse, LegacyContent, ModernContent, MusicResponse, NullableWorkResponse, UploadRecordEvent, UserInfoResponse, UserVideoListResponse, WorkResponse } from './types.js'
 
 const isDouyinDataType = (value: string): value is DouyinDataType => [
   'one_work',
@@ -39,38 +40,6 @@ const narrowApiResponse = <T extends object>(value: unknown, label: string): T =
 const getUploadRecordEvent = (event: DouyinRuntimeEvent): UploadRecordEvent => {
   if (!isRecord(event.bot)) throw new Error('消息事件缺少机器人实例')
   return event as unknown as UploadRecordEvent
-}
-
-/**
- * 直播间信息数据的两种嵌套形态（`data.data` 与 `data`）在这里统一收口，
- * 让读房间列表和读主播 sec_uid 走同一份判据，不会一边跟着改、另一边漏掉。
- */
-const getLiveRoot = (response: LiveResponse): Record<string, unknown> => {
-  const responseData = response.data
-  return isRecord(responseData.data) ? responseData.data : responseData
-}
-
-/**
- * 直播间响应里的主播 sec_uid。
- *
- * `live.douyin.com/{web_rid}` 直链只能提取出 web_rid，而卡片要的昵称、粉丝、签名、
- * 作品数这些主播字段只有「用户主页数据」才给。web/enter 的响应里带 `user.sec_uid`，
- * 正好当从「房间号」跳到「主播」的那一跳，省掉一次搜索反查。
- */
-const getLiveAnchorSecUid = (response: LiveResponse): string => {
-  const user = getLiveRoot(response).user
-  return isRecord(user) && typeof user.sec_uid === 'string' ? user.sec_uid : ''
-}
-
-const getLivePayload = (response: LiveResponse): { items: DouyinLiveItem[], partition: LivePartition } => {
-  const payload = getLiveRoot(response)
-  const items = Array.isArray(payload.data)
-    ? payload.data.filter((item): item is DouyinLiveItem => isRecord(item))
-    : []
-  const partition = isRecord(payload.partition_road_map)
-    ? payload.partition_road_map as LivePartition
-    : {}
-  return { items, partition }
 }
 
 /**
@@ -962,56 +931,30 @@ export class DouYin extends Base {
           return true
         }
         case 'live_room_detail': {
-          // 两条入口给的定位字段不一样：webcast 分享链接只有 sec_uid，
-          // live.douyin.com 直链只有 web_rid。所以先把手上有的那个补成另一个，
-          // 再走同一套「主页数据 + 直播间信息数据」流程。
+          // 「先把手上没有的号补齐、再拉直播间」那套时序连同它的坑（room_id 是内部房间号、
+          // 不是 URL 里的 web_rid）在 `live-room.ts` 里只写一份 —— 录制入口
+          // （apps/tools.ts 的 recordLive）走的是同一个函数，抄第二份的话两条路
+          // 迟早在同一个 amagi zod 校验上分头翻车。
           //
-          // 注意 `直播间信息数据` 的 room_id 是内部房间号（用户主页的 room_id_str），
-          // 跟 URL 里的 web_rid 不是一个号；amagi 的 zod 校验要求两者都是非空 string，
-          // 少传一个会直接抛 invalid_type —— 原来这里只传 sec_uid，所以两条分支都是死路。
-          let secUid = data.sec_uid
-          let webRid = data.room_id ?? ''
-
-          if (!secUid) {
-            if (!webRid) throw new Error('直播间链接缺少 sec_uid 与房间号，无法解析')
-            // 只有 web_rid 时先探一次直播间：`web/enter` 认 web_rid，
-            // 响应里的 user.sec_uid 就是反查主播主页所需的钥匙。
-            const roomProbe = narrowApiResponse<LiveResponse>(await this.amagi.getDouyinData('直播间信息数据', {
-              room_id: webRid,
-              web_rid: webRid,
-              typeMode: 'strict'
-            }), '直播间信息数据')
-            secUid = getLiveAnchorSecUid(roomProbe)
-            if (!secUid) throw new Error('直播间信息数据未返回主播信息，可能已关播或抖音 Cookie 失效')
+          // 取数客户端仍然传 this.amagi 而不是让那个函数自己 import
+          // `platform/douyin/api.ts`：this.amagi 是 Base 里那层 Proxy，负责把接口报错
+          // 渲染成错误卡片，换掉等于解析失败时不再出卡片。
+          const room = await resolveDouyinLiveRoom(
+            { sec_uid: data.sec_uid, room_id: data.room_id },
+            async (method, options) => await this.amagi.getDouyinData(method, options)
+          )
+          if (!room.living) {
+            await this.e.reply(`「${room.anchor.nickname}」\n未开播，正在休息中~`)
+            return true
           }
-
-          const UserInfoData = narrowApiResponse<UserInfoResponse>(await this.amagi.getDouyinData('用户主页数据', {
-            sec_uid: secUid,
-            typeMode: 'strict'
-          }), '用户主页数据')
-          if (UserInfoData.data.user.live_status === 1) {
-            // 直播中
-            const roomData = narrowApiResponse<DouyinRoomData>(JSON.parse(UserInfoData.data.user.room_data || '{}'), '直播间房间数据')
-            webRid = roomData.owner?.web_rid || webRid
-            const liveData = narrowApiResponse<LiveResponse>(await this.amagi.getDouyinData('直播间信息数据', {
-              room_id: UserInfoData.data.user.room_id_str || webRid,
-              web_rid: webRid,
-              typeMode: 'strict'
-            }), '直播间信息数据')
-            const { items: liveItems, partition } = getLivePayload(liveData)
-            const liveItem = liveItems[0]
-            if (!liveItem) throw new Error('直播间信息数据返回格式异常')
-            const img = await Render('douyin/live', buildDouyinLivePayload({
-              anchor: UserInfoData.data.user,
-              dynamicTYPE: '直播间信息',
-              liveItem,
-              partitionTitle: partition.partition?.title || '',
-              webRid: webRid || liveItem.owner?.web_rid || ''
-            }))
-            await this.e.reply(img)
-          } else {
-            await this.e.reply(`「${UserInfoData.data.user.nickname}」\n未开播，正在休息中~`)
-          }
+          const img = await Render('douyin/live', buildDouyinLivePayload({
+            anchor: room.anchor,
+            dynamicTYPE: '直播间信息',
+            liveItem: room.liveItem,
+            partitionTitle: room.partitionTitle,
+            webRid: room.webRid
+          }))
+          await this.e.reply(img)
           return true
         }
         default:

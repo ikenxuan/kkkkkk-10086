@@ -93,6 +93,10 @@ vi.mock('../../src/module/platform/douyin/index.js', () => ({
   getDouyinID: vi.fn()
 }))
 vi.mock('../../src/module/platform/douyin/api.js', () => ({ getDouyinData: vi.fn() }))
+// 直播录制流水线只在 rule 命中时才跑，契约测试只实例化 app。挡掉它是因为它的真实
+// 依赖链（FFmpeg / Base / bilibili 取流）会绕过上面那个 utils barrel 替身去要真的
+// Config，而真的 Config 要读宿主的 lib/config。
+vi.mock('../../src/module/platform/common/liveRecord.js', () => ({ recordLiveRoom: vi.fn() }))
 vi.mock('../../src/module/platform/douyin/login.js', () => ({ dylogin: vi.fn() }))
 vi.mock('../../src/module/platform/douyin/pushPreview.js', () => ({ DouyinPushPreview: class {} }))
 

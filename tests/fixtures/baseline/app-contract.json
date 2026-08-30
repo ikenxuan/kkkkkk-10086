@@ -203,6 +203,12 @@
     "priority": "500",
     "rule": [
       {
+        "reg": "/^#?kkk录直播(?![一-龥])/",
+        "regType": "RegExp",
+        "fnc": "recordLive",
+        "permission": null
+      },
+      {
         "reg": "/.*((www|v|jx|jingxuan|m|live)\\.(douyin|iesdouyin)\\.com|douyin\\.com\\/(video|note)|webcast\\.amemv\\.com).*/i",
         "regType": "RegExp",
         "fnc": "douyin",

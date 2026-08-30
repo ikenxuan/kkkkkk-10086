@@ -18,6 +18,17 @@ const config = vi.hoisted(() => ({
   cookies: { douyin: '' }
 }))
 
+/**
+ * 录制流水线的替身。挡掉它有两个理由：真实模块的依赖链（FFmpeg / Base / bilibili 取流）
+ * 会绕过下面那个 utils barrel 替身去要真的 Config（那要读宿主 lib/config），
+ * 而本文件要断言的是 `recordLive` **怎么派发** —— 平台判对没判对、URL 抽没抽干净。
+ */
+const recordLiveRoomMock = vi.hoisted(() => vi.fn())
+
+vi.mock('../../src/module/platform/common/liveRecord.js', () => ({
+  recordLiveRoom: recordLiveRoomMock
+}))
+
 vi.mock('../../src/module/utils/index.js', () => ({
   Config: config,
   Common: { getReplyMessage: vi.fn() },
@@ -82,6 +93,14 @@ const createEvent = (userId: string, groupId = 'group-1') => ({
   reply: vi.fn()
 })
 
+/** 按 fnc 取出注册的规则；顺序也是契约的一部分，所以连下标一起给出来 */
+const findRule = (fnc: string): { reg: RegExp, fnc: string, index: number } => {
+  const rules = (new ToolsApp() as unknown as { rule: Array<{ reg: RegExp, fnc: string }> }).rule
+  const index = rules.findIndex(item => item.fnc === fnc)
+  if (index < 0) throw new Error(`未注册 ${fnc} 规则`)
+  return { ...rules[index]!, index }
+}
+
 beforeEach(() => {
   vi.useFakeTimers()
   getKuaishouIDMock.mockReset()
@@ -100,6 +119,8 @@ beforeEach(() => {
   douyinResourcesMock.mockReset()
   getDouyinIDMock.mockResolvedValue({ type: 'live_room_detail', room_id: '26139686' })
   douyinResourcesMock.mockResolvedValue(true)
+  recordLiveRoomMock.mockReset()
+  recordLiveRoomMock.mockResolvedValue(true)
 })
 
 afterEach(() => {
@@ -151,13 +172,6 @@ describe('kkkTools episode selection state', () => {
  * 都会表现成「发了链接机器人不吭声」，而单测只看其中一段是查不出来的。
  */
 describe('kkkTools 直播间链接样本', () => {
-  const findRule = (fnc: string) => {
-    const rule = (new ToolsApp() as unknown as { rule: Array<{ reg: RegExp, fnc: string }> })
-      .rule.find(item => item.fnc === fnc)
-    if (!rule) throw new Error(`未注册 ${fnc} 规则`)
-    return rule
-  }
-
   it('抖音网关放行直播间长链与 App 分享的 reflow 链接', () => {
     const { reg } = findRule('douyin')
 
@@ -183,5 +197,108 @@ describe('kkkTools 直播间链接样本', () => {
     await new ToolsApp()._bilibili(event)
 
     expect(getBilibiliIDMock).toHaveBeenCalledWith('https://live.bilibili.com/26139686?unique_k=2333')
+  })
+})
+
+/**
+ * `#kkk录直播` 的规则与派发。
+ *
+ * 这条命令的形状比它看起来危险：命令正文里**自带一条平台链接**，而本 app 里那几条
+ * 平台规则的正则是不锚定的（`/.*(live\.douyin\.com|…).*​/i`）。宿主按 `rule[]` 的
+ * 数组顺序逐条试（lib/plugins/loader.js:283），且本 app 在「默认解析」开启时
+ * priority 是 -Infinity，比所有插件都先拿到消息 —— 所以「排在第几位」是唯一的
+ * 可达性开关，没有任何数值优先级能补救。
+ */
+describe('kkkTools 录直播规则', () => {
+  it('规则排在所有平台规则之前，否则命令会被平台链接规则先吃掉', () => {
+    const record = findRule('recordLive')
+
+    expect(record.index).toBe(0)
+    expect(record.index).toBeLessThan(findRule('douyin').index)
+    expect(record.index).toBeLessThan(findRule('bilibili').index)
+  })
+
+  it('带不带 # 都认，井号后不留空格也认', () => {
+    const { reg } = findRule('recordLive')
+
+    expect(reg.test('#kkk录直播 https://live.douyin.com/26139686')).toBe(true)
+    expect(reg.test('kkk录直播 https://live.bilibili.com/1017')).toBe(true)
+    expect(reg.test('#kkk录直播https://live.douyin.com/26139686')).toBe(true)
+  })
+
+  it('只吃行首：正文里带这几个字的别家命令不会被截走', () => {
+    const { reg } = findRule('recordLive')
+
+    // 少了 `^` 的后果不是「多解析一次」，而是别的插件的命令被本 app 抢走并回错话
+    expect(reg.test('帮我 #kkk录直播 一下')).toBe(false)
+    expect(reg.test('这个功能叫 kkk录直播')).toBe(false)
+  })
+
+  it('关键字后紧跟汉字的更长命令不算本命令', () => {
+    const { reg } = findRule('recordLive')
+
+    // `prefix` 那条规则就是在这个形状上真实翻过车（`#kkk解析` 吃掉 `#kkk解析统计`）
+    expect(reg.test('#kkk录直播列表')).toBe(false)
+    expect(reg.test('#kkk录直播设置')).toBe(false)
+  })
+
+  it('裸链接不会被本规则截走，仍然走平台解析', () => {
+    expect(findRule('recordLive').reg.test('https://live.douyin.com/26139686')).toBe(false)
+    expect(findRule('douyin').reg.test('https://live.douyin.com/26139686')).toBe(true)
+  })
+})
+
+describe('kkkTools 录直播派发', () => {
+  it('抖音直播间链接按 douyin 平台录，URL 已剥掉末尾标点', async () => {
+    const event = { ...createEvent('user-rec'), msg: '#kkk录直播 https://live.douyin.com/26139686。' }
+
+    await expect(new ToolsApp().recordLive(event)).resolves.toBe(true)
+
+    expect(recordLiveRoomMock).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: 'user-rec' }),
+      'douyin',
+      'https://live.douyin.com/26139686'
+    )
+  })
+
+  it('B站直播间链接按 bilibili 平台录', async () => {
+    const event = { ...createEvent('user-rec'), msg: '#kkk录直播 https://live.bilibili.com/1017' }
+
+    await new ToolsApp().recordLive(event)
+
+    expect(recordLiveRoomMock).toHaveBeenCalledWith(
+      expect.anything(),
+      'bilibili',
+      'https://live.bilibili.com/1017'
+    )
+  })
+
+  it('没带链接时明确要链接，不进队列', async () => {
+    const event = { ...createEvent('user-rec'), msg: '#kkk录直播' }
+
+    await expect(new ToolsApp().recordLive(event)).resolves.toBe(true)
+
+    expect(event.reply).toHaveBeenCalledWith('要在 #kkk录直播 后面带上抖音或B站的直播间链接')
+    expect(recordLiveRoomMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['快手', 'https://v.kuaishou.com/abc'],
+    ['非平台域名', 'https://example.com/live/1']
+  ])('%s 链接一律拒掉：能触发规则但录不了的必须说清楚', async (_label, url) => {
+    const event = { ...createEvent('user-rec'), msg: `#kkk录直播 ${url}` }
+
+    await expect(new ToolsApp().recordLive(event)).resolves.toBe(true)
+
+    expect(event.reply).toHaveBeenCalledWith('只能录抖音和B站的直播间，且对应平台的解析开关要开着')
+    expect(recordLiveRoomMock).not.toHaveBeenCalled()
+  })
+
+  it('录制没成也返回 true —— 返回 false 在宿主那边是「继续往后派」', async () => {
+    recordLiveRoomMock.mockResolvedValue(false)
+    const event = { ...createEvent('user-rec'), msg: '#kkk录直播 https://live.douyin.com/26139686' }
+
+    await expect(new ToolsApp().recordLive(event)).resolves.toBe(true)
+    expect(recordLiveRoomMock).toHaveBeenCalledTimes(1)
   })
 })

@@ -75,6 +75,16 @@ vi.mock('../../src/module/platform/douyin/api.js', () => ({
   getDouyinData: vi.fn()
 }))
 
+/**
+ * 录制流水线的替身：真实模块的依赖链（FFmpeg / Base / bilibili 取流）会绕过上面那个
+ * utils barrel 替身去要真的 Config。本文件只关心「录制这一次拿到的是什么指纹」。
+ */
+const recordLiveRoomMock = vi.hoisted(() => vi.fn(async () => true))
+
+vi.mock('../../src/module/platform/common/liveRecord.js', () => ({
+  recordLiveRoom: recordLiveRoomMock
+}))
+
 vi.mock('../../src/module/utils/EmojiReaction.js', () => ({
   EmojiReactionManager: class {
     event: { message_id?: string }
@@ -586,5 +596,119 @@ describe('诊断卡能读到解析队列', () => {
 
     expect(getParseCoordinatorSnapshot()?.running).toBe(0)
     expect(getParseCoordinatorSnapshot()?.pending).toBe(0)
+  })
+})
+
+/**
+ * 录直播的指纹必须和「解析同一个直播间」分开。
+ *
+ * `runCoordinatedParse` 缺省会从 `e.msg` 反推目标，而 `#kkk录直播 <直播间链接>` 的
+ * 正文里就带着那条链接 —— 反推出来的 `{ type: 'url', value: 链接 }` 和用户直接发链接
+ * 那一次**逐字节相同**。同群先后发出这两条时，后发的会被判成重复、直接拿走前一个的
+ * 结果：用户发了录制命令，收到的是一张直播卡片，而且录制从来没发生过。
+ * 所以那个显式的 work-id 目标不是「顺手加的」，是这条命令能工作的前提。
+ */
+describe('kkkTools 录直播的指纹隔离', () => {
+  const LIVE_URL = 'https://live.douyin.com/26139686'
+
+  it('录制和普通解析同一个直播间算出不同指纹，两件事各跑一次', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    getDouyinIdMock.mockResolvedValue({ type: 'live_room_detail', room_id: '26139686' })
+    recordLiveRoomMock.mockImplementation(async () => true)
+
+    // 先把普通解析卡在 handler 里、让它的指纹留在 pending 表上，
+    // 这样「录制会不会被它去重掉」才真的被测到 —— 串行跑是测不出去重的。
+    const gate = createDeferred<boolean>()
+    douyinResourcesMock.mockImplementation(async () => await gate.promise)
+
+    const parsing = tools.douyin(createEvent({
+      msg: LIVE_URL, group_id: 50001, user_id: 1, message_id: 'live-parse'
+    }))
+    await vi.waitFor(() => expect(douyinResourcesMock).toHaveBeenCalledTimes(1))
+
+    const recording = tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, group_id: 50001, user_id: 1, message_id: 'live-record'
+    }))
+    await vi.waitFor(() => expect(recordLiveRoomMock).toHaveBeenCalledTimes(1))
+
+    expect(submittedIdentities).toHaveLength(2)
+    const [parseFingerprint, recordFingerprint] = fingerprintsOf(submittedIdentities)
+    expect(parseFingerprint).not.toBe(recordFingerprint)
+    expect(submittedIdentities[0]?.target).toEqual({ type: 'url', value: LIVE_URL })
+    expect(submittedIdentities[1]?.target).toEqual({
+      type: 'work-id',
+      value: `live-record|douyin|${LIVE_URL}`
+    })
+    // 两条消息各自拿到表情回应；被去重的那一方是没有回应的（见上面几组用例）
+    expect(reactionStates.get('live-parse')).toEqual(['processing'])
+    expect(reactionStates.get('live-record')).toEqual(['processing', 'succeeded'])
+
+    gate.resolve(true)
+    await expect(Promise.all([parsing, recording])).resolves.toEqual([true, true])
+  })
+
+  it('平台编进目标：同一条链接分派到两个平台时不会互相去重', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    recordLiveRoomMock.mockImplementation(async () => true)
+
+    await expect(tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, group_id: 50002, user_id: 2, message_id: 'plat-dy'
+    }))).resolves.toBe(true)
+    await expect(tools.recordLive(createEvent({
+      msg: '#kkk录直播 https://live.bilibili.com/1017', group_id: 50002, user_id: 2, message_id: 'plat-bili'
+    }))).resolves.toBe(true)
+
+    expect(submittedIdentities.map(identity => identity.platform)).toEqual(['douyin', 'bilibili'])
+    expect(submittedIdentities.map(identity => identity.target.value)).toEqual([
+      `live-record|douyin|${LIVE_URL}`,
+      'live-record|bilibili|https://live.bilibili.com/1017'
+    ])
+    const [douyinFingerprint, bilibiliFingerprint] = fingerprintsOf(submittedIdentities)
+    expect(douyinFingerprint).not.toBe(bilibiliFingerprint)
+  })
+
+  it('同群并发两次录同一个直播间只录一遍', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    const gate = createDeferred<boolean>()
+    recordLiveRoomMock.mockImplementation(async () => await gate.promise)
+
+    const winner = tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, group_id: 50003, user_id: 3, message_id: 'rec-winner'
+    }))
+    await vi.waitFor(() => expect(recordLiveRoomMock).toHaveBeenCalledTimes(1))
+    const duplicate = tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, group_id: 50003, user_id: 4, message_id: 'rec-duplicate'
+    }))
+    await Promise.resolve()
+
+    // 一场直播录两遍是纯浪费：占一个并发位、拉两份同样的流、发两个同样的文件
+    expect(recordLiveRoomMock).toHaveBeenCalledTimes(1)
+    const [winnerFingerprint, duplicateFingerprint] = fingerprintsOf(submittedIdentities)
+    expect(winnerFingerprint).toBe(duplicateFingerprint)
+    expect(reactionStates.get('rec-duplicate')).toBeUndefined()
+
+    gate.resolve(true)
+    await expect(Promise.all([winner, duplicate])).resolves.toEqual([true, true])
+  })
+
+  it('私聊和群聊各算一次，作用域仍由协调器统一推导', async () => {
+    const tools = Reflect.construct(kkkTools, []) as InstanceType<typeof kkkTools>
+    recordLiveRoomMock.mockImplementation(async () => true)
+
+    await tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, group_id: 50004, user_id: 5, message_id: 'scope-g'
+    }))
+    await tools.recordLive(createEvent({
+      msg: `#kkk录直播 ${LIVE_URL}`, user_id: 5, message_id: 'scope-p'
+    }))
+
+    expect(submittedIdentities.map(identity => identity.scope)).toEqual([
+      { type: 'group', id: '50004' },
+      { type: 'private', id: '5' }
+    ])
+    expect(submittedIdentities[0]?.target).toEqual(submittedIdentities[1]?.target)
+    const [groupFingerprint, privateFingerprint] = fingerprintsOf(submittedIdentities)
+    expect(groupFingerprint).not.toBe(privateFingerprint)
+    expect(recordLiveRoomMock).toHaveBeenCalledTimes(2)
   })
 })

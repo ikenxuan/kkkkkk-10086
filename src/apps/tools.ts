@@ -19,6 +19,7 @@ import {
 import { createEmojiParseReactionPort } from '@/module/utils/ParseReactionAdapter'
 import { runWithMediaMetrics, type MediaRecord } from '@/module/utils/media-metrics'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
+import { recordLiveRoom, type LiveRecordPlatform } from '@/module/platform/common/liveRecord'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
 import { isRecord } from '@/module/utils/record'
@@ -114,11 +115,26 @@ const getSelectionKey = (e: MessageEvent): string => `${getEventGroupId(e)}:${ge
 
 const trimUrlPunctuation = (value: string): string => value.replace(/[\])}>,，。！？、]+$/u, '')
 
+/**
+ * 消息正文里的第一条 http(s) 链接，末尾标点已剥掉。
+ *
+ * `replaceAll('\\', '')`：部分客户端把分享链接里的字符转义后上报，不剥掉的话
+ * 域名判定和 `new URL()` 都会认错。剥末尾标点是因为「（链接）」「链接。」这种写法
+ * 会把标点粘进 URL 里。
+ *
+ * 抽出来给 getParseTarget 和 recordLive 共用：两边原来各写一遍同一个正则，
+ * 而它们必须对同一条消息抽出同一条 URL —— 一边多剥一个字符，录制的指纹就和
+ * 解析的指纹按不同的字符串算，去重口径当场分叉。
+ */
+const extractFirstUrl = (message: string): string => {
+  const matched = message.replaceAll('\\', '').trim().match(/https?:\/\/[^\s"'<>]+/i)?.[0]
+  return matched ? trimUrlPunctuation(matched) : ''
+}
+
 const getParseTarget = (platform: Platform, message: string): ParseTarget => {
   const normalizedMessage = message.replaceAll('\\', '').trim()
-  const matchedUrl = normalizedMessage.match(/https?:\/\/[^\s"'<>]+/i)?.[0]
-  if (matchedUrl) {
-    const value = trimUrlPunctuation(matchedUrl)
+  const value = extractFirstUrl(message)
+  if (value) {
     try {
       const url = new URL(value)
       if (url.protocol === 'http:' || url.protocol === 'https:') return { type: 'url', value }
@@ -252,6 +268,16 @@ export class kkkTools extends plugin<'message'> {
       event: 'message',
       priority: isDefaultTool(Config.app) ? -Infinity : Config.app.priority,
       rule: [
+        // 必须排在 `generateRules()` **前面**。宿主是按 `i.plugin.rule` 的数组顺序
+        // 逐条试的（lib/plugins/loader.js:283），本 app 在「默认解析」开启时是
+        // -Infinity，没有任何数值优先级能救 —— 放到后面的话，`#kkk录直播 <直播间链接>`
+        // 会先被上面那条平台链接规则吃掉，用户拿到的是一张普通直播卡片而不是录像。
+        //
+        // `^` 和 `(?![一-龥])` 两个锚都是必需的：没有 `^` 时正文里带这几个字的
+        // 任何消息（含别的插件的命令）都会被这条截走，没有那个否定断言时
+        // `#kkk录直播列表` 这种更长的中文命令会被当成本命令 —— 同一形状的 bug
+        // 在下面 `prefix` 那条上已经真实发生过一次。
+        { reg: /^#?kkk录直播(?![一-龥])/, fnc: 'recordLive' },
         ...generateRules(), // 动态生成的平台规则
         ...(isVideoToolEnabled(Config.app) ? [{ reg: /^(\[图片\])?$/, fnc: 'imageQrCode' }] : []),
         { reg: /^#?\d{1,2}$/, fnc: 'selectDouyinWork' },
@@ -652,6 +678,48 @@ export class kkkTools extends plugin<'message'> {
         return true
       },
       createBilibiliEpisodeTarget(stored, episode)
+    )
+  }
+
+  /**
+   * 录一段直播并上传。
+   *
+   * 平台判定必须在进协调器**之前**做完：`runCoordinatedParse` 的平台参数会进指纹、
+   * 进媒体度量、进错误卡片，猜错等于把 B站 的失败记到抖音账上。
+   *
+   * 判定复用 `findPlatformConfig` —— 和平台链接规则同一批正则、同一个开关，
+   * 所以「链接不是这两家的」和「这个平台的解析被关掉了」在这里是同一个结论：不录。
+   * 另写一份域名判据的话，能触发本规则却在这里判不出平台的链接就会静默失败。
+   */
+  async recordLive (e: CommandEvent): Promise<boolean> {
+    const url = extractFirstUrl(e.msg || '')
+    if (!url) {
+      await e.reply!('要在 #kkk录直播 后面带上抖音或B站的直播间链接')
+      return true
+    }
+
+    const handler = findPlatformConfig(url)?.handler
+    if (handler !== 'douyin' && handler !== 'bilibili') {
+      await e.reply!('只能录抖音和B站的直播间，且对应平台的解析开关要开着')
+      return true
+    }
+    const platform: LiveRecordPlatform = handler
+
+    // 指纹目标必须显式给：默认那条会从 e.msg 里抽出这条 URL，于是「录直播」和
+    // 「普通解析同一个直播间」算出完全一样的指纹 —— 后发的那个被去重掉、直接拿走
+    // 前一个的结果，用户发了录制命令却收到一张直播卡片。
+    return await this.runCoordinatedParse(
+      e,
+      platform,
+      platform === 'douyin' ? '抖音直播录制' : 'B站直播录制',
+      async event => {
+        // 录制成败不能当派发返回值：这里已经回过话了，而返回 false 在宿主那边是
+        // 「本插件不认这条消息、继续往后派」（`imageQrCode` 的 return false 就是
+        // 这个语义），于是同一条命令还会被后面的插件再答一次。
+        await recordLiveRoom(event, platform, url)
+        return true
+      },
+      { type: 'work-id', value: `live-record|${platform}|${url}` }
     )
   }
 }
