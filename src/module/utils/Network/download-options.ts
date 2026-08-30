@@ -12,6 +12,32 @@ import {
 } from './DownloadWatchdog.js'
 import { MB } from './units.js'
 
+/**
+ * 直播流时长上限的默认值，毫秒。
+ *
+ * 这个数字原来是 `download-pipeline.ts` 里 `isLiveStream ? 120000 : 90000` 的左半边，
+ * 也就是「抓直播流」那条探针支路的 abort 时限。搬到这里是为了让它和
+ * `liveStreamMaxSize` 一样只有一份：那个字面量之前也在两处各写一遍，改一处漏一处。
+ *
+ * 导出是给单测拿同一个数字断言用，而不是在测试里抄一遍字面量。
+ */
+export const DEFAULT_LIVE_STREAM_MAX_DURATION_MS = 120_000
+
+/**
+ * 直播流时长上限的归一化。
+ *
+ * 只认「有限的正数」，其余一律回落默认值。这里不能只写 `?? 默认值`：
+ * `0` 和负数都是合法的 `number`，`??` 会原样放过去，而这个值最终会变成
+ * `setTimeout(() => controller.abort(), …)` 的延时 —— 传 0 等于「开流即断」，
+ * 表现成直播一抓就断，而调用方看到的是自己明明传了个数字。
+ * `NaN`（`Number(undefined)` 的常见产物）同理，它和任何数比较都是 false，
+ * 会一路走到 setTimeout 里被当成 0。
+ */
+const normalizeLiveStreamDuration = (value: number | undefined): number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : DEFAULT_LIVE_STREAM_MAX_DURATION_MS
+
 export const normalizeDownloadOptions = (
   options: DownloadOptions,
   uploadConfig: DownloadUploadConfig
@@ -22,6 +48,7 @@ export const normalizeDownloadOptions = (
   return {
     isLiveStream,
     liveStreamMaxSize: options.liveStreamMaxSize ?? 10 * MB,
+    liveStreamMaxDurationMs: normalizeLiveStreamDuration(options.liveStreamMaxDurationMs),
     multiThread: !isLiveStream && uploadConfig.downloadMultiThread === true,
     concurrency: clampConcurrency(uploadConfig.downloadConcurrency),
     throttle: {

@@ -113,6 +113,9 @@ export const attemptDownloadStream = async (
   // 直播上限只认归一化后的那一份。之前这里自己写了一遍 `?? 10 * MB` 默认值，
   // 和 `normalizeDownloadOptions` 里的那份是两个独立的字面量，改一处漏一处。
   const liveStreamMaxSize = normalized.liveStreamMaxSize
+  // 直播流的 abort 时限同理：这个 120s 原来也是本文件的字面量，现在由归一化统一给出，
+  // 调用方（录制路径）想录更久就传 `liveStreamMaxDurationMs`，不传还是原来那个默认值。
+  const liveStreamMaxDurationMs = normalized.liveStreamMaxDurationMs
   const throttle = normalized.throttle
   const filepath = context.filepath
   if (!filepath) throw new TypeError('下载文件路径不能为空')
@@ -182,7 +185,7 @@ export const attemptDownloadStream = async (
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), isLiveStream ? 120000 : 90000)
+  const timeoutId = setTimeout(() => controller.abort(), isLiveStream ? liveStreamMaxDurationMs : 90000)
   // 低速看守掐断时留下的错误。声明在 try 外面是为了让 catch 也看得见 ——
   // `abort()` 之后 axios 抛的是它自己的 ERR_CANCELED，得靠这个引用把「为什么被取消」找回来。
   let slowAbort: Error | undefined

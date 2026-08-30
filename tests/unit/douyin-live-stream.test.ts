@@ -104,6 +104,88 @@ describe('pickDouyinLiveStream quality priority', () => {
   })
 })
 
+// 这一组钉的是 `douyin.live.quality` 那个配置项的语义：它只改变尝试顺序。
+// 「只认配置值」会让「用户填了 FULL_HD1、主播只推 SD1」变成录不到，而那条流是可播的。
+describe('pickDouyinLiveStream 配置的档位偏好', () => {
+  it('把配置的档位排到内置优先级表前面', () => {
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: {
+        FULL_HD1: 'https://pull.example.com/full.flv',
+        SD1: 'https://pull.example.com/sd1.flv'
+      }
+    }), 'SD1')
+
+    expect(pick.quality).toBe('SD1')
+  })
+
+  it('配置内置表里没有的档位（HD1）也照样先试', () => {
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: {
+        FULL_HD1: 'https://pull.example.com/full.flv',
+        HD1: 'https://pull.example.com/hd1.flv'
+      }
+    }), 'HD1')
+
+    expect(pick.quality).toBe('HD1')
+  })
+
+  it('配置的档位拿不到地址时继续往下试，而不是判失败', () => {
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: {
+        FULL_HD1: '',
+        SD1: 'https://pull.example.com/sd1.flv'
+      }
+    }), 'FULL_HD1')
+
+    expect(pick.url).toBe('https://pull.example.com/sd1.flv')
+    expect(pick.quality).toBe('SD1')
+  })
+
+  it('配置了一个上游压根没给的档位时，仍然录到可播的那条', () => {
+    // 用户填错档位名（或上游改名）不该等于「不能录」
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: { SD2: 'https://pull.example.com/sd2.flv' }
+    }), 'NOT_A_QUALITY')
+
+    expect(pick.quality).toBe('SD2')
+  })
+
+  it('空串与纯空白的配置值等于没配，按内置顺序走', () => {
+    const streamUrl = {
+      flv_pull_url: {
+        SD2: 'https://pull.example.com/sd2.flv',
+        FULL_HD1: 'https://pull.example.com/full.flv'
+      }
+    }
+
+    expect(pickDouyinLiveStream(liveItem(streamUrl), '').quality).toBe('FULL_HD1')
+    expect(pickDouyinLiveStream(liveItem(streamUrl), '   ').quality).toBe('FULL_HD1')
+    expect(pickDouyinLiveStream(liveItem(streamUrl)).quality).toBe('FULL_HD1')
+  })
+
+  it('配置值两侧的空白被剪掉，不会因此错过那个档位', () => {
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: {
+        FULL_HD1: 'https://pull.example.com/full.flv',
+        SD2: 'https://pull.example.com/sd2.flv'
+      }
+    }), '  SD2  ')
+
+    expect(pick.quality).toBe('SD2')
+  })
+
+  it('配置内置表里已有的档位时不会把它试两遍', () => {
+    // 去重的回归：`FULL_HD1` 插到队首后，内置表里那份必须被过滤掉，
+    // 否则兜底扫描的「跳过优先级表里的键」判据要多考虑一次重复项
+    const pick = pickDouyinLiveStream(liveItem({
+      flv_pull_url: { FULL_HD1: 'https://pull.example.com/full.flv' }
+    }), 'FULL_HD1')
+
+    expect(pick.quality).toBe('FULL_HD1')
+    expect(pick.url).toBe('https://pull.example.com/full.flv')
+  })
+})
+
 describe('pickDouyinLiveStream malformed responses', () => {
   it('does not throw when stream_url is missing entirely', () => {
     expect(() => pickDouyinLiveStream({})).not.toThrow()

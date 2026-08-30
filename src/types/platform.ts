@@ -17,6 +17,14 @@ export interface FileInfo extends FileTitle {
 export interface DownloadOptions extends CdnFallbackOptions {
   isLiveStream?: boolean
   liveStreamMaxSize?: number
+  /**
+   * 直播流的时长上限，毫秒。
+   *
+   * 和 `liveStreamMaxSize` 是两把独立的闸，谁先到谁收口：体积那把管「别把盘写满」，
+   * 这把管「别一直占着下载槽」。码率未知的直播流上只靠体积推不出时长，
+   * 反过来也一样，所以两个都得有默认值。
+   */
+  liveStreamMaxDurationMs?: number
   currentSpeed?: number
   /**
    * 这次下载已经试过、且被判定为「这个节点有问题」的地址。内部字段，由重试逻辑自己追加。
@@ -55,6 +63,8 @@ export interface NormalizedSlowGuardOptions {
 export interface NormalizedDownloadOptions {
   isLiveStream: boolean
   liveStreamMaxSize: number
+  /** 直播流时长上限，毫秒。归一化后一定有值，见 {@link DownloadOptions.liveStreamMaxDurationMs} */
+  liveStreamMaxDurationMs: number
   multiThread: boolean
   concurrency: number
   throttle: NormalizedThrottleOptions
@@ -88,6 +98,8 @@ export interface VideoDownloadOptions extends CdnFallbackOptions {
   headers?: Record<string, string>
   isLiveStream?: boolean
   liveStreamMaxSize?: number
+  /** 直播流时长上限（毫秒），见 {@link DownloadOptions.liveStreamMaxDurationMs} */
+  liveStreamMaxDurationMs?: number
 }
 
 export type DownloadUploadConfig = Pick<

@@ -75,11 +75,20 @@ export interface DouyinLiveStreamPick {
  * 是常态（未开播、或该档位没转码）。所以判据是「非空字符串」，
  * 不是「键在不在」，也不是指望 TS 拦住不存在的档位。
  *
+ * ## 为什么配置的档位只是「插到队首」而不是「只认它」
+ *
+ * `preferredQuality` 来自 `douyin.live.quality`，用户填的是一个**期望**值。
+ * 抖音那边某个档位没转码是常态（见上面那段），所以「只认配置值」意味着
+ * 用户填了 `FULL_HD1` 而主播只推了 `SD1` 时我们判「录不到」——
+ * 而那条流其实是可播的。因此配置值只改变尝试顺序，不改变「有可播的就录」这条底线。
+ *
  * @param liveItem 直播间信息里的房间项，允许整个不存在
+ * @param preferredQuality 期望的档位键，插到内置优先级表的最前面；空串/未给时按内置顺序
  * @returns 选中的地址与档位；没有任何可用地址时三个字段都是空串
  */
 export const pickDouyinLiveStream = (
-  liveItem: DouyinLiveItem | undefined
+  liveItem: DouyinLiveItem | undefined,
+  preferredQuality?: string
 ): DouyinLiveStreamPick => {
   const streamUrl = liveItem?.stream_url
   const flv = streamUrl?.flv_pull_url
@@ -92,10 +101,17 @@ export const pickDouyinLiveStream = (
     return typeof value === 'string' && value.trim() !== '' ? value : ''
   }
 
-  // 先按声明的优先级挑；`FULL_HD1` 给了空串就继续往下试，而不是认它选中
+  // 配置的档位排在内置优先级表前面。去重是必须的：用户填 `FULL_HD1`（内置表里本来就有）
+  // 时若不去重，下面的「兜底扫描跳过优先级表里的键」判据就要多考虑一次重复项。
+  const preferred = String(preferredQuality ?? '').trim()
+  const priority = preferred
+    ? [preferred, ...DOUYIN_FLV_QUALITY_PRIORITY.filter(key => key !== preferred)]
+    : [...DOUYIN_FLV_QUALITY_PRIORITY]
+
+  // 先按优先级挑；`FULL_HD1` 给了空串就继续往下试，而不是认它选中
   let chosen = ''
   let quality = ''
-  for (const key of DOUYIN_FLV_QUALITY_PRIORITY) {
+  for (const key of priority) {
     const url = usable(key)
     if (url) {
       chosen = url
@@ -104,10 +120,12 @@ export const pickDouyinLiveStream = (
     }
   }
 
-  // 兜底：优先级表外的档位（HD1，以及上游将来新增的任何档位）按响应自身的键序取第一个可用的
+  // 兜底：优先级表外的档位（没被配置指定的 HD1，以及上游将来新增的任何档位）
+  // 按响应自身的键序取第一个可用的。跳过 `priority` 而不是跳过
+  // `DOUYIN_FLV_QUALITY_PRIORITY`：配置值已经在上面试过了，再扫一遍纯属重复。
   if (!chosen) {
     for (const key of Object.keys(flv)) {
-      if ((DOUYIN_FLV_QUALITY_PRIORITY as readonly string[]).includes(key)) continue
+      if (priority.includes(key)) continue
       const url = usable(key)
       if (url) {
         chosen = url

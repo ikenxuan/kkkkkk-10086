@@ -7,6 +7,7 @@ import {
   DEFAULT_SUSTAIN_MS,
   SAMPLE_INTERVAL_MS
 } from '../../src/module/utils/Network/DownloadWatchdog.js'
+import { DEFAULT_LIVE_STREAM_MAX_DURATION_MS } from '../../src/module/utils/Network/download-options.js'
 
 // `new Networks()` 会读 Config.request，第一次读就触发 Config 单例初始化 ——
 // 而 initCfg 里的 YamlReader 在解析失败时走 logger.error。vitest 并行跑多个文件时
@@ -67,6 +68,7 @@ describe('normalizeDownloadOptions', () => {
     expect(normalizeDownloadOptions({}, {})).toEqual({
       isLiveStream: false,
       liveStreamMaxSize: 10 * 1024 * 1024,
+      liveStreamMaxDurationMs: DEFAULT_LIVE_STREAM_MAX_DURATION_MS,
       multiThread: false,
       concurrency: 8,
       throttle: {
@@ -94,6 +96,7 @@ describe('normalizeDownloadOptions', () => {
     })).toEqual({
       isLiveStream: false,
       liveStreamMaxSize: 10 * 1024 * 1024,
+      liveStreamMaxDurationMs: DEFAULT_LIVE_STREAM_MAX_DURATION_MS,
       multiThread: true,
       concurrency: 16,
       throttle: {
@@ -118,6 +121,49 @@ describe('normalizeDownloadOptions', () => {
       downloadMultiThread: true,
       downloadConcurrency: 6
     }).multiThread).toBe(false)
+  })
+})
+
+// 这一组钉的是 liveStreamMaxDurationMs 的归一化。它是直播支路 abort 时限的唯一来源
+// （`download-pipeline.ts` 里那个 `setTimeout(..., isLiveStream ? 这个值 : 90000)`），
+// 所以每一条「填了个不能用的数」都必须回落到默认值而不是把时限归零 ——
+// 归零的表现是「直播流一抓就断」，而调用方看到的是自己明明传了个数字。
+describe('直播时长上限的归一化', () => {
+  it('没传时用默认值，而不是 undefined', () => {
+    // 归一化后的形状里这个字段是必填的，正是为了让下游不用再写一遍 `?? 默认值`
+    expect(normalizeDownloadOptions({}, {}).liveStreamMaxDurationMs)
+      .toBe(DEFAULT_LIVE_STREAM_MAX_DURATION_MS)
+  })
+
+  it('传了有限正数就用它，不受直播开关影响', () => {
+    // 不看 isLiveStream：这个值只有直播支路会用到，但归一化本身不做这个判断，
+    // 否则「先归一化、后决定走哪条路」的调用顺序会拿到一个静默变了的值
+    expect(normalizeDownloadOptions({ liveStreamMaxDurationMs: 300_000 }, {}).liveStreamMaxDurationMs)
+      .toBe(300_000)
+    expect(normalizeDownloadOptions({ liveStreamMaxDurationMs: 300_000, isLiveStream: true }, {}).liveStreamMaxDurationMs)
+      .toBe(300_000)
+  })
+
+  it('小数原样保留，不取整', () => {
+    // ffmpeg 的 `-t` 收小数，setTimeout 也收，没有取整的理由
+    expect(normalizeDownloadOptions({ liveStreamMaxDurationMs: 1500.5 }, {}).liveStreamMaxDurationMs)
+      .toBe(1500.5)
+  })
+
+  it.each([
+    ['0', 0],
+    ['负数', -1],
+    ['NaN', Number.NaN],
+    ['Infinity', Number.POSITIVE_INFINITY]
+  ])('%s 回落到默认值而不是让时限归零', (_label, value) => {
+    expect(normalizeDownloadOptions({ liveStreamMaxDurationMs: value }, {}).liveStreamMaxDurationMs)
+      .toBe(DEFAULT_LIVE_STREAM_MAX_DURATION_MS)
+  })
+
+  it('默认值和它替换掉的那个字面量一致', () => {
+    // 这个常量是从 `download-pipeline.ts` 的 `isLiveStream ? 120000 : 90000` 搬过来的。
+    // 钉住数字本身：搬家时手滑改了大小，直播支路的行为就在没人察觉的情况下变了
+    expect(DEFAULT_LIVE_STREAM_MAX_DURATION_MS).toBe(120_000)
   })
 })
 

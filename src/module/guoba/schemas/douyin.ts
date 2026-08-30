@@ -78,6 +78,15 @@ export const douyin: GuobaSchema[] = [
   select('douyin.displayContent', '视频信息内容', displayContentOptions.filter(item => item.value !== 'desc'), '视频信息的内容，可选值：cover、title、author、stats', true),
   ...danmakuSchemas('douyin'),
 
+  divider('抖音直播录制'),
+  num('douyin.live.maxDuration', '单次录制最长时长', 1, 7200, '秒', '时间到了由 ffmpeg 自己收口，所以填多少就等多少：填 600 就是一条命令占住十分钟，期间该会话的其它解析都在排队。体积也随之成比例增长——直播流不转码，落盘大小约等于「码率 × 时长」，录完还要过「视频上传拦截阈值」那道闸，超了等于白录一场'),
+  select('douyin.live.quality', '录制画质偏好', [
+    option('原画 FULL_HD1', 'FULL_HD1'),
+    option('高清 HD1', 'HD1'),
+    option('标清 SD1', 'SD1'),
+    option('流畅 SD2', 'SD2')
+  ], '抖音 flv 拉流地址的档位键。只影响尝试顺序，不是硬要求：该档位没转码、或接口给了空地址时会自动往下试其它档，全都拿不到才判失败，所以选最高档不会造成「开播了却录不到」，只是可能实际拿到比选的更低的档位。HD1 属于「上游可能给、接口类型没承诺」的档，选它更容易落到兜底扫描上'),
+
   divider('抖音推送'),
   sw('douyin.push.switch', '抖音推送', '开启后需重启；使用「#设置抖音推送 + 抖音号」配置推送列表'),
   {

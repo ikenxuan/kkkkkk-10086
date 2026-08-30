@@ -68,6 +68,14 @@ export interface VideoDownloadOptions {
   isLiveStream?: boolean
   liveStreamMaxSize?: number
   /**
+   * 直播流的时长上限（毫秒）。给 0 或不给都按默认值处理，见 `normalizeDownloadOptions`。
+   *
+   * 和 `liveStreamMaxSize` 是两条独立的闸：体积那条数字节，这条数时间，谁先到谁收口。
+   * 需要两条都在是因为直播的码率不定 —— 只限体积的话低码率流会拖很久，
+   * 只限时长的话高码率流会落一个超大的文件。
+   */
+  liveStreamMaxDurationMs?: number
+  /**
    * 同一份资源的其它可用地址（镜像 / 备用 CDN），不含 `video_url` 也没关系 ——
    * 下载层会把 `video_url` 排在最前再合并这批。
    */
@@ -83,6 +91,8 @@ export interface DownloadFileOptions {
   headers?: AxiosRequestConfig['headers']
   isLiveStream?: boolean
   liveStreamMaxSize?: number
+  /** 直播流时长上限（毫秒），见 {@link VideoDownloadOptions.liveStreamMaxDurationMs} */
+  liveStreamMaxDurationMs?: number
   /** 备用地址，见 {@link VideoDownloadOptions.candidates} */
   candidates?: readonly string[]
   /** 资源键，见 {@link VideoDownloadOptions.resource} */

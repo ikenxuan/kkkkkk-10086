@@ -255,6 +255,7 @@ const buildApiErrorImage = async (
  * @property {import('axios').AxiosRequestConfig['headers']} [headers] 自定义请求头，将使用该请求头下载文件
  * @property {boolean} [isLiveStream] 是否为直播流
  * @property {number} [liveStreamMaxSize] 直播流最大下载大小(字节)
+ * @property {number} [liveStreamMaxDurationMs] 直播流最长抓取时长(毫秒)
  */
 
 /**
@@ -293,6 +294,7 @@ const buildApiErrorImage = async (
  * @property {import('axios').RawAxiosRequestHeaders & import('./index.js').MethodsHeaders | import('axios').AxiosHeaders} [headers] 用于下载文件的请求头
  * @property {boolean} [isLiveStream] 是否为直播流
  * @property {number} [liveStreamMaxSize] 直播流最大下载大小(字节)
+ * @property {number} [liveStreamMaxDurationMs] 直播流最长抓取时长(毫秒)
  * @default {}
  */
 
@@ -981,6 +983,7 @@ export const downloadVideo = async (
     headers: downloadOpt.headers || baseHeaders,
     isLiveStream: downloadOpt.isLiveStream,
     liveStreamMaxSize: downloadOpt.liveStreamMaxSize,
+    liveStreamMaxDurationMs: downloadOpt.liveStreamMaxDurationMs,
     candidates: downloadOpt.candidates,
     resource: downloadOpt.resource,
     probeCdn: downloadOpt.probeCdn
@@ -1053,6 +1056,7 @@ export const downloadFile = async (
   }, 0, {
     isLiveStream: opt.isLiveStream,
     liveStreamMaxSize: opt.liveStreamMaxSize,
+    liveStreamMaxDurationMs: opt.liveStreamMaxDurationMs,
     candidates: opt.candidates,
     resource: opt.resource,
     probeCdn: opt.probeCdn

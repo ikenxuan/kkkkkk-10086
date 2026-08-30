@@ -73,6 +73,34 @@ export type VerticalMode = 'off' | 'standard' | 'force'
 export type VideoCodec = 'h264' | 'h265' | 'av1'
 
 /**
+ * 抖音直播录制配置。
+ *
+ * `quality` 是 flv 拉流地址的档位键，不是本仓自己定义的枚举 —— 抖音随时可能新增档位，
+ * 收成联合类型会让「上游给了新档、用户想用」变成改代码才能解决的事。
+ * 填了不存在或没转码的档位不会失败，`pickDouyinLiveStream` 会自动往下试其它档。
+ */
+export interface DouyinLiveConfig {
+  /** 单次录制的最长时长，秒。透传给 `recordLiveStream` 时换算成毫秒 */
+  maxDuration?: number
+  /** 录制画质偏好，flv 档位键（`FULL_HD1` / `HD1` / `SD1` / `SD2` …），只影响尝试顺序 */
+  quality?: string
+}
+
+/**
+ * B站直播录制配置。
+ *
+ * `qn` 用的是**直播**的画质编号表（10000 = 原画），和 `videoQuality` 那套稿件编号
+ * 不是同一张表，也不接受稿件那边的 `0`（自动按体积挑）—— 录制前既拿不到时长
+ * 也拿不到体积，没有可比的东西。
+ */
+export interface BilibiliLiveConfig {
+  /** 单次录制的最长时长，秒。透传给 `recordLiveStream` 时换算成毫秒 */
+  maxDuration?: number
+  /** 录制画质编号，直播档位表（30000 杜比 / 20000 4K / 10000 原画 / 400 蓝光 …） */
+  qn?: number
+}
+
+/**
  * B站 CDN 选择策略。
  *
  * - `auto`：只在接口把地址指到 PCDN 时才改写成公网镜像站（默认）
@@ -109,6 +137,8 @@ export interface DouyinConfig {
   danmakuOpacity?: number
   verticalMode?: VerticalMode
   videoCodec?: VideoCodec
+  /** 直播录制参数，见 {@link DouyinLiveConfig} */
+  live?: DouyinLiveConfig
   push?: DouyinPushConfig
 }
 
@@ -163,6 +193,8 @@ export interface BilibiliConfig {
    * 见 `module/utils/CdnProbe.ts`。
    */
   bilibiliCdnProbe?: boolean
+  /** 直播录制参数，见 {@link BilibiliLiveConfig} */
+  live?: BilibiliLiveConfig
   push?: BilibiliPushConfig
 }
 
