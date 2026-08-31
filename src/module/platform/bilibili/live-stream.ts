@@ -105,10 +105,8 @@ const readQualityName = (qnDesc: unknown, qn: number): string => {
  *
  * ## wbi 签名
  *
- * 这个接口按不需要签名实现。`genParams.ts` 那条 wbi 路径服务的是
- * `api.bilibili.com` 的稿件 playurl；`api.live.bilibili.com` 的直播接口是另一支，
- * 未见需要签名的依据。Cookie 仍然带上 —— 高码率档位（原画/4K）对未登录用户会
- * 被降级，带 Cookie 才拿得到。
+ * 不需要。2026-08-31 用真实房间实测：不带 wbi 签名即 `code: 0`，`playurl_info` 非空。
+ * Cookie 仍然带上 —— 高码率档位（原画/4K）对未登录用户会被降级，带 Cookie 才拿得到。
  *
  * @param roomId 真实房间号（长号）。短号也能调通，但官方建议用长号
  * @param qn 期望画质，默认 10000（原画）。官方会在不可用时自动降级并在响应里回报实际档位

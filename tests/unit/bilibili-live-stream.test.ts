@@ -29,7 +29,14 @@ vi.mock('../../src/module/utils/Config.js', () => ({
 
 const { fetchBilibiliLiveStream } = await import('../../src/module/platform/bilibili/live-stream.js')
 
-/** 一份结构完整的正常响应，畸形用例都从它上面剪字段 */
+/**
+ * 一份结构完整的正常响应，畸形用例都从它上面剪字段。
+ *
+ * 字段名与嵌套按 2026-08-31 的真机响应校准，但只保留代码真的会读的键：
+ * 真实响应里 codec 有 16 个键（drm / session / is_pushing 等），塞进来只会让
+ * fixture 变成「复刻一份响应」而不是「钉住代码依赖的形状」。
+ * host / extra / base_url 用占位值 —— 真值带签名且会过期。
+ */
 const okResponse = {
   code: 0,
   data: {
@@ -41,6 +48,7 @@ const okResponse = {
         ],
         stream: [
           {
+            protocol_name: 'http_stream',
             format: [
               {
                 format_name: 'flv',
@@ -48,6 +56,7 @@ const okResponse = {
                   {
                     codec_name: 'avc',
                     current_qn: 10000,
+                    accept_qn: [10000, 400, 250, 150],
                     base_url: '/live-bvc/123/live_456.flv',
                     url_info: [
                       {
@@ -109,6 +118,7 @@ describe('fetchBilibiliLiveStream happy path', () => {
     format.codec.unshift({
       codec_name: 'hevc',
       current_qn: 10000,
+      accept_qn: [10000],
       base_url: '/live-bvc/dead.flv',
       url_info: []
     })
@@ -224,6 +234,36 @@ describe('fetchBilibiliLiveStream malformed responses', () => {
               stream: [{
                 format: [{ codec: [{ url_info: [{ host: 'https://cn.example.com' }] }] }]
               }]
+            }
+          }
+        }
+      }
+    ],
+    // 上面的用例都是「缺了」或「空数组」，走不到四道 Array.isArray 的否定分支。
+    // 下面四条把每一层换成非数组对象 —— 上游把某层从数组改成对象时就是这个形状。
+    [
+      'stream is an object instead of an array',
+      { code: 0, data: { playurl_info: { playurl: { stream: { format: [] } } } } }
+    ],
+    [
+      'format is an object instead of an array',
+      { code: 0, data: { playurl_info: { playurl: { stream: [{ format: { codec: [] } }] } } } }
+    ],
+    [
+      'codec is an object instead of an array',
+      {
+        code: 0,
+        data: { playurl_info: { playurl: { stream: [{ format: [{ codec: { base_url: '/a.flv' } }] }] } } }
+      }
+    ],
+    [
+      'url_info is an object instead of an array',
+      {
+        code: 0,
+        data: {
+          playurl_info: {
+            playurl: {
+              stream: [{ format: [{ codec: [{ base_url: '/a.flv', url_info: { host: 'https://a.example.com' } }] }] }]
             }
           }
         }
