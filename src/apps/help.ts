@@ -75,7 +75,16 @@ const enabledPlatforms = (): string => {
   return names.length > 0 ? `支持「${names.join('」「')}」` : '暂无可用平台'
 }
 
-const buildHelpGroups = (): HelpGroup[] => [
+/**
+ * 菜单的原始数据（未按角色过滤）。
+ *
+ * 导出只为了让 `tests/unit/help-menu.test.ts` 能验字段齐全 —— 特别是 `roles`：
+ * 它在 `buildMenuForRole` 里被有意摘掉，所以走渲染那条路（`kkkHelp.help()` +
+ * 替身 Render）**看不到**它，而漏写 `roles` 恰好是这里最贵的错 —— 少了它
+ * `filterItems` 会把条目发给所有人，主人专属命令就此泄进普通成员的帮助页。
+ * 运行时仍然只有 `buildMenuForRole` 调它。
+ */
+export const buildHelpGroups = (): HelpGroup[] => [
   {
     title: '常用功能',
     items: [
@@ -89,6 +98,20 @@ const buildHelpGroups = (): HelpGroup[] => [
         title: '「#解析」「#kkk解析」「#弹幕解析」',
         description: '在解析功能关闭的情况下，可对引用消息进行解析；弹幕解析仅适用于「抖音」「哔哩哔哩」',
         icon: 'ph:magic-wand-fill',
+        roles: ['member', 'master']
+      },
+      {
+        // 紧跟在解析条目之后：录直播走的是解析那条路（`tools.ts` 的 recordLive 复用
+        // `findPlatformConfig` 判平台、再进 `runCoordinatedParse`），不是独立功能。
+        title: '#kkk录直播 + 直播间链接',
+        // 三个数都得跟着代码走，别在这里写字面量的来源：
+        // - 平台取自 `LiveRecordPlatform`（common/liveRecord.ts），也是 recordLive 里
+        //   `handler !== 'douyin' && handler !== 'bilibili'` 那道闸放行的两家
+        // - 10 分钟是 `LIVE_RECORD_MAX_DURATION_MS`（= 协调器预算 720s - 上传余量 120s）
+        // - 「录完才上传」是实现的硬约束：ffmpeg 靠 `-t` 收口，收口前没有文件可发
+        description: '支持「抖音」「哔哩哔哩」的直播间链接；单次最长录 10 分钟，录完整段后作为文件上传，期间本群其它解析都在排队',
+        icon: 'ph:record-fill',
+        // 与 `tools.ts` 里这条规则的 `permission` 一致（没有设，即不限主人）
         roles: ['member', 'master']
       },
       {
