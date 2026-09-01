@@ -142,8 +142,6 @@ export const isToolAvailable = async (tool: ExternalToolName): Promise<boolean> 
 }
 
 /**
- * 把配置里的工具选择解析成实际要用的工具。
- *
  * `auto` 优先 curl：它的 `--speed-limit` 正是我们最想要的能力，而 wget 没有等价物。
  * 都不可用时返回 `builtin`，让调用方走内建下载 —— 静默回落是对的，
  * 用户装没装 curl 不该决定一次解析成不成功。
@@ -185,7 +183,6 @@ const flattenHeaders = (headers: AxiosRequestConfig['headers']): string[] => {
   return lines
 }
 
-/** 代理配置拼成 `protocol://[user:pass@]host:port`。 */
 const formatProxy = (proxy: AxiosProxyConfig | false | undefined): string | null => {
   if (!proxy || !proxy.host) return null
   const protocol = proxy.protocol || 'http'
@@ -322,8 +319,6 @@ export const isRetryableExternalFailure = (error: unknown): boolean => {
 }
 
 /**
- * 跑一次外部工具下载。
- *
  * 成功时返回落盘路径与实际字节数（`fs.stat` 量的，不是工具自报的）。
  * 失败时抛 {@link ExternalDownloadError}。
  *

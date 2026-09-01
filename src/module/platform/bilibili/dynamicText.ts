@@ -217,8 +217,6 @@ export const formatBilibiliVideoDescText = (
 }
 
 /**
- * 纯文本 → 富文本节点：换行拆成 lineBreak，裸 URL 拆成 webLink，其余是 text。
- *
  * 对应 HTML 版的 {@link parsePlainText}，但不再自己往里塞颜色 ——
  * 配色是模板的事（`renderRichTextToReact` 按节点类型上样式），
  * 生产方只负责说清「这段是链接」而不是「这段是 #006A9E」。
@@ -460,7 +458,6 @@ export const buildBilibiliArticleCategories = (
 }
 
 /**
- * 统计弹幕出现次数，返回按热度排序的前 limit 条
  * @param danmakuList 弹幕列表
  * @param limit 返回条数
  */

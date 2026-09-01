@@ -260,8 +260,6 @@ export class StatisticsDBBase {
   }
 
   /**
-   * 群内用户解析次数排行，按总次数从多到少取前 `limit` 名。
-   *
    * 为什么走 SQL 聚合而不是拿 `getGroupStatistics()` 的结果在应用层 reduce：
    * - 建表时的 `UNIQUE(groupId, userId, platform)` 会带一个隐式索引，列序正好是
    *   「groupId 前缀 + userId」，所以 `WHERE groupId = ? GROUP BY userId` 能直接
@@ -370,8 +368,6 @@ export class StatisticsDBBase {
   }
 
   /**
-   * 累加一批媒体度量。
-   *
    * 一次调用对应一次解析产出的全部媒体，所以先在应用层把这一批合成一组增量，
    * 再用一条 UPSERT 落库 —— 图集解析可能产出几十条媒体，逐条 UPDATE 就是几十次
    * 往返，而它们的目标行是同一行。
@@ -473,7 +469,6 @@ export class StatisticsDBBase {
     )
   }
 
-  /** 某个群的媒体度量原始行 */
   async getGroupMediaMetrics (groupId: string): Promise<MediaMetricsRow[]> {
     return await this.allQuery<MediaMetricsRow>(
       'SELECT * FROM MediaMetrics WHERE groupId = ? ORDER BY platform',
@@ -482,8 +477,6 @@ export class StatisticsDBBase {
   }
 
   /**
-   * 全部媒体度量行。
-   *
    * 不在这里排除 `PRIVATE_GROUP_ID`：私聊解析出去的媒体，时长是真实发生的，
    * 计入总时长有意义。按「群」聚合的读取端（如果以后有）才需要排除，
    * 和 getTotalGroups 的口径一致。
@@ -492,12 +485,10 @@ export class StatisticsDBBase {
     return await this.allQuery<MediaMetricsRow>('SELECT * FROM MediaMetrics ORDER BY groupId, platform')
   }
 
-  /** 某个群的媒体度量汇总 */
   async getGroupMediaSummary (groupId: string): Promise<MediaMetricsSummary> {
     return summarizeMediaMetrics(await this.getGroupMediaMetrics(groupId))
   }
 
-  /** 全局媒体度量汇总 */
   async getGlobalMediaSummary (): Promise<MediaMetricsSummary> {
     return summarizeMediaMetrics(await this.getAllMediaMetrics())
   }
@@ -508,8 +499,6 @@ const average = (total: number, samples: number): number | undefined =>
   samples > 0 ? Math.round(total / samples) : undefined
 
 /**
- * 把原始行聚合成模板消费的形状。
- *
  * 导出是为了让读取端（apps/statistics.ts）和测试都用同一套口径，
  * 避免两边各写一遍平均值公式后悄悄漂移。
  */

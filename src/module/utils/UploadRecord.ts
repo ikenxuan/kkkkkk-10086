@@ -116,19 +116,8 @@ const IS_WIN = os.platform() === 'win32'
 const md5 = (data: crypto.BinaryLike): Buffer => crypto.createHash('md5').update(data).digest()
 const uuid = (): `${string}-${string}-${string}-${string}-${string}` => crypto.randomUUID()
 
-/**
- * 错误处理对象
- * @typedef {Object} ErrorsObject
- * @property {Object.<string, number>} ErrorCode - 错误代码枚举
- * @property {Object.<number, string>} ErrorMessage - 错误消息映射
- * @property {function(number, [string]): Error} drop - 错误抛出函数
- */
 const errors = {} as Errors
 
-/**
- * 错误代码枚举
- * @enum {number}
- */
 errors.ErrorCode = {
   /** 客户端离线 */
   ClientNotOnline: -1,
@@ -166,10 +155,6 @@ errors.ErrorCode = {
   FFmpegPttTransError: -220
 }
 
-/**
- * 错误消息映射
- * @type {Object.<number, string>}
- */
 const ErrorMessage: Record<number, string | undefined> = {
   [errors.ErrorCode.UserNotExists]: '查无此人',
   [errors.ErrorCode.GroupNotJoined]: '未加入的群',
@@ -183,7 +168,6 @@ const ErrorMessage: Record<number, string | undefined> = {
 }
 
 /**
- * 改进的错误抛出函数
  * @param {number} code 错误代码
  * @param {string} [message] 错误信息
  * @throws {core.ApiRejection} API错误异常
@@ -213,7 +197,6 @@ async function UploadRecord (
 ): Promise<ReturnType<typeof segment.record> | MessageElement> {
   const bot = e.bot
 
-  // 首先准备音频文件（下载、转换等）
   let filePath: string | undefined
   let cleanupFile = false
   try {
@@ -225,10 +208,9 @@ async function UploadRecord (
     // 入参会原样返回，那种情况下删的就是用户自己的文件。
     cleanupFile = filePath.startsWith(TMP_DIR)
 
-    // 如果没有上传高清语音功能，直接返回转换后的音频
     if (!bot?.sendUni) {
       const silkBuffer = await audioTrans(filePath)
-      if (!silkBuffer) return segment.record(record_url) // 转换失败，返回原始地址
+      if (!silkBuffer) return segment.record(record_url)
       // 这条路（非 ICQQ 适配器）拿不到时长：audioTrans 只做编码转换、不 probe。
       // 仍然上报一条，让条数对得上——durationMs 缺省时写库端只增 mediaCount，
       // 不动平均时长的分母（见 media-metrics.ts）
@@ -236,10 +218,9 @@ async function UploadRecord (
       return segment.record(`base64://${silkBuffer.toString('base64')}`)
     }
 
-    // 然后获取音频buffer和时长
     const result = await getPttBuffer(filePath, transcoding)
-    if (!result.buffer) return segment.record(record_url) // 获取buffer失败，返回原始地址
-    if (transcoding) await fs.promises.writeFile(filePath, result.buffer) // 将buffer写入临时文件
+    if (!result.buffer) return segment.record(record_url)
+    if (transcoding) await fs.promises.writeFile(filePath, result.buffer)
     const recordSize = (await fs.promises.stat(filePath)).size
     if (seconds === 0 && result.time) seconds = result.time.seconds
     // getPttBuffer 那几条分支给的都是秒（SILK/WAV 自己算、大文件走 ffprobe），
@@ -326,7 +307,6 @@ async function UploadRecord (
     logger.error('上传语音失败:', error)
     return segment.record(record_url)
   } finally {
-    // 清理临时文件
     if (cleanupFile && filePath && fs.existsSync(filePath)) {
       fs.unlink(filePath, () => { })
     }
@@ -334,7 +314,6 @@ async function UploadRecord (
 }
 
 /**
- * 下载并准备音频文件
  * @param {any} file 音频文件路径、URL、Buffer或base64数据
  * @returns {Promise<string>} 返回本地文件路径
  */
@@ -342,13 +321,11 @@ async function prepareAudioFile (file: RecordSource): Promise<string> {
   let filePath = `${TMP_DIR}/${uuid()}`
 
   try {
-    // 检查 file 是否为 Buffer 实例或 base64 编码的数据
     if (Buffer.isBuffer(file) || (typeof file === 'string' && file.startsWith('base64://'))) {
       const base64Data = typeof file === 'string' && file.startsWith('base64://') ? file.substring('base64://'.length) : file.toString('base64')
       const buffer = Buffer.from(base64Data, 'base64')
       await fs.promises.writeFile(filePath, new Uint8Array(buffer))
     } else if (file.startsWith('http://') || file.startsWith('https://')) {
-      // 使用 Networks 下载文件
       const network = new Networks({
         url: file,
         filepath: filePath,
@@ -367,7 +344,6 @@ async function prepareAudioFile (file: RecordSource): Promise<string> {
         throw new Error(`下载音频文件失败: ${error}`)
       }
     } else if (file.startsWith('file://') || await fs.promises.access(file).then(() => true).catch(() => false)) {
-      // 移除 file:// 前缀
       let localFile = file.replace(/^file:\/\/\//, '')
       // Windows 系统可能需要移除前导斜杠
       if (IS_WIN && localFile.startsWith('/')) localFile = localFile.slice(1)
@@ -376,7 +352,6 @@ async function prepareAudioFile (file: RecordSource): Promise<string> {
       throw new Error('提供的路径不是有效的文件、URL 或 base64 数据。')
     }
   } catch (error) {
-    // 清理临时文件
     if (filePath !== file && fs.existsSync(filePath)) {
       fs.unlink(filePath, () => { })
     }
@@ -387,7 +362,6 @@ async function prepareAudioFile (file: RecordSource): Promise<string> {
 }
 
 /**
- * 获取PTT音频缓冲区
  * @param {string} filePath 音频文件路径（必须是已存在的本地文件）
  * @param {boolean} transcoding 是否转码
  * @returns {Promise<PttBufferResult>} 返回音频缓冲区和可选的音频时长信息
@@ -397,14 +371,11 @@ async function getPttBuffer (filePath: string, transcoding = true): Promise<PttB
   let time: AudioTime | undefined
 
   try {
-    // 读取文件前7个字节用于检测音频格式
     const head = await read7Bytes(filePath)
 
-    // 获取音频时长信息
     const result = await getAudioTime(filePath)
     if (result.code === 1 && result.data) time = result.data
 
-    // 读取文件buffer
     const fileBuffer = await fs.promises.readFile(filePath)
 
     try {
@@ -432,13 +403,11 @@ async function getPttBuffer (filePath: string, transcoding = true): Promise<PttB
 }
 
 /**
- * 获取音频时长信息
  * @param {string} file 音频文件路径
  * @returns {Promise<AudioTimeResult>} 返回状态码、可选音频缓冲区和时长信息
  */
 async function getAudioTime (file: string): Promise<AudioTimeResult> {
   try {
-    // 先尝试使用 silk-wasm 获取 SILK 音频时长
     const { isSilk, getDuration, isWav, getWavFileInfo } = await import('silk-wasm')
     const fileBuffer = await fs.promises.readFile(file)
 
@@ -464,13 +433,11 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
     // 如果 silk-wasm 不可用，降级到 FFmpeg
   }
 
-  // 降级到 FFmpeg 方式
   try {
     const fileInfo = fs.statSync(file)
     const isLarge = fileInfo.size >= 10485760
 
     if (isLarge) {
-      // 大文件处理：先转换再获取时长
       const result = await ffmpeg(['-y', '-i', file, '-fs', '10485600', '-ab', '128k', `${file}.mp3`])
       if (isCommandResult(result) && result.status) {
         const buffer = fs.readFileSync(`${file}.mp3`)
@@ -495,7 +462,6 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
         }
       }
     } else {
-      // 小文件直接使用 ffprobe 获取时长
       const result = await ffprobe(durationProbeArgs(file))
       if (isCommandResult(result) && result.status && result.stdout) {
         const duration = parseFloat(result.stdout.trim())
@@ -514,7 +480,6 @@ async function getAudioTime (file: string): Promise<AudioTimeResult> {
 }
 
 /**
- * 音频转码为SILK格式
  * @param {string} file 音频文件路径
  * @returns {Promise<Buffer|false>} 返回转码后的SILK音频数据
  */
@@ -523,24 +488,20 @@ async function audioTrans (file: string): Promise<Buffer | false> {
     const { encode, isSilk, isWav, getWavFileInfo } = await import('silk-wasm')
     const fileBuffer = await fs.promises.readFile(file)
 
-    // 如果已经是 SILK 格式，直接返回
     if (isSilk(fileBuffer)) {
       return fileBuffer
     }
 
-    // 如果是 WAV 格式，检查采样率
     if (isWav(fileBuffer)) {
       const { fmt } = getWavFileInfo(fileBuffer)
       const allowSampleRate = [8000, 12000, 16000, 24000, 32000, 44100, 48000]
 
       if (allowSampleRate.includes(fmt.sampleRate)) {
-        // 直接使用 WAV 数据进行 SILK 编码
         const silkData = await encode(fileBuffer, fmt.sampleRate)
         return Buffer.from(silkData.data)
       }
     }
 
-    // 其他格式或不支持的采样率，使用 FFmpeg 转换
     const tmpfile = `${TMP_DIR}/${uuid()}.pcm`
 
     try {
@@ -564,7 +525,6 @@ async function audioTrans (file: string): Promise<Buffer | false> {
 }
 
 /**
- * 音频转码降级处理（转为AMR格式）
  * @param {string} file 音频文件路径
  * @returns {Promise<Buffer|false>} 返回转码后的AMR音频数据
  */
@@ -603,7 +563,6 @@ async function read7Bytes (file: string): Promise<Buffer> {
 }
 
 /**
- * 将32位整数IP转换为字符串格式
  * @param {any} ip 32位整数IP或字符串IP
  * @returns {string} 返回点分十进制IP字符串
  */

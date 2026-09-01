@@ -93,7 +93,6 @@ export const pickDouyinLiveStream = (
   const streamUrl = liveItem?.stream_url
   const flv = streamUrl?.flv_pull_url
   const empty: DouyinLiveStreamPick = { url: '', quality: '', qualityName: '' }
-  // stream_url 整个缺失、或 flv_pull_url 缺失，都在这里收口，不往下走取值
   if (!flv || typeof flv !== 'object') return empty
 
   const usable = (key: string): string => {

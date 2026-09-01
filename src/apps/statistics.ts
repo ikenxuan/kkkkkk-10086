@@ -7,7 +7,6 @@ import type { ParseStatisticsRow, StatisticsPlatform } from '@/types/database'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import { isRecord } from '@/module/utils/record'
 
-/** 各平台解析次数，键固定为四个平台 */
 type PlatformStats = Record<StatisticsPlatform, number>
 
 const sumPlatformStats = (stats: PlatformStats): number =>
@@ -22,13 +21,11 @@ interface GroupListProvider {
   gl?: HostGroupMap
 }
 
-/** 从一条群信息里取群名 */
 const readGroupName = (info: unknown): string => {
   if (!isRecord(info)) return ''
   return String(info.group_name || info.groupName || info.name || '')
 }
 
-/** 事件自身所在的群号；私聊时为空串 */
 const getEventGroupId = (e: MessageEvent): string => String(e.group_id || '')
 
 /**
@@ -121,8 +118,6 @@ export class kkkStatistics extends plugin<'message'> {
     const groupUniqueUsers = await statisticsDB.getGroupUniqueUsers(String(groupId))
     const globalSummary = await statisticsDB.getGlobalSummary()
     /**
-     * 本群用户解析排行，取前 10 名。
-     *
      * 走 SQL 聚合而不是从上面的 `groupStats` 现算：聚合和 `LIMIT` 都压到 SQLite 里，
      * 无论这个群攒了多少行都只回 10 行（理由详见 `getGroupUserRanking()` 的注释）。
      * 昵称由 `buildGroupUserRanking` 从宿主群成员表同步补齐，不发任何请求。
@@ -221,8 +216,6 @@ export class kkkStatistics extends plugin<'message'> {
       historyData: history.reverse(),
       groupInfoMap,
       /**
-       * 本地新增的可选字段（上游没有）：一条媒体都没攒到时是 undefined，模板整块不渲染。
-       *
        * 这里用的是全量汇总、含私聊，跟上面 allStats 滤掉 PRIVATE_GROUP_ID 的口径不同：
        * 私聊解析出去的媒体，时长和体积是真实发生的，计入「累计解析了多少时长」有意义；
        * allStats 之所以要滤，是因为模板拿它现算「群组排行」和「服务群组数」，
@@ -237,8 +230,6 @@ export class kkkStatistics extends plugin<'message'> {
 }
 
 /**
- * 取统计数据库实例。
- *
  * `getStatisticsDB()` 初始化失败时返回 null，迁移前的代码会在随后的属性访问上抛
  * TypeError；这里把它换成一条能说明原因的错误，抛出时机与传播路径不变。
  */

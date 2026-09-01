@@ -92,6 +92,7 @@ export interface CdnRegistrySnapshot {
   resources: number
   /** 见过的主机数 */
   hosts: number
+  /** 当前处在惩罚期的主机 */
   penalized: readonly CdnHostSnapshot[]
 }
 

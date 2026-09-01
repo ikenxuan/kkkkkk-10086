@@ -240,16 +240,19 @@ export interface ApiCacheRequest {
   method: string
   /** 实际发出去的 Cookie，只用于算指纹，不会原样进键 */
   cookie: string
+  /** 实际发出去的请求参数 */
   options: Record<string, unknown>
 }
 
 export interface ApiCacheTierStats {
   tier: ApiCacheTier
+  /** 直接命中缓存条目 */
   hits: number
   /** 并发合并到别人的 in-flight 请求上 */
   coalesced: number
   /** 真的打了接口 */
   misses: number
+  /** 当前该档位在缓存里的条目数 */
   entries: number
 }
 

@@ -1,11 +1,8 @@
 /**
- * 富文本节点联合类型。
- *
  * 后端只需要生产这些纯 JSON 节点，前端可以再按 React、HTML、Canvas 等不同目标渲染。
  */
 export type RichTextNode = RichTextInlineNode | RichTextBlockNode
 
-/** 行内节点。 */
 export type RichTextInlineNode =
   | RichTextTextNode
   | RichTextEmojiNode
@@ -20,7 +17,6 @@ export type RichTextInlineNode =
   | RichTextViewPictureNode
   | RichTextHashtagNode
 
-/** 块级节点。 */
 export type RichTextBlockNode =
   | RichTextHeadingNode
   | RichTextParagraphNode
@@ -33,8 +29,6 @@ export type RichTextBlockNode =
   | RichTextHorizontalRuleNode
 
 /**
- * 富文本文档。
- *
  * `version` 用来给后续节点协议升级留空间；`platform` 用来标记来源平台，方便后续按平台做兼容。
  */
 export interface RichTextDocument {
@@ -43,7 +37,6 @@ export interface RichTextDocument {
   nodes: RichTextNode[]
 }
 
-/** 行内文本样式。 */
 export interface RichTextInlineStyle {
   /** 粗体 */
   bold?: boolean
@@ -89,8 +82,6 @@ export interface RichTextMentionNode {
 }
 
 /**
- * 搜索词高亮节点。
- *
  * 某些平台会把"评论里的高亮搜索词"独立放在元数据里，而不是单独拼进 HTML。
  * 这里把它提升成独立节点，方便 template 渲染成高亮文本和上标搜索图标。
  */
@@ -154,8 +145,6 @@ export interface RichTextViewPictureNode {
 }
 
 /**
- * Hashtag 话题节点。
- *
  * 纯文本高亮，不带任何图标。用于抖音等平台的 #话题# 标签展示。
  * 与 topic 节点的区别：topic 带有 B站风格的 # 图标，hashtag 只做纯文字高亮。
  */
@@ -165,7 +154,6 @@ export interface RichTextHashtagNode {
   text: string
 }
 
-/** 标题节点。 */
 export interface RichTextHeadingNode {
   type: 'heading'
   /** 标题级别 1-6 */
@@ -174,14 +162,12 @@ export interface RichTextHeadingNode {
   nodes: RichTextNode[]
 }
 
-/** 段落节点。 */
 export interface RichTextParagraphNode {
   type: 'paragraph'
   /** 子节点 */
   nodes: RichTextNode[]
 }
 
-/** 图片节点。 */
 export interface RichTextImageNode {
   type: 'image'
   /** 图片地址 */
@@ -192,19 +178,16 @@ export interface RichTextImageNode {
   caption?: string
 }
 
-/** 水平分隔线节点。 */
 export interface RichTextHorizontalRuleNode {
   type: 'horizontalRule'
 }
 
-/** 引用块节点。 */
 export interface RichTextBlockquoteNode {
   type: 'blockquote'
   /** 子节点 */
   nodes: RichTextNode[]
 }
 
-/** 列表节点。 */
 export interface RichTextListNode {
   type: 'list'
   /** 是否为有序列表 */
@@ -213,14 +196,12 @@ export interface RichTextListNode {
   items: RichTextListItemNode[]
 }
 
-/** 列表项节点。 */
 export interface RichTextListItemNode {
   type: 'listItem'
   /** 子节点 */
   nodes: RichTextNode[]
 }
 
-/** 代码块节点。 */
 export interface RichTextCodeBlockNode {
   type: 'codeBlock'
   /** 代码语言 */
@@ -229,7 +210,6 @@ export interface RichTextCodeBlockNode {
   content: string
 }
 
-/** 链接卡片节点。 */
 export interface RichTextLinkCardNode {
   type: 'linkCard'
   /** 卡片标题/显示文本 */
@@ -259,8 +239,6 @@ export interface RichTextEmojiDefinition {
 }
 
 /**
- * 单个富文本节点的样式配置。
- *
  * 平台模板传入它们想要的 className，渲染器直接应用。
  * 只允许 className，不允许 style 对象——视觉样式全部由 Tailwind 接管。
  */
@@ -278,8 +256,6 @@ export interface RichTextSearchKeywordStyleConfig extends RichTextNodeStyleConfi
 }
 
 /**
- * HTML 渲染器配置。React 渲染器复用这些 className 约定。
- *
  * 传入的 className 会覆盖渲染器内部对这些节点的默认样式。
  * 视觉样式全部由 Tailwind className 表达，渲染器只负责结构。
  */

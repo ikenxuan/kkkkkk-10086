@@ -261,9 +261,6 @@ export class Xiaohongshu extends Base {
      */
     const noteVideo = card.video
 
-    /**
-     * 笔记信息卡支线：只依赖上面已经取好的 `card` 和共享的 `emojiData`。
-     */
     const sendNoteInfo = sendContent.includes('info')
       ? async (): Promise<void> => {
         const noteInfoImg = await Render('xiaohongshu/noteInfo', {

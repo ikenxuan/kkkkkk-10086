@@ -59,6 +59,7 @@ export const DEFAULT_SLOW_FLOOR_BYTES = 256 * 1024
 export interface SlowSpeedGuardOptions {
   /** 地板速，字节/秒。低于它才开始累计 */
   floorBytesPerSecond: number
+  /** 宽限期，毫秒 */
   graceMs?: number
   /** 持续低速多久才判定，毫秒 */
   sustainMs?: number
@@ -76,6 +77,7 @@ export interface SlowSpeedSample {
    * 只是没法做「快下完了」这条豁免。
    */
   totalBytes: number
+  /** 采样时刻 */
   now: number
 }
 
@@ -84,10 +86,12 @@ export interface SlowSpeedVerdict {
   triggered: boolean
   /** 最近一次采样间隔内的速率，字节/秒 */
   bytesPerSecond: number
+  /** 已经连续低速了多久，毫秒 */
   slowForMs: number
 }
 
 export interface SlowSpeedGuard {
+  /** 喂一次采样，拿回判定结果 */
   sample: (input: SlowSpeedSample) => SlowSpeedVerdict
   /** 重启下载后重新计时 */
   reset: (now: number) => void

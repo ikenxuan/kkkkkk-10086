@@ -172,9 +172,6 @@ interface DouyinMentionToken {
   userId: string
 }
 
-/**
- * 提取评论里的 @ 用户 sec_uid 列表
- */
 const extractMentionSecUids = (textExtra: RawTextExtra[] | undefined): string[] | null => {
   if (!Array.isArray(textExtra) || textExtra.length === 0) return null
 
@@ -185,9 +182,6 @@ const extractMentionSecUids = (textExtra: RawTextExtra[] | undefined): string[] 
   return secUids.length > 0 ? secUids : null
 }
 
-/**
- * 解析评论中的搜索词信息
- */
 const extractSearchText = (textExtra: RawTextExtra[] | undefined): ExtraSearchText[] | null => {
   if (!Array.isArray(textExtra) || textExtra.length === 0) return null
 
@@ -357,7 +351,6 @@ const buildDouyinRichText = async (
  * 单张评论图片的 HEIC 转 JPG。
  *
  * 上游用 heic-decode + jpeg-js，这里沿用本仓库既有的 heic-convert，行为一致。
- * 非 HEIC 直接原样返回。
  */
 const processCommentImage = async (imageUrl: string | null | undefined): Promise<string | null> => {
   if (!imageUrl) return null
@@ -464,7 +457,6 @@ const fetchReplyComments = async (
 }
 
 /**
- * 处理抖音评论数据
  * @param data 完整的评论数据
  * @param emojidata 处理过后的 emoji 列表
  */

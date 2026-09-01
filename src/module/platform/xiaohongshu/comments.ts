@@ -14,7 +14,6 @@ import {
 } from '@kkk/richtext'
 import type { XiaohongshuAtUser, XiaohongshuComment, XiaohongshuEmoji, XiaohongshuPicture, XiaohongshuTag, XiaohongshuUserInfo } from './types.js'
 
-/** 表情列表接口返回结构 */
 interface EmojiTab {
   collection?: Array<{ emoji?: Array<{ image_name?: string, image?: string }> }>
 }
@@ -24,12 +23,10 @@ interface EmojiPayload {
   emoji?: { tabs?: EmojiTab[] }
 }
 
-/** 文本构建选项 */
 export interface BuildTextOptions {
   stripTopicMarker?: boolean
 }
 
-/** 评论图片处理选项 */
 export interface CommentImageOptions {
   title?: string
   headers?: AxiosRequestConfig['headers']
@@ -37,7 +34,6 @@ export interface CommentImageOptions {
 
 const formatCount = (value: number | string | undefined): number | string => value ?? 0
 
-/** 配置里的评论条数，最少 1 条 */
 export const getCommentLimit = (): number =>
   Math.max(1, Number(Config.xiaohongshu.numcomment || 5))
 
@@ -236,8 +232,6 @@ export const pickPictureUrl = (picture: XiaohongshuPicture | undefined): string 
 }
 
 /**
- * 评论图片 → 模板契约的对象形状。
- *
  * 模板只读 `pictures[0].url_default`，但契约里这 5 个字段全是必填，
  * 而小红书接口本来就带 height / width / info_list，所以按原样补齐，别只留一个 url。
  */

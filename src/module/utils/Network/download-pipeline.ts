@@ -2,13 +2,7 @@
  * 一次下载尝试的全过程：挑地址、探 Range、三条下载路（多线程 / 外部工具 / 内建流）、
  * 两道看守、以及失败后的报地址簿与退避重试。
  *
- * 从 `Networks` 类里搬出来是为了让那个类回到「薄客户端」的体量。搬迁时唯一的语义
- * 改动是 `slowAbort` 的归属：它原来是 `attemptDownloadStream` 方法作用域的 `let`，
- * 现在是本模块这个函数作用域的 `let`。它在 try 段与 catch 段之间的通道作用没有变 ——
- * 仍然声明在 try 之外，仍然是 catch 里找回「为什么被取消」的唯一凭据。
- *
- * 实例字段全部走参数显式传进来，不再靠 `this`：`url` 尤其如此，因为
- * `Networks.url` 是 readonly 而「这次用哪条地址」是每次尝试自己算出来的局部量。
+ * 从 `Networks` 类里搬出来是为了让那个类回到「薄客户端」的体量。
  */
 
 import fs from 'node:fs'
@@ -373,8 +367,6 @@ export const attemptDownloadStream = async (
     const slowGuard = normalized.slowGuard.enabled && !isLiveStream
       ? createSlowSpeedGuard({ floorBytesPerSecond, sustainMs })
       : undefined
-    // `slowAbort` 声明在 try 外面（函数作用域），因为认领它的 catch 在 try 之外：
-    // abort() 之后 axios 抛的是它自己的 ERR_CANCELED，我们造的那个错误不会自动传出去。
     let slowCheckInterval: NodeJS.Timeout | undefined
     if (slowGuard) {
       slowGuard.reset(Date.now())

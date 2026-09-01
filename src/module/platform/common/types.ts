@@ -39,7 +39,9 @@ export type LiveRecordPlatform = 'douyin' | 'bilibili'
 
 /** 一张图自己的实况图参数。缺 staticUrl / liveVideoUrl 表示这张图不做实况图。 */
 export interface LivePhotoBatchItem {
+  /** 静态图地址 */
   staticUrl?: string
+  /** 实况图视频地址 */
   liveVideoUrl?: string
   /** 当前图片序号，只用于临时文件名 */
   index?: number

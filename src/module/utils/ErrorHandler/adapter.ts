@@ -267,9 +267,6 @@ export const getAdapterInfo = (event?: MessageEvent): ErrorAdapterInfo | undefin
   }
 }
 
-/**
- * Resolve the handlerError asset by matching every normalized adapter field.
- */
 export const getAdapterLogoPath = (adapterInfo: Pick<ErrorAdapterInfo, 'name' | 'version'> & Partial<ErrorAdapterInfo>): string | undefined => {
   const values = Object.values(adapterInfo).map(asText).filter(Boolean).join(' ')
   return ADAPTER_LOGO_RULES.find(rule => rule.pattern.test(values))?.path

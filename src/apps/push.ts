@@ -11,8 +11,6 @@ import { isRecord } from '@/module/utils/record'
 import { isDefaultTool } from '@/module/utils/app-config'
 
 /**
- * 取 amagi 响应外层的 `data`。
- *
  * 旧实现直接写 `data.data`，响应结构异常时会抛 TypeError 并冒泡到宿主的错误处理，
  * 这里沿用「取不到就抛」，不静默把 undefined 传给下游。
  */
@@ -21,7 +19,6 @@ const requireData = (response: unknown, label: string): unknown => {
   return response.data
 }
 
-/** 按路径取值，任意一层缺失返回 undefined，等价于旧实现的可选链 */
 const readPath = (value: unknown, path: string[]): unknown => {
   let current = value
   for (const key of path) {
@@ -31,7 +28,6 @@ const readPath = (value: unknown, path: string[]): unknown => {
   return current
 }
 
-/** 读取指定路径上的非空字符串 */
 const readString = (value: unknown, path: string[]): string | undefined => {
   const found = readPath(value, path)
   return typeof found === 'string' && found ? found : undefined
@@ -113,27 +109,17 @@ export class kkkPush extends plugin<'message'> {
     return async () => { await handler(undefined) }
   }
 
-  /**
-   * 抖音推送方法
-   * 这是一个异步方法，用于执行抖音推送操作
-   */
   async douyinPush (): Promise<boolean> {
-    // 创建DouYinpush实例并执行action方法
     await new DouYinpush().action()
     return true
   }
 
-  /**
-   * 执行B站推送功能的方法
-   * 这是一个异步方法，用于调用B站推送类的action方法
-   */
   async bilibiliPush (): Promise<boolean> {
-    await new Bilibilipush().action()  // 创建B站推送实例并执行action方法
+    await new Bilibilipush().action()
     return true
   }
 
   /**
-   * 强制推送方法，根据消息内容判断并执行相应的推送操作
    * @param e 包含消息信息的对象
    */
   async forcePush (e: CommandEvent): Promise<boolean> {
@@ -148,7 +134,6 @@ export class kkkPush extends plugin<'message'> {
   }
 
   /**
-   * 设置抖音推送功能的方法
    * @param e 事件对象，包含消息相关信息
    */
   async setdyPush (e: CommandEvent): Promise<boolean> {
@@ -160,7 +145,6 @@ export class kkkPush extends plugin<'message'> {
       return true
     }
 
-    // 如果是私聊消息，直接返回true
     if (e.isPrivate) return true
     const data = await douyinFetcher.searchContent({ query, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig())
     await new DouYinpush(e).setting(
@@ -170,7 +154,6 @@ export class kkkPush extends plugin<'message'> {
   }
 
   /**
-   * 设置B站推送的异步方法
    * @param e 包含消息信息的对象
    */
   async setbiliPush (e: CommandEvent): Promise<boolean> {
@@ -186,9 +169,7 @@ export class kkkPush extends plugin<'message'> {
       return true
     }
 
-    // 如果是私信消息，直接返回true
     if (e.isPrivate) return true
-    // 检查是否配置了B站Cookie，如果没有则提示用户配置
     const cookie = Config.cookies.bilibili
     if (!cookie) {
       // 旧实现把 `{ at: true }` 传在了 quote 位（宿主 reply 的第二参数是 quote，at 属于第三参数
@@ -197,44 +178,34 @@ export class kkkPush extends plugin<'message'> {
       await e.reply!('\n请先配置B站Cookie', true)
       return true
     }
-    // 使用正则表达式匹配消息格式，提取UID
     const match = /^(\d+)$/.exec(query)
     if (match && match[1]) {
-      // 获取B站用户主页数据
       const data = await bilibiliFetcher.fetchUserCard({ host_mid: Number(match[1]), typeMode: 'strict' }, cookie, buildAmagiRequestConfig())
       // 按 setting() 的形参类型收窄，避免在业务层重复声明 amagi 的响应结构
       const profile = requireData(data, 'B站用户主页数据') as Parameters<Bilibilipush['setting']>[0]
-      // 创建Bilibilipush实例并调用setting方法进行设置
       await new Bilibilipush(e).setting(profile)
     }
     return true
   }
 
   /**
-   * 根据消息内容显示不同平台的推送列表
    * @param e 消息事件对象
    */
   async pushlist (e: CommandEvent): Promise<boolean> {
-    // 根据消息内容判断显示哪个平台的推送列表
     const platform = e.msg.includes('抖音') ? 'douyin' : 'bilibili'
     if (platform === 'douyin') {
-      // 如果是抖音平台，则创建DouYinpush实例并渲染推送列表
       await new DouYinpush(e).renderPushList()
     } else {
-      // 如果是哔哩哔哩平台，则创建Bilibilipush实例并渲染推送列表
       await new Bilibilipush(e).renderPushList()
     }
     return true
   }
 
   /**
-   * 更改推送机器人ID的方法
    * @param e 事件对象，包含消息等信息
    */
   async changeBotID (e: CommandEvent): Promise<boolean> {
-    // 定义匹配命令的正则表达式，用于识别"#kkk设置推送机器人"开头的消息
     const command = /^#kkk设置推送机器人/
-    // 从消息中提取新的机器人ID，移除命令部分
     const newBotId = e.msg.replace(command, '')
 
     /** `群号:机器人账号` → `群号:新机器人账号` */
@@ -243,9 +214,7 @@ export class kkkPush extends plugin<'message'> {
       return `${group_id}:${newBotId}`
     }
 
-    // 更改推送列表机器人ID
     const updateGroupIds = <T extends DouyinPushItem | BilibiliPushItem>(list: T[] | null | undefined): T[] => {
-      // 检查列表是否为空或未定义
       if (!list || !Array.isArray(list) || list.length === 0) {
         return []
       }

@@ -14,13 +14,10 @@ import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
 import type { BuildLivePhotoBatchResult, BuildLivePhotoResult, LivePhotoBatchItem, LivePhotoBatchItemResult } from './types.js'
 
-/** 实况图生成模式 */
 export type LivePhotoMode = 'video_and_livephoto' | 'video_only' | 'livephoto_only'
 
-/** 实况图目标系统 */
 export type MotionPhotoSystem = 'google' | 'xiaomi' | 'oppo' | 'huawei_honor'
 
-/** BGM 合并模式 */
 export type LivePhotoMergeMode = 'independent' | 'continuous'
 
 /** 整批图共用的实况图参数 */
@@ -339,7 +336,6 @@ type LivePhotoDownload =
     motionPath: string
   }
 
-/** 当前生成模式下要产出哪些东西 */
 const getGenerationPlan = (): { video: boolean, livePhoto: boolean } => {
   const mode = getLivePhotoMode()
   return {
@@ -471,8 +467,6 @@ const composeLivePhoto = async (
 }
 
 /**
- * 生成一张图的实况图相关消息元素。
- *
  * 契约不变：失败时返回 `messages: []`，调用方看到空数组就回退成普通图片；
  * `tempFiles` 在失败路径下也照样带回来。
  */

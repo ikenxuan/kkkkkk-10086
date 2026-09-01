@@ -192,8 +192,6 @@ export const probeCdnUrl = async (url: string, options: ProbeOptions = {}): Prom
 }
 
 /**
- * 探测结果排序用的比较函数。
- *
  * 成功的一律排在失败的前面；成功者之间比吞吐（高的在前），吞吐打平（差在 5% 以内，
  * 属于测量噪声）时比 TTFB。失败者之间比 TTFB —— 快速失败的（比如立刻 403）
  * 比慢慢超时的更不值得再试，所以慢的反而排前面。
@@ -215,8 +213,6 @@ export interface ProbeAndOrderOptions extends ProbeOptions {
 }
 
 /**
- * 探测一批候选地址并按实测结果重排。
- *
  * 并发探测：串行探 4 个节点在最坏情况下要 4 倍超时，那点排序收益抵不上让用户多等。
  *
  * 只探前 `limit` 个，剩下的原样接在后面 —— 它们本来就是备胎的备胎，
