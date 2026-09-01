@@ -7,7 +7,7 @@ import { Common } from '@/module/utils/index'
  * （packages/core/src/platform/douyin/push/render.ts）。
  *
  * 这两个路由（`douyin/favorite-list`、`douyin/recommend-list`）连同模板一直随包
- * 构建，但本仓库从来没有调用点：favorite / recommend 两种推送类型都落到了通用的
+ * 构建，但在 `push.ts` 接上之前没有任何调用点：favorite / recommend 两种推送类型都落到了通用的
  * `douyin/dynamic` 上。通用卡片只有一个作者区，而这两种推送的语义是
  * 「甲喜欢/推荐了乙的作品」——订阅者是甲、作品作者是乙。于是卡片上只剩乙，
  * 「谁喜欢的」这个信息整块丢掉，标题却写着「抖音喜欢列表推送」。
