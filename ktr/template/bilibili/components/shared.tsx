@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 
 import { cn } from '../../../utils/cn'
-import type { DecorationCardData, UsernameMetadata } from '../dynamic/types'
+import type { DecorationCardData } from '@/module/utils/template-contracts'
+import type { UsernameMetadata } from '../dynamic/types'
 
 /**
  * 用户名渲染组件

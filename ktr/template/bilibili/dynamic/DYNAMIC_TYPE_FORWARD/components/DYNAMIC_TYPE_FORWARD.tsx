@@ -7,7 +7,8 @@ import type { PosterProps } from '../../../../types/ctx'
 import { DecorationCard, EnhancedImage, UsernameDisplay } from '../../../components/shared'
 import { BilibiliAdditionalCard } from '../../components/AdditionalCard'
 import { BilibiliDynamicFooter, BilibiliDynamicStatus, BilibiliDynamicUserInfo } from '../../components/CommonComponents'
-import type { DecorationCardData, OriginalContentAV, OriginalContentDraw, OriginalContentLiveRcmd, OriginalContentWord } from '../../types'
+import type { DecorationCardData } from '@/module/utils/template-contracts'
+import type { OriginalContentAV, OriginalContentDraw, OriginalContentLiveRcmd, OriginalContentWord } from '../../types'
 import type { BilibiliForwardDynamicData } from './types'
 
 /**

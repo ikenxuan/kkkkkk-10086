@@ -11,7 +11,7 @@ import type { PosterProps } from '../../../types/ctx'
 import { cn } from '../../../../utils/cn'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import { DouyinCommentIcon, DouyinFavoriteIcon, DouyinLikeIcon, DouyinMoreIcon, DouyinShareIcon } from '../../components/Icons'
-import type { DouyinSubComment } from '../../components/types'
+import type { DouyinSubComment } from '@/module/utils/template-contracts'
 import type { DouyinCommentData } from './types'
 
 type DouyinVideoInfoHeaderProps = Omit<DouyinCommentData, 'CommentsData'> & { useDarkTheme: boolean }

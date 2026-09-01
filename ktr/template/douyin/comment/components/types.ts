@@ -1,7 +1,5 @@
 /** 本模板的数据类型（路由 index.tsx 与 components/ 实现共用）。 */
-import type { RichTextDocument } from '@kkk/richtext'
-
-import type { DouyinSubComment } from '../../components/types'
+import type { DouyinComment } from '@/module/utils/template-contracts'
 
 /**
  * 抖音评论模板数据
@@ -39,47 +37,7 @@ export interface DouyinCommentData {
   /** 发布时间戳（秒） */
   CreateTime: number
   /** 评论数据列表 */
-  CommentsData: Array<{
-    /** 评论ID */
-    id?: number
-    /** 评论CID */
-    cid?: string
-    /** 作品ID */
-    aweme_id?: string
-    /** 用户头像URL */
-    userimageurl: string
-    /** 用户昵称 */
-    nickname: string
-    /** 标签类型 (1=作者) */
-    label_type?: number
-    /** 状态标签 */
-    status_label?: string
-    /** 评论内容 */
-    text: RichTextDocument
-    /** 评论图片 */
-    commentimage?: string
-    /** 贴纸 */
-    sticker?: string
-    /** 创建时间戳（秒） */
-    create_time: number
-    /** IP标签 */
-    ip_label: string
-    /** 点赞数 */
-    digg_count: number
-    /** 搜索文本 */
-    search_text?: Array<{
-      /** 搜索文本内容 */
-      search_text: string
-      /** 搜索查询ID */
-      search_query_id: string
-    }> | null
-    /** 是否@用户ID */
-    is_At_user_id?: any
-    /** 回复评论数据 */
-    replyComment?: DouyinSubComment[]
-    /** 作者是否点赞 */
-    is_author_digged?: boolean
-  }>
+  CommentsData: DouyinComment[]
   /** 最大嵌套层级 */
   maxDepth?: number
 }

@@ -18,6 +18,7 @@
     ".generated/**/*.ts",
     "src/template-sdk/**/*.ts",
     "src/module/utils/richtext/**/*.ts",
+    "src/module/utils/template-contracts/**/*.ts",
     "ktr/richtext/**/*.ts",
     "ktr/richtext/**/*.tsx",
     "ktr/utils/**/*.ts",

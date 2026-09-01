@@ -13,6 +13,7 @@ import {
 import { Config, Networks, baseHeaders } from '@/module/utils/index'
 import { firstUrl } from '@/module/utils/record'
 import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
+import type { DouyinComment, DouyinSubComment, ExtraSearchText, RawTextExtra } from '@/module/utils/template-contracts'
 
 /** 表情项 */
 export interface DouyinEmoji {
@@ -23,20 +24,6 @@ export interface DouyinEmoji {
 /** 评论中的 @ 用户扩展 */
 export interface ExtraSecUid {
   sec_uid: string
-}
-
-/** 评论中的搜索词扩展 */
-export interface ExtraSearchText {
-  search_text: string
-  search_query_id: string
-}
-
-interface RawTextExtra {
-  start?: number
-  end?: number
-  sec_uid?: string
-  search_text?: string
-  search_query_id?: string
 }
 
 interface RawDouyinComment {
@@ -57,84 +44,6 @@ interface RawDouyinComment {
   reply_to_reply_id?: string
   reply_to_username?: string
   is_author_digged?: boolean
-}
-
-/**
- * 渲染用的评论项。
- *
- * 这是 `ktr/template/douyin/comment/components/types.ts` 里 `DouyinCommentData['CommentsData'][number]`
- * 的手抄副本。上游是 `import type { DouyinCommentData } from '@template/...'` 直接引契约，
- * 本仓库暂时抄不了：`tsconfig.json` 的 `rootDir` 是 `./src`，把 `ktr/**` 的 .ts 拉进这个 program
- * 会直接 TS6059。所以这里先照抄形状，改动契约时两边都要动 —— 让它变成编译期错误是
- * 待办里的 `TemplateDataMap`（把模板契约挪到 src/ 下、由 ktr 侧反向 re-export，
- * 就是 9d215bd 给 richtext 做过的那套）。
- */
-export interface DouyinComment {
-  /** 楼层序号，从 1 开始 */
-  id?: number
-  /** 评论 CID */
-  cid?: string
-  /** 作品 ID */
-  aweme_id?: string
-  /** 用户头像 URL */
-  userimageurl: string
-  /** 用户昵称 */
-  nickname: string
-  /** 标签类型（1 = 作者） */
-  label_type?: number
-  /** 状态标签 */
-  status_label?: string
-  /** 评论正文富文本 */
-  text: RichTextDocument
-  /** 评论图片 */
-  commentimage?: string
-  /** 贴纸 */
-  sticker?: string
-  /** 创建时间戳（秒） */
-  create_time: number
-  /** IP 标签 */
-  ip_label: string
-  /** 点赞数 */
-  digg_count: number
-  /** 搜索词 */
-  search_text?: ExtraSearchText[] | null
-  /** 正文里 @ 到的用户 sec_uid 列表 */
-  is_At_user_id?: string[] | null
-  /** 子评论 */
-  replyComment?: DouyinReplyComment[]
-  /** 作者是否点赞过这条评论 */
-  is_author_digged?: boolean
-}
-
-/**
- * 渲染用的子评论项，对应 `ktr/template/douyin/components/types.ts` 的 `DouyinSubComment`。
- * 同上，形状要跟模板侧手工保持一致。
- */
-export interface DouyinReplyComment {
-  /** 创建时间戳（秒） */
-  create_time: number
-  /** 用户昵称 */
-  nickname: string
-  /** 用户头像 URL */
-  userimageurl: string
-  /** 评论正文富文本 */
-  text: RichTextDocument
-  /** 点赞数 */
-  digg_count: number
-  /** IP 标签 */
-  ip_label: string
-  /** 原始 text_extra，模板侧目前只透传 */
-  text_extra: RawTextExtra[]
-  /** 标签文本 */
-  label_text: string
-  /** 评论图片 */
-  image_list: string[] | null
-  /** 评论 CID */
-  cid: string
-  /** 回复的评论 ID */
-  reply_to_reply_id: string
-  /** 回复的用户昵称 */
-  reply_to_username: string
 }
 
 /** 评论接口返回结构 */
@@ -397,7 +306,7 @@ const fetchReplyComments = async (
   commentId: string | undefined,
   emojiData: RichTextEmojiDefinition[],
   imageUrls: string[]
-): Promise<DouyinReplyComment[]> => {
+): Promise<DouyinSubComment[]> => {
   if (!awemeId || !commentId) return []
 
   let replyComment: CommentRepliesResponse
@@ -416,7 +325,7 @@ const fetchReplyComments = async (
   const replies = replyComment.data.comments
   if (!replies || replies.length === 0) return []
 
-  const replyComments: DouyinReplyComment[] = []
+  const replyComments: DouyinSubComment[] = []
   for (const reply of replies) {
     const replyUserintextlongid = extractMentionSecUids(reply.text_extra)
     const replySearchTokens = extractSearchTokens(reply.text_extra, reply.text)

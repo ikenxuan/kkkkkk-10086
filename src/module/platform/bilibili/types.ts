@@ -473,19 +473,6 @@ export type LegacyBilibiliContent = '提示信息' | '评论图' | '视频' | '�
 
 export type ModernBilibiliContent = 'info' | 'comment' | 'video'
 
-/**
- * 粉丝装饰卡片数据。
- *
- * 这是 `ktr/template/bilibili/dynamic/types.ts` 里 `DecorationCardData` 的手抄副本
- * （`ktr/**` 的 .ts 进不了根 program，理由见 contracts/template-data-map.ts）。
- * 两边由 contracts/hand-copied-contracts.ts 的断言钉住，形状对不上就编译报错。
- */
-export interface BilibiliDecorationCard {
-  card_url: string
-  colors: string[]
-  text: string
-}
-
 export interface DynamicOidData {
   data: {
     item: {

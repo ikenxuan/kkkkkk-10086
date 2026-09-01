@@ -1,17 +1,6 @@
 /** bilibili dynamic 板块共享类型（跨模板复用 / core 引用）。 */
 import type { RichTextDocument } from '@kkk/richtext'
-
-/**
- * 装饰卡片数据
- */
-export interface DecorationCardData {
-  /** 卡片背景图片URL */
-  card_url: string
-  /** 渐变颜色数组 */
-  colors: string[]
-  /** 卡片显示文字 */
-  text: string
-}
+import type { DecorationCardData } from '@/module/utils/template-contracts'
 
 /**
  * 用户名元数据，用于传递 VIP 状态和颜色信息

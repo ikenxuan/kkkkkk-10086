@@ -26,9 +26,10 @@ import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/types'
 import type { RichTextDocument } from '@kkk/richtext'
+import type { DecorationCardData } from '@/module/utils/template-contracts'
 import { at, isRecord } from '@/module/utils/record'
 import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
-import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliDecorationCard, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicAdditional, DynamicAdditionalButton, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
+import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicAdditional, DynamicAdditionalButton, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
 
 const require = createRequire(import.meta.url)
 const loadAmagiRuntime = (): AmagiRuntime => {
@@ -1662,7 +1663,7 @@ export const buildBilibiliAdditionalCard = (additional: DynamicAdditional | null
  */
 export const generateDecorationCard = (
   decorate: DynamicDecoration | undefined
-): BilibiliDecorationCard | undefined => {
+): DecorationCardData | undefined => {
   if (!decorate?.card_url) return undefined
   return {
     card_url: decorate.card_url,

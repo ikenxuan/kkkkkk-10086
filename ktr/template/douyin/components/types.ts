@@ -1,37 +1,5 @@
 /** douyin板块共享类型（跨模板复用 / core 引用）。 */
 
-import type { RichTextDocument } from '@kkk/richtext'
-
-/**
- * 抖音子评论数据接口
- */
-export interface DouyinSubComment {
-  /** 创建时间戳（秒） */
-  create_time: number
-  /** 用户昵称 */
-  nickname: string
-  /** 用户头像URL */
-  userimageurl: string
-  /** 评论内容 */
-  text: RichTextDocument
-  /** 点赞数 */
-  digg_count: number
-  /** IP标签 */
-  ip_label: string
-  /** 文本额外信息 */
-  text_extra: any[]
-  /** 标签文本 */
-  label_text: string
-  /** 评论图片 */
-  image_list: string[] | null
-  /** 评论ID */
-  cid: string
-  /** 回复的评论ID */
-  reply_to_reply_id: string
-  /** 回复的用户昵称 */
-  reply_to_username: string
-}
-
 /**
  * 抖音直播用户信息组件属性接口
  */
