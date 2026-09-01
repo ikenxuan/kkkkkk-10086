@@ -121,9 +121,9 @@ export interface BilibiliUgcData {
   title: string
   /** 时长（如 "08:01"） */
   duration: string
-  /** 播放量（如 "12.6万播放"） */
+  /** 播放量数值段（如 "12.6万"）。渲染成 `{play}播放`，带上单位会重复 */
   play: string
-  /** 弹幕数（如 "1061弹幕"） */
+  /** 弹幕数值段（如 "1061"）。渲染成 `{danmaku}弹幕`，带上单位会重复 */
   danmaku: string
 }
 

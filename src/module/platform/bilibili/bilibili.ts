@@ -28,7 +28,7 @@ import type { BaseEvent } from '@/module/utils/types'
 import type { RichTextDocument } from '@kkk/richtext'
 import { at, isRecord } from '@/module/utils/record'
 import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
-import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliDecorationCard, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
+import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliDecorationCard, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicAdditional, DynamicAdditionalButton, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
 
 const require = createRequire(import.meta.url)
 const loadAmagiRuntime = (): AmagiRuntime => {
@@ -734,6 +734,7 @@ export class Bilibili extends Base {
                   dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.text || '',
                   dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.rich_text_nodes || []
                 ),
+                additional: buildBilibiliAdditionalCard(dynamicInfo.data.data.item.modules.module_dynamic.additional),
                 // 'auto' 让模板按图片数自己挑 vertical/waterfall/grid，
                 // 布局规则在 DYNAMIC_TYPE_DRAW.tsx 的 getLayoutType 里，不在这边重写一份
                 imageLayout: 'auto',
@@ -761,29 +762,10 @@ export class Bilibili extends Base {
               const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
               const text = replacetext(summary?.text || '', summary?.rich_text_nodes || [])
 
-              if (dynamicInfo.data.data.item.modules.module_dynamic.additional) {
-                switch (dynamicInfo.data.data.item.modules.module_dynamic.additional.type) {
-                  // TODO: 动态中的额外卡片元素，
-                  // see: https://github.com/SocialSisterYi/bilibili-API-collect/blob/afc4349247ff7d59ac16dfe6eec8ff2b766a74f0/docs/dynamic/all.md
-                  // find: data.items[n].modules.module_dynamic.additional
-                  case AdditionalType.RESERVE: {
-                    break
-                  }
-                  case AdditionalType.COMMON:
-                  case AdditionalType.GOODS:
-                  case AdditionalType.VOTE:
-                  case AdditionalType.UGC:
-                  case AdditionalType.MATCH:
-                  case AdditionalType.UPOWER_LOTTERY:
-                  default: {
-                    break
-                  }
-                }
-              }
-
               await this.e.reply(
                 await Render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
                   text,
+                  additional: buildBilibiliAdditionalCard(dynamicInfo.data.data.item.modules.module_dynamic.additional),
                   dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
                   pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
                   share: Common.count(dynamicInfo.data.data.item.modules.module_stat.forward.count),
@@ -1581,6 +1563,91 @@ export const cover = (pic: DynamicPicture[]): Array<{ image_src: string }> => {
     imgArray.push({ image_src: src })
   }
   return imgArray
+}
+
+/** 卡片按钮的显示文案。视频预约、游戏卡只有 `jump_style`，直播预约与追番卡按 `status` 在两套文案里选。 */
+const additionalButtonText = (button: DynamicAdditionalButton | undefined): string => {
+  if (button?.jump_style?.text) return button.jump_style.text
+  return (button?.status === 2 ? button.check?.text : button?.uncheck?.text) ?? ''
+}
+
+/** 从「8054播放 · 15弹幕」里拆出两个数值。模板自己补「播放」「弹幕」后缀，所以只取数值段。 */
+const parseUgcCounts = (descSecond: string | undefined) => ({
+  play: descSecond?.match(/([\d.]+[万亿]?)\s*播放/)?.[1] ?? '',
+  danmaku: descSecond?.match(/([\d.]+[万亿]?)\s*弹幕/)?.[1] ?? ''
+})
+
+/**
+ * 把动态的相关内容卡片整理成模板要的数据。
+ *
+ * 只映射模板实现了的四种；商品、赛事、充电抽奖等返回 undefined，让
+ * `BilibiliAdditionalCard` 那道 `props.additional &&` 短路直接不渲染。
+ *
+ * see: https://github.com/SocialSisterYi/bilibili-API-collect/blob/afc4349247ff7d59ac16dfe6eec8ff2b766a74f0/docs/dynamic/all.md
+ * find: data.items[n].modules.module_dynamic.additional
+ *
+ * @param additional 动态的 `module_dynamic.additional`
+ */
+export const buildBilibiliAdditionalCard = (additional: DynamicAdditional | null | undefined) => {
+  switch (additional?.type) {
+    case AdditionalType.RESERVE: {
+      const reserve = additional.reserve
+      if (!reserve) return undefined
+      return {
+        type: 'ADDITIONAL_TYPE_RESERVE' as const,
+        reserve: {
+          title: reserve.title ?? '',
+          desc1: reserve.desc1?.text ?? '',
+          desc2: reserve.desc2?.text ?? '',
+          desc3: reserve.desc3?.text,
+          buttonText: reserve.desc2?.visible === false ? '已结束' : additionalButtonText(reserve.button)
+        }
+      }
+    }
+    case AdditionalType.VOTE: {
+      const vote = additional.vote
+      if (!vote) return undefined
+      return {
+        type: 'ADDITIONAL_TYPE_VOTE' as const,
+        vote: {
+          title: vote.title || vote.desc || '',
+          desc: `${vote.join_num ?? 0}人参与`,
+          status: vote.status ?? 0
+        }
+      }
+    }
+    case AdditionalType.COMMON: {
+      const common = additional.common
+      if (!common) return undefined
+      return {
+        type: 'ADDITIONAL_TYPE_COMMON' as const,
+        common: {
+          cover: common.cover ?? '',
+          title: common.title ?? '',
+          desc1: common.desc1 ?? '',
+          desc2: common.desc2 ?? '',
+          button_text: additionalButtonText(common.button),
+          head_text: common.head_text,
+          sub_type: common.sub_type
+        }
+      }
+    }
+    case AdditionalType.UGC: {
+      const ugc = additional.ugc
+      if (!ugc) return undefined
+      return {
+        type: 'ADDITIONAL_TYPE_UGC' as const,
+        ugc: {
+          cover: ugc.cover ?? '',
+          title: ugc.title ?? '',
+          duration: ugc.duration ?? '',
+          ...parseUgcCounts(ugc.desc_second)
+        }
+      }
+    }
+    default:
+      return undefined
+  }
 }
 
 /**

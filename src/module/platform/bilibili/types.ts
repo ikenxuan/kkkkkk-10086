@@ -307,13 +307,63 @@ export interface DynamicMajor {
   article?: { id?: number | string, title?: string }
 }
 
+/** 相关内容卡片的按钮。视频预约、游戏卡只给 `jump_style`；直播预约、追番卡按 `status` 在两套文案里选。 */
+export interface DynamicAdditionalButton {
+  /** 1：未选中，用 `uncheck`；2：已选中，用 `check` */
+  status?: number
+  check?: { text?: string }
+  uncheck?: { text?: string }
+  jump_style?: { text?: string }
+}
+
+/** 动态的相关内容卡片。四个子对象按 `type` 互斥出现，其余类型（商品、赛事、充电抽奖）这里不声明。 */
+export interface DynamicAdditional {
+  type: string
+  reserve?: {
+    title?: string
+    /** 预约时间，如「11-05 20:00 直播」 */
+    desc1?: { text?: string }
+    /** 预约观看量。`visible` 为 false 时该换成「已结束」 */
+    desc2?: { text?: string, visible?: boolean }
+    /** 预约有奖信息 */
+    desc3?: { text?: string }
+    button?: DynamicAdditionalButton
+  }
+  vote?: {
+    title?: string
+    /** 投票标题的另一处来源，`title` 缺失时用它 */
+    desc?: string
+    /** 已参与人数 */
+    join_num?: number
+    /** 4：已结束 */
+    status?: number
+  }
+  common?: {
+    cover?: string
+    title?: string
+    desc1?: string
+    desc2?: string
+    head_text?: string
+    /** `game` / `decoration` / `ogv` */
+    sub_type?: string
+    button?: DynamicAdditionalButton
+  }
+  ugc?: {
+    cover?: string
+    title?: string
+    duration?: string
+    /** 播放量与弹幕数合在一起，形如「8054播放 · 15弹幕」 */
+    desc_second?: string
+  }
+}
+
 export interface DynamicModules {
   module_author: DynamicAuthor
   module_dynamic: {
     major: DynamicMajor
     desc: { text: string, rich_text_nodes: RichTextNode[] }
     topic?: { name?: string } | null
-    additional?: { type: string }
+    additional?: DynamicAdditional | null
   }
   module_stat: {
     like: { count: number }
