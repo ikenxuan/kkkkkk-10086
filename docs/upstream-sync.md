@@ -1,0 +1,65 @@
+# 上游对齐记录
+
+本仓是 [`ikenxuan/karin-plugin-kkk`](https://github.com/ikenxuan/karin-plugin-kkk)（karin 生态）的云崽移植。两边在同一批平台代码上持续分叉，这份文件是**「已对齐到此」的唯一记录**。
+
+按平台分行而不是记一个全局 sha：各平台进度天然不一致。
+
+「上游 sha」指**上游该平台目录最后一次改动的 commit**，不是上游 HEAD。对齐时以它为准，因为该平台在那之后没有新变化。
+
+## 对齐表
+
+| 平台 | 上游 sha | 上游日期 | 上游版本 | 本仓 commit | 对齐范围 |
+|---|---|---|---|---|---|
+| bilibili | `6e557ec3` | 2026-08-18 | 2.42.2 | `3be55569` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。**未对齐**：`riskControl` 的 voucher 提取与原始形状落盘（见下） |
+| douyin | `4772801d` | 2026-08-29 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`live-room.ts` 的两步补号时序是本仓设施，上游无对应物 |
+| kuaishou | `f4b0c23e` | 2026-08-17 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`getdata.ts` 的 `KUAISHOU_METHODS` 常量表是本仓设施 |
+| xiaohongshu | `da7bfd2d` | 2026-08-18 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。上一次同步（`docs/superpowers/plans/2026-08-19-xiaohongshu-v2421-sync.md`）只记了版本号 `v2.42.1` 没记 sha，无法判定同步到了哪一刻，这份表从本次起补上 |
+
+上游基准：HEAD `4772801d`（2026-08-29），分支 `main`，工作树干净。
+
+## 刻意不跟上游的地方
+
+下一轮同步**不要**把这些当成「落后」再改回去。
+
+### 1. UA 守卫（四平台共用，唯一一处刻意分叉）
+
+上游 `amagiClient.ts` 是直接透传：`headers: { 'User-Agent': amagi['User-Agent'] }`。
+
+本仓保留 `buildSharedUserAgentHeader()`：**只在配置 UA 比所有平台 amagi 内置的都新时才覆盖**，否则交回 amagi 自己决定。
+
+理由：amagi 的 `Sec-Ch-Ua` 是从 UA 派生的，UA 落后会让整组客户端提示自相矛盾，而 B站 gaia 风控（`-352`）看的正是这个。这不是假设——首次安装时 `config/config/request.yaml` 被写死后升级插件不覆盖，本机那份锁在 Chrome/125，而 amagi 内置 bilibili 是 142。照上游丢掉守卫，本机的 B站 请求 UA 会当场从 142 掉回 125。
+
+阈值取四平台内置里最高的那个（douyin 125 / bilibili 142 / kuaishou 130 / xiaohongshu 141），因为共用客户端不知道这次请求走哪个平台。
+
+### 2. amagi 本体版本
+
+| | 形态 |
+|---|---|
+| 上游 | git submodule `packages/amagi`，pin `6996c48a`，`workspace:*` 链进去（**该 submodule 本地未 checkout**，读不到上游在用的源码） |
+| 本仓 | 发布版 `^6.5.0`，实装 6.5.0 |
+
+所以能对齐的是**调用形态与错误语义**，不是 amagi 本体版本。
+
+### 3. `softFetch` 白名单
+
+本仓 `SOFT_ERROR_CODES.bilibili` 是 `[12061, 12002]`，上游只有 `12061`。归「纯分叉」，不动。
+
+### 4. 移植设施（本仓有、上游没有的文件）
+
+为云崽宿主或发布版 amagi 而加，**不要照上游删**：
+
+- bilibili：`amagi-runtime` `article` `cdn` `dynamicText` `live-stream` `richtext-message` `types`
+- douyin：`listCard` `live` `live-room` `pushPreview` `render`
+- xiaohongshu：`link` `livePhoto`
+
+## 尚未对齐
+
+**`riskControl` 的 voucher 处理**（bilibili）。当前状态：
+
+- `riskControl.ts:27-30` 已有 4 条候选路径（`data.data` / `rawError.data.data` / `rawError.error.data.data` / `rawError.error.data`）
+- 但 `Base.ts:227-231` 那道「是否原样抛给 riskControl」的闸门**只认 2 条**（`data.data` / `rawError.data.data`），比提取器窄
+- 取不到 voucher 时没有把响应信封的**键路径**落进日志，下次真撞上风控仍然只能再猜一轮
+
+两处口径要统一，且日志里不能出现 cookie 或 voucher 值本身。
+
+另需注意：推送路径的 `-352` **永远**到不了 `riskControl`——定时任务没有事件对象，而 `Base.ts` 和 `riskControl` 两道闸门都要求 `Boolean(event)`。那条路上二维码没有收件人，不是缺陷而是路径性质。修 voucher 只对解析路径有效。
