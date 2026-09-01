@@ -52,6 +52,40 @@
 - douyin：`listCard` `live` `live-room` `pushPreview` `render`
 - xiaohongshu：`link` `livePhoto`
 
+## 待查：推送路径的空 cookie（本仓与上游的一处语义分叉）
+
+`platform/bilibili/push.ts:390` 拉视频信息时第二个实参是 `''`，也就是**不带 cookie**：
+
+```ts
+await bilibiliFetcher.fetchVideoInfo({ bvid, typeMode: 'strict' }, '', buildAmagiRequestConfig())
+```
+
+上游同一处（`packages/core/src/platform/bilibili/push.ts:470`）是：
+
+```ts
+await bilibiliFetcher.fetchVideoInfo({ bvid, typeMode: 'strict' })
+```
+
+看着只是少传两个参数，实际语义相反，因为两边的 `bilibiliFetcher` 不是同一个东西：
+
+| | `bilibiliFetcher` 是什么 | cookie 从哪来 |
+|---|---|---|
+| 上游 | `amagiClientInstance.amagi.bilibili.fetcher`，取自用 `Client({ cookies })` 建出来的实例 | **实例自带**，调用点不传 |
+| 本仓 | `require('@ikenxuan/amagi').bilibiliFetcher`，模块级裸导出，没有绑定任何实例 | **只能由调用点显式传**，不传就是没有 |
+
+所以上游那一行发的是配置里的 B站 cookie，本仓这一行发的是空 cookie。
+
+本仓其余 B站 调用点都显式传了 `Config.cookies.bilibili`，只有三处是 `''`：
+`push.ts:390`（`fetchVideoInfo`）、`bilibili.ts:485` 与 `:644`（两处 `fetchComments`）。
+
+**这不是 `3be55569` 改出来的**：`''` 从最初的云崽移植（`0471487d`）就在，那次移植把上游的
+「实例带 cookie」换成了「裸 fetcher + 显式传参」，而这几处没有跟着补上 cookie。
+
+**为什么值得记而不是直接改**：真机证据里撞 `-352` 的正是推送路径，而未登录请求本就是 gaia 风控
+盯的形状。但 `fetchVideoInfo` 带不带 ck 可能影响返回的画质档位，同一处还留着一行注释掉的
+「无 ck 对照」代码（`push.ts:397`），说明当初可能是有意为之。**没有测试覆盖「带不带 ck」的差异**，
+所以改之前需要先确认，不能顺手加。
+
 ## `-352` voucher：已做与未决
 
 **已做**（`2669ab0d`）：提取口合并成 `platform/bilibili/riskVoucher.ts` 一处，候选路径扩到 8 条。
