@@ -3,6 +3,13 @@ import type { RichTextDocument } from '@kkk/richtext'
 import type { DecorationCardData } from '@/module/utils/template-contracts'
 
 /**
+ * 唯一声明在 `src/module/utils/template-contracts`（src 与模板两侧共用，删字段两边一起红）。
+ * 这里转发一次是为了让 `ktr/` 保持上游镜像的可比性——否则下面三个消费点要各自改成
+ * 从 `@/` 引，凭空多出三处与上游的 diff。
+ */
+export type { DecorationCardData }
+
+/**
  * 用户名元数据，用于传递 VIP 状态和颜色信息
  */
 export interface UsernameMetadata {
