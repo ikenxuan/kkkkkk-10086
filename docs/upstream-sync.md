@@ -10,7 +10,7 @@
 
 | 平台 | 上游 sha | 上游日期 | 上游版本 | 本仓 commit | 对齐范围 |
 |---|---|---|---|---|---|
-| bilibili | `6e557ec3` | 2026-08-18 | 2.42.2 | `3be55569` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。**未对齐**：`riskControl` 的 voucher 提取与原始形状落盘（见下） |
+| bilibili | `6e557ec3` | 2026-08-18 | 2.42.2 | `3be55569` `2669ab0d` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。`-352` voucher 提取已合并成一处、路径扩到 8 条（见下），但真实 voucher 位置仍未确证 |
 | douyin | `4772801d` | 2026-08-29 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`live-room.ts` 的两步补号时序是本仓设施，上游无对应物 |
 | kuaishou | `f4b0c23e` | 2026-08-17 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`getdata.ts` 的 `KUAISHOU_METHODS` 常量表是本仓设施 |
 | xiaohongshu | `da7bfd2d` | 2026-08-18 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。上一次同步（`docs/superpowers/plans/2026-08-19-xiaohongshu-v2421-sync.md`）只记了版本号 `v2.42.1` 没记 sha，无法判定同步到了哪一刻，这份表从本次起补上 |
@@ -52,14 +52,14 @@
 - douyin：`listCard` `live` `live-room` `pushPreview` `render`
 - xiaohongshu：`link` `livePhoto`
 
-## 尚未对齐
+## `-352` voucher：已做与未决
 
-**`riskControl` 的 voucher 处理**（bilibili）。当前状态：
+**已做**（`2669ab0d`）：提取口合并成 `platform/bilibili/riskVoucher.ts` 一处，候选路径扩到 8 条。
 
-- `riskControl.ts:27-30` 已有 4 条候选路径（`data.data` / `rawError.data.data` / `rawError.error.data.data` / `rawError.error.data`）
-- 但 `Base.ts:227-231` 那道「是否原样抛给 riskControl」的闸门**只认 2 条**（`data.data` / `rawError.data.data`），比提取器窄
-- 取不到 voucher 时没有把响应信封的**键路径**落进日志，下次真撞上风控仍然只能再猜一轮
+合并前 `Base.ts` 的闸门只认 2 条、`riskControl` 的策略认 4 条，口径不一致：voucher 落在闸门不认的路径上时，用户先收一张「接口失败」卡、再被要求扫码。
 
-两处口径要统一，且日志里不能出现 cookie 或 voucher 值本身。
+**已做**（`145d6bf8`）：取不到 voucher 时把信封的**键名**落进日志，见 `utils/amagiClient.ts` 的 `logRiskControlShape`。只记键名不记值（里面可能有 cookie 指纹）。放在 amagi 客户端而不是 `riskControl`：后者的 `match` 要求 voucher 非空，没有 voucher 的 -352 根本进不到它的 handle，日志写在里面等于永不执行。
+
+**未决**：真实 -352 响应体究竟把 voucher 放在哪，**仍未确证**。-352 不能按需复现，所以 8 条路径是刻意撒网而不是对某一条的判断；实测拿到的 -352 信封只有 `{code, message, ttl}`，连 `data` 都不存在。下一次真撞上时，靠上面那条日志读键名收口。
 
 另需注意：推送路径的 `-352` **永远**到不了 `riskControl`——定时任务没有事件对象，而 `Base.ts` 和 `riskControl` 两道闸门都要求 `Boolean(event)`。那条路上二维码没有收件人，不是缺陷而是路径性质。修 voucher 只对解析路径有效。
