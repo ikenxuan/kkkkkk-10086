@@ -13,14 +13,7 @@ import { resolveDouyinLiveRoom } from '@/module/platform/douyin/live-room'
 import { fetchBilibiliLiveStream } from '@/module/platform/bilibili/live-stream'
 import type { CommandEvent } from '@/types/message'
 import type { DouyinLiveRoomOptions, DouyinUserOptions } from '@ikenxuan/amagi'
-
-/**
- * 直播录制支持的平台。
- *
- * 不是 `Platform` 的全集：快手和小红书这边既没有取流实现、也没有对应配置项，
- * 收成一个更窄的类型是为了让「新增平台」必须同时被类型逼着补全下面的分支。
- */
-export type LiveRecordPlatform = 'douyin' | 'bilibili'
+import type { LiveRecordPlatform } from './types.js'
 
 /** 配置缺项时的录制时长，秒。与 `config/default_config/*.yaml` 里的 `live.maxDuration` 同值 */
 const DEFAULT_RECORD_SECONDS = 300

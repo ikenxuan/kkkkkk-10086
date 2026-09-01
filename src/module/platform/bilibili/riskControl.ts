@@ -1,7 +1,7 @@
 import util from 'node:util'
 import { generate } from '@ikenxuan/qrcode'
 import { registerErrorStrategy, renderErrorReport, sendErrorToAllMasters, sendErrorToMaster } from '@/module/utils/ErrorHandler/index'
-import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '@/module/utils/ErrorHandler/strategy'
+import type { ErrorHandlerContext, ErrorStrategy, ErrorStrategyResult } from '@/module/utils/ErrorHandler/types'
 import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiClient'
 import Config from '@/module/utils/Config'
 import { getErrorMessage } from '@/module/utils/error-message'

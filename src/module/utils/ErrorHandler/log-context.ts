@@ -1,14 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { format } from 'node:util'
-
-export type CapturedLogLevel = 'TRAC' | 'DEBU' | 'MARK' | 'INFO' | 'ERRO' | 'WARN' | 'FATA'
-
-export interface CapturedLogEntry {
-  timestamp: string
-  level: CapturedLogLevel
-  message: string
-  raw: string
-}
+import type { CapturedLogEntry, CapturedLogLevel } from './types.js'
 
 interface LogContextState {
   active: boolean

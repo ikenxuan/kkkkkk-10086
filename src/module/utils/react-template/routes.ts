@@ -1,3 +1,5 @@
+import type { ReactTemplateRoute } from './types.js'
+
 /**
  * Routes shipped by karin-plugin-kkk's feat-template-react branch.
  * Keep this list explicit and sorted: it is part of the compatibility
@@ -40,8 +42,6 @@ export const REACT_TEMPLATE_ROUTES = [
   'xiaohongshu/comment',
   'xiaohongshu/noteInfo'
 ] as const
-
-export type ReactTemplateRoute = (typeof REACT_TEMPLATE_ROUTES)[number]
 
 /**
  * 调用方旧路由名到当前模板路由的映射。

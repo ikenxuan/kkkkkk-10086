@@ -1,11 +1,5 @@
 import axios from 'axios'
-
-/** 小红书笔记 ID 解析结果 */
-export interface XiaohongshuNoteId {
-  type: 'note'
-  note_id: string
-  xsec_token?: string
-}
+import type { XiaohongshuNoteId } from './types.js'
 
 const safeDecode = (value: string): string => {
   try {

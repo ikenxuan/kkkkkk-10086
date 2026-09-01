@@ -6,7 +6,7 @@ import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, base
 import { getStatisticsDB, PRIVATE_GROUP_ID } from '@/module/db/index'
 import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import type { BilibiliIdData } from '@/module/platform/bilibili/getid'
-import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/strategy'
+import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/types'
 import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
 import {
   createParseFingerprint,
@@ -19,7 +19,8 @@ import {
 import { createEmojiParseReactionPort } from '@/module/utils/ParseReactionAdapter'
 import { runWithMediaMetrics, type MediaRecord } from '@/module/utils/media-metrics'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
-import { recordLiveRoom, type LiveRecordPlatform } from '@/module/platform/common/liveRecord'
+import { recordLiveRoom } from '@/module/platform/common/liveRecord'
+import type { LiveRecordPlatform } from '@/module/platform/common/types'
 import type { CommandEvent, MessageEvent } from '@/types/message'
 import type { Platform } from '@/types/platform'
 import { isRecord } from '@/module/utils/record'

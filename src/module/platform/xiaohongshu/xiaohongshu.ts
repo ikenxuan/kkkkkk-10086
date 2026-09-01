@@ -9,10 +9,7 @@ import common from '@/runtime/host/common'
 import {
   buildLivePhotoMessagesBatch,
   buildLivePhotoTipMessage,
-  pickXiaohongshuImageUrl,
-  type XiaohongshuImageItem,
-  type XiaohongshuLiveVideo,
-  type XiaohongshuStreamData
+  pickXiaohongshuImageUrl
 } from './livePhoto.js'
 import {
   buildNoteStatistics,
@@ -20,13 +17,18 @@ import {
   buildXiaohongshuEmojiList,
   buildXiaohongshuRichText,
   formatTime,
-  getCommentLimit,
-  type XiaohongshuComment,
-  type XiaohongshuEmoji,
-  type XiaohongshuUserInfo
+  getCommentLimit
 } from './comments.js'
 import type { FileInfo } from '@/types/platform'
-import type { XiaohongshuNoteId } from './getid.js'
+import type {
+  XiaohongshuComment,
+  XiaohongshuEmoji,
+  XiaohongshuImageItem,
+  XiaohongshuLiveVideo,
+  XiaohongshuNoteId,
+  XiaohongshuStreamData,
+  XiaohongshuUserInfo
+} from './types.js'
 import { buildAmagiRequestConfig, xiaohongshuFetcher } from '@/module/utils/amagiClient'
 import { buildXiaohongshuShareUrl } from './link.js'
 import { getErrorMessage } from '@/module/utils/error-message'

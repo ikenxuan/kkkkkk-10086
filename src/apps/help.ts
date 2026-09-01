@@ -105,7 +105,7 @@ export const buildHelpGroups = (): HelpGroup[] => [
         // `findPlatformConfig` 判平台、再进 `runCoordinatedParse`），不是独立功能。
         title: '#kkk录直播 + 直播间链接',
         // 三个数都得跟着代码走，别在这里写字面量的来源：
-        // - 平台取自 `LiveRecordPlatform`（common/liveRecord.ts），也是 recordLive 里
+        // - 平台取自 `LiveRecordPlatform`（common/types.ts），也是 recordLive 里
         //   `handler !== 'douyin' && handler !== 'bilibili'` 那道闸放行的两家
         // - 10 分钟是 `LIVE_RECORD_MAX_DURATION_MS`（= 协调器预算 720s - 上传余量 120s）
         // - 「录完才上传」是实现的硬约束：ffmpeg 靠 `-t` 收口，收口前没有文件可发

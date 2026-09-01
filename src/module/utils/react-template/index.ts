@@ -4,11 +4,5 @@ export {
 } from './registry.js'
 export {
   REACT_TEMPLATE_ROUTES,
-  resolveReactTemplateRoute,
-  type ReactTemplateRoute
+  resolveReactTemplateRoute
 } from './routes.js'
-export {
-  type RenderParams,
-  type TemplateDataMap,
-  type TemplateParams
-} from './template-data.js'

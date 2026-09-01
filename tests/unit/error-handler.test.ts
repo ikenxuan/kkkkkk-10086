@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
-import type { ErrorHandlerContext } from '../../src/module/utils/ErrorHandler/strategy.js'
+import type { ErrorHandlerContext } from '../../src/module/utils/ErrorHandler/types.js'
 import type { MessageEvent } from '../../src/types/message.js'
 
 // 场景收敛的断言全靠「Render() 到手的 logs 数组」，所以这个 mock 要留得住调用参数

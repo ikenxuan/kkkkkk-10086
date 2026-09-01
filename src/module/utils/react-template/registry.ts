@@ -5,7 +5,8 @@ import { pathToFileURL } from 'node:url'
 
 import type { RenderContext } from '@/template-sdk/index'
 import { PluginPath } from '@/dir'
-import { resolveReactTemplateRoute, type ReactTemplateRoute } from './routes.js'
+import { resolveReactTemplateRoute } from './routes.js'
+import type { ReactTemplateRoute } from './types.js'
 
 interface StandaloneRenderResult {
   success: boolean

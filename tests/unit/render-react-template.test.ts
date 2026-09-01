@@ -67,7 +67,7 @@ globalThis.logger = {
 } as unknown as typeof logger
 
 const { Render } = await import('../../src/module/utils/Render.js')
-type ReactTemplateRoute = import('../../src/module/utils/react-template/routes.js').ReactTemplateRoute
+type ReactTemplateRoute = import('../../src/module/utils/react-template/types.js').ReactTemplateRoute
 
 /**
  * standalone 运行时把文档写进自己的一次性目录，再把路径和清理函数一起交回来。

@@ -1,6 +1,6 @@
 /**
  * 模板 payload 契约表：把 `ktr/template/<route>/components/types.ts` 里的真实契约
- * 补充声明进 `src/module/utils/react-template/template-data.ts` 的 `TemplateDataMap`。
+ * 补充声明进 `src/module/utils/react-template/types.ts` 的 `TemplateDataMap`。
  *
  * 这个文件**只被 `tsconfig.render.json` 收录**，构建用的根 program 看不到它。
  * 原因是根 program 的 `rootDir` 是 `./src`，把 `ktr/**` 的 .ts 拉进去会直接 TS6059；
@@ -47,7 +47,7 @@ import type { GroupStatisticsData } from '../ktr/template/statistics/group/compo
 import type { XiaohongshuCommentData } from '../ktr/template/xiaohongshu/comment/components/types'
 import type { XiaohongshuNoteInfoData } from '../ktr/template/xiaohongshu/noteInfo/components/types'
 
-declare module '@/module/utils/react-template/template-data' {
+declare module '@/module/utils/react-template/types' {
   interface TemplateDataMap {
     'bilibili/bangumi': BangumiBilibiliData
     'bilibili/comment': BilibiliCommentData

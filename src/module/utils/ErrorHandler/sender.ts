@@ -2,7 +2,7 @@ import type { MessageEvent, MessageId } from '@/types/message'
 import cfg from '@/runtime/host/config'
 import Config from '@/module/utils/Config'
 import { getErrorMessage } from '@/module/utils/error-message'
-import type { ErrorHandlerContext } from './strategy.js'
+import type { ErrorHandlerContext } from './types.js'
 
 const getBotId = (event?: MessageEvent): MessageId | undefined => {
   return (event?.self_id || event?.bot?.uin || event?.bot?.self_id) as

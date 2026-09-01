@@ -1,14 +1,5 @@
 import type { BotAdapterInfo, MessageEvent } from '@/types/message'
-
-export interface ErrorAdapterInfo {
-  name: string
-  version: string
-  protocol: string
-  platform: string
-  standard: string
-  communication: string
-  [key: string]: unknown
-}
+import type { ErrorAdapterInfo } from './types.js'
 
 type AdapterRecord = Record<string, unknown>
 

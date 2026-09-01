@@ -4,34 +4,12 @@ import Config from '@/module/utils/Config'
 import {
   buildLivePhotoMessages as buildCommonLivePhotoMessages,
   buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch,
-  buildLivePhotoTipMessage,
-  type BuildLivePhotoBatchResult,
-  type BuildLivePhotoResult,
-  type LivePhotoBatchItem
+  buildLivePhotoTipMessage
 } from '@/module/platform/common/livePhoto'
+import type { BuildLivePhotoBatchResult, BuildLivePhotoResult, LivePhotoBatchItem } from '@/module/platform/common/types'
+import type { XiaohongshuImageItem, XiaohongshuLiveVideo, XiaohongshuStreamData } from './types.js'
 
 export { buildLivePhotoTipMessage }
-
-/** 小红书图片项中被实况图逻辑读取的字段 */
-export interface XiaohongshuImageItem {
-  url_default?: string
-  url_pre?: string
-  url?: string
-  info_list?: Array<{ url?: string }>
-  live_photo?: boolean
-  stream?: XiaohongshuStreamData
-}
-
-/** 实况图视频流 */
-export interface XiaohongshuLiveVideo {
-  master_url?: string
-  width?: number
-  height?: number
-  size?: number
-}
-
-/** 按编码分组的视频流 */
-export type XiaohongshuStreamData = Partial<Record<'h264' | 'h265' | 'av1' | 'h266', XiaohongshuLiveVideo[]>>
 
 export const pickXiaohongshuImageUrl = (image: XiaohongshuImageItem | string | undefined): string | undefined => {
   if (typeof image === 'string') return image

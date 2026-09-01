@@ -1,7 +1,7 @@
 import { Render } from '@/module/utils/Render'
 import Version from '@/module/utils/Version'
 import { formatBuildTime } from '@/module/tooling/build-metadata'
-import type { ErrorHandlerContext } from './strategy.js'
+import type { ErrorHandlerContext } from './types.js'
 
 export interface NormalizedError {
   name: string

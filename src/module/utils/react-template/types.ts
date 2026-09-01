@@ -1,4 +1,6 @@
-import type { ReactTemplateRoute } from './routes.js'
+import type { REACT_TEMPLATE_ROUTES } from './routes.js'
+
+export type ReactTemplateRoute = (typeof REACT_TEMPLATE_ROUTES)[number]
 
 /** 没有登记契约的路由沿用的宽松 payload */
 export interface RenderParams extends Record<string, unknown> {
