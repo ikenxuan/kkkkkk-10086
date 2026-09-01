@@ -255,3 +255,47 @@ describe('bilibiliRiskControlStrategy without an event', () => {
     expect(requestCaptchaFromVoucher).not.toHaveBeenCalled()
   })
 })
+
+/**
+ * voucher 的候选路径现在只有一份，在 `platform/bilibili/riskVoucher.ts`。
+ *
+ * 合并前这里认 4 条、`utils/Base.ts` 的闸门只认 2 条，落在差集上的 voucher 会让用户
+ * 先收一张「接口失败」卡再被要求扫码。两侧同源之后，这张表和
+ * tests/unit/base-push-error-card.test.ts 里那张必须一起过。
+ */
+const voucherShapes: Array<[string, Record<string, unknown>]> = [
+  ['data.data.v_voucher', { code: -352, data: { data: { v_voucher: 'voucher-1' } } }],
+  ['data.v_voucher', { code: -352, data: { v_voucher: 'voucher-1' } }],
+  ['rawError.data.data.v_voucher', { code: -352, rawError: { data: { data: { v_voucher: 'voucher-1' } } } }],
+  ['rawError.data.v_voucher', { code: -352, rawError: { data: { v_voucher: 'voucher-1' } } }],
+  ['rawError.error.data.data.v_voucher', { code: -352, rawError: { error: { data: { data: { v_voucher: 'voucher-1' } } } } }],
+  ['rawError.error.data.v_voucher', { code: -352, rawError: { error: { data: { v_voucher: 'voucher-1' } } } }],
+  ['rawError.v_voucher', { code: -352, rawError: { v_voucher: 'voucher-1' } }],
+  ['v_voucher', { code: -352, v_voucher: 'voucher-1' }]
+]
+
+describe('bilibiliRiskControlStrategy voucher 候选路径', () => {
+  it.each(voucherShapes)('命中并把 voucher 交给申请接口: %s', async (_path, error) => {
+    requestCaptchaFromVoucher.mockResolvedValue({})
+    const ctx = createContext({ error })
+
+    expect(bilibiliRiskControlStrategy.match(ctx as never)).toBe(true)
+    await bilibiliRiskControlStrategy.handle(ctx as never)
+
+    expect(requestCaptchaFromVoucher.mock.calls[0]?.[0]).toMatchObject({ v_voucher: 'voucher-1' })
+  })
+
+  it('一条都不命中时 match 为假', () => {
+    // 实测的 -352 信封只有 {code, message, ttl}。没有 voucher 就申请不了验证码，
+    // 这时候必须让路给错误卡片，而不是把 handle 跑一遍再 continue。
+    expect(bilibiliRiskControlStrategy.match(
+      createContext({ error: { code: -352, message: '风控校验失败', ttl: 1 } }) as never
+    )).toBe(false)
+  })
+
+  it('空字符串 voucher 不算命中', () => {
+    expect(bilibiliRiskControlStrategy.match(
+      createContext({ error: { code: -352, data: { data: { v_voucher: '' } } } }) as never
+    )).toBe(false)
+  })
+})

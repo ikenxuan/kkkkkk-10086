@@ -4,6 +4,7 @@ import type { ProxyAuth } from '@/types/config'
 import type { FileInfo } from '@/types/platform'
 import { bilibiliFetcher, douyinFetcher } from '@/module/utils/amagiClient'
 import { AmagiError, readAmagiFailureCode } from '@/module/platform/common/softError'
+import { readRiskVoucher } from '@/module/platform/bilibili/riskVoucher'
 import {
   classifyCdnFailure,
   reportCdnFailure,
@@ -216,23 +217,6 @@ const buildApiErrorImage = async (
   }
 }
 
-/**
- * 风控 voucher 的读取，路径与 `platform/bilibili/riskControl.ts` 的 `getVoucher` 一致。
- *
- * 没有 import 那边的：riskControl 属于 ErrorHandler 策略链，反过来依赖 Base 这条链上的
- * 模块，直连会成环。这里只需要「有没有 voucher」这一个布尔判断。
- */
-const getRiskVoucher = (error: AmagiError): boolean => {
-  const fromData = isRecord(error.data) && isRecord(error.data.data)
-    ? error.data.data.v_voucher
-    : undefined
-  const raw = isRecord(error.rawError) ? error.rawError : undefined
-  const fromRaw = isRecord(raw?.data) && isRecord(raw.data.data)
-    ? raw.data.data.v_voucher
-    : undefined
-  return typeof (fromData ?? fromRaw) === 'string'
-}
-
 /** amagi 失败对象整理成 {@link buildApiErrorImage} 吃的形状 */
 const toApiErrorRecord = (error: AmagiError): ApiErrorRecord => ({
   code: error.code,
@@ -280,9 +264,9 @@ const wrapFetcherWithErrorCard = <T extends object> (
               const code = readAmagiFailureCode(error)
               // 不在 amagi 登记表里的码不出卡片，交给 ErrorHandler 的策略链
               if (code === undefined || !(code in bilibiliErrorCodeMap)) throw error
-              // -352 且拿得到 voucher 时原样抛：riskControl 策略按 code / data / rawError
-              // 读它去走验证码流程，出卡片就把那条路堵死了
-              if (code === -352 && getRiskVoucher(error) && Object.keys(event ?? {}).length !== 0) throw error
+              // -352 且拿得到 voucher 时原样抛：riskControl 策略要按它去走验证码流程，
+              // 出卡片就把那条路堵死了。候选路径必须与策略侧同源，见 riskVoucher.ts
+              if (code === -352 && readRiskVoucher(error) && Object.keys(event ?? {}).length !== 0) throw error
             }
 
             const img = await buildApiErrorImage(platform, method, toApiErrorRecord(error), event, self.pushContext)

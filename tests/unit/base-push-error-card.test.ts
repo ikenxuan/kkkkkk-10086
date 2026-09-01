@@ -85,16 +85,19 @@ const amagiDependencies = {
 }
 
 /**
- * 一个「任何方法都抛业务失败」的 fetcher 替身。
+ * 一个「任何方法都抛同一个 error」的 fetcher 替身。
  *
  * 抛而不是返回失败信封：转信封那步在 `amagiClient` 的 Proxy 里，`Base.ts` 收到的
  * 已经是 `AmagiError`，它的 catch 只认 `instanceof`。所以这里必须抛真的那个类，
  * 换成本地同名 class 会让 Base 直接原样上抛、一张卡片都不出。
  */
-const failingFetcher = <T> (code: number, message: string, data?: unknown): T =>
+const throwingFetcher = <T> (error: unknown): T =>
   new Proxy({}, {
-    get: () => vi.fn().mockRejectedValue(new AmagiError(code, message, data))
+    get: () => vi.fn().mockRejectedValue(error)
   }) as T
+
+const failingFetcher = <T> (code: number, message: string, data?: unknown): T =>
+  throwingFetcher<T>(new AmagiError(code, message, data))
 
 /**
  * 宿主 plugins/adapter/OneBotv11.js 的字段形状：适配器实例上只有 id / name，
@@ -348,6 +351,57 @@ describe('push error card adapter info', () => {
     expect(payload.adapterInfo?.name).toBe('LLOneBot')
     // 群号行不受适配器解析影响，三个目标里有群号的两个都在
     expect((payload.logs ?? []).map(entry => entry.message)).toEqual(['群: 114514', '群: 1919810', '群: 456'])
+  })
+})
+
+/**
+ * -352 风控闸门：拿得到 voucher 时 Base 必须**原样抛**、一个字都不发。
+ *
+ * 候选路径的两个读取点（这里的闸门、`platform/bilibili/riskControl.ts` 的策略）已经
+ * 合并到 `platform/bilibili/riskVoucher.ts`。合并前闸门只认 2 条路径而策略认 4 条，
+ * 落在差集上的 voucher 会让用户先收一张「接口失败」卡、紧接着又被要求扫码。
+ */
+const riskGate = async (error: unknown): Promise<{ rendered: number, replied: number }> => {
+  installBots({})
+  const reply = vi.fn(async () => undefined)
+  const base = new Base({ group_id: 114514, user_id: 1919810, bot: napCatBot(), reply } as never, {
+    ...amagiDependencies,
+    bilibiliErrorCodeMap: { [-352]: true },
+    bilibiliFetcher: throwingFetcher<BilibiliFetcher>(error)
+  })
+
+  await expect(base.amagi.bilibili.fetchVideoInfo({ bvid: 'BV1' })).rejects.toBe(error)
+
+  return { rendered: renderMock.mock.calls.length, replied: reply.mock.calls.length }
+}
+
+/** 每条候选路径一个形状。`AmagiError(code, message, data, rawError)` */
+const voucherShapes: Array<[string, unknown]> = [
+  ['data.data.v_voucher', new AmagiError(-352, '风控', { data: { v_voucher: 'v' } })],
+  ['data.v_voucher', new AmagiError(-352, '风控', { v_voucher: 'v' })],
+  ['rawError.data.data.v_voucher', new AmagiError(-352, '风控', undefined, { data: { data: { v_voucher: 'v' } } })],
+  ['rawError.data.v_voucher', new AmagiError(-352, '风控', undefined, { data: { v_voucher: 'v' } })],
+  ['rawError.error.data.data.v_voucher', new AmagiError(-352, '风控', undefined, { error: { data: { data: { v_voucher: 'v' } } } })],
+  ['rawError.error.data.v_voucher', new AmagiError(-352, '风控', undefined, { error: { data: { v_voucher: 'v' } } })],
+  ['rawError.v_voucher', new AmagiError(-352, '风控', undefined, { v_voucher: 'v' })],
+  ['v_voucher', Object.assign(new AmagiError(-352, '风控'), { v_voucher: 'v' })]
+]
+
+describe('bilibili -352 risk control gate', () => {
+  it.each(voucherShapes)('原样抛出、不出卡片：voucher 在 %s', async (_path, error) => {
+    expect(await riskGate(error)).toEqual({ rendered: 0, replied: 0 })
+  })
+
+  it('一条都不命中时照旧出卡片 —— 闸门不是「见 -352 就放行」', async () => {
+    // 实测的 -352 信封只有 {code, message, ttl}，没有 data，这才是常态。
+    // 没有 voucher 就走不了验证码流程，此时把错误卡吞掉等于让用户什么也收不到。
+    expect(await riskGate(new AmagiError(-352, '风控', { ttl: 1 }, { errorDescription: '风控校验失败' })))
+      .toEqual({ rendered: 1, replied: 1 })
+  })
+
+  it('空字符串 voucher 不算命中', async () => {
+    expect(await riskGate(new AmagiError(-352, '风控', { data: { v_voucher: '' } })))
+      .toEqual({ rendered: 1, replied: 1 })
   })
 })
 

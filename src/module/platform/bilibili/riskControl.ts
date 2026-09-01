@@ -6,29 +6,7 @@ import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiCl
 import Config from '@/module/utils/Config'
 import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
-
-/** 按路径读取嵌套字段，任意一层缺失时返回 undefined */
-const readPath = (value: unknown, path: string[]): unknown => {
-  let current = value
-  for (const key of path) {
-    if (!isRecord(current)) return undefined
-    current = current[key]
-  }
-  return current
-}
-
-/** 读取指定路径上的非空字符串 */
-const readString = (value: unknown, path: string[]): string | undefined => {
-  const found = readPath(value, path)
-  return typeof found === 'string' && found ? found : undefined
-}
-
-const getVoucher = (error: unknown): string | undefined => {
-  return readString(error, ['data', 'data', 'v_voucher']) ||
-    readString(error, ['rawError', 'data', 'data', 'v_voucher']) ||
-    readString(error, ['rawError', 'error', 'data', 'data', 'v_voucher']) ||
-    readString(error, ['rawError', 'error', 'data', 'v_voucher'])
-}
+import { readPath, readRiskVoucher, readString } from './riskVoucher.js'
 
 /** amagi 返回结构不固定，逐层向下取 data 作为业务数据 */
 const pickPayload = (value: unknown): Record<string, unknown> | undefined => {
@@ -126,12 +104,12 @@ export const bilibiliRiskControlStrategy: ErrorStrategy = {
   name: 'BilibiliRiskControl',
 
   match: ({ error, event }: ErrorHandlerContext): boolean => {
-    return isRecord(error) && error.code === -352 && Boolean(getVoucher(error)) && Boolean(event)
+    return isRecord(error) && error.code === -352 && Boolean(readRiskVoucher(error)) && Boolean(event)
   },
 
   async handle (ctx: ErrorHandlerContext): Promise<ErrorStrategyResult> {
     const { error, event, options } = ctx
-    const voucher = getVoucher(error)
+    const voucher = readRiskVoucher(error)
     if (!voucher) return 'continue'
     // 跟上游一样先确认有人能看到验证码。没有 event 时下面的申请请求纯属白跑一趟，
     // 而且会替用户消耗掉一次 v_voucher（voucher 是一次性的），让他重试时更难通过。
