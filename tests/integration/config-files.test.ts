@@ -40,8 +40,6 @@ describe('default configuration files', () => {
     expect(parsed.app?.priority).toBeTypeOf('number')
     expect(parsed.upload?.downloadConcurrency).toBeTypeOf('number')
     expect(parsed.app?.parseConcurrency).toBe(2)
-    expect(parsed.request?.amagiTimeout).toBe(60000)
-    expect(parsed.request?.amagiMaxRetries).toBe(2)
     expect(parsed.app?.videotool).toBeTypeOf('boolean')
     expect(parsed.bilibili?.bilibilitool).toBeTypeOf('boolean')
     expect(parsed.douyin?.douyintool).toBeTypeOf('boolean')

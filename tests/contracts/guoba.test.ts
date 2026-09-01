@@ -127,6 +127,41 @@ describe('guoba config schemas', () => {
     }
   })
 
+  /**
+   * 面板项与默认 yaml 必须同批增删。
+   *
+   * 上面那条只比对 field 的第一段和文件名，键本身没人管；而保存逻辑按 field 逐层写下去，
+   * 面板上留一个 yaml 里没有的键，用户拨了开关却什么都没发生。反过来漏删 yaml 只是留个死键，
+   * 危害小得多，所以这里只钉「面板 -> yaml」这一个方向。
+   *
+   * 读真实 default_config 而不是上面的 configDouble：要验的就是磁盘上那几份 yaml。
+   */
+  it('backs every dotted field with a real key in default_config', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs')
+    const { parse } = await import('yaml')
+
+    const config: Record<string, unknown> = {}
+    for (const file of readdirSync('config/default_config').filter(name => name.endsWith('.yaml'))) {
+      config[file.replace('.yaml', '')] = parse(readFileSync(`config/default_config/${file}`, 'utf8'))
+    }
+
+    const resolve = (segments: string[]): boolean => {
+      let current: unknown = config
+      for (const key of segments) {
+        if (current === null || typeof current !== 'object' || !(key in current)) return false
+        current = (current as Record<string, unknown>)[key]
+      }
+      return true
+    }
+
+    const orphans = (configInfo?.schemas ?? [])
+      .map(schema => schema.field)
+      .filter((field): field is string => typeof field === 'string' && field.includes('.'))
+      .filter(field => !resolve(field.split('.')))
+
+    expect(orphans).toEqual([])
+  })
+
   it('prefixes every dotted field with a real config file name', () => {
     // 保存逻辑按 `field` 的第一段决定写哪个 yaml，前缀错了就会写出野文件
     const configNames = new Set([
@@ -228,37 +263,6 @@ describe('guoba config schemas', () => {
         componentProps: { min: 0, max: 1 }
       })
     }
-  })
-
-  it('exposes the per-attempt Amagi hard timeout with a one-minute ceiling', () => {
-    const schema = schemaByField('request.amagiTimeout')
-
-    expect(schema).toMatchObject({
-      field: 'request.amagiTimeout',
-      component: 'InputNumber',
-      componentProps: {
-        min: 1000,
-        max: 60000,
-        addonAfter: 'ms'
-      }
-    })
-    expect(schema?.bottomHelpMessage).toContain('每次 Amagi 尝试的硬超时')
-    expect(schema?.bottomHelpMessage).toContain('最多一分钟')
-  })
-
-  it('exposes Amagi retries as attempts after the initial request', () => {
-    const schema = schemaByField('request.amagiMaxRetries')
-
-    expect(schema).toMatchObject({
-      field: 'request.amagiMaxRetries',
-      component: 'InputNumber',
-      componentProps: {
-        min: 0,
-        max: 5,
-        addonAfter: '次'
-      }
-    })
-    expect(schema?.bottomHelpMessage).toContain('初次请求之后的重试次数')
   })
 })
 

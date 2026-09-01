@@ -23,7 +23,6 @@
  */
 import { createHash } from 'node:crypto'
 
-import Config from './Config.js'
 import { isRecord } from './record.js'
 
 /** 参与缓存的平台。刻意不 import `platform/common/userAgent` 的 `AmagiPlatform`：utils 不反向依赖 platform。 */
@@ -299,22 +298,15 @@ const counters: Record<ApiCacheTier, { hits: number, coalesced: number, misses: 
 
 let enabledResolver: (() => boolean) | undefined
 
-/**
- * 覆盖开关来源。测试用来摆脱 Config 单例 —— 读 `Config.app` 会触发一次配置初始化落盘，
- * 在并行的 vitest 里那是读写竞争的来源。传 undefined 恢复成读配置。
- */
+/** 覆盖开关来源。传 undefined 恢复默认（开）。 */
 export const setApiCacheEnabledResolver = (resolver: (() => boolean) | undefined): void => {
   enabledResolver = resolver
 }
 
-/**
- * 缓存总开关。默认开。
- *
- * 只管缓存，不管并发和下载 —— 那两个关掉等于回退到没有并发的旧行为，那是回退不是配置。
- */
+/** 缓存总开关。没有配置项，默认开。 */
 export const isApiCacheEnabled = (): boolean => {
   if (enabledResolver) return enabledResolver()
-  return Config.app?.cacheEnabled !== false
+  return true
 }
 
 /**

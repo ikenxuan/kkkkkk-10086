@@ -13,8 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  *    而指纹**没**进键的话，用户换了 ck 还会命中旧缓存，表现成「换了 Cookie 也没用」。
  */
 
-// ApiCache 会 import Config 读 `app.cacheEnabled`，真实 Config 构造时读写 yaml。
-// 这里替掉，避免测试碰真实配置目录（并行 vitest 下那是读写竞争的来源）。
+// ApiCache 不再读 Config；替身留着，避免将来重新引入时测试碰真实配置目录。
 vi.mock('../../src/module/utils/Config.js', () => ({
   default: { app: {} as Record<string, unknown> }
 }))

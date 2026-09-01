@@ -47,7 +47,6 @@ export interface AppConfig {
   EmojiReply?: boolean
   parseTip?: boolean
   parseConcurrency?: number
-  cacheEnabled?: boolean
   fakeForward?: boolean
   errorLogSendTo?: string[]
   multiPageRender?: boolean
@@ -258,8 +257,6 @@ export interface ProxyConfig {
 
 export interface RequestConfig {
   timeout: number
-  amagiTimeout?: number
-  amagiMaxRetries?: number
   'User-Agent': string
   proxy: ProxyConfig
 }
