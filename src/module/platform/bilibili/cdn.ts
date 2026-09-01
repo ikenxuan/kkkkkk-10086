@@ -3,7 +3,7 @@
  *
  * ## 和 CdnRegistry 的分工
  *
- * `module/utils/CdnRegistry.ts` 只会在接口给出的地址里重新排序 —— 接口一条能用的都没给时
+ * `module/utils/Network/CdnRegistry.ts` 只会在接口给出的地址里重新排序 —— 接口一条能用的都没给时
  * 它无能为力。而 B站 恰好有这种情况：请求「看起来没有身份」时 `base_url` 和整个
  * `backup_url[]` 会**全部**指向 PCDN（`*.mcdn.bilivideo.cn` / `*.szbdyd.com`），
  * 这类域名把节点 IP 编进了主机名，只在国内走运营商 DNS 才解析得出来，
@@ -30,7 +30,7 @@ const upos = (code: string): string => UPOS_TEMPLATE.replace('{}', code)
 /**
  * 可用的 upos 镜像，按「一般情况下的可用性」排序。
  *
- * 顺序只是**没有测速数据时**的默认偏好。开了测速（`Config.upload.cdnLatencyProbe`）之后
+ * 顺序只是**没有测速数据时**的默认偏好。开了测速（`Config.bilibili.bilibiliCdnProbe`）之后
  * 由实测延迟决定用哪个，这个顺序就只作为并列时的 tie-break。
  *
  * 名字沿用 B站 自己的运营商代号：`cos`=腾讯云、`bd`=百度云、`hw`=华为云、
@@ -51,7 +51,6 @@ export const BILIBILI_UPOS_MIRRORS: readonly string[] = Object.freeze([
 /** PCDN 主机名：把节点 IP 编进域名，只在国内运营商 DNS 下解析得出来。 */
 const PCDN_HOST = /(^|\.)(mcdn\.bilivideo\.cn|szbdyd\.com)$/i
 
-/** 已经是 upos 镜像的主机名。 */
 const UPOS_HOST = /^upos-[a-z]{2}-(mirror|estgoss)/i
 
 /**
@@ -62,7 +61,6 @@ const UPOS_HOST = /^upos-[a-z]{2}-(mirror|estgoss)/i
  */
 const PROVINCIAL_HOST = /^cn(-[a-z]+){2}(-\d{2}){2}\.bilivideo\.com$/i
 
-/** 这个地址是 PCDN 吗。 */
 export const isBilibiliPcdnUrl = (url: string): boolean => {
   try {
     return PCDN_HOST.test(new URL(url).hostname)
@@ -168,7 +166,6 @@ export const expandBilibiliCdnCandidates = (
     else usable.push(url)
   }
 
-  // PCDN 地址逐个找逃生口：先看它自带的 xy_usource，再套镜像
   for (const url of pcdn) {
     const upstream = rewriteToUpstreamSource(url)
     if (upstream !== null) rewritten.push(upstream)
@@ -184,7 +181,6 @@ export const expandBilibiliCdnCandidates = (
   }
 
   const ordered = [...usable, ...provincial, ...rewritten, ...pcdn]
-  // 去重，保持首次出现的次序
   const seen = new Set<string>()
   return ordered.filter(url => {
     const host = (() => {

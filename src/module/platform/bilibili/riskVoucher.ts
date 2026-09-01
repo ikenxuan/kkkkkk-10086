@@ -54,8 +54,6 @@ const VOUCHER_PATHS: readonly string[][] = [
 ]
 
 /**
- * 逐条试候选路径，取第一个非空字符串。
- *
  * @param value 一次失败：抛出来的 `AmagiError`、amagi 原样返回的失败 `Result`，或任意值
  * @returns 取到的 voucher；一条都不命中时 undefined
  */

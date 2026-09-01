@@ -53,8 +53,6 @@ export interface MediaMetricsView {
 }
 
 /**
- * 把数据库聚合结果裁成模板契约的形状；没有任何数据时返回 undefined。
- *
  * 「没有任何数据」的判定用 `mediaCount === 0 && successCount + failureCount === 0`
  * 而不是只看 mediaCount：纯图文解析（一条媒体都没有）也会记一行成败，
  * 那种情况下成功率仍然有意义，卡片上会只显示成功率和耗时那两颗药丸。

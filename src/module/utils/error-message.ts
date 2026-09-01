@@ -33,8 +33,6 @@
  */
 
 /**
- * 尽最大努力把任意值转成字符串。
- *
  * `String()` 不是全函数：原型为 null 的对象没有 `toString`，会抛 TypeError。
  */
 const stringifyUnknown = (value: unknown): string => {
@@ -46,10 +44,6 @@ const stringifyUnknown = (value: unknown): string => {
 }
 
 /**
- * 取错误的可读描述。
- *
- * 优先读 `.message`（不要求是 Error 实例），拿不到就退回整个值的字符串形式。
- *
  * @param error catch 到的任意值
  * @returns 可直接拼进日志或回复文本的字符串，任何输入都不抛
  */

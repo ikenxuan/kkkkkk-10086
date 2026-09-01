@@ -92,8 +92,6 @@ export const livePhotoBatchTimeoutMs = (imageCount: number): number => {
 
 export interface MediaTaskOptions {
   /**
-   * Hard deadline for each independently running media branch.
-   *
    * 不传就是不传：`runWithRequestGuard` 会退到 `DEFAULT_REQUEST_TIMEOUT_MS`（60s）。
    * douyin / bilibili 两个调用点都不传，靠的就是这个默认行为。
    */

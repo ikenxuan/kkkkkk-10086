@@ -19,12 +19,11 @@ import type { StatisticsPlatform } from '@/types/database'
 /** 媒体类型。音频是 `#BGM<n>` 那条路上传的语音 */
 export type MediaKind = 'video' | 'audio'
 
-/** 一条媒体记录。三个度量各自可缺 —— 缺的原因见 normalizeDuration / 各上报点 */
 export interface MediaRecord {
   kind: MediaKind
   /**
    * 毫秒。**不是**所有平台都给：快手、小红书当前的解析路径上没有时长字段，
-   * 此时这里是 undefined，写库端据此只累加条数、不动时长分母（见 recordMedia）。
+   * 此时这里是 undefined，写库端据此只累加条数、不动时长分母（见 recordMediaMetrics）。
    */
   durationMs?: number
   /** 字节。来自上传边界的 totalBytes */
@@ -79,8 +78,6 @@ export const fromMilliseconds = (ms: number | undefined | null): number | undefi
   normalizeDuration(ms)
 
 /**
- * 在一个媒体度量作用域里跑 `fn`，返回它的结果和收集到的记录。
- *
  * 不吞异常：`fn` 抛出时照原样往上抛，但已经收集到的记录仍然通过 `onSettled` 交出去 ——
  * 解析失败前已经发出去的媒体是真发出去了，不该因为后续步骤失败就不算。
  */

@@ -54,13 +54,11 @@ export const DEFAULT_SUSTAIN_MS = 20000
  */
 export const MIN_REMAINING_BYTES = 2 * 1024 * 1024
 
-/** 地板速的默认值：256 KB/s。 */
 export const DEFAULT_SLOW_FLOOR_BYTES = 256 * 1024
 
 export interface SlowSpeedGuardOptions {
   /** 地板速，字节/秒。低于它才开始累计 */
   floorBytesPerSecond: number
-  /** 宽限期，毫秒 */
   graceMs?: number
   /** 持续低速多久才判定，毫秒 */
   sustainMs?: number
@@ -78,7 +76,6 @@ export interface SlowSpeedSample {
    * 只是没法做「快下完了」这条豁免。
    */
   totalBytes: number
-  /** 采样时刻 */
   now: number
 }
 
@@ -87,12 +84,10 @@ export interface SlowSpeedVerdict {
   triggered: boolean
   /** 最近一次采样间隔内的速率，字节/秒 */
   bytesPerSecond: number
-  /** 已经连续低速了多久，毫秒 */
   slowForMs: number
 }
 
 export interface SlowSpeedGuard {
-  /** 喂一次采样，拿回判定结果 */
   sample: (input: SlowSpeedSample) => SlowSpeedVerdict
   /** 重启下载后重新计时 */
   reset: (now: number) => void
@@ -105,8 +100,6 @@ const NOT_TRIGGERED = (bytesPerSecond: number, slowForMs: number): SlowSpeedVerd
 })
 
 /**
- * 造一个低速看守。
- *
  * 判定只**报告**，不做任何副作用：中断连接、记账、重试都由调用方决定。
  * 这样它才能在单测里被逐个采样地驱动，而不需要真开一条 HTTP 连接。
  *
@@ -178,15 +171,12 @@ export const createSlowSpeedGuard = (options: SlowSpeedGuardOptions): SlowSpeedG
 /** 低速中断专用的错误码。让上层能把「我们自己掐掉的」和别的取消区分开。 */
 export const SLOW_DOWNLOAD_ABORT_CODE = 'KKK_DOWNLOAD_TOO_SLOW'
 
-/** 这个错误是低速看守掐掉的吗。 */
 export const isSlowDownloadAbort = (error: unknown): boolean =>
   typeof error === 'object' && error !== null &&
   (Reflect.get(error, 'code') === SLOW_DOWNLOAD_ABORT_CODE ||
     Reflect.get(error, 'kkkSlowAbort') === true)
 
 /**
- * 造一个带低速标记的错误。
- *
  * 标记打在两个地方（`code` 和 `kkkSlowAbort`）是有意的：`AbortController.abort()`
  * 之后 axios 会把自己的 `ERR_CANCELED` 盖在 `code` 上，`kkkSlowAbort` 这个自有字段
  * 才是能穿过 `toAxiosError()` 的那一份。

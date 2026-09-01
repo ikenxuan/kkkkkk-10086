@@ -22,7 +22,6 @@ const AMAGI_BUILTIN_CHROME_MAJOR = {
 export type AmagiPlatform = keyof typeof AMAGI_BUILTIN_CHROME_MAJOR
 
 /**
- * 从 UA 里读 Chrome 主版本号。
  * @param userAgent 完整 UA 字符串
  * @returns 主版本号；不是 Chrome 系 UA 时返回 null
  */
@@ -89,7 +88,6 @@ export const buildUserAgentHeader = (platform: AmagiPlatform): Record<string, st
  *
  * 那个实例把四个平台的 cookie 一起传进去，一次请求走哪个平台在这里是不知道的，
  * 所以取四者里最高的阈值：**只有比所有平台内置 UA 都新，才敢覆盖**。
- * 偏保守的一侧同样是「让 amagi 自己决定」。
  *
  * @returns 要合并进 amagi 请求头的对象；不该覆盖时返回空对象
  */

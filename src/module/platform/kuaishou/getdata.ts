@@ -2,10 +2,8 @@ import { isRecord } from '@/module/utils/record'
 import Config from '@/module/utils/Config'
 import { buildAmagiRequestConfig, kuaishouFetcher } from '@/module/utils/amagiClient'
 
-/** 快手数据请求类型 */
 export type KuaishouDataType = 'one_work' | '单个作品信息' | '作品评论信息'
 
-/** 单个作品聚合结果 */
 export interface KuaishouWorkPayload {
   VideoData: unknown
   CommentData: unknown
@@ -55,7 +53,7 @@ const KUAISHOU_METHODS = {
  * 所以正确的做法是让 `KuaishouWorkPayload` 的字段路径保持和迁移前逐字节一致，
  * 消费侧（`Action` / `comments()`）一行都不用改。
  *
- * @param value wrapper 的返回值，可能是 amagi 的 `Result`，也可能已经是裸响应
+ * @param value amagi fetcher 的返回值，可能是 amagi 的 `Result`，也可能已经是裸响应
  * @returns 裸响应体
  */
 const unwrapAmagiResult = (value: unknown): unknown => {

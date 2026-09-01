@@ -92,7 +92,6 @@ export interface CdnRegistrySnapshot {
   resources: number
   /** 见过的主机数 */
   hosts: number
-  /** 当前处在惩罚期的主机 */
   penalized: readonly CdnHostSnapshot[]
 }
 
@@ -108,7 +107,6 @@ const readHostname = (url: string): string | null => {
   }
 }
 
-/** 这个地址能不能拿去下载：非空、可解析、http(s)。 */
 export const isDownloadableUrl = (url: unknown): url is string =>
   typeof url === 'string' && url.length > 0 && readHostname(url) !== null
 

@@ -4,18 +4,15 @@
  *
  * 三个都只回答「这个值到底在不在」，都零 import，所以放同一个文件。
  *
- * 以下这段讲的是 `isRecord` 的合并历史，`at` / `firstUrl` 的理由见各自的注释。
- *
  * 合并前仓库里有 23 份同名实现（22 个 `isRecord` + guoba 的 `isPlainRecord`），
  * 分成两族：11 份排除数组，12 份不排除。名字和类型签名完全一样，
  * 差别只在有没有那句 `!Array.isArray(value)` —— 这种分叉最难发现，
  * 因为两族都能通过类型检查，只在运行时对数组给出相反的答案。
  *
- * 统一取**排除数组**那族，理由不是少数服从多数，而是有三处调用点把它当前提：
+ * 统一取**排除数组**那族，理由不是少数服从多数，而是有两处调用点把它当前提：
  * - `utils/YamlReader.ts` 和 `utils/Config.ts` 的错误文案字面写着
  *   `'YAML root must be a non-array record'`。换成宽松版，一个顶层是数组的
  *   YAML 就会被当成合法配置放过去，后面按键取值全是 undefined。
- * - `module/guoba/index.ts` 的注释写明「数组要走点分路径分支，所以排除数组」。
  *
  * 反过来说，`Record<string, unknown>` 这个类型谓词本身就在撒谎如果放过数组：
  * 数组的键是数字下标，按 `value.someKey` 取值只会得到 undefined。
@@ -29,8 +26,6 @@
  */
 
 /**
- * 判断值是不是普通对象（不含数组、不含 null）。
- *
  * @param value 任意值，通常来自 JSON.parse / YAML.parse / 远端接口响应
  * @returns 是普通对象时收窄为 `Record<string, unknown>`
  */

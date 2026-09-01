@@ -35,7 +35,6 @@ const groupAvatarUrl = (groupId: string): string =>
 export const matchesGroup = (entry: string | undefined, groupId: string | number): boolean =>
   (entry ?? '').split(':')[0] === String(groupId)
 
-/** 组装 `userlist` 契约里的 groupInfo */
 export const buildPushListGroupInfo = (event: PushListGroupEvent) => {
   const groupId = String(event.group_id ?? '')
   return {

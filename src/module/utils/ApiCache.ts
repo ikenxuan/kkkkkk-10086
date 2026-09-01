@@ -1,12 +1,8 @@
 /**
- * 四个平台 `api.ts` wrapper 共用的进程内接口响应缓存。
+ * 进程内的接口响应缓存。
  *
- * ## 为什么放在 wrapper 的最外层
- *
- * 层次是 `withApiCache` → `softFetch` → `runWithRequestGuard` → amagi fetcher。
- * 命中直接返回，miss 才往下走。反过来（缓存套在 RequestGuard 里面）等于每次命中
- * 也要过一遍超时/重试的状态机，白付一个 AbortController 和一个 setTimeout 的代价；
- * 而套在 `softFetch` 里面就更糟：软失败的归一化会跑两遍，缓存里存的还是未归一的形状。
+ * `withApiCache` 当前**没有生产调用点**：已经从 amagi 取数路径上摘掉，
+ * 只剩 `tests/unit/api-cache.test.ts` 在驱动它。
  *
  * ## 为什么必须有 in-flight 合并
  *
@@ -47,9 +43,7 @@ export const API_CACHE_CAPACITY = 128
  * 「一天前的评论数」或者「每次都 miss」这两种没人想要的形态，而问题会表现成插件的 bug。
  */
 export const API_CACHE_TTL_MS: Readonly<Record<ApiCacheTier, number>> = {
-  /** 24 小时 */
   static: 24 * 60 * 60 * 1000,
-  /** 5 分钟 */
   detail: 5 * 60 * 1000
 }
 
@@ -179,7 +173,7 @@ export const API_CACHE_POLICY: Readonly<Record<ApiCachePlatform, Readonly<Record
  *   `v_voucher` 是**一次性**的，缓存 = 拿旧凭据反复换验证码，整条风控恢复链路直接失效。
  *
  * 抖音的扫码登录（`platform/douyin/login.ts`）走 puppeteer 抓页面、**完全不经过**
- * `getDouyinData`，所以这里没有抖音条目；快手和小红书没有登录链路（ck 手工设置）。
+ * amagi 取数，所以这里没有抖音条目；快手和小红书没有登录链路（ck 手工设置）。
  */
 export const NEVER_CACHE_METHODS: Readonly<Record<ApiCachePlatform, readonly string[]>> = {
   douyin: [],
@@ -246,20 +240,16 @@ export interface ApiCacheRequest {
   method: string
   /** 实际发出去的 Cookie，只用于算指纹，不会原样进键 */
   cookie: string
-  /** 实际发出去的请求参数 */
   options: Record<string, unknown>
 }
 
-/** 单个档位的计数 */
 export interface ApiCacheTierStats {
   tier: ApiCacheTier
-  /** 直接命中缓存条目 */
   hits: number
   /** 并发合并到别人的 in-flight 请求上 */
   coalesced: number
   /** 真的打了接口 */
   misses: number
-  /** 当前该档位在缓存里的条目数 */
   entries: number
 }
 
@@ -405,7 +395,6 @@ const readEntry = (key: string, now: number): CacheEntry | undefined => {
     entries.delete(key)
     return undefined
   }
-  // 重新插入 = 挪到尾部，队首因此始终是最久未用的
   entries.delete(key)
   entries.set(key, entry)
   return entry
@@ -435,7 +424,6 @@ const writeEntry = (key: string, entry: CacheEntry, now: number): void => {
   entries.set(key, entry)
 }
 
-/** 从失败值/失败错误里取业务码，数字化。 */
 const readFailureCode = (value: unknown): number | undefined => {
   if (!isRecord(value)) return undefined
   const nested = isRecord(value.error) ? value.error.code : undefined
@@ -523,7 +511,6 @@ const classifyResolved = (
   return { ttlMs: API_CACHE_TTL_MS[tier], negative: false }
 }
 
-/** 命中时把存下来的结果重放给调用方。 */
 const replay = <T> (outcome: CacheOutcome): T => {
   if (outcome.kind === 'error') throw outcome.error
   return outcome.value as T

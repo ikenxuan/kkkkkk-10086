@@ -110,7 +110,6 @@ export const buildDouyinPlayUrl = (playAddr?: DouyinPlayAddrLike | null): string
  * 从包装地址的 query 里取 `file_id`。
  *
  * 不写死下标 2：实测 `url_list` 的长度在 2~3 之间浮动，写死会在只有两条时漏掉。
- * 逐条试到第一个带 `file_id` 的为止，都没有就返回 undefined。
  * @param urlList - `play_addr.url_list`
  * @returns file_id，取不到时 undefined
  */
@@ -126,7 +125,6 @@ const extractFileId = (urlList?: string[]): string | undefined => {
   return undefined
 }
 
-/** 挑源参数 */
 export interface DouyinVideoPickOptions {
   /** 画质偏好，`adapt` 为按体积上限自动挑最高档 */
   videoQuality?: VideoQuality
@@ -248,7 +246,6 @@ const bySizeDesc = (a: DouyinBitRateItem, b: DouyinBitRateItem): number =>
   b.play_addr.data_size - a.play_addr.data_size
 
 /**
- * 按档位给视频源分组，组内按体积降序
  * @param videos - 视频源数组
  * @returns 档位 → 该档位下的视频源
  */

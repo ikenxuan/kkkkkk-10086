@@ -118,8 +118,6 @@ const countAhead = (upstream: string | null): number | null => {
 }
 
 /**
- * 采集安装状态。
- *
  * 脏检查用 `-uno` 只看已跟踪文件：Yunzai 插件运行时会往自己目录里写缓存和配置，
  * 把未跟踪文件也算进来的话，正常用户的 release 安装会被误判成本地开发。
  */
@@ -151,8 +149,6 @@ export const getInstallState = (): InstallState => {
 }
 
 /**
- * 把分支名映射成发布通道。
- *
  * 认不出来的分支（fork、feature 分支）一律算 `Dev`：它定义上就不是已发布的版本。
  */
 export const resolveChannel = (branch: string | null): ReleaseChannel => {
