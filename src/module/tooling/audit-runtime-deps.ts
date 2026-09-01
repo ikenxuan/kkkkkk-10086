@@ -50,6 +50,10 @@ const stripComments = (source: string): string =>
  * - 行首的 `import ... from '...'` / `import '...'`（tsc 产物与 vite 产物都是这个形状）
  * - 行首的 `export ... from '...'`
  * - 表达式位置的 `import('...')` 与 `require('...')`
+ *
+ * **只认字面量说明符**，所以「由宿主提供、本插件刻意不声明」的模块要把说明符写成
+ * `string` 变量来绕开——目前只有 `utils/UploadRecord.ts` 的 icqq 是这种情况，理由写在那里。
+ * 加这类例外时务必在调用点写清楚，否则跟「忘了声明」在产物里长得一模一样。
  */
 const SPECIFIER_PATTERNS = [
   /^\s*import\s+(?:[^'"();]*?\s+from\s+)?['"]([^'"\n]+)['"]/gm,

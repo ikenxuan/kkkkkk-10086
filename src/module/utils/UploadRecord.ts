@@ -101,8 +101,15 @@ let core: Core = {
   pb: { encode: () => undefined, decode: () => ({}) },
   ApiRejection: Error as unknown as ErrorConstructorLike
 }
+/**
+ * 说明符刻意标注成 `string` 而不是留字面量：icqq 由**宿主**提供（喵崽本体自带；
+ * TRSS 走下面那条 `plugins/ICQQ-Plugin` 兜底），本插件不把它列进 dependencies。
+ * 留字面量的话，icqq 没装时 `tsc` 会报 TS2307，`audit:runtime-deps` 也会判成未声明依赖。
+ * 两条都取不到时 `core` 保持上面那个空实现，语音上传降级而不是崩。
+ */
+const ICQQ_SPECIFIER: string = 'icqq'
 try {
-  const icqq = await import('icqq')
+  const icqq = await import(ICQQ_SPECIFIER)
   core = icqq.core as unknown as Core
 } catch {
   try {
