@@ -21,14 +21,12 @@ import type {
 // 说明符根本到不了 vite 的 resolver；一旦改成值导入，模板构建会立刻解析失败。
 } from '@/module/utils/richtext/types'
 
-/** 创建普通文本节点。 */
 export const createTextNode = (text: string, style?: RichTextInlineStyle): RichTextTextNode => ({
   type: 'text',
   text,
   style
 })
 
-/** 创建行内表情节点。 */
 export const createEmojiNode = (
   name: string,
   src: string,
@@ -42,58 +40,49 @@ export const createEmojiNode = (
   scale: options.scale
 })
 
-/** 创建 @ 用户节点。 */
 export const createMentionNode = (text: string, userId?: string): RichTextMentionNode => ({
   type: 'mention',
   text,
   userId
 })
 
-/** 创建搜索词高亮节点。 */
 export const createSearchKeywordNode = (text: string, queryId?: string): RichTextSearchKeywordNode => ({
   type: 'searchKeyword',
   text,
   queryId
 })
 
-/** 创建换行节点。 */
 export const createLineBreakNode = (): RichTextLineBreakNode => ({
   type: 'lineBreak'
 })
 
-/** 创建话题节点。 */
 export const createTopicNode = (text: string): RichTextTopicNode => ({
   type: 'topic',
   text
 })
 
-/** 创建 @ 用户节点。 */
 export const createAtNode = (text: string, userId?: string): RichTextAtNode => ({
   type: 'at',
   text,
   userId
 })
 
-/** 创建抽奖节点。 */
 export const createLotteryNode = (text: string): RichTextLotteryNode => ({
   type: 'lottery',
   text
 })
 
-/** 创建网页链接节点。 */
 export const createWebLinkNode = (text: string, jumpUrl: string): RichTextWebLinkNode => ({
   type: 'webLink',
   text,
   jumpUrl
 })
 
-/** 创建投票节点。 */
 export const createVoteNode = (text: string): RichTextVoteNode => ({
   type: 'vote',
   text
 })
 
-/** 创建查看图片节点。 */
 export const createViewPictureNode = (text: string): RichTextViewPictureNode => ({
   type: 'viewPicture',
   text
@@ -151,8 +140,7 @@ export const normalizeRichTextNodes = (nodes: RichTextNode[]): RichTextNode[] =>
 /**
  * 从富文本文档中提取纯文本内容。
  *
- * 遍历所有节点，收集包含 text 字段的文本内容。
- * lineBreak 节点映射为空格（不参与长度计数），图片节点被忽略。
+ * lineBreak 节点映射为空字符串（不参与长度计数），图片节点被忽略。
  */
 export const extractRichTextPlainText = (document: RichTextDocument): string => {
   const extractFromNode = (node: RichTextNode): string => {

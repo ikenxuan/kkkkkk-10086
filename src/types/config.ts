@@ -189,7 +189,7 @@ export interface BilibiliConfig {
    * 下载前实测候选地址的速度，挑快的用。默认关。
    *
    * 测的是首字节延迟加一小段真实传输 —— 被限速的节点握手很快，只有拉数据才分得出来。
-   * 见 `module/utils/CdnProbe.ts`。
+   * 见 `module/utils/Network/CdnProbe.ts`。
    */
   bilibiliCdnProbe?: boolean
   /** 直播录制参数，见 {@link BilibiliLiveConfig} */
@@ -287,7 +287,7 @@ export interface UploadConfig {
    * 下载连接预算：同一个平台同时最多开几条下载连接，2-16，默认 8。
    *
    * 不是「单文件分片数」——文件级下载和多线程分片共享同一份额度，见
-   * `module/utils/DownloadBudget.ts`。运行时一律经 `clampConcurrency()` 收敛，
+   * `module/utils/Network/DownloadBudget.ts`。运行时一律经 `clampConcurrency()` 收敛，
    * 所以这里读到的原始值可能超出区间。
    */
   downloadConcurrency?: number
@@ -299,7 +299,7 @@ export interface UploadConfig {
    * 持续低速时自动换地址重下。默认开。
    *
    * 治的是 B站 那种「连接活着但被掐在 0.1MB/s」的限速：现有的断流看守判的是
-   * 完全没有数据，低速时它永远不会响。见 `module/utils/DownloadWatchdog.ts`。
+   * 完全没有数据，低速时它永远不会响。见 `module/utils/Network/DownloadWatchdog.ts`。
    */
   downloadSlowRestart?: boolean
   /**
@@ -318,7 +318,7 @@ export interface UploadConfig {
    * 外部下载器：`auto` / `off` / `curl` / `wget`。默认 `off`。
    *
    * `auto` 表示按可用性自动挑（优先 curl，因为只有它有 `--speed-limit`），
-   * 但只用在**大文件**上 —— 判定与理由见 `module/utils/ExternalDownloader.ts`。
+   * 但只用在**大文件**上 —— 判定与理由见 `module/utils/Network/ExternalDownloader.ts`。
    */
   downloadExternalTool?: 'off' | 'auto' | 'curl' | 'wget'
   /** 外部下载器的体积门槛，单位 MB，默认 64。小于它的文件仍走内置下载。 */

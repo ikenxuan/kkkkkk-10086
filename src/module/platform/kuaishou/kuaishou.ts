@@ -44,7 +44,7 @@ export interface KuaishouActionPayload {
  * 和用户的快手 Cookie。
  *
  * 迁移到 amagi 后 cookie 与业务请求头都由 amagi 自己组装（`getKuaishouDefaultConfig`），
- * 那段污染代码随 `getdata.ts` 一起删掉了。但**下面这次 HEAD 探测不走 amagi**，
+ * 那段污染代码随 `getdata.ts` 的重写一起删掉了。但**下面这次 HEAD 探测不走 amagi**，
  * 它是本仓库自己用 `Networks` 发的；而它之前恰好是靠那份污染拿到 `Referer` 的。
  * 所以在这里显式补上，免得把污染删掉的同时静默丢掉防盗链头。
  *

@@ -4,23 +4,18 @@ export interface RunResult {
   changes: number
 }
 
-/** 支持统计的平台 */
 export type StatisticsPlatform = 'douyin' | 'bilibili' | 'kuaishou' | 'xiaohongshu'
 
-/** 过滤模式 */
 export type FilterMode = 'blacklist' | 'whitelist'
 
-/** 抖音推送类型 */
 export type DouyinPushType = 'post' | 'favorite' | 'recommend' | 'live'
 
-/** 机器人表行 */
 export interface BotRow {
   id: string
   createdAt: string
   updatedAt: string
 }
 
-/** 群组表行 */
 export interface GroupRow {
   id: string
   botId: string
@@ -28,7 +23,6 @@ export interface GroupRow {
   updatedAt: string
 }
 
-/** ParseStatistics 表行 */
 export interface ParseStatisticsRow {
   id: number
   groupId: string
@@ -39,7 +33,6 @@ export interface ParseStatisticsRow {
   updatedAt: string
 }
 
-/** ParseHistory 表行 */
 export interface ParseHistoryRow {
   id: number
   date: string
@@ -68,14 +61,12 @@ export interface GroupUserRankingRow {
   xiaohongshu: number
 }
 
-/** GlobalStatistics 表行 */
 export interface GlobalStatisticsRow {
   key: string
   value: string
   updatedAt: string
 }
 
-/** 全局统计汇总 */
 export interface GlobalStatisticsSummary {
   totalGroups: number
   totalParses: number
@@ -150,7 +141,6 @@ export interface MediaMetricsSummary {
   platforms: Record<StatisticsPlatform, MediaMetricsPlatformSummary>
 }
 
-/** 单个平台的媒体度量 */
 export interface MediaMetricsPlatformSummary {
   mediaCount: number
   /** 总时长毫秒 */
@@ -163,7 +153,6 @@ export interface MediaMetricsPlatformSummary {
   totalBytes: number
 }
 
-/** DouyinUsers 表行 */
 export interface DouyinUserRow {
   sec_uid: string
   short_id?: string
@@ -174,7 +163,6 @@ export interface DouyinUserRow {
   updatedAt: string
 }
 
-/** 抖音群组订阅关系行 */
 export interface DouyinSubscriptionRow {
   groupId: string
   sec_uid: string
@@ -182,12 +170,10 @@ export interface DouyinSubscriptionRow {
   updatedAt: string
 }
 
-/** 携带用户信息的抖音订阅关系 */
 export interface DouyinSubscriptionWithUser extends DouyinSubscriptionRow {
   douyinUser: DouyinUserRow
 }
 
-/** AwemeCaches 表行 */
 export interface AwemeCacheRow {
   id: number
   aweme_id: string
@@ -198,7 +184,6 @@ export interface AwemeCacheRow {
   updatedAt: string
 }
 
-/** 抖音过滤词行 */
 export interface DouyinFilterWordRow {
   id: number
   sec_uid: string
@@ -208,7 +193,6 @@ export interface DouyinFilterWordRow {
   updatedAt: string
 }
 
-/** 抖音过滤标签行 */
 export interface DouyinFilterTagRow {
   id: number
   sec_uid: string
@@ -218,14 +202,12 @@ export interface DouyinFilterTagRow {
   updatedAt: string
 }
 
-/** 抖音过滤配置 */
 export interface DouyinFilterConfig {
   filterMode: FilterMode
   filterWords: string[]
   filterTags: string[]
 }
 
-/** BilibiliUsers 表行 */
 export interface BilibiliUserRow {
   host_mid: number
   remark?: string
@@ -234,7 +216,6 @@ export interface BilibiliUserRow {
   updatedAt: string
 }
 
-/** B站群组订阅关系行 */
 export interface BilibiliSubscriptionRow {
   groupId: string
   host_mid: number
@@ -242,12 +223,10 @@ export interface BilibiliSubscriptionRow {
   updatedAt: string
 }
 
-/** 携带用户信息的 B站订阅关系 */
 export interface BilibiliSubscriptionWithUser extends BilibiliSubscriptionRow {
   bilibiliUser: BilibiliUserRow
 }
 
-/** DynamicCaches 表行 */
 export interface DynamicCacheRow {
   id: number
   dynamic_id: string
@@ -258,7 +237,6 @@ export interface DynamicCacheRow {
   updatedAt: string
 }
 
-/** B站过滤词行 */
 export interface BilibiliFilterWordRow {
   id: number
   host_mid: number
@@ -268,7 +246,6 @@ export interface BilibiliFilterWordRow {
   updatedAt: string
 }
 
-/** B站过滤标签行 */
 export interface BilibiliFilterTagRow {
   id: number
   host_mid: number
@@ -278,7 +255,6 @@ export interface BilibiliFilterTagRow {
   updatedAt: string
 }
 
-/** B站过滤配置 */
 export interface BilibiliFilterConfig {
   filterMode: FilterMode
   filterWords: string[]
@@ -295,12 +271,10 @@ export interface TableColumnInfo {
   pk: number
 }
 
-/** 计数查询结果 */
 export interface CountResult {
   count: number
 }
 
-/** 求和查询结果 */
 export interface SumResult {
   total: number | null
 }

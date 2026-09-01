@@ -212,7 +212,6 @@ export class ParseCoordinator {
  */
 let activeCoordinator: ParseCoordinator | undefined
 
-/** 登记当前协调器，供诊断卡读取队列快照 */
 export const setActiveParseCoordinator = (coordinator: ParseCoordinator | undefined): void => {
   activeCoordinator = coordinator
 }

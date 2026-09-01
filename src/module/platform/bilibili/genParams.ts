@@ -25,7 +25,6 @@ const getWbiSign = (): AmagiWbiSignModule['wbi_sign'] => {
   return wbiSign
 }
 
-/** 从「登录基本信息」响应中读取 vipStatus，读取不到时返回 undefined */
 const readVipStatus = (value: unknown): number | undefined => {
   if (!isRecord(value)) return undefined
   const data = isRecord(value.data) ? value.data : undefined
@@ -34,7 +33,6 @@ const readVipStatus = (value: unknown): number | undefined => {
 }
 
 /**
- * 计算请求参数
  * @param apiURL 请求地址
  */
 export async function genParams (apiURL: string): Promise<string> {
@@ -63,36 +61,22 @@ export interface BilibiliCkStatus {
 /**
  * 检查B站Cookie的有效性和VIP状态
  *
- * 此函数通过调用B站API来验证Cookie的有效性，并检查用户的VIP状态。
- * 如果Cookie未配置或无效，将返回未登录状态。
- *
- * @example
- * // 检查Cookie状态
- * const result = await checkCk();
- * console.log(result); // { Status: 'isLogin', isVIP: true }
- *
  * @returns 返回包含登录状态和VIP状态的对象
  *
  * @throws 当API调用失败时可能抛出错误
  *
- * @see {@link bilibiliFetcher} 使用的API调用函数
- * @see {@link Config.cookies} 使用的Cookie配置
- *
  */
 export async function checkCk (): Promise<BilibiliCkStatus> {
-  // 如果Cookie为空或未配置，直接返回未登录状态
   // （「没配置」只有空串这一种表示，归一化在 Config.cookies getter 里做）
   if (Config.cookies.bilibili === '') {
     return { Status: '!isLogin', isVIP: false }
   }
 
-  // 获取用户登录信息
   const loginInfo = await bilibiliFetcher.fetchLoginStatus({}, Config.cookies.bilibili, buildAmagiRequestConfig())
 
   // 判断VIP状态：vipStatus为1表示是VIP用户
   const isVIP = readVipStatus(loginInfo) === 1
 
-  // 返回登录状态和VIP状态
   // 注意：无论是否是VIP，只要Cookie有效就返回已登录状态
   return {
     Status: 'isLogin',

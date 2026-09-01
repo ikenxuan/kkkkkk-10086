@@ -8,7 +8,6 @@ import {
   type RichTextNode
 } from '@kkk/richtext'
 
-/** 评论中的表情项 */
 interface BilibiliCommentEmote {
   url: string
 }
@@ -21,20 +20,18 @@ interface BilibiliCommentMember {
   pendant: { image: string }
   level_info: { current_level: number }
   vip: {
-    /** 本文件沿用 vipStatus 判断大会员，与 bilibili.ts / push.ts 使用的 status 不同 */
+    /** 本文件沿用 vipStatus 判断大会员，与 dynamicText.ts 使用的 status 不同 */
     vipStatus?: number
     status: number
     nickname_color?: string
   }
 }
 
-/** 评论中被 @ 的用户 */
 interface BilibiliCommentAtMember {
   mid?: string | number
   uname: string
 }
 
-/** 评论正文 */
 interface BilibiliCommentContent {
   message: string
   emote?: Record<string, BilibiliCommentEmote>
@@ -113,7 +110,6 @@ const splitByMention = (nodes: RichTextNode[], members: BilibiliCommentAtMember[
   })
 }
 
-/** 评论正文 → 富文本文档 */
 const buildCommentMessage = (content: BilibiliCommentContent): RichTextDocument =>
   createRichTextDocument(
     splitByMention(splitByEmote(content.message ?? '', content.emote), content.members),
@@ -155,7 +151,7 @@ const buildSubComment = (reply: BilibiliCommentReply, upperMid: string) => ({
 /**
  * B站评论数据 → `bilibili/comment` 契约的 `CommentsData`。
  *
- * 这里刻意不写返回类型标注：让 TS 推出字面量形状，四个
+ * 这里刻意不写返回类型标注：让 TS 推出字面量形状，五个
  * `Render('bilibili/comment', …)` 调用点就都会拿契约来校验它。
  *
  * 整个函数是从 art-template 时代重写的——原实现把等级图标 SVG、大会员 span、

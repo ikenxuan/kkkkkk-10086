@@ -32,7 +32,6 @@ export const statBotId = (pushList: PushlistConfig): {
     bilibili: new Map<string, number>()
   }
 
-  // 统计抖音平台机器人使用次数
   pushList.douyin?.forEach(item => {
     item.group_id.forEach(gid => {
       const botId = gid.split(':')[1] || ''
@@ -40,7 +39,6 @@ export const statBotId = (pushList: PushlistConfig): {
     })
   })
 
-  // 统计B站平台机器人使用次数
   pushList.bilibili?.forEach(item => {
     item.group_id.forEach(gid => {
       const botId = gid.split(':')[1] || ''
@@ -48,7 +46,6 @@ export const statBotId = (pushList: PushlistConfig): {
     })
   })
 
-  // 获取抖音平台使用最多的机器人
   let douyinMaxCount = 0
   let douyinMostFrequentBot = ''
   platformBotCount.douyin.forEach((count, botId) => {
@@ -58,7 +55,6 @@ export const statBotId = (pushList: PushlistConfig): {
     }
   })
 
-  // 获取B站平台使用最多的机器人
   let biliMaxCount = 0
   let biliMostFrequentBot = ''
   platformBotCount.bilibili.forEach((count, botId) => {

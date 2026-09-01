@@ -115,13 +115,11 @@ export const getBilibiliID = async (
   let longLink = ''
   const absoluteUrl = ensureAbsoluteUrl(url)
   try {
-    // 获取长链接
     longLink = await new Networks({
       url: absoluteUrl,
       headers: baseHeaders
     }).getLongLink()
 
-    // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
       logger.error('获取B站长链接失败，请稍后再试')
       return { type: 'undefined' }
@@ -135,7 +133,6 @@ export const getBilibiliID = async (
       if (response.url && response.url !== absoluteUrl) longLink = response.url
     }
 
-    /** 统一的URL模式匹配表 */
     const urlPatterns: UrlPattern[] = [
       // 视频链接
       [
@@ -218,7 +215,6 @@ export const getBilibiliID = async (
           const parsedUrl = parseUrlSafely(url)
           const hostname = parsedUrl?.hostname ?? ''
           const pathname = parsedUrl?.pathname ?? ''
-          // 统一使用单个正则表达式匹配
           const match = /^https:\/\/(?:t|www)\.bilibili\.com\/(?:opus\/)?(\d+)/.exec(url) ||
             (hostname === 't.bilibili.com' && pathname.match(/^\/(\d+)/)) ||
             (hostname === 'www.bilibili.com' && pathname.match(/^\/opus\/(\d+)/))
@@ -246,7 +242,6 @@ export const getBilibiliID = async (
       ]
     ]
 
-    // 统一的链接处理逻辑
     for (const [name, test, extract] of urlPatterns) {
       if (test(longLink)) {
         const extractResult = extract(longLink)
@@ -258,7 +253,6 @@ export const getBilibiliID = async (
   } catch (error) {
     logger.error('[B站链接] 解析失败:', error)
   }
-  // 处理未匹配到任何模式的情况
   if (result.type === 'undefined' && log) {
     logger.warn('[B站链接] 无法识别的链接:', longLink)
   }

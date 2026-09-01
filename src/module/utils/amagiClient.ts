@@ -37,8 +37,8 @@ const isResultEnvelope = (value: unknown): value is Result<unknown> =>
 /**
  * -352 到达时把信封的**键名**记下来（不记值，里面有 cookie 指纹一类东西）。
  *
- * 放在这里而不是 riskControl：那个策略的 `match` 要求 `getVoucher(error)` 非空，
- * 没有 voucher 的 -352 根本进不到它的 `handle`（`ErrorHandler/handler.ts:31` 直接 continue），
+ * 放在这里而不是 riskControl：那个策略的 `match` 要求 `readRiskVoucher(error)` 非空，
+ * 没有 voucher 的 -352 根本进不到它的 `handle`（`ErrorHandler/handler.ts:33` 直接 continue），
  * 日志写在里面等于永远不执行。而实测的 -352 响应体只有 `{code, message, ttl}`、
  * 没有 `data` —— 也就是说「取不到 voucher」才是常态，正是这条日志要留证的情形。
  */

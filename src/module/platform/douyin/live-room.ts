@@ -19,7 +19,7 @@ export type DouyinLiveApiFetcher = (
 /**
  * 和 `douyin.ts` 里 `narrowApiResponse` 同一句报错。
  *
- * 没把那个泛型工具搬出来公用：它在 douyin.ts 里有 12 处调用，搬走只是把 import 换个方向，
+ * 没把那个泛型工具搬出来公用：它在 douyin.ts 里有 9 处调用，搬走只是把 import 换个方向，
  * 而这里真正需要的只有「不是对象就按接口异常抛」这一句。报错文案保持一致，
  * 因为用户看到的是同一类失败。
  */

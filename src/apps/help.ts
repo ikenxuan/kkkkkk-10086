@@ -4,8 +4,6 @@ import { checkYunzaiVersion } from '@/module/utils/yunzaiVersion'
 import type { CommandEvent } from '@/types/message'
 
 /**
- * 帮助与版本两条命令。
- *
  * 菜单结构与三条命令的分工照搬上游 `karin-plugin-kkk` 的
  * `packages/core/src/apps/help.ts`：`#kkk版本` 出的是 `other/runtime`
  * 运行环境诊断卡。本仓库原来把版本和更新日志合成一条规则、全渲染成更新日志，

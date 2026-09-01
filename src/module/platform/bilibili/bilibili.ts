@@ -1640,6 +1640,10 @@ function mapping_table (type: string): number {
   return 1
 }
 
+/**
+ * @param {import ('@ikenxuan/amagi').BiliDynamicInfo<DynamicType>} dynamicINFO
+ * @returns
+ */
 const oid = (dynamicINFO: DynamicOidData): string => {
   switch (dynamicINFO.data.item.type) {
     case 'DYNAMIC_TYPE_WORD':
@@ -1654,6 +1658,20 @@ const oid = (dynamicINFO: DynamicOidData): string => {
   }
 }
 
+/**
+ * 检出符合大小的视频流信息对象
+ * @param {Object} qualityOptions - 视频质量选项
+ * @param {number} [qualityOptions.qn] - qn值，视频清晰度标识
+ * @param {number} [qualityOptions.maxAutoVideoSize] - 可接受的最大视频文件大小，单位：MB
+ * @param {string} qualityOptions.bvid - 视频BV号
+ * @param {string[]} qualityOptions.accept_description - 视频流清晰度列表
+ * @param {videoDownloadUrlList} videoList - 包含所有清晰度的视频流信息对象
+ * @param {string} audioUrl - 音频流地址
+ * @returns {Promise<{ accept_description: string[]; videoList: videoDownloadUrlList; selectedQuality: string }>} 包含处理后的视频列表和清晰度描述的对象
+ * @property {string[]} returns.accept_description - 处理后的清晰度描述列表
+ * @property {Object[]} returns.videoList - 处理后的视频流信息对象列表
+ * @property {string} returns.selectedQuality - 选中的视频画质值
+ */
 export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { base_url: string }> (
   qualityOptions: BilibiliQualityOptions,
   videoList: T[],

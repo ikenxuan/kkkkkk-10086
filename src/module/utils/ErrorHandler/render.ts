@@ -102,8 +102,7 @@ export const buildContextLogEntries = (groupId?: string | number, userId?: strin
  *
  * 错误卡片有两个调用点（本文件的 renderErrorReport，和 `Base.ts` 的 buildApiErrorImage），
  * 场景判定必须是同一套，否则同一张模板在两条路径上会给出不一样的行。把「解析事件 + 生成条目」
- * 收成一个入口，调用点就不用各自复制一遍 group_id/isPrivate 的取值规则 ——
- * `Base.ts` 目前还在自己拼 `|| 'private'` / `|| 'unknown'`，改成调这个函数即可对齐。
+ * 收成一个入口，调用点就不用各自复制一遍 group_id/isPrivate 的取值规则。
  */
 export const buildEventContextLogEntries = (event: ErrorHandlerContext['event']) =>
   buildContextLogEntries(resolveGroupId(event), resolveUserId(event))
