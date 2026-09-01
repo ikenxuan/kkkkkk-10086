@@ -34,8 +34,6 @@ const isConfigName = (name: string): name is ConfigName =>
   CONFIG_NAMES.some(configName => configName === name)
 
 /**
- * 面板分组的先后顺序。
- *
  * 每个配置节文件自带 SOFT_GROUP_BEGIN，所以这个数组的顺序就是用户在面板上看到的
  * 分组顺序；`flat()` 之后必须与拆分前逐项一致，顺序变了等于把用户熟悉的面板重排。
  */
@@ -50,8 +48,6 @@ const schemas: GuobaSchema[] = [
 ].flat()
 
 /**
- * 锅巴面板的插件描述、表单结构与读写入口。
- *
  * @returns 锅巴约定的 support 对象（pluginInfo + configInfo）
  */
 export function supportGuoba (): GuobaSupport {

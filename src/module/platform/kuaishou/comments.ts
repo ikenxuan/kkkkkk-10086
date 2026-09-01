@@ -145,7 +145,6 @@ export const buildKuaishouRichText = (
 }
 
 /**
- * 处理快手评论数据
  * @param data 完整的评论数据
  * @param emojidata 处理过后的 emoji 列表
  */
@@ -174,10 +173,8 @@ export default async function comments (
       create_time: Number(item.timestamp) || 0,
       reply_comment_total: item.subCommentCount || 0
     }))
-    // 按照点赞量降序
     .sort((a, b) => b.digg_count - a.digg_count)
 
-  // 从数组前方开始保留 Config.kuaishou.kuaishounumcomments 条评论，自动移除数组末尾的评论
   const limit = Config.kuaishou.numcomment || Config.kuaishou.kuaishounumcomments || 5
   return jsonArray.slice(0, Math.min(jsonArray.length, limit))
 }

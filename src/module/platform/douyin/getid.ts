@@ -38,13 +38,11 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
   let result: DouyinIdData = { type: 'undefined' }
   let longLink = ''
   try {
-    // 获取长链接
     longLink = await new Networks({
       url,
       headers: baseHeaders
     }).getLongLink()
 
-    // 处理获取长链接失败的情况
     if (!longLink || longLink === '') {
       logger.error('获取抖音长链接失败，请稍后再试')
       return { type: 'undefined' }
@@ -55,9 +53,7 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
       if (response.url && response.url !== url) longLink = response.url
     }
 
-    /** 统一的URL模式匹配表 */
     const urlPatterns: UrlPattern[] = [
-      // 直播间链接
       [
         'live_webcast',
         url => url.includes('webcast.amemv.com'),
@@ -87,7 +83,6 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
           }
         }
       ],
-      // 视频作品链接
       [
         'work',
         url => /(?:video|article|note)\/\d+/.test(url),
@@ -96,10 +91,9 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
           aweme_id: url.match(/(?:video|article|note)\/(\d+)/)?.[1]
         })
       ],
-      // 图集/幻灯片作品链接 (slides)
       [
         'slides',
-        url => /slides\/\d+/.test(url), // 匹配 /slides/ 后跟数字的模式
+        url => /slides\/\d+/.test(url),
         url => ({
           type: 'one_work',
           aweme_id: url.match(/slides\/(\d+)/)?.[1],
@@ -115,7 +109,6 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
           is_mp4: true
         })
       ],
-      // 用户主页链接
       [
         'user',
         url => /https:\/\/(?:www\.douyin\.com|www\.iesdouyin\.com)\/(?:share\/)?user\/\S+/.test(url),
@@ -124,7 +117,6 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
           sec_uid: url.match(/user\/([a-zA-Z0-9_-]+)\b/)?.[1]
         })
       ],
-      // 音乐作品链接
       [
         'music',
         url => /music\/\d+/.test(url),
@@ -135,7 +127,6 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
       ]
     ]
 
-    // 统一的链接处理逻辑 - 适配新的数组结构
     for (const [name, test, extract] of urlPatterns) {
       if (test(longLink)) {
         result = extract(longLink)
@@ -146,7 +137,6 @@ export const getDouyinID = async (url: string, log = true): Promise<DouyinIdData
   } catch (error) {
     logger.error('[抖音链接] 解析失败:', error)
   }
-  // 处理未匹配到任何模式的情况
   if (result.type === 'undefined' && log) {
     logger.warn(`[抖音链接] 无法识别的链接: ${longLink}`)
   }

@@ -52,8 +52,6 @@ const sendPrivate = async (botId: MessageId, userId: string, message: unknown): 
 }
 
 /**
- * 这次错误有没有人收得到卡片。
- *
  * 三个 sendErrorToXxx 各自的前置条件之或。用来在 handler 里决定要不要起 puppeteer ——
  * 没人收的时候那张图纯属白烧：渲染要几秒，而且适配器还会顺手把它上传一次图床。
  *
@@ -75,8 +73,6 @@ export const hasErrorReportTarget = (ctx: ErrorHandlerContext): boolean => {
 }
 
 /**
- * 把错误卡片发给触发者。
- *
  * 返回「触发者到底收到没有」：调用方要靠它决定还要不要补那条 `处理失败：...` 纯文字。
  * 原来这里是 void，于是卡片已经发到触发者眼前了，调用方还是照发一遍文字，
  * 同一个错误在同一个会话里出现两次。

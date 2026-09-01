@@ -1,7 +1,3 @@
-import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
-import type { PushAmagiRuntime } from './types.js'
-
 /**
  * `push.ts` 用到的 amagi 枚举，以及取不到包时的兜底副本。
  *
@@ -12,6 +8,10 @@ import type { PushAmagiRuntime } from './types.js'
  * `createRequire` 的基准目录仍是本目录（与 `push.ts` 同级，lib 产物里也同级），
  * 所以搬过来不影响 `@ikenxuan/amagi` 的解析结果。
  */
+
+import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
+import type { PushAmagiRuntime } from './types.js'
 
 /**
  * amagi 缺失时的枚举副本。

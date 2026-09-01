@@ -125,14 +125,11 @@ const FileWitch = {
   request: RequestType
 } satisfies Partial<Record<ConfigName, CfgKeyMap>>
 
-// 转义正则特殊字符
 const escapeRegex = (str: string): string => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const SwitchCfgReg = new RegExp(`^#kkk设置(${Object.keys(SwitchCfgType).map(escapeRegex).join('|')})\\s*(开启|关闭)$`, 'i')
 const NumberCfgReg = new RegExp(`^#kkk设置(${Object.keys(NumberCfgType).map(escapeRegex).join('|')})\\s*(\\d+)$`, 'i')
 
 /**
- * 在各配置文件的开关表里定位配置项，返回所属配置文件与 yaml 字段名
- *
  * 旧实现先用 `Object.keys(values).includes(key)` 找到文件，再从 `SwitchCfgType`（各表的并集）
  * 取字段名。各表的中文键互不重复，因此直接读 `values[key]` 与之等价，
  * 同时能让类型系统看到字段名一定存在。
@@ -206,12 +203,11 @@ export class kkkAdmin extends plugin<'message'> {
       ]
     })
 
-    // 使用 this.task 定义定时任务
     const task: PluginTask[] = []
     this.task = task
     if (Config.app.removeCache) {
       task.push({
-        cron: '0 0 4 * * *',  // 每天凌晨4点执行
+        cron: '0 0 4 * * *',
         name: '[kkkkkk-10086] 视频缓存自动删除',
         fnc: async () => { await this.deltemp() },
         log: true
@@ -344,24 +340,20 @@ export class kkkAdmin extends plugin<'message'> {
  * @returns 调整后的数值。`limit` 为空时原样返回入参，与旧实现一致
  */
 function checkNumberValue (value: string | undefined, limit: string | number[]): string | number | undefined {
-  // 如果没有限制，直接返回原值
   if (!limit) return value
   const num = Number(value)
 
-  // 处理数组类型限制（固定值列表）
   // 例：B站画质只能是 [0, 6, 16, 32, 64, 74, 80, 112, 116, 120, 127] 中的一个
   if (Array.isArray(limit)) {
-    // 如果输入值在列表中，返回输入值；否则返回列表的第一个值（默认值）
     return limit.includes(num) ? num : limit[0]
   }
 
-  // 处理范围类型限制（最小值-最大值）
   // 例：'1-50' 表示值必须在1到50之间
   // 拆分结果不足两段时 min/max 为 undefined，与之比较恒为 false，行为同旧实现
   const [min, max] = limit.split('-').map(Number)
-  if (min !== undefined && num < min) return min  // 小于最小值，返回最小值
-  if (max !== undefined && num > max) return max  // 大于最大值，返回最大值
-  return num  // 在范围内，返回原值
+  if (min !== undefined && num < min) return min
+  if (max !== undefined && num > max) return max
+  return num
 }
 
 function removeAllFiles (directory: string): Promise<void> {

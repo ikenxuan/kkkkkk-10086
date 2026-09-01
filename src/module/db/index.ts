@@ -29,24 +29,12 @@ const createSingletonGetter = <T>(factory: () => Promise<T>): () => Promise<T | 
   }
 }
 
-/**
- * 获取或初始化 DouyinDB 实例（单例模式）
- */
 export const getDouyinDB = createSingletonGetter(async () => await new DouyinDBBase().init())
 
-/**
- * 获取或初始化 BilibiliDB 实例（单例模式）
- */
 export const getBilibiliDB = createSingletonGetter(async () => await new BilibiliDBBase().init())
 
-/**
- * 获取或初始化 StatisticsDB 实例（单例模式）
- */
 export const getStatisticsDB = createSingletonGetter(async () => await new StatisticsDBBase().init())
 
-/**
- * 初始化所有数据库
- */
 export const initAllDatabases = async (): Promise<{
   douyinDB: DouyinDBBase | null
   bilibiliDB: BilibiliDBBase | null
@@ -61,7 +49,6 @@ export const initAllDatabases = async (): Promise<{
   return { douyinDB: douyin, bilibiliDB: bilibili, statisticsDB: statistics }
 }
 
-// 导出数据库实例（延迟初始化）
 const douyinDBInstance = await getDouyinDB()
 const bilibiliDBInstance = await getBilibiliDB()
 const statisticsDBInstance = await getStatisticsDB()

@@ -25,8 +25,6 @@ export interface RenderParams extends Record<string, unknown> {
 export interface TemplateDataMap {}
 
 /**
- * 某个路由的 payload 类型。
- *
  * 表里登记过就用真实契约（多传、少传、类型不对都会红），没登记就退回 {@link RenderParams}。
  * `scale` 是 `Render()` 自己吃掉的渲染参数，不属于模板契约，所以额外并上。
  */

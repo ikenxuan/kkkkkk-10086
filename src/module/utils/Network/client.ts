@@ -20,8 +20,6 @@ import { delay, isSslError, toAxiosError } from './errors.js'
 import { getRandomUserAgent } from './user-agent.js'
 
 /**
- * 一次请求 / 下载的构造参数。
- *
  * 不进 `index.ts` 的公开面：全仓库没有一个调用点显式标注这个类型，都是直接把
  * 对象字面量交给 `new Networks({...})`，由构造函数的形参去约束。
  */
@@ -139,7 +137,7 @@ export class Networks {
         return await this.request(retryCount + 1)
       }
       // 必须抛 Error 而不是 axiosError.message：抛裸字符串时 normalizeError
-      // （ErrorHandler/render.ts:15）拿不到 stack，错误卡片的堆栈区直接不渲染。
+      // （ErrorHandler/render.ts:12）拿不到 stack，错误卡片的堆栈区直接不渲染。
       // toAxiosError 保证这里一定是带真实调用栈的 AxiosError。
       throw axiosError
     }
@@ -231,8 +229,6 @@ export class Networks {
   }
 
   /**
-   * 把这次尝试要读的实例状态摊成一个上下文交给 `download-pipeline`。
-   *
    * `retry` 打回 `downloadStream` 而不是直接打回 pipeline，是为了让重试继续走
    * 上面那个「`retryCount > 0` 就不再申请额度」的分支。
    */

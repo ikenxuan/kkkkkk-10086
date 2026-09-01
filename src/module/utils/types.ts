@@ -9,8 +9,6 @@ import type { BilibiliFetcher, DouyinFetcher } from '@ikenxuan/amagi'
 import type { FileTitle } from '@/types/platform'
 import type { AxiosRequestConfig } from 'axios'
 
-// ==================== 来自 Base.ts ====================
-
 export interface AmagiClient {
   [key: string]: unknown
 }
@@ -79,9 +77,9 @@ export interface VideoDownloadOptions {
    * 下载层会把 `video_url` 排在最前再合并这批。
    */
   candidates?: readonly string[]
-  /** 资源键，例如 `bili:BV1xx:video`。给了才会跨次数记住这批地址，见 `utils/CdnRegistry.ts` */
+  /** 资源键，例如 `bili:BV1xx:video`。给了才会跨次数记住这批地址，见 `utils/Network/CdnRegistry.ts` */
   resource?: string
-  /** 下载前实测候选地址速度，按结果重排。由平台层按自己的开关决定，见 `utils/CdnProbe.ts` */
+  /** 下载前实测候选地址速度，按结果重排。由平台层按自己的开关决定，见 `utils/Network/CdnProbe.ts` */
   probeCdn?: boolean
 }
 

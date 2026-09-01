@@ -39,7 +39,6 @@ export interface DouyinListCardStatistics {
   share_count?: number
 }
 
-/** 抖音号：优先 unique_id，退回 short_id */
 const listCardDouyinId = (user: DouyinListCardUser | undefined): string =>
   user?.unique_id || user?.short_id || '无法获取'
 
@@ -56,7 +55,6 @@ const listCardAvatar = (user: DouyinListCardUser | undefined): string => {
   return ''
 }
 
-/** 两张卡片共用的作品区字段 */
 const buildListCardWorkFields = (options: {
   author: DouyinListCardUser | undefined
   coverUrl: string
