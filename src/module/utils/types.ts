@@ -5,8 +5,7 @@
  * 让实现文件专注运行时逻辑，类型可以被别的模块直接引用而不必 import 整个 `Base`。
  */
 
-import type { getBilibiliData as fetchBilibiliData } from '@/module/platform/bilibili/api'
-import type { getDouyinData as fetchDouyinData } from '@/module/platform/douyin/api'
+import type { BilibiliFetcher, DouyinFetcher } from '@ikenxuan/amagi'
 import type { FileTitle } from '@/types/platform'
 import type { AxiosRequestConfig } from 'axios'
 
@@ -22,8 +21,8 @@ export interface AmagiModule {
 }
 
 export interface AmagiDependencies extends AmagiModule {
-  getBilibiliData: typeof fetchBilibiliData
-  getDouyinData: typeof fetchDouyinData
+  bilibiliFetcher: BilibiliFetcher
+  douyinFetcher: DouyinFetcher
 }
 
 /** `Base` 及其子类构造函数接受的事件对象 */
@@ -108,9 +107,14 @@ export interface ApiErrorRecord extends Record<string, unknown> {
   data?: unknown
 }
 
+/**
+ * `Base` 暴露的 amagi 客户端。
+ *
+ * 两个平台的 fetcher 是**包过错误卡片的**那一层（见 `Base.ts` 的 Proxy），其余属性
+ * 原样透传给 amagi Client。只有这两个平台在这里出现，因为只有它们的失败要出卡片
+ * —— 快手/小红书的调用点直接 import `utils/amagiClient` 的裸 fetcher。
+ */
 export type AmagiProxyClient = AmagiClient & {
-  getBilibiliData: typeof fetchBilibiliData
-  getDouyinData: typeof fetchDouyinData
+  bilibili: BilibiliFetcher
+  douyin: DouyinFetcher
 }
-
-export type AmagiProperty = keyof AmagiProxyClient

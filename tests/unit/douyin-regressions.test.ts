@@ -14,11 +14,36 @@ const shouldFilterMock = vi.hoisted(() => vi.fn())
 const getDouyinIdMock = vi.hoisted(() => vi.fn())
 const guardedDouyinDataMock = vi.hoisted(() => vi.fn())
 
+/**
+ * 裸 fetcher 是「一个对象、每个方法一个键」，方法名当第一个实参汇进同一个 spy，
+ * 旧的 `getDouyinData(method, options)` 形态原样保留。
+ *
+ * 分工的判据是方法名，而按名分流只对「只有一条路径会调」的方法成立。
+ * `fetchUserFavoriteList` / `fetchUserRecommendList` 只有推送在调，进 guard 表；
+ * `fetchLiveRoomInfo` 解析和推送都调，靠客户端区分（裸 fetcher 是推送，`this.amagi.douyin` 是解析）。
+ * `fetchUserVideoList` 两条路径都走 `this.amagi.douyin`（douyin.ts:812 解析、push.ts:674 推送），
+ * 客户端和方法名都区分不开，所以它不进任何 guard 表 —— 要断言它的用例直接断 douyinDataMock。
+ */
+const AMAGI_GUARDED = vi.hoisted(() => new Set([
+  'fetchUserFavoriteList', 'fetchUserRecommendList'
+]))
+const BARE_GUARDED = vi.hoisted(() => new Set([
+  'fetchUserFavoriteList', 'fetchUserRecommendList', 'fetchLiveRoomInfo'
+]))
+const makeFetcherStub = vi.hoisted(() => (guarded: Set<string>) => new Proxy({}, {
+  get: (_target, method: string) => async (options: unknown) =>
+    guarded.has(method)
+      ? await guardedDouyinDataMock(method, options)
+      : await douyinDataMock(method, options)
+}))
+const amagiDouyinStub = vi.hoisted(() => makeFetcherStub(AMAGI_GUARDED))
+const bareDouyinFetcherStub = vi.hoisted(() => makeFetcherStub(BARE_GUARDED))
+
 vi.mock('../../src/module/utils/index.js', () => ({
   Base: class {
     e: Record<string, unknown>
     headers: Record<string, string> = {}
-    amagi = { getDouyinData: douyinDataMock }
+    amagi = { douyin: amagiDouyinStub }
 
     constructor (event: Record<string, unknown>) {
       this.e = event
@@ -78,8 +103,9 @@ vi.mock('../../src/module/db/index.js', () => ({
 vi.mock('../../src/module/platform/douyin/getid.js', () => ({
   getDouyinID: getDouyinIdMock
 }))
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: guardedDouyinDataMock
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: bareDouyinFetcherStub,
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 globalThis.logger = {
@@ -201,7 +227,7 @@ describe('Douyin migration regressions', () => {
     )
 
     expect(result).toEqual([{ aweme_id: `${pushType}-1` }])
-    expect(guardedDouyinDataMock).toHaveBeenCalledWith(method === 'fetchUserFavoriteList' ? 'fetchUserFavoriteList' : 'fetchUserRecommendList', {
+    expect(guardedDouyinDataMock).toHaveBeenCalledWith(method, {
       sec_uid: 'sec-1',
       number: 15,
       typeMode: 'strict'
@@ -226,7 +252,7 @@ describe('Douyin migration regressions', () => {
     }
 
     douyinDataMock.mockImplementation(async (method: string, options: Record<string, unknown>) => {
-      if (method === '直播间信息数据') {
+      if (method === 'fetchLiveRoomInfo') {
         // 第一次探测只有 web_rid；第二次才带上主页给的内部房间号
         if (options.room_id === '26139686') {
           return { data: { data: { user: { sec_uid: 'sec-live-1' } } } }
@@ -258,18 +284,18 @@ describe('Douyin migration regressions', () => {
     expect(await new DouYin({ reply }, data).RESOURCES(data)).toBe(true)
 
     // 用 web_rid 探一次直播间，拿到 sec_uid
-    expect(douyinDataMock).toHaveBeenNthCalledWith(1, '直播间信息数据', {
+    expect(douyinDataMock).toHaveBeenNthCalledWith(1, 'fetchLiveRoomInfo', {
       room_id: '26139686',
       web_rid: '26139686',
       typeMode: 'strict'
     })
     // 用探到的 sec_uid 反查主播主页
-    expect(douyinDataMock).toHaveBeenNthCalledWith(2, '用户主页数据', {
+    expect(douyinDataMock).toHaveBeenNthCalledWith(2, 'fetchUserProfile', {
       sec_uid: 'sec-live-1',
       typeMode: 'strict'
     })
     // 正式取直播间信息时 room_id 换成主页给的内部房间号，web_rid 仍是展示号
-    expect(douyinDataMock).toHaveBeenNthCalledWith(3, '直播间信息数据', {
+    expect(douyinDataMock).toHaveBeenNthCalledWith(3, 'fetchLiveRoomInfo', {
       room_id: '7632061670499617555',
       web_rid: '26139686',
       typeMode: 'strict'
@@ -289,7 +315,7 @@ describe('Douyin migration regressions', () => {
     const reply = vi.fn().mockResolvedValue(undefined)
 
     douyinDataMock.mockImplementation(async (method: string) => {
-      if (method === '直播间信息数据') {
+      if (method === 'fetchLiveRoomInfo') {
         return { data: { data: { data: [{ title: 'Live', cover: { url_list: ['cover'] } }] } } }
       }
       return {
@@ -309,11 +335,11 @@ describe('Douyin migration regressions', () => {
     const data = { type: 'live_room_detail', sec_uid: 'sec-webcast' }
     expect(await new DouYin({ reply }, data).RESOURCES(data)).toBe(true)
 
-    expect(douyinDataMock).toHaveBeenNthCalledWith(1, '用户主页数据', {
+    expect(douyinDataMock).toHaveBeenNthCalledWith(1, 'fetchUserProfile', {
       sec_uid: 'sec-webcast',
       typeMode: 'strict'
     })
-    expect(douyinDataMock).toHaveBeenNthCalledWith(2, '直播间信息数据', {
+    expect(douyinDataMock).toHaveBeenNthCalledWith(2, 'fetchLiveRoomInfo', {
       room_id: '7632061670499617555',
       web_rid: '26139686',
       typeMode: 'strict'
@@ -352,7 +378,7 @@ describe('Douyin migration regressions', () => {
     )
 
     expect(result?.Detail_Data.live_data).toBe(liveData)
-    expect(guardedDouyinDataMock).toHaveBeenCalledWith('直播间信息数据', {
+    expect(guardedDouyinDataMock).toHaveBeenCalledWith('fetchLiveRoomInfo', {
       room_id: 'room-1',
       web_rid: 'web-1',
       typeMode: 'strict'
@@ -394,7 +420,7 @@ describe('Douyin migration regressions', () => {
     const result = await new DouyinPushPreview({} as never).renderLive('https://douyin.test/user')
 
     expect(result).toEqual({ ok: true, image: 'image' })
-    expect(guardedDouyinDataMock).toHaveBeenCalledWith('直播间信息数据', {
+    expect(guardedDouyinDataMock).toHaveBeenCalledWith('fetchLiveRoomInfo', {
       room_id: 'room-1',
       web_rid: 'web-1',
       typeMode: 'strict'
@@ -520,35 +546,41 @@ describe('抖音推送跳过已注销账号', () => {
     const result = await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
 
     expect(result).toEqual({})
-    // 只应该有那一次「用户主页数据」，不该再有作品列表请求
+    // 只应该有那一次 fetchUserProfile，不该再有作品列表请求
     expect(douyinDataMock).toHaveBeenCalledTimes(1)
-    expect(guardedDouyinDataMock).not.toHaveBeenCalled()
+    expect(douyinDataMock).not.toHaveBeenCalledWith('fetchUserVideoList', expect.anything())
   })
 
   it('special_state 为 1 但账号未删除时照常推送', async () => {
     // 两个条件是「与」关系：只有 special_state 不足以判定注销（私密账号等也会带状态）
-    douyinDataMock.mockResolvedValue({
-      data: {
-        user: {
-          ...liveProfile.data.user,
-          special_state_info: { special_state: 1, title: '私密账号' },
-          user_deleted: false
-        }
-      }
-    })
-    guardedDouyinDataMock.mockResolvedValue({ data: { aweme_list: [] } })
+    douyinDataMock.mockImplementation(async (method: string) =>
+      method === 'fetchUserVideoList'
+        ? { data: { aweme_list: [] } }
+        : {
+            data: {
+              user: {
+                ...liveProfile.data.user,
+                special_state_info: { special_state: 1, title: '私密账号' },
+                user_deleted: false
+              }
+            }
+          })
 
     await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
 
-    expect(guardedDouyinDataMock).toHaveBeenCalled()
+    expect(douyinDataMock).toHaveBeenCalledWith('fetchUserVideoList', expect.objectContaining({
+      sec_uid: 'sec-deleted'
+    }))
   })
 
   it('正常账号不受影响', async () => {
-    douyinDataMock.mockResolvedValue(liveProfile)
-    guardedDouyinDataMock.mockResolvedValue({ data: { aweme_list: [] } })
+    douyinDataMock.mockImplementation(async (method: string) =>
+      method === 'fetchUserVideoList' ? { data: { aweme_list: [] } } : liveProfile)
 
     await new DouYinpush({ group_id: 'group-1' }).getDynamicList(userList)
 
-    expect(guardedDouyinDataMock).toHaveBeenCalled()
+    expect(douyinDataMock).toHaveBeenCalledWith('fetchUserVideoList', expect.objectContaining({
+      sec_uid: 'sec-deleted'
+    }))
   })
 })

@@ -1,5 +1,6 @@
 import { isRecord } from '@/module/utils/record'
-import { getKuaishouData } from './api.js'
+import Config from '@/module/utils/Config'
+import { buildAmagiRequestConfig, kuaishouFetcher } from '@/module/utils/amagiClient'
 
 /** 快手数据请求类型 */
 export type KuaishouDataType = 'one_work' | '单个作品信息' | '作品评论信息'
@@ -12,27 +13,29 @@ export interface KuaishouWorkPayload {
 }
 
 /**
- * amagi 内部方法名 —— 全部取自 `@ikenxuan/amagi@6.5.0` 的
- * `KuaishouInternalMethods`（`dist/default/index.d.ts:26006`），wrapper 再通过
- * `KuaishouMethodToFetcher` 映射到英文 fetcher 方法名：
+ * 没配 `Config.cookies.kuaishou` 时用的游客 ck。
  *
- * | 中文内部方法名   | 英文 fetcher 方法名 |
- * | ---------------- | ------------------- |
- * | 单个视频作品数据 | fetchVideoWork      |
- * | 评论数据         | fetchWorkComments   |
- * | Emoji数据        | fetchEmojiList      |
+ * **不能删**：amagi 6.5.0 的 `getKuaishouDefaultConfig` 只做 `Cookie: cookie?.trim() ?? ''`，
+ * **没有**自己的游客兜底。而快手 GraphQL 在完全不带 Cookie 时会返回空响应、被 amagi
+ * 归一成 `INVALID_COOKIE`，于是没配 ck 的用户会直接坏掉。
+ * （`kpn=KUAISHOU_VISION` 是快手 web 端必需的产品标识。）
+ */
+const KUAISHOU_GUEST_COOKIE =
+  'did=web_50424132d556424eb8fa8d27a612fda9; didv=1720860549000; kpf=PC_WEB; clientid=3; kpn=KUAISHOU_VISION'
+
+/**
+ * 用到的 amagi fetcher 方法名。
  *
  * 刻意写常量而不是内联字面量：这三个名字是**跨包契约**，amagi 改名时应该在这里
  * 一眼看到，而不是散落在三个调用点里。
  *
- * amagi 另有 `用户主页数据` / `用户作品列表数据` / `直播间信息数据`
- * （`fetchUserProfile` / `fetchUserWorkList` / `fetchLiveRoomInfo`），
+ * amagi 另有 `fetchUserProfile` / `fetchUserWorkList` / `fetchLiveRoomInfo`，
  * 本插件目前不用，属于新功能，另有安排。
  */
 const KUAISHOU_METHODS = {
-  videoWork: '单个视频作品数据',
-  comments: '评论数据',
-  emojiList: 'Emoji数据'
+  videoWork: 'fetchVideoWork',
+  comments: 'fetchWorkComments',
+  emojiList: 'fetchEmojiList'
 } as const
 
 /**
@@ -70,8 +73,21 @@ const unwrapAmagiResult = (value: unknown): unknown => {
  * 而 `Action` 会因为读不到 `visionVideoDetail.status === 1` 回「不支持解析的视频」。
  * 也就是说取数失败的用户可见行为和迁移前一致。
  */
-const fetchKuaishou = async (method: string, options?: Record<string, unknown>): Promise<unknown> => {
-  const result = unwrapAmagiResult(await getKuaishouData(method, options))
+const fetchKuaishou = async (
+  method: (typeof KUAISHOU_METHODS)[keyof typeof KUAISHOU_METHODS],
+  options?: Record<string, unknown>
+): Promise<unknown> => {
+  // 按联合类型下标取方法会丢掉 amagi 的重载（只剩 2 参那条），所以收窄成本地调用签名
+  const fetch = kuaishouFetcher[method] as (
+    options: Record<string, unknown>,
+    cookie: string,
+    requestConfig: ReturnType<typeof buildAmagiRequestConfig>
+  ) => Promise<unknown>
+  const result = unwrapAmagiResult(await fetch(
+    options ?? {},
+    Config.cookies.kuaishou || KUAISHOU_GUEST_COOKIE,
+    buildAmagiRequestConfig()
+  ))
   if (!result || result === '') {
     logger.error('获取响应数据失败！\n请求类型：' + method)
   }

@@ -22,13 +22,19 @@ vi.mock('../../src/module/utils/Common.js', () => ({
   default: commonMock
 }))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: vi.fn()
-}))
-
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: vi.fn()
-}))
+// 两个平台必须合到一份替身里：amagiClient 是同一个模块，分两次 vi.mock 同一路径
+// 后一次会静默盖掉前一次。
+// importOriginal 只为拿到真的 wrapAmagiClient，不会拖上 amagi —— 那四个 fetcher 是
+// lazyFetcher，只在属性访问时才 require，而这里两个都被替身盖掉了。
+vi.mock('../../src/module/utils/amagiClient.js', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../src/module/utils/amagiClient.js')>()
+  return {
+    ...actual,
+    bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
+    douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+    buildAmagiRequestConfig: vi.fn(() => ({}))
+  }
+})
 
 vi.mock('../../src/module/utils/FFmpeg.js', async importOriginal => {
   const actual = await importOriginal<typeof import('../../src/module/utils/FFmpeg.js')>()
@@ -71,10 +77,12 @@ vi.mock('@ikenxuan/watermark', () => ({
 }))
 
 import { embedWatermarkToPngBytes, type EmbedOutput } from '@ikenxuan/watermark'
+import type { BilibiliFetcher } from '@ikenxuan/amagi'
 import {
   normalizeCompressionOptions,
   normalizeLoopVideoOptions
 } from '../../src/module/utils/FFmpeg.js'
+import { wrapAmagiClient } from '../../src/module/utils/amagiClient.js'
 import {
   Base,
   isRemoteVideoTooLargeForUrlSend,
@@ -85,11 +93,11 @@ import { embedWatermark } from '../../src/module/utils/Watermark.js'
 
 const encoderMock = vi.mocked(embedWatermarkToPngBytes)
 
+// default + bilibiliErrorCodeMap 同时给齐，getAmagiDependencies 才走短路分支、
+// 不去 require('@ikenxuan/amagi')；两个 fetcher 由上面的模块替身兜底。
 const amagiDependencies = {
   default: vi.fn(() => ({})),
-  bilibiliErrorCodeMap: {},
-  getBilibiliData: vi.fn(),
-  getDouyinData: vi.fn()
+  bilibiliErrorCodeMap: {}
 }
 
 const createUploadEvent = (
@@ -152,17 +160,6 @@ afterEach(() => {
 describe('Base compatibility', () => {
   it('falls back to ICQQ when a scheduled task has no event', () => {
     expect(new Base(undefined, amagiDependencies).botadapter).toBe('ICQQ')
-  })
-
-  it('keeps handling truthy non-object Douyin responses as API errors', async () => {
-    const getDouyinData = vi.fn().mockResolvedValue('unexpected')
-    const base = new Base(undefined, {
-      ...amagiDependencies,
-      getDouyinData
-    })
-    const call = base.amagi.getDouyinData as () => Promise<unknown>
-
-    await expect(call()).rejects.toThrow()
   })
 
   it('uses the event reply even when no contact target is attached', async () => {
@@ -243,19 +240,26 @@ describe('Base compatibility', () => {
   })
 
   it('keeps handling string-valued Bilibili error codes', async () => {
-    const getBilibiliData = vi.fn().mockResolvedValue({
-      code: '-400',
-      message: 'unexpected'
-    })
+    // 字符串码必须按线上的方式进来：wrapAmagiClient 把失败信封抛成 AmagiError，
+    // 而 AmagiError.code 声明是 number —— 直接 new 一个就得给 code 加 cast，
+    // 那就把「运行期真的会收到字符串」这个前提盖掉了。
+    // 归一化在 readAmagiFailureCode 里，Base 拿它的结果去查 bilibiliErrorCodeMap。
+    const stub = {
+      fetchVideoInfo: async () => ({
+        success: false,
+        code: '-400',
+        message: 'unexpected'
+      })
+      // satisfies 而不是 as：方法名照 BilibiliFetcher 校验，上游改名时这里会红
+    } satisfies Partial<Record<keyof BilibiliFetcher, unknown>>
     const reply = vi.fn()
     const base = new Base({ reply }, {
       ...amagiDependencies,
       bilibiliErrorCodeMap: { [-400]: true },
-      getBilibiliData
+      bilibiliFetcher: wrapAmagiClient(stub) as unknown as BilibiliFetcher
     })
-    const call = base.amagi.getBilibiliData as () => Promise<unknown>
 
-    await expect(call()).rejects.toThrow('unexpected')
+    await expect(base.amagi.bilibili.fetchVideoInfo({ bvid: 'BV1' })).rejects.toThrow('unexpected')
     expect(reply).toHaveBeenCalledTimes(1)
   })
 

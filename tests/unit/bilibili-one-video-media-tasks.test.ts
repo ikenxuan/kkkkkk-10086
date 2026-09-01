@@ -74,8 +74,10 @@ vi.mock('../../src/module/utils/index.js', async () => {
   }
 })
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: vi.fn()
+// 任何方法都返回 undefined，与旧的 `getBilibiliData: vi.fn()` 同义：这些用例不该走到取数
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/platform/bilibili/index.js', () => ({
@@ -184,22 +186,19 @@ const createSubject = (options: SubjectOptions = {}) => {
     if (kind === 'comment') mocks.events.push('comment:reply')
   })
 
-  const getBilibiliData = vi.fn(async (method: string) => {
-    if (method === '单个视频作品数据') return infoData
-    if (method === '单个视频下载信息数据') return playUrlData
-    if (method === '评论数据') {
-      mocks.events.push('comment:fetch')
-      if (options.commentsSoftFailureCode !== undefined) {
-        return {
-          success: false,
-          code: options.commentsSoftFailureCode,
-          message: 'UP主已关闭评论区',
-          data: null
-        }
+  const fetchVideoInfo = vi.fn(async () => infoData)
+  const fetchVideoStreamUrl = vi.fn(async () => playUrlData)
+  const fetchComments = vi.fn(async () => {
+    mocks.events.push('comment:fetch')
+    if (options.commentsSoftFailureCode !== undefined) {
+      return {
+        success: false,
+        code: options.commentsSoftFailureCode,
+        message: 'UP主已关闭评论区',
+        data: null
       }
-      return { data: { replies: [{ rpid: 1 }] } }
     }
-    throw new Error(`Unexpected Bilibili API method: ${method}`)
+    return { data: { replies: [{ rpid: 1 }] } }
   })
 
   const fetchVideoDanmakuList = vi.fn(async () => {
@@ -213,11 +212,20 @@ const createSubject = (options: SubjectOptions = {}) => {
     mocks.events.push('video:end')
   })
 
+  // Proxy 兜底保留旧 stub 的 `Unexpected method` 报错：one_video 将来多调一个 fetcher
+  // 方法时要当场炸出来，而不是静默拿到 undefined 再在几十行外报 TypeError。
+  const bilibili = new Proxy({ fetchVideoInfo, fetchVideoStreamUrl, fetchComments }, {
+    get: (target, prop) => {
+      if (prop in target) return Reflect.get(target, prop)
+      throw new Error(`Unexpected Bilibili fetcher method: ${String(prop)}`)
+    }
+  })
+
   const subject = Object.create(Bilibili.prototype) as Bilibili
   Object.assign(subject, {
     Type: 'one_video',
     e: { reply },
-    amagi: { getBilibiliData },
+    amagi: { bilibili },
     forceBurnDanmaku: true,
     islogin: false,
     downloadfilename: '',
@@ -232,7 +240,7 @@ const createSubject = (options: SubjectOptions = {}) => {
   return {
     subject,
     reply,
-    getBilibiliData,
+    fetchComments,
     fetchVideoDanmakuList,
     getvideo
   }
@@ -270,7 +278,7 @@ describe('Bilibili one_video media tasks', () => {
   it('starts the information, video and comment branches concurrently', async () => {
     const posterGate = createDeferred<void>()
     const videoGate = createDeferred<void>()
-    const { subject, getBilibiliData } = createSubject({ posterGate, videoGate })
+    const { subject, fetchComments } = createSubject({ posterGate, videoGate })
     const execution = subject.RESOURCES({ type: 'one_video', bvid: 'BV1test', p: 1 })
 
     try {
@@ -290,16 +298,16 @@ describe('Bilibili one_video media tasks', () => {
       videoGate.resolve()
       await expect(execution).resolves.not.toBe(false)
       expect(mocks.events).toContain('comment:reply')
-      const commentCall = getBilibiliData.mock.calls.find(([method]) => method === '评论数据')
-      expect(commentCall).toEqual([
-        '评论数据',
-        '',
-        expect.objectContaining({
+      // 参数顺序跟着 amagi fetcher 变了：options 在前、cookie 在中、请求配置在后
+      expect(fetchComments.mock.calls[0]).toEqual([
+        {
           oid: '123',
           type: 1,
           number: 1,
           typeMode: 'strict'
-        })
+        },
+        '',
+        expect.anything()
       ])
     } finally {
       posterGate.resolve()

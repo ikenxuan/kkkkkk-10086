@@ -1,4 +1,5 @@
 import { Base, Config, UploadRecord, Networks, Render, Common, downloadFile, downloadVideo, uploadFile, baseHeaders, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
+import { buildAmagiRequestConfig } from '@/module/utils/amagiClient'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
 import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
 import common from '@/runtime/host/common'
@@ -12,7 +13,7 @@ import { resolveDouyinLiveRoom } from './live-room.js'
 import { getDouyinLiveVideoUrl, getDouyinWorkCoverUrl, isDouyinArticle, isDouyinVideo } from './workType.js'
 import { buildDouyinPlayUrl, douyinProcessVideos } from './videoQuality.js'
 import type { DouyinDataType } from './getid.js'
-import type { DyEmojiList } from '@ikenxuan/amagi'
+import type { DouyinLiveRoomOptions, DouyinUserOptions, DyEmojiList } from '@ikenxuan/amagi'
 import fs from 'fs'
 import { at, firstUrl, isRecord } from '@/module/utils/record'
 import type { CommentsPayload, DanmakuList, DanmakuResponse, DouyinAweme, DouyinConstructorData, DouyinEvent, DouyinMusic, DouyinResourceType, DouyinRuntimeEvent, DouyinUser, DyVideo, EmojiResponse, LegacyContent, ModernContent, MusicResponse, NullableWorkResponse, UploadRecordEvent, UserInfoResponse, UserVideoListResponse, WorkResponse } from './types.js'
@@ -153,10 +154,10 @@ export class DouYin extends Base {
       }
       switch (this.type) {
         case 'one_work': {
-          const VideoResponse = narrowApiResponse<NullableWorkResponse>(await this.amagi.getDouyinData('聚合解析', {
-            aweme_id: data.aweme_id,
+          const VideoResponse = narrowApiResponse<NullableWorkResponse>(await this.amagi.douyin.parseWork({
+            aweme_id: data.aweme_id ?? '',
             typeMode: 'strict'
-          }), '作品详情')
+          }, Config.cookies.douyin, buildAmagiRequestConfig()), '作品详情')
           if (VideoResponse.data.aweme_detail === null) {
             throw new Error('获取作品详情失败，可能是因为该作品已被删除或设置为私密。')
           }
@@ -169,7 +170,7 @@ export class DouYin extends Base {
             emojiListPromise ??= (async () => {
               try {
                 const emojiData = narrowApiResponse<EmojiResponse>(
-                  await this.amagi.getDouyinData('Emoji数据', { typeMode: 'strict' }),
+                  await this.amagi.douyin.fetchEmojiList({ typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()),
                   'Emoji数据'
                 )
                 return Emoji(emojiData.data).filter(
@@ -565,10 +566,10 @@ export class DouYin extends Base {
               } else {
                 let userProfile: DouyinUser | undefined
                 try {
-                  const userProfileData = narrowApiResponse<UserInfoResponse>(await this.amagi.getDouyinData('用户主页数据', {
-                    sec_uid: aweme.author.sec_uid,
+                  const userProfileData = narrowApiResponse<UserInfoResponse>(await this.amagi.douyin.fetchUserProfile({
+                    sec_uid: aweme.author.sec_uid ?? '',
                     typeMode: 'strict'
-                  }), '用户主页数据')
+                  }, Config.cookies.douyin, buildAmagiRequestConfig()), '用户主页数据')
                   userProfile = userProfileData.data.user
                 } catch (error) {
                   logger.warn('[抖音] 获取作者主页信息失败，继续渲染视频信息图', error)
@@ -640,11 +641,11 @@ export class DouYin extends Base {
 
               if (this.forceBurnDanmaku || Config.douyin.burnDanmaku) {
                 try {
-                  const danmakuData = narrowApiResponse<DanmakuResponse>(await this.amagi.getDouyinData('弹幕数据', {
-                    aweme_id: data.aweme_id,
+                  const danmakuData = narrowApiResponse<DanmakuResponse>(await this.amagi.douyin.fetchDanmakuList({
+                    aweme_id: data.aweme_id ?? '',
                     duration: video?.duration || 0,
                     typeMode: 'strict'
-                  }), '弹幕数据')
+                  }, Config.cookies.douyin, buildAmagiRequestConfig()), '弹幕数据')
                   danmakuList = danmakuData?.data?.danmaku_list || danmakuData?.danmaku_list || []
                   logger.debug(`[抖音] 获取到 ${danmakuList.length} 条弹幕`)
                 } catch (error) {
@@ -709,13 +710,13 @@ export class DouYin extends Base {
                 失败只由 runMediaTasks 记一条评论支线错误，视频照发。
                 放在表情表之前是为了失败时省掉那次没人要的 Emoji 请求（它自带降级，不会抛）。
               */
-              const CommentsData = narrowApiResponse<CommentsPayload>(await this.amagi.getDouyinData('评论数据', {
-                aweme_id: data.aweme_id,
+              const CommentsData = narrowApiResponse<CommentsPayload>(await this.amagi.douyin.fetchWorkComments({
+                aweme_id: data.aweme_id ?? '',
                 // 面板上「评论解析数量」写的是新键 douyin.numcomment，这里原来只读旧键 numcomments，
                 // 于是用户在面板里改了数量却没有任何效果。走 helper 统一「新键优先、旧键兜底」。
                 number: douyinCommentLimit(),
                 typeMode: 'strict'
-              }), '评论数据')
+              }, Config.cookies.douyin, buildAmagiRequestConfig()), '评论数据')
               const list = await getEmojiList()
               const commentsResult = await douyinComments(CommentsData, list)
               if (!commentsResult.CommentsData.length) {
@@ -808,14 +809,14 @@ export class DouYin extends Base {
         }
 
         case 'user_dynamic': {
-          const UserVideoListData = narrowApiResponse<UserVideoListResponse>(await this.amagi.getDouyinData('用户主页视频列表数据', {
-            sec_uid: data.sec_uid,
+          const UserVideoListData = narrowApiResponse<UserVideoListResponse>(await this.amagi.douyin.fetchUserVideoList({
+            sec_uid: data.sec_uid ?? '',
             typeMode: 'strict'
-          }), '用户主页视频列表数据')
-          const UserInfoData = narrowApiResponse<UserInfoResponse>(await this.amagi.getDouyinData('用户主页数据', {
-            sec_uid: data.sec_uid,
+          }, Config.cookies.douyin, buildAmagiRequestConfig()), '用户主页视频列表数据')
+          const UserInfoData = narrowApiResponse<UserInfoResponse>(await this.amagi.douyin.fetchUserProfile({
+            sec_uid: data.sec_uid ?? '',
             typeMode: 'strict'
-          }), '用户主页数据')
+          }, Config.cookies.douyin, buildAmagiRequestConfig()), '用户主页数据')
 
           const awemeList = UserVideoListData?.data?.aweme_list || UserVideoListData?.aweme_list || []
           const user = UserInfoData.data.user
@@ -879,14 +880,14 @@ export class DouYin extends Base {
           }
         }
         case 'music_work': {
-          const MusicData = narrowApiResponse<MusicResponse>(await this.amagi.getDouyinData('音乐数据', {
-            music_id: data.music_id,
+          const MusicData = narrowApiResponse<MusicResponse>(await this.amagi.douyin.fetchMusicInfo({
+            music_id: data.music_id ?? '',
             typeMode: 'strict'
-          }), '音乐数据')
+          }, Config.cookies.douyin, buildAmagiRequestConfig()), '音乐数据')
           const sec_uid = MusicData.data.music_info.sec_uid
-          const UserData = narrowApiResponse<UserInfoResponse>(await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }), '用户主页数据')
+          const UserData = narrowApiResponse<UserInfoResponse>(await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()), '用户主页数据')
           // if (userdata.status_code === 2) {
-          //   const new_userdata = await getDouyinData('搜索数据', { query: data.music_info.author })
+          //   const new_userdata = await douyinFetcher.searchContent({ query: data.music_info.author }, Config.cookies.douyin, buildAmagiRequestConfig())
           //   if (new_userdata.data[0].type === 4 && new_userdata.data[0].card_unique_name === 'user') {
           //     userdata = { user: new_userdata.data[0].user_list[0].user_info }
           //   }
@@ -936,12 +937,21 @@ export class DouYin extends Base {
           // （apps/tools.ts 的 recordLive）走的是同一个函数，抄第二份的话两条路
           // 迟早在同一个 amagi zod 校验上分头翻车。
           //
-          // 取数客户端仍然传 this.amagi 而不是让那个函数自己 import
-          // `platform/douyin/api.ts`：this.amagi 是 Base 里那层 Proxy，负责把接口报错
-          // 渲染成错误卡片，换掉等于解析失败时不再出卡片。
+          // 取数客户端仍然传 this.amagi 而不是裸 fetcher：this.amagi 是 Base 里那层 Proxy，
+          // 负责把接口报错渲染成错误卡片，换掉等于解析失败时不再出卡片。
           const room = await resolveDouyinLiveRoom(
             { sec_uid: data.sec_uid, room_id: data.room_id },
-            async (method, options) => await this.amagi.getDouyinData(method, options)
+            async (method, options) => method === 'fetchLiveRoomInfo'
+              ? await this.amagi.douyin.fetchLiveRoomInfo(
+                options as unknown as DouyinLiveRoomOptions & { typeMode: 'strict' },
+                Config.cookies.douyin,
+                buildAmagiRequestConfig()
+              )
+              : await this.amagi.douyin.fetchUserProfile(
+                options as unknown as DouyinUserOptions & { typeMode: 'strict' },
+                Config.cookies.douyin,
+                buildAmagiRequestConfig()
+              )
           )
           if (!room.living) {
             await this.e.reply(`「${room.anchor.nickname}」\n未开播，正在休息中~`)

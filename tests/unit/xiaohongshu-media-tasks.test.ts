@@ -1,11 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { xiaohongshuFetcher } from '../../src/module/utils/amagiClient.js'
+
+/**
+ * 取数方法名的全集。下面的期望数组用 `satisfies` 钉在它上面：`toEqual` 的形参是
+ * 无约束泛型，光写字面量的话上游改名后这里会静默变成「断言一串谁也不会调用的名字」。
+ */
+type XiaohongshuApiMethod = keyof typeof xiaohongshuFetcher
+
 const configMock = vi.hoisted(() => ({
   app: { parseTip: false },
   cookies: { xiaohongshu: 'xhs-cookie' },
   xiaohongshu: { sendContent: [] as string[], numcomment: 5 }
 }))
-const getXiaohongshuDataMock = vi.hoisted(() => vi.fn())
+
+/**
+ * 裸 fetcher 上只列被测那条路会用到的三个方法，而且都是具名 handle：
+ * 写成 `new Proxy({}, { get: () => vi.fn() })` 的话每次属性访问都是一个新 `vi.fn()`，
+ * 调用断言永远拿不到收到调用的那一份。
+ */
+const api = vi.hoisted(() => {
+  const requestConfig = { timeout: 15_000 }
+  return {
+    requestConfig,
+    buildAmagiRequestConfig: vi.fn(() => requestConfig),
+    fetcher: {
+      fetchNoteDetail: vi.fn(),
+      fetchEmojiList: vi.fn(),
+      fetchNoteComments: vi.fn()
+    } satisfies Partial<Record<XiaohongshuApiMethod, unknown>>
+  }
+})
 const renderMock = vi.hoisted(() => vi.fn())
 const processImageUrlMock = vi.hoisted(() => vi.fn())
 const removeFileMock = vi.hoisted(() => vi.fn())
@@ -41,8 +66,9 @@ vi.mock('../../src/module/utils/Base.js', () => ({
   downloadVideo: downloadVideoMock
 }))
 
-vi.mock('../../src/module/platform/xiaohongshu/api.js', () => ({
-  getXiaohongshuData: getXiaohongshuDataMock
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  xiaohongshuFetcher: api.fetcher,
+  buildAmagiRequestConfig: api.buildAmagiRequestConfig
 }))
 
 /*
@@ -69,6 +95,12 @@ const {
   VIDEO_DOWNLOAD_TIMEOUT_MS
 } = await import('../../src/module/utils/MediaTasks.js')
 const { Xiaohongshu } = await import('../../src/module/platform/xiaohongshu/xiaohongshu.js')
+
+/** 这次解析真正打过的取数方法，按名字排好序便于比对 */
+const touchedApiMethods = (): XiaohongshuApiMethod[] => {
+  const methods = Object.keys(api.fetcher) as Array<keyof typeof api.fetcher>
+  return methods.filter(method => api.fetcher[method].mock.calls.length > 0).sort()
+}
 
 const loggerMock = {
   debug: vi.fn(),
@@ -116,33 +148,34 @@ const buildNoteCard = (options: NoteOptions = {}) => ({
   video: options.video ? buildNoteVideo() : undefined
 })
 
+/** `fetchNoteDetail` 的信封，笔记卡包在 `data.data.items[0].note_card` 里 */
+const noteDetailResponse = (card: unknown): unknown => ({
+  success: true,
+  data: { data: { items: [{ note_card: card }] } }
+})
+
 interface RespondOptions extends NoteOptions {
   onEmoji?: () => void
   onComments?: () => Promise<void> | void
 }
 
 const respond = (options: RespondOptions = {}): void => {
-  getXiaohongshuDataMock.mockImplementation(async (method: string) => {
-    if (method === '单个笔记数据') {
-      return { success: true, data: { data: { items: [{ note_card: buildNoteCard(options) }] } } }
-    }
-    if (method === '表情列表') {
-      options.onEmoji?.()
-      return { success: true }
-    }
-    if (method === '评论数据') {
-      await options.onComments?.()
-      return {
-        success: true,
+  api.fetcher.fetchNoteDetail.mockImplementation(async () => noteDetailResponse(buildNoteCard(options)))
+  api.fetcher.fetchEmojiList.mockImplementation(async () => {
+    options.onEmoji?.()
+    return { success: true }
+  })
+  api.fetcher.fetchNoteComments.mockImplementation(async () => {
+    await options.onComments?.()
+    return {
+      success: true,
+      data: {
         data: {
-          data: {
-            comments: [{ id: 'c1', user_info: { nickname: 'u1' }, show_tags: [] }],
-            has_more: false
-          }
+          comments: [{ id: 'c1', user_info: { nickname: 'u1' }, show_tags: [] }],
+          has_more: false
         }
       }
     }
-    return { success: true }
   })
 }
 
@@ -222,8 +255,12 @@ describe('Xiaohongshu media tasks', () => {
 
     await new Xiaohongshu({ reply } as never).XiaohongshuHandler(NOTE_ID)
 
-    const emojiCalls = getXiaohongshuDataMock.mock.calls.filter(([method]) => method === '表情列表')
-    expect(emojiCalls).toHaveLength(1)
+    expect(api.fetcher.fetchEmojiList).toHaveBeenCalledTimes(1)
+    expect(touchedApiMethods()).toEqual([
+      'fetchEmojiList',
+      'fetchNoteComments',
+      'fetchNoteDetail'
+    ] satisfies XiaohongshuApiMethod[])
     expect(renderMock.mock.calls.map(([route]) => route).sort()).toEqual([
       'xiaohongshu/comment',
       'xiaohongshu/noteInfo'
@@ -341,12 +378,9 @@ describe('Xiaohongshu media tasks', () => {
 
   // 「这个笔记没有评论 ~」是用户可见的反馈，挪进支线后不能丢。
   it('still tells the user when the note has no comments', async () => {
-    getXiaohongshuDataMock.mockImplementation(async (method: string) => {
-      if (method === '单个笔记数据') {
-        return { success: true, data: { data: { items: [{ note_card: buildNoteCard() }] } } }
-      }
-      if (method === '评论数据') return { success: true, data: { data: { comments: [], has_more: false } } }
-      return { success: true }
+    api.fetcher.fetchNoteComments.mockResolvedValue({
+      success: true,
+      data: { data: { comments: [], has_more: false } }
     })
     const reply = vi.fn(async () => undefined)
 
@@ -464,16 +498,10 @@ describe('Xiaohongshu media tasks', () => {
    */
   it('still reports a missing video url from inside the video branch', async () => {
     configMock.xiaohongshu.sendContent = ['info', 'comment', 'video']
-    getXiaohongshuDataMock.mockImplementation(async (method: string) => {
-      if (method === '单个笔记数据') {
-        const card = { ...buildNoteCard({ video: true }), video: { media: { stream: {} } } }
-        return { success: true, data: { data: { items: [{ note_card: card }] } } }
-      }
-      if (method === '评论数据') {
-        return { success: true, data: { data: { comments: [{ id: 'c1', user_info: { nickname: 'u1' }, show_tags: [] }], has_more: false } } }
-      }
-      return { success: true }
-    })
+    api.fetcher.fetchNoteDetail.mockResolvedValue(noteDetailResponse({
+      ...buildNoteCard({ video: true }),
+      video: { media: { stream: {} } }
+    }))
     const reply = vi.fn(async () => undefined)
 
     await expect(new Xiaohongshu({ reply } as never).XiaohongshuHandler(NOTE_ID)).resolves.toBe(true)

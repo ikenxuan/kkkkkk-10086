@@ -11,6 +11,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const douyinDataMock = vi.hoisted(() => vi.fn())
 const guardedDouyinDataMock = vi.hoisted(() => vi.fn())
+/**
+ * 裸 fetcher 是「一个对象、每个方法一个键」，方法名当第一个实参汇进同一个 spy，
+ * 旧的 `getDouyinData(method, options)` 形态原样保留。
+ *
+ * 作品列表那三个方法分到 guardedDouyinDataMock，其余（主页、搜索）分到 douyinDataMock ——
+ * 这就是原来「Base 代理」与「api.ts wrapper」两个替身的分工，只是判据从模块换成了方法名。
+ */
+const LIST_METHODS = vi.hoisted(() => new Set([
+  'fetchUserVideoList', 'fetchUserFavoriteList', 'fetchUserRecommendList'
+]))
+const douyinFetcherStub = vi.hoisted(() => new Proxy({}, {
+  get: (_target, method: string) => async (options: unknown) =>
+    LIST_METHODS.has(method)
+      ? await guardedDouyinDataMock(method, options)
+      : await douyinDataMock(method, options)
+}))
 const renderMock = vi.hoisted(() => vi.fn())
 const getDouyinIdMock = vi.hoisted(() => vi.fn())
 const shouldFilterMock = vi.hoisted(() => vi.fn())
@@ -37,7 +53,7 @@ vi.mock('../../src/module/utils/index.js', () => ({
   Base: class {
     e: unknown
     headers: Record<string, string> = {}
-    amagi = { getDouyinData: douyinDataMock }
+    amagi = { douyin: douyinFetcherStub }
 
     constructor (event: unknown) {
       this.e = event
@@ -81,8 +97,9 @@ vi.mock('../../src/module/platform/douyin/getid.js', () => ({
   getDouyinID: getDouyinIdMock
 }))
 
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: guardedDouyinDataMock
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: douyinFetcherStub,
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/platform/douyin/workType.js', () => ({

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import type { DouyinLiveApiFetcher } from '../../src/module/platform/douyin/live-room.js'
+
 /**
  * `douyin/live-room.ts` 的两步解析护栏。
  *
@@ -24,9 +26,16 @@ globalThis.logger = {
 
 const { resolveDouyinLiveRoom } = await import('../../src/module/platform/douyin/live-room.js')
 
+/**
+ * 方法名从被测模块的入参类型上取，下面的期望序列都用 `satisfies` 钉在它上面。
+ * `toEqual` 的形参是无约束泛型，光写字面量的话方法名再改一次这里会静默变成
+ * 「断言一串谁也不会调用的名字」—— 是 satisfies 那一句让它在类型检查时就报出来。
+ */
+type DouyinLiveApiMethod = Parameters<DouyinLiveApiFetcher>[0]
+
 /** 一次被拦下来的取数调用 */
 interface FetchCall {
-  method: string
+  method: DouyinLiveApiMethod
   options: Record<string, unknown>
 }
 
@@ -35,7 +44,7 @@ interface FetchCall {
  * 响应给完之后再被调用会抛，免得漏掉「多打了一次接口」这种回归。
  */
 const createFetcher = (responses: readonly unknown[]): {
-  fetch: (method: string, options: Record<string, unknown>) => Promise<unknown>
+  fetch: DouyinLiveApiFetcher
   calls: FetchCall[]
 } => {
   const calls: FetchCall[] = []
@@ -78,7 +87,8 @@ describe('resolveDouyinLiveRoom 的两步补号', () => {
 
     const room = await resolveDouyinLiveRoom({ sec_uid: 'MS4wLjABAAAA' }, fetch)
 
-    expect(calls.map(call => call.method)).toEqual(['用户主页数据', '直播间信息数据'])
+    expect(calls.map(call => call.method))
+      .toEqual(['fetchUserProfile', 'fetchLiveRoomInfo'] satisfies DouyinLiveApiMethod[])
     expect(calls[0]?.options).toMatchObject({ sec_uid: 'MS4wLjABAAAA' })
     expect(room.living).toBe(true)
   })
@@ -89,7 +99,8 @@ describe('resolveDouyinLiveRoom 的两步补号', () => {
 
     await resolveDouyinLiveRoom({ room_id: '26139686' }, fetch)
 
-    expect(calls.map(call => call.method)).toEqual(['直播间信息数据', '用户主页数据', '直播间信息数据'])
+    expect(calls.map(call => call.method))
+      .toEqual(['fetchLiveRoomInfo', 'fetchUserProfile', 'fetchLiveRoomInfo'] satisfies DouyinLiveApiMethod[])
     // 探测这一跳手上只有 web_rid，所以两个参数都填它 —— 这一步 amagi 只要求非空。
     expect(calls[0]?.options).toMatchObject({ room_id: '26139686', web_rid: '26139686' })
     expect(calls[1]?.options).toMatchObject({ sec_uid: 'MS4wProbe' })
@@ -157,7 +168,7 @@ describe('resolveDouyinLiveRoom 的两步补号', () => {
     const room = await resolveDouyinLiveRoom({ sec_uid: 'MS4wLjABAAAA' }, fetch)
 
     expect(room).toEqual({ living: false, anchor: expect.objectContaining({ nickname: '主播甲' }) })
-    expect(calls.map(call => call.method)).toEqual(['用户主页数据'])
+    expect(calls.map(call => call.method)).toEqual(['fetchUserProfile'] satisfies DouyinLiveApiMethod[])
   })
 })
 

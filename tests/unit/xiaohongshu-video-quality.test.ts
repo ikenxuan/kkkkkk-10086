@@ -22,8 +22,10 @@ vi.mock('../../src/module/utils/Base.js', () => ({
   Base: class {},
   downloadVideo: vi.fn()
 }))
-vi.mock('../../src/module/platform/xiaohongshu/api.js', () => ({
-  getXiaohongshuData: vi.fn()
+// 任何方法都返回 undefined，与旧的 `getXiaohongshuData: vi.fn()` 同义：这些用例不该走到取数
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  xiaohongshuFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 const { selectVideoStream } = await import('../../src/module/platform/xiaohongshu/xiaohongshu.js')

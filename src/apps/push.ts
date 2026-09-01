@@ -1,7 +1,6 @@
 import { bilibiliDB, douyinDB } from '@/module/db/index'
 import { Bilibilipush, getBilibiliID } from '@/module/platform/bilibili/index'
-import { getBilibiliData } from '@/module/platform/bilibili/api'
-import { getDouyinData } from '@/module/platform/douyin/api'
+import { bilibiliFetcher, buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { DouYinpush, getDouyinID } from '@/module/platform/douyin/index'
 import { Config, wrapWithErrorHandler } from '@/module/utils/index'
 import type { PluginRule, PluginTask } from 'trss-yunzai'
@@ -163,9 +162,7 @@ export class kkkPush extends plugin<'message'> {
 
     // 如果是私聊消息，直接返回true
     if (e.isPrivate) return true
-    // `?? undefined` 只把 null 换成 undefined：getDouyinData 的 normalizeArgs 对两者都走
-    // 「arg1 不是 cookie」分支，运行时行为与迁移前完全一致
-    const data = await getDouyinData('搜索数据', Config.cookies.douyin ?? undefined, { query, typeMode: 'strict' })
+    const data = await douyinFetcher.searchContent({ query, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig())
     await new DouYinpush(e).setting(
       requireData(data, '抖音搜索数据') as Parameters<DouYinpush['setting']>[0]
     )
@@ -204,10 +201,8 @@ export class kkkPush extends plugin<'message'> {
     const match = /^(\d+)$/.exec(query)
     if (match && match[1]) {
       // 获取B站用户主页数据
-      const data = await getBilibiliData('用户主页数据', cookie, { host_mid: Number(match[1]), typeMode: 'strict' })
-      // getBilibiliData 的返回类型是 unknown：方法名是动态的，wrapper 无法回推具体响应类型。
-      // 运行时结构由 '用户主页数据' 这个方法名保证，这里按 setting() 的形参类型收窄，
-      // 避免在业务层重复声明 amagi 的响应结构。
+      const data = await bilibiliFetcher.fetchUserCard({ host_mid: Number(match[1]), typeMode: 'strict' }, cookie, buildAmagiRequestConfig())
+      // 按 setting() 的形参类型收窄，避免在业务层重复声明 amagi 的响应结构
       const profile = requireData(data, 'B站用户主页数据') as Parameters<Bilibilipush['setting']>[0]
       // 创建Bilibilipush实例并调用setting方法进行设置
       await new Bilibilipush(e).setting(profile)
@@ -291,7 +286,7 @@ export class kkkPush extends plugin<'message'> {
       return true
     }
 
-    const workInfo = await getDouyinData('聚合解析', Config.cookies.douyin || '', { aweme_id: idData.aweme_id, typeMode: 'strict' })
+    const workInfo = await douyinFetcher.parseWork({ aweme_id: idData.aweme_id, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig())
     const aweme = readPath(workInfo, ['data', 'aweme_detail']) || readPath(workInfo, ['data', 'data', 'aweme_detail'])
     const secUid = readString(aweme, ['author', 'sec_uid'])
     if (!secUid) {
@@ -321,7 +316,7 @@ export class kkkPush extends plugin<'message'> {
       return true
     }
 
-    const dynamicInfo = await getBilibiliData('动态详情数据', Config.cookies.bilibili || '', { dynamic_id: idData.dynamic_id, typeMode: 'strict' })
+    const dynamicInfo = await bilibiliFetcher.fetchDynamicDetail({ dynamic_id: idData.dynamic_id, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig())
     const item = readPath(dynamicInfo, ['data', 'data', 'item']) || readPath(dynamicInfo, ['data', 'item'])
     const hostMid = Number(readPath(item, ['modules', 'module_author', 'mid']))
     if (!hostMid) {

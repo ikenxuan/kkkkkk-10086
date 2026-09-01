@@ -54,8 +54,10 @@ vi.mock('../../src/module/platform/bilibili/index.js', () => ({
   genParams: vi.fn()
 }))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: vi.fn()
+// 任何方法都返回 undefined，与旧的 `getBilibiliData: vi.fn()` 同义：这些用例不该走到取数
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/platform/common/danmaku.js', () => ({

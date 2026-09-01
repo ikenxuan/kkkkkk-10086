@@ -1,8 +1,8 @@
-import { Base, Common, Render } from '@/module/utils/index'
+import { Base, Common, Config, Render } from '@/module/utils/index'
 import { getDouyinID } from './getid.js'
 import { buildDouyinLivePayload, type DouyinLiveItem, type DouyinRoomData } from './live.js'
 import { getDouyinWorkCoverUrl, type DouyinAweme } from './workType.js'
-import { getDouyinData } from './api.js'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 
 /** 预览渲染结果 */
 export type PushPreviewResult =
@@ -65,11 +65,6 @@ interface LiveDataResponse {
   }
 }
 
-/** amagi 客户端上被预览逻辑使用的方法 */
-interface PreviewAmagi {
-  getDouyinData: (method: string, options: Record<string, unknown>) => Promise<unknown>
-}
-
 const getAweme = (workData: WorkDataResponse | undefined): PreviewAweme | undefined =>
   workData?.data?.aweme_detail
 
@@ -111,28 +106,23 @@ const getPartitionTitle = (liveData: LiveDataResponse | undefined): string =>
   ''
 
 export class DouyinPushPreview extends Base {
-  /** amagi 客户端，访问方式与旧实现一致 */
-  private get client (): PreviewAmagi {
-    return this.amagi as unknown as PreviewAmagi
-  }
-
   async renderWork (url: string): Promise<PushPreviewResult> {
     const iddata = await getDouyinID(url, false)
     if (iddata.type !== 'one_work' || !iddata.aweme_id) {
       return { ok: false, message: '该链接不是作品链接，请提供视频/图集/文章链接' }
     }
 
-    const workData = await this.client.getDouyinData('聚合解析', {
+    const workData = await douyinFetcher.parseWork({
       aweme_id: iddata.aweme_id,
       typeMode: 'strict'
-    }) as WorkDataResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as WorkDataResponse
     const aweme = getAweme(workData)
     if (!aweme) return { ok: false, message: '获取作品详情失败，作品可能已被删除或设为私密' }
 
-    const userInfo = await this.client.getDouyinData('用户主页数据', {
-      sec_uid: aweme.author?.sec_uid,
+    const userInfo = await douyinFetcher.fetchUserProfile({
+      sec_uid: aweme.author?.sec_uid ?? '',
       typeMode: 'strict'
-    }) as UserInfoResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as UserInfoResponse
     const user = getUser(userInfo)
 
     const image = await Render('douyin/dynamic', {
@@ -162,13 +152,17 @@ export class DouyinPushPreview extends Base {
       return { ok: false, message: `需要用户主页链接以测试${pushTypeLabels[pushType]}推送` }
     }
 
-    const userInfo = await this.client.getDouyinData('用户主页数据', {
+    const userInfo = await douyinFetcher.fetchUserProfile({
       sec_uid: iddata.sec_uid,
       typeMode: 'strict'
-    }) as UserInfoResponse
-    const listData = await getDouyinData(
-      pushType === 'favorite' ? 'fetchUserFavoriteList' : 'fetchUserRecommendList',
-      { sec_uid: iddata.sec_uid, number: 1, typeMode: 'strict' }
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as UserInfoResponse
+    const fetchList = pushType === 'favorite'
+      ? douyinFetcher.fetchUserFavoriteList
+      : douyinFetcher.fetchUserRecommendList
+    const listData = await fetchList(
+      { sec_uid: iddata.sec_uid, number: 1, typeMode: 'strict' },
+      Config.cookies.douyin,
+      buildAmagiRequestConfig()
     ) as ListDataResponse
 
     const aweme = listData?.data?.aweme_list?.[0]
@@ -176,10 +170,10 @@ export class DouyinPushPreview extends Base {
 
     let authorInfo = userInfo
     if (aweme.author?.sec_uid) {
-      authorInfo = await this.client.getDouyinData('用户主页数据', {
+      authorInfo = await douyinFetcher.fetchUserProfile({
         sec_uid: aweme.author.sec_uid,
         typeMode: 'strict'
-      }) as UserInfoResponse
+      }, Config.cookies.douyin, buildAmagiRequestConfig()) as UserInfoResponse
     }
     const author = getUser(authorInfo)
     const image = await Render('douyin/dynamic', {
@@ -213,20 +207,20 @@ export class DouyinPushPreview extends Base {
       return { ok: false, message: '旧版链接解析器无法从直播间直链反查 sec_uid，请提供用户主页分享链接' }
     }
 
-    const userInfo = await this.client.getDouyinData('用户主页数据', {
+    const userInfo = await douyinFetcher.fetchUserProfile({
       sec_uid: iddata.sec_uid,
       typeMode: 'strict'
-    }) as UserInfoResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as UserInfoResponse
     const user = getUser(userInfo)
     if (user.live_status !== 1) return { ok: false, message: `${user.nickname || '该用户'} 当前未在直播` }
     if (!user.room_data) return { ok: false, message: '未获取到直播间信息' }
 
     const roomData = JSON.parse(user.room_data) as DouyinRoomData
-    const liveData = await getDouyinData('直播间信息数据', {
-      room_id: user.room_id_str,
-      web_rid: roomData.owner?.web_rid,
+    const liveData = await douyinFetcher.fetchLiveRoomInfo({
+      room_id: user.room_id_str ?? '',
+      web_rid: roomData.owner?.web_rid ?? '',
       typeMode: 'strict'
-    }) as LiveDataResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as LiveDataResponse
     const liveItem = getLiveItem(liveData)
     const webRid = roomData?.owner?.web_rid || iddata.room_id || ''
 

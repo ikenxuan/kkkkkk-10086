@@ -27,7 +27,7 @@ import {
 } from './comments.js'
 import type { FileInfo } from '@/types/platform'
 import type { XiaohongshuNoteId } from './getid.js'
-import { getXiaohongshuData } from './api.js'
+import { buildAmagiRequestConfig, xiaohongshuFetcher } from '@/module/utils/amagiClient'
 import { buildXiaohongshuShareUrl } from './link.js'
 import { getErrorMessage } from '@/module/utils/error-message'
 import {
@@ -110,7 +110,7 @@ export type XiaohongshuCommentFetcher = (
 export const fetchConfiguredNoteComments = async (
   data: XiaohongshuNoteId,
   fetchComments: XiaohongshuCommentFetcher = async options =>
-    await getXiaohongshuData('评论数据', options as unknown as Record<string, unknown>) as NoteCommentsResponse
+    await xiaohongshuFetcher.fetchNoteComments(options as never, Config.cookies.xiaohongshu, buildAmagiRequestConfig()) as NoteCommentsResponse
 ): Promise<NoteCommentsResponse> => {
   const targetCount = getCommentLimit()
   const firstPage = await fetchComments({
@@ -228,11 +228,11 @@ export class Xiaohongshu extends Base {
     }
 
     const sendContent = normalizeSendContent()
-    const noteData = await getXiaohongshuData('单个笔记数据', {
+    const noteData = await xiaohongshuFetcher.fetchNoteDetail({
       typeMode: 'strict',
       note_id: data.note_id,
-      xsec_token: data.xsec_token
-    }) as NoteDetailResponse
+      xsec_token: data.xsec_token || ''
+    }, Config.cookies.xiaohongshu, buildAmagiRequestConfig()) as NoteDetailResponse
     const card = getNoteCard(noteData)
     if (!card) {
       throw new Error(noteData?.success === false
@@ -243,7 +243,7 @@ export class Xiaohongshu extends Base {
     let emojiData: XiaohongshuEmoji[] = []
     if (sendContent.includes('info') || sendContent.includes('comment')) {
       try {
-        const emojiList = await getXiaohongshuData('表情列表', { typeMode: 'strict' })
+        const emojiList = await xiaohongshuFetcher.fetchEmojiList({ typeMode: 'strict' }, Config.cookies.xiaohongshu, buildAmagiRequestConfig())
         emojiData = buildXiaohongshuEmojiList(emojiList as Parameters<typeof buildXiaohongshuEmojiList>[0])
       } catch (error: unknown) {
         logger.debug(`[小红书] 获取表情列表失败，使用纯文本渲染: ${getErrorMessage(error)}`)

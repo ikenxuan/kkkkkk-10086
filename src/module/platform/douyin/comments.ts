@@ -12,7 +12,7 @@ import {
 } from '@kkk/richtext'
 import { Config, Networks, baseHeaders } from '@/module/utils/index'
 import { firstUrl } from '@/module/utils/record'
-import { getDouyinData } from './api.js'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 
 /** 表情项 */
 export interface DouyinEmoji {
@@ -249,10 +249,10 @@ const resolveMentionTokens = async (userIds: string[] | null): Promise<DouyinMen
 
   const mentionTokens = await Promise.all(uniqueUserIds.map(async secUid => {
     try {
-      const userInfo = await getDouyinData('用户主页数据', Config.cookies.douyin || '', {
+      const userInfo = await douyinFetcher.fetchUserProfile({
         sec_uid: secUid,
         typeMode: 'strict'
-      }) as UserInfoResponse
+      }, Config.cookies.douyin, buildAmagiRequestConfig()) as UserInfoResponse
       const nickname = userInfo.data.user.nickname?.trim()
       if (!nickname || userInfo.data.user.sec_uid !== secUid) return null
       return { text: `@${nickname}`, userId: secUid }
@@ -409,12 +409,12 @@ const fetchReplyComments = async (
 
   let replyComment: CommentRepliesResponse
   try {
-    replyComment = await getDouyinData('指定评论回复数据', Config.cookies.douyin || '', {
+    replyComment = await douyinFetcher.fetchCommentReplies({
       aweme_id: awemeId,
       comment_id: commentId,
       number: Config.douyin.subCommentLimit,
       typeMode: 'strict'
-    }) as CommentRepliesResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as CommentRepliesResponse
   } catch (error) {
     logger.warn(`[抖音] 获取评论 ${commentId} 的子评论失败，该楼只渲染主评论`, error)
     return []

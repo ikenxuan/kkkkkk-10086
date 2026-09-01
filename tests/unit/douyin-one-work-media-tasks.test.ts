@@ -6,7 +6,10 @@ const mocks = vi.hoisted(() => ({
   douyinComments: vi.fn(),
   downloadFile: vi.fn(),
   downloadVideo: vi.fn(),
-  getDouyinData: vi.fn(),
+  parseWork: vi.fn(),
+  fetchWorkComments: vi.fn(),
+  fetchDanmakuList: vi.fn(),
+  fetchEmojiList: vi.fn(),
   loggerError: vi.fn(),
   processImageUrl: vi.fn(),
   render: vi.fn(),
@@ -48,7 +51,14 @@ vi.mock('../../src/module/utils/index.js', async () => {
   class Base {
     e: Record<string, unknown>
     headers: Record<string, string> = {}
-    amagi = { getDouyinData: mocks.getDouyinData }
+    amagi = {
+      douyin: {
+        parseWork: mocks.parseWork,
+        fetchWorkComments: mocks.fetchWorkComments,
+        fetchDanmakuList: mocks.fetchDanmakuList,
+        fetchEmojiList: mocks.fetchEmojiList
+      }
+    }
 
     constructor (event: Record<string, unknown>) {
       this.e = event
@@ -83,6 +93,12 @@ vi.mock('../../src/module/utils/index.js', async () => {
     uploadFile: mocks.uploadFile
   }
 })
+
+// douyin.ts 只从这里取 buildAmagiRequestConfig，fetcher 走的是 Base 上的 amagi
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
+}))
 
 vi.mock('../../src/module/platform/douyin/danmaku.js', () => ({
   burnDouyinDanmaku: mocks.burnDouyinDanmaku
@@ -221,13 +237,10 @@ describe('Douyin one_work media tasks', () => {
     mocks.config.douyin.sendContent = ['info', 'comment', 'video']
     mocks.config.douyin.commentImageCollection = false
     mocks.config.douyin.realCommentCount = false
-    mocks.getDouyinData.mockImplementation(async (method: string) => {
-      if (method === '聚合解析') return workResponse
-      if (method === '评论数据') return { data: { comments: [] } }
-      if (method === '弹幕数据') return { data: { danmaku_list: danmakuList } }
-      if (method === 'Emoji数据') return emojiResponse
-      throw new Error(`Unexpected Douyin API method: ${method}`)
-    })
+    mocks.parseWork.mockResolvedValue(workResponse)
+    mocks.fetchWorkComments.mockResolvedValue({ data: { comments: [] } })
+    mocks.fetchDanmakuList.mockResolvedValue({ data: { danmaku_list: danmakuList } })
+    mocks.fetchEmojiList.mockResolvedValue(emojiResponse)
     mocks.downloadFile.mockResolvedValue({ filepath: 'tmp/input.mp4' })
     mocks.downloadVideo.mockResolvedValue(undefined)
     mocks.processImageUrl.mockResolvedValue('processed-cover')
@@ -250,8 +263,7 @@ describe('Douyin one_work media tasks', () => {
     expect(mocks.legacyBurnDanmaku).not.toHaveBeenCalled()
     expect(mocks.downloadVideo).toHaveBeenCalledOnce()
 
-    const emojiCalls = mocks.getDouyinData.mock.calls.filter(([method]) => method === 'Emoji数据')
-    expect(emojiCalls).toHaveLength(1)
+    expect(mocks.fetchEmojiList).toHaveBeenCalledOnce()
 
     const burnOptions = mocks.burnDouyinDanmaku.mock.calls[0]?.[3] as { emojiList?: unknown }
     expect(burnOptions.emojiList).toEqual([
@@ -378,13 +390,7 @@ describe('Douyin one_work media tasks', () => {
    * 下面三条分别钉住：接口 reject、接口返回非对象、以及闸门关掉时压根不该发这个请求。
    */
   it('still sends the video when the comments API rejects', async () => {
-    mocks.getDouyinData.mockImplementation(async (method: string) => {
-      if (method === '聚合解析') return workResponse
-      if (method === '评论数据') throw new Error('comments endpoint down')
-      if (method === '弹幕数据') return { data: { danmaku_list: danmakuList } }
-      if (method === 'Emoji数据') return emojiResponse
-      throw new Error(`Unexpected Douyin API method: ${method}`)
-    })
+    mocks.fetchWorkComments.mockRejectedValue(new Error('comments endpoint down'))
     const parser = new DouYin(
       { reply: vi.fn(async () => undefined) },
       { type: 'one_work', aweme_id: 'work-1', is_mp4: true },
@@ -403,14 +409,8 @@ describe('Douyin one_work media tasks', () => {
   })
 
   it('still sends the video when the comments API returns a non-object', async () => {
-    mocks.getDouyinData.mockImplementation(async (method: string) => {
-      if (method === '聚合解析') return workResponse
-      // narrowApiResponse 的 isRecord 判据落空 => 抛「评论数据返回格式异常」
-      if (method === '评论数据') return null
-      if (method === '弹幕数据') return { data: { danmaku_list: danmakuList } }
-      if (method === 'Emoji数据') return emojiResponse
-      throw new Error(`Unexpected Douyin API method: ${method}`)
-    })
+    // narrowApiResponse 的 isRecord 判据落空 => 抛「评论数据返回格式异常」
+    mocks.fetchWorkComments.mockResolvedValue(null)
     const parser = new DouYin(
       { reply: vi.fn(async () => undefined) },
       { type: 'one_work', aweme_id: 'work-1', is_mp4: true },
@@ -435,7 +435,7 @@ describe('Douyin one_work media tasks', () => {
     await expect(parser.RESOURCES({ type: 'one_work', aweme_id: 'work-1', is_mp4: true })).resolves.toBe(true)
 
     // 用户把评论图关掉了，取数就该一次都不发（原来照发，还能炸掉整条解析）
-    expect(mocks.getDouyinData.mock.calls.filter(([method]) => method === '评论数据')).toHaveLength(0)
+    expect(mocks.fetchWorkComments).not.toHaveBeenCalled()
     expect(mocks.downloadVideo).toHaveBeenCalledOnce()
   })
 })

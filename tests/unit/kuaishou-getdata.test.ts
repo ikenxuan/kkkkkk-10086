@@ -1,59 +1,112 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const getKuaishouDataMock = vi.hoisted(() => vi.fn())
-const renderMock = vi.hoisted(() => vi.fn())
-const downloadVideoMock = vi.hoisted(() => vi.fn())
-const getHeadersMock = vi.hoisted(() => vi.fn())
-const networksOptions = vi.hoisted(() => [] as Array<{ url: string, headers: Record<string, string> }>)
+import type { KuaishouFetcher } from '@ikenxuan/amagi'
 
-const configMock = vi.hoisted(() => ({
-  app: {} as Record<string, unknown>,
-  kuaishou: {} as Record<string, unknown>,
-  cookies: {} as Record<string, unknown>,
-  request: {} as Record<string, unknown>
+import type { KuaishouDataType } from '../../src/module/platform/kuaishou/getdata.js'
+
+/**
+ * `kuaishou/getdata.ts` 的取数与剥壳，外加它产出的 payload 被 `KuaiShou.Action`
+ * 原样消费这段接缝。四件事：
+ *
+ * 1. **字段路径不能变深**。amagi v6 在响应外面多包了一层 `Result`，而 `comments.ts`
+ *    只认 `data.visionCommentList` 与 `visionCommentList` 两级 —— 带壳进去评论会静默
+ *    变成空数组，一句报错都没有。
+ * 2. **cookie 排在第二位**。amagi fetcher 收的是 `(options, cookie, requestConfig)`，
+ *    和 options 换位不会崩，只会让请求变成未登录态、回一份空数据。
+ * 3. **没配 ck 要落到内置游客 ck**。amagi 的 `getKuaishouDefaultConfig` 只做
+ *    `cookie?.trim() ?? ''`，没有自己的游客兜底，空 Cookie 会被快手归一成 INVALID_COOKIE。
+ * 4. **防盗链头在调用点补**。体积探测那一跳不走 amagi，它原本是靠 getdata.ts 污染
+ *    共享 baseHeaders 才拿到 Referer 的。
+ *
+ * `amagiClient` 整个换成替身，所以真 amagi 一次都不会被 require —— 它 exports map 里的
+ * `development` 条件指向未发布的 `src/index.ts`，在 vitest 下加载即 MODULE_NOT_FOUND。
+ */
+
+/** `buildAmagiRequestConfig()` 的替身返回值，只用来认第三个实参真的到位 */
+const requestConfig = vi.hoisted(() => ({ timeout: 15_000 }))
+
+const doubles = vi.hoisted(() => ({
+  fetchVideoWork: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  fetchWorkComments: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  fetchEmojiList: vi.fn<(...args: unknown[]) => Promise<unknown>>(),
+  buildAmagiRequestConfig: vi.fn(() => requestConfig),
+  Render: vi.fn(),
+  downloadVideo: vi.fn(),
+  getHeaders: vi.fn()
 }))
 
-vi.mock('../../src/module/platform/kuaishou/api.js', () => ({
-  getKuaishouData: getKuaishouDataMock
+const networksOptions = vi.hoisted(() => [] as Array<{ url: string, headers: Record<string, string> }>)
+
+const config = vi.hoisted(() => ({
+  app: {} as Record<string, unknown>,
+  kuaishou: {} as Record<string, unknown>,
+  cookies: {} as { kuaishou?: string }
+}))
+
+// 裸 fetcher 上只列被测那条路用到的三个方法：写成 Proxy 的话每次属性访问都是一个新
+// `vi.fn()`，断言永远拿不到收到调用的那一份。
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  kuaishouFetcher: {
+    fetchVideoWork: doubles.fetchVideoWork,
+    fetchWorkComments: doubles.fetchWorkComments,
+    fetchEmojiList: doubles.fetchEmojiList
+  },
+  buildAmagiRequestConfig: doubles.buildAmagiRequestConfig
 }))
 
 vi.mock('../../src/module/utils/index.js', () => ({
+  // 真 Base 的构造函数会 require amagi 建 Client，一引就是 MODULE_NOT_FOUND
   Base: class {
     e: unknown
     headers: Record<string, string> = { Accept: '*/*' }
   },
-  Config: configMock,
-  Render: renderMock,
+  Config: config,
+  Render: doubles.Render,
   Networks: class {
     constructor (options: { url: string, headers: Record<string, string> }) {
       networksOptions.push(options)
     }
 
-    getHeaders = getHeadersMock
+    getHeaders = doubles.getHeaders
   },
-  downloadVideo: downloadVideoMock
+  downloadVideo: doubles.downloadVideo
 }))
 
+// getdata.ts 与 comments.ts 引的是这个模块本身，不是上面那个 barrel
 vi.mock('../../src/module/utils/Config.js', () => ({
-  default: configMock
+  default: config
 }))
 
 globalThis.logger = {
-  warn: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  mark: vi.fn()
+  debug: vi.fn(), error: vi.fn(), info: vi.fn(), mark: vi.fn(), warn: vi.fn()
 } as unknown as typeof logger
 
 const { default: KuaishouData } = await import('../../src/module/platform/kuaishou/getdata.js')
 const { default: KuaiShou } = await import('../../src/module/platform/kuaishou/kuaishou.js')
 
 /**
+ * 方法名从 amagi 的 fetcher 类型上取，下面的期望序列都用 `satisfies` 钉在它上面。
+ * `toEqual` 的形参是无约束泛型，光写字面量的话上游改名（或有人把中文旧方法名塞回来）
+ * 这里会静默变成「断言一串谁也不会调用的名字」—— 是 satisfies 那一句让它在类型检查时报出来。
+ */
+type KuaishouApiMethod = keyof KuaishouFetcher
+
+/** getdata.ts 真正用到的三个，顺序就是它 `Promise.all` 里的构造顺序 */
+const USED_METHODS = ['fetchVideoWork', 'fetchWorkComments', 'fetchEmojiList'] as const satisfies readonly KuaishouApiMethod[]
+
+type UsedMethod = (typeof USED_METHODS)[number]
+
+type KuaishouActionArg = Parameters<InstanceType<typeof KuaiShou>['Action']>[0]
+
+const PHOTO_ID = '3x1'
+const KUAISHOU_CK = 'did=web_test; kpn=KUAISHOU_VISION'
+
+/**
  * amagi v6 的成功响应形状：`createSuccessResponse(rawData, '获取成功', 200)`
  * （`@ikenxuan/amagi@6.5.0` `dist/default/index.cjs:1405`）。
  * `rawData` 就是快手 GraphQL 的响应体，也正是迁移前 `Networks.getData()` 的返回值。
  */
-const amagiResult = (rawBody: unknown) => ({
+const amagiResult = (rawBody: unknown): unknown => ({
   success: true,
   code: 200,
   message: '获取成功',
@@ -103,58 +156,78 @@ const EMOJI_BODY = {
   }
 }
 
-/** 按内部方法名分派 mock 响应 */
-const respondByMethod = (wrap: (body: unknown) => unknown = amagiResult) => {
-  getKuaishouDataMock.mockImplementation(async (method: string) => {
-    if (method === '单个视频作品数据') return wrap(VIDEO_BODY)
-    if (method === '评论数据') return wrap(COMMENT_BODY)
-    if (method === 'Emoji数据') return wrap(EMOJI_BODY)
-    throw new Error(`unexpected method: ${method}`)
-  })
+const BODY_OF: Record<UsedMethod, unknown> = {
+  fetchVideoWork: VIDEO_BODY,
+  fetchWorkComments: COMMENT_BODY,
+  fetchEmojiList: EMOJI_BODY
 }
 
+/** 一次被拦下来的取数调用 */
+interface FetchCall {
+  method: UsedMethod
+  options: unknown
+  cookie: unknown
+  requestConfig: unknown
+}
+
+const calls: FetchCall[] = []
+
+/** 给三个具名 handle 装上记账实现，`respond` 决定这一跳回什么 */
+const installFetchers = (respond: (method: UsedMethod) => Promise<unknown>): void => {
+  for (const method of USED_METHODS) {
+    doubles[method].mockImplementation(async (...args: unknown[]) => {
+      calls.push({ method, options: args[0], cookie: args[1], requestConfig: args[2] })
+      return await respond(method)
+    })
+  }
+}
+
+/** 按方法名分派响应体，默认包上 amagi 的 Result 外壳 */
+const respondByMethod = (wrap: (body: unknown) => unknown = amagiResult): void => {
+  installFetchers(async method => wrap(BODY_OF[method]))
+}
+
+// 不写返回类型：`ReturnType<typeof vi.fn>` 会宽成 `Mock<Procedure | Constructable>`，
+// 那个过不了 `BaseEvent.reply` 的赋值检查，靠推断才拿到能用的形状
 const createEvent = () => ({ reply: vi.fn().mockResolvedValue({ message_id: 1 }) })
 
 beforeEach(() => {
-  configMock.app = {}
-  configMock.kuaishou = { numcomment: 5 }
-  configMock.cookies = {}
-  configMock.request = {}
-  getKuaishouDataMock.mockReset()
-  renderMock.mockReset()
-  renderMock.mockResolvedValue(['rendered-comment-image'])
-  downloadVideoMock.mockReset()
-  downloadVideoMock.mockResolvedValue(true)
-  getHeadersMock.mockReset()
-  getHeadersMock.mockResolvedValue({ 'content-length': '2097152' })
+  vi.clearAllMocks()
+  // clearAllMocks 只清调用记录，实现会跨用例留着，所以取数那三个要连实现一起归零
+  for (const method of USED_METHODS) doubles[method].mockReset()
+
+  config.app = {}
+  config.kuaishou = { numcomment: 5 }
+  config.cookies = { kuaishou: KUAISHOU_CK }
+  calls.length = 0
   networksOptions.length = 0
-  vi.mocked(logger.error).mockClear()
+  doubles.Render.mockResolvedValue(['rendered-comment-image'])
+  doubles.downloadVideo.mockResolvedValue(true)
+  doubles.getHeaders.mockResolvedValue({ 'content-length': '2097152' })
 })
 
-describe('KuaishouData.GetData', () => {
-  it('asks amagi for the three internal method names this plugin needs', async () => {
+describe('KuaishouData.GetData 的取数与剥壳', () => {
+  it.each(['one_work', '单个作品信息'] satisfies KuaishouDataType[])(
+    '「%s」打三个 amagi 方法，参数、ck、请求配置依次到位',
+    async (type) => {
+      respondByMethod()
+
+      await new KuaishouData(type).GetData({ photoId: PHOTO_ID })
+
+      expect(calls.map(call => call.method))
+        .toEqual(['fetchVideoWork', 'fetchWorkComments', 'fetchEmojiList'] satisfies KuaishouApiMethod[])
+      expect(doubles.fetchVideoWork).toHaveBeenCalledWith({ photoId: PHOTO_ID }, KUAISHOU_CK, requestConfig)
+      expect(doubles.fetchWorkComments).toHaveBeenCalledWith({ photoId: PHOTO_ID }, KUAISHOU_CK, requestConfig)
+      // 表情列表无参，但 ck 与请求配置一样得给：它们在 amagi 的签名里不可省
+      expect(doubles.fetchEmojiList).toHaveBeenCalledWith({}, KUAISHOU_CK, requestConfig)
+    }
+  )
+
+  it('剥掉 amagi 的 Result 外壳，payload 的字段路径和迁移前逐字相同', async () => {
     respondByMethod()
 
-    await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
-    expect(getKuaishouDataMock.mock.calls.map(call => call[0]).sort()).toEqual(
-      ['Emoji数据', '单个视频作品数据', '评论数据'].sort()
-    )
-    // 作品与评论都要带 photoId，表情列表无参
-    expect(getKuaishouDataMock.mock.calls.find(call => call[0] === '单个视频作品数据')?.[1])
-      .toEqual({ photoId: '3x1' })
-    expect(getKuaishouDataMock.mock.calls.find(call => call[0] === '评论数据')?.[1])
-      .toEqual({ photoId: '3x1' })
-    expect(getKuaishouDataMock.mock.calls.find(call => call[0] === 'Emoji数据')?.[1])
-      .toBeUndefined()
-  })
-
-  it('strips the amagi Result wrapper so the payload keeps its pre-migration shape', async () => {
-    respondByMethod()
-
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
-
-    // 迁移前 `Networks.getData()` 返回的就是这三个裸响应体，字段路径必须逐字相同
     expect(payload).toEqual({
       VideoData: VIDEO_BODY,
       CommentData: COMMENT_BODY,
@@ -162,11 +235,11 @@ describe('KuaishouData.GetData', () => {
     })
   })
 
-  it('passes a bare response through untouched when there is no Result wrapper', async () => {
+  it('裸响应原样透传，不会再剥掉一层 data', async () => {
     // 防御：amagi 换形状或调用方直接塞裸响应时不能把 data 再剥一层
     respondByMethod(body => body)
 
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
     expect(payload).toEqual({
       VideoData: VIDEO_BODY,
@@ -175,30 +248,26 @@ describe('KuaishouData.GetData', () => {
     })
   })
 
-  it('runs the three requests concurrently rather than serially', async () => {
+  it('三个请求并发在飞，而不是串成三个往返', async () => {
     // 三个请求之间没有数据依赖。这个 gate 只在**三个都已发出**之后才放行，
     // 所以串行实现会永久卡在第一个请求上，由下面的 1s 竞速兜底报错。
     let release: () => void = () => {}
     const gate = new Promise<void>(resolve => { release = resolve })
-    const started: string[] = []
 
-    getKuaishouDataMock.mockImplementation(async (method: string) => {
-      started.push(method)
-      if (started.length === 3) release()
+    installFetchers(async method => {
+      if (calls.length === 3) release()
       await gate
-      if (method === '单个视频作品数据') return amagiResult(VIDEO_BODY)
-      if (method === '评论数据') return amagiResult(COMMENT_BODY)
-      return amagiResult(EMOJI_BODY)
+      return amagiResult(BODY_OF[method])
     })
 
     const payload = await Promise.race([
-      new KuaishouData('one_work').GetData({ photoId: '3x1' }),
+      new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }),
       new Promise((_resolve, reject) => {
         setTimeout(() => reject(new Error('GetData 仍在串行发请求：三个请求没有同时在飞')), 1000)
       })
     ])
 
-    expect(started).toHaveLength(3)
+    expect(calls).toHaveLength(3)
     expect(payload).toEqual({
       VideoData: VIDEO_BODY,
       CommentData: COMMENT_BODY,
@@ -206,44 +275,69 @@ describe('KuaishouData.GetData', () => {
     })
   })
 
-  it('returns only the unwrapped comment payload for the comments-only type', async () => {
+  it('「作品评论信息」只打评论那一跳，返回剥壳后的评论体', async () => {
     respondByMethod()
 
-    const payload = await new KuaishouData('作品评论信息').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('作品评论信息').GetData({ photoId: PHOTO_ID })
 
     expect(payload).toEqual(COMMENT_BODY)
-    expect(getKuaishouDataMock).toHaveBeenCalledTimes(1)
-    expect(getKuaishouDataMock.mock.calls[0]?.[0]).toBe('评论数据')
+    expect(calls.map(call => call.method)).toEqual(['fetchWorkComments'] satisfies KuaishouApiMethod[])
   })
 
-  it('logs an error for each empty response instead of throwing', async () => {
-    // amagi 失败时返回 `{ success: false, ... }`，剥壳后 data 是 undefined
-    getKuaishouDataMock.mockResolvedValue({ success: false, code: 500, message: '快手数据获取失败', data: undefined })
+  it('信封成功但 data 为空时逐条记 error 日志，而不是抛出来', async () => {
+    respondByMethod(() => amagiResult(undefined))
 
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
     expect(payload).toEqual({ VideoData: undefined, CommentData: undefined, EmojiData: undefined })
     expect(logger.error).toHaveBeenCalledTimes(3)
+    // 日志要指名道姓：三条一模一样的报错看不出是哪一跳空了
+    for (const method of USED_METHODS) {
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining(method))
+    }
   })
 
-  it('returns undefined for an unknown request type', async () => {
-    expect(await new KuaishouData('未知类型' as never).GetData({ photoId: '3x1' })).toBeUndefined()
-    expect(getKuaishouDataMock).not.toHaveBeenCalled()
+  it('amagi 抛错时 GetData 不吞掉它', async () => {
+    // 生产里 `success: false` 的信封在 amagiClient 的 wrapAmagiClient 就抛成 AmagiError 了，
+    // 根本走不到 unwrapAmagiResult —— 所以「取数失败」的形态是 reject 而不是一个失败信封
+    respondByMethod()
+    doubles.fetchVideoWork.mockRejectedValue(new Error('快手数据获取失败'))
+
+    await expect(new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }))
+      .rejects.toThrow('快手数据获取失败')
+  })
+
+  it('未知请求类型返回 undefined，一个接口都不打', async () => {
+    expect(await new KuaishouData('未知类型' as never).GetData({ photoId: PHOTO_ID })).toBeUndefined()
+
+    for (const method of USED_METHODS) expect(doubles[method]).not.toHaveBeenCalled()
+  })
+
+  it.each([[undefined], ['']])('快手 ck 为 %p 时落到内置游客 ck', async (cookie) => {
+    // amagi 的 getKuaishouDefaultConfig 没有自己的游客兜底，空 Cookie 会被快手
+    // 归一成 INVALID_COOKIE —— 没配 ck 的用户会整条坏掉
+    config.cookies = { kuaishou: cookie }
+    respondByMethod()
+
+    await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+
+    expect(calls).toHaveLength(3)
+    for (const call of calls) {
+      expect(String(call.cookie)).toContain('kpn=KUAISHOU_VISION')
+    }
   })
 })
 
-describe('KuaishouWorkPayload feeds KuaiShou.Action unchanged', () => {
-  it('reaches the video, comment and emoji fields Action and comments() actually read', async () => {
+describe('KuaishouWorkPayload 原样喂给 KuaiShou.Action', () => {
+  it('走到 Action 与 comments() 真正读的视频、评论、表情字段', async () => {
     respondByMethod()
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
     const event = createEvent()
 
-    expect(await new KuaiShou(event).Action(
-      payload as Parameters<InstanceType<typeof KuaiShou>['Action']>[0]
-    )).toBe(true)
+    expect(await new KuaiShou(event).Action(payload as KuaishouActionArg)).toBe(true)
 
-    expect(renderMock).toHaveBeenCalledTimes(1)
-    const [template, props] = renderMock.mock.calls[0] as [string, {
+    expect(doubles.Render).toHaveBeenCalledTimes(1)
+    const [template, props] = doubles.Render.mock.calls[0] as [string, {
       viewCount: number
       likeCount: number
       share_url: string
@@ -268,20 +362,18 @@ describe('KuaishouWorkPayload feeds KuaiShou.Action unchanged', () => {
       expect.objectContaining({ type: 'emoji', name: '[大笑]', src: 'https://static.kuaishou.com/daxiao.png' })
     ])
 
-    expect(downloadVideoMock).toHaveBeenCalledTimes(1)
-    const [, options] = downloadVideoMock.mock.calls[0] as [unknown, { title: { originTitle: string } }]
+    expect(doubles.downloadVideo).toHaveBeenCalledTimes(1)
+    const [, options] = doubles.downloadVideo.mock.calls[0] as [unknown, { title: { originTitle: string } }]
     expect(options.title.originTitle).toBe('测试作品.mp4')
   })
 
-  it('sends the kuaishou referer with the video size probe', async () => {
+  it('体积探测那一跳带上快手的防盗链头', async () => {
     // 迁移前这个 Referer 是靠 getdata.ts 污染共享 baseHeaders 拿到的，
     // 删掉污染后必须在 kuaishou.ts 里显式补上，否则防盗链会拦掉体积探测
     respondByMethod()
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
-    await new KuaiShou(createEvent()).Action(
-      payload as Parameters<InstanceType<typeof KuaiShou>['Action']>[0]
-    )
+    await new KuaiShou(createEvent()).Action(payload as KuaishouActionArg)
 
     expect(networksOptions).toHaveLength(1)
     const options = networksOptions[0]!
@@ -294,18 +386,18 @@ describe('KuaishouWorkPayload feeds KuaiShou.Action unchanged', () => {
     expect('Cookie' in options.headers).toBe(false)
   })
 
-  it('refuses the work when amagi comes back with a failed Result', async () => {
-    getKuaishouDataMock.mockResolvedValue({ success: false, code: 500, message: '快手数据获取失败', data: undefined })
-    const payload = await new KuaishouData('one_work').GetData({ photoId: '3x1' })
+  it('取数回来是空数据时退化成「不支持解析的视频」，不渲染也不下载', async () => {
+    // 迁移前这条的前提是 amagi 回一个 `success: false` 的信封；新架构里那种信封在
+    // amagiClient 就抛成 AmagiError 了，能走到 Action 的失败形态只剩「信封成功、data 为空」
+    respondByMethod(() => amagiResult(undefined))
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
     const event = createEvent()
 
-    expect(await new KuaiShou(event).Action(
-      payload as Parameters<InstanceType<typeof KuaiShou>['Action']>[0]
-    )).toBe(true)
+    expect(await new KuaiShou(event).Action(payload as KuaishouActionArg)).toBe(true)
 
     // 和迁移前一致：取数失败退化成「不支持解析的视频」，不弹错误卡
     expect(event.reply).toHaveBeenCalledWith('不支持解析的视频')
-    expect(renderMock).not.toHaveBeenCalled()
-    expect(downloadVideoMock).not.toHaveBeenCalled()
+    expect(doubles.Render).not.toHaveBeenCalled()
+    expect(doubles.downloadVideo).not.toHaveBeenCalled()
   })
 })

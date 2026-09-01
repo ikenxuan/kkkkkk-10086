@@ -30,7 +30,6 @@ const {
   getApiCacheSnapshot,
   resetApiCache,
   resolveApiCacheTier,
-  setApiCacheEnabledResolver,
   withApiCache
 } = await import('../../src/module/utils/ApiCache.js')
 
@@ -602,57 +601,6 @@ describe('软失败按成功档位缓存', () => {
     vi.setSystemTime(NOW_MS + API_CACHE_TTL_MS.detail + 1)
     await withApiCache(target, fetcher.run)
     expect(fetcher.state.calls).toBe(2)
-  })
-})
-
-describe('cacheEnabled 开关', () => {
-  it('关掉之后完全旁路：不查、不写、不计数', async () => {
-    setApiCacheEnabledResolver(() => false)
-
-    const fetcher = createFetcher(() => ({ success: true, data: 'emoji' }))
-    const target = request('xiaohongshu', '表情列表')
-
-    await withApiCache(target, fetcher.run)
-    await withApiCache(target, fetcher.run)
-    await withApiCache(target, fetcher.run)
-
-    expect(fetcher.state.calls).toBe(3)
-
-    const snapshot = getApiCacheSnapshot()
-    expect(snapshot.enabled).toBe(false)
-    expect(snapshot.entries).toBe(0)
-    expect(snapshot.hits).toBe(0)
-    expect(snapshot.misses).toBe(0)
-    expect(snapshot.coalesced).toBe(0)
-  })
-
-  it('关掉之后连并发请求也不合并', async () => {
-    setApiCacheEnabledResolver(() => false)
-    const gate = createGate()
-    const state = { calls: 0 }
-    const run = async (): Promise<unknown> => {
-      state.calls++
-      await gate.opened
-      return { success: true }
-    }
-
-    const target = request('xiaohongshu', '表情列表')
-    const pending = [withApiCache(target, run), withApiCache(target, run)]
-    gate.release()
-    await Promise.all(pending)
-
-    expect(state.calls).toBe(2)
-  })
-
-  it('默认开：配置里没写这个键时按开启处理', async () => {
-    const fetcher = createFetcher(() => ({ success: true }))
-    const target = request('xiaohongshu', '表情列表')
-
-    await withApiCache(target, fetcher.run)
-    await withApiCache(target, fetcher.run)
-
-    expect(fetcher.state.calls).toBe(1)
-    expect(getApiCacheSnapshot().enabled).toBe(true)
   })
 })
 

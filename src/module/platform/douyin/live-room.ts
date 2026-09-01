@@ -5,14 +5,14 @@ import type { DouyinUser, LivePartition, LiveResponse, UserInfoResponse } from '
 /**
  * 「拿到一个可用的直播间」这一跳的取数口子。
  *
- * 抽成参数而不是在本文件里 import `./api.js`：解析卡片走的是 `Base` 里那个包了 amagi 的
- * Proxy（它顺带把接口报错渲染成错误卡片），录制走的是 `platform/douyin/api.ts` 的独立
- * wrapper。两条路都需要下面那套「先把手上没有的号补齐、再拉直播间」的时序，但客户端
- * 不能互换 —— 让解析改用 wrapper 等于接口出错时不再出卡片。
+ * 抽成参数而不是在本文件里直接取 fetcher：解析卡片走的是 `Base` 里那个包了 amagi 的
+ * Proxy（它顺带把接口报错渲染成错误卡片），录制没有解析上下文、走 `amagiClient` 的裸
+ * `douyinFetcher`。两条路都需要下面那套「先把手上没有的号补齐、再拉直播间」的时序，但
+ * 客户端不能互换 —— 让解析改用裸 fetcher 等于接口出错时不再出卡片。
  * 所以时序留在这里只写一份，客户端由调用方给。
  */
 export type DouyinLiveApiFetcher = (
-  method: '直播间信息数据' | '用户主页数据',
+  method: 'fetchLiveRoomInfo' | 'fetchUserProfile',
   options: Record<string, unknown>
 ) => Promise<unknown>
 
@@ -102,7 +102,7 @@ export const resolveDouyinLiveRoom = async (
     if (!webRid) throw new Error('直播间链接缺少 sec_uid 与房间号，无法解析')
     // 只有 web_rid 时先探一次直播间：`web/enter` 认 web_rid，
     // 响应里的 user.sec_uid 就是反查主播主页所需的钥匙。
-    const roomProbe = narrowResponse<LiveResponse>(await fetchDouyin('直播间信息数据', {
+    const roomProbe = narrowResponse<LiveResponse>(await fetchDouyin('fetchLiveRoomInfo', {
       room_id: webRid,
       web_rid: webRid,
       typeMode: 'strict'
@@ -111,7 +111,7 @@ export const resolveDouyinLiveRoom = async (
     if (!secUid) throw new Error('直播间信息数据未返回主播信息，可能已关播或抖音 Cookie 失效')
   }
 
-  const userInfo = narrowResponse<UserInfoResponse>(await fetchDouyin('用户主页数据', {
+  const userInfo = narrowResponse<UserInfoResponse>(await fetchDouyin('fetchUserProfile', {
     sec_uid: secUid,
     typeMode: 'strict'
   }), '用户主页数据')
@@ -120,7 +120,7 @@ export const resolveDouyinLiveRoom = async (
 
   const roomData = narrowResponse<DouyinRoomData>(JSON.parse(anchor.room_data || '{}'), '直播间房间数据')
   webRid = roomData.owner?.web_rid || webRid
-  const liveData = narrowResponse<LiveResponse>(await fetchDouyin('直播间信息数据', {
+  const liveData = narrowResponse<LiveResponse>(await fetchDouyin('fetchLiveRoomInfo', {
     room_id: anchor.room_id_str || webRid,
     web_rid: webRid,
     typeMode: 'strict'

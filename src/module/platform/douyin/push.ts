@@ -5,7 +5,7 @@ import type { DouyinPushType } from '@/types/database'
 import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
 import { getDouyinID, douyinProcessVideos, pickDouyinPlayUrl } from './index.js'
-import { getDouyinData } from './api.js'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { withDownloadBucket } from '@/module/utils/Network/DownloadBudget'
 import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
@@ -208,11 +208,11 @@ export class DouYinpush extends Base {
     for (const item of pushList) {
       if (item.sec_uid || !item.short_id) continue
       try {
-        const searchResult = await this.amagi.getDouyinData('搜索数据', {
+        const searchResult = await this.amagi.douyin.searchContent({
           query: item.short_id,
           type: 'user',
           typeMode: 'strict'
-        }) as DouyinSearchResponse
+        }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinSearchResponse
         const users = this.getSearchUsers(searchResult)
         const matchedUser = users.find(userItem => {
           const user = userItem.user_info || userItem
@@ -580,7 +580,7 @@ export class DouYinpush extends Base {
           // 下面这个接口调用挂掉时，错误卡片是从 amagi 的 Proxy 里出的，那里够不到 item。
           // 先把订阅的 `群号:机器人账号` 记到实例上，卡片才能显示目标群号和推送用的适配器。
           this.pushContext = { groupWithBot: item.group_id }
-          const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
+          const userinfo = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
 
           const targets = item.group_id.map(groupWithBot => {
             const [groupId = '', botId = ''] = groupWithBot.split(':')
@@ -667,16 +667,19 @@ export class DouYinpush extends Base {
     sec_uid: string,
     item: DouyinPushConfigItem
   ): Promise<DouyinAweme[]> {
-    const method = pushType === 'post'
-      ? '用户主页视频列表数据'
-      : pushType === 'favorite'
-        ? 'fetchUserFavoriteList'
-        : 'fetchUserRecommendList'
-    const result = await getDouyinData(method, {
+    // 三个方法的 options 类型同为 DouyinUserListOptions，只有返回类型不同，
+    // 所以下标访问拿到的联合签名能被合成、直接可调用。
+    const method: 'fetchUserVideoList' | 'fetchUserFavoriteList' | 'fetchUserRecommendList' =
+      pushType === 'post'
+        ? 'fetchUserVideoList'
+        : pushType === 'favorite'
+          ? 'fetchUserFavoriteList'
+          : 'fetchUserRecommendList'
+    const result = await this.amagi.douyin[method]({
       sec_uid,
       number: 15,
       typeMode: 'strict'
-    }) as DouyinListResponse
+    }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinListResponse
 
     const awemeList = result?.data?.aweme_list || []
     if (awemeList.length === 0 && pushType !== 'post') {
@@ -785,7 +788,7 @@ export class DouYinpush extends Base {
     try {
       const authorSecUid = aweme.author?.sec_uid
       if (!authorSecUid) return fallbackUserInfo
-      return await this.amagi.getDouyinData('用户主页数据', { sec_uid: authorSecUid, typeMode: 'strict' }) as DouyinProfileResponse
+      return await this.amagi.douyin.fetchUserProfile({ sec_uid: authorSecUid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
     } catch (error) {
       logger.warn(`获取作品作者用户信息失败: ${error}`)
       return fallbackUserInfo
@@ -815,11 +818,11 @@ export class DouYinpush extends Base {
       }
 
       const roomData = JSON.parse(userinfo.data.user.room_data) as DouyinRoomData
-      const liveInfo = await getDouyinData('直播间信息数据', {
+      const liveInfo = await douyinFetcher.fetchLiveRoomInfo({
         room_id: userinfo.data.user.room_id_str || '',
         web_rid: roomData.owner?.web_rid || '',
         typeMode: 'strict'
-      }) as DouyinLiveInfo
+      }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinLiveInfo
 
       if (!liveStatus?.living) {
         return {
@@ -901,7 +904,7 @@ export class DouYinpush extends Base {
     }
 
     // 顺序获取用户数据和检查订阅状态
-    const UserInfoData = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
+    const UserInfoData = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
     const isSubscribed = await douyinDB?.isSubscribed(sec_uid, groupId)
 
     if (!UserInfoData?.data?.user) {
@@ -1002,7 +1005,7 @@ export class DouYinpush extends Base {
 
     for (const subscription of subscriptions) {
       const sec_uid = subscription.sec_uid
-      const userInfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
+      const userInfo = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
       const configItem = Config.pushlist.douyin?.find(item => item.sec_uid === sec_uid)
 
       renderOpt.push({
@@ -1086,7 +1089,7 @@ export class DouYinpush extends Base {
 
     const remarks = new Map<string, string>()
     for (const sec_uid of pending) {
-      const userinfo = await this.amagi.getDouyinData('用户主页数据', { sec_uid, typeMode: 'strict' }) as DouyinProfileResponse
+      const userinfo = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
       const remark = userinfo.data.user.nickname
       if (remark) remarks.set(sec_uid, remark)
     }

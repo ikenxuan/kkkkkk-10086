@@ -2,7 +2,7 @@
 import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, needsGroupFileChannel, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
-import { getBilibiliData } from './api.js'
+import { buildAmagiRequestConfig } from '@/module/utils/amagiClient'
 import { burnDanmaku } from '@/module/platform/common/danmaku'
 import common from '@/runtime/host/common'
 import { bilibiliComments, checkCk, genParams } from './index.js'
@@ -20,7 +20,7 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage, type LivePhotoBatchItem } from '@/module/platform/common/livePhoto'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks } from '@/module/utils/MediaTasks'
-import { isSoftFailure, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
+import { isSoftFailure, softFetch, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
 import type { BaseEvent } from '@/module/utils/types'
@@ -287,13 +287,18 @@ export class Bilibili extends Base {
       !iddata?.Episode && (Config.app.parseTip || hasBilibiliContent('提示信息')) && await this.e.reply('检测到B站链接，开始解析')
       switch (this.Type) {
         case 'one_video': {
+          // getid 的匹配函数比提取正则宽松，能判成 one_video 却提不出 BV 号
+          if (!iddata.bvid) {
+            await this.e.reply('该视频链接缺少 BV 号，无法解析')
+            return true
+          }
           // Amagi 以方法名分派固定响应；第三方边界在各调用点收窄到本文件读取的字段。
-          const infoData = await this.amagi.getBilibiliData('单个视频作品数据', { bvid: iddata.bvid, typeMode: 'strict' }) as VideoInfoResponse
-          const playUrlData = await this.amagi.getBilibiliData('单个视频下载信息数据', {
+          const infoData = await this.amagi.bilibili.fetchVideoInfo({ bvid: iddata.bvid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as VideoInfoResponse
+          const playUrlData = await this.amagi.bilibili.fetchVideoStreamUrl({
             avid: infoData.data.data.aid,
             cid: iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid,
             typeMode: 'strict'
-          })
+          }, Config.cookies.bilibili, buildAmagiRequestConfig())
           this.islogin = (await checkCk()).Status === 'isLogin'
 
           const { owner, pic, title, stat, desc } = infoData.data.data
@@ -336,7 +341,7 @@ export class Bilibili extends Base {
           const sendVideoInfo = hasBilibiliContent('简介', 'info') && (Config.bilibili?.displayContent || []).length > 0
             ? async (): Promise<void> => {
               if (Config.bilibili.videoInfoMode === 'image') {
-                const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: owner.mid, typeMode: 'strict' }) as UserProfileResponse
+                const userProfileData = await this.amagi.bilibili.fetchUserCard({ host_mid: Number(owner.mid), typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as UserProfileResponse
                 let hotDanmaku: ReturnType<typeof getHotBilibiliDanmaku> = []
                 if (Config.bilibili.showDanmakuInVideoInfo) {
                   const danmakuCid = iddata.p ? (infoData.data.data.pages[iddata.p - 1]?.cid || infoData.data.data.cid) : infoData.data.data.cid
@@ -469,12 +474,17 @@ export class Bilibili extends Base {
               // 取一次有效数量复用：取值和「要不要出评论图」的判断必须来自同一个键，
               // 否则会出现「新键设了 5，判断却读旧键的 undefined 而整块跳过」。
               const commentLimit = bilibiliCommentLimit()
-              const commentsData = await this.amagi.getBilibiliData('评论数据', '', {
-                number: commentLimit,
-                type: 1,
-                oid: infoData.data.data.aid.toString(),
-                typeMode: 'strict'
-              }) as CommentsResponse
+              // softFetch 不能省：下面的 isSoftFailure 只认返回值，而裸 fetcher 遇到
+              // 失败信封会抛。不包的话 12061 变成抛出，判定永远 false，用户拿到错误卡。
+              const commentsData = await softFetch(
+                async () => await this.amagi.bilibili.fetchComments({
+                  number: commentLimit,
+                  type: 1,
+                  oid: infoData.data.data.aid.toString(),
+                  typeMode: 'strict'
+                }, '', buildAmagiRequestConfig()),
+                SOFT_ERROR_CODES.bilibili
+              ) as CommentsResponse
               // UP 主关了评论区是业务上的正常拒绝，不是故障：软错误码不会弹错误卡，
               // 而 bilibiliComments 对它只会返回空数组，于是原来表现成「评论图静默不出」，
               // 用户看不出是关了评论区还是解析坏了。这里明确告知一句再收工。
@@ -521,7 +531,7 @@ export class Bilibili extends Base {
           break
         }
         case 'bangumi_video_info': {
-          const videoInfo = await this.amagi.getBilibiliData('番剧基本信息数据', { [iddata.isEpid ? 'ep_id' : 'season_id']: iddata.realid, typeMode: 'strict' }) as BangumiInfoResponse
+          const videoInfo = await this.amagi.bilibili.fetchBangumiInfo({ [iddata.isEpid ? 'ep_id' : 'season_id']: iddata.realid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as BangumiInfoResponse
           this.islogin = (await checkCk()).Status === 'isLogin'
           this.isVIP = (await checkCk()).isVIP
 
@@ -613,18 +623,27 @@ export class Bilibili extends Base {
         }
         case 'dynamic_info': {
           if (!hasBilibiliContent('动态')) break
-          const dynamicInfo = await this.amagi.getBilibiliData('动态详情数据', { dynamic_id: iddata.dynamic_id, typeMode: 'strict' }) as DynamicInfoResponse
+          // getid 的匹配函数比提取正则宽松，能判成 dynamic_info 却提不出动态 ID
+          if (!iddata.dynamic_id) {
+            await this.e.reply('该动态链接缺少动态 ID，无法解析')
+            break
+          }
+          const dynamicInfo = await this.amagi.bilibili.fetchDynamicDetail({ dynamic_id: iddata.dynamic_id, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as DynamicInfoResponse
           // 整个 dynamic_info 分支共用这一个有效数量：下面取数、以及各动态类型里
           // 「要不要发评论图」的判断都得用它，不能一半读新键一半读旧键。
           const commentLimit = bilibiliCommentLimit()
           const rawCommentsData: CommentsResponse | false = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
             commentLimit > 0
-            ? await this.amagi.getBilibiliData('评论数据', '', {
-              type: mapping_table(dynamicInfo.data.data.item.type),
-              oid: oid(dynamicInfo.data),
-              number: commentLimit,
-              typeMode: 'strict'
-            }) as CommentsResponse
+            // 同上：下面的 isSoftFailure 读返回值，裸 fetcher 会抛，所以这里也要包。
+            ? await softFetch(
+              async () => await this.amagi.bilibili.fetchComments({
+                type: mapping_table(dynamicInfo.data.data.item.type),
+                oid: oid(dynamicInfo.data),
+                number: commentLimit,
+                typeMode: 'strict'
+              }, '', buildAmagiRequestConfig()),
+              SOFT_ERROR_CODES.bilibili
+            ) as CommentsResponse
             : false
           /*
             软失败（UP 主关了评论区）塌回 `false` 这个既有哨兵，下面各动态类型里
@@ -636,7 +655,7 @@ export class Bilibili extends Base {
             isSoftFailure(rawCommentsData, SOFT_ERROR_CODES.bilibili)
           if (commentsSoftClosed) await this.e.reply('UP主已关闭评论区，无法获取评论')
           const commentsData: CommentsResponse | false = commentsSoftClosed ? false : rawCommentsData
-          const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' }) as UserProfileResponse
+          const userProfileData = await this.amagi.bilibili.fetchUserCard({ host_mid: Number(dynamicInfo.data.data.item.modules.module_author.mid), typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as UserProfileResponse
 
           switch (dynamicInfo.data.data.item.type) {
             /** 图文、纯图 */
@@ -932,7 +951,7 @@ export class Bilibili extends Base {
             case DynamicType.AV: {
               if (dynamicInfo.data.data.item.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicInfo.data.data.item.modules.module_dynamic.major.archive.bvid
-                const INFODATA = await getBilibiliData('单个视频作品数据', '', { bvid, typeMode: 'strict' }) as VideoInfoResponse
+                const INFODATA = await this.amagi.bilibili.fetchVideoInfo({ bvid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as VideoInfoResponse
                 if (commentLimit > 0 && commentsData) {
                   const commentsdata = bilibiliComments(commentsData.data)
                   await this.e.reply(
@@ -988,7 +1007,7 @@ export class Bilibili extends Base {
             /** 直播动态 */
             case DynamicType.LIVE_RCMD: {
               const dynamicCARD = JSON.parse(dynamicInfo.data.data.item.modules.module_dynamic.major.live_rcmd.content) as LiveCardData
-              const userINFO = await getBilibiliData('用户主页数据', '', { host_mid: dynamicInfo.data.data.item.modules.module_author.mid, typeMode: 'strict' }) as UserProfileResponse
+              const userINFO = await this.amagi.bilibili.fetchUserCard({ host_mid: Number(dynamicInfo.data.data.item.modules.module_author.mid), typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as UserProfileResponse
               const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_LIVE_RCMD',
                 {
                   // 契约是单张封面字符串，不是数组
@@ -1021,8 +1040,8 @@ export class Bilibili extends Base {
               }
 
               const [articleInfoBase, articleInfo] = await Promise.all([
-                this.amagi.getBilibiliData('专栏文章基本信息', { id: articleId, typeMode: 'strict' }),
-                this.amagi.getBilibiliData('专栏正文内容', { id: articleId, typeMode: 'strict' })
+                this.amagi.bilibili.fetchArticleInfo({ id: articleId, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()),
+                this.amagi.bilibili.fetchArticleContent({ id: articleId, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig())
               ]) as [ArticleInfoResponse, ArticleContentResponse]
               const articleData = articleInfoBase.data.data
               const articleContent = articleInfo.data.data
@@ -1116,9 +1135,14 @@ export class Bilibili extends Base {
           break
         }
         case 'live_room_detail': {
-          const liveInfo = await this.amagi.getBilibiliData('直播间信息', { room_id: iddata.room_id, typeMode: 'strict' }) as LiveInfoResponse
-          const roomInitInfo = await this.amagi.getBilibiliData('直播间初始化信息', { room_id: iddata.room_id, typeMode: 'strict' }) as RoomInitResponse
-          const userProfileData = await this.amagi.getBilibiliData('用户主页数据', { host_mid: roomInitInfo.data.data.uid, typeMode: 'strict' }) as UserProfileResponse
+          // getid 只用 includes('live.bilibili.com') 判型，提取正则却要求尾随数字
+          if (!iddata.room_id) {
+            await this.e.reply('该直播间链接缺少房间号，无法解析')
+            return true
+          }
+          const liveInfo = await this.amagi.bilibili.fetchLiveRoomInfo({ room_id: iddata.room_id, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as LiveInfoResponse
+          const roomInitInfo = await this.amagi.bilibili.fetchLiveRoomInitInfo({ room_id: iddata.room_id, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as RoomInitResponse
+          const userProfileData = await this.amagi.bilibili.fetchUserCard({ host_mid: Number(roomInitInfo.data.data.uid), typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as UserProfileResponse
 
           if (roomInitInfo.data.data.live_status === 0) {
             await this.e.reply(`「${userProfileData.data.data.card.name}」\n未开播，正在休息中~`)

@@ -4,7 +4,7 @@ import { DouYin, getDouyinID } from '@/module/platform/douyin/index'
 import { Xiaohongshu, getXiaohongshuID } from '@/module/platform/xiaohongshu/index'
 import { Config, Common, UploadRecord, wrapWithErrorHandler, downloadVideo, baseHeaders } from '@/module/utils/index'
 import { getStatisticsDB, PRIVATE_GROUP_ID } from '@/module/db/index'
-import { getDouyinData } from '@/module/platform/douyin/api'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import type { BilibiliIdData } from '@/module/platform/bilibili/getid'
 import type { ErrorHandlerPlugin } from '@/module/utils/ErrorHandler/strategy'
 import { EmojiReactionManager } from '@/module/utils/EmojiReaction'
@@ -616,17 +616,17 @@ export class kkkTools extends plugin<'message'> {
   async uploadRecord (e: CommandEvent): Promise<boolean> {
     try {
       // 获取音乐ID并验证
-      const musicIdMatch = e.msg.match(/BGM(\d+)/)
-      if (!musicIdMatch) {
+      const musicId = e.msg.match(/BGM(\d+)/)?.[1]
+      if (!musicId) {
         await e.reply!('未找到有效的音乐ID')
         return false
       }
 
       // 获取音乐数据
-      const data = await getDouyinData('音乐数据', Config.cookies.douyin ?? '', {
-        music_id: musicIdMatch[1],
+      const data = await douyinFetcher.fetchMusicInfo({
+        music_id: musicId,
         typeMode: 'strict'
-      })
+      }, Config.cookies.douyin, buildAmagiRequestConfig())
 
       // 验证音乐数据
       if (!isDouyinMusicData(data)) {

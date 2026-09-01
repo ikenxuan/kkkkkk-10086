@@ -4,7 +4,7 @@ import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
 import { DEFAULT_PARSE_TIMEOUT_MS } from '@/module/utils/ParseCoordinator'
 import { getDouyinID } from '@/module/platform/douyin/index'
 import { getBilibiliID } from '@/module/platform/bilibili/index'
-import { getDouyinData } from '@/module/platform/douyin/api'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 // 两个取流模块都**不在**各自平台的 barrel 里（douyin/index.ts 与 bilibili/index.ts
 // 的导出清单都没有它们），所以只能深引用。别顺手加进 barrel：那两个 barrel 被大量
 // 测试用手写字面量 mock，加一项就得同步改一圈。
@@ -12,6 +12,7 @@ import { pickDouyinLiveStream } from '@/module/platform/douyin/live'
 import { resolveDouyinLiveRoom } from '@/module/platform/douyin/live-room'
 import { fetchBilibiliLiveStream } from '@/module/platform/bilibili/live-stream'
 import type { CommandEvent } from '@/types/message'
+import type { DouyinLiveRoomOptions, DouyinUserOptions } from '@ikenxuan/amagi'
 
 /**
  * 直播录制支持的平台。
@@ -112,11 +113,23 @@ const resolveDouyinSource = async (url: string): Promise<LiveSourceResult> => {
     return { ok: false, message: '这条抖音链接不是直播间，录直播只认直播间链接' }
   }
 
-  // 取数走 `platform/douyin/api.ts` 的独立 wrapper 而不是 Base 里的 amagi Proxy：
+  // 取数走裸 fetcher 而不是 Base 里那层带错误卡片的 amagi Proxy：
   // 那个 Proxy 挂在 DouYin 实例上（要先 new 一个解析器），而这里没有解析上下文。
   const room = await resolveDouyinLiveRoom(
     { sec_uid: idData.sec_uid, room_id: idData.room_id },
-    async (method, options) => await getDouyinData(method, Config.cookies.douyin ?? '', options)
+    // 按 method 分支而不是 `douyinFetcher[method]` 下标取：下标要把整个函数断言掉，
+    // amagi 改了方法名时拿到的是 undefined、崩在运行时；分支写死真名则构建期就报错。
+    async (method, options) => method === 'fetchLiveRoomInfo'
+      ? await douyinFetcher.fetchLiveRoomInfo(
+        options as unknown as DouyinLiveRoomOptions & { typeMode: 'strict' },
+        Config.cookies.douyin,
+        buildAmagiRequestConfig()
+      )
+      : await douyinFetcher.fetchUserProfile(
+        options as unknown as DouyinUserOptions & { typeMode: 'strict' },
+        Config.cookies.douyin,
+        buildAmagiRequestConfig()
+      )
   )
   if (!room.living) {
     return { ok: false, message: `「${room.anchor.nickname}」未开播，没有流可以录` }

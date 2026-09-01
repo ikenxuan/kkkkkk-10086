@@ -4,4 +4,3 @@ import GetKuaishouID from './getid.js'
 import comments from './comments.js'
 
 export { KuaiShou, KuaishouData, GetKuaishouID, comments }
-export { getKuaishouData } from './api.js'

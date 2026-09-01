@@ -2,8 +2,8 @@ import { createRequire } from 'node:module'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ProxyAuth } from '@/types/config'
 import type { FileInfo } from '@/types/platform'
-import { getBilibiliData as fetchBilibiliData } from '@/module/platform/bilibili/api'
-import { getDouyinData as fetchDouyinData } from '@/module/platform/douyin/api'
+import { bilibiliFetcher, douyinFetcher } from '@/module/utils/amagiClient'
+import { AmagiError, readAmagiFailureCode } from '@/module/platform/common/softError'
 import {
   classifyCdnFailure,
   reportCdnFailure,
@@ -26,7 +26,7 @@ import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
 import { getErrorMessage } from './error-message.js'
 import { isRecord } from './record.js'
-import type { AmagiClient, AmagiDependencies, AmagiModule, AmagiProperty, AmagiProxyClient, ApiErrorRecord, BaseEvent, DownloadFileOptions, MessageTarget, UploadFileDependencies, UploadFileOptions, VideoDownloadOptions } from './types.js'
+import type { AmagiDependencies, AmagiModule, AmagiProxyClient, ApiErrorRecord, BaseEvent, DownloadFileOptions, MessageTarget, UploadFileDependencies, UploadFileOptions, VideoDownloadOptions } from './types.js'
 
 const require = createRequire(import.meta.url)
 let defaultAmagiModule: AmagiModule | undefined
@@ -43,27 +43,16 @@ const getAmagiDependencies = (
     return {
       default: overrides.default,
       bilibiliErrorCodeMap: overrides.bilibiliErrorCodeMap,
-      getBilibiliData: overrides.getBilibiliData ?? fetchBilibiliData,
-      getDouyinData: overrides.getDouyinData ?? fetchDouyinData
+      bilibiliFetcher: overrides.bilibiliFetcher ?? bilibiliFetcher,
+      douyinFetcher: overrides.douyinFetcher ?? douyinFetcher
     }
   }
   return {
     ...getDefaultAmagiModule(),
-    getBilibiliData: fetchBilibiliData,
-    getDouyinData: fetchDouyinData,
+    bilibiliFetcher,
+    douyinFetcher,
     ...overrides
   }
-}
-
-const getAmagiMethod = (
-  target: AmagiClient,
-  property: AmagiProperty,
-  getBilibiliData: typeof fetchBilibiliData,
-  getDouyinData: typeof fetchDouyinData
-): unknown => {
-  if (property === 'getBilibiliData') return getBilibiliData
-  if (property === 'getDouyinData') return getDouyinData
-  return Reflect.get(target, property)
 }
 
 /**
@@ -228,6 +217,87 @@ const buildApiErrorImage = async (
 }
 
 /**
+ * 风控 voucher 的读取，路径与 `platform/bilibili/riskControl.ts` 的 `getVoucher` 一致。
+ *
+ * 没有 import 那边的：riskControl 属于 ErrorHandler 策略链，反过来依赖 Base 这条链上的
+ * 模块，直连会成环。这里只需要「有没有 voucher」这一个布尔判断。
+ */
+const getRiskVoucher = (error: AmagiError): boolean => {
+  const fromData = isRecord(error.data) && isRecord(error.data.data)
+    ? error.data.data.v_voucher
+    : undefined
+  const raw = isRecord(error.rawError) ? error.rawError : undefined
+  const fromRaw = isRecord(raw?.data) && isRecord(raw.data.data)
+    ? raw.data.data.v_voucher
+    : undefined
+  return typeof (fromData ?? fromRaw) === 'string'
+}
+
+/** amagi 失败对象整理成 {@link buildApiErrorImage} 吃的形状 */
+const toApiErrorRecord = (error: AmagiError): ApiErrorRecord => ({
+  code: error.code,
+  message: error.message,
+  data: error.data,
+  // rawError 是 amagi 的结构化错误对象（amagiMessage / errorDescription / requestUrl 都在里面），
+  // buildApiErrorImage 优先读 err.error，诊断区的字段全靠它
+  error: error.rawError
+})
+
+/**
+ * 给一个平台的 fetcher 包上错误卡片。
+ *
+ * `amagiClient` 只负责把失败信封抛成 {@link AmagiError}，卡片留在这里 —— 因为渲染要用
+ * 每实例的 `self.e`（发给谁）和 `self.pushContext`（印不印群号），两者都进不了模块级单例。
+ *
+ * 事件为空时走 `sendMasterMessage`：那是定时推送路径**唯一**的告警出口。
+ * ErrorHandler 的兜底走 `getBotId(ctx.event)`，推送路径没有事件，一张卡也发不出去。
+ */
+const wrapFetcherWithErrorCard = <T extends object> (
+  fetcher: T,
+  platform: 'bilibili' | 'douyin',
+  self: { e: BaseEvent | undefined, pushContext: { groupWithBot: string[] } | undefined },
+  fallbackEvent: BaseEvent | undefined,
+  bilibiliErrorCodeMap: Record<number, unknown>
+): T =>
+    new Proxy(fetcher, {
+      get: (target, prop) => {
+        const value: unknown = Reflect.get(target, prop)
+        if (typeof value !== 'function') return value
+
+        return async (...args: unknown[]): Promise<unknown> => {
+          try {
+            return await (value as (...a: unknown[]) => Promise<unknown>).apply(target, args)
+          } catch (error: unknown) {
+            if (!(error instanceof AmagiError)) throw error
+
+            // 渲染、路由判断、回复必须用同一个事件。以前只有 buildApiErrorImage 用了
+            // self.e，判空和 reply 还读着构造参数，于是子类构造后重新赋值 this.e 时
+            // 会出现「按新事件渲染、却按旧事件投递」——卡片内容对，但发错了地方。
+            const event = self.e ?? fallbackEvent
+            const method = String(prop)
+
+            if (platform === 'bilibili') {
+              const code = readAmagiFailureCode(error)
+              // 不在 amagi 登记表里的码不出卡片，交给 ErrorHandler 的策略链
+              if (code === undefined || !(code in bilibiliErrorCodeMap)) throw error
+              // -352 且拿得到 voucher 时原样抛：riskControl 策略按 code / data / rawError
+              // 读它去走验证码流程，出卡片就把那条路堵死了
+              if (code === -352 && getRiskVoucher(error) && Object.keys(event ?? {}).length !== 0) throw error
+            }
+
+            const img = await buildApiErrorImage(platform, method, toApiErrorRecord(error), event, self.pushContext)
+            if (Object.keys(event ?? {}).length === 0) {
+              await sendMasterMessage(platform, img)
+              throw error
+            }
+            await event?.reply?.(img)
+            throw error
+          }
+        }
+      }
+    })
+
+/**
  * 上传文件选项
  * @typedef {Object} uploadFileOptions
  * @property {boolean} [useGroupFile] 是否使用群文件上传
@@ -319,9 +389,9 @@ export class Base {
   /**
    * amagi 客户端。
    *
-   * 用 `AmagiProxyClient` 而不是 `AmagiClient`：下面的 Proxy 通过 `getAmagiMethod`
-   * 真的会把 `getBilibiliData` / `getDouyinData` 这两个函数交出去，所以这里如实声明，
-   * 否则两个方法在子类里都是 `unknown`、根本调用不了。
+   * 用 `AmagiProxyClient` 而不是 `AmagiClient`：下面的 Proxy 真的会把 `bilibili` /
+   * `douyin` 两个 fetcher 交出去，所以这里如实声明，否则它们在子类里都是 `unknown`、
+   * 根本调用不了。
    */
   amagi: AmagiProxyClient
 
@@ -333,8 +403,8 @@ export class Base {
     const {
       default: Client,
       bilibiliErrorCodeMap,
-      getBilibiliData,
-      getDouyinData
+      bilibiliFetcher: bilibili,
+      douyinFetcher: douyin
     } = dependencies
     let proxy: false | {
       host: string
@@ -372,76 +442,15 @@ export class Base {
     // 所以错误上报时以 self.e 为准、退回构造参数。
     const self = this
 
-    // 使用Proxy包装amagi客户端
+    const wrapped: Record<string, unknown> = {
+      bilibili: wrapFetcherWithErrorCard(bilibili, 'bilibili', self, e, bilibiliErrorCodeMap),
+      douyin: wrapFetcherWithErrorCard(douyin, 'douyin', self, e, bilibiliErrorCodeMap)
+    }
+
+    // 两个平台的 fetcher 换成包了错误卡片的那层，其余属性原样交给 amagi Client
     this.amagi = new Proxy(client, {
-      get (target, prop): unknown {
-        const property = prop as AmagiProperty
-        const method = getAmagiMethod(
-          target,
-          property,
-          getBilibiliData,
-          getDouyinData
-        )
-        if (typeof method === 'function') {
-          return async (...args: unknown[]): Promise<unknown> => {
-            const rawResult: unknown = await Reflect.apply(method, target, args)
-
-            if (!rawResult) {
-              logger.warn(`Amagi API调用 (${String(property)}) 返回了空值`)
-              return rawResult
-            }
-            const result = rawResult as ApiErrorRecord
-
-            // 渲染、路由判断、回复必须用同一个事件。以前只有 buildApiErrorImage 用了
-            // self.e，判空和 reply 还读着构造参数 e，于是子类构造后重新赋值 this.e 时
-            // 会出现「按新事件渲染、却按旧事件投递」——卡片内容对，但发错了地方。
-            const event = self.e ?? e
-
-            if (property === 'getDouyinData' && result.code !== 200) {
-              const img = await buildApiErrorImage('douyin', String(property), result, event, self.pushContext)
-              if (Object.keys(event ?? {}).length === 0) {
-                await sendMasterMessage('douyin', img)
-                throw new Error(result.message)
-              }
-              await event?.reply?.(img)
-              throw new Error(result.message)
-            }
-
-            const rawCode: unknown = result.code
-            if (
-              property === 'getBilibiliData' &&
-              (typeof rawCode === 'number' || typeof rawCode === 'string') &&
-              rawCode in bilibiliErrorCodeMap
-            ) {
-              const data = isRecord(result.data) ? result.data : undefined
-              const nestedData = isRecord(data?.data) ? data.data : undefined
-              const error = isRecord(result.error) ? result.error : undefined
-              const errorData = isRecord(error?.data) ? error.data : undefined
-              const errorNestedData = isRecord(errorData?.data) ? errorData.data : undefined
-              const voucher = nestedData?.v_voucher || errorNestedData?.v_voucher
-              if (result.code === -352 && voucher && Object.keys(event ?? {}).length !== 0) {
-                const riskError = new Error(result.message || 'B站风控验证')
-                Object.assign(riskError, {
-                  code: result.code,
-                  platform: 'bilibili',
-                  data: result.data || result.error,
-                  rawError: result
-                })
-                throw riskError
-              }
-              const img = await buildApiErrorImage('bilibili', String(property), result, event, self.pushContext)
-              if (Object.keys(event ?? {}).length === 0) {
-                await sendMasterMessage('bilibili', img)
-                throw new Error(result.message)
-              }
-              await event?.reply?.(img)
-              throw new Error(result.message)
-            }
-            return result
-          }
-        }
-        return method
-      }
+      get: (target, prop): unknown =>
+        prop in wrapped ? wrapped[prop as string] : Reflect.get(target, prop)
     }) as AmagiProxyClient
   }
 

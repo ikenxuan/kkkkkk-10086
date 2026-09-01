@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { DouyinLiveApiFetcher } from '../../src/module/platform/douyin/live-room.js'
 import type { CommandEvent } from '../../src/types/message.js'
 
 /**
@@ -21,10 +22,15 @@ import type { CommandEvent } from '../../src/types/message.js'
  * `utils/ParseCoordinator.ts`（截断上限从它的预算推导，用替身就等于自己跟自己对答案）。
  */
 
+/** `buildAmagiRequestConfig()` 的替身返回值，只用来认第三个实参真的到位 */
+const requestConfig = vi.hoisted(() => ({ timeout: 15_000 }))
+
 const doubles = vi.hoisted(() => ({
   getDouyinID: vi.fn(),
   getBilibiliID: vi.fn(),
-  getDouyinData: vi.fn(),
+  fetchLiveRoomInfo: vi.fn(),
+  fetchUserProfile: vi.fn(),
+  buildAmagiRequestConfig: vi.fn(() => requestConfig),
   resolveDouyinLiveRoom: vi.fn(),
   fetchBilibiliLiveStream: vi.fn(),
   recordLiveStream: vi.fn(),
@@ -69,8 +75,14 @@ vi.mock('../../src/module/platform/douyin/index.js', () => ({
   getDouyinID: doubles.getDouyinID
 }))
 
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: doubles.getDouyinData
+// 裸 fetcher 上只列被测那条路用到的两个方法：写成 Proxy 的话每次属性访问都是一个新
+// `vi.fn()`，断言永远拿不到收到调用的那一份。
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: {
+    fetchLiveRoomInfo: doubles.fetchLiveRoomInfo,
+    fetchUserProfile: doubles.fetchUserProfile
+  },
+  buildAmagiRequestConfig: doubles.buildAmagiRequestConfig
 }))
 
 vi.mock('../../src/module/platform/douyin/live-room.js', () => ({
@@ -203,22 +215,45 @@ describe('recordLiveRoom 抖音取流', () => {
     expect(event.reply.mock.calls[0]?.[0]).toContain('画质：蓝光')
   })
 
-  it('取数客户端带上抖音 Cookie，且方法名与参数原样透传', async () => {
+  it('直播间那一跳落在 fetchLiveRoomInfo 上，参数、Cookie、请求配置依次到位', async () => {
     doubles.resolveDouyinLiveRoom.mockImplementation(async (
       _id: unknown,
-      fetch: (method: string, options: unknown) => Promise<unknown>
+      fetch: DouyinLiveApiFetcher
     ) => {
-      await fetch('直播间信息数据', { room_id: '7300', web_rid: '26139686' })
+      await fetch('fetchLiveRoomInfo', { room_id: '7300', web_rid: '26139686' })
       return livingRoom()
     })
 
     await recordLiveRoom(createEvent(), 'douyin', DOUYIN_URL)
 
-    expect(doubles.getDouyinData).toHaveBeenCalledWith(
-      '直播间信息数据',
+    // amagi 收的是 `(options, cookie, requestConfig)`。cookie 排在第二位，
+    // 和 options 换了位置不会崩、只会让请求变成未登录态，回来一份空数据。
+    expect(doubles.fetchLiveRoomInfo).toHaveBeenCalledWith(
+      { room_id: '7300', web_rid: '26139686' },
       'douyin-ck',
-      { room_id: '7300', web_rid: '26139686' }
+      requestConfig
     )
+    // 分支写死方法名，串台了就是拿房间参数去打主页接口
+    expect(doubles.fetchUserProfile).not.toHaveBeenCalled()
+  })
+
+  it('主页那一跳落在 fetchUserProfile 上，不会串到直播间接口', async () => {
+    doubles.resolveDouyinLiveRoom.mockImplementation(async (
+      _id: unknown,
+      fetch: DouyinLiveApiFetcher
+    ) => {
+      await fetch('fetchUserProfile', { sec_uid: 'MS4wLjABAAAA' })
+      return livingRoom()
+    })
+
+    await recordLiveRoom(createEvent(), 'douyin', DOUYIN_URL)
+
+    expect(doubles.fetchUserProfile).toHaveBeenCalledWith(
+      { sec_uid: 'MS4wLjABAAAA' },
+      'douyin-ck',
+      requestConfig
+    )
+    expect(doubles.fetchLiveRoomInfo).not.toHaveBeenCalled()
   })
 
   it('把链接里的两个号一起交给房间解析，缺哪个由那边补', async () => {

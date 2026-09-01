@@ -8,6 +8,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getBilibiliDataMock = vi.hoisted(() => vi.fn())
+/** 裸 fetcher 的每个方法都汇进同一个 spy —— 这组用例不区分方法，只要取数有返回 */
+const bilibiliFetcherStub = vi.hoisted(() => new Proxy({}, {
+  get: (_target, method: string) =>
+    async (options: unknown) => await getBilibiliDataMock(method, options)
+}))
 const renderMock = vi.hoisted(() => vi.fn())
 const addDynamicCacheMock = vi.hoisted(() => vi.fn())
 const shouldFilterMock = vi.hoisted(() => vi.fn())
@@ -73,8 +78,9 @@ vi.mock('../../src/module/platform/bilibili/article.js', () => ({
   formatBilibiliArticleBody: vi.fn()
 }))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: getBilibiliDataMock
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: bilibiliFetcherStub,
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/platform/common/livePhoto.js', () => ({
@@ -176,8 +182,8 @@ beforeEach(() => {
 /** 造一个 amagi 被打桩过的推送实例 */
 const newPush = (): InstanceType<typeof Bilibilipush> => {
   const subject = new Bilibilipush()
-  ;(subject as unknown as { amagi: { getBilibiliData: typeof getBilibiliDataMock } }).amagi = {
-    getBilibiliData: getBilibiliDataMock
+  ;(subject as unknown as { amagi: { bilibili: unknown } }).amagi = {
+    bilibili: bilibiliFetcherStub
   }
   return subject
 }

@@ -11,7 +11,6 @@
  *   按次跳过水印的开关（水印由 `Config.app.RemoveWatermark` 全局控制），所以 `skipWatermark`
  *   没有对应实现，此处不提供该选项。
  * - `Count()` -> `Common.count()`
- * - `douyinFetcher.fetchUserProfile()` -> `getDouyinData('用户主页数据', ...)`
  * - 上游的 `getWorkTypeInfo()` 返回带 `mainType` 的对象，本仓库是 `isDouyinVideo/isDouyinImage/
  *   isDouyinArticle` 三个谓词 + `getDouyinWorkCoverUrl`，语义一致。
  */
@@ -26,11 +25,11 @@ import {
 } from '@kkk/richtext'
 import { format, fromUnixTime } from 'date-fns'
 
-import { Common, Render } from '@/module/utils/index'
+import { Common, Config, Render } from '@/module/utils/index'
 import { at } from '@/module/utils/record'
 import type { ImageMessage } from '@/module/utils/Watermark'
 
-import { getDouyinData } from './api.js'
+import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { buildDouyinResolutionInfo, type DouyinBitRateItem, isDouyinHdrStream } from './videoQuality.js'
 import {
   getDouyinWorkCoverUrl,
@@ -354,7 +353,7 @@ const resolveMentionTokens = async (
   await Promise.all(uniqueSecUids.map(async secUid => {
     if (mentionCache.has(secUid)) return
     try {
-      const userInfo = await getDouyinData('用户主页数据', { sec_uid: secUid, typeMode: 'strict' }) as {
+      const userInfo = await douyinFetcher.fetchUserProfile({ sec_uid: secUid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as {
         data: { user: { sec_uid?: string, nickname?: string } }
       }
       const user = userInfo.data.user

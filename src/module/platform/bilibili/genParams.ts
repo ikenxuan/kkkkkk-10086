@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module'
-import { getBilibiliData } from './api.js'
+import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiClient'
 import Config from '@/module/utils/Config'
 import { isRecord } from '@/module/utils/record'
 
@@ -41,7 +41,7 @@ export async function genParams (apiURL: string): Promise<string> {
   // 「没配置」只有空串这一种表示，归一化在 Config.cookies getter 里做（见那边的注释）
   if (Config.cookies.bilibili === '') return '&platform=html5'
   /** 保留原有的直接取值方式：响应结构异常时同样抛出错误交给调用方 */
-  const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili) as BilibiliLoginInfo
+  const loginInfo = await bilibiliFetcher.fetchLoginStatus({}, Config.cookies.bilibili, buildAmagiRequestConfig()) as BilibiliLoginInfo
   const genSign = await getWbiSign()(apiURL, Config.cookies.bilibili)
 
   const qn = [6, 16, 32, 64, 74, 80, 112, 116, 120, 125, 126, 127]
@@ -75,7 +75,7 @@ export interface BilibiliCkStatus {
  *
  * @throws 当API调用失败时可能抛出错误
  *
- * @see {@link getBilibiliData} 使用的API调用函数
+ * @see {@link bilibiliFetcher} 使用的API调用函数
  * @see {@link Config.cookies} 使用的Cookie配置
  *
  */
@@ -87,7 +87,7 @@ export async function checkCk (): Promise<BilibiliCkStatus> {
   }
 
   // 获取用户登录信息
-  const loginInfo = await getBilibiliData('登录基本信息', Config.cookies.bilibili)
+  const loginInfo = await bilibiliFetcher.fetchLoginStatus({}, Config.cookies.bilibili, buildAmagiRequestConfig())
 
   // 判断VIP状态：vipStatus为1表示是VIP用户
   const isVIP = readVipStatus(loginInfo) === 1

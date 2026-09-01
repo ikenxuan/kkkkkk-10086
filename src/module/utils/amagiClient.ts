@@ -6,6 +6,7 @@ import type {
   Result,
   XiaohongshuFetcher
 } from '@ikenxuan/amagi'
+import type { ProxyAuth } from '@/types/config'
 import { AmagiError } from '@/module/platform/common/softError'
 import { buildSharedUserAgentHeader } from '@/module/platform/common/userAgent'
 import Config from '@/module/utils/Config'
@@ -33,7 +34,30 @@ const isResultEnvelope = (value: unknown): value is Result<unknown> =>
  * 推 botId（无事件也能发），而 ErrorHandler 兜底走 `getBotId(ctx.event)` —— 推送路径
  * 的事件是 undefined，一张都发不出去。搬进来会让定时推送的告警彻底消失。
  */
+/**
+ * -352 到达时把信封的**键名**记下来（不记值，里面有 cookie 指纹一类东西）。
+ *
+ * 放在这里而不是 riskControl：那个策略的 `match` 要求 `getVoucher(error)` 非空，
+ * 没有 voucher 的 -352 根本进不到它的 `handle`（`ErrorHandler/handler.ts:31` 直接 continue），
+ * 日志写在里面等于永远不执行。而实测的 -352 响应体只有 `{code, message, ttl}`、
+ * 没有 `data` —— 也就是说「取不到 voucher」才是常态，正是这条日志要留证的情形。
+ */
+const logRiskControlShape = (result: Extract<Result<unknown>, { success: false }>): void => {
+  if (result.code !== -352) return
+  try {
+    const keysOf = (value: unknown): string =>
+      isRecord(value) ? Object.keys(value).join(',') || '(空对象)' : String(value)
+    logger.warn(
+      `[amagi] -352 风控信封形状: data={${keysOf(result.data)}} error={${keysOf(result.error)}}`
+    )
+  } catch {
+    // 宿主没注入 logger 时（单测、或加载早期）不能让留证把错误本身带崩：
+    // 已有用例「白名单外的 -352 继续抛 AmagiError」正是在无 logger 下跑的
+  }
+}
+
 const toAmagiError = (result: Extract<Result<unknown>, { success: false }>): AmagiError => {
+  logRiskControlShape(result)
   const rawError: unknown = result.error
   const amagiMessage = isRecord(rawError) && typeof rawError.amagiMessage === 'string'
     ? rawError.amagiMessage
@@ -74,7 +98,13 @@ export const wrapAmagiClient = <T extends object> (client: T): T => {
   return createProxy(client) as T
 }
 
-/** 传给 amagi fetcher 的请求配置，形状对齐各平台 api.ts */
+/**
+ * 传给 amagi fetcher 的请求配置。
+ *
+ * `auth` 写 `ProxyAuth` 而不是 `unknown`：amagi 的 `RequestConfig` 是
+ * `Omit<AxiosRequestConfig, …>`，`unknown` 过不了 `AxiosProxyConfig.auth` 的赋值检查，
+ * 于是每个调用点都是 TS2769。旧的 `api.ts` 看不出来是因为它把 fetcher 收窄成了本地类型。
+ */
 export interface AmagiRequestConfig {
   timeout: number
   headers: Record<string, string>
@@ -82,7 +112,7 @@ export interface AmagiRequestConfig {
     host: string
     port: number
     protocol: string
-    auth: unknown
+    auth: ProxyAuth
   }
 }
 

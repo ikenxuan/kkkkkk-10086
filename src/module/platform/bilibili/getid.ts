@@ -1,5 +1,6 @@
 import { baseHeaders, Networks } from '@/module/utils/index'
-import { getBilibiliData } from './api.js'
+import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiClient'
+import Config from '@/module/utils/Config'
 
 /** B站数据类型 */
 export type BilibiliDataType =
@@ -47,17 +48,22 @@ interface ConvertAvToBvResult {
   }
 }
 
-/** getid 的可注入依赖，仅用于测试替换真实 amagi */
+/**
+ * getid 的可注入依赖，仅用于测试替换真实 amagi。
+ *
+ * `typeMode` 写成字面量而不是 string：amagi 的严格重载按 `typeMode: 'strict'` 挑返回类型，
+ * 宽化成 string 会让下面那个 fetcher 调用两个重载都匹配不上。
+ */
 export interface BilibiliIdDependencies {
-  convertAvToBv: (options: { avid: number, typeMode: string }) => Promise<ConvertAvToBvResult>
+  convertAvToBv: (options: { avid: number, typeMode: 'strict' }) => Promise<ConvertAvToBvResult>
 }
 
 let defaultDependencies: BilibiliIdDependencies | undefined
 
-/** 默认通过统一 B站 API wrapper 执行，使请求获得超时、中止与网络重试保护 */
 const getDefaultDependencies = (): BilibiliIdDependencies => {
   defaultDependencies ??= {
-    convertAvToBv: async (options) => await getBilibiliData('AV转BV', options) as ConvertAvToBvResult
+    convertAvToBv: async (options) =>
+      await bilibiliFetcher.convertAvToBv(options, Config.cookies.bilibili, buildAmagiRequestConfig()) as ConvertAvToBvResult
   }
   return defaultDependencies
 }

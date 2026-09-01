@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getLongLink = vi.hoisted(() => vi.fn())
-const getBilibiliData = vi.hoisted(() => vi.fn())
+const convertAvToBvFetcher = vi.hoisted(() => vi.fn())
 /** 记录 Networks 实际收到的 url，用来断言协议补全发生在发请求之前 */
 const networksUrls = vi.hoisted(() => [] as string[])
 
@@ -16,8 +16,14 @@ vi.mock('../../src/module/utils/index.js', () => ({
   }
 }))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: { convertAvToBv: convertAvToBvFetcher },
+  buildAmagiRequestConfig: vi.fn(() => ({}))
+}))
+
+// getid.ts 自己 import Config 取 cookie，真实 Config 构造时读写宿主 yaml
+vi.mock('../../src/module/utils/Config.js', () => ({
+  default: { cookies: { bilibili: '' } }
 }))
 
 const loggerInfo = vi.fn()
@@ -51,7 +57,7 @@ beforeEach(() => {
   fetchSpy.mockReset()
   fetchSpy.mockResolvedValue({ url: '' } as Response)
   convertAvToBv.mockReset()
-  getBilibiliData.mockReset()
+  convertAvToBvFetcher.mockReset()
 })
 
 describe('getBilibiliID link patterns', () => {
@@ -132,11 +138,12 @@ describe('getBilibiliID link patterns', () => {
 describe('getBilibiliID av conversion', () => {
   it('routes the default av conversion through the guarded Bilibili API wrapper', async () => {
     getLongLink.mockResolvedValue('https://www.bilibili.com/video/av170001')
-    getBilibiliData.mockResolvedValue({ data: { data: { bvid: 'BV17x411w7KC' } } })
+    convertAvToBvFetcher.mockResolvedValue({ data: { data: { bvid: 'BV17x411w7KC' } } })
 
     const result = await getBilibiliID('https://b23.tv/share')
 
-    expect(getBilibiliData).toHaveBeenCalledWith('AV转BV', { avid: 170001, typeMode: 'strict' })
+    // 只钉 options：cookie 与 requestConfig 由 getDefaultDependencies 现算，不是本用例的被测面
+    expect(convertAvToBvFetcher.mock.calls[0]?.[0]).toEqual({ avid: 170001, typeMode: 'strict' })
     expect(result).toEqual({ type: 'one_video', bvid: 'BV17x411w7KC' })
   })
 

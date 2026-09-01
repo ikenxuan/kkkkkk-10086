@@ -71,8 +71,10 @@ vi.mock('../../src/module/db/index.js', () => ({
   PRIVATE_GROUP_ID: 'private'
 }))
 
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: vi.fn()
+// 任何方法都返回 undefined，与旧的 `getDouyinData: vi.fn()` 同义：这些用例不该走到取数
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 /**

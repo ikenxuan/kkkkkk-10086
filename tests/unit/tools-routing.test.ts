@@ -28,7 +28,10 @@ vi.mock('../../src/module/db/index.js', () => ({ getStatisticsDB: vi.fn().mockRe
 // 录制流水线整个挡掉：它的真实依赖链里有 FFmpeg / Base / bilibili 取流，
 // 而那几个又要真的 Config（读宿主 lib/config），本文件只关心路由，不需要它们。
 vi.mock('../../src/module/platform/common/liveRecord.js', () => ({ recordLiveRoom: vi.fn() }))
-vi.mock('../../src/module/platform/douyin/api.js', () => ({ getDouyinData: vi.fn() }))
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
+}))
 vi.mock('../../src/module/platform/douyin/index.js', () => ({
   DouYin: class {},
   getDouyinID: vi.fn()

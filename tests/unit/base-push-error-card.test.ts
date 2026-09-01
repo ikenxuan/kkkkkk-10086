@@ -34,12 +34,10 @@ vi.mock('../../src/module/utils/Network/index.js', () => ({
   baseHeaders: {}
 }))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: vi.fn()
-}))
-
-vi.mock('../../src/module/platform/douyin/api.js', () => ({
-  getDouyinData: vi.fn()
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/runtime/host/config.js', () => ({
@@ -68,7 +66,9 @@ vi.mock('../../src/module/utils/Common.js', () => ({
   }
 }))
 
+import type { BilibiliFetcher, DouyinFetcher } from '@ikenxuan/amagi'
 import { Base } from '../../src/module/utils/Base.js'
+import { AmagiError } from '../../src/module/platform/common/softError.js'
 
 /** `Bot` / `logger` / `segment` 在全局声明里都是必填，塞部分实现得先过一层 unknown */
 const globalWithHost = globalThis as unknown as {
@@ -81,10 +81,20 @@ const originalBot = globalWithHost.Bot
 
 const amagiDependencies = {
   default: vi.fn(() => ({})),
-  bilibiliErrorCodeMap: {},
-  getBilibiliData: vi.fn(),
-  getDouyinData: vi.fn()
+  bilibiliErrorCodeMap: {}
 }
+
+/**
+ * 一个「任何方法都抛业务失败」的 fetcher 替身。
+ *
+ * 抛而不是返回失败信封：转信封那步在 `amagiClient` 的 Proxy 里，`Base.ts` 收到的
+ * 已经是 `AmagiError`，它的 catch 只认 `instanceof`。所以这里必须抛真的那个类，
+ * 换成本地同名 class 会让 Base 直接原样上抛、一张卡片都不出。
+ */
+const failingFetcher = <T> (code: number, message: string, data?: unknown): T =>
+  new Proxy({}, {
+    get: () => vi.fn().mockRejectedValue(new AmagiError(code, message, data))
+  }) as T
 
 /**
  * 宿主 plugins/adapter/OneBotv11.js 的字段形状：适配器实例上只有 id / name，
@@ -133,9 +143,9 @@ const installBots = (bots: Record<string, unknown>): void => {
 /**
  * 驱动一次「抖音接口返回非 200」，返回 `Render()` 收到的卡片数据。
  *
- * 走 getDouyinData 而不是 getBilibiliData 只是因为它的触发条件更短
- * （`code !== 200`，不用配 bilibiliErrorCodeMap）；两条分支传给
- * buildApiErrorImage 的第 5 个参数是同一个 `self.pushContext`。
+ * 走抖音而不是 B站 只是因为它的触发条件更短（任何 AmagiError 都出卡片，
+ * 不用配 bilibiliErrorCodeMap）；两条分支传给 buildApiErrorImage 的第 5 个参数
+ * 是同一个 `self.pushContext`。
  */
 const errorCard = async (options: {
   pushContext?: { groupWithBot: string[] }
@@ -146,13 +156,11 @@ const errorCard = async (options: {
 
   const base = new Base(options.event as never, {
     ...amagiDependencies,
-    getDouyinData: vi.fn().mockResolvedValue({ code: 500, message: '抖音接口炸了' })
+    douyinFetcher: failingFetcher<DouyinFetcher>(500, '抖音接口炸了')
   })
   base.pushContext = options.pushContext
 
-  await expect(
-    (base.amagi.getDouyinData as () => Promise<unknown>)()
-  ).rejects.toThrow('抖音接口炸了')
+  await expect(base.amagi.douyin.fetchVideoWork({ aweme_id: '1' })).rejects.toThrow('抖音接口炸了')
 
   // 不加这条的话，Render 压根没被调到时下面会拿到空 payload，
   // 「某一行不该出现」这类用例就会假通过。
@@ -183,13 +191,11 @@ const bilibiliErrorCard = async (
   const base = new Base(undefined, {
     ...amagiDependencies,
     bilibiliErrorCodeMap: { [-352]: true },
-    getBilibiliData: vi.fn().mockResolvedValue({ code: -352, message: 'B站接口炸了' })
+    bilibiliFetcher: failingFetcher<BilibiliFetcher>(-352, 'B站接口炸了')
   })
   base.pushContext = pushContext
 
-  await expect(
-    (base.amagi.getBilibiliData as () => Promise<unknown>)()
-  ).rejects.toThrow('B站接口炸了')
+  await expect(base.amagi.bilibili.fetchVideoInfo({ bvid: 'BV1' })).rejects.toThrow('B站接口炸了')
 
   expect(renderMock).toHaveBeenCalledTimes(1)
   return renderMock.mock.calls[0][1] as ErrorCardPayload
@@ -283,11 +289,11 @@ describe('push error card target rows', () => {
 
     const base = new Base(undefined, {
       ...amagiDependencies,
-      getDouyinData: vi.fn().mockResolvedValue({ code: 500, message: '抖音接口炸了' })
+      douyinFetcher: failingFetcher<DouyinFetcher>(500, '抖音接口炸了')
     })
     base.pushContext = { groupWithBot: ['114514:2854196310', '1919810:2854196310'] }
 
-    await expect((base.amagi.getDouyinData as () => Promise<unknown>)()).rejects.toThrow('抖音接口炸了')
+    await expect(base.amagi.douyin.fetchVideoWork({ aweme_id: '1' })).rejects.toThrow('抖音接口炸了')
 
     const sendMasterMsg = (globalWithHost.Bot as { sendMasterMsg: ReturnType<typeof vi.fn> }).sendMasterMsg
     const text = String((sendMasterMsg.mock.calls[0]?.[0] as unknown[])?.join('\n'))

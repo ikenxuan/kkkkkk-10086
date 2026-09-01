@@ -84,7 +84,13 @@ vi.mock('../../src/module/platform/bilibili/index.js', () => ({
   Bilibilipush: class {},
   getBilibiliID: vi.fn()
 }))
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({ getBilibiliData: vi.fn() }))
+// 两个平台合到一份替身里：amagiClient 是同一个模块，分两次 vi.mock 同一路径
+// 后一次会静默盖掉前一次。任何方法都返回 undefined，同旧的 `getXData: vi.fn()`。
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
+}))
 vi.mock('../../src/module/platform/bilibili/login.js', () => ({ bilibiliLogin: vi.fn() }))
 
 vi.mock('../../src/module/platform/douyin/index.js', () => ({
@@ -92,7 +98,6 @@ vi.mock('../../src/module/platform/douyin/index.js', () => ({
   DouYinpush: class {},
   getDouyinID: vi.fn()
 }))
-vi.mock('../../src/module/platform/douyin/api.js', () => ({ getDouyinData: vi.fn() }))
 // 直播录制流水线只在 rule 命中时才跑，契约测试只实例化 app。挡掉它是因为它的真实
 // 依赖链（FFmpeg / Base / bilibili 取流）会绕过上面那个 utils barrel 替身去要真的
 // Config，而真的 Config 要读宿主的 lib/config。

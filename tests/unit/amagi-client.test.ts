@@ -371,3 +371,53 @@ describe('四平台 fetcher 导出是惰性的', () => {
     expect(typeof bilibiliFetcher).toBe('object')
   })
 })
+
+describe('-352 记下风控信封的形状', () => {
+  const callWith = async (envelope: unknown): Promise<unknown> => {
+    const client = wrapAmagiClient({ fetch: async () => envelope })
+    return await client.fetch().catch((error: unknown) => error)
+  }
+
+  beforeEach(() => {
+    globalThis.logger = { warn: vi.fn() } as unknown as typeof logger
+  })
+
+  it('记的是键名，不是值', async () => {
+    await callWith({
+      success: false as const,
+      code: -352,
+      message: '风控校验失败',
+      data: { rawData: { code: -352 } },
+      error: { amagiError: 'BILIBILI_ERROR', cookieFingerprint: 'a1b2c3' }
+    })
+
+    const line = vi.mocked(globalThis.logger.warn).mock.calls[0]?.[0] as string
+    expect(line).toContain('data={rawData}')
+    expect(line).toContain('amagiError,cookieFingerprint')
+    // 值里可能带 cookie 指纹一类东西，只能出现键名
+    expect(line).not.toContain('a1b2c3')
+  })
+
+  it('实测的 -352 形状（没有 data 键）也记得下来', async () => {
+    // 真机探针拿到的响应体就是 `{code, message, ttl}`，data 是 undefined
+    await callWith({ success: false as const, code: -352, message: '风控校验失败', ttl: 1 })
+
+    expect(vi.mocked(globalThis.logger.warn).mock.calls[0]?.[0]).toContain('data={undefined}')
+  })
+
+  it('别的错误码不记', async () => {
+    await callWith(failureEnvelope(12061))
+
+    expect(globalThis.logger.warn).not.toHaveBeenCalled()
+  })
+
+  it('logger 缺席时照旧抛 AmagiError，不被日志带崩', async () => {
+    // @ts-expect-error 故意抹掉宿主注入的全局 logger
+    delete globalThis.logger
+
+    const error = await callWith({ success: false as const, code: -352, message: '风控校验失败' })
+
+    expect(error).toBeInstanceOf(AmagiError)
+    expect((error as InstanceType<typeof AmagiError>).code).toBe(-352)
+  })
+})

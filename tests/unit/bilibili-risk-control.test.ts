@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const getBilibiliData = vi.hoisted(() => vi.fn())
+// 两个方法各自一个替身。旧的单函数替身靠调用次序区分「申请」与「验证」，
+// 裸 fetcher 下它们是两个键，次序不再是判据。
+const requestCaptchaFromVoucher = vi.hoisted(() => vi.fn())
+const validateCaptchaResult = vi.hoisted(() => vi.fn())
 const registerErrorStrategy = vi.hoisted(() => vi.fn())
 const sendErrorToMaster = vi.hoisted(() => vi.fn(async () => undefined))
 const sendErrorToAllMasters = vi.hoisted(() => vi.fn(async () => undefined))
@@ -11,8 +14,9 @@ const sendErrorToAllMasters = vi.hoisted(() => vi.fn(async () => undefined))
  */
 const renderErrorReport = vi.hoisted(() => vi.fn(async () => ({ card: 'rendered-image' })))
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: { requestCaptchaFromVoucher, validateCaptchaResult },
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/utils/Config.js', () => ({
@@ -58,28 +62,28 @@ const createContext = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('bilibiliRiskControlStrategy guarded Amagi requests', () => {
-  it('requests a captcha through getBilibiliData', async () => {
-    getBilibiliData.mockResolvedValue({})
+  it('requests a captcha through the bare fetcher', async () => {
+    requestCaptchaFromVoucher.mockResolvedValue({})
 
     await expect(bilibiliRiskControlStrategy.handle(createContext() as never)).resolves.toBe('continue')
 
-    expect(getBilibiliData).toHaveBeenCalledWith('从_v_voucher_申请_captcha', {
+    // 只钉 options：cookie 与 requestConfig 不是本用例的被测面
+    expect(requestCaptchaFromVoucher.mock.calls[0]?.[0]).toEqual({
       v_voucher: 'voucher-1',
       typeMode: 'strict'
     })
   })
 
-  it('validates a captcha through getBilibiliData', async () => {
-    getBilibiliData
-      .mockResolvedValueOnce({
+  it('validates a captcha through the bare fetcher', async () => {
+    requestCaptchaFromVoucher.mockResolvedValue({
+      data: {
         data: {
-          data: {
-            geetest: { gt: 'gt-1', challenge: 'challenge-1' },
-            token: 'token-1'
-          }
+          geetest: { gt: 'gt-1', challenge: 'challenge-1' },
+          token: 'token-1'
         }
-      })
-      .mockResolvedValueOnce({ success: true })
+      }
+    })
+    validateCaptchaResult.mockResolvedValue({ success: true })
     const awaitContext = vi.fn(async () => ({
       msg: 'https://example.test/callback?validate=validate-1&seccode=seccode-1'
     }))
@@ -91,7 +95,7 @@ describe('bilibiliRiskControlStrategy guarded Amagi requests', () => {
       }
     }) as never)).resolves.toBe('handled')
 
-    expect(getBilibiliData).toHaveBeenNthCalledWith(2, '验证验证码结果', {
+    expect(validateCaptchaResult.mock.calls[0]?.[0]).toEqual({
       challenge: 'challenge-1',
       token: 'token-1',
       validate: 'validate-1',
@@ -102,21 +106,20 @@ describe('bilibiliRiskControlStrategy guarded Amagi requests', () => {
 })
 
 describe('bilibiliRiskControlStrategy verification failures', () => {
-  /** 把流程推进到「验证结果已提交」，第二次 getBilibiliData 的结果由入参决定 */
+  /** 把流程推进到「验证结果已提交」，验证那一步的结果由入参决定 */
   const runVerification = async (
     verifyOutcome: { resolve: unknown } | { reject: unknown }
   ): Promise<ReturnType<typeof vi.fn>> => {
-    const captcha = {
+    requestCaptchaFromVoucher.mockResolvedValue({
       data: {
         data: {
           geetest: { gt: 'gt-1', challenge: 'challenge-1' },
           token: 'token-1'
         }
       }
-    }
-    getBilibiliData.mockResolvedValueOnce(captcha)
-    if ('reject' in verifyOutcome) getBilibiliData.mockRejectedValueOnce(verifyOutcome.reject)
-    else getBilibiliData.mockResolvedValueOnce(verifyOutcome.resolve)
+    })
+    if ('reject' in verifyOutcome) validateCaptchaResult.mockRejectedValueOnce(verifyOutcome.reject)
+    else validateCaptchaResult.mockResolvedValueOnce(verifyOutcome.resolve)
 
     const reply = vi.fn(async () => undefined)
     const awaitContext = vi.fn(async () => ({
@@ -201,7 +204,7 @@ describe('bilibiliRiskControlStrategy verification failures', () => {
 describe('bilibiliRiskControlStrategy 验证卡片', () => {
   /** 让「申请 captcha」这一步成功，好让流程走到出图那一段 */
   const captchaGranted = (): void => {
-    getBilibiliData.mockResolvedValue({
+    requestCaptchaFromVoucher.mockResolvedValue({
       data: { data: { geetest: { gt: 'gt-1', challenge: 'challenge-1' }, token: 'token-1' } }
     })
   }
@@ -249,6 +252,6 @@ describe('bilibiliRiskControlStrategy without an event', () => {
       event: undefined
     }) as never)).resolves.toBe('continue')
 
-    expect(getBilibiliData).not.toHaveBeenCalled()
+    expect(requestCaptchaFromVoucher).not.toHaveBeenCalled()
   })
 })

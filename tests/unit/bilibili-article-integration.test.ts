@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import type { AmagiProxyClient } from '../../src/module/utils/types.js'
+
+/**
+ * 方法名取自生产代码用的同一份 fetcher 声明。下面的假 handle 与期望数组都靠 `satisfies` 钉在它上面，
+ * 上游改名或塞回中文旧名会在 typecheck 报错 —— 而不是留下一个谁也不会调用的替身让断言假绿。
+ */
+type BilibiliApiMethod = keyof AmagiProxyClient['bilibili']
 
 const mocks = vi.hoisted(() => ({
   render: vi.fn(),
@@ -6,6 +13,13 @@ const mocks = vi.hoisted(() => ({
   makeForwardMsg: vi.fn(),
   extractBilibiliArticleImages: vi.fn(),
   formatBilibiliArticleBody: vi.fn(),
+  /** 按 RESOURCES 的调用顺序声明，下面用它的键序当「实际调用了哪些方法」的期望 */
+  bilibiliApi: {
+    fetchDynamicDetail: vi.fn(),
+    fetchUserCard: vi.fn(),
+    fetchArticleInfo: vi.fn(),
+    fetchArticleContent: vi.fn()
+  } satisfies Partial<Record<BilibiliApiMethod, Mock>>,
   config: {
     getConfig: vi.fn(),
     app: { parseTip: false },
@@ -41,8 +55,14 @@ vi.mock('../../src/module/utils/index.js', () => {
   }
 })
 
-vi.mock('../../src/module/platform/bilibili/api.js', () => ({
-  getBilibiliData: vi.fn()
+// 取数一律走注入的 this.amagi.bilibili；模块级 fetcher 被碰到就是接线错了，所以让它直接抛
+vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  bilibiliFetcher: new Proxy({}, {
+    get: (_target, prop) => {
+      throw new Error(`不该读模块级 bilibiliFetcher.${String(prop)}，取数应走 this.amagi.bilibili`)
+    }
+  }),
+  buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
 vi.mock('../../src/module/platform/bilibili/index.js', () => ({
@@ -178,27 +198,37 @@ describe('Bilibili article dynamic integration', () => {
       title
     }))
     mocks.render.mockResolvedValue({ type: 'poster' })
+    mocks.bilibiliApi.fetchDynamicDetail.mockResolvedValue(dynamicInfo)
+    mocks.bilibiliApi.fetchUserCard.mockResolvedValue(userProfile)
+    mocks.bilibiliApi.fetchArticleInfo.mockResolvedValue(articleInfo)
+    mocks.bilibiliApi.fetchArticleContent.mockResolvedValue(articleContent)
   })
 
   it('sends rich text and poster independently and passes the React article contract', async () => {
     const reply = vi.fn()
-    const getBilibiliData = vi.fn(async (method: string) => {
-      if (method === '动态详情数据') return dynamicInfo
-      if (method === '用户主页数据') return userProfile
-      if (method === '专栏文章基本信息') return articleInfo
-      if (method === '专栏正文内容') return articleContent
-      throw new Error(`Unexpected API method: ${method}`)
-    })
 
     const subject = Object.create(Bilibili.prototype) as Bilibili
     Object.assign(subject, {
       Type: 'dynamic_info',
       e: { reply },
-      amagi: { getBilibiliData },
+      amagi: { bilibili: mocks.bilibiliApi },
       headers: {}
     })
 
     await subject.RESOURCES({ type: 'dynamic_info', dynamic_id: '999' })
+
+    expect(mocks.bilibiliApi.fetchDynamicDetail).toHaveBeenCalledWith({ dynamic_id: '999', typeMode: 'strict' }, 'SESSDATA=test', {})
+    expect(mocks.bilibiliApi.fetchArticleInfo).toHaveBeenCalledWith({ id: '42', typeMode: 'strict' }, 'SESSDATA=test', {})
+    expect(mocks.bilibiliApi.fetchArticleContent).toHaveBeenCalledWith({ id: '42', typeMode: 'strict' }, 'SESSDATA=test', {})
+    // bilibilinumcomments: 0 ⇒ 不该取评论；这里顺带盯住「专栏链路只碰这几个方法」
+    const invokedMethods = (Object.keys(mocks.bilibiliApi) as Array<keyof typeof mocks.bilibiliApi>)
+      .filter(method => mocks.bilibiliApi[method].mock.calls.length > 0)
+    expect(invokedMethods).toEqual([
+      'fetchDynamicDetail',
+      'fetchUserCard',
+      'fetchArticleInfo',
+      'fetchArticleContent'
+    ] satisfies BilibiliApiMethod[])
 
     expect(mocks.makeForwardMsg).toHaveBeenCalledOnce()
     expect(mocks.makeForwardMsg).toHaveBeenCalledWith(
