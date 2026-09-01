@@ -86,35 +86,40 @@ afterEach(() => {
 })
 
 describe('策略表：白名单之外一律直连', () => {
-  it('把「表情列表」这类准静态接口归到长 TTL 档，作品详情归到短 TTL 档', () => {
-    expect(resolveApiCacheTier('xiaohongshu', '表情列表')).toBe('static')
-    expect(resolveApiCacheTier('kuaishou', 'Emoji数据')).toBe('static')
-    expect(resolveApiCacheTier('douyin', 'Emoji数据')).toBe('static')
-    expect(resolveApiCacheTier('bilibili', 'Emoji数据')).toBe('static')
+  it('把「表情清单」这类准静态接口归到长 TTL 档，作品详情归到短 TTL 档', () => {
+    expect(resolveApiCacheTier('xiaohongshu', 'fetchEmojiList')).toBe('static')
+    expect(resolveApiCacheTier('kuaishou', 'fetchEmojiList')).toBe('static')
+    expect(resolveApiCacheTier('douyin', 'fetchEmojiList')).toBe('static')
+    expect(resolveApiCacheTier('bilibili', 'fetchEmojiList')).toBe('static')
 
-    expect(resolveApiCacheTier('xiaohongshu', '单个笔记数据')).toBe('detail')
-    expect(resolveApiCacheTier('bilibili', '单个视频作品数据')).toBe('detail')
-    expect(resolveApiCacheTier('douyin', '聚合解析')).toBe('detail')
+    expect(resolveApiCacheTier('xiaohongshu', 'fetchNoteDetail')).toBe('detail')
+    expect(resolveApiCacheTier('bilibili', 'fetchVideoInfo')).toBe('detail')
+    expect(resolveApiCacheTier('douyin', 'parseWork')).toBe('detail')
   })
 
-  it('同名方法按平台分别配：抖音「用户主页数据」兼任直播态载体，所以只有 B站 那份进白名单', () => {
-    expect(resolveApiCacheTier('bilibili', '用户主页数据')).toBe('detail')
-    expect(resolveApiCacheTier('douyin', '用户主页数据')).toBeUndefined()
+  it('按平台分别配：抖音 fetchUserProfile 兼任直播态载体，所以只有 B站 的 fetchUserCard 进白名单', () => {
+    expect(resolveApiCacheTier('bilibili', 'fetchUserCard')).toBe('detail')
+    expect(resolveApiCacheTier('douyin', 'fetchUserProfile')).toBeUndefined()
+  })
+
+  it('方法名跨平台撞车时按平台各判各的', () => {
+    expect(resolveApiCacheTier('kuaishou', 'fetchVideoWork')).toBe('detail')
+    expect(resolveApiCacheTier('douyin', 'fetchVideoWork')).toBeUndefined()
   })
 
   it('没列进白名单的方法两次调用真打两次接口', async () => {
     const fetcher = createFetcher(() => ({ ok: true }))
 
-    await withApiCache(request('douyin', '搜索数据', { keyword: 'x' }), fetcher.run)
-    await withApiCache(request('douyin', '搜索数据', { keyword: 'x' }), fetcher.run)
+    await withApiCache(request('douyin', 'searchContent', { keyword: 'x' }), fetcher.run)
+    await withApiCache(request('douyin', 'searchContent', { keyword: 'x' }), fetcher.run)
 
     expect(fetcher.state.calls).toBe(2)
   })
 
   it('直连的方法不进命中率统计，免得把分母冲淡', async () => {
     const fetcher = createFetcher(() => ({ ok: true }))
-    await withApiCache(request('bilibili', '单个视频下载信息数据', { bvid: 'BV1' }), fetcher.run)
-    await withApiCache(request('bilibili', '单个视频下载信息数据', { bvid: 'BV1' }), fetcher.run)
+    await withApiCache(request('bilibili', 'fetchVideoStreamUrl', { bvid: 'BV1' }), fetcher.run)
+    await withApiCache(request('bilibili', 'fetchVideoStreamUrl', { bvid: 'BV1' }), fetcher.run)
 
     const snapshot = getApiCacheSnapshot()
     expect(snapshot.hits).toBe(0)
@@ -123,15 +128,15 @@ describe('策略表：白名单之外一律直连', () => {
   })
 
   it('推送轮询、直播态、带时效签名的下载直链都不在白名单里', () => {
-    expect(resolveApiCacheTier('douyin', '用户主页视频列表数据')).toBeUndefined()
+    expect(resolveApiCacheTier('douyin', 'fetchUserVideoList')).toBeUndefined()
     expect(resolveApiCacheTier('douyin', 'fetchUserFavoriteList')).toBeUndefined()
     expect(resolveApiCacheTier('douyin', 'fetchUserRecommendList')).toBeUndefined()
-    expect(resolveApiCacheTier('douyin', '直播间信息数据')).toBeUndefined()
-    expect(resolveApiCacheTier('bilibili', '用户主页动态列表数据')).toBeUndefined()
-    expect(resolveApiCacheTier('bilibili', '单个视频下载信息数据')).toBeUndefined()
-    expect(resolveApiCacheTier('bilibili', '直播间信息')).toBeUndefined()
-    expect(resolveApiCacheTier('bilibili', '直播间初始化信息')).toBeUndefined()
-    expect(resolveApiCacheTier('bilibili', '用户直播状态')).toBeUndefined()
+    expect(resolveApiCacheTier('douyin', 'fetchLiveRoomInfo')).toBeUndefined()
+    expect(resolveApiCacheTier('bilibili', 'fetchUserDynamicList')).toBeUndefined()
+    expect(resolveApiCacheTier('bilibili', 'fetchVideoStreamUrl')).toBeUndefined()
+    expect(resolveApiCacheTier('bilibili', 'fetchLiveRoomInfo')).toBeUndefined()
+    expect(resolveApiCacheTier('bilibili', 'fetchLiveRoomInitInfo')).toBeUndefined()
+    expect(resolveApiCacheTier('bilibili', 'fetchUserLiveStatus')).toBeUndefined()
   })
 })
 
@@ -141,6 +146,27 @@ describe('登录态方法绝不缓存', () => {
    * 先钉「白名单里根本没有这些方法」（结构），再钉「连续两次调用真的打了两次接口」（行为）。
    * 把登录态方法误加进白名单时，这两条会一起红。
    */
+  /**
+   * 上面那条对**拼错的名字**是空洞满足的：不存在的方法名天然不在白名单里，
+   * 断言照样通过。而这张表在运行时不参与判定，拼错了没有任何东西会响——
+   * 正是它要防的那种静默失效。所以这里再钉一层：名字必须真的是某个调用点在调的方法。
+   */
+  it('绝不缓存清单里的名字都能在 B站 调用点里找到', async () => {
+    const { readFileSync, readdirSync } = await import('node:fs')
+
+    const sources = readdirSync('src/module/platform/bilibili')
+      .filter(name => name.endsWith('.ts'))
+      .map(name => readFileSync(`src/module/platform/bilibili/${name}`, 'utf8'))
+      .join('\n')
+
+    for (const method of NEVER_CACHE_METHODS.bilibili) {
+      expect(
+        sources.includes(`.${method}(`),
+        `${method} 在 platform/bilibili 下没有任何调用点——要么拼错了，要么 amagi 改了名`
+      ).toBe(true)
+    }
+  })
+
   it('绝不缓存清单和白名单的交集为空', () => {
     for (const platform of Object.keys(NEVER_CACHE_METHODS) as Platform[]) {
       for (const method of NEVER_CACHE_METHODS[platform]) {
@@ -154,11 +180,11 @@ describe('登录态方法绝不缓存', () => {
   })
 
   it.each([
-    ['申请二维码', { }],
-    ['二维码状态', { qrcode_key: 'key-1' }],
-    ['登录基本信息', { }],
-    ['从_v_voucher_申请_captcha', { v_voucher: 'voucher-1' }],
-    ['验证验证码结果', { challenge: 'c', token: 't', validate: 'v', seccode: 's' }]
+    ['requestLoginQrcode', { }],
+    ['checkQrcodeStatus', { qrcode_key: 'key-1' }],
+    ['fetchLoginStatus', { }],
+    ['requestCaptchaFromVoucher', { v_voucher: 'voucher-1' }],
+    ['validateCaptchaResult', { challenge: 'c', token: 't', validate: 'v', seccode: 's' }]
   ])('B站 %s 连续两次调用都真的打了接口', async (method, options) => {
     const fetcher = createFetcher(() => ({ success: true, data: { code: 86101 } }))
 
@@ -168,14 +194,14 @@ describe('登录态方法绝不缓存', () => {
     expect(fetcher.state.calls).toBe(2)
   })
 
-  it('二维码状态轮询里，第一轮的「未扫码」不会盖住第二轮的「已扫码」', async () => {
+  it('checkQrcodeStatus 轮询里，第一轮的「未扫码」不会盖住第二轮的「已扫码」', async () => {
     const codes = [86101, 86090, 0]
     let index = 0
     const fetcher = createFetcher(() => ({ success: true, data: { code: codes[index++] } }))
 
-    const first = await withApiCache(request('bilibili', '二维码状态', { qrcode_key: 'k' }), fetcher.run)
-    const second = await withApiCache(request('bilibili', '二维码状态', { qrcode_key: 'k' }), fetcher.run)
-    const third = await withApiCache(request('bilibili', '二维码状态', { qrcode_key: 'k' }), fetcher.run)
+    const first = await withApiCache(request('bilibili', 'checkQrcodeStatus', { qrcode_key: 'k' }), fetcher.run)
+    const second = await withApiCache(request('bilibili', 'checkQrcodeStatus', { qrcode_key: 'k' }), fetcher.run)
+    const third = await withApiCache(request('bilibili', 'checkQrcodeStatus', { qrcode_key: 'k' }), fetcher.run)
 
     expect(fetcher.state.calls).toBe(3)
     expect(first).toMatchObject({ data: { code: 86101 } })
@@ -198,7 +224,7 @@ describe('分级 TTL', () => {
 
   it('准静态档在作品详情档早已过期之后仍然命中', async () => {
     const fetcher = createFetcher(() => ({ success: true, data: 'emoji' }))
-    const target = request('xiaohongshu', '表情列表')
+    const target = request('xiaohongshu', 'fetchEmojiList')
 
     await withApiCache(target, fetcher.run)
     expect(fetcher.state.calls).toBe(1)
@@ -216,7 +242,7 @@ describe('分级 TTL', () => {
 
   it('作品详情档过期后 miss', async () => {
     const fetcher = createFetcher(() => ({ success: true, data: 'note' }))
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
 
     await withApiCache(target, fetcher.run)
     vi.setSystemTime(NOW_MS + API_CACHE_TTL_MS.detail - 1)
@@ -232,19 +258,19 @@ describe('分级 TTL', () => {
     const staticFetcher = createFetcher(() => ({ success: true, data: 'emoji' }))
     const detailFetcher = createFetcher(() => ({ success: true, data: 'note' }))
 
-    await withApiCache(request('xiaohongshu', '表情列表'), staticFetcher.run)
-    await withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), detailFetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchEmojiList'), staticFetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), detailFetcher.run)
 
     vi.setSystemTime(NOW_MS + API_CACHE_TTL_MS.detail + 1)
-    await withApiCache(request('xiaohongshu', '表情列表'), staticFetcher.run)
-    await withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), detailFetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchEmojiList'), staticFetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), detailFetcher.run)
 
     expect(staticFetcher.state.calls).toBe(1)
     expect(detailFetcher.state.calls).toBe(2)
   })
 
   it('过期条目在快照里不再计数', async () => {
-    await withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), createFetcher(() => ({ ok: 1 })).run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), createFetcher(() => ({ ok: 1 })).run)
     expect(getApiCacheSnapshot().entries).toBe(1)
 
     vi.setSystemTime(NOW_MS + API_CACHE_TTL_MS.detail + 1)
@@ -256,7 +282,7 @@ describe('缓存键里的 Cookie 指纹', () => {
   const RAW_COOKIE = 'SESSDATA=abc123def456; bili_jct=deadbeefcafe; DedeUserID=10086'
 
   it('键里绝对不出现 Cookie 原文，只有短哈希', () => {
-    const key = buildApiCacheKey(request('bilibili', '单个视频作品数据', { bvid: 'BV1' }, RAW_COOKIE))
+    const key = buildApiCacheKey(request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' }, RAW_COOKIE))
 
     expect(key).toBeDefined()
     // 整串、各个键值对、以及每一段值，都不允许出现在键里
@@ -278,8 +304,8 @@ describe('缓存键里的 Cookie 指纹', () => {
   it('同一个 work-id 在登录态与未登录态下是两条缓存', async () => {
     const fetcher = createFetcher(() => ({ success: true }))
 
-    await withApiCache(request('bilibili', '单个视频作品数据', { bvid: 'BV1' }, ''), fetcher.run)
-    await withApiCache(request('bilibili', '单个视频作品数据', { bvid: 'BV1' }, RAW_COOKIE), fetcher.run)
+    await withApiCache(request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' }, ''), fetcher.run)
+    await withApiCache(request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' }, RAW_COOKIE), fetcher.run)
 
     expect(fetcher.state.calls).toBe(2)
     expect(getApiCacheSnapshot().entries).toBe(2)
@@ -290,7 +316,7 @@ describe('缓存键里的 Cookie 指纹', () => {
     const fetcher = createFetcher(() => ({ success: true, data: { quality } }))
 
     const anonymous = await withApiCache(
-      request('bilibili', '单个视频作品数据', { bvid: 'BV1' }, ''),
+      request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' }, ''),
       fetcher.run
     )
     expect(anonymous).toMatchObject({ data: { quality: '480p' } })
@@ -298,7 +324,7 @@ describe('缓存键里的 Cookie 指纹', () => {
     // 用户在锅巴里填了大会员 ck，接口从此回 1080p
     quality = '1080p'
     const loggedIn = await withApiCache(
-      request('bilibili', '单个视频作品数据', { bvid: 'BV1' }, RAW_COOKIE),
+      request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' }, RAW_COOKIE),
       fetcher.run
     )
 
@@ -307,8 +333,8 @@ describe('缓存键里的 Cookie 指纹', () => {
   })
 
   it('参数键的书写顺序不影响键，免得同一份参数产生两条缓存', () => {
-    const first = buildApiCacheKey(request('douyin', '聚合解析', { url: 'u', typeMode: 'strict' }))
-    const second = buildApiCacheKey(request('douyin', '聚合解析', { typeMode: 'strict', url: 'u' }))
+    const first = buildApiCacheKey(request('douyin', 'parseWork', { url: 'u', typeMode: 'strict' }))
+    const second = buildApiCacheKey(request('douyin', 'parseWork', { typeMode: 'strict', url: 'u' }))
 
     expect(first).toBe(second)
   })
@@ -316,11 +342,11 @@ describe('缓存键里的 Cookie 指纹', () => {
   it('参数序列化不了时降级成直连，而不是硬编一个键', async () => {
     const circular: Record<string, unknown> = { note_id: 'n1' }
     circular.self = circular
-    expect(buildApiCacheKey(request('xiaohongshu', '单个笔记数据', circular))).toBeUndefined()
+    expect(buildApiCacheKey(request('xiaohongshu', 'fetchNoteDetail', circular))).toBeUndefined()
 
     const fetcher = createFetcher(() => ({ ok: 1 }))
-    await withApiCache(request('xiaohongshu', '单个笔记数据', circular), fetcher.run)
-    await withApiCache(request('xiaohongshu', '单个笔记数据', circular), fetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', circular), fetcher.run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', circular), fetcher.run)
     expect(fetcher.state.calls).toBe(2)
   })
 })
@@ -335,7 +361,7 @@ describe('in-flight 合并', () => {
       return { success: true, data: 'shared' }
     }
 
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
     const inFlight = Array.from({ length: 8 }, async () => await withApiCache(target, run))
 
     // 闸门还没开，8 个请求都在飞
@@ -365,9 +391,9 @@ describe('in-flight 合并', () => {
     }
 
     const pending = [
-      withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), run),
-      withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n2' }), run),
-      withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), run)
+      withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), run),
+      withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n2' }), run),
+      withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), run)
     ]
 
     expect(state.calls).toBe(2)
@@ -385,7 +411,7 @@ describe('in-flight 合并', () => {
       return { success: true }
     }
 
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
     const pending = [withApiCache(target, run), withApiCache(target, run)]
     gate.release()
     await Promise.all(pending)
@@ -409,7 +435,7 @@ describe('in-flight 合并', () => {
       throw boom
     }
 
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
     const pending = [
       withApiCache(target, run).catch((error: unknown) => error),
       withApiCache(target, run).catch((error: unknown) => error)
@@ -426,7 +452,7 @@ describe('LRU 容量上限', () => {
   it('超过上限后条目数不再增长', async () => {
     for (let index = 0; index <= API_CACHE_CAPACITY + 20; index++) {
       await withApiCache(
-        request('xiaohongshu', '单个笔记数据', { note_id: `n${index}` }),
+        request('xiaohongshu', 'fetchNoteDetail', { note_id: `n${index}` }),
         createFetcher(() => ({ index })).run
       )
     }
@@ -437,7 +463,7 @@ describe('LRU 容量上限', () => {
   })
 
   it('淘汰的是最久未用的那条，而不是最早写入的那条', async () => {
-    const keyOf = (index: number) => request('xiaohongshu', '单个笔记数据', { note_id: `n${index}` })
+    const keyOf = (index: number) => request('xiaohongshu', 'fetchNoteDetail', { note_id: `n${index}` })
 
     // 填满
     for (let index = 0; index < API_CACHE_CAPACITY; index++) {
@@ -483,7 +509,7 @@ describe('失败缓存（negative caching）', () => {
     ['401 未授权', 401]
   ])('抛出的 %s 被缓存住，不再反复打接口', async (_label, status) => {
     const fetcher = createFailingFetcher(() => Object.assign(new Error('rejected'), { response: { status } }))
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
 
     await expect(withApiCache(target, fetcher.run)).rejects.toThrow('rejected')
     await expect(withApiCache(target, fetcher.run)).rejects.toThrow('rejected')
@@ -494,7 +520,7 @@ describe('失败缓存（negative caching）', () => {
 
   it('失败缓存在 45 秒后自愈', async () => {
     const fetcher = createFailingFetcher(() => Object.assign(new Error('rejected'), { response: { status: 429 } }))
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
 
     await expect(withApiCache(target, fetcher.run)).rejects.toThrow('rejected')
 
@@ -518,7 +544,7 @@ describe('失败缓存（negative caching）', () => {
     ['认不出来的失败', new Error('who knows')]
   ])('暂时故障不进缓存：%s', async (_label, error) => {
     const fetcher = createFailingFetcher(() => error)
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
 
     await expect(withApiCache(target, fetcher.run)).rejects.toBeTruthy()
     await expect(withApiCache(target, fetcher.run)).rejects.toBeTruthy()
@@ -534,7 +560,7 @@ describe('失败缓存（negative caching）', () => {
     ['-101 账号未登录', -101]
   ])('B站 返回的 %s 被缓存住', async (_label, code) => {
     const fetcher = createFetcher(() => ({ success: false, code, message: '风控' }))
-    const target = request('bilibili', '单个视频作品数据', { bvid: 'BV1' })
+    const target = request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' })
 
     await withApiCache(target, fetcher.run)
     await withApiCache(target, fetcher.run)
@@ -545,7 +571,7 @@ describe('失败缓存（negative caching）', () => {
 
   it('B站 -352 刻意不缓存：本仓库对它有交互式验证码恢复链路，用户会在几秒内重发命令', async () => {
     const fetcher = createFetcher(() => ({ success: false, code: -352, data: { v_voucher: 'voucher-1' } }))
-    const target = request('bilibili', '单个视频作品数据', { bvid: 'BV1' })
+    const target = request('bilibili', 'fetchVideoInfo', { bvid: 'BV1' })
 
     await withApiCache(target, fetcher.run)
     await withApiCache(target, fetcher.run)
@@ -556,7 +582,7 @@ describe('失败缓存（negative caching）', () => {
 
   it('amagi 那个恒为 500 的通用失败码不缓存：它不带业务语义，缓存等于把网络抖动也缓存', async () => {
     const fetcher = createFetcher(() => ({ success: false, code: 500, message: '小红书数据获取失败' }))
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
 
     await withApiCache(target, fetcher.run)
     await withApiCache(target, fetcher.run)
@@ -586,7 +612,7 @@ describe('软失败按成功档位缓存', () => {
       data: undefined,
       error: undefined
     }))
-    const target = request('bilibili', '评论数据', { oid: '1', type: 1 })
+    const target = request('bilibili', 'fetchComments', { oid: '1', type: 1 })
 
     await withApiCache(target, fetcher.run)
 
@@ -613,7 +639,7 @@ describe('诊断快照', () => {
       return { success: true }
     }
 
-    const target = request('xiaohongshu', '单个笔记数据', { note_id: 'n1' })
+    const target = request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' })
     // 1 miss + 3 coalesced
     const pending = [
       withApiCache(target, run),
@@ -645,9 +671,9 @@ describe('诊断快照', () => {
     const emoji = createFetcher(() => ({ success: true }))
     const note = createFetcher(() => ({ success: true }))
 
-    await withApiCache(request('xiaohongshu', '表情列表'), emoji.run)
-    await withApiCache(request('xiaohongshu', '表情列表'), emoji.run)
-    await withApiCache(request('xiaohongshu', '单个笔记数据', { note_id: 'n1' }), note.run)
+    await withApiCache(request('xiaohongshu', 'fetchEmojiList'), emoji.run)
+    await withApiCache(request('xiaohongshu', 'fetchEmojiList'), emoji.run)
+    await withApiCache(request('xiaohongshu', 'fetchNoteDetail', { note_id: 'n1' }), note.run)
 
     const snapshot = getApiCacheSnapshot()
     const staticTier = snapshot.tiers.find(tier => tier.tier === 'static')

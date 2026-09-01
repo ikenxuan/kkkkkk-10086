@@ -62,7 +62,7 @@ export const API_CACHE_NEGATIVE_TTL_MS = 45 * 1000
  * （不缓存），而不是被误缓存。也刻意不做「方法名里有没有『表情』两个字」这种模糊匹配：
  * 猜错的代价是功能坏掉，而模糊匹配一定会在某个新方法上猜错。
  *
- * 键是 wrapper 收到的**原始方法名**（旧版 amagi 的中文名，抖音那条路还允许英文 fetcher 名）。
+ * 键是 wrapper 收到的**原始方法名**，即 amagi v6 的英文 fetcher 方法名。
  *
  * ---
  *
@@ -70,78 +70,79 @@ export const API_CACHE_NEGATIVE_TTL_MS = 45 * 1000
  *
  * 这份清单和白名单一样重要 —— 它们不是「还没来得及加」，是加了会坏：
  *
- * - **`单个视频下载信息数据`（B站 playurl）**：返回的是**带时效签名的直链**，还会随登录态
+ * - **`fetchVideoStreamUrl`（B站 playurl）**：返回的是**带时效签名的直链**，还会随登录态
  *   给不同清晰度档位。缓存它等于过一会儿发一条已经过期的下载地址出去。
- * - **`直播间信息` / `直播间初始化信息` / `用户直播状态`（B站）、`直播间信息数据`（抖音）**：
- *   直播态本身就是要即时的，缓存会直接延迟开播推送。
- * - **抖音 `用户主页数据`**：这个接口在抖音这边**兼任直播态载体**（`push.ts` 拿它的
+ * - **`fetchLiveRoomInfo` / `fetchLiveRoomInitInfo` / `fetchUserLiveStatus`（B站）、
+ *   `fetchLiveRoomInfo`（抖音）**：直播态本身就是要即时的，缓存会直接延迟开播推送。
+ * - **抖音 `fetchUserProfile`**：这个接口在抖音这边**兼任直播态载体**（`push.ts` 拿它的
  *   `live_status` / `room_data` 判断有没有开播，见 `buildLivePushItem`），所以和上一条同理。
- *   注意 B站 的同名方法只返回 `card`（昵称/头像/粉丝数）、不含直播态，因此**是**白名单成员 ——
- *   同名不同命，这也正是策略表按「平台 + 方法名」而不是只按方法名配的原因。
- * - **`用户主页视频列表数据` / `用户主页动态列表数据` / `fetchUserFavoriteList` /
+ *   B站 取用户信息走的是另一个方法 `fetchUserCard`，只返回 `card`（昵称/头像/粉丝数）、
+ *   不含直播态，因此**是**白名单成员。方法名本身跨平台会撞（`fetchLiveRoomInfo` 三家都有、
+ *   `fetchEmojiList` 四家都有），这正是策略表按「平台 + 方法名」而不是只按方法名配的原因。
+ * - **`fetchUserVideoList`（抖音）/ `fetchUserDynamicList`（B站）/ `fetchUserFavoriteList` /
  *   `fetchUserRecommendList`**：推送轮询存在的意义就是发现新内容，缓存等于延迟推送。
- * - **`搜索数据`**：只在添加订阅时一次性调用，没有重复调用可省。
+ * - **`searchContent`**：只在添加订阅时一次性调用，没有重复调用可省。
  * - **登录态相关的一切**：见 {@link NEVER_CACHE_METHODS}。
  */
 export const API_CACHE_POLICY: Readonly<Record<ApiCachePlatform, Readonly<Record<string, ApiCacheTier>>>> = {
   douyin: {
     /** 平台级表情清单，与作品、账号都无关，按月变化 */
-    Emoji数据: 'static',
+    fetchEmojiList: 'static',
     /** 作品正文与媒体地址按 aweme_id 定死，5 分钟内只有播放/点赞计数会动 */
-    聚合解析: 'detail',
+    parseWork: 'detail',
     /** 评论首页在 5 分钟窗口内几乎不变；多群发同一条链接时这是第二大的重复开销 */
-    评论数据: 'detail',
+    fetchWorkComments: 'detail',
     /** 同上，子评论（展开某条评论的回复） */
-    指定评论回复数据: 'detail',
+    fetchCommentReplies: 'detail',
     /** BGM 元数据按 music id 定死 */
-    音乐数据: 'detail',
+    fetchMusicInfo: 'detail',
     /** 弹幕按 aweme_id 取，5 分钟的增量对烧制出来的画面没有可见影响 */
-    弹幕数据: 'detail'
+    fetchDanmakuList: 'detail'
   },
   bilibili: {
     /** 表情包 packages，平台级清单 */
-    Emoji数据: 'static',
+    fetchEmojiList: 'static',
     /**
      * av↔bv 是一个**固定双射**（算法换算，不随时间变），所以给最长档。
      * 这条也是白名单里唯一一个和账号、内容都无关的纯换算。
      */
-    AV转BV: 'static',
+    convertAvToBv: 'static',
     /** 稿件元数据按 bvid 定死 */
-    单个视频作品数据: 'detail',
-    /** 见抖音 `评论数据` */
-    评论数据: 'detail',
+    fetchVideoInfo: 'detail',
+    /** 见抖音 `fetchWorkComments` */
+    fetchComments: 'detail',
     /** 动态正文发布后不再修改 */
-    动态详情数据: 'detail',
+    fetchDynamicDetail: 'detail',
     /** 番剧元数据按 ep_id / season_id 定 */
-    番剧基本信息数据: 'detail',
+    fetchBangumiInfo: 'detail',
     /** 专栏元数据按 cvid 定 */
-    专栏文章基本信息: 'detail',
+    fetchArticleInfo: 'detail',
     /** 专栏正文按 cvid 定，发布后基本不改 */
-    专栏正文内容: 'detail',
+    fetchArticleContent: 'detail',
     /**
-     * 只返回 `card`（昵称/头像/粉丝数），**不含**直播态 —— 与抖音同名方法的关键区别。
+     * 只返回 `card`（昵称/头像/粉丝数），**不含**直播态 —— 与抖音 `fetchUserProfile` 的关键区别。
      * 动态推送一轮里同一个 UP 会被重复取好几次（每条动态一次），这里省得最多。
      */
-    用户主页数据: 'detail'
+    fetchUserCard: 'detail'
   },
   kuaishou: {
     /** 平台级表情清单，原来每次解析都重拉一遍 */
-    Emoji数据: 'static',
+    fetchEmojiList: 'static',
     /** 作品元数据按 photoId 定死 */
-    单个视频作品数据: 'detail',
-    /** 见抖音 `评论数据` */
-    评论数据: 'detail'
+    fetchVideoWork: 'detail',
+    /** 见抖音 `fetchWorkComments` */
+    fetchWorkComments: 'detail'
   },
   xiaohongshu: {
     /**
      * 原来**每次解析都重新拉一次**（`xiaohongshu.ts` 的 `Action`）。
      * 这是全仓最典型的「准静态数据按作品详情的频率在拉」，也是这套缓存最直接的收益点。
      */
-    表情列表: 'static',
+    fetchEmojiList: 'static',
     /** 笔记正文与图集按 note id 定死 */
-    单个笔记数据: 'detail',
-    /** 见抖音 `评论数据`；小红书评论是分页的，游标在 options 里、会进键，所以分页互不串味 */
-    评论数据: 'detail'
+    fetchNoteDetail: 'detail',
+    /** 见抖音 `fetchWorkComments`；小红书评论是分页的，游标在 options 里、会进键，所以分页互不串味 */
+    fetchNoteComments: 'detail'
   }
 }
 
@@ -155,21 +156,21 @@ export const API_CACHE_POLICY: Readonly<Record<ApiCachePlatform, Readonly<Record
  * 2. `tests/unit/api-cache.test.ts` 断言它和白名单的**交集为空**。
  *
  * 刻意**不**做成运行时兜底（「在白名单里也强行不缓存」）：那样一来，误把
- * `二维码状态` 加进白名单的人会得到一份「测试全绿、行为也正确」的假安全，
+ * `checkQrcodeStatus` 加进白名单的人会得到一份「测试全绿、行为也正确」的假安全，
  * 而下一次有人删掉兜底时才炸。让白名单成为唯一真相，误加就当场被测试打回。
  *
  * ---
  *
  * 为什么这几个是最危险的：它们都是**有状态轮询**或**一次性凭据**。
  *
- * - `申请二维码` / `二维码状态`（`platform/bilibili/login.ts`）：`二维码状态` 是
- *   `while (true)` + `sleep(3000)` 的轮询，靠返回码从 86101（未扫码）走到 86090（已扫待确认）
- *   再到 0（成功、随响应带回 set-cookie）。缓存住第一次的 86101 就是**扫码登录永远停在
- *   「等待扫码」**，而且用户看不出原因。
- * - `登录基本信息`（`platform/bilibili/genParams.ts`）：登录态与大会员判定，几乎每次
+ * - `requestLoginQrcode` / `checkQrcodeStatus`（`platform/bilibili/login.ts`）：
+ *   `checkQrcodeStatus` 是 `while (true)` + `sleep(3000)` 的轮询，靠返回码从 86101（未扫码）
+ *   走到 86090（已扫待确认）再到 0（成功、随响应带回 set-cookie）。缓存住第一次的 86101
+ *   就是**扫码登录永远停在「等待扫码」**，而且用户看不出原因。
+ * - `fetchLoginStatus`（`platform/bilibili/genParams.ts`）：登录态与大会员判定，几乎每次
  *   下载/解析都调，正是那种「看着像热点、其实是凭据校验」的接口。缓存它会让刚设好 ck 的
  *   用户继续被当成未登录。
- * - `从_v_voucher_申请_captcha` / `验证验证码结果`（`platform/bilibili/riskControl.ts`）：
+ * - `requestCaptchaFromVoucher` / `validateCaptchaResult`（`platform/bilibili/riskControl.ts`）：
  *   `v_voucher` 是**一次性**的，缓存 = 拿旧凭据反复换验证码，整条风控恢复链路直接失效。
  *
  * 抖音的扫码登录（`platform/douyin/login.ts`）走 puppeteer 抓页面、**完全不经过**
@@ -177,7 +178,7 @@ export const API_CACHE_POLICY: Readonly<Record<ApiCachePlatform, Readonly<Record
  */
 export const NEVER_CACHE_METHODS: Readonly<Record<ApiCachePlatform, readonly string[]>> = {
   douyin: [],
-  bilibili: ['申请二维码', '二维码状态', '登录基本信息', '从_v_voucher_申请_captcha', '验证验证码结果'],
+  bilibili: ['requestLoginQrcode', 'checkQrcodeStatus', 'fetchLoginStatus', 'requestCaptchaFromVoucher', 'validateCaptchaResult'],
   kuaishou: [],
   xiaohongshu: []
 }
