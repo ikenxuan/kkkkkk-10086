@@ -34,7 +34,6 @@ export interface DouyinFilterPushItem {
   }
 }
 
-/** 作品缓存记录，时间字段转换为 Date */
 export type AwemeCacheWithDates = Omit<AwemeCacheRow, 'createdAt' | 'updatedAt'> & {
   createdAt: Date
   updatedAt: Date
@@ -58,7 +57,6 @@ interface AwemeCacheDeleteConditions {
   aweme_id?: string
 }
 
-/** 数据库操作类 */
 export class DouyinDBBase {
   db: Database | null = null
   dbPath: string
@@ -70,17 +68,12 @@ export class DouyinDBBase {
     this.dbPath = path.join(dataPath ?? path.join(Version.pluginPath, 'data'), 'douyin.db')
   }
 
-  /**
-   * 初始化数据库
-   */
   async init (): Promise<this> {
     try {
       logger.debug(logger.green('--------------------------[DouyinDB] 开始初始化数据库--------------------------'))
       logger.debug('[DouyinDB] 正在连接数据库...')
-      // 创建数据库连接
       await fs.promises.mkdir(path.dirname(this.dbPath), { recursive: true })
       this.db = new sqlite3.Database(this.dbPath)
-      // 创建表结构
       await this.createTables()
       logger.debug('[DouyinDB] 数据库模型同步成功')
       logger.debug('[DouyinDB] 正在同步配置订阅...')
@@ -95,19 +88,14 @@ export class DouyinDBBase {
     return this
   }
 
-  /**
-   * 创建数据库表结构
-   */
   async createTables (): Promise<void> {
     const queries = [
-      // 创建机器人表
       `CREATE TABLE IF NOT EXISTS Bots (
         id TEXT PRIMARY KEY,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // 创建群组表
       `CREATE TABLE IF NOT EXISTS Groups (
         id TEXT PRIMARY KEY,
         botId TEXT NOT NULL,
@@ -116,7 +104,6 @@ export class DouyinDBBase {
         FOREIGN KEY (botId) REFERENCES Bots(id)
       )`,
 
-      // 创建抖音用户表
       `CREATE TABLE IF NOT EXISTS DouyinUsers (
         sec_uid TEXT PRIMARY KEY,
         short_id TEXT,
@@ -127,7 +114,6 @@ export class DouyinDBBase {
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // 创建群组用户订阅关系表
       `CREATE TABLE IF NOT EXISTS GroupUserSubscriptions (
         groupId TEXT,
         sec_uid TEXT,
@@ -138,7 +124,6 @@ export class DouyinDBBase {
         FOREIGN KEY (sec_uid) REFERENCES DouyinUsers(sec_uid)
       )`,
 
-      // 创建作品缓存表
       `CREATE TABLE IF NOT EXISTS AwemeCaches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         aweme_id TEXT NOT NULL,
@@ -152,7 +137,6 @@ export class DouyinDBBase {
         UNIQUE(aweme_id, sec_uid, groupId, pushType)
       )`,
 
-      // 创建过滤词表
       `CREATE TABLE IF NOT EXISTS FilterWords (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sec_uid TEXT NOT NULL,
@@ -164,7 +148,6 @@ export class DouyinDBBase {
         UNIQUE(sec_uid, word)
       )`,
 
-      // 创建过滤标签表
       `CREATE TABLE IF NOT EXISTS FilterTags (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sec_uid TEXT NOT NULL,
@@ -209,9 +192,6 @@ export class DouyinDBBase {
     await this.runQuery('DROP TABLE AwemeCaches_old')
   }
 
-  /**
-   * 执行SQL查询
-   */
   runQuery (sql: string, params: unknown[] = []): Promise<RunResult> {
     return new Promise((resolve, reject) => {
       this.db?.run(sql, params, function (this: Sqlite3RunResult, err: Error | null) {
@@ -224,9 +204,6 @@ export class DouyinDBBase {
     })
   }
 
-  /**
-   * 执行SQL查询并获取单个结果
-   */
   getQuery<T> (sql: string, params: unknown[] = []): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       this.db?.get<T>(sql, params, (err, row) => {
@@ -239,9 +216,6 @@ export class DouyinDBBase {
     })
   }
 
-  /**
-   * 执行SQL查询并获取所有结果
-   */
   allQuery<T> (sql: string, params: unknown[] = []): Promise<T[]> {
     return new Promise((resolve, reject) => {
       this.db?.all<T>(sql, params, (err, rows) => {
@@ -254,9 +228,6 @@ export class DouyinDBBase {
     })
   }
 
-  /**
-   * 获取或创建机器人记录
-   */
   async getOrCreateBot (botId: string): Promise<BotRow> {
     let bot = await this.getQuery<BotRow>('SELECT * FROM Bots WHERE id = ?', [botId])
     if (!bot) {
@@ -270,14 +241,10 @@ export class DouyinDBBase {
     return bot
   }
 
-  /**
-   * 获取或创建群组记录
-   */
   async getOrCreateGroup (groupId: string, botId: string): Promise<GroupRow> {
     await this.getOrCreateBot(botId)
     let group = await this.getQuery<GroupRow>('SELECT * FROM Groups WHERE id = ?', [groupId])
     if (!group) {
-      // 如果群组不存在，创建新群组
       const now = new Date().toISOString()
       await this.runQuery(
         'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
@@ -285,7 +252,6 @@ export class DouyinDBBase {
       )
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
     } else if (group.botId !== botId) {
-      // 如果群组已存在但机器人ID不同，更新机器人ID
       const now = new Date().toISOString()
       await this.runQuery(
         'UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?',
@@ -297,9 +263,6 @@ export class DouyinDBBase {
     return group
   }
 
-  /**
-   * 获取或创建抖音用户记录
-   */
   async getOrCreateDouyinUser (sec_uid: string, short_id = '', remark = ''): Promise<DouyinUserRow> {
     let user = await this.getQuery<DouyinUserRow>('SELECT * FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
     if (!user) {
@@ -351,9 +314,6 @@ export class DouyinDBBase {
     return user
   }
 
-  /**
-   * 订阅抖音用户
-   */
   async subscribeDouyinUser (
     groupId: string,
     botId: string,
@@ -378,9 +338,6 @@ export class DouyinDBBase {
     return subscription
   }
 
-  /**
-   * 取消订阅抖音用户
-   */
   async unsubscribeDouyinUser (groupId: string, sec_uid: string): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND sec_uid = ?',
@@ -393,9 +350,6 @@ export class DouyinDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 添加作品缓存
-   */
   async addAwemeCache (
     aweme_id: string,
     sec_uid: string,
@@ -425,9 +379,6 @@ export class DouyinDBBase {
     return cache
   }
 
-  /**
-   * 检查作品是否已推送
-   */
   async isAwemePushed (
     aweme_id: string,
     sec_uid: string,
@@ -441,9 +392,6 @@ export class DouyinDBBase {
     return (result?.count || 0) > 0
   }
 
-  /**
-   * 检查指定推送类型是否已有历史缓存。
-   */
   async hasHistory (sec_uid: string, groupId: string, pushType: DouyinPushType = 'post'): Promise<boolean> {
     const result = await this.getQuery<CountResult>(
       'SELECT COUNT(*) as count FROM AwemeCaches WHERE sec_uid = ? AND groupId = ? AND pushType = ?',
@@ -457,16 +405,10 @@ export class DouyinDBBase {
    */
   async updateListSnapshot (): Promise<void> {}
 
-  /**
-   * 获取机器人管理的所有群组
-   */
   async getBotGroups (botId: string): Promise<GroupRow[]> {
     return await this.allQuery<GroupRow>('SELECT * FROM Groups WHERE botId = ?', [botId])
   }
 
-  /**
-   * 获取群组订阅的所有抖音用户
-   */
   async getGroupSubscriptions (groupId: string): Promise<DouyinSubscriptionWithUser[]> {
     const subscriptions = await this.allQuery<{
       groupId: string
@@ -506,9 +448,6 @@ export class DouyinDBBase {
     }))
   }
 
-  /**
-   * 获取抖音用户的所有订阅群组
-   */
   async getUserSubscribedGroups (sec_uid: string): Promise<GroupRow[]> {
     return await this.allQuery<GroupRow>(
       `SELECT g.* FROM Groups g
@@ -518,9 +457,6 @@ export class DouyinDBBase {
     )
   }
 
-  /**
-   * 检查群组是否已订阅抖音用户
-   */
   async isSubscribed (sec_uid: string, groupId: string): Promise<boolean> {
     const result = await this.getQuery<CountResult>(
       'SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE sec_uid = ? AND groupId = ?',
@@ -529,9 +465,6 @@ export class DouyinDBBase {
     return (result?.count || 0) > 0
   }
 
-  /**
-   * 获取抖音用户信息
-   */
   async getDouyinUser (sec_uid: string): Promise<DouyinUserRow | null> {
     const user = await this.getQuery<DouyinUserRow>('SELECT * FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
     if (user) {
@@ -540,9 +473,6 @@ export class DouyinDBBase {
     return user || null
   }
 
-  /**
-   * 更新用户直播状态
-   */
   async updateLiveStatus (sec_uid: string, living: boolean): Promise<boolean> {
     const user = await this.getDouyinUser(sec_uid)
     if (!user) return false
@@ -554,9 +484,6 @@ export class DouyinDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 获取用户直播状态
-   */
   async getLiveStatus (sec_uid: string): Promise<{ living: boolean }> {
     const user = await this.getDouyinUser(sec_uid)
     return { living: user?.living || false }
@@ -568,79 +495,58 @@ export class DouyinDBBase {
   async syncConfigSubscriptions (configItems: DouyinPushItem[]): Promise<void> {
     // 1. 收集配置文件中的所有订阅关系
     const configSubscriptions = new Map<string, Set<string>>()
-    // 初始化每个群组的订阅用户集合
     for (const item of configItems) {
       // 配置文件始终写入 sec_uid，补默认值会改变旧实现对缺失项的处理
       const sec_uid = item.sec_uid as string
       const short_id = item.short_id ?? ''
       const remark = item.remark ?? ''
-      // 创建或更新抖音用户记录
       await this.getOrCreateDouyinUser(sec_uid, short_id, remark)
-      // 处理该用户的所有群组订阅
       for (const groupWithBot of item.group_id) {
         const [groupId, botId] = groupWithBot.split(':')
         if (!groupId || !botId) continue
-        // 确保群组存在
         await this.getOrCreateGroup(groupId, botId)
-        // 记录配置文件中的订阅关系
         if (!configSubscriptions.has(groupId)) {
           configSubscriptions.set(groupId, new Set())
         }
         configSubscriptions.get(groupId)?.add(sec_uid)
-        // 检查是否已订阅
         const isSubscribed = await this.isSubscribed(sec_uid, groupId)
-        // 如果未订阅，创建订阅关系
         if (!isSubscribed) {
           await this.subscribeDouyinUser(groupId, botId, sec_uid, short_id, remark)
         }
       }
     }
     // 2. 获取数据库中的所有订阅关系，并与配置文件比较，删除不在配置文件中的订阅
-    // 获取所有群组
     const allGroups = await this.allQuery<GroupRow>('SELECT * FROM Groups')
     for (const group of allGroups) {
       const groupId = group.id
       const configUsers = configSubscriptions.get(groupId) ?? new Set<string>()
-      // 获取该群组在数据库中的所有订阅
       const dbSubscriptions = await this.getGroupSubscriptions(groupId)
-      // 找出需要删除的订阅（在数据库中存在但配置文件中不存在）
       for (const subscription of dbSubscriptions) {
         const sec_uid = subscription.sec_uid
         if (!configUsers.has(sec_uid)) {
-          // 删除订阅关系
           await this.unsubscribeDouyinUser(groupId, sec_uid)
           logger.mark(`已删除群组 ${groupId} 对抖音用户 ${sec_uid} 的订阅`)
         }
       }
     }
     // 3. 清理不再被任何群组订阅的抖音用户记录及其过滤词和过滤标签
-    // 获取所有抖音用户
     const allUsers = await this.allQuery<DouyinUserRow>('SELECT * FROM DouyinUsers')
     for (const user of allUsers) {
       const sec_uid = user.sec_uid
-      // 检查该用户是否还有群组订阅
       const subscribedGroups = await this.getUserSubscribedGroups(sec_uid)
       if (subscribedGroups.length === 0) {
-        // 删除该用户的过滤词和过滤标签
         await this.runQuery('DELETE FROM FilterWords WHERE sec_uid = ?', [sec_uid])
         await this.runQuery('DELETE FROM FilterTags WHERE sec_uid = ?', [sec_uid])
-        // 删除该用户记录
         await this.runQuery('DELETE FROM DouyinUsers WHERE sec_uid = ?', [sec_uid])
         logger.mark(`已删除抖音用户 ${sec_uid} 的记录及相关过滤设置（不再被任何群组订阅）`)
       }
     }
   }
 
-  /**
-   * 通过ID获取群组信息
-   */
   async getGroupById (groupId: string): Promise<GroupRow | null> {
     return await this.getQuery<GroupRow>('SELECT * FROM Groups WHERE id = ?', [groupId]) || null
   }
 
-  /**
-   * 更新用户的过滤模式
-   */
   async updateFilterMode (sec_uid: string, filterMode: FilterMode): Promise<DouyinUserRow> {
     const user = await this.getOrCreateDouyinUser(sec_uid)
     const now = new Date().toISOString()
@@ -651,9 +557,6 @@ export class DouyinDBBase {
     return { ...user, filterMode, updatedAt: now }
   }
 
-  /**
-   * 添加过滤词
-   */
   async addFilterWord (sec_uid: string, word: string): Promise<DouyinFilterWordRow> {
     await this.getOrCreateDouyinUser(sec_uid)
     let filterWord = await this.getQuery<DouyinFilterWordRow>(
@@ -678,9 +581,6 @@ export class DouyinDBBase {
     return filterWord
   }
 
-  /**
-   * 删除过滤词
-   */
   async removeFilterWord (sec_uid: string, word: string): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM FilterWords WHERE sec_uid = ? AND word = ?',
@@ -689,9 +589,6 @@ export class DouyinDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 添加过滤标签
-   */
   async addFilterTag (sec_uid: string, tag: string): Promise<DouyinFilterTagRow> {
     await this.getOrCreateDouyinUser(sec_uid)
     let filterTag = await this.getQuery<DouyinFilterTagRow>(
@@ -716,9 +613,6 @@ export class DouyinDBBase {
     return filterTag
   }
 
-  /**
-   * 删除过滤标签
-   */
   async removeFilterTag (sec_uid: string, tag: string): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM FilterTags WHERE sec_uid = ? AND tag = ?',
@@ -727,25 +621,16 @@ export class DouyinDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 获取用户的所有过滤词
-   */
   async getFilterWords (sec_uid: string): Promise<string[]> {
     const filterWords = await this.allQuery<DouyinFilterWordRow>('SELECT * FROM FilterWords WHERE sec_uid = ?', [sec_uid])
     return filterWords.map(word => word.word)
   }
 
-  /**
-   * 获取用户的所有过滤标签
-   */
   async getFilterTags (sec_uid: string): Promise<string[]> {
     const filterTags = await this.allQuery<DouyinFilterTagRow>('SELECT * FROM FilterTags WHERE sec_uid = ?', [sec_uid])
     return filterTags.map(tag => tag.tag)
   }
 
-  /**
-   * 获取用户的过滤配置
-   */
   async getFilterConfig (sec_uid: string): Promise<DouyinFilterConfig> {
     const user = await this.getOrCreateDouyinUser(sec_uid)
     const filterWords = await this.getFilterWords(sec_uid)
@@ -757,9 +642,6 @@ export class DouyinDBBase {
     }
   }
 
-  /**
-   * 检查内容是否应该被过滤
-   */
   async shouldFilter (PushItem: DouyinFilterPushItem, tags: string[] = []): Promise<boolean> {
     // 使用 PushItem.sec_uid 而不是 PushItem.Detail_Data.sec_uid
     const sec_uid = PushItem.sec_uid
@@ -775,7 +657,6 @@ export class DouyinDBBase {
       过滤标签：${filterTags}
       `)
     const desc = PushItem.Detail_Data.desc ?? ''
-    // 检查内容中是否包含过滤词
     const hasFilterWord = filterWords.some(word => desc.includes(word))
     const hasFilterTag = filterTags.some(
       filterTag => tags.some(tag => tag === filterTag)
@@ -789,9 +670,7 @@ export class DouyinDBBase {
       是否过滤：${hasFilterWord || hasFilterTag ? logger.red(`${hasFilterWord || hasFilterTag}`) : logger.green(`${hasFilterWord || hasFilterTag}`)}
       作品地址：${logger.green(`https://www.douyin.com/video/${PushItem.Detail_Data.aweme_id}`)}
       `)
-    // 根据过滤模式决定是否过滤
     if (filterMode === 'blacklist') {
-      // 黑名单模式：如果包含过滤词或过滤标签，则过滤
       if (hasFilterWord || hasFilterTag) {
         logger.warn(`
           作品内容命中黑名单规则，已过滤该作品不再推送
@@ -915,7 +794,6 @@ export class DouyinDBBase {
               ...cache,
               douyinUser,
               createdAt: new Date(cache.createdAt),
-              // 转换为Date对象
               updatedAt: new Date(cache.updatedAt)
             })
           }

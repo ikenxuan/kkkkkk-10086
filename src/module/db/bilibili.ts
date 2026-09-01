@@ -68,7 +68,6 @@ export interface BilibiliFilterPushItem {
   Dynamic_Data: BilibiliDynamicPayload
 }
 
-/** 动态缓存记录，时间字段转换为 Date */
 export type DynamicCacheWithDates = Omit<DynamicCacheRow, 'createdAt' | 'updatedAt'> & {
   createdAt: Date
   updatedAt: Date
@@ -92,7 +91,6 @@ interface DynamicCacheDeleteConditions {
   dynamic_id?: string
 }
 
-/** 数据库操作类 */
 export class BilibiliDBBase {
   db: Database | null = null
   dbPath: string
@@ -104,17 +102,12 @@ export class BilibiliDBBase {
     this.dbPath = path.join(dataPath ?? path.join(Version.pluginPath, 'data'), 'bilibili.db')
   }
 
-  /**
-   * 初始化数据库
-   */
   async init (): Promise<this> {
     try {
       logger.debug(logger.green('--------------------------[BilibiliDB] 开始初始化数据库--------------------------'))
       logger.debug('[BilibiliDB] 正在连接数据库...')
-      // 创建数据库连接
       await fs.promises.mkdir(path.dirname(this.dbPath), { recursive: true })
       this.db = new sqlite3.Database(this.dbPath)
-      // 创建表结构
       await this.createTables()
       logger.debug('[BilibiliDB] 数据库模型同步成功')
       logger.debug('[BilibiliDB] 正在同步配置订阅...')
@@ -129,19 +122,14 @@ export class BilibiliDBBase {
     return this
   }
 
-  /**
-   * 创建数据库表结构
-   */
   async createTables (): Promise<void> {
     const queries = [
-      // 创建机器人表
       `CREATE TABLE IF NOT EXISTS Bots (
         id TEXT PRIMARY KEY,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // 创建群组表
       `CREATE TABLE IF NOT EXISTS Groups (
         id TEXT PRIMARY KEY,
         botId TEXT NOT NULL,
@@ -150,7 +138,6 @@ export class BilibiliDBBase {
         FOREIGN KEY (botId) REFERENCES Bots(id)
       )`,
 
-      // 创建B站用户表
       `CREATE TABLE IF NOT EXISTS BilibiliUsers (
         host_mid INTEGER PRIMARY KEY,
         remark TEXT,
@@ -159,7 +146,6 @@ export class BilibiliDBBase {
         updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // 创建群组用户订阅关系表
       `CREATE TABLE IF NOT EXISTS GroupUserSubscriptions (
         groupId TEXT,
         host_mid INTEGER,
@@ -170,7 +156,6 @@ export class BilibiliDBBase {
         FOREIGN KEY (host_mid) REFERENCES BilibiliUsers(host_mid)
       )`,
 
-      // 创建动态缓存表
       `CREATE TABLE IF NOT EXISTS DynamicCaches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         dynamic_id TEXT NOT NULL,
@@ -184,7 +169,6 @@ export class BilibiliDBBase {
         UNIQUE(dynamic_id, host_mid, groupId)
       )`,
 
-      // 创建过滤词表
       `CREATE TABLE IF NOT EXISTS FilterWords (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         host_mid INTEGER NOT NULL,
@@ -196,7 +180,6 @@ export class BilibiliDBBase {
         UNIQUE(host_mid, word)
       )`,
 
-      // 创建过滤标签表
       `CREATE TABLE IF NOT EXISTS FilterTags (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         host_mid INTEGER NOT NULL,
@@ -213,9 +196,6 @@ export class BilibiliDBBase {
     }
   }
 
-  /**
-   * 执行SQL查询
-   */
   runQuery (sql: string, params: unknown[] = []): Promise<RunResult> {
     return new Promise((resolve, reject) => {
       this.db?.run(sql, params, function (this: Sqlite3RunResult, err: Error | null) {
@@ -228,9 +208,6 @@ export class BilibiliDBBase {
     })
   }
 
-  /**
-   * 执行SQL查询并获取单个结果
-   */
   getQuery<T> (sql: string, params: unknown[] = []): Promise<T | undefined> {
     return new Promise((resolve, reject) => {
       this.db?.get<T>(sql, params, (err, row) => {
@@ -243,9 +220,6 @@ export class BilibiliDBBase {
     })
   }
 
-  /**
-   * 执行SQL查询并获取所有结果
-   */
   allQuery<T> (sql: string, params: unknown[] = []): Promise<T[]> {
     return new Promise((resolve, reject) => {
       this.db?.all<T>(sql, params, (err, rows) => {
@@ -258,9 +232,6 @@ export class BilibiliDBBase {
     })
   }
 
-  /**
-   * 获取或创建机器人记录
-   */
   async getOrCreateBot (botId: string): Promise<BotRow> {
     let bot = await this.getQuery<BotRow>('SELECT * FROM Bots WHERE id = ?', [botId])
     if (!bot) {
@@ -274,14 +245,10 @@ export class BilibiliDBBase {
     return bot
   }
 
-  /**
-   * 获取或创建群组记录
-   */
   async getOrCreateGroup (groupId: string, botId: string): Promise<GroupRow> {
     await this.getOrCreateBot(botId)
     let group = await this.getQuery<GroupRow>('SELECT * FROM Groups WHERE id = ?', [groupId])
     if (!group) {
-      // 如果群组不存在，创建新群组
       const now = new Date().toISOString()
       await this.runQuery(
         'INSERT INTO Groups (id, botId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
@@ -289,7 +256,6 @@ export class BilibiliDBBase {
       )
       group = { id: groupId, botId, createdAt: now, updatedAt: now }
     } else if (group.botId !== botId) {
-      // 如果群组已存在但机器人ID不同，更新机器人ID
       const now = new Date().toISOString()
       await this.runQuery(
         'UPDATE Groups SET botId = ?, updatedAt = ? WHERE id = ?',
@@ -301,9 +267,6 @@ export class BilibiliDBBase {
     return group
   }
 
-  /**
-   * 获取或创建B站用户记录
-   */
   async getOrCreateBilibiliUser (host_mid: number, remark = ''): Promise<BilibiliUserRow> {
     let user = await this.getQuery<BilibiliUserRow>('SELECT * FROM BilibiliUsers WHERE host_mid = ?', [host_mid])
     if (!user) {
@@ -333,9 +296,6 @@ export class BilibiliDBBase {
     return user
   }
 
-  /**
-   * 订阅B站用户
-   */
   async subscribeBilibiliUser (
     groupId: string,
     botId: string,
@@ -359,9 +319,6 @@ export class BilibiliDBBase {
     return subscription
   }
 
-  /**
-   * 取消订阅B站用户
-   */
   async unsubscribeBilibiliUser (groupId: string, host_mid: number): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM GroupUserSubscriptions WHERE groupId = ? AND host_mid = ?',
@@ -374,9 +331,6 @@ export class BilibiliDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 添加动态缓存
-   */
   async addDynamicCache (
     dynamic_id: string,
     host_mid: number,
@@ -406,9 +360,6 @@ export class BilibiliDBBase {
     return cache
   }
 
-  /**
-   * 检查动态是否已推送
-   */
   async isDynamicPushed (dynamic_id: string, host_mid: number, groupId: string): Promise<boolean> {
     const result = await this.getQuery<CountResult>(
       'SELECT COUNT(*) as count FROM DynamicCaches WHERE dynamic_id = ? AND host_mid = ? AND groupId = ?',
@@ -417,16 +368,10 @@ export class BilibiliDBBase {
     return (result?.count || 0) > 0
   }
 
-  /**
-   * 获取机器人管理的所有群组
-   */
   async getBotGroups (botId: string): Promise<GroupRow[]> {
     return await this.allQuery<GroupRow>('SELECT * FROM Groups WHERE botId = ?', [botId])
   }
 
-  /**
-   * 获取群组订阅的所有B站用户
-   */
   async getGroupSubscriptions (groupId: string): Promise<BilibiliSubscriptionWithUser[]> {
     const subscriptions = await this.allQuery<{
       groupId: string
@@ -462,9 +407,6 @@ export class BilibiliDBBase {
     }))
   }
 
-  /**
-   * 获取B站用户的所有订阅群组
-   */
   async getUserSubscribedGroups (host_mid: number): Promise<GroupRow[]> {
     return await this.allQuery<GroupRow>(
       `SELECT g.* FROM Groups g
@@ -474,9 +416,6 @@ export class BilibiliDBBase {
     )
   }
 
-  /**
-   * 获取群组的动态缓存
-   */
   async getGroupDynamicCache (groupId: string, host_mid?: number): Promise<DynamicCacheRow[]> {
     let sql = 'SELECT * FROM DynamicCaches WHERE groupId = ?'
     const params: unknown[] = [groupId]
@@ -488,9 +427,6 @@ export class BilibiliDBBase {
     return await this.allQuery<DynamicCacheRow>(sql, params)
   }
 
-  /**
-   * 检查群组是否已订阅B站用户
-   */
   async isSubscribed (host_mid: number, groupId: string): Promise<boolean> {
     const result = await this.getQuery<CountResult>(
       'SELECT COUNT(*) as count FROM GroupUserSubscriptions WHERE host_mid = ? AND groupId = ?',
@@ -505,40 +441,30 @@ export class BilibiliDBBase {
   async syncConfigSubscriptions (configItems: BilibiliPushItem[]): Promise<void> {
     // 1. 收集配置文件中的所有订阅关系
     const configSubscriptions = new Map<string, Set<number>>()
-    // 初始化每个群组的订阅UP集合
     for (const item of configItems) {
       const host_mid = item.host_mid
       const remark = item.remark ?? ''
-      // 创建或更新B站用户记录
       await this.getOrCreateBilibiliUser(host_mid, remark)
-      // 处理该UP主的所有群组订阅
       for (const groupWithBot of item.group_id) {
         const [groupId, botId] = groupWithBot.split(':')
         if (!groupId || !botId) continue
-        // 确保群组存在
         await this.getOrCreateGroup(groupId, botId)
-        // 记录配置文件中的订阅关系
         if (!configSubscriptions.has(groupId)) {
           configSubscriptions.set(groupId, new Set())
         }
         configSubscriptions.get(groupId)?.add(host_mid)
-        // 检查是否已订阅
         const isSubscribed = await this.isSubscribed(host_mid, groupId)
-        // 如果未订阅，创建订阅关系
         if (!isSubscribed) {
           await this.subscribeBilibiliUser(groupId, botId, host_mid, remark)
         }
       }
     }
     // 2. 获取数据库中的所有订阅关系，并与配置文件比较，删除不在配置文件中的订阅
-    // 获取所有群组
     const allGroups = await this.allQuery<GroupRow>('SELECT * FROM Groups')
     for (const group of allGroups) {
       const groupId = group.id
       const configUps = configSubscriptions.get(groupId) ?? new Set<number>()
-      // 获取该群组在数据库中的所有订阅
       const dbSubscriptions = await this.getGroupSubscriptions(groupId)
-      // 找出需要删除的订阅（在数据库中存在但配置文件中不存在）
       for (const subscription of dbSubscriptions) {
         const host_mid = subscription.host_mid
         if (!configUps.has(host_mid)) {
@@ -548,26 +474,19 @@ export class BilibiliDBBase {
       }
     }
     // 3. 清理不再被任何群组订阅的UP主记录及其过滤词和过滤标签
-    // 获取所有B站用户
     const allUsers = await this.allQuery<BilibiliUserRow>('SELECT * FROM BilibiliUsers')
     for (const user of allUsers) {
       const host_mid = user.host_mid
-      // 检查该UP主是否还有群组订阅
       const subscribedGroups = await this.getUserSubscribedGroups(host_mid)
       if (subscribedGroups.length === 0) {
-        // 删除该UP主的过滤词和过滤标签
         await this.runQuery('DELETE FROM FilterWords WHERE host_mid = ?', [host_mid])
         await this.runQuery('DELETE FROM FilterTags WHERE host_mid = ?', [host_mid])
-        // 删除该UP主记录
         await this.runQuery('DELETE FROM BilibiliUsers WHERE host_mid = ?', [host_mid])
         logger.mark(`已删除UP主 ${host_mid} 的记录及相关过滤设置（不再被任何群组订阅）`)
       }
     }
   }
 
-  /**
-   * 更新用户的过滤模式
-   */
   async updateFilterMode (host_mid: number, filterMode: FilterMode): Promise<BilibiliUserRow> {
     const user = await this.getOrCreateBilibiliUser(host_mid)
     const now = new Date().toISOString()
@@ -578,9 +497,6 @@ export class BilibiliDBBase {
     return { ...user, filterMode, updatedAt: now }
   }
 
-  /**
-   * 添加过滤词
-   */
   async addFilterWord (host_mid: number, word: string): Promise<BilibiliFilterWordRow> {
     await this.getOrCreateBilibiliUser(host_mid)
     let filterWord = await this.getQuery<BilibiliFilterWordRow>(
@@ -605,9 +521,6 @@ export class BilibiliDBBase {
     return filterWord
   }
 
-  /**
-   * 删除过滤词
-   */
   async removeFilterWord (host_mid: number, word: string): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM FilterWords WHERE host_mid = ? AND word = ?',
@@ -616,9 +529,6 @@ export class BilibiliDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 添加过滤标签
-   */
   async addFilterTag (host_mid: number, tag: string): Promise<BilibiliFilterTagRow> {
     await this.getOrCreateBilibiliUser(host_mid)
     let filterTag = await this.getQuery<BilibiliFilterTagRow>(
@@ -643,9 +553,6 @@ export class BilibiliDBBase {
     return filterTag
   }
 
-  /**
-   * 删除过滤标签
-   */
   async removeFilterTag (host_mid: number, tag: string): Promise<boolean> {
     const result = await this.runQuery(
       'DELETE FROM FilterTags WHERE host_mid = ? AND tag = ?',
@@ -654,25 +561,16 @@ export class BilibiliDBBase {
     return result.changes > 0
   }
 
-  /**
-   * 获取用户的所有过滤词
-   */
   async getFilterWords (host_mid: number): Promise<string[]> {
     const filterWords = await this.allQuery<BilibiliFilterWordRow>('SELECT * FROM FilterWords WHERE host_mid = ?', [host_mid])
     return filterWords.map(word => word.word)
   }
 
-  /**
-   * 获取用户的所有过滤标签
-   */
   async getFilterTags (host_mid: number): Promise<string[]> {
     const filterTags = await this.allQuery<BilibiliFilterTagRow>('SELECT * FROM FilterTags WHERE host_mid = ?', [host_mid])
     return filterTags.map(tag => tag.tag)
   }
 
-  /**
-   * 获取用户的过滤配置
-   */
   async getFilterConfig (host_mid: number): Promise<BilibiliFilterConfig> {
     const user = await this.getOrCreateBilibiliUser(host_mid)
     const filterWords = await this.getFilterWords(host_mid)
@@ -684,18 +582,13 @@ export class BilibiliDBBase {
     }
   }
 
-  /**
-   * 从动态中提取文本内容和标签
-   */
   async extractTextAndTags (dynamicData: BilibiliDynamicPayload): Promise<{ text: string, tags: string[] }> {
     let text = ''
     const tags: string[] = []
-    // 如果没有模块数据，返回空结果
     if (!dynamicData || !dynamicData.modules || !dynamicData.modules.module_dynamic) {
       return { text, tags }
     }
     const moduleDynamic = dynamicData.modules.module_dynamic
-    // 提取直播标题和分区
     const liveContent = moduleDynamic.major?.live_rcmd?.content
     if (liveContent) {
       const content = JSON.parse(liveContent) as {
@@ -704,16 +597,12 @@ export class BilibiliDBBase {
       text += content.live_play_info.title + ' '
       tags.push(content.live_play_info.area_name)
     }
-    // 提取描述文本
     if (moduleDynamic.desc && moduleDynamic.desc.text) {
       text += moduleDynamic.desc.text + ' '
     }
-    // 提取视频标题
     if (moduleDynamic.major && moduleDynamic.major.archive && moduleDynamic.major.archive.title) {
       text += moduleDynamic.major.archive.title + ' '
     }
-    // 提取标签
-    // 主动态
     if (moduleDynamic.desc && moduleDynamic.desc.rich_text_nodes) {
       for (const node of moduleDynamic.desc.rich_text_nodes) {
         if (node.type !== 'RICH_TEXT_NODE_TYPE_TEXT') {
@@ -721,7 +610,6 @@ export class BilibiliDBBase {
         }
       }
     }
-    // 若为转发动态，再检查子动态
     const DynamicType = getDynamicType()
     if (dynamicData.type === DynamicType.FORWARD && 'orig' in dynamicData) {
       if (dynamicData.orig!.type === DynamicType.AV) {
@@ -742,11 +630,7 @@ export class BilibiliDBBase {
     return { text: text.trim(), tags }
   }
 
-  /**
-   * 检查内容是否应该被过滤
-   */
   async shouldFilter (PushItem: BilibiliFilterPushItem, extraTags: string[] = []): Promise<boolean> {
-    // 获取用户的过滤配置
     const { filterMode, filterWords, filterTags } = await this.getFilterConfig(PushItem.host_mid)
     logger.debug(`
       获取用户${PushItem.remark}（${PushItem.host_mid}）的过滤配置：
@@ -754,26 +638,21 @@ export class BilibiliDBBase {
       过滤词：${filterWords}
       过滤标签：${filterTags}
       `)
-    // 提取主动态的文本和标签
     const { text: mainText, tags: mainTags } = await this.extractTextAndTags(PushItem.Dynamic_Data)
     logger.debug(`
       提取主动态的文本和标签：
       文本：${mainText}
       标签：[${mainTags.join('][')}]
       `)
-    // 合并所有标签
     let allTags = [...mainTags, ...extraTags]
     let allText = mainText
-    // 如果是转发动态，还需要检查原动态
     const DynamicType = getDynamicType()
     if (PushItem.Dynamic_Data.type === DynamicType.FORWARD && 'orig' in PushItem.Dynamic_Data) {
       const { text: origText, tags: origTags } = await this.extractTextAndTags(PushItem.Dynamic_Data.orig as BilibiliDynamicPayload)
       allText += ' ' + origText
       allTags = [...allTags, ...origTags]
     }
-    // 检查内容中是否包含过滤词
     const hasFilterWord = filterWords.some(word => allText.includes(word))
-    // 检查标签中是否包含过滤标签
     const hasFilterTag = filterTags.some(
       filterTag => allTags.some(tag => tag.includes(filterTag))
     )
@@ -788,9 +667,7 @@ export class BilibiliDBBase {
     动态地址：${logger.green(`https://t.bilibili.com/${PushItem.Dynamic_Data.id_str}`)}
     动态类型：${PushItem.dynamic_type}
     `)
-    // 根据过滤模式决定是否过滤
     if (filterMode === 'blacklist') {
-      // 黑名单模式：如果包含过滤词或过滤标签，则过滤
       if (hasFilterWord || hasFilterTag) {
         logger.warn(`
         动态内容命中黑名单规则，已过滤该动态不再推送
@@ -917,7 +794,6 @@ export class BilibiliDBBase {
               ...cache,
               bilibiliUser,
               createdAt: new Date(cache.createdAt),
-              // 转换为Date对象
               updatedAt: new Date(cache.updatedAt)
             })
           }

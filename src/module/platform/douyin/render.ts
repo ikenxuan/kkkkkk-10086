@@ -42,7 +42,6 @@ import {
 } from './workType.js'
 
 /**
- * 处理作品描述
  * @param Desc - 作品原始描述文本
  * @returns 如果描述为空则返回默认提示，否则返回原文
  */
@@ -55,7 +54,6 @@ interface CoCreator {
   role_title: string
 }
 
-/** 合作信息 */
 interface CooperationInfo {
   co_creator_nums: number
   co_creators: CoCreator[]
@@ -63,7 +61,6 @@ interface CooperationInfo {
 }
 
 /**
- * 构建合作信息数据
  * 从作品详情中提取创作者合作信息，包括合作者列表和订阅者角色
  * @param Detail_Data - 作品详情数据，包含 cooperation_info、user_info、author 等字段
  * @returns 合作信息对象，如果不存在则返回 undefined
@@ -122,7 +119,6 @@ const buildCooperationInfo = (Detail_Data: any): CooperationInfo | undefined => 
 }
 
 /**
- * 构建 Douyin CDN 头像 URL
  * @param uri - 头像资源的 URI 标识
  * @returns 完整的 1080x1080 分辨率头像 CDN 地址
  */
@@ -140,7 +136,6 @@ const getUserAvatar = (user: any): string => {
 type ImageMediaType = 'static' | 'live' | 'clip'
 
 /**
- * 解析图文/合辑中单张图片的媒体类型。
  * clip_type 规则参考普通解析逻辑：2/空为静态图，5 为实况动图，4 为短片。
  * @param image - 抖音 images 数组中的单项
  * @returns 模板可识别的媒体类型
@@ -159,7 +154,6 @@ const getImageMediaType = (image: { clip_type?: number } | null | undefined): Im
 }
 
 /**
- * 构建图文作品图片列表。
  * 第一项为封面，保留全部后续图片供模板从索引 1 起按需预览，并在每项上携带媒体类型。
  * @param images - 作品原始图片数组，每项包含 url_list（多分辨率 URL）
  * @param fallbackCover - images 缺失时使用的兜底封面
@@ -255,7 +249,6 @@ interface DouyinMentionToken {
 }
 
 /**
- * 根据抖音作品描述和 text_extra 构建富文本文档
  * 普通正文走 text 节点，换行走 lineBreak 节点，hashtag 与有效 @ 用户走高亮节点。
  * @param text - 需要编排的文本片段
  * @param textExtra - 抖音作品 text_extra 数组
@@ -377,9 +370,6 @@ const resolveMentionTokens = async (
   })
 }
 
-/**
- * 将文本按换行拆分为 text 节点和 lineBreak 节点并推入目标数组
- */
 const appendTextSegments = (text: string, target: RichTextNode[]): void => {
   if (!text) return
   for (const part of text.split(/(\r?\n)/)) {
@@ -392,7 +382,6 @@ const appendTextSegments = (text: string, target: RichTextNode[]): void => {
 }
 
 /**
- * 提取博主 IP 属地
  * @param Detail_Data - 作品详情数据
  * @returns IP 属地文本（如 "重庆"），不存在时返回 undefined
  */
@@ -404,7 +393,6 @@ const extractIpLocation = (Detail_Data: any): string | undefined => {
 }
 
 /**
- * 从 suggest_words 中随机选择一条热点词
  * @param Detail_Data - 作品详情数据
  * @returns `{ hint_text, word }` 或 undefined
  */
@@ -423,7 +411,6 @@ const extractSuggestWord = (Detail_Data: any): { hint_text: string, word: string
 }
 
 /**
- * 从抖音图片对象中提取第一个可用 URL。
  * @param images - 可能存在的多种封面对象
  * @returns 可直接渲染的图片 URL，不存在时返回 undefined
  */
@@ -436,7 +423,6 @@ const pickImageUrl = (...images: any[]): string | undefined => {
 }
 
 /**
- * 构建图文作品 BGM 展示信息。
  * 优先使用 matched_pgc_sound 的标准曲目信息，再回退到原声/作者字段和 extra 中的映射标题。
  * @param music - 抖音作品 music 字段
  * @returns 可传给模板的音乐信息；无有效音乐数据时返回 undefined
@@ -469,7 +455,6 @@ const buildMusicInfo = (music: any): { author: string, title: string, cover?: st
 }
 
 /**
- * 获取用户抖音号
  * @param user - 用户对象，包含 unique_id 和 short_id
  * @returns 优先返回抖音号（unique_id），为空则返回短 ID
  */
@@ -498,7 +483,6 @@ export interface RenderWorkImageOptions {
 }
 
 /**
- * 根据作品类型计算默认推送标签
  * @param aweme - 作品详情数据
  * @returns 视频/图文/文章 之一的推送标签
  */
@@ -510,7 +494,6 @@ const getDefaultPushLabel = (aweme: WorkTypeDouyinAweme): string => {
 }
 
 /**
- * 渲染作品信息图片
  * 根据作品类型（文章/视频/图文）自动选择对应模板进行渲染
  * 类型标签按优先级：调用方显式传入 -> 根据作品类型自动计算推送标签
  * @param options - 渲染参数

@@ -91,7 +91,6 @@ const captureLiveStack = (name: string, message: string): string => {
 const asText = (value: unknown): string =>
   typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
 
-/** 按顺序取第一个非空的文本字段 */
 const pick = (...values: unknown[]): string => values.map(asText).find(Boolean) || ''
 
 /** 把 amagi 的结构化报错字段整理成键值对，供模板独立展示 */
@@ -196,7 +195,6 @@ const buildApiErrorImage = async (
       ],
       buildTime: buildMetadata?.buildTime ? formatBuildTime(buildMetadata.buildTime) : undefined,
       commitHash: buildMetadata?.shortCommitHash || buildMetadata?.commitHash,
-      // 有事件走事件；定时推送按配置里的机器人账号主动查 Bot[botId]
       adapterInfo: messageEvent ? getAdapterInfo(messageEvent) : getPushAdapterInfo(pushTargets)
     })
   } catch (renderError: unknown) {
@@ -322,26 +320,6 @@ const wrapFetcherWithErrorCard = <T extends object> (
  */
 
 /**
- * HTTP请求方法类型
- * @typedef {'GET'|'POST'|'PUT'|'DELETE'|'PATCH'|'HEAD'|'OPTIONS'} Method
- */
-
-/**
- * 表示HTTP请求方法的请求头类型
- * @typedef {Object} MethodsHeaders
- * @remarks
- * 这是一个部分类型，将HTTP方法映射到对应的AxiosHeaders类型
- * @property {import('axios').AxiosHeaders} [get] GET方法请求头
- * @property {import('axios').AxiosHeaders} [post] POST方法请求头
- * @property {import('axios').AxiosHeaders} [put] PUT方法请求头
- * @property {import('axios').AxiosHeaders} [delete] DELETE方法请求头
- * @property {import('axios').AxiosHeaders} [patch] PATCH方法请求头
- * @property {import('axios').AxiosHeaders} [head] HEAD方法请求头
- * @property {import('axios').AxiosHeaders} [options] OPTIONS方法请求头
- * @property {import('axios').AxiosHeaders} common 通用请求头
- */
-
-/**
  * 下载文件配置选项
  * @typedef {Object} downLoadFileOptions
  * @property {string} title 文件名
@@ -381,7 +359,6 @@ export class Base {
 
   constructor (e?: BaseEvent, overrides: Partial<AmagiDependencies> = {}) {
     this.e = e
-    /** @type {import('axios').AxiosRequestConfig['headers']} */
     this.headers = baseHeaders
     const dependencies = getAmagiDependencies(overrides)
     const {
@@ -413,7 +390,7 @@ export class Base {
       },
       request: {
         timeout: Config.request?.timeout || 15000,
-        // 同 platform/*/api.ts：只在配置 UA 比 amagi 内置的更新时才覆盖，
+        // 只在配置 UA 比 amagi 内置的更新时才覆盖，
         // 否则让 amagi 自己决定（它的 Sec-Ch-Ua 是从 UA 派生的，UA 落后会让指纹自相矛盾）
         // 这个 Client 是四平台共用的，走哪个平台在这里不可知，所以用四者里最高的阈值。
         headers: buildSharedUserAgentHeader(),
@@ -431,7 +408,6 @@ export class Base {
       douyin: wrapFetcherWithErrorCard(douyin, 'douyin', self, e, bilibiliErrorCodeMap)
     }
 
-    // 两个平台的 fetcher 换成包了错误卡片的那层，其余属性原样交给 amagi Client
     this.amagi = new Proxy(client, {
       get: (target, prop): unknown =>
         prop in wrapped ? wrapped[prop as string] : Reflect.get(target, prop)
@@ -439,22 +415,18 @@ export class Base {
   }
 
   /**
-   * 获取适配器名称
    * @returns {string} 返回适配器名称，如 'ICQQ', 'LagrangeCore', 'QQBot', 'OneBotv11' 等
    */
   get botadapter (): string {
     const adapter = this.e?.bot?.adapter
     const adapterName = typeof adapter === 'object' ? adapter.name : undefined
-    // 定义不同机器人版本对应的适配器检查规则
     const adapters = {
-      // Miao-Yunzai 版本的适配器检查规则
       'Miao-Yunzai': {
         ICQQ: () => this.e?.bot?.online_status !== 0,
         LagrangeCore: () => this.e?.bot?.adapter === 'LagrangeCore',
         QQBot: () => this.e?.bot?.adapter === 'QQBot',
         OneBotv11: () => this.e?.bot?.adapter === 'OneBotv11'
       },
-      // TRSS-Yunzai 版本的适配器检查规则
       'TRSS-Yunzai': {
         ICQQ: () => adapterName === 'ICQQ',
         QQBot: () => adapterName === 'QQBot',
@@ -464,22 +436,17 @@ export class Base {
       }
     }
 
-    // 特殊处理 TRSS-Yunzai 的 OneBotv11 情况
     if (Version.BotName === 'TRSS-Yunzai' && adapterName === 'OneBotv11') {
-      // 判断是否为 Lagrange.OneBot 版本
       return this.e?.bot?.version?.app_name === 'Lagrange.OneBot' ? 'Lagrange.OneBot' : 'OneBotv11'
     }
 
-    // 查找匹配的适配器，优先使用对应版本的适配器检查规则，如果没有则使用 Miao-Yunzai 的规则
     const botAdapters = adapters[Version.BotName] || adapters['Miao-Yunzai']
-    // 遍历适配器检查规则，返回第一个匹配的适配器名称
     for (const [adapterName, checkFn] of Object.entries(botAdapters)) {
       if (checkFn()) {
         return adapterName
       }
     }
 
-    // 默认返回 ICQQ
     return 'ICQQ'
   }
 
@@ -489,19 +456,15 @@ export class Base {
    * @returns {*} 处理后的消息或null
    */
   resultMsg (forwardmsg: unknown): unknown {
-    // Miao-Yunzai的处理
     if (Version.BotName === 'Miao-Yunzai') {
       return this.botadapter === 'OneBotv11' ? null : forwardmsg
     }
 
-    // TRSS-Yunzai的处理
     if (Version.BotName === 'TRSS-Yunzai') {
-      // 这些适配器支持转发消息
       const supportedAdapters = ['ICQQ', 'LagrangeCore', 'QQBot', 'OneBotv11']
       return supportedAdapters.includes(this.botadapter) ? forwardmsg : null
     }
 
-    // 其他情况默认返回转发消息
     return forwardmsg
   }
 
@@ -522,15 +485,12 @@ export class Base {
   }
 
   /**
-   * 创建按钮
    * @param {unknown[]} btn - 按钮数组
    * @returns {Object|null} 返回按钮对象或null
    */
   // cSpell:ignore mkbutton
   mkbutton (btn: unknown[]): unknown | null {
-    // Miao-Yunzai和yunzai的处理
     if (['Miao-Yunzai', 'yunzai'].includes(Version.BotName)) {
-      // 只有QQBot适配器且markdown配置允许时才创建按钮
       if (this.botadapter === 'QQBot' && this.e?.bot?.config?.markdown?.type !== 0) {
         const createButton = Reflect.get(Bot ?? {}, 'Button') as unknown
         return typeof createButton === 'function' ? Reflect.apply(createButton, Bot, [btn]) : null
@@ -538,23 +498,14 @@ export class Base {
       return null
     }
 
-    // TRSS-Yunzai的处理
     if (Version.BotName === 'TRSS-Yunzai') {
       return segment.button(btn)
     }
 
-    // 其他情况返回null
     return null
   }
 }
 
-/**
- * 直接发送远端视频地址。
- * @param {*} e 消息事件
- * @param {string} videoUrl 视频直链
- * @param {uploadFileOptions} [options] 上传参数
- * @returns {Promise<boolean>}
- */
 const defaultUploadFileDependencies: UploadFileDependencies = {
   resolveBotAdapter: event => new Base(event).botadapter
 }
@@ -615,6 +566,13 @@ const readMessageId = (value: unknown): string => {
   return (Array.isArray(messageId) ? messageId[0] : messageId) as string
 }
 
+/**
+ * 直接发送远端视频地址。
+ * @param {*} e 消息事件
+ * @param {string} videoUrl 视频直链
+ * @param {uploadFileOptions} [options] 上传参数
+ * @returns {Promise<boolean>}
+ */
 const sendVideoUrl = async (
   e: BaseEvent,
   videoUrl: string,
@@ -684,7 +642,6 @@ export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boo
  * @returns {boolean} true 表示「确定装不下」，此时不该再走远程直发
  */
 export const isRemoteVideoTooLargeForUrlSend = (botAdapter: string, sizeInMB: number): boolean => {
-  // 体积未知（探测失败）一律放行，判断权交还给 sendVideoUrl 的实际发送结果
   if (!Number.isFinite(sizeInMB) || sizeInMB <= 0) return false
   return needsGroupFileChannel(botAdapter, sizeInMB)
 }
@@ -702,7 +659,6 @@ const failGroupFileChannel = (botAdapter: string, sizeInMB: number): false => {
 }
 
 /**
- * 上传视频文件
  * @param {*} e 消息事件
  * @param {fileInfo} file 包含本地视频文件信息的对象
  * @param {string} videoUrl 视频直链，无则传空字符串
@@ -719,12 +675,10 @@ export const uploadFile = async (
   let newFileSize = file.totalBytes
   const isActiveMessage = options?.active && options?.activeOption
 
-  // 视频压缩处理
   if (Config.upload?.compress && file.totalBytes > (Config.upload.compresstrigger || 100)) {
     const duration = await mergeFile('获取指定视频文件时长', { path: file.filepath, resultPath: '' })
     logger.warn(logger.yellow(`视频大小 (${file.totalBytes} MB) 触发压缩条件，正在压缩...`))
 
-    // 发送压缩提示消息
     const compressMsg = `视频大小 (${file.totalBytes} MB) 触发压缩条件，正在压缩至${Config.upload.compressvalue} MB...`
     const msg1 = isActiveMessage && options?.activeOption
       ? await Bot?.[options.activeOption.uin]?.pickGroup(options.activeOption.group_id)?.sendMsg(compressMsg)
@@ -756,10 +710,8 @@ export const uploadFile = async (
     }
   }
 
-  // 获取适配器信息
   const botAdapter = dependencies.resolveBotAdapter(e)
 
-  // 特殊处理
   if (Version.BotName === 'TRSS-Yunzai' && botAdapter === 'LagrangeCore') {
     logger.warn('TRSS-Yunzai & Lagrange插件暂不支持上传视频，请使用ws链接Lagrange.Onebot')
     return false
@@ -797,7 +749,6 @@ export const uploadFile = async (
   const preferredByConfig = Boolean(Config.upload?.usegroupfile) && newFileSize > (Config.upload?.groupfilevalue || 100)
   const useGroupFile = requiredByCaller || preferredByConfig
 
-  // 文件处理
   let File
   const useBase64Video = Config.upload.videoSendMode === 'base64' || Config.upload.sendbase64
   if (useBase64Video && !useGroupFile) {
@@ -988,12 +939,10 @@ export const downloadVideo = async (
   // 视频大小判断：超过本适配器消息段上限就必须改走群文件，没超过则传 false，
   // 交给 uploadFile 按 usegroupfile / groupfilevalue 决定（false 只表示「不强制」，不是「禁止」）
   const useGroupFile = needsGroupFileChannel(botAdapter, res.totalBytes)
-  // 上传视频
   return await uploadFile(e, res, downloadOpt.video_url, { ...uploadOpt, useGroupFile })
 }
 
 /**
- * 异步下载文件的函数
  * @param {string} videoUrl 下载地址
  * @param {downLoadFileOptions} opt 配置选项，包括标题、请求头、直播流选项等
  * @returns {Promise<fileInfo>} 返回一个包含文件路径和总字节数的对象
@@ -1009,7 +958,6 @@ export const downloadFile = async (
     filepath: Common.tempDri.video + opt.title,
     timeout: 30000
   }).downloadStream((downloadedBytes, totalBytes, isLiveStream) => {
-    // 计算基础数据
     const elapsed = Math.max(0.1, (Date.now() - startTime) / 1000)
     const downloaded = Math.max(0, downloadedBytes || 0)
     const speedNum = downloaded / elapsed / 1048576
@@ -1022,13 +970,11 @@ export const downloadFile = async (
     const isValidTotal = typeof totalBytes === 'number' && !isNaN(totalBytes) && isFinite(totalBytes) && totalBytes > 1 && totalBytes !== -1
 
     if (!isValidTotal) {
-      // 未知大小：显示脉冲式进度条
       const pulse = Math.sin(elapsed * 2) * 0.5 + 0.5
       const fillCount = Math.floor(pulse * barLen * 0.6) + Math.floor(barLen * 0.2)
       const anim = '█'.repeat(fillCount) + '░'.repeat(barLen - fillCount)
       logger.info(`⬇️  ${opt.title} [${anim}] ${color('#00BFFF')(dlMB)} MB | ${speed} MB/s 下载中...\r`)
     } else {
-      // 已知大小：显示百分比进度条
       const pct = Math.min(100, Math.max(0, downloaded / totalBytes * 100))
       const fill = Math.floor(pct / 100 * barLen)
       const bar = `[${'█'.repeat(Math.max(0, fill))}${'░'.repeat(Math.max(0, barLen - fill))}]`

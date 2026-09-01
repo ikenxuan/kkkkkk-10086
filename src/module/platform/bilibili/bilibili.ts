@@ -272,13 +272,11 @@ export class Bilibili extends Base {
     this.downloadfilename = ''
     this.forceBurnDanmaku = options?.forceBurnDanmaku ?? false
     this.headers = this.headers || {}
-    // 使用可选链和空值合并运算符
     this.headers.Referer ||= 'https://www.bilibili.com/'
     this.headers.Cookie ||= Config.cookies.bilibili || ''
   }
 
   /**
-   * 处理B站资源的异步方法
    * @param {import('./getid.js').BilibiliId} iddata - 包含资源ID和相关数据的对象
    * @returns {Promise<boolean | void>}
    */
@@ -312,17 +310,13 @@ export class Bilibili extends Base {
           const playUrlStream = getBilibiliVideoStream(playUrlData)
 
           let videoSize = ''
-          /** @type {{ accept_description: string[], videoList: videoDownloadUrlList, selectedQuality: string }} */
-          let correctList: BilibiliQualityResult<BilibiliVideoStream & { base_url: string }> = { accept_description: [], videoList: [], selectedQuality: '未知' } // 提供默认值
+          let correctList: BilibiliQualityResult<BilibiliVideoStream & { base_url: string }> = { accept_description: [], videoList: [], selectedQuality: '未知' }
           let preparePlaybackPromise: Promise<void> | undefined
           const preparePlayback = (): Promise<void> => {
             preparePlaybackPromise ||= (async () => {
               if (this.islogin && Config.bilibili.videopriority === false && playUrlPayload.dash?.video?.length && playUrlPayload.dash?.audio?.length) {
-                /** 过滤视频流信息对象，排除清晰度重复的视频流 */
                 const simplify = dedupeBilibiliVideoStreams(playUrlPayload.dash.video)
-                /** 替换原始的视频信息对象 */
                 playUrlPayload.dash.video = simplify
-                /** 给视频信息对象删除不符合条件的视频流 */
                 correctList = await bilibiliProcessVideos({
                   accept_description: playUrlPayload.accept_description || [],
                   bvid: infoData.data.data.bvid,
@@ -330,7 +324,6 @@ export class Bilibili extends Base {
                 }, simplify, pickBilibiliStreamUrl(playUrlPayload.dash.audio[0]))
                 playUrlPayload.dash.video = correctList.videoList
                 playUrlPayload.accept_description = correctList.accept_description
-                /** 获取第一个视频流的大小 */
                 videoSize = await getvideosize(pickBilibiliStreamUrl(correctList.videoList[0]), pickBilibiliStreamUrl(playUrlPayload.dash.audio[0]), infoData.data.data.bvid)
                 return
               }
@@ -543,11 +536,8 @@ export class Bilibili extends Base {
             return true
           }
           for (let i = 0; i < videoInfo.data.result.episodes.length; i++) {
-            /** @type {string} */
             const long_title = videoInfo.data.result.episodes[i]?.long_title || ''
-            /** @type {string} */
             const badge = videoInfo.data.result.episodes[i]?.badge || ''
-            /** @type {string} */
             const short_link = videoInfo.data.result.episodes[i]?.short_link || ''
             msg.push([
               `\n> ## 第${i + 1}集`,
@@ -568,7 +558,6 @@ export class Bilibili extends Base {
           let Episode
           if (iddata?.Episode) {
             Episode = iddata.Episode
-            // 检查是否为中文数字，如果是则转换为阿拉伯数字
             if (/^[一二三四五六七八九十百千万]+$/.test(Episode)) {
               Episode = Common.chineseToArabic(Episode).toString()
             }
@@ -598,11 +587,8 @@ export class Bilibili extends Base {
             return true
           }
           if (Config.bilibili.videoQuality === 0) {
-            /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
             const simplify = dedupeBilibiliVideoStreams(playUrlData.result.dash.video)
-            /** 替换原始的视频信息对象 */
             playUrlData.result.dash.video = simplify
-            /** 给视频信息对象删除不符合条件的视频流 */
             const correctList = await bilibiliProcessVideos({
               accept_description: playUrlData.result.accept_description || [],
               bvid: videoInfo.data.result.season_id.toString(),
@@ -744,7 +730,6 @@ export class Bilibili extends Base {
 
               await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
                 image_url: cover(pics),
-                // 动态详情数据中，图文动态的描述文本在 major.opus.summary 中
                 text: replacetext(
                   dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.text || '',
                   dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.rich_text_nodes || []
@@ -1180,7 +1165,6 @@ export class Bilibili extends Base {
   }
 
   /**
-   * 获取B站视频弹幕列表
    * @param {number|string} cid 视频cid
    * @param {number} duration 视频时长，单位秒
    * @returns {Promise<Array<{progress:number, mode:number, fontsize:number, color:number, content:string}>>}
@@ -1348,7 +1332,6 @@ export class Bilibili extends Base {
   }
 
   /**
-   * 获取视频并处理的方法
    * @param {Object} videoData - 视频数据对象
    * @param {import('@ikenxuan/amagi').BiliBangumiVideoInfo | import('@ikenxuan/amagi').BiliOneWork} [videoData.infoData] - 视频信息数据
    * @param {import('@ikenxuan/amagi').BiliVideoPlayurlIsLogin | import('@ikenxuan/amagi').BiliBiliVideoPlayurlNoLogin | import('@ikenxuan/amagi').BiliBangumiVideoPlayurlIsLogin | import('@ikenxuan/amagi').BiliBangumiVideoPlayurlNoLogin} [videoData.playUrlData] - 播放URL数据
@@ -1356,8 +1339,6 @@ export class Bilibili extends Base {
    * @returns {Promise<void>}
    */
   async getvideo ({ infoData, playUrlData, danmakuList = [] }: GetVideoInput): Promise<void> {
-    /** 获取视频 => FFMPEG合成 */
-    // 如果配置了视频优先，则设置为未登录状态
     if (Config.bilibili.videopriority === true) this.islogin = false
 
     // 单个视频取 bvid，番剧取 season_id。两个用途：临时文件名的区分段，以及
@@ -1368,7 +1349,6 @@ export class Bilibili extends Base {
       ? infoData && 'data' in infoData ? infoData.data.bvid : undefined
       : infoData && 'result' in infoData ? infoData.result.season_id : undefined
 
-    // 如果已登录
     if (this.islogin) {
       const dash = getBilibiliDash(playUrlData)
       // 全部候选地址，不只是第一条：某个节点 403 / 404 / 被限速时下载层才有下一条可换。
@@ -1387,14 +1367,11 @@ export class Bilibili extends Base {
         return
       }
 
-      // 并行下载视频和音频
       await this.downloadMergedStream({
         videoUrl,
         audioUrl,
         videoCandidates,
         audioCandidates,
-        // 资源键带上 bvid 与流别：视频和音频是两份不同的资源，
-        // 共用一个键会让它们互相污染候选清单
         resourceKey: videoId ? `bili:${videoId}` : undefined,
         danmakuList,
         tag: String(videoId ?? Date.now())
@@ -1503,7 +1480,6 @@ export class Bilibili extends Base {
    * @returns {string} 格式化后的统计信息字符串
    */
   formatVideoStats (view: number, danmaku: number, like: number, coin: number, share: number, favorite: number): string {
-    // 计算每个数据项的文本
     const viewText = `📊 播放量: ${Common.count(view)}`
     const danmakuText = `💬 弹幕: ${Common.count(danmaku)}`
     const likeText = `👍 点赞: ${Common.count(like)}`
@@ -1511,11 +1487,9 @@ export class Bilibili extends Base {
     const shareText = `🔄 转发: ${Common.count(share)}`
     const favoriteText = `⭐ 收藏: ${Common.count(favorite)}`
 
-    // 找出第一列中最长的项的长度
     const firstColItems = [viewText, likeText, shareText]
     const maxFirstColLength = Math.max(...firstColItems.map(item => this.getStringDisplayWidth(item)))
 
-    // 构建三行文本，确保第二列对齐
     const line1 = this.alignTwoColumns(viewText, danmakuText, maxFirstColLength)
     const line2 = this.alignTwoColumns(likeText, coinText, maxFirstColLength)
     const line3 = this.alignTwoColumns(shareText, favoriteText, maxFirstColLength)
@@ -1524,23 +1498,19 @@ export class Bilibili extends Base {
   }
 
   /**
-   * 对齐两列文本
    * @param {string} col1 - 第一列文本
    * @param {string} col2 - 第二列文本
    * @param {number} targetLength - 目标长度
    * @returns {string} 对齐后的文本
    */
   alignTwoColumns (col1: string, col2: string, targetLength: number): string {
-    // 计算需要添加的空格数量
     const col1Width = this.getStringDisplayWidth(col1)
     const spacesNeeded = targetLength - col1Width + 5 // 5是两列之间的固定间距
 
-    // 添加空格使两列对齐
     return col1 + ' '.repeat(spacesNeeded) + col2
   }
 
   /**
-   * 获取字符串在显示时的实际宽度
    * 考虑到不同字符的显示宽度不同（如中文、emoji等）
    * @param {string} str - 要计算宽度的字符串
    * @returns {number} 字符串的显示宽度
@@ -1599,21 +1569,17 @@ export function replacetext (
 }
 
 /**
- * 生成图片数组
  * @param { { img_src: string }[] } pic 一个包含图片源字符串的数组
  * @returns {Object[]} imgArray - 包含图片源地址的对象数组。
  */
 export const cover = (pic: DynamicPicture[]): Array<{ image_src: string }> => {
-  // 初始化一个空数组来存放图片对象
   const imgArray: Array<{ image_src: string }> = []
-  // 遍历dycrad.item.pictures数组，将每个图片的img_src存入对象，并将该对象加入imgArray
   for (const i of pic) {
     const src = i.img_src || i.src || i.url
     // 三个字段都没有就跳过：契约要的是 string，塞 undefined 进去等于给模板埋个空 <img>
     if (!src) continue
     imgArray.push({ image_src: src })
   }
-  // 返回包含所有图片对象的数组
   return imgArray
 }
 
@@ -1711,26 +1677,20 @@ export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { ba
     // `sortedVideos[0]`（升序后的最低画质）。给个 1080P 的默认值比静默降到 240P 合理。
     const targetQuality = qualityOptions.qn || Config.bilibili.videoQuality || 80
 
-    // 尝试找到完全匹配的清晰度
     let matchedVideo = videoList.find(video => video?.id === targetQuality)
 
     // 如果没有完全匹配的清晰度，找最接近的
     if (!matchedVideo) {
-      // 按照清晰度ID排序
       const sortedVideos = [...videoList].sort((a, b) => a.id - b.id)
 
-      // 找到小于目标清晰度的最大值
       const lowerVideos = sortedVideos.filter(video => video.id < targetQuality)
       const higherVideos = sortedVideos.filter(video => video.id > targetQuality)
 
       if (lowerVideos.length > 0) {
-        // 有小于目标清晰度的，取最大的
         matchedVideo = lowerVideos[lowerVideos.length - 1]
       } else if (higherVideos.length > 0) {
-        // 没有小于目标清晰度的，取最小的
         matchedVideo = higherVideos[0]
       } else {
-        // 如果都没有，取第一个（应该不会发生）
         matchedVideo = sortedVideos[0]
       }
     }
@@ -1805,20 +1765,16 @@ export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { ba
   let selectedQuality = ''
 
   if (closestId !== null) {
-    // 找到最接近但不超过文件大小限制的视频清晰度
     const closestQuality = qnd[Number(closestId)] || '未知'
-    // 更新 OBJECT.DATA.data.accept_description
     qualityOptions.accept_description = qualityOptions.accept_description.filter(desc => desc === closestQuality)
     if (qualityOptions.accept_description.length === 0) {
       qualityOptions.accept_description = [closestQuality]
     }
-    // 找到对应的视频对象
     const video = videoList.find(video => video.id === Number(closestId))
     if (video) {
-      // 更新 OBJECT.DATA.data.dash.video 数组
       videoList = [video]
     }
-    selectedQuality = closestQuality // 设置选中的画质值
+    selectedQuality = closestQuality
   } else {
     // 没有任何清晰度符合体积上限，退回最低画质。
     //
@@ -1845,6 +1801,11 @@ export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { ba
   }
 }
 
+const getContentRangeSize = (contentRange: string | undefined): number => {
+  const match = contentRange?.match(/\/(\d+)/)
+  return match?.[1] ? parseInt(match[1], 10) : 0
+}
+
 /**
  * [bilibili] 获取视频和音频的总大小
  * @param {string} videourl - 视频流URL
@@ -1852,11 +1813,6 @@ export const bilibiliProcessVideos = async <T extends BilibiliVideoStream & { ba
  * @param {string} bvid - 视频BV号
  * @returns  返回视频和音频总大小(MB),保留2位小数
  */
-const getContentRangeSize = (contentRange: string | undefined): number => {
-  const match = contentRange?.match(/\/(\d+)/)
-  return match?.[1] ? parseInt(match[1], 10) : 0
-}
-
 export const getvideosize = async (videourl: string, audiourl: string, bvid: string): Promise<string> => {
   const videoheaders = await new Networks({
     url: videourl,

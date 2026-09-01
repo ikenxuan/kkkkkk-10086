@@ -96,7 +96,6 @@ const PLATFORM_CONFIG: PlatformConfig[] = [
 ]
 
 /**
- * 动态生成插件规则
  * @returns {Array} 返回启用的平台规则数组
  */
 const generateRules = (): Array<{ reg: RegExp, fnc: PlatformConfig['handler'] }> => {
@@ -279,19 +278,19 @@ export class kkkTools extends plugin<'message'> {
         // `#kkk录直播列表` 这种更长的中文命令会被当成本命令 —— 同一形状的 bug
         // 在下面 `prefix` 那条上已经真实发生过一次。
         { reg: /^#?kkk录直播(?![一-龥])/, fnc: 'recordLive' },
-        ...generateRules(), // 动态生成的平台规则
+        ...generateRules(),
         ...(isVideoToolEnabled(Config.app) ? [{ reg: /^(\[图片\])?$/, fnc: 'imageQrCode' }] : []),
         { reg: /^#?\d{1,2}$/, fnc: 'selectDouyinWork' },
         // 关键字后面不能紧跟汉字：这条规则没有结尾锚点，原来 `^#?kkk解析` 会把
         // `#kkk解析统计` 一起吃掉，而本 app 优先级 500 比 statistics 的 2000 靠前，
         // 且下面的 prefix() 无论有没有匹配到平台都返回 true，
         // 于是 `#kkk解析统计` 被静默截走、统计卡片从来没出过。
-        { reg: /^#?(解析|kkk解析|弹幕解析)(?![一-龥])/, fnc: 'prefix' }, // 解析功能规则
+        { reg: /^#?(解析|kkk解析|弹幕解析)(?![一-龥])/, fnc: 'prefix' },
         // 必须有 `^`：本 app 在「默认解析」开启时是 -Infinity，比任何插件都先派发，
         // 而 uploadRecord 不像 imageQrCode / selectDouyinWork 那样不认就 `return false`
         // 交还派发权——它直接去请求音乐数据并回「获取音乐数据失败」。没有锚点时
         // 任何一条正文里带 `BGM123` 的消息（含别的插件的命令）都会被截走并收到这句报错。
-        { reg: /^#?BGM(\d+)/, fnc: 'uploadRecord' }, // BGM上传功能规则
+        { reg: /^#?BGM(\d+)/, fnc: 'uploadRecord' },
         { reg: /^#?第(\d{1,3})集$/, fnc: 'next' } // 选集功能规则
       ]
     })
@@ -334,7 +333,6 @@ export class kkkTools extends plugin<'message'> {
       )
     }
 
-    // 查找匹配的平台并直接调用处理函数
     await this.dispatchPlatform(e)
     return true
   }
@@ -442,7 +440,6 @@ export class kkkTools extends plugin<'message'> {
   }
 
   /**
-   * 处理抖音链接解析
    * @param {any} e 事件对象
    * @returns {Promise<boolean>} 处理结果
    */
@@ -519,7 +516,6 @@ export class kkkTools extends plugin<'message'> {
   }
 
   /**
-   * 处理B站链接解析
    * @param {any} e 事件对象
    * @returns {Promise<boolean>} 处理结果
    */
@@ -535,7 +531,6 @@ export class kkkTools extends plugin<'message'> {
       : typeof firstMessage?.data === 'string' ? firstMessage.data : ''
     let url = (e.msg || messageFallback).replaceAll('\\', '').trim()
 
-    // 处理不同类型的B站链接
     if (url.includes('b23.tv')) {
       url = url.match(/(http:|https:)\/\/b23.tv\/[-A-Za-z\d._?%&+=/#]*/)?.[0] || url
     } else if (/bilibili\.com|bili2233\.cn/.test(url)) {
@@ -567,7 +562,6 @@ export class kkkTools extends plugin<'message'> {
   }
 
   /**
-   * 处理快手链接解析
    * @param {any} e 事件对象
    * @returns {Promise<boolean>} 处理结果
    */
@@ -588,7 +582,6 @@ export class kkkTools extends plugin<'message'> {
   }
 
   /**
-   * 处理小红书链接解析
    * @param {any} e 事件对象
    * @returns {Promise<boolean>} 处理结果
    */
@@ -616,26 +609,22 @@ export class kkkTools extends plugin<'message'> {
    */
   async uploadRecord (e: CommandEvent): Promise<boolean> {
     try {
-      // 获取音乐ID并验证
       const musicId = e.msg.match(/BGM(\d+)/)?.[1]
       if (!musicId) {
         await e.reply!('未找到有效的音乐ID')
         return false
       }
 
-      // 获取音乐数据
       const data = await douyinFetcher.fetchMusicInfo({
         music_id: musicId,
         typeMode: 'strict'
       }, Config.cookies.douyin, buildAmagiRequestConfig())
 
-      // 验证音乐数据
       if (!isDouyinMusicData(data)) {
         await e.reply!('获取音乐数据失败，可能是音乐ID错误或网络问题')
         return false
       }
 
-      // 提取音乐信息
       const { title, play_url } = data.data.music_info
       const music_url = play_url.uri
       const musicInfo = `《${title}》\n${music_url}`

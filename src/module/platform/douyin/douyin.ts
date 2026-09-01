@@ -197,7 +197,6 @@ export class DouYin extends Base {
           /** 按画质配置选中、即将下载发送的那一路视频源，卡片上的清晰度从它派生 */
           let selectedVideo: DyVideo | undefined
 
-          /** 图集 */
           let imagenum = 0
           const image_res = []
           if (!isVideo && !isArticle && hasDouyinContent('图集')) {
@@ -207,7 +206,6 @@ export class DouYin extends Base {
                 const image_data = []
                 const imageres = []
                 let image_url = ''
-                // 使用可选链和空值合并操作符确保安全访问
                 const images = VideoData.data.aweme_detail.images || []
                 const hasLiveImage = images.some(item => (item.clip_type ?? 2) !== 2)
                 const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 50, '抖音图集')
@@ -294,12 +292,10 @@ export class DouYin extends Base {
                 }
 
                 for (const [index, imageItem] of images.entries()) {
-                  // 获取图片地址，优先使用第三个URL，其次使用第二个URL
                   // 同文件上方 `:257`/`:286` 两处同字段早就写的是 `url_list?.[2]`，
                   // 只有这条漏了；`url_list` 整条缺失时它自己就是崩点。
                   image_url = at(imageItem.url_list, 2) || at(imageItem.url_list, 1) || ''
 
-                  // 处理标题，去除特殊字符
                   const processedImageUrl = await processImageUrl(image_url, title, index, {
                     Referer: 'https://www.douyin.com/',
                     Cookie: Config.cookies.douyin || ''
@@ -380,7 +376,6 @@ export class DouYin extends Base {
                     continue
                   }
 
-                  // 静态图片，clip_type为2或undefined
                   if (item.clip_type === 2 || item.clip_type === undefined) {
                     // 这行原本是 `if (item.url_list[0])`，拿来当守卫的表达式自己会抛 ——
                     // 而紧邻的 `:411` 同字段写的就是 `url_list?.[0]`。
@@ -426,10 +421,9 @@ export class DouYin extends Base {
             }
           }
 
-          /** 背景音乐 */
           if (!isArticle && VideoData.data.aweme_detail.music && hasDouyinContent('背景音乐') && !this.hasProcessedLiveImage) {
             const music = VideoData.data.aweme_detail.music
-            const music_url = getDouyinMusicUrl(music) // BGM link
+            const music_url = getDouyinMusicUrl(music)
             if (this.is_mp4 === false && Config.app.removeCache === false && music_url !== undefined) {
               try {
                 const path = Common.tempDri.images + `${g_title}/BGM.mp3`
@@ -444,7 +438,6 @@ export class DouYin extends Base {
             }
           }
 
-          /** 视频 */
           let FPS: number | undefined
           /**
            * 视频体积，评论图页头那行「视频大小」。
@@ -459,7 +452,6 @@ export class DouYin extends Base {
           let video = null
           let cover = ''
           if (isVideo) {
-            // 视频地址特殊判断：play_addr_h264、play_addr、
             video = VideoData.data.aweme_detail.video
             /*
               `bit_rate` 整条可能不下发（线上那条 `reading '0'` 就是它），所以先收成
@@ -513,7 +505,7 @@ export class DouYin extends Base {
             ].filter(Boolean)
             cover = firstUrl(video.animated_cover) || firstUrl(video.dynamic_cover) || firstUrl(video.cover_original_scale) || firstUrl(video.cover) || firstUrl(video.origin_cover)
 
-            const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 80, '抖音视频') // video title
+            const title = sanitizeFilenameSegment(VideoData.data.aweme_detail.preview_title, 80, '抖音视频')
             g_title = title
             /*
               这一行原来是 `video.bit_rate[0].play_addr.data_size` 裸取，而且它在
@@ -603,7 +595,6 @@ export class DouYin extends Base {
             }
             : undefined
 
-          /** 发送视频 */
           const sendVideo = isVideo && hasDouyinContent('视频', 'video') && sendvideofile
             ? async (): Promise<void> => {
               /*
@@ -775,7 +766,6 @@ export class DouYin extends Base {
                   }
                 )
 
-                // 评论区图片收集：把评论里出现过的图片/表情包合并转发出去
                 if (Config.douyin.commentImageCollection && commentsResult.image_url.length > 0) {
                   const imageMessages = await Promise.all(
                     commentsResult.image_url.map(async (url, index) =>
@@ -987,7 +977,6 @@ export class DouYin extends Base {
 }
 
 /**
- * 传递整数，返回x小时后的时间
  * @param {number} delay - 延迟的小时数
  * @returns {string} - 返回格式化后的时间字符串
  */
@@ -1006,7 +995,6 @@ function Time (delay: number): string {
 }
 
 /**
- * 处理抖音表情数据
  * @param {import('@ikenxuan/amagi').DyEmojiList} data 表情数据对象
  * @returns {Array<{name: string, url: string | undefined}>} 处理后的表情数组,包含name和url属性
  */

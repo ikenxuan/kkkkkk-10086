@@ -139,48 +139,6 @@ export const durationProbeArgs = (filePath: string): string[] => [
 ]
 
 /**
- * @typedef {Object} FFmpegClientOptions
- * @property {Object} VideoAudioOptions
- * @property {string} VideoAudioOptions.path
- * @property {string} VideoAudioOptions.path2
- * @property {string} VideoAudioOptions.resultPath
- * @property {(success: boolean, resultPath: string) => (boolean|Promise<boolean>)} VideoAudioOptions.callback
- * @property {Object} Video3AudioOptions
- * @property {string} Video3AudioOptions.path
- * @property {string} Video3AudioOptions.path2
- * @property {string} Video3AudioOptions.resultPath
- * @property {(success: boolean, resultPath: string) => (boolean|Promise<boolean>)} Video3AudioOptions.callback
- * @property {Object} getVideoSizeOptions
- * @property {string} getVideoSizeOptions.path
- * @property {Object} compressVideoOptions
- * @property {string} compressVideoOptions.path
- * @property {number} compressVideoOptions.targetBitrate
- * @property {number} [compressVideoOptions.maxRate]
- * @property {number} [compressVideoOptions.bufSize]
- * @property {number} [compressVideoOptions.crf]
- * @property {string} compressVideoOptions.resultPath
- */
-
-/**
- * @typedef {'二合一（视频 + 音频）' | '视频*3 + 音频' | '获取指定视频文件时长' | '压缩视频'} OperationType
- */
-
-/**
- * @typedef {'二合一（视频 + 音频）'} VideoAudioOperation
- * @typedef {'视频*3 + 音频'} Video3AudioOperation
- * @typedef {'获取指定视频文件时长'} GetVideoSizeOperation
- * @typedef {'压缩视频'} CompressVideoOperation
- */
-
-/**
- * @typedef {Object} FFHandlerOptions
- * @property {FFmpegClientOptions['VideoAudioOptions']} VideoAudioOperation
- * @property {FFmpegClientOptions['Video3AudioOptions']} Video3AudioOperation
- * @property {FFmpegClientOptions['getVideoSizeOptions']} 获取指定视频文件时长
- * @property {FFmpegClientOptions['compressVideoOptions']} 压缩视频
- */
-
-/**
  * @template {OperationType} T
  * @typedef {T extends '二合一（视频 + 音频）' ? {status: boolean, error: Error|null, stdout: string, stderr: string} : T extends '视频*3 + 音频' ? {status: boolean, error: Error|null, stdout: string, stderr: string} : T extends '获取指定视频文件时长' ? number : T extends '压缩视频' ? string : never} MergeFileResult
  */
@@ -211,7 +169,6 @@ class FFmpeg {
    * @cspell:ignore ffprobe amix aout libx noprint nokey
    */
   async FFmpeg (opt: CompressionOptions): Promise<FFmpegExecResult | number | string> {
-    // 检查ffmpeg和ffprobe是否可用
     if (!await checkFFmpegAvailable()) {
       throw new Error('FFmpeg工具未安装或不可用')
     }
@@ -831,7 +788,6 @@ function exec (
   options?: FFmpegExecOptions
 ): Promise<FFmpegExecResult | boolean> {
   return new Promise(resolve => {
-    // 打印执行日志（如果启用）
     if (options?.log) {
       logger.info([
         '[exec] 执行命令:',
@@ -847,7 +803,6 @@ function exec (
     // 执行命令。maxBuffer 保持 Node 默认的 1MB —— 迁移前的 `exec` 也是这个默认值，
     // 这轮只换执行方式、不顺手改行为。真撞到 ENOBUFS 再单独调。
     execFileCmd(file, [...args], options ?? {}, (error, stdout, stderr) => {
-      // 打印执行结果日志（如果启用）
       if (options?.log) {
         const info = stringifyError(error || undefined)
         if (info && typeof info === 'object' && 'message' in info && info.message) {
@@ -861,22 +816,18 @@ function exec (
         ].join('\n'))
       }
 
-      // 如果只需要布尔值结果
       if (options?.booleanResult) {
         return resolve((!error))
       }
 
-      // 转换输出为字符串
       stdout = stdout.toString()
       stderr = stderr.toString()
 
-      // 去除首尾空白（如果需要）
       if (options?.trim) {
         stdout = stdout.trim()
         stderr = stderr.trim()
       }
 
-      // 构建返回结果
       const value = {
         status: !error,
         error,

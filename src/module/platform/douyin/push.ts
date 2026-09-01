@@ -36,32 +36,6 @@ import type { PushDouyinAweme as DouyinAweme, DouyinDetailData, DouyinListRespon
  */
 
 /**
- * 作品详情信息
- * @typedef {Record<string, unknown>} DetailData
- * @property {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').DyUserInfo>} user_info - 博主主页信息
- * @property {{ liveStatus: 'open' | 'close', isChanged: boolean, isliving: boolean }} [liveStatus] - 直播状态信息
- * @property {import('@ikenxuan/amagi').ApiResponse<import('@ikenxuan/amagi').DyUserLiveVideos>} [live_data] - 直播数据
- */
-
-/**
- * @typedef {Object} DouyinPushItem
- * @property {string} remark - 博主的昵称
- * @property {string} sec_uid - 博主UID
- * @property {number} create_time - 作品发布时间
- * @property {Array<{groupId: string, botId: string}>} targets - 要推送到的群组和机器人ID
- * @property {'post'|'favorite'|'recommend'|'live'} [pushType] - 推送类型
- * @property {DetailData} Detail_Data - 作品详情信息
- * @property {string} avatar_img - 博主头像url
- * @property {boolean} living - 是否正在直播
- * @exports DouyinPushItem
- */
-
-/**
- * 推送列表的类型定义
- * @typedef {Record<string, DouyinPushItem>} WillBePushList
- */
-
-/**
  * 抖音基础请求头配置
  * @type {downloadFileOptions['headers']}
  */
@@ -71,7 +45,6 @@ const douyinBaseHeaders = {
   Cookie: Config.cookies.douyin
 }
 
-/** 抖音推送支持的类型，与数据库层共用同一套字面量 */
 export type { DouyinPushType } from '@/types/database'
 
 const DEFAULT_DOUYIN_PUSH_TYPES: DouyinPushType[] = ['post', 'live']
@@ -87,8 +60,6 @@ const isDouyinPushType = (value: unknown): value is DouyinPushType =>
   value === 'post' || value === 'favorite' || value === 'recommend' || value === 'live'
 
 /**
- * 把配置里的推送类型收敛成合法列表。
- *
  * 非数组、空数组、以及全部非法的情况都回退到默认值；返回的始终是新数组，
  * 调用方改动结果不会污染默认值。
  */
@@ -129,7 +100,6 @@ export class DouYinpush extends Base {
   force = false
 
   /**
-   * 构造函数
    * @param e 事件对象，定时任务触发时没有事件
    * @param force 是否强制推送
    */
@@ -145,8 +115,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 执行主要的操作流程。
-   *
    * 整段包在 `withDownloadBucket()` 里，是因为主动推送**不走** `runCoordinatedParse`，
    * 于是 ParseCoordinator 铺的下载桶上下文在这条路上是空的 —— 不套的话这一轮推送里
    * 所有下载都会落到 default 兜底桶，和别的平台抢同一份额度。
@@ -156,7 +124,6 @@ export class DouYinpush extends Base {
       try {
         await this.syncConfigToDatabase()
 
-        // 清理旧的作品缓存记录
         const deletedCount = await cleanOldDynamicCache('douyin', 1)
         if (deletedCount > 0) {
           logger.info(`已清理 ${deletedCount} 条过期的抖音作品缓存记录`)
@@ -164,7 +131,6 @@ export class DouYinpush extends Base {
 
         await this.ensureConfigFields(Config.pushlist.douyin || [])
 
-        // 检查备注信息
         if (await this.checkremark()) return true
 
         const data = await this.getDynamicList(Config.pushlist.douyin || [])
@@ -179,11 +145,7 @@ export class DouYinpush extends Base {
     })
   }
 
-  /**
-   * 同步配置文件中的订阅信息到数据库
-   */
   async syncConfigToDatabase (): Promise<void> {
-    // 如果配置文件中没有抖音推送列表，直接返回
     if (!Config.pushlist.douyin || Config.pushlist.douyin.length === 0) {
       return
     }
@@ -272,22 +234,18 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 获取并处理抖音动态数据
    * @param {WillBePushList} data - 待推送的抖音动态数据列表
    * @returns {Promise<boolean>} - 返回处理结果，成功返回true
    */
   async getdata (data: WillBePushList): Promise<boolean> {
     try {
-      // 检查数据是否为空，为空则直接返回true
       if (Object.keys(data).length === 0) return true
 
-      // 遍历每个动态数据
       for (const awemeId in data) {
         const pushItem = data[awemeId]
         if (!pushItem) continue
         const pushType = pushItem.pushType || (pushItem.living ? 'live' : 'post')
         const actualAwemeId = awemeId.replace(/^(post|favorite|recommend|live)_/, '')
-        // 记录开始处理动态的日志信息
         logger.mark(`
         ${logger.blue('开始处理并渲染抖音动态图片')}
         ${logger.blue('博主')}: ${logger.green(pushItem.remark)}${' '}
@@ -295,17 +253,11 @@ export class DouYinpush extends Base {
         ${logger.cyan('作品id')}：${logger.yellow(actualAwemeId)}
         ${logger.cyan('访问地址')}：${logger.green(pushType === 'live' ? 'https://live.douyin.com/' + (pushItem.Detail_Data?.room_data?.owner?.web_rid || '') : 'https://www.douyin.com/video/' + actualAwemeId)}`)
 
-        // 获取当前动态项
         const Detail_Data = pushItem.Detail_Data
-        // 检查是否跳过该动态
         const skip = await skipDynamic(pushItem)
-        /**
-         * @type {import('@kaguyajs/trss-yunzai-types').icqq.segment[]}
-         */
         let img: Awaited<ReturnType<typeof Render>> = false
         let iddata: DouyinIdData = { is_mp4: true, type: 'one_work' }
 
-        // 如果不跳过，获取抖音ID数据
         if (!skip) {
           iddata = await getDouyinID(Detail_Data?.share_url || 'https://live.douyin.com/' + Detail_Data?.room_data?.owner?.web_rid, false)
         }
@@ -316,9 +268,7 @@ export class DouYinpush extends Base {
         const isImage = isDouyinImage(workDetail)
         if (!pushItem.living && iddata.type === 'one_work') iddata.is_mp4 = isVideo
 
-        // 如果不跳过，处理动态内容
         if (!skip) {
-          // 处理直播推送
           if (pushItem.living && 'room_data' in pushItem.Detail_Data && Detail_Data.live_data) {
             const liveResponse = Detail_Data.live_data.data
             const livePayload = liveResponse?.data
@@ -326,7 +276,6 @@ export class DouYinpush extends Base {
             const partitionTitle = liveResponse?.partition_road_map?.partition?.title ||
               (!Array.isArray(livePayload) ? livePayload?.partition_road_map?.partition?.title : undefined)
             const profile = Detail_Data.user_info.data.user
-            // 处理直播推送
             img = await Render('douyin/live', buildDouyinLivePayload({
               anchor: profile,
               dynamicTYPE: '直播动态推送',
@@ -335,7 +284,6 @@ export class DouYinpush extends Base {
               webRid: Detail_Data.room_data?.owner?.web_rid || liveItem?.owner?.web_rid || ''
             }))
           } else {
-            // 处理普通作品推送
             const realUrl = Config.douyin?.push?.shareType === 'web' && await new Networks({
               url: workData.share_url,
               headers: {
@@ -395,7 +343,6 @@ export class DouYinpush extends Base {
         // Render 返回 false 表示本次渲染失败，保留未推送状态供下次重试。
         if (!skip && img === false) continue
 
-        // 遍历目标群组，并发送消息
         for (const target of pushItem.targets) {
           // 这条卡片是否已经「不必再重发」：被过滤跳过、发送成功、或 bot/群不存在的兜底。
           // 二次解析（视频/图集）失败不改变它 —— 卡片已经出去了，重发只会让群里看到两遍。
@@ -410,14 +357,11 @@ export class DouYinpush extends Base {
               const messageId = isRecord(status) ? status.message_id : undefined
               cardDelivered = Boolean(messageId)
 
-              // 如果是直播推送，更新直播状态
               if (pushItem.living && 'room_data' in pushItem.Detail_Data && messageId) {
                 await douyinDB?.updateLiveStatus(pushItem.sec_uid, true)
               }
 
-              // 是否一同解析该新作品？
               if (Config.douyin?.push?.parsedynamic && messageId) {
-                // 如果新作品是视频
                 if (isVideo) {
                   try {
                     /**
@@ -428,7 +372,6 @@ export class DouYinpush extends Base {
                      * 二是 `getLongLink()` 用的是完整 GET，为了拿最终 URL 把整条视频缓冲了一遍。
                      */
                     let downloadUrl = ''
-                    // 根据配置文件自动选择分辨率
                     if (Config.douyin.autoResolution) {
                       // 读 .length 不是守卫：bit_rate 缺失时这行日志自己就抛，
                       // 而且抛在下面把它交给 douyinProcessVideos 之前。
@@ -449,7 +392,6 @@ export class DouYinpush extends Base {
                         pickDouyinPlayUrl(workData.video.play_addr_h264)
                     }
                     if (!downloadUrl) throw new Error('取不到可用的视频下载地址')
-                    // 下载视频
                     await downloadVideo(this.e as BaseEvent, {
                       video_url: downloadUrl,
                       title: { timestampTitle: `tmp_${Date.now()}.mp4`, originTitle: `${workData.desc}.mp4` },
@@ -462,8 +404,7 @@ export class DouYinpush extends Base {
                   } catch (error) {
                     logger.error(error)
                   }
-                } else if (isImage && iddata.type === 'one_work') { // 如果新作品是图集
-                  /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
+                } else if (isImage && iddata.type === 'one_work') {
                   const imageres = []
                   const temp = []
                   let hasGeneratedLivePhoto = false
@@ -519,7 +460,6 @@ export class DouYinpush extends Base {
                           message: img
                         })) as never)
                         : common?.makeForwardMsg(Bot?.[botId], imageres, '作品图片')
-                      // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                       if (Bot?.[botId]?.pickGroup(groupId) && forwardMsg) {
                         await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg as never)
                       } else {
@@ -558,15 +498,13 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 根据配置文件获取用户当天的作品列表。
    * @param {douyinPushItem[]} userList - 抖音推送项列表
    * @returns {Promise<WillBePushList>} 将要推送的列表
    */
   async getDynamicList (userList: DouyinPushConfigItem[]): Promise<WillBePushList> {
-    const willbepushlist: WillBePushList = {} // 初始化将要推送的列表对象
+    const willbepushlist: WillBePushList = {}
 
     try {
-      /** 过滤掉不启用的订阅项 */
       const filteredUserList = userList.filter(item => item.switch !== false)
       for (const item of filteredUserList) {
         try {
@@ -588,7 +526,6 @@ export class DouYinpush extends Base {
             return { groupId, botId }
           }).filter(target => target.groupId && target.botId)
 
-          // 如果没有订阅群组，跳过该用户
           if (targets.length === 0) continue
 
           // 账号注销后主页接口照样有响应，但作品/直播列表恒空，再往下走等于每轮推送都白打一遍
@@ -657,7 +594,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 获取指定推送类型的作品列表。
    * @param {'post'|'favorite'|'recommend'|'live'} pushType 推送类型
    * @param {string} sec_uid 用户sec_uid
    * @param {douyinPushItem} item 推送配置
@@ -713,7 +649,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 过滤指定作品需要推送的群组。
    * @param {DouyinAweme} aweme 作品数据
    * @param {string} sec_uid 用户sec_uid
    * @param {Array<{groupId: string, botId: string}>} targets 推送目标
@@ -797,7 +732,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 构建直播推送项。
    * @param {string} sec_uid 用户sec_uid
    * @param {ApiResponse<DyUserInfo>} userinfo 用户主页数据
    * @param {douyinPushItem} item 推送配置
@@ -855,9 +789,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 检查作品是否已经推送过
-   * @async
-   * @function checkIfAlreadyPushed
    * @param {string} aweme_id - 作品ID
    * @param {string} sec_uid - 用户sec_uid
    * @param {string[]} groupIds - 群组ID列表
@@ -880,9 +811,8 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 设置或更新特定 sec_uid 的群组信息。
    * @param {DySearchInfo} data 抖音的搜索结果数据。需要接口返回的原始数据
-   * @returns {Promise<void>} 操作成功或失败的消息字符串。
+   * @returns {Promise<void>}
    */
   async setting (data: DouyinSearchResponse): Promise<void> {
     const event = this.e as DouyinPushEvent & {
@@ -892,7 +822,6 @@ export class DouYinpush extends Base {
     }
     const groupId = String(event.group_id)
     const botId = String(event.self_id)
-    // 使用数组find方法快速定位用户信息卡片，避免循环遍历导致的性能问题
     const userCard = Array.isArray(data.data)
       ? data.data.find(item => item.card_unique_name === 'user')
       : undefined
@@ -904,7 +833,6 @@ export class DouYinpush extends Base {
       throw new Error('无法获取用户sec_uid')
     }
 
-    // 顺序获取用户数据和检查订阅状态
     const UserInfoData = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
     const isSubscribed = await douyinDB?.isSubscribed(sec_uid, groupId)
 
@@ -912,7 +840,6 @@ export class DouYinpush extends Base {
       throw new Error('获取用户信息失败')
     }
 
-    // 处理抖音号：优先使用unique_id，如果为空则使用short_id
     const user_shortid = UserInfoData.data.user.unique_id || UserInfoData.data.user.short_id
     if (!user_shortid) {
       throw new Error('无法获取用户抖音号')
@@ -923,7 +850,6 @@ export class DouYinpush extends Base {
     const snapshotItem = (Config.pushlist.douyin ?? []).find(item => item.sec_uid === sec_uid)
     const isRemove = Boolean(snapshotItem?.group_id.some(entry => matchesGroup(entry, groupId)))
 
-    // 顺序执行数据库操作和消息发送
     if (isRemove) {
       if (isSubscribed) {
         await douyinDB?.unsubscribeDouyinUser(groupId, sec_uid)
@@ -935,7 +861,6 @@ export class DouYinpush extends Base {
       }
       await event.reply(`群：${event.group_name}(${groupId})\n添加成功！${UserInfoData.data.user.nickname}\n抖音号：${user_shortid}`)
 
-      // 检查推送状态：如果推送未开启，发送提示消息
       if (Config.douyin.push && Config.douyin.push.switch === false) {
         await event.reply('请发送「#kkk设置抖音推送开启」以进行推送')
       }
@@ -955,13 +880,11 @@ export class DouYinpush extends Base {
         if (!item) return list
         const groupIndex = item.group_id.findIndex(entry => matchesGroup(entry, groupId))
         if (groupIndex >= 0) item.group_id.splice(groupIndex, 1)
-        // 清理空配置：如果用户没有群组订阅了，删除整个用户配置
         if (item.group_id.length === 0) list.splice(index, 1)
         return list
       }
 
       if (item) {
-        // 添加订阅：向现有用户配置添加新群组
         if (!item.group_id.some(entry => matchesGroup(entry, groupId))) {
           item.group_id.push(`${groupId}:${botId}`)
         }
@@ -969,7 +892,6 @@ export class DouYinpush extends Base {
         return list
       }
 
-      // 新增用户：创建新的用户订阅配置
       list.push({
         switch: true,
         sec_uid,
@@ -984,7 +906,6 @@ export class DouYinpush extends Base {
     await this.renderPushList()
   }
 
-  /** 渲染推送列表图片 */
   async renderPushList (): Promise<void> {
     const event = this.e as DouyinPushEvent & {
       group_id: string | number
@@ -993,7 +914,6 @@ export class DouYinpush extends Base {
     await this.syncConfigToDatabase()
     const groupId = String(event.group_id)
 
-    // 获取当前群组的所有订阅
     const subscriptions = await douyinDB?.getGroupSubscriptions(groupId)
 
     if (!subscriptions || subscriptions.length === 0) {
@@ -1001,7 +921,6 @@ export class DouYinpush extends Base {
       return
     }
 
-    /** @type {Record<string, string>[]} */
     const renderOpt = []
 
     for (const subscription of subscriptions) {
@@ -1033,7 +952,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 强制推送
    * @param {WillBePushList} data 处理完成的推送列表
    */
   async forcepush (data: WillBePushList): Promise<void> {
@@ -1041,20 +959,15 @@ export class DouYinpush extends Base {
     const currentGroupId = String(event.group_id || '')
     const currentBotId = String(event.self_id || '')
 
-    // 如果不是全部强制推送，需要过滤数据
     if (!event.msg?.includes('全部')) {
-      // 获取当前群组订阅的所有抖音用户
       const subscriptions = await douyinDB?.getGroupSubscriptions(currentGroupId)
       const subscribedUids = subscriptions?.map(sub => sub.sec_uid) || []
 
-      // 创建一个新的推送列表，只包含当前群组订阅的用户的作品
       const filteredData: WillBePushList = {}
 
       for (const awemeId in data) {
-        // 检查该作品的用户是否被当前群组订阅
         const pushItem = data[awemeId]
         if (pushItem && subscribedUids.includes(pushItem.sec_uid)) {
-          // 复制该作品到过滤后的列表，并将目标设置为当前群组
           filteredData[awemeId] = {
             ...pushItem,
             targets: [{
@@ -1065,17 +978,12 @@ export class DouYinpush extends Base {
         }
       }
 
-      // 使用过滤后的数据进行推送
       await this.getdata(filteredData)
     } else {
-      // 全部强制推送，保持原有逻辑
       await this.getdata(data)
     }
   }
 
-  /**
-   * 检查并更新备注信息
-   */
   async checkremark (): Promise<boolean> {
     const pushList = Config.pushlist.douyin
     if (!pushList || pushList.length === 0) return true
@@ -1115,7 +1023,6 @@ export class DouYinpush extends Base {
   }
 
   /**
-   * 处理作品描述
    * @param {DouyinDetailData} Detail_Data - 作品详细数据
    * @param {string} desc - 作品描述文本
    * @returns {string} 处理后的描述文本
@@ -1134,14 +1041,12 @@ export class DouYinpush extends Base {
  * @returns 是否应该跳过推送
  */
 export const skipDynamic = async (PushItem: DouyinSkipCheckItem): Promise<boolean> => {
-  // 如果是直播动态，不跳过
   if ('liveStatus' in PushItem.Detail_Data) {
     return false
   }
 
   const tags: string[] = []
 
-  // 提取标签
   if (PushItem.Detail_Data.text_extra) {
     for (const item of PushItem.Detail_Data.text_extra) {
       if (item.hashtag_name) {

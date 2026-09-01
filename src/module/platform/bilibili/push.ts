@@ -82,20 +82,16 @@ const createLiveDynamicItem = (
  */
 
 /**
- * 下载文件选项
  * @typedef {import('../../utils/Base.js').downloadFileOptions} downloadFileOptions
  */
 
 /**
- * 定义推送列表项的接口
  * @typedef {import('../../utils/Config.js').bilibiliPushItem} bilibiliPushItem
  */
 
-/** 已支持推送的动态类型 */
 export { DynamicType }
 
 /**
- * 每个推送项的类型定义
  * @typedef {Object} BilibiliPushItem
  * @property {string} remark - 该UP主的昵称
  * @property {number} host_mid - UP主UID
@@ -107,7 +103,6 @@ export { DynamicType }
  */
 
 /**
- * Bilibili基础请求头配置
  * @type {downloadFileOptions['headers']}
  */
 const bilibiliBaseHeaders = {
@@ -159,7 +154,6 @@ export class Bilibilipush extends Base {
   declare e: BilibiliPushEvent | undefined
   force = false
   /**
-   * 构造函数
    * @param {*} [e] - 事件对象，定时任务触发时没有事件
    * @param {boolean} [force=false] - 是否强制推送
    */
@@ -175,9 +169,6 @@ export class Bilibilipush extends Base {
   }
 
   /**
-   * 执行主要的操作流程
-   */
-  /**
    * 执行主要的操作流程。
    *
    * 整段包在 `withDownloadBucket()` 里，是因为主动推送**不走** `runCoordinatedParse`，
@@ -189,7 +180,6 @@ export class Bilibilipush extends Base {
       try {
         await this.syncConfigToDatabase()
         this.ensureConfigFields(Config.pushlist.bilibili || [])
-        // 清理旧的动态缓存记录
         const deletedCount = await cleanOldDynamicCache('bilibili', 1)
         if (deletedCount > 0) {
           logger.info(`已清理 ${deletedCount} 条过期的B站动态缓存记录`)
@@ -211,11 +201,7 @@ export class Bilibilipush extends Base {
     })
   }
 
-  /**
-   * 同步配置文件中的订阅信息到数据库
-   */
   async syncConfigToDatabase (): Promise<void> {
-    // 如果配置文件中没有B站推送列表，直接返回
     if (!Config.pushlist.bilibili || Config.pushlist.bilibili.length === 0) {
       return
     }
@@ -280,7 +266,6 @@ export class Bilibilipush extends Base {
 
         let skip = await skipDynamic(dynamicItem)
         let send_video = true
-        /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
         let img: RenderResult = []
         let dycrad: BilibiliVideoInfo | undefined
         let articleForwardPayload: {
@@ -656,7 +641,6 @@ export class Bilibilipush extends Base {
           continue
         }
 
-        // 遍历 targets 数组，并发送消息
         for (const target of dynamicItem.targets) {
           // 这条卡片是否已经「不必再重发」：被过滤跳过、发送成功、或 bot/群不存在的兜底。
           // 二次解析（视频/图集/专栏）失败不改变它 —— 卡片已经出去了，重发只会让群里看到两遍。
@@ -712,13 +696,11 @@ export class Bilibilipush extends Base {
                       }, Config.cookies.bilibili, buildAmagiRequestConfig())
                       const playUrlPayload = getBilibiliPayload(playUrlData)
                       const playUrlDash = getBilibiliDash(playUrlData)
-                      /** 提取出视频流信息对象，并排除清晰度重复的视频流 */
-                      const simplify = (playUrlDash.video || []).filter((/** @type {{id: number}} */item, /** @type {number} */index, /** @type {{id: number}[]} */self) => {
-                        return self.findIndex((/** @type {{id: number}} */ t) => {
+                      const simplify = (playUrlDash.video || []).filter((item, index, self) => {
+                        return self.findIndex((t) => {
                           return t.id === item.id
                         }) === index
                       })
-                      /** 替换原始的视频信息对象 */
                       playUrlDash.video = simplify
                       const correctList = await bilibiliProcessVideos({
                         accept_description: playUrlPayload.accept_description ?? [],
@@ -728,7 +710,6 @@ export class Bilibilipush extends Base {
                       }, simplify, playUrlDash.audio?.[0]?.base_url || '')
                       playUrlDash.video = correctList.videoList
                       playUrlPayload.accept_description = correctList.accept_description
-                      /** 获取第一个视频流的大小 */
                       videoSize = await getvideosize(
                         correctList.videoList?.[0]?.base_url || '',
                         playUrlDash.audio?.[0]?.base_url || '',
@@ -769,7 +750,7 @@ export class Bilibilipush extends Base {
                           path: mp4File.filepath,
                           path2: mp3File.filepath,
                           resultPath: Common.tempDri.video + `Bil_Result_${infoData.data.data.bvid}.mp4`,
-                          callback: async (/** @type {boolean} */ success, /** @type {string} */ resultPath) => {
+                          callback: async (success, resultPath) => {
                             if (success) {
                               const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
                               fs.renameSync(resultPath, filePath)
@@ -781,7 +762,6 @@ export class Bilibilipush extends Base {
                               const stats = fs.statSync(filePath)
                               const fileSizeInMB = Number((stats.size / (1024 * 1024)).toFixed(2))
                               if (fileSizeInMB > (Config.upload?.groupfilevalue || 100)) {
-                                // 使用文件上传
                                 return await uploadFile(
                                   this.e ?? {},
                                   { filepath: filePath, totalBytes: fileSizeInMB, originTitle: sanitizeFilenameSegment(infoData.data.data.desc, 50, 'B站视频') },
@@ -809,7 +789,6 @@ export class Bilibilipush extends Base {
                     break
                   }
                   case 'DYNAMIC_TYPE_DRAW': {
-                    /** @type {import ('@kaguyajs/trss-yunzai-types').icqq.segment[]} */
                     const imgArray = []
                     const tempFiles = []
                     let hasGeneratedLivePhoto = false
@@ -871,7 +850,6 @@ export class Bilibilipush extends Base {
                             message: img
                           })) as ForwardNodes)
                           : common?.makeForwardMsg(Bot?.[botId], imgArray, '动态图片')
-                        // 如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
                         if (Bot?.[botId]?.pickGroup(groupId) && forwardMsg) {
                           await Bot[botId].pickGroup(groupId).sendMsg(forwardMsg as GroupSendable)
                         } else {
@@ -919,11 +897,6 @@ export class Bilibilipush extends Base {
     return true
   }
 
-  /**
-   * 根据配置文件获取UP当天的动态列表。
-   * @param {bilibiliPushItem[]} userList - 用户列表
-   * @returns {Promise<{willbepushlist: WillBePushList}>}
-   */
   async getDirectLivePushItems (
     userList: BilibiliPushConfigItem[]
   ): Promise<{ handledUids: Set<number>, willBePushList: WillBePushList }> {
@@ -1040,13 +1013,16 @@ export class Bilibilipush extends Base {
     }
   }
 
+  /**
+   * 根据配置文件获取UP当天的动态列表。
+   * @param {bilibiliPushItem[]} userList - 用户列表
+   * @returns {Promise<{willbepushlist: WillBePushList}>}
+   */
   async getDynamicList (userList: BilibiliPushConfigItem[]): Promise<{ willbepushlist: WillBePushList }> {
     const directLiveItems = await this.getDirectLivePushItems(userList)
-    /** @type {WillBePushList} */
     const willbepushlist: WillBePushList = { ...directLiveItems.willBePushList }
 
     try {
-      /** 过滤掉不启用的订阅项 */
       const filteredUserList = userList.filter(item => item.switch !== false)
       for (const item of filteredUserList) {
         try {
@@ -1062,20 +1038,17 @@ export class Bilibilipush extends Base {
           this.pushContext = { groupWithBot: item.group_id }
           const dynamic_list = asAmagiResponse<BiliUserDynamic>(await this.amagi.bilibili.fetchUserDynamicList({ host_mid: item.host_mid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()))
           if (dynamic_list.data.data.items.length > 0) {
-            // 遍历接口返回的视频列表
             for (const dynamic of dynamic_list.data.data.items) {
               const now = Date.now()
-              // 获取动态发布时间戳(毫秒)
               const createTime = dynamic.modules.module_author.pub_ts * 1000
               const timeDifference = (now - createTime)
 
-              const is_top = dynamic.modules.module_tag?.text === '置顶' // 是否为置顶
-              let shouldPush = false // 是否列入推送数组
+              const is_top = dynamic.modules.module_tag?.text === '置顶'
+              let shouldPush = false
 
               const timeDiffSeconds = Math.round(timeDifference / 1000)
               const timeDiffHours = Math.round((timeDifference / 1000 / 60 / 60) * 100) / 100 // 保留2位小数
 
-              // 条件判断，以下任何一项成立都将进行推送：如果是置顶且发布时间在一天内 || 如果是置顶作品且有新的群组且发布时间在一天内 || 如果有新的群组且发布时间在一天内
               logger.debug(`
                 前期获取该动态基本信息：
                 UP主：${dynamic.modules.module_author.name}
@@ -1095,14 +1068,12 @@ export class Bilibilipush extends Base {
                 logger.debug(logger.yellow(`根据以上判断，shoulPush 为 false，跳过该动态：https://t.bilibili.com/${dynamic.id_str}\n`))
               }
 
-              // 如果 shouldPush 为 true，或该作品距现在的时间差小于一天，则将该动态添加到 willbepushlist 中
               if (timeDifference < 86400000 || shouldPush) {
                 if (!allowedDynamicTypes.has(dynamic.type)) {
                   logger.debug(`UP主 ${item.remark || item.host_mid} 的动态 ${dynamic.id_str} 类型为「${dynamic.type}」，不在推送类型配置中，跳过`)
                   continue
                 }
 
-                // 将群组ID和机器人ID分离
                 const targets = item.group_id.map(groupWithBot => {
                   const [groupId, botId] = groupWithBot.split(':')
                   return { groupId: groupId || '', botId: botId || '' }
@@ -1112,14 +1083,13 @@ export class Bilibilipush extends Base {
                   ? await this.resolveLiveDynamicCacheId(dynamic, item.host_mid)
                   : dynamic.id_str
 
-                // 确保 willbepushlist[pushId] 是一个对象
                 if (!willbepushlist[pushId]) {
                   willbepushlist[pushId] = {
                     remark: item?.remark || dynamic.modules.module_author.name,
                     host_mid: item.host_mid,
                     create_time: dynamic.modules.module_author.pub_ts,
                     targets,
-                    Dynamic_Data: dynamic, // 存储 dynamic 对象
+                    Dynamic_Data: dynamic,
                     avatar_img: dynamic.modules.module_author.face,
                     dynamic_type: dynamic.type
                   }
@@ -1156,28 +1126,22 @@ export class Bilibilipush extends Base {
    * @returns {Promise<WillBePushList>} 更新后的推送列表
    */
   async excludeAlreadyPushed (willBePushList: WillBePushList): Promise<WillBePushList> {
-    // 遍历推送列表中的作品ID
     for (const dynamicId in willBePushList) {
       const pushItem = willBePushList[dynamicId]
       if (!pushItem) continue
       const newTargets: BilibiliPushTarget[] = []
 
-      // 遍历作品对应的目标群组
       for (const target of pushItem.targets) {
-        // 检查该动态是否已经推送给该群组
         const isPushed = await bilibiliDB?.isDynamicPushed(dynamicId, pushItem.host_mid, target.groupId)
 
-        // 如果未被推送过，则保留此目标
         if (!isPushed) {
           newTargets.push(target)
         }
       }
 
-      // 更新作品的目标数组
       if (newTargets.length > 0) {
         pushItem.targets = newTargets
       } else {
-        // 如果没有剩余目标，移除该作品
         delete willBePushList[dynamicId]
       }
     }
@@ -1197,7 +1161,6 @@ export class Bilibilipush extends Base {
     const groupId = String(event.group_id ?? '')
     const botId = String(event.self_id ?? '')
 
-    // 检查该群组是否已订阅该UP主
     const isSubscribed = await bilibiliDB?.isSubscribed(host_mid, groupId)
 
     // 这条命令是开关式的：群里已经订阅了就取消，没订阅就添加。判断用快照就够 ——
@@ -1215,7 +1178,6 @@ export class Bilibilipush extends Base {
       await bilibiliDB?.subscribeBilibiliUser(groupId, botId, host_mid, data.data.card.name)
       await event.reply?.(`群：${event.group_name ?? ''}(${groupId})\n添加成功！${data.data.card.name}\nUID：${host_mid}`)
 
-      // 检查推送状态
       if (Config.bilibili?.push?.switch === false) {
         await event.reply?.('请发送「#kkk设置B站推送开启」以进行推送')
       }
@@ -1235,7 +1197,6 @@ export class Bilibilipush extends Base {
         if (!item) return list
         const groupIndex = item.group_id.findIndex(entry => matchesGroup(entry, groupId))
         if (groupIndex >= 0) item.group_id.splice(groupIndex, 1)
-        // 如果删除后 group_id 数组为空，则删除整个条目
         if (item.group_id.length === 0) list.splice(index, 1)
         return list
       }
@@ -1248,7 +1209,6 @@ export class Bilibilipush extends Base {
         return list
       }
 
-      // 不存在相同的 host_mid，新增一个配置项
       list.push({
         switch: true,
         host_mid,
@@ -1264,7 +1224,6 @@ export class Bilibilipush extends Base {
 
   /**
    * 检查并更新配置文件中指定用户的备注信息。
-   * 该函数会遍历配置文件中的用户列表，对于没有备注或备注为空的用户，会从外部数据源获取其备注信息，并更新到配置文件中。
    */
   async checkremark (): Promise<boolean> {
     const pushList = Config.pushlist.bilibili
@@ -1275,7 +1234,6 @@ export class Bilibilipush extends Base {
     const remarks = new Map<number, string>()
     for (const item of pushList) {
       if (item.remark !== undefined && item.remark !== '') continue
-      // 从外部数据源获取用户备注信息
       const resp = asAmagiResponse<BiliUserProfile>(await this.amagi.bilibili.fetchUserCard({ host_mid: item.host_mid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()))
       remarks.set(item.host_mid, resp.data.data.card.name)
     }
@@ -1300,7 +1258,6 @@ export class Bilibilipush extends Base {
   }
 
   /**
-   * 强制推送
    * @param {WillBePushList} data - 处理完成的推送列表
    */
   async forcepush (data: WillBePushList): Promise<void> {
@@ -1309,20 +1266,15 @@ export class Bilibilipush extends Base {
     const currentGroupId = String(event.group_id || '')
     const currentBotId = String(event.self_id || '')
 
-    // 如果不是全部强制推送，需要过滤数据
     if (!(event.msg ?? '').includes('全部')) {
-      // 获取当前群组订阅的所有UP主
       const subscriptions = await bilibiliDB?.getGroupSubscriptions(currentGroupId)
       const subscribedUids = subscriptions?.map(sub => sub.host_mid) || []
 
-      /** 创建一个新的推送列表，只包含当前群组订阅的UP主的动态 */
       const filteredData: WillBePushList = {}
 
       for (const dynamicId in data) {
         const item = data[dynamicId]
-        // 检查该动态的UP主是否被当前群组订阅
         if (item && subscribedUids.includes(item.host_mid)) {
-          // 复制该动态到过滤后的列表，并将目标设置为当前群组
           filteredData[dynamicId] = {
             ...item,
             targets: [{
@@ -1333,20 +1285,16 @@ export class Bilibilipush extends Base {
         }
       }
 
-      // 使用过滤后的数据进行推送
       await this.getdata(filteredData)
     } else {
-      // 全部强制推送，保持原有逻辑
       await this.getdata(data)
     }
   }
 
-  /** 渲染推送列表图片 */
   async renderPushList (): Promise<void> {
     const event = this.e
     if (!event) return
     await this.syncConfigToDatabase()
-    // 获取当前群组的所有订阅
     const subscriptions = await bilibiliDB?.getGroupSubscriptions(String(event.group_id ?? ''))
 
     if (!subscriptions || subscriptions.length === 0) {
@@ -1354,10 +1302,8 @@ export class Bilibilipush extends Base {
       return
     }
 
-    /** 用户的今日动态列表 */
     const renderOpt = []
 
-    // 获取所有订阅UP主的信息
     for (const subscription of subscriptions) {
       const host_mid = subscription.host_mid
       const userInfo = asAmagiResponse<BiliUserProfile>(await this.amagi.bilibili.fetchUserCard({ host_mid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()))
@@ -1389,7 +1335,6 @@ export class Bilibilipush extends Base {
 }
 
 /**
- * 处理并提取表情数据，返回一个包含表情名称和URL的对象数组。
  * @param {unknown[]} data - 表情数据的数组，每个元素包含一个表情包的信息
  * @returns {Array<{text: string, url: string}>} 返回一个对象数组，每个对象包含text(表情名称)和url(表情图片地址)属性
  */
@@ -1415,7 +1360,6 @@ export const extractEmojisData = (data: unknown): Array<{ text: string, url: str
 export const skipDynamic = async (PushItem: BilibiliFilterPushItem): Promise<boolean> => {
   const tags: string[] = []
 
-  // 提取标签
   const moduleDynamic = PushItem.Dynamic_Data.modules?.module_dynamic
   if (moduleDynamic?.desc?.rich_text_nodes) {
     for (const node of moduleDynamic.desc.rich_text_nodes) {
@@ -1427,7 +1371,6 @@ export const skipDynamic = async (PushItem: BilibiliFilterPushItem): Promise<boo
     }
   }
 
-  // 检查转发的原动态标签
   const originalMajor = PushItem.Dynamic_Data.orig?.modules?.module_dynamic?.major
   if (PushItem.Dynamic_Data.type === DynamicType.FORWARD && originalMajor) {
     const majorType = 'type' in originalMajor ? originalMajor.type : undefined

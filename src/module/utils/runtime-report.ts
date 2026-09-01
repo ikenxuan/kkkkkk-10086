@@ -345,8 +345,9 @@ export const collectRuntimeReport = (event: MessageEvent) => {
     concurrency: {
       cache: {
         enabled: cacheSnapshot.enabled,
-        // 一次查询都还没发生时，命中率是 0/0。报「0.0%」会被读成「缓存不工作」，
-        // 所以单独给模板一个标记，让它显示「尚未产生请求」而不是一个假的坏指标。
+        // withApiCache 目前**没有生产调用点**（见 ApiCache.ts 头部），也没人注册过
+        // enabled 解析器，所以 enabled 恒为 true 而各项计数恒为 0、sampled 恒为 false。
+        // 这个标记让模板显示「尚未产生请求」，而不是印一个 0/0 算出来的 0.0% 命中率。
         sampled: cacheLookups > 0,
         hitRate: formatPercent(cacheSnapshot.hitRate),
         hits: cacheSnapshot.hits,
