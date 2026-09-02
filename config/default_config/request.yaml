@@ -1,12 +1,6 @@
 # 请求超时时间，单位：毫秒
 timeout: 30000
 
-# 每次 Amagi 尝试的硬超时，单位：毫秒，最多一分钟
-amagiTimeout: 60000
-
-# 初次请求之后的重试次数
-amagiMaxRetries: 2
-
 # 用户代理
 User-Agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0'
 
