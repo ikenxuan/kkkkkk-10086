@@ -363,15 +363,24 @@ describe('视频解析路径的 cookie 实参（Bilibili.RESOURCES one_video）'
 })
 
 describe('动态解析路径的 cookie 实参（Bilibili.RESOURCES dynamic_info）', () => {
+  /*
+    走纯文动态而不是 `DYNAMIC_TYPE_UNSUPPORTED`：`fetchUserCard` 现在是懒取的
+    （挪进了正文支线，见 bilibili.ts 的 getUserCard），落进 switch 的 default
+    分支压根不会碰它，那样这条断言会变成「断言一个没人调用的方法」。
+  */
   const dynamicDetail = {
     data: {
       data: {
+        follower: 1,
         item: {
           id_str: 'dyn-1',
-          // 落进 switch 的 default 分支：这组用例只关心 default 之前那三次取数
-          type: 'DYNAMIC_TYPE_UNSUPPORTED',
+          type: 'DYNAMIC_TYPE_WORD',
           basic: { comment_id_str: '123', rid_str: '123' },
-          modules: { module_author: { mid: 789 } }
+          modules: {
+            module_author: { mid: 789, face: '', pendant: { image: '' }, pub_time: '刚刚' },
+            module_dynamic: { major: { opus: { summary: { text: '正文', rich_text_nodes: [] } } } },
+            module_stat: { like: { count: 0 }, comment: { count: 0 }, forward: { count: 0 } }
+          }
         }
       }
     }

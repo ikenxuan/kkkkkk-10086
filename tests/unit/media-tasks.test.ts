@@ -340,23 +340,31 @@ describe('resolveMediaTaskTimeoutMs', () => {
   })
 
   /**
-   * douyin / bilibili 的调用点不许被顺手放宽 —— 它们的视频上传支线现在正靠 60s
-   * 默认值拦卡死。源码级钉死比行为级便宜也更直接。
+   * douyin / bilibili 的**视频**支线不许被顺手放宽 —— 它现在正靠 60s 默认值拦卡死的上传。
+   * 源码级钉死比行为级便宜也更直接。
    *
-   * 正则写成 `/timeout_?ms/i` 而不是 `toContain('timeoutMs')`：后者漏得过
-   * `taskTimeoutMs`（大写的 T）和 `VIDEO_DOWNLOAD_TIMEOUT_MS`（带下划线），
-   * 而这两个恰恰是最可能被顺手加进去的写法。两个文件里现存的 `timeoutSeconds`
-   * 不匹配这个模式，所以它不会误伤。
+   * 这条原来是「整个文件里不许出现 timeout_?ms」的一刀切，那是因为当时两个调用点
+   * 一个覆盖都没有。抖音的图文正文支线和 B站动态的图片支线（都是整批实况图，工作量
+   * 线性于图数）之后必须按图数放宽，所以判据收紧到它真正保护的东西上：
+   *
+   * - 全局 `timeoutMs` 一律禁止 —— 它会把 video 一起放宽。用负向后视排除
+   *   `taskTimeoutMs`，这样写在同一行里也躲不过。
+   * - `taskTimeoutMs` 里出现的支线名必须和白名单**逐字相等**，多一个少一个都报。
+   *   两个文件都只放行 `image`，所以给它放宽不会顺带给 video 开门。
    */
   it.each([
-    'douyin/douyin.ts',
-    'bilibili/bilibili.ts'
-  ])('keeps %s free of any media task timeout override', file => {
+    ['douyin/douyin.ts', ['image']],
+    ['bilibili/bilibili.ts', ['image']]
+  ] as const)('keeps the %s video branch on the guard default', (file, allowedOverrides) => {
     const source = readFileSync(new URL(`../../src/module/platform/${file}`, import.meta.url), 'utf8')
 
     // 先确认真读到了那个调用点，别让文件改名把这条变成空断言
     expect(source).toContain('runMediaTasks(')
-    expect(source).not.toMatch(/timeout_?ms/i)
+    expect(source).not.toMatch(/(?<!task)timeoutMs:/)
+
+    const overrides = [...source.matchAll(/taskTimeoutMs:\s*\{([^}]*)\}/g)]
+      .flatMap(([, body]) => [...body.matchAll(/\b(poster|video|image|comment)\s*:/g)].map(([, name]) => name))
+    expect(overrides).toEqual([...allowedOverrides])
   })
 })
 

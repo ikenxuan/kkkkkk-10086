@@ -20,7 +20,7 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import type { LivePhotoBatchItem } from '@/module/platform/common/types'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
-import { runMediaTasks } from '@/module/utils/MediaTasks'
+import { livePhotoBatchTimeoutMs, type MediaTaskName, runMediaTasks } from '@/module/utils/MediaTasks'
 import { isSoftFailure, softFetch, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
 import fs from 'fs'
@@ -54,6 +54,14 @@ const { bilibiliApiUrls, DynamicType, AdditionalType } = loadAmagiRuntime()
  * `szbdyd.com` 是另一个 PCDN 域，判定方式相同。
  */
 const BILIBILI_PCDN_HOST = /(^|\.)(mcdn\.bilivideo\.cn|szbdyd\.com)$/i
+
+/** `dynamic_info` 三条支线的失败日志文案，键就是 `MediaTaskName` */
+const DYNAMIC_TASK_LABELS: Record<MediaTaskName, string> = {
+  poster: '正文卡渲染与发送',
+  video: '视频下载与发送',
+  image: '图片下载与发送',
+  comment: '评论图渲染与发送'
+}
 
 /** 一路流上的全部地址，按「主地址在前」排好。两种流的键名不同，见 {@link BilibiliStreamUrls.url}。 */
 const readStreamUrls = (stream: BilibiliStreamUrls | undefined): string[] =>
@@ -617,22 +625,44 @@ export class Bilibili extends Base {
             break
           }
           const dynamicInfo = await this.amagi.bilibili.fetchDynamicDetail({ dynamic_id: iddata.dynamic_id, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as DynamicInfoResponse
-          // 整个 dynamic_info 分支共用这一个有效数量：下面取数、以及各动态类型里
-          // 「要不要发评论图」的判断都得用它，不能一半读新键一半读旧键。
+          /*
+            评论图的唯一闸门，四种动态类型共用。
+
+            原来只有 DRAW 分支查了 `hasBilibiliContent('评论图', 'comment')`，WORD / AV /
+            ARTICLE 三个分支只查 `commentLimit > 0` —— 用户在面板里关掉「评论图」，那三种
+            动态照样出评论卡；而且不管开关如何，下面这一跳都照发，白费一次请求。
+            闸门收到取数这里之后，`commentsData` 这个哨兵就是四个分支唯一要看的东西。
+          */
           const commentLimit = bilibiliCommentLimit()
-          const rawCommentsData: CommentsResponse | false = dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
+          let rawCommentsData: CommentsResponse | false = false
+          if (
+            hasBilibiliContent('评论图', 'comment') &&
+            dynamicInfo.data.data.item.type !== DynamicType.LIVE_RCMD &&
             commentLimit > 0
-            // 同上：下面的 isSoftFailure 读返回值，裸 fetcher 会抛，所以这里也要包。
-            ? await softFetch(
-              async () => await this.amagi.bilibili.fetchComments({
-                type: mapping_table(dynamicInfo.data.data.item.type),
-                oid: oid(dynamicInfo.data),
-                number: commentLimit,
-                typeMode: 'strict'
-              }, '', buildAmagiRequestConfig()),
-              SOFT_ERROR_CODES.bilibili
-            ) as CommentsResponse
-            : false
+          ) {
+            try {
+              // 同上：下面的 isSoftFailure 读返回值，裸 fetcher 会抛，所以这里也要包。
+              rawCommentsData = await softFetch(
+                async () => await this.amagi.bilibili.fetchComments({
+                  type: mapping_table(dynamicInfo.data.data.item.type),
+                  oid: oid(dynamicInfo.data),
+                  number: commentLimit,
+                  typeMode: 'strict'
+                }, '', buildAmagiRequestConfig()),
+                SOFT_ERROR_CODES.bilibili
+              ) as CommentsResponse
+            } catch (error) {
+              /*
+                白名单外的硬失败（-352 风控、超时、其它业务码）也塌回 `false`。
+
+                这一跳原来是裸 await，而 `dynamic_info` 整条是串行的、没接 runMediaTasks，
+                于是它一抛就是**整条动态都不发**：图文、纯图、纯文、转发、专栏一张都出不来。
+                评论图是附加内容，取不到只该少一张卡。抖音 one_work 踩过同一个坑
+                （`fix(douyin): 评论取数搬进支线闭包`）。
+              */
+              logger.error('[Bilibili] 动态评论取数失败，本次不发评论图', error)
+            }
+          }
           /*
             软失败（UP 主关了评论区）塌回 `false` 这个既有哨兵，下面各动态类型里
             `&& commentsData` 那几处守卫就会照原样跳过评论块 —— 不塌的话它是个真对象，
@@ -643,130 +673,153 @@ export class Bilibili extends Base {
             isSoftFailure(rawCommentsData, SOFT_ERROR_CODES.bilibili)
           if (commentsSoftClosed) await this.e.reply('UP主已关闭评论区，无法获取评论')
           const commentsData: CommentsResponse | false = commentsSoftClosed ? false : rawCommentsData
-          const userProfileData = await this.amagi.bilibili.fetchUserCard({ host_mid: Number(dynamicInfo.data.data.item.modules.module_author.mid), typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as UserProfileResponse
+          /**
+           * 评论图渲染 + 发送。四种动态类型下都是同一张卡，只有 `share_url` / `ImageLength` 不同。
+           *
+           * 这里**不再**自己 try/catch：它已经是 `runDynamicTasks` 里的 comment 支线，
+           * 失败由 runMediaTasks 逐支线上报，吞在这里等于让那条支线永远显示成功。
+           */
+          const sendCommentCard = async (options: { share_url: string, ImageLength: number }): Promise<void> => {
+            if (!commentsData) return
+            const commentsdata = bilibiliComments(commentsData.data)
+            await this.e.reply(await Render('bilibili/comment', {
+              Type: '动态',
+              CommentsData: commentsdata,
+              CommentLength: String(commentsdata?.length || 0),
+              share_url: options.share_url,
+              ImageLength: options.ImageLength,
+              // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
+              Resolution: null,
+              shareurl: '动态分享链接'
+            }))
+          }
+
+          /**
+           * UP 主名片：懒取 + 记忆化。
+           *
+           * 原来它是 switch 之前的裸 await，而六种动态类型的正文卡都读它 ——
+           * 这一跳挂掉（风控、超时）整条动态一张卡都不发。搬进正文支线之后
+           * 它只能带走正文，图片和评论卡照发。记忆化是因为转发动态的嵌套分支会再读一次。
+           */
+          let userCardPromise: Promise<UserProfileResponse> | undefined
+          const getUserCard = async (): Promise<UserProfileResponse> => {
+            userCardPromise ??= this.amagi.bilibili.fetchUserCard({
+              host_mid: Number(dynamicInfo.data.data.item.modules.module_author.mid),
+              typeMode: 'strict'
+            }, Config.cookies.bilibili, buildAmagiRequestConfig()) as Promise<UserProfileResponse>
+            return await userCardPromise
+          }
+
+          /**
+           * 一种动态类型的收尾：正文（`poster`）、图片（`image`）、评论卡（`comment`）并发跑，
+           * 谁先好谁先发，一条失败也不影响其它两条。
+           *
+           * `dynamic_info` 原来整条是串行的、压根没接 runMediaTasks：图片处理一抛正文卡就没了，
+           * 正文卡一抛评论卡就没了（AV 动态反过来，评论卡排在正文之前）。
+           */
+          const runDynamicTasks = async (tasks: {
+            poster?: () => Promise<void>
+            image?: () => Promise<void>
+            comment: { share_url: string, ImageLength: number }
+            imageCount?: number
+          }): Promise<void> => {
+            await runMediaTasks({
+              poster: tasks.poster,
+              image: tasks.image,
+              comment: async () => { await sendCommentCard(tasks.comment) }
+            }, {
+              // 图片支线含实况图生成（下载 + ffmpeg），工作量线性于图数，同 douyin/小红书口径
+              taskTimeoutMs: { image: livePhotoBatchTimeoutMs(tasks.imageCount ?? 0) },
+              onTaskFailure: ({ task, error }) => {
+                logger.error(`[Bilibili] 动态${DYNAMIC_TASK_LABELS[task]}任务失败`, error)
+              }
+            })
+          }
 
           switch (dynamicInfo.data.data.item.type) {
             /** 图文、纯图 */
             case DynamicType.DRAW: {
-              const imgArray: unknown[] = []
-              const tempFiles: Array<{ filepath?: string }> = []
-              let hasGeneratedLivePhoto = false
               const pics = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.pics || []
 
-              // 非实况图的位置传空条目，让结果和 pics 逐位对齐 ——
-              // imgArray 的顺序就是转发消息里图片的顺序。
-              const livePhotoItems: LivePhotoBatchItem[] = pics.map(item => (
-                item?.url && item.live_url
-                  ? { staticUrl: item.url, liveVideoUrl: item.live_url }
-                  : {}
-              ))
-              const livePhotoBatch = await buildCommonLivePhotoMessagesBatch(livePhotoItems, {
-                platform: 'bilibili',
-                headers: {
-                  ...baseHeaders,
-                  Referer: 'https://www.bilibili.com/'
-                }
-              })
-              tempFiles.push(...livePhotoBatch.tempFiles)
-              hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+              const sendImages = async (): Promise<void> => {
+                const imgArray: unknown[] = []
+                const tempFiles: Array<{ filepath?: string }> = []
+                let hasGeneratedLivePhoto = false
 
-              for (const [index, item] of pics.entries()) {
-                const itemUrl = item?.url
-                if (!itemUrl) continue
-
-                const livePhoto = livePhotoBatch.results[index]
-                if (livePhoto !== undefined && livePhoto.messages.length > 0) {
-                  imgArray.push(...livePhoto.messages)
-                  continue
-                }
-
-                const imageUrl = await processImageUrl(itemUrl, dynamicInfo.data.data.item.modules.module_author?.name || 'B站动态图片', index, {
-                  Referer: 'https://www.bilibili.com/',
-                  Cookie: Config.cookies.bilibili || ''
+                // 非实况图的位置传空条目，让结果和 pics 逐位对齐 ——
+                // imgArray 的顺序就是转发消息里图片的顺序。
+                const livePhotoItems: LivePhotoBatchItem[] = pics.map(item => (
+                  item?.url && item.live_url
+                    ? { staticUrl: item.url, liveVideoUrl: item.live_url }
+                    : {}
+                ))
+                const livePhotoBatch = await buildCommonLivePhotoMessagesBatch(livePhotoItems, {
+                  platform: 'bilibili',
+                  headers: {
+                    ...baseHeaders,
+                    Referer: 'https://www.bilibili.com/'
+                  }
                 })
-                imgArray.push(segment.image(imageUrl))
-              }
+                tempFiles.push(...livePhotoBatch.tempFiles)
+                hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
 
-              if (hasGeneratedLivePhoto) {
-                imgArray.push(await buildLivePhotoTipMessage())
-              }
+                for (const [index, item] of pics.entries()) {
+                  const itemUrl = item?.url
+                  if (!itemUrl) continue
 
-              try {
-                if (imgArray.length === 1) await this.e.reply(imgArray[0])
-                if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray, '动态图片'))
-              } finally {
-                for (const item of tempFiles) {
-                  if (item?.filepath) await Common.removeFile(item.filepath, true)
+                  const livePhoto = livePhotoBatch.results[index]
+                  if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+                    imgArray.push(...livePhoto.messages)
+                    continue
+                  }
+
+                  const imageUrl = await processImageUrl(itemUrl, dynamicInfo.data.data.item.modules.module_author?.name || 'B站动态图片', index, {
+                    Referer: 'https://www.bilibili.com/',
+                    Cookie: Config.cookies.bilibili || ''
+                  })
+                  imgArray.push(segment.image(imageUrl))
+                }
+
+                if (hasGeneratedLivePhoto) {
+                  imgArray.push(await buildLivePhotoTipMessage())
+                }
+
+                try {
+                  if (imgArray.length === 1) await this.e.reply(imgArray[0])
+                  if (imgArray.length > 1) await this.e.reply(['QQBot', 'KOOKBot'].includes(this.botadapter) ? imgArray : await common.makeForwardMsg(this.e, imgArray, '动态图片'))
+                } finally {
+                  for (const item of tempFiles) {
+                    if (item?.filepath) await Common.removeFile(item.filepath, true)
+                  }
                 }
               }
 
-              if (hasBilibiliContent('评论图', 'comment') && commentsData) {
-                const commentsdata = bilibiliComments(commentsData.data)
-                const img = await Render('bilibili/comment', {
-                  Type: '动态',
-                  CommentsData: commentsdata,
-                  CommentLength: String(commentsdata?.length || 0),
-                  share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
-                  // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
-                  Resolution: null,
-                  shareurl: '动态分享链接'
-                })
-                await this.e.reply(img)
-              }
-
-              if ('topic' in dynamicInfo.data.data.item.modules.module_dynamic && dynamicInfo.data.data.item.modules.module_dynamic.topic !== null) {
-                const name = dynamicInfo.data.data.item.modules.module_dynamic.topic?.name
-                dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes.unshift({
-                  orig_text: name,
-                  jump_url: '',
-                  text: name,
-                  type: 'topic'
-                })
-                const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
-                if (summary) {
-                  summary.text = `${name}\n\n` + (summary.text || '')
+              const sendPoster = async (): Promise<void> => {
+                const userProfileData = await getUserCard()
+                if ('topic' in dynamicInfo.data.data.item.modules.module_dynamic && dynamicInfo.data.data.item.modules.module_dynamic.topic !== null) {
+                  const name = dynamicInfo.data.data.item.modules.module_dynamic.topic?.name
+                  dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary.rich_text_nodes.unshift({
+                    orig_text: name,
+                    jump_url: '',
+                    text: name,
+                    type: 'topic'
+                  })
+                  const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
+                  if (summary) {
+                    summary.text = `${name}\n\n` + (summary.text || '')
+                  }
                 }
-              }
 
-              await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
-                image_url: cover(pics),
-                text: replacetext(
-                  dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.text || '',
-                  dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.rich_text_nodes || []
-                ),
-                additional: buildBilibiliAdditionalCard(dynamicInfo.data.data.item.modules.module_dynamic.additional),
-                // 'auto' 让模板按图片数自己挑 vertical/waterfall/grid，
-                // 布局规则在 DYNAMIC_TYPE_DRAW.tsx 的 getLayoutType 里，不在这边重写一份
-                imageLayout: 'auto',
-                dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
-                pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
-                share: Common.count(dynamicInfo.data.data.item.modules.module_stat.forward.count),
-                create_time: dynamicInfo.data.data.item.modules.module_author.pub_time,
-                avatar_url: dynamicInfo.data.data.item.modules.module_author.face,
-                frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
-                share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                dynamic_id: String(dynamicInfo.data.data.item.id_str),
-                usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
-                fans: Common.count(userProfileData.data.data.follower),
-                user_shortid: dynamicInfo.data.data.item.modules.module_author.mid,
-                total_favorited: Common.count(userProfileData.data.data.like_num),
-                following_count: Common.count(userProfileData.data.data.card.attention),
-                decoration_card: generateDecorationCard(dynamicInfo.data.data.item.modules.module_author.decoration_card),
-                render_time: Common.getCurrentTime(),
-                dynamicTYPE: '图文动态'
-              }))
-              break
-            }
-            /** 纯文 */
-            case DynamicType.WORD: {
-              const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
-              const text = replacetext(summary?.text || '', summary?.rich_text_nodes || [])
-
-              await this.e.reply(
-                await Render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
-                  text,
+                await this.e.reply(await Render('bilibili/dynamic/DYNAMIC_TYPE_DRAW', {
+                  image_url: cover(pics),
+                  text: replacetext(
+                    dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.text || '',
+                    dynamicInfo.data.data.item.modules.module_dynamic.major?.opus?.summary?.rich_text_nodes || []
+                  ),
                   additional: buildBilibiliAdditionalCard(dynamicInfo.data.data.item.modules.module_dynamic.additional),
+                  // 'auto' 让模板按图片数自己挑 vertical/waterfall/grid，
+                  // 布局规则在 DYNAMIC_TYPE_DRAW.tsx 的 getLayoutType 里，不在这边重写一份
+                  imageLayout: 'auto',
                   dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
                   pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
                   share: Common.count(dynamicInfo.data.data.item.modules.module_stat.forward.count),
@@ -775,35 +828,73 @@ export class Bilibili extends Base {
                   frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
                   share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
                   dynamic_id: String(dynamicInfo.data.data.item.id_str),
-                  usernameMeta: getUsernameMetadata(dynamicInfo.data.data.card || userProfileData.data.data.card),
-                  fans: Common.count(dynamicInfo.data.data.follower),
+                  usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
+                  fans: Common.count(userProfileData.data.data.follower),
                   user_shortid: dynamicInfo.data.data.item.modules.module_author.mid,
                   total_favorited: Common.count(userProfileData.data.data.like_num),
                   following_count: Common.count(userProfileData.data.data.card.attention),
                   decoration_card: generateDecorationCard(dynamicInfo.data.data.item.modules.module_author.decoration_card),
                   render_time: Common.getCurrentTime(),
-                  dynamicTYPE: '纯文动态'
-                })
-              )
-              if (commentLimit > 0 && commentsData) {
-                const commentsdata = bilibiliComments(commentsData.data)
-                await this.e.reply(
-                  await Render('bilibili/comment', {
-                    Type: '动态',
-                    CommentsData: commentsdata,
-                    CommentLength: String(commentsdata.length),
-                    share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
-                    ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
-                    // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
-                    Resolution: null,
-                    shareurl: '动态分享链接'
-                  })
-                )
+                  dynamicTYPE: '图文动态'
+                }))
               }
+
+              await runDynamicTasks({
+                poster: sendPoster,
+                image: pics.length > 0 ? sendImages : undefined,
+                imageCount: pics.length,
+                comment: {
+                  share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
+                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0
+                }
+              })
+              break
+            }
+            /** 纯文 */
+            case DynamicType.WORD: {
+              const summary = dynamicInfo.data.data.item.modules.module_dynamic.major.opus.summary
+              const text = replacetext(summary?.text || '', summary?.rich_text_nodes || [])
+
+              await runDynamicTasks({
+                poster: async () => {
+                  const userProfileData = await getUserCard()
+                  await this.e.reply(
+                    await Render('bilibili/dynamic/DYNAMIC_TYPE_WORD', {
+                      text,
+                      additional: buildBilibiliAdditionalCard(dynamicInfo.data.data.item.modules.module_dynamic.additional),
+                      dianzan: Common.count(dynamicInfo.data.data.item.modules.module_stat.like.count),
+                      pinglun: Common.count(dynamicInfo.data.data.item.modules.module_stat.comment.count),
+                      share: Common.count(dynamicInfo.data.data.item.modules.module_stat.forward.count),
+                      create_time: dynamicInfo.data.data.item.modules.module_author.pub_time,
+                      avatar_url: dynamicInfo.data.data.item.modules.module_author.face,
+                      frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
+                      share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
+                      dynamic_id: String(dynamicInfo.data.data.item.id_str),
+                      usernameMeta: getUsernameMetadata(dynamicInfo.data.data.card || userProfileData.data.data.card),
+                      fans: Common.count(dynamicInfo.data.data.follower),
+                      user_shortid: dynamicInfo.data.data.item.modules.module_author.mid,
+                      total_favorited: Common.count(userProfileData.data.data.like_num),
+                      following_count: Common.count(userProfileData.data.data.card.attention),
+                      decoration_card: generateDecorationCard(dynamicInfo.data.data.item.modules.module_author.decoration_card),
+                      render_time: Common.getCurrentTime(),
+                      dynamicTYPE: '纯文动态'
+                    })
+                  )
+                },
+                comment: {
+                  share_url: 'https://t.bilibili.com/' + dynamicInfo.data.data.item.id_str,
+                  ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0
+                }
+              })
               break
             }
             /** 转发动态 */
             case DynamicType.FORWARD: {
+              /*
+                转发动态只有一张卡、今天也不出评论图，没有第二条支线可以并发，
+                所以这里维持裸 await —— 拆成 runMediaTasks 只会多一层包装。
+              */
+              const userProfileData = await getUserCard()
               const text = replacetext(
                 dynamicInfo.data.data.item.modules.module_dynamic.desc.text,
                 dynamicInfo.data.data.item.modules.module_dynamic.desc.rich_text_nodes
@@ -920,56 +1011,52 @@ export class Bilibili extends Base {
             case DynamicType.AV: {
               if (dynamicInfo.data.data.item.modules.module_dynamic.major.type === 'MAJOR_TYPE_ARCHIVE') {
                 const bvid = dynamicInfo.data.data.item.modules.module_dynamic.major.archive.bvid
-                const INFODATA = await this.amagi.bilibili.fetchVideoInfo({ bvid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as VideoInfoResponse
-                if (commentLimit > 0 && commentsData) {
-                  const commentsdata = bilibiliComments(commentsData.data)
-                  await this.e.reply(
-                    await Render('bilibili/comment', {
-                      Type: '动态',
-                      CommentsData: commentsdata,
-                      CommentLength: String(commentsdata.length),
-                      share_url: 'https://www.bilibili.com/video/' + bvid,
-                      ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0,
-                      // 契约里 Resolution 必填，动态没有视频流，模板也只在 Type === '视频' 时显示这一格
-                      Resolution: null,
-                      shareurl: '动态分享链接'
-                    })
-                  )
-                }
+                await runDynamicTasks({
+                  poster: async () => {
+                    const [INFODATA, userProfileData] = await Promise.all([
+                      this.amagi.bilibili.fetchVideoInfo({ bvid, typeMode: 'strict' }, Config.cookies.bilibili, buildAmagiRequestConfig()) as Promise<VideoInfoResponse>,
+                      getUserCard()
+                    ])
 
-                const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
-                  {
-                    // 契约是单张封面字符串，不是数组
-                    image_url: INFODATA.data.data.pic,
-                    text: replacetext(INFODATA.data.data.title, []),
-                    desc: formatBilibiliVideoDescRichText(INFODATA.data.data.desc_v2, INFODATA.data.data.desc || ''),
-                    dynamic_text: replacetext(
-                      dynamicInfo.data.data.item.modules.module_dynamic.desc?.text || '',
-                      dynamicInfo.data.data.item.modules.module_dynamic.desc?.rich_text_nodes || []
-                    ),
-                    dianzan: Common.count(INFODATA.data.data.stat.like),
-                    pinglun: Common.count(INFODATA.data.data.stat.reply),
-                    share: Common.count(INFODATA.data.data.stat.share),
-                    view: Common.count(INFODATA.data.data.stat.view),
-                    coin: Common.count(INFODATA.data.data.stat.coin),
-                    duration_text: dynamicInfo.data.data.item.modules.module_dynamic.major.archive.duration_text,
-                    page_length: INFODATA.data.data.pages?.length || 1,
-                    create_time: Common.convertTimestampToDateTime(INFODATA.data.data.ctime),
-                    avatar_url: INFODATA.data.data.owner.face,
-                    frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
+                    const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_AV',
+                      {
+                        // 契约是单张封面字符串，不是数组
+                        image_url: INFODATA.data.data.pic,
+                        text: replacetext(INFODATA.data.data.title, []),
+                        desc: formatBilibiliVideoDescRichText(INFODATA.data.data.desc_v2, INFODATA.data.data.desc || ''),
+                        dynamic_text: replacetext(
+                          dynamicInfo.data.data.item.modules.module_dynamic.desc?.text || '',
+                          dynamicInfo.data.data.item.modules.module_dynamic.desc?.rich_text_nodes || []
+                        ),
+                        dianzan: Common.count(INFODATA.data.data.stat.like),
+                        pinglun: Common.count(INFODATA.data.data.stat.reply),
+                        share: Common.count(INFODATA.data.data.stat.share),
+                        view: Common.count(INFODATA.data.data.stat.view),
+                        coin: Common.count(INFODATA.data.data.stat.coin),
+                        duration_text: dynamicInfo.data.data.item.modules.module_dynamic.major.archive.duration_text,
+                        page_length: INFODATA.data.data.pages?.length || 1,
+                        create_time: Common.convertTimestampToDateTime(INFODATA.data.data.ctime),
+                        avatar_url: INFODATA.data.data.owner.face,
+                        frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
+                        share_url: 'https://www.bilibili.com/video/' + bvid,
+                        dynamic_id: String(dynamicInfo.data.data.item.id_str),
+                        usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
+                        fans: Common.count(userProfileData.data.data.follower),
+                        user_shortid: userProfileData.data.data.card.mid,
+                        total_favorited: Common.count(userProfileData.data.data.like_num),
+                        following_count: Common.count(userProfileData.data.data.card.attention),
+                        decoration_card: generateDecorationCard(dynamicInfo.data.data.item.modules.module_author.decoration_card),
+                        render_time: Common.getCurrentTime(),
+                        dynamicTYPE: '视频动态'
+                      }
+                    )
+                    await this.e.reply(img)
+                  },
+                  comment: {
                     share_url: 'https://www.bilibili.com/video/' + bvid,
-                    dynamic_id: String(dynamicInfo.data.data.item.id_str),
-                    usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
-                    fans: Common.count(userProfileData.data.data.follower),
-                    user_shortid: userProfileData.data.data.card.mid,
-                    total_favorited: Common.count(userProfileData.data.data.like_num),
-                    following_count: Common.count(userProfileData.data.data.card.attention),
-                    decoration_card: generateDecorationCard(dynamicInfo.data.data.item.modules.module_author.decoration_card),
-                    render_time: Common.getCurrentTime(),
-                    dynamicTYPE: '视频动态'
+                    ImageLength: dynamicInfo.data.data.item.modules?.module_dynamic?.major?.draw?.items?.length || 0
                   }
-                )
-                await this.e.reply(img)
+                })
               }
               break
             }
@@ -1034,65 +1121,66 @@ export class Bilibili extends Base {
                   Cookie: Config.cookies.bilibili || ''
                 })
               })
-              const forwardMessage = await createBilibiliRichTextForwardMessage(forwardNodes, {
-                segmentFactory: {
-                  text: value => segment.text?.(value) ?? value,
-                  image: url => segment.image(url)
-                },
-                makeForwardMsg: (messages, forwardTitle) => common.makeForwardMsg(this.e, messages, forwardTitle),
-                title: '专栏内容'
-              })
-              if (forwardMessage) await this.e.reply(forwardMessage)
-
               const stats = articleData.stats || {}
               const categories = buildBilibiliArticleCategories(articleData.categories)
 
-              const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_ARTICLE', {
-                usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
-                avatar_url: userProfileData.data.data.card.face,
-                frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
-                create_time: dynamicInfo.data.data.item.modules.module_author.pub_time ||
-                  Common.convertTimestampToDateTime(dynamicInfo.data.data.item.modules.module_author.pub_ts),
-                title,
-                summary,
-                banner_url: articleData.banner_url || articleData.image_urls?.[0] || '',
-                categories,
-                words: articleData.words || 0,
-                body,
-                stats: {
-                  view: stats.view ?? 0,
-                  like: stats.like ?? 0,
-                  favorite: stats.favorite ?? 0,
-                  reply: stats.reply ?? 0,
-                  share: stats.dynamic ?? stats.share ?? 0,
-                  dynamic: stats.dynamic ?? 0,
-                  coin: stats.coin ?? 0
-                },
-                render_time: Common.getCurrentTime(),
-                share_url: shareUrl,
-                dynamicTYPE: '专栏动态解析',
-                user_shortid: userProfileData.data.data.card.mid,
-                total_favorited: Common.count(userProfileData.data.data.like_num),
-                following_count: Common.count(userProfileData.data.data.card.attention),
-                fans: Common.count(userProfileData.data.data.follower)
-              })
-              await this.e.reply(img)
-
-              if (commentLimit > 0 && commentsData) {
-                const commentsdata = bilibiliComments(commentsData.data)
-                await this.e.reply(
-                  await Render('bilibili/comment', {
-                    Type: '动态',
-                    CommentsData: commentsdata,
-                    CommentLength: String(commentsdata.length),
-                    share_url: shareUrl,
-                    ImageLength: articleImages.length,
-                    // 契约里 Resolution 必填，专栏没有视频流，模板也只在 Type === '视频' 时显示这一格
-                    Resolution: null,
-                    shareurl: '动态分享链接'
-                  })
-                )
+              /*
+                专栏正文（合并转发）与信息卡拆成两条支线：正文里每张图都要过
+                `processImageUrl`，一张挂掉原来会把信息卡和评论卡一起带走。
+                `buildBilibiliRichTextForwardNodes` 留在共享前奏里 —— `body` 两边都要读。
+              */
+              const sendArticleBody = async (): Promise<void> => {
+                const forwardMessage = await createBilibiliRichTextForwardMessage(forwardNodes, {
+                  segmentFactory: {
+                    text: value => segment.text?.(value) ?? value,
+                    image: url => segment.image(url)
+                  },
+                  makeForwardMsg: (messages, forwardTitle) => common.makeForwardMsg(this.e, messages, forwardTitle),
+                  title: '专栏内容'
+                })
+                if (forwardMessage) await this.e.reply(forwardMessage)
               }
+
+              const sendArticleCard = async (): Promise<void> => {
+                const userProfileData = await getUserCard()
+                const img = await Render('bilibili/dynamic/DYNAMIC_TYPE_ARTICLE', {
+                  usernameMeta: getUsernameMetadata(userProfileData.data.data.card),
+                  avatar_url: userProfileData.data.data.card.face,
+                  frame: dynamicInfo.data.data.item.modules.module_author.pendant.image,
+                  create_time: dynamicInfo.data.data.item.modules.module_author.pub_time ||
+                  Common.convertTimestampToDateTime(dynamicInfo.data.data.item.modules.module_author.pub_ts),
+                  title,
+                  summary,
+                  banner_url: articleData.banner_url || articleData.image_urls?.[0] || '',
+                  categories,
+                  words: articleData.words || 0,
+                  body,
+                  stats: {
+                    view: stats.view ?? 0,
+                    like: stats.like ?? 0,
+                    favorite: stats.favorite ?? 0,
+                    reply: stats.reply ?? 0,
+                    share: stats.dynamic ?? stats.share ?? 0,
+                    dynamic: stats.dynamic ?? 0,
+                    coin: stats.coin ?? 0
+                  },
+                  render_time: Common.getCurrentTime(),
+                  share_url: shareUrl,
+                  dynamicTYPE: '专栏动态解析',
+                  user_shortid: userProfileData.data.data.card.mid,
+                  total_favorited: Common.count(userProfileData.data.data.like_num),
+                  following_count: Common.count(userProfileData.data.data.card.attention),
+                  fans: Common.count(userProfileData.data.data.follower)
+                })
+                await this.e.reply(img)
+              }
+
+              await runDynamicTasks({
+                poster: sendArticleCard,
+                image: sendArticleBody,
+                imageCount: articleImages.length,
+                comment: { share_url: shareUrl, ImageLength: articleImages.length }
+              })
               break
             }
             default: {
