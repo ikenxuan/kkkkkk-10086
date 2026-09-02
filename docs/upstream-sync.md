@@ -10,12 +10,34 @@
 
 | 平台 | 上游 sha | 上游日期 | 上游版本 | 本仓 commit | 对齐范围 |
 |---|---|---|---|---|---|
-| bilibili | `6e557ec3` | 2026-08-18 | 2.42.2 | `3be55569` `2669ab0d` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。`-352` voucher 提取已合并成一处、路径扩到 8 条（见下），但真实 voucher 位置仍未确证 |
-| douyin | `4772801d` | 2026-08-29 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`live-room.ts` 的两步补号时序是本仓设施，上游无对应物 |
-| kuaishou | `f4b0c23e` | 2026-08-17 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。`getdata.ts` 的 `KUAISHOU_METHODS` 常量表是本仓设施 |
-| xiaohongshu | `da7bfd2d` | 2026-08-18 | 2.42.2 | `3be55569` | 调用形态已对齐，同上。上一次同步（`docs/superpowers/plans/2026-08-19-xiaohongshu-v2421-sync.md`）只记了版本号 `v2.42.1` 没记 sha，无法判定同步到了哪一刻，这份表从本次起补上 |
+| bilibili | `6e557ec3` | 2026-08-18 | 2.42.3 | `3be55569` `2669ab0d` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。`-352` voucher 提取已合并成一处、路径扩到 8 条（见下），但真实 voucher 位置仍未确证 |
+| douyin | `3cf285ae` | 2026-09-01 | 2.42.3 | `3be55569` `097807a0` `6d348d8c` | 调用形态已对齐。**扫码登录已跟到 passport 接口**（见下）。`live-room.ts` 的两步补号时序是本仓设施，上游无对应物 |
+| kuaishou | `f4b0c23e` | 2026-08-17 | 2.42.3 | `3be55569` | 调用形态已对齐，同上。`getdata.ts` 的 `KUAISHOU_METHODS` 常量表是本仓设施 |
+| xiaohongshu | `da7bfd2d` | 2026-08-18 | 2.42.3 | `3be55569` | 调用形态已对齐，同上。上一次同步（`docs/superpowers/plans/2026-08-19-xiaohongshu-v2421-sync.md`）只记了版本号 `v2.42.1` 没记 sha，无法判定同步到了哪一刻，这份表从本次起补上 |
 
-上游基准：HEAD `4772801d`（2026-08-29），分支 `main`，工作树干净。
+上游基准：HEAD `c5512ace`（2026-09-01，v2.42.3），分支 `main`。
+
+### 本次扫描：`4772801d..c5512ace` 共 8 个提交，只有 1 个该移植
+
+| 提交 | 处置 |
+|---|---|
+| `3cf285ae` 抖音登录换 passport 接口 | **已移植**，见下 |
+| `38f9d5b0` 改用 `@snapka/puppeteer` | **已作废，不要移植**——`3cf285ae` 把 puppeteer 整个删了，这两条方向相反。下一轮扫到「我们没跟这条」时不要回头做 |
+| `1db3e356` `c5512ace` | 只动 `package.json`（karin 侧 discordbot 适配器、发版号），与本仓无关 |
+| `e20b7a8e` `4db462b1` `85a6a81a` `d91c833f` | 一个源文件都没动（`noop` / `tmp` / 删占位 / 删探针） |
+
+### 抖音扫码登录（`3cf285ae` → 本仓 `6d348d8c`）
+
+**这是本表第一次真的动 amagi 本体版本**（`^6.5.0` → `^6.6.0`，本仓 `097807a0`）。此前一直写着「能对齐的是调用形态与错误语义，不是 amagi 本体版本」——那条仍然成立，只是这次上游用的接口恰好已经发布到 npm，所以够得着。
+
+升级前逐条验过爆炸半径：抖音 fetcher 19→23 个方法，新增的正是那四个 passport 方法，**零删除零改名**；其余三平台方法数不变；四平台内置 Chrome 主版本两版完全一致，所以 UA 守卫那四个阈值不用动。
+
+**两处刻意不照抄上游**：
+
+1. 四个 passport 方法走本仓包过的 `douyinFetcher`，不是上游那样直接引模块级裸函数。上游的 fetcher 取自 `Client({ cookies })` 建出来的实例，本仓是模块级裸导出 + 自己的包装层（见「amagi 本体版本」一节）。照抄的后果是失败从「抛 `AmagiError`」退化成「返回 `success: false`」，不显式检查就静默拿到 undefined。
+2. `isSmsCodeVerifyWay` 经 `amagiClient` 惰性转口。直接 `import { isSmsCodeVerifyWay } from '@ikenxuan/amagi'` 会让整个测试文件在 **Vite 解析阶段**就 `packageEntryFailure`（amagi 的 exports map 里 `development` 条件指向未发布的 `src/index.ts`），`vi.mock` 根本来不及生效——实测「Tests no tests」。
+
+**顺带删掉四个死依赖**：`puppeteer` 与 `fingerprint-injector` 随本次移植失效；`sequelize` 源码里从未出现过；`simple-git` 在 `f54ed6d8` 删 art-template 时连代码一起删了、`package.json` 漏跟。
 
 ## 刻意不跟上游的地方
 
