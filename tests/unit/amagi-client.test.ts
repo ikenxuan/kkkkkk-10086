@@ -16,6 +16,7 @@ const {
   AmagiError,
   bilibiliFetcher,
   buildAmagiRequestConfig,
+  ensureAmagiEventBridge,
   softFetch,
   wrapAmagiClient
 } = await import('../../src/module/utils/amagiClient.js')
@@ -419,5 +420,66 @@ describe('-352 记下风控信封的形状', () => {
 
     expect(error).toBeInstanceOf(AmagiError)
     expect((error as InstanceType<typeof AmagiError>).code).toBe(-352)
+  })
+})
+
+describe('amagi 事件旁路日志', () => {
+  /** 假 emitter：`api:error` 的监听器会被存下来，好手动触发 */
+  const fakeModule = (listeners: Array<(data: unknown) => void>) => ({
+    amagiEvents: {
+      on: (_event: string, listener: (data: unknown) => void) => listeners.push(listener)
+    }
+  }) as never
+
+  beforeEach(() => {
+    globalThis.logger = { warn: vi.fn() } as unknown as typeof logger
+  })
+
+  /*
+    这里只能验「拿到事件之后怎么记」和「装几次」。「订阅对了哪一个 emitter」在 vitest 下
+    验不了：`require('@ikenxuan/amagi')` 会命中 exports 的 `development` 条件、去找未发布的
+    `src/index.ts` 而直接抛。生产上那条约束靠 amagiClient 里的注释和 `loadAmagiModule`
+    这唯一取值口守着 —— 静态 import 会拿到 index.mjs 里另一个空 emitter。
+  */
+  it('把真实业务码记成一行，而不是打成对象', () => {
+    const listeners: Array<(data: unknown) => void> = []
+    ensureAmagiEventBridge(fakeModule(listeners))
+
+    listeners[0]?.({
+      platform: 'douyin',
+      methodType: 'videoWork',
+      // 抖音失败信封的 code 恒为 500，真码只在这个字段上出现过一次
+      errorCode: 2154,
+      errorMessage: '抖音数据获取失败'
+    })
+
+    const line = vi.mocked(globalThis.logger.warn).mock.calls.at(-1)?.[0] as string
+    expect(line).toContain('douyin/videoWork')
+    expect(line).toContain('errorCode=2154')
+    expect(line).not.toContain('[object Object]')
+  })
+
+  it('errorCode 缺席时写「无」而不是 undefined', () => {
+    // 网络错误 / ck 失效 / 内容过滤三条路的 payload 上没有 status_code
+    const listeners: Array<(data: unknown) => void> = []
+    ensureAmagiEventBridge(fakeModule(listeners))
+
+    listeners[0]?.({ platform: 'douyin', methodType: 'videoWork', errorMessage: '抖音数据获取失败' })
+
+    expect(vi.mocked(globalThis.logger.warn).mock.calls.at(-1)?.[0]).toContain('errorCode=无')
+  })
+
+  it('装一次就够：同一个 emitter 不会让失败记两行', () => {
+    const listeners: Array<(data: unknown) => void> = []
+    const module = fakeModule(listeners)
+
+    ensureAmagiEventBridge(module)
+    ensureAmagiEventBridge(module)
+
+    expect(listeners).toHaveLength(1)
+  })
+
+  it('这个 amagi 版本没有 emitter 时静默跳过', () => {
+    expect(() => ensureAmagiEventBridge({} as never)).not.toThrow()
   })
 })

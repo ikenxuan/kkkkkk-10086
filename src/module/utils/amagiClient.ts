@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module'
 import type {
+  ApiErrorEventData,
   BilibiliFetcher,
   DouyinFetcher,
   KuaishouFetcher,
@@ -141,14 +142,54 @@ interface AmagiModule {
   xiaohongshuFetcher: XiaohongshuFetcher
   /** 抖音二次验证方式判定。纯函数，不在 fetcher 接口上 */
   isSmsCodeVerifyWay: (typeof import('@ikenxuan/amagi'))['isSmsCodeVerifyWay']
+  /** 可选：老版本 amagi 没有导出它，缺了也不该让取数失败 */
+  amagiEvents?: { on: (event: 'api:error', listener: (data: ApiErrorEventData) => void) => unknown }
 }
 
 const require = createRequire(import.meta.url)
 let amagiModule: AmagiModule | undefined
+/** 按 emitter 实例记，同一个不会装两遍监听器（会让每次失败记两行）。同 log-context 的 hookedLoggers */
+const bridgedEmitters = new WeakSet<object>()
+
+/**
+ * 把 amagi 的 `api:error` 落进日志。
+ *
+ * 抖音失败信封的 `code` 恒为 500 —— amagi 的 `createErrorResponse` 不传第三参，
+ * 原始响应体连同 `status_code` 一起被扔掉。真实业务码只在这个事件的 `errorCode`
+ * 上出现过一次，没人订阅就永久丢失，错误卡片上只剩那个没有信息量的 500。
+ *
+ * emitter 必须从 {@link loadAmagiModule} 拿：静态 `import` 会命中 amagi exports 的
+ * `import` 条件走到 `index.mjs`，那里是**另一个** emitter 实例，监听器永不触发。
+ *
+ * 沿用 {@link logRiskControlShape} 的两条约定：值可能带 cookie 指纹所以只记有限字段，
+ * 以及 logger 缺失时不能把业务带崩。
+ *
+ * 导出只为让单测能喂一个假 module —— 在 vitest 下 `require('@ikenxuan/amagi')` 会命中
+ * exports 的 `development` 条件、解析到未发布的 `src/index.ts`，真 emitter 拿不到。
+ */
+export const ensureAmagiEventBridge = (module: AmagiModule): void => {
+  const events = module.amagiEvents
+  // 这个 amagi 版本没有 emitter：取数照常，只是没有旁路日志
+  if (!events || bridgedEmitters.has(events)) return
+  bridgedEmitters.add(events)
+
+  events.on('api:error', data => {
+    try {
+      // 抖音只有「HTTP 通了且回了 JSON」时 errorCode 才是真业务码；网络错误、
+      // ck 失效、内容过滤三条路它是 undefined，此时真码在信封的 code 上。
+      logger.warn(
+        `[amagi] api:error ${String(data.platform)}/${String(data.methodType)} errorCode=${String(data.errorCode ?? '无')} message=${String(data.errorMessage ?? '')}`
+      )
+    } catch {
+      // 留证不能替换业务错误
+    }
+  })
+}
 
 /** amagi 的 package exports 在 Vite 下解析失败，沿用 api.ts 的 CommonJS 兜底 */
 const loadAmagiModule = (): AmagiModule => {
   amagiModule ??= require('@ikenxuan/amagi') as AmagiModule
+  ensureAmagiEventBridge(amagiModule)
   return amagiModule
 }
 
