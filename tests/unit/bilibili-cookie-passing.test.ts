@@ -91,7 +91,6 @@ vi.mock('../../src/module/utils/index.js', async () => {
     downloadVideo: vi.fn(),
     mergeFile: vi.fn(),
     uploadFile: vi.fn(),
-    needsGroupFileChannel: vi.fn(() => false),
     processImageUrl: handles.processImageUrl,
     sanitizeFilename,
     sanitizeFilenameSegment,

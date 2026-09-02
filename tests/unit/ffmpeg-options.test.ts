@@ -86,7 +86,6 @@ import { wrapAmagiClient } from '../../src/module/utils/amagiClient.js'
 import {
   Base,
   isRemoteVideoTooLargeForUrlSend,
-  needsGroupFileChannel,
   uploadFile
 } from '../../src/module/utils/Base.js'
 import { embedWatermark } from '../../src/module/utils/Watermark.js'
@@ -443,47 +442,24 @@ describe('uploadFile 群文件分流', () => {
   })
 })
 
-describe('needsGroupFileChannel', () => {
-  it('按适配器区分消息段体积上限', () => {
-    expect(needsGroupFileChannel('ICQQ', 102)).toBe(false)
-    expect(needsGroupFileChannel('ICQQ', 102.5)).toBe(true)
-    expect(needsGroupFileChannel('Lagrange.OneBot', 120)).toBe(true)
-    expect(needsGroupFileChannel('OneBotv11', 90)).toBe(false)
-    // QQBot / KOOKBot 不在名单里，按更低的 75MB 算
-    expect(needsGroupFileChannel('QQBot', 80)).toBe(true)
-    expect(needsGroupFileChannel('KOOKBot', 70)).toBe(false)
-    // 拿不到适配器名字时按最保守的上限处理
-    expect(needsGroupFileChannel(undefined as unknown as string, 80)).toBe(true)
-  })
-})
-
 describe('isRemoteVideoTooLargeForUrlSend', () => {
   it('体积探不到时一律放行，不许堵住远程直发', () => {
     // downloadVideo 探不到 content-range 时算出来的就是 0，这是常态而非异常：
     // 判成 true 会让所有不给响应头的源站永久失去远程直发能力
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', 0)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', NaN)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', -1)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', Infinity)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(0)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(NaN)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(-1)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(Infinity)).toBe(false)
   })
 
-  it('体积已知且超上限时才拦，阈值与 needsGroupFileChannel 同源', () => {
-    // QQBot 不在大文件名单里，按 75MB 算
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', 74.9)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', 75)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('QQBot', 75.1)).toBe(true)
-    // 名单内适配器按 102MB 算
-    expect(isRemoteVideoTooLargeForUrlSend('ICQQ', 102)).toBe(false)
-    expect(isRemoteVideoTooLargeForUrlSend('ICQQ', 102.5)).toBe(true)
-  })
-
-  it('与 needsGroupFileChannel 在正体积上逐点一致', () => {
-    for (const adapter of ['QQBot', 'ICQQ', 'Lagrange.OneBot', 'KOOKBot']) {
-      for (const size of [0.1, 50, 74.9, 75.1, 101.9, 102.1, 500]) {
-        expect(isRemoteVideoTooLargeForUrlSend(adapter, size))
-          .toBe(needsGroupFileChannel(adapter, size))
-      }
-    }
+  it('体积已知且超上限时才拦，且不再按适配器分档', () => {
+    // 原来 QQBot 按 75MB、名单内适配器按 102MB；现在统一一个上限，
+    // 「要不要走群文件」全交给 upload.usegroupfile / groupfilevalue
+    expect(isRemoteVideoTooLargeForUrlSend(75.1)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(101.9)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(102)).toBe(false)
+    expect(isRemoteVideoTooLargeForUrlSend(102.5)).toBe(true)
+    expect(isRemoteVideoTooLargeForUrlSend(500)).toBe(true)
   })
 })
 

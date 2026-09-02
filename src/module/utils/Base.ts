@@ -597,29 +597,16 @@ const sendVideoUrl = async (
 }
 
 /**
- * 消息内嵌视频段实测能扛住约 102MB 的适配器；其余（QQBot、KOOKBot 等）按约 75MB 算。
+ * 消息内嵌视频段实测能扛住的体积上限，单位 MB。
  *
- * 这两个数字是实测上限而非协议规定值，集中放在这里，别再散成魔法数字。
- * 名单里的 'OneBot11' 是历史遗留写法，botadapter 实际不会返回它，留着只为不改动既有判定。
+ * 实测上限而非协议规定值。原来这里按适配器分 102 / 75 两档并据此**强制**改走群文件，
+ * 现在不再按适配器区分：多数适配器（QQBot 自己也上了分片上传）都能发到这个量级，
+ * 而「要不要走群文件」本就该由 `upload.usegroupfile` / `upload.groupfilevalue` 表达。
  */
-const LARGE_VIDEO_SEGMENT_ADAPTERS = ['LagrangeCore', 'Lagrange.OneBot', 'OneBotv11', 'OneBot11', 'ICQQ']
+const MESSAGE_SEGMENT_VIDEO_LIMIT_MB = 102
 
 /**
- * 判断文件是否**必须**改走群文件通道。
- *
- * 这是「能力」判断，不是「偏好」判断：体积一旦超过上限，消息内嵌视频段根本发不出去，
- * 此时群文件不是「另一种可选方式」，而是唯一还有机会成功的通道。
- * 用户偏好由 `upload.usegroupfile` / `upload.groupfilevalue` 表达，两者在 uploadFile 里取或。
- *
- * @param {string} botAdapter 适配器名称，必须是 `Base` 归一化后的名字（`new Base(e).botadapter`）
- * @param {number} sizeInMB 文件体积，单位 MB
- * @returns {boolean} true 表示消息段装不下，必须走群文件
- */
-export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boolean =>
-  sizeInMB > (LARGE_VIDEO_SEGMENT_ADAPTERS.includes(botAdapter) ? 102 : 75)
-
-/**
- * 远程 URL 直发前的体积门：**已知**体积超过本适配器消息段上限时才拦。
+ * 远程 URL 直发前的体积门：**已知**体积超过消息段上限时才拦。
  *
  * 为什么探不到体积也要放行：`downloadVideo` 开头那次 `getHeaders()` 只是尽力而为 ——
  * 源站不返回 `content-range`（不支持 Range、CDN 抹掉响应头、鉴权失败只回 200 等）时
@@ -628,22 +615,15 @@ export const needsGroupFileChannel = (botAdapter: string, sizeInMB: number): boo
  * 都会永久失去远程直发能力，而它们本来是发得出去的。
  *
  * 因此这里的语义被刻意收窄成「我确定它太大」，不确定就一律放行，让 `sendVideoUrl`
- * 照旧去试 —— 它失败会返回 false，调用点的 `&&` 短路自然回落到下载 + 群文件那条路，
+ * 照旧去试 —— 它失败会返回 false，调用点的 `&&` 短路自然回落到下载那条路，
  * 兜底一直都在，多试一次的代价远小于误堵一条本来可用的通道。
  *
- * 阈值直接复用 `needsGroupFileChannel`，没有另造数字：`sendVideoUrl` 发出去的是
- * `segment.video(视频直链)`，与本地那条 `segment.video(File)` 是同一种消息内嵌视频段，
- * 区别只在段里装的是直链还是本地路径，通道本身没换，上限自然同源。
- * upload.yaml 对 `filelimit` 的注释也写了「QQBot 官方接口更低（约 75MB）」，
- * 而 QQBot 恰好落在 `needsGroupFileChannel` 的 75MB 那一档，数字对得上。
- *
- * @param {string} botAdapter 适配器名称，必须是 `Base` 归一化后的名字（`new Base(e).botadapter`）
  * @param {number} sizeInMB 探测到的体积，单位 MB；0 / NaN / 负数都表示「探不到」
  * @returns {boolean} true 表示「确定装不下」，此时不该再走远程直发
  */
-export const isRemoteVideoTooLargeForUrlSend = (botAdapter: string, sizeInMB: number): boolean => {
+export const isRemoteVideoTooLargeForUrlSend = (sizeInMB: number): boolean => {
   if (!Number.isFinite(sizeInMB) || sizeInMB <= 0) return false
-  return needsGroupFileChannel(botAdapter, sizeInMB)
+  return sizeInMB > MESSAGE_SEGMENT_VIDEO_LIMIT_MB
 }
 
 /**
@@ -727,8 +707,8 @@ export const uploadFile = async (
    * 然后发送失败。
    *
    * 为什么要尊重调用方传值：那个 true 表达的是**事实**而不是偏好 ——「这个体积塞不进消息段」。
-   *   - downloadVideo（本文件）与 bilibili.ts 用 needsGroupFileChannel 按适配器算（102MB / 75MB）；
-   *   - push.ts 那一处是「体积已越过 groupfilevalue 分流线」的分支。
+   * 目前只剩 push.ts 一处在传，那是「体积已越过 groupfilevalue 分流线」的分支
+   * （downloadVideo 与 bilibili.ts 原来按适配器算 102 / 75 两档并强制走群文件，已经删掉）。
    * 消息段发不出去时，另一个选择不是「发在聊天里」，而是「发不出去」，所以必须尊重。
    * 「我压根不想收这么大的文件」有 `usefilelimit` / `filelimit` 专门表达，不该由这里代劳。
    *
@@ -894,9 +874,7 @@ export const downloadVideo = async (
    *
    * 体积门只对 `botAdapter === 'QQBot'` 那条**自动**分流生效，对 videoSendMode === 'url' 不生效：
    *   - QQBot 这条是插件替用户做的决定（没人要求过），给它加上体积感知本就是插件的份内事；
-   *     而且 upload.yaml 明确写了 QQBot 官方接口约 75MB，正是 `needsGroupFileChannel` 给
-   *     QQBot 的那一档，阈值有出处、不用外推。
-   *   - `videoSendMode === 'url'` 是用户自己拨的开关。102 / 75 这两个数字的实测背景是
+   *   - `videoSendMode === 'url'` 是用户自己拨的开关。上限那个数字的实测背景是
    *     「消息段装本地字节」，换成 Lagrange / NapCat 这类适配器发远程直链时是否同样受限，
    *     仓库里没有任何测量支撑。拿一个外推来的上限去悄悄推翻用户的显式配置，
    *     比多试一次失败的发送要糟得多 —— 何况试失败也只是回落到下载那条路，兜底一直都在。
@@ -905,7 +883,7 @@ export const downloadVideo = async (
    * 把 videoSendMode 设成 url 就能显式绕开它，不必改代码。
    */
   const remoteUrlRequestedByUser = Config.upload.videoSendMode === 'url'
-  const blockedBySize = !remoteUrlRequestedByUser && isRemoteVideoTooLargeForUrlSend(botAdapter, parseFloat(fileSizeInMB))
+  const blockedBySize = !remoteUrlRequestedByUser && isRemoteVideoTooLargeForUrlSend(parseFloat(fileSizeInMB))
   const canSendRemoteVideo = downloadOpt.video_url && !uploadOpt?.forceLocal && !Config.upload.compress && !blockedBySize && (botAdapter === 'QQBot' || remoteUrlRequestedByUser)
 
   if (blockedBySize) {
@@ -936,10 +914,10 @@ export const downloadVideo = async (
   res = { ...res, ...downloadOpt.title }
   res.totalBytes = Number((res.totalBytes / (1024 * 1024)).toFixed(2))
 
-  // 视频大小判断：超过本适配器消息段上限就必须改走群文件，没超过则传 false，
-  // 交给 uploadFile 按 usegroupfile / groupfilevalue 决定（false 只表示「不强制」，不是「禁止」）
-  const useGroupFile = needsGroupFileChannel(botAdapter, res.totalBytes)
-  return await uploadFile(e, res, downloadOpt.video_url, { ...uploadOpt, useGroupFile })
+  // 不再按体积强制走群文件：那条判断原来按适配器分 102 / 75 两档，而多数适配器
+  // （QQBot 也上了分片上传）都能发到这个量级。走不走群文件交给 uploadFile 按
+  // usegroupfile / groupfilevalue 决定，也就是只听用户偏好。
+  return await uploadFile(e, res, downloadOpt.video_url, uploadOpt)
 }
 
 /**

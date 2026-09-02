@@ -1,4 +1,4 @@
-import { Base, Common, Config, baseHeaders, needsGroupFileChannel, sanitizeFilenameSegment, uploadFile } from '@/module/utils/index'
+import { Common, Config, baseHeaders, sanitizeFilenameSegment, uploadFile } from '@/module/utils/index'
 import { recordLiveStream } from '@/module/utils/FFmpeg'
 import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
 import { DEFAULT_PARSE_TIMEOUT_MS } from '@/module/utils/ParseCoordinator'
@@ -283,8 +283,7 @@ export const recordLiveRoom = async (
       totalBytes: sizeMB,
       originTitle: `${source.name}.${source.suffix}`
     },
-    '',
-    { useGroupFile: needsGroupFileChannel(new Base(e).botadapter, sizeMB) }
+    ''
   )
 
   if (!sent) {

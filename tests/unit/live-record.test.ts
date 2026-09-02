@@ -35,7 +35,6 @@ const doubles = vi.hoisted(() => ({
   fetchBilibiliLiveStream: vi.fn(),
   recordLiveStream: vi.fn(),
   uploadFile: vi.fn(),
-  needsGroupFileChannel: vi.fn(),
   getVideoFileSize: vi.fn(),
   removeFile: vi.fn(),
   mkdir: vi.fn(),
@@ -60,7 +59,6 @@ vi.mock('../../src/module/utils/index.js', async () => ({
     count: (value: unknown) => String(value)
   },
   baseHeaders: { 'User-Agent': 'test-ua' },
-  needsGroupFileChannel: doubles.needsGroupFileChannel,
   // 文件名清洗用真的：这一步会真的改文件名（`「」` 之外还有一堆元字符），
   // 自己手写一个 identity 替身等于把「名字到底长什么样」这件事从断言里抹掉。
   sanitizeFilenameSegment: (await import('../../src/module/utils/filename.js')).sanitizeFilenameSegment,
@@ -163,7 +161,6 @@ beforeEach(() => {
     bytes: 41_943_040
   })
   doubles.getVideoFileSize.mockResolvedValue(40)
-  doubles.needsGroupFileChannel.mockReturnValue(false)
   doubles.uploadFile.mockResolvedValue(true)
   doubles.mkdir.mockResolvedValue(true)
   doubles.removeFile.mockResolvedValue(true)
@@ -467,13 +464,12 @@ describe('recordLiveRoom 上传与闸门', () => {
     expect(doubles.removeFile).not.toHaveBeenCalled()
   })
 
-  it('上传参数：MB 体积、带后缀的文件名、群文件通道来自体积判定', async () => {
-    doubles.needsGroupFileChannel.mockReturnValue(true)
+  it('上传参数：MB 体积、带后缀的文件名，不再替用户强制群文件通道', async () => {
     const event = createEvent()
 
     await recordLiveRoom(event, 'douyin', DOUYIN_URL)
 
-    expect(doubles.needsGroupFileChannel).toHaveBeenCalledWith('ICQQ', 40)
+    // 第四个参数整个去掉了：走不走群文件只听 upload.usegroupfile / groupfilevalue
     expect(doubles.uploadFile).toHaveBeenCalledWith(
       event,
       {
@@ -482,8 +478,7 @@ describe('recordLiveRoom 上传与闸门', () => {
         totalBytes: 40,
         originTitle: '抖音直播_主播 甲_26139686.flv'
       },
-      '',
-      { useGroupFile: true }
+      ''
     )
   })
 
