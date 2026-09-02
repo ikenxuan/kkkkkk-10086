@@ -134,19 +134,21 @@ export const buildAmagiRequestConfig = (): AmagiRequestConfig => ({
     : false
 })
 
-interface AmagiFetcherModule {
+interface AmagiModule {
   bilibiliFetcher: BilibiliFetcher
   douyinFetcher: DouyinFetcher
   kuaishouFetcher: KuaishouFetcher
   xiaohongshuFetcher: XiaohongshuFetcher
+  /** 抖音二次验证方式判定。纯函数，不在 fetcher 接口上 */
+  isSmsCodeVerifyWay: (typeof import('@ikenxuan/amagi'))['isSmsCodeVerifyWay']
 }
 
 const require = createRequire(import.meta.url)
-let amagiModule: AmagiFetcherModule | undefined
+let amagiModule: AmagiModule | undefined
 
 /** amagi 的 package exports 在 Vite 下解析失败，沿用 api.ts 的 CommonJS 兜底 */
-const loadAmagiModule = (): AmagiFetcherModule => {
-  amagiModule ??= require('@ikenxuan/amagi') as AmagiFetcherModule
+const loadAmagiModule = (): AmagiModule => {
+  amagiModule ??= require('@ikenxuan/amagi') as AmagiModule
   return amagiModule
 }
 
@@ -174,3 +176,19 @@ export const douyinFetcher = lazyFetcher(() => wrapAmagiClient(loadAmagiModule()
 export const kuaishouFetcher = lazyFetcher(() => wrapAmagiClient(loadAmagiModule().kuaishouFetcher))
 
 export const xiaohongshuFetcher = lazyFetcher(() => wrapAmagiClient(loadAmagiModule().xiaohongshuFetcher))
+
+/**
+ * 抖音二次验证的方式判定。
+ *
+ * 四个 passport 取数方法都在 `douyinFetcher` 上（因此天然过 {@link wrapAmagiClient}，
+ * 失败统一抛 `AmagiError`），只有这个纯函数是模块级裸导出。
+ *
+ * 仍然从这里转口而不是让调用点直接 `import { isSmsCodeVerifyWay } from '@ikenxuan/amagi'`：
+ * 那样写会让任何 import 到调用点的单测在 **Vite 解析阶段**就失败 —— amagi 的 exports map
+ * 里 `development` 条件指向未发布的 `src/index.ts`，`vi.mock` 都来不及生效（实测
+ * `packageEntryFailure`）。走这里则沿用 `loadAmagiModule` 的 CommonJS 兜底，且首次调用
+ * 才真的 require。
+ * @param verifyWay 服务端下发的 verify_way
+ */
+export const isSmsCodeVerifyWay = (verifyWay: string): boolean =>
+  loadAmagiModule().isSmsCodeVerifyWay(verifyWay)

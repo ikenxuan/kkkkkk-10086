@@ -270,9 +270,10 @@ export class kkkAdmin extends plugin<'message'> {
   async dylogin (e: CommandEvent): Promise<boolean> {
     // dylogin 只用到 reply 与 bot.recallMsg，而其形参把 reply 声明为必填；命令事件上必然带 reply
     await dylogin(e as Parameters<typeof dylogin>[0], {
-      waitForCode: async prompt => {
+      // 等待秒数由 dylogin 给（它把同一个数字写进了提示文案），这里不能自己定一个别的
+      waitForCode: async (prompt, timeoutSeconds) => {
         await this.reply(prompt, true)
-        const ctx = await this.awaitContext(false, 60, '验证码输入超时，登录失败')
+        const ctx = await this.awaitContext(false, timeoutSeconds, '验证码输入超时，登录失败')
         return ctx?.msg || ''
       }
     })

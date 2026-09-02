@@ -1,12 +1,39 @@
-import puppeteer from 'puppeteer'
-import type { Browser, Page } from 'puppeteer'
 import fs from 'node:fs'
-import os from 'node:os'
 import { join } from 'node:path'
-import { scan } from '@ikenxuan/qrcode'
-import { newInjectedPage } from 'fingerprint-injector'
-import { Common, Config, Render } from '@/module/utils/index'
+import type { DouyinPassportVerifyContext } from '@ikenxuan/amagi'
+import { buildAmagiRequestConfig, douyinFetcher, isSmsCodeVerifyWay } from '@/module/utils/amagiClient'
 import { getErrorMessage } from '@/module/utils/error-message'
+import { isRecord } from '@/module/utils/record'
+import { readImageBytes } from '@/module/utils/Watermark'
+import { Common, Config, Render } from '@/module/utils/index'
+
+/**
+ * 下面五个阈值原样取自上游 3cf285ae（`platform/douyin/login.ts`），逐条的来历：
+ *
+ * - {@link SCAN_TIMEOUT}：上游按「消息可撤回窗口」定的 2 分钟。
+ * - {@link CONFIRM_TIMEOUT}、{@link CODE_INPUT_TIMEOUT}、{@link CODE_MAX_ATTEMPTS}：
+ *   上游没写理由，这里也不替它编一个，只记下取值与出处。
+ * - {@link REQUIRED_COOKIES}：上游列的六个键，缺任何一个都只是告警而非失败 ——
+ *   抖音并非每次登录都下发全部六个。
+ */
+
+/** 等待用户扫码的时限上限，与消息可撤回窗口（2 分钟）对齐；二维码本身更早失效时以它为准 */
+const SCAN_TIMEOUT = 120_000
+
+/** 扫码后等待手机确认或完成二次验证的时限 */
+const CONFIRM_TIMEOUT = 180_000
+
+/** 等待用户回填短信验证码的时限（秒） */
+const CODE_INPUT_TIMEOUT = 90
+
+/** 短信验证码允许的重试次数 */
+const CODE_MAX_ATTEMPTS = 3
+
+/** 6 位数字验证码 */
+const CODE_PATTERN = /^\d{6}$/
+
+/** 登录凭证里需要确认下发的关键 cookie */
+const REQUIRED_COOKIES = ['sessionid', 'sessionid_ss', 'sid_guard', 'uid_tt', 'uid_tt_ss', 'ttwid']
 
 /** 登录流程使用的事件对象 */
 export interface DouyinLoginEvent {
@@ -18,339 +45,332 @@ export interface DouyinLoginEvent {
 
 /** 登录选项 */
 export interface DouyinLoginOptions {
-  /** 交互式获取短信验证码 */
-  waitForCode?: (prompt: string) => Promise<string>
+  /**
+   * 交互式获取短信验证码
+   * @param prompt 要发给用户的提示文案，由调用方负责发出
+   * @param timeoutSeconds 等待上限（秒），取 CODE_INPUT_TIMEOUT；超时或没取到就返回空串
+   */
+  waitForCode?: (prompt: string, timeoutSeconds: number) => Promise<string>
 }
 
-interface LoginResult {
-  ok: boolean
-  message?: string
+/** 登录会话的可变状态：cookie 会被每一步刷新，必须逐步传递下去 */
+interface LoginSession {
+  /** 当前会话 cookie */
+  cookie: string
+  /** 二维码令牌 */
+  token: string
 }
 
-interface QrcodeResult {
-  src: string
-  buffer: Buffer
-  decoded: string
-}
+type StepResult<T> = { ok: true, value: T } | { ok: false, message: string }
 
-const LOGIN_URL = 'https://www.douyin.com'
-const QR_SELECTOR = 'img[aria-label="二维码"], .web-login-scan-code__content__qrcode-wrapper img'
-
-const getOperatingSystem = (): 'windows' | 'macos' | 'linux' => {
-  const platform = os.platform()
-  if (platform === 'win32') return 'windows'
-  if (platform === 'darwin') return 'macos'
-  return 'linux'
-}
-
-const getChromeExecutablePath = (): string | undefined => {
-  const candidates = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser'
-  ].filter(Boolean) as string[]
-  return candidates.find(item => fs.existsSync(item))
+/**
+ * 跑一步 passport 调用，把失败折成一句给用户看的话。
+ *
+ * 四个方法都挂在 `douyinFetcher` 上、因而过了 `wrapAmagiClient`：业务失败是**抛出来**的
+ * `AmagiError`，不是上游那种带 `success` 的返回值。而登录的每一步失败要给出各自的提示，
+ * 全交给最外层 catch 会塌成同一句「登录过程出错」，所以逐步接住。
+ * @param label 出现在提示里的步骤名
+ * @param call 实际调用
+ */
+const step = async <T> (label: string, call: () => Promise<T>): Promise<StepResult<T>> => {
+  try {
+    return { ok: true, value: await call() }
+  } catch (error) {
+    logger.error(`[抖音登录] ${label}失败`, error)
+    return { ok: false, message: `${label}失败：${getErrorMessage(error)}` }
+  }
 }
 
 const getMessageId = (msg: unknown): unknown => {
-  const record = msg as { message_id?: unknown, messageId?: unknown } | undefined
-  return record?.message_id || record?.messageId
+  if (!isRecord(msg)) return undefined
+  return msg.message_id || msg.messageId
 }
 
-const recallMessages = async (e: DouyinLoginEvent, ids: unknown[]): Promise<void> => {
-  await Promise.all(ids.filter(Boolean).map(async id => {
-    try {
-      await e.bot?.recallMsg?.(e, id)
-    } catch {}
-  }))
-}
+/**
+ * 登录过程中发出的消息，全部登记在这里，结束时统一撤回，避免二维码留在群里
+ * @param e 消息事件
+ */
+const createMessageTracker = (e: DouyinLoginEvent) => {
+  const messageIds: unknown[] = []
 
-const safeScreenshot = async (page: Page, filename: string): Promise<void> => {
-  try {
-    await Common.mkdir(Common.tempDri.default)
-    await page.screenshot({ path: join(Common.tempDri.default, filename) as `${string}.png` })
-  } catch (error) {
-    logger.warn(`[抖音登录] 截图失败: ${getErrorMessage(error)}`)
-  }
-}
-
-const getImageBuffer = async (src: string): Promise<Buffer | null> => {
-  if (!src) return null
-  if (src.startsWith('data:image')) return Buffer.from(src.split(',')[1] || '', 'base64')
-  const response = await fetch(src)
-  return Buffer.from(await response.arrayBuffer())
-}
-
-const waitQrcode = async (page: Page): Promise<QrcodeResult> => {
-  await page.waitForSelector(QR_SELECTOR, { timeout: 60000 })
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  const src = await page.$eval(QR_SELECTOR, img => img.getAttribute('src') || '')
-  const imageBuffer = await getImageBuffer(src)
-  if (!imageBuffer?.length) throw new Error('二维码图片为空')
-  let decoded = ''
-  try {
-    // scan 是异步函数：旧实现漏了 await，导致 decoded 恒为 Promise 对象
-    decoded = await scan(imageBuffer) || ''
-    if (decoded) logger.mark(`[抖音登录] 二维码解码成功: ${decoded}`)
-  } catch (error) {
-    logger.warn(`[抖音登录] 二维码解码失败，将发送原图: ${getErrorMessage(error)}`)
-  }
   return {
-    src,
-    buffer: imageBuffer,
-    decoded
-  }
-}
+    /**
+     * 发送并登记一条消息
+     * @param message 消息内容
+     */
+    async send (message: unknown): Promise<unknown> {
+      const sent = await e.reply(message, true)
+      const id = getMessageId(sent)
+      if (id) messageIds.push(id)
+      return sent
+    },
 
-const createLoginPage = async (browser: Browser): Promise<Page> => {
-  const page = await newInjectedPage(browser, {
-    fingerprintOptions: {
-      devices: ['desktop'],
-      operatingSystems: [getOperatingSystem()]
-    }
-  })
-
-  await page.setRequestInterception(true)
-  page.on('request', request => {
-    const resourceType = request.resourceType()
-    const url = request.url()
-    const shouldBlock =
-      resourceType === 'media' ||
-      resourceType === 'font' ||
-      /\.(mp4|webm|m3u8|flv|avi|mov|wmv|mkv)(\?|$)/i.test(url) ||
-      url.includes('/aweme/') ||
-      (resourceType === 'image' && !url.includes('qrcode') && !url.startsWith('data:image') && /\.(jpe?g|webp)(\?|$)/i.test(url))
-    if (shouldBlock) request.abort()
-    else request.continue()
-  })
-
-  await page.evaluateOnNewDocument(() => {
-    // 浏览器上下文：window 即 globalThis，此处按运行时结构收窄
-    const scope = globalThis as unknown as {
-      HTMLMediaElement: { prototype: { play: () => Promise<void> } }
-      MediaSource?: unknown
-      IntersectionObserver?: unknown
-    }
-    scope.HTMLMediaElement.prototype.play = function () {
-      return Promise.reject(new Error('Video playback blocked'))
-    }
-    if (scope.MediaSource) scope.MediaSource = undefined
-    scope.IntersectionObserver = class {
-      observe (): void {}
-      unobserve (): void {}
-      disconnect (): void {}
-    }
-  })
-
-  return page
-}
-
-const saveDouyinCookies = async (page: Page): Promise<void> => {
-  const cookies = await page.cookies()
-  const cookieString = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
-  Config.modify('cookies', 'douyin', cookieString)
-  const hasSessionidSs = cookies.some(cookie => cookie.name === 'sessionid_ss')
-  const hasTtwid = cookies.some(cookie => cookie.name === 'ttwid')
-  logger.mark(`[抖音登录] Cookie 参数检测: sessionid_ss=${hasSessionidSs}, ttwid=${hasTtwid}`)
-  if (!hasSessionidSs || !hasTtwid) logger.warn('[抖音登录] 登录 cookie 缺少关键字段，后续 API 可能不可用')
-}
-
-const clickTextButton = async (page: Page, text: string): Promise<boolean> => {
-  return await page.evaluate((buttonText: string) => {
-    const doc = (globalThis as unknown as {
-      document: { querySelectorAll: (selector: string) => ArrayLike<{ textContent?: string | null, click: () => void }> }
-    }).document
-    const elements = Array.from(doc.querySelectorAll('*'))
-    const element = elements.find(el => el.textContent?.trim() === buttonText)
-    if (!element) return false
-    element.click()
-    return true
-  }, text)
-}
-
-const handleSecondVerify = async (
-  page: Page,
-  getCode: DouyinLoginOptions['waitForCode']
-): Promise<LoginResult> => {
-  if (typeof getCode !== 'function') {
-    return { ok: false, message: '当前登录需要短信二次验证，但当前运行环境没有提供验证码输入上下文。请先使用「#设置抖音ck」手动保存 ck。' }
-  }
-
-  try {
-    await page.waitForSelector('#uc-second-verify', { timeout: 8000 })
-    const clicked = await clickTextButton(page, '接收短信验证码')
-    if (!clicked) logger.warn('[抖音登录] 未找到「接收短信验证码」按钮，继续等待验证码输入框')
-
-    const inputSelector = '#uc-second-verify input'
-    await page.waitForSelector(inputSelector, { timeout: 15000 })
-
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const prompt = attempt === 1
-        ? '此次验证需要进行短信 2FA。\n6 位验证码已发送至扫码设备绑定的手机号，请在 60 秒内发送验证码。'
-        : '验证码错误，请重新发送正确的 6 位验证码（剩余机会：1次）。'
-      const code = await getCode(prompt)
-      if (!/^\d{6}$/.test(String(code || '').trim())) {
-        if (attempt === 2) return { ok: false, message: '验证码格式无效，登录失败' }
-        continue
-      }
-
-      await page.evaluate((selector: string) => {
-        const doc = (globalThis as unknown as {
-          document: { querySelector: (selector: string) => { value?: string } | null }
-        }).document
-        const input = doc.querySelector(selector)
-        if (input) input.value = ''
-      }, inputSelector)
-      await page.type(inputSelector, String(code).trim())
-
-      const validatePromise = new Promise<boolean>(resolve => {
-        const handler = async (response: { url: () => string, text: () => Promise<string> }): Promise<void> => {
-          if (!response.url().includes('validate_code')) return
-          try {
-            const body = await response.text()
-            const json = JSON.parse(body) as { data?: { error_code?: number }, message?: string }
-            logger.debug('[抖音登录] 验证码验证响应:', json)
-            page.off('response', handler as never)
-            if (json?.data?.error_code === 1202) resolve(false)
-            else if (json?.message === 'success' || !json?.data?.error_code) resolve(true)
-            else resolve(false)
-          } catch (error) {
-            logger.warn(`[抖音登录] 解析验证码验证响应失败: ${getErrorMessage(error)}`)
-          }
+    /** 撤回目前登记的全部消息 */
+    async recallAll (): Promise<void> {
+      const pending = messageIds.splice(0, messageIds.length)
+      await Promise.all(pending.map(async id => {
+        try {
+          await e.bot?.recallMsg?.(e, id)
+        } catch (error) {
+          logger.debug(`[抖音登录] 撤回消息失败: ${getErrorMessage(error)}`)
         }
-        page.on('response', handler as never)
-        setTimeout(() => {
-          page.off('response', handler as never)
-          resolve(false)
-        }, 8000)
-      })
-
-      await clickTextButton(page, '验证')
-      const verified = await validatePromise
-      if (verified) {
-        logger.mark('[抖音登录] 2FA 验证通过，等待最终登录确认')
-        return { ok: true }
-      }
+      }))
     }
-    return { ok: false, message: '验证码错误或验证超时，登录失败' }
-  } catch (error) {
-    logger.error('[抖音登录] 二次验证处理失败', error)
-    return { ok: false, message: '二次验证处理失败，登录失败' }
   }
 }
 
+/**
+ * 处理账号二次验证：发短信验证码 → 等用户回填 → 提交
+ * @param session 登录会话，验证过程中会刷新其中的 cookie
+ * @param verify 轮询下发的验证上下文
+ * @param tracker 消息登记器
+ * @param waitForCode 取验证码的交互回调
+ * @returns 验证是否通过
+ */
+const handleSecondVerify = async (
+  session: LoginSession,
+  verify: DouyinPassportVerifyContext,
+  tracker: ReturnType<typeof createMessageTracker>,
+  waitForCode: DouyinLoginOptions['waitForCode']
+): Promise<boolean> => {
+  // 先确认有人能把验证码递回来。没有交互上下文时发出去的短信没人消费，
+  // 白扣一次账号的发码额度。
+  if (typeof waitForCode !== 'function') {
+    await tracker.send('此次登录需要短信二次验证，但当前运行环境没有验证码输入上下文。请改用「#设置抖音ck」手动保存 ck。')
+    return false
+  }
+
+  if (!verify.encryptUid) {
+    await tracker.send('账号触发了二次验证，但服务端未下发验证上下文，请稍后重试')
+    return false
+  }
+
+  // 服务端给的验证方式因账号而异：普通账号是 mobile_sms_verify，
+  // 被判定需要辅助验证的账号是 assist_mobile_sms_verify，两者都是下行短信收码
+  const smsWay = verify.verifyWays.find(way => isSmsCodeVerifyWay(way.verifyWay))
+  if (verify.verifyWays.length > 0 && !smsWay) {
+    const ways = verify.verifyWays.map(way => way.verifyWay).join('、')
+    logger.warn(`[抖音登录] 服务端给出的验证方式均不支持: ${ways}`)
+    await tracker.send(`账号触发了二次验证，但当前仅支持短信验证码，服务端给出的方式为：${ways}`)
+    return false
+  }
+
+  const sent = await step('短信验证码发送', async () => await douyinFetcher.sendPassportVerifyCode(
+    { verify, verify_way: smsWay?.verifyWay, typeMode: 'strict' },
+    session.cookie,
+    buildAmagiRequestConfig()
+  ))
+  if (!sent.ok) {
+    await tracker.send(sent.message)
+    return false
+  }
+  const sendResult = sent.value.data
+  session.cookie = sendResult.cookie
+
+  if (!sendResult.ok) {
+    await tracker.send(`短信验证码发送失败：${sendResult.message}`)
+    return false
+  }
+
+  const bizTraceId = sendResult.biz_trace_id
+  const verifyWay = sendResult.verify_way
+  logger.mark(`[抖音登录] 二次验证方式: ${verifyWay}`)
+  const target = sendResult.mobile || smsWay?.mobile || '扫码设备绑定的手机号'
+  let prompt = `此次登录需要二次验证\n6 位数验证码已发送至 ${target}\n请在 ${CODE_INPUT_TIMEOUT} 秒内直接回复该验证码`
+
+  for (let attempt = 1; attempt <= CODE_MAX_ATTEMPTS; attempt++) {
+    const code = (await waitForCode(prompt, CODE_INPUT_TIMEOUT)).trim()
+
+    // 宿主的 awaitContext 超时时自己会先回一句，这里只补「流程到此为止」
+    if (!code) {
+      await tracker.send('等待验证码超时，登录已取消')
+      return false
+    }
+
+    if (!CODE_PATTERN.test(code)) {
+      if (attempt === CODE_MAX_ATTEMPTS) {
+        await tracker.send('输入格式不正确，登录已取消')
+        return false
+      }
+      prompt = `请只发送 6 位数字验证码（剩余 ${CODE_MAX_ATTEMPTS - attempt} 次机会）`
+      continue
+    }
+
+    const checked = await step('验证', async () => await douyinFetcher.validatePassportVerifyCode(
+      { verify, code, biz_trace_id: bizTraceId, verify_way: verifyWay, typeMode: 'strict' },
+      session.cookie,
+      buildAmagiRequestConfig()
+    ))
+    if (!checked.ok) {
+      await tracker.send(checked.message)
+      return false
+    }
+    const checkResult = checked.value.data
+    session.cookie = checkResult.cookie
+
+    if (checkResult.ok) {
+      logger.mark('[抖音登录] 二次验证通过')
+      await tracker.send('验证通过，正在完成登录…')
+      return true
+    }
+
+    if (!checkResult.wrongCode || attempt === CODE_MAX_ATTEMPTS) {
+      await tracker.send(`验证失败：${checkResult.message}`)
+      return false
+    }
+
+    prompt = `验证码错误，请重新发送（剩余 ${CODE_MAX_ATTEMPTS - attempt} 次机会）`
+  }
+
+  return false
+}
+
+/**
+ * 保存登录凭证
+ * @param cookie 完整登录 cookie
+ */
+const persistCookie = (cookie: string): void => {
+  const present = new Set(cookie.split(';').map(pair => pair.split('=')[0]?.trim() ?? ''))
+  const missing = REQUIRED_COOKIES.filter(name => !present.has(name))
+  if (missing.length > 0) {
+    logger.warn(`[抖音登录] 以下 cookie 未在本次登录中下发：${missing.join(', ')}`)
+  }
+
+  Config.modify('cookies', 'douyin', cookie)
+  logger.mark('[抖音登录] 登录凭证已保存至 cookies.yaml')
+}
+
+/**
+ * 抖音扫码登录
+ *
+ * 协议层在 `@ikenxuan/amagi` 的 passport 接口里，这里只负责与用户的交互和状态流转，
+ * 全程不启动浏览器。
+ * @param e 消息事件
+ * @param options 登录选项
+ */
 export const dylogin = async (
   e: DouyinLoginEvent,
   options: DouyinLoginOptions = {}
 ): Promise<boolean> => {
-  const messageIds: unknown[] = []
-  let browser: Browser | undefined
+  const tracker = createMessageTracker(e)
+
   try {
-    const disclaimerMsg = await e.reply('免责声明:\n您将通过扫码完成获取抖音网页端的用户登录凭证（ck），该ck将用于请求抖音 WEB API 接口。\n本BOT不会上传任何有关你的信息到第三方，所配置的 ck 只会用于请求官方 API 接口。\n我方仅提供视频解析及相关抖音内容服务，若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~', true)
-    messageIds.push(getMessageId(disclaimerMsg))
+    await tracker.send('免责声明:\n您将通过扫码完成获取抖音网页端的用户登录凭证（ck），该ck将用于请求抖音 WEB API 接口。\n本BOT不会上传任何有关你的信息到第三方，所配置的 ck 只会用于请求官方 API 接口。\n我方仅提供视频解析及相关抖音内容服务，若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~')
 
-    const executablePath = getChromeExecutablePath()
-    browser = await puppeteer.launch({
-      headless: 'new' as unknown as boolean,
-      ...(executablePath ? { executablePath } : {}),
-      protocolTimeout: 60000,
-      args: [
-        '--disable-blink-features=AutomationControlled',
-        '--mute-audio',
-        '--window-size=800,600',
-        '--disable-gpu',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-background-networking',
-        '--disable-sync',
-        '--disable-extensions',
-        '--disable-notifications',
-        '--disable-translate',
-        '--disable-renderer-backgrounding'
-      ],
-      ignoreDefaultArgs: ['--enable-automation']
-    })
-
-    const page = await createLoginPage(browser)
-    await page.goto(LOGIN_URL, { timeout: 120000, waitUntil: 'domcontentloaded' })
-
-    let qr: QrcodeResult
-    try {
-      qr = await waitQrcode(page)
-    } catch (error) {
-      await safeScreenshot(page, 'DouyinLoginQrcodeError.png')
-      await e.reply(`获取二维码失败：${getErrorMessage(error)}`, true)
+    const qrcode = await step('获取二维码', async () => await douyinFetcher.requestPassportQrcode(
+      { typeMode: 'strict' },
+      undefined,
+      buildAmagiRequestConfig()
+    ))
+    if (!qrcode.ok) {
+      await tracker.recallAll()
+      await e.reply(qrcode.message, true)
       return true
     }
 
-    await Common.mkdir(Common.tempDri.default)
-    fs.writeFileSync(join(Common.tempDri.default, 'DouyinLoginQrcode.png'), qr.buffer)
-    const qrcodeMsg = await e.reply(
-      await Render('douyin/qrcodeImg', { share_url: qr.decoded || qr.src }),
-      true
-    )
-    messageIds.push(getMessageId(qrcodeMsg))
+    const qrcodeData = qrcode.value.data
+    const session: LoginSession = { cookie: qrcodeData.cookie, token: qrcodeData.token }
+    // expire_time 是绝对 Unix 秒，剩余时长直接用 expires_in
+    const validFor = qrcodeData.expires_in
+    logger.mark(`[抖音登录] 二维码已获取，有效期 ${validFor} 秒`)
 
-    const loginResult = await new Promise<LoginResult>(resolve => {
-      let settled = false
-      let loginTimeout: NodeJS.Timeout | undefined
-      const finish = (result: LoginResult): void => {
-        if (settled) return
-        settled = true
-        clearTimeout(loginTimeout)
-        resolve(result)
+    const rendered = await Render('douyin/qrcodeImg', { share_url: qrcodeData.content })
+    const qrcodeImage = rendered ? rendered[0] : undefined
+    if (!qrcodeImage) throw new Error('生成二维码图片失败')
+
+    // 顺手落一份到 temp：图被适配器吞掉或被撤回后，这是唯一还能拿到二维码的地方
+    const qrcodeBytes = readImageBytes(qrcodeImage)
+    if (qrcodeBytes) {
+      await Common.mkdir(Common.tempDri.default)
+      fs.writeFileSync(join(Common.tempDri.default, 'DouyinLoginQrcode.png'), new Uint8Array(qrcodeBytes))
+    }
+
+    await tracker.send(rendered)
+
+    // 二维码实际只有约 60 秒有效期，等到 2 分钟才提示超时会让用户白等
+    let deadline = Date.now() + (validFor > 0 ? Math.min(validFor * 1000, SCAN_TIMEOUT) : SCAN_TIMEOUT)
+    let scanned = false
+
+    while (Date.now() < deadline) {
+      const polled = await step('轮询二维码状态', async () => await douyinFetcher.checkPassportQrcode(
+        { token: session.token, typeMode: 'strict' },
+        session.cookie,
+        buildAmagiRequestConfig()
+      ))
+      if (!polled.ok) {
+        await tracker.recallAll()
+        await e.reply(polled.message, true)
+        return true
       }
-      const resetTimeout = (ms: number, message: string): void => {
-        clearTimeout(loginTimeout)
-        loginTimeout = setTimeout(() => finish({ ok: false, message }), ms)
-      }
-      resetTimeout(120000, '登录超时！二维码已失效！')
-      let scannedHandled = false
-      let secondVerifyHandled = false
 
-      page.on('response', async response => {
-        const url = response.url()
-        if (!url.includes('check_qrconnect')) return
-        try {
-          const setCookie = response.headers()['set-cookie'] || ''
-          if (setCookie.includes('sid_guard')) {
-            await saveDouyinCookies(page)
-            finish({ ok: true, message: '登录成功！用户登录凭证已保存至 cookies.yaml' })
-            return
-          }
+      const result = polled.value.data
+      session.cookie = result.cookie
 
-          const body = await response.text()
-          const json = JSON.parse(body) as { data?: { status?: string, error_code?: number } }
-          if (json?.data?.status === 'scanned' && !scannedHandled) {
-            scannedHandled = true
-            const scannedMsg = await e.reply('二维码已扫码，请在手机上授权以登录', true)
-            messageIds.push(getMessageId(scannedMsg))
+      switch (result.status) {
+        case 'new':
+          break
+
+        case 'scanned':
+          if (!scanned) {
+            scanned = true
+            deadline = Date.now() + CONFIRM_TIMEOUT
+            await tracker.recallAll()
+            await tracker.send('二维码已扫码，请在手机上授权以登录')
           }
-          if (json?.data?.error_code === 2046 && !secondVerifyHandled) {
-            secondVerifyHandled = true
-            resetTimeout(90000, '二次验证后等待登录确认超时，登录失败')
-            const verifyResult = await handleSecondVerify(page, options.waitForCode)
-            if (!verifyResult.ok) finish(verifyResult)
+          break
+
+        case 'verify': {
+          const passed = await handleSecondVerify(session, result.verify, tracker, options.waitForCode)
+          if (!passed) {
+            await tracker.recallAll()
+            return true
           }
-        } catch (error) {
-          logger.warn(`[抖音登录] 处理登录响应失败: ${getErrorMessage(error)}`)
+          deadline = Date.now() + CONFIRM_TIMEOUT
+          break
         }
-      })
-    })
 
-    await e.reply(loginResult.message, true)
-    await recallMessages(e, messageIds)
+        case 'confirmed':
+          if (!result.logged_in) {
+            await tracker.recallAll()
+            await e.reply('已确认登录，但服务端未下发登录凭证，请稍后重试', true)
+            return true
+          }
+          persistCookie(result.cookie)
+          await tracker.recallAll()
+          await e.reply('登录成功！用户登录凭证已保存至cookies.yaml', true)
+          return true
+
+        case 'expired':
+          await tracker.recallAll()
+          await e.reply('二维码已失效，请重新发起登录', true)
+          return true
+
+        case 'busy':
+          // 服务端限频，parser 已经把间隔翻倍，这里只记录不打扰用户
+          logger.debug(`[抖音登录] 轮询被限频，${result.interval} ms 后重试: ${result.message}`)
+          break
+
+        case 'risk':
+          logger.warn(`[抖音登录] 命中风控: ${result.message}`)
+          await tracker.recallAll()
+          await e.reply(`登录请求被抖音风控拦截：${result.message}\n请稍后再试`, true)
+          return true
+
+        case 'unknown':
+          logger.warn(`[抖音登录] 未知的轮询状态: ${result.message}`)
+          break
+      }
+
+      await Common.sleep(result.interval)
+    }
+
+    await tracker.recallAll()
+    await e.reply(scanned ? '等待手机确认超时，登录已取消' : '登录超时！二维码已失效！', true)
   } catch (error) {
     logger.error('[抖音登录] 登录流程出错', error)
+    await tracker.recallAll()
     await e.reply('登录过程出错，请查看控制台日志', true)
-  } finally {
-    if (browser) await browser.close().catch((err: Error) => logger.warn(`[抖音登录] 关闭浏览器失败: ${err.message}`))
   }
+
   return true
 }

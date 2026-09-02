@@ -173,11 +173,13 @@ export const API_CACHE_POLICY: Readonly<Record<ApiCachePlatform, Readonly<Record
  * - `requestCaptchaFromVoucher` / `validateCaptchaResult`（`platform/bilibili/riskControl.ts`）：
  *   `v_voucher` 是**一次性**的，缓存 = 拿旧凭据反复换验证码，整条风控恢复链路直接失效。
  *
- * 抖音的扫码登录（`platform/douyin/login.ts`）走 puppeteer 抓页面、**完全不经过**
- * amagi 取数，所以这里没有抖音条目；快手和小红书没有登录链路（ck 手工设置）。
+ * 抖音那四条是 passport 扫码登录（`platform/douyin/login.ts`，2.40 起改走 amagi 的
+ * passport 接口、不再起 puppeteer）：`checkPassportQrcode` 是同一个形态的有状态轮询，
+ * 缓存住第一次的 `new` 就永远停在「等待扫码」；发码/验码那两个的 `biz_trace_id`
+ * 与验证码都是一次性的。快手和小红书没有登录链路（ck 手工设置）。
  */
 export const NEVER_CACHE_METHODS: Readonly<Record<ApiCachePlatform, readonly string[]>> = {
-  douyin: [],
+  douyin: ['requestPassportQrcode', 'checkPassportQrcode', 'sendPassportVerifyCode', 'validatePassportVerifyCode'],
   bilibili: ['requestLoginQrcode', 'checkQrcodeStatus', 'fetchLoginStatus', 'requestCaptchaFromVoucher', 'validateCaptchaResult'],
   kuaishou: [],
   xiaohongshu: []
