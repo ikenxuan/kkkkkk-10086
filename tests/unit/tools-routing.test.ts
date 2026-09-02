@@ -5,7 +5,8 @@ const doubles = vi.hoisted(() => ({
   getBilibiliID: vi.fn(),
   bilibiliResources: vi.fn(),
   kuaishouGetData: vi.fn(),
-  kuaishouAction: vi.fn()
+  kuaishouAction: vi.fn(),
+  getReplyMessage: vi.fn()
 }))
 
 vi.mock('../../src/module/utils/index.js', () => ({
@@ -17,7 +18,7 @@ vi.mock('../../src/module/utils/index.js', () => ({
     xiaohongshu: { switch: true },
     cookies: { douyin: '' }
   },
-  Common: { getReplyMessage: vi.fn() },
+  Common: { getReplyMessage: doubles.getReplyMessage },
   UploadRecord: vi.fn(),
   wrapWithErrorHandler: (fn: (event: unknown) => unknown) => fn,
   downloadVideo: vi.fn(),
@@ -87,6 +88,29 @@ describe('tools 平台路由回归', () => {
     doubles.kuaishouGetData.mockResolvedValue({ VideoData: {}, CommentData: {}, EmojiData: {} })
     doubles.getKuaishouID.mockResolvedValue({ type: 'one_work', photoId: 'photo-1', P: '快手' })
     doubles.getBilibiliID.mockResolvedValue({ type: 'video', bvid: 'BV1xx411c7mD' })
+  })
+
+  it('引用里没有可解析链接时给一句提示，而不是静默认为处理成功', async () => {
+    // 回归：这里原来无条件 return true，于是 QQBot 上引用解析失效了很久，
+    // 表现成「机器人没反应」而不是报错
+    doubles.getReplyMessage.mockResolvedValue('#解析')
+    const app = new KkkTools()
+    const event = { msg: '#解析', group_id: 100, user_id: 200, reply: vi.fn() }
+
+    await expect(app.prefix(event)).resolves.toBe(true)
+
+    expect(event.reply).toHaveBeenCalledWith(expect.stringContaining('没找到可解析的链接'))
+  })
+
+  it('引用里有链接时不发那句提示', async () => {
+    doubles.getReplyMessage.mockResolvedValue('https://v.kuaishou.com/AbC123')
+    const app = new KkkTools()
+    const event = { msg: '#解析', group_id: 100, user_id: 200, reply: vi.fn() }
+
+    await app.prefix(event)
+
+    expect(doubles.getKuaishouID).toHaveBeenCalledWith('https://v.kuaishou.com/AbC123')
+    expect(event.reply).not.toHaveBeenCalledWith(expect.stringContaining('没找到可解析的链接'))
   })
 
   it('把消息中的单个快手 URL 字符串交给 ID 解析器', async () => {

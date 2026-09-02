@@ -333,7 +333,11 @@ export class kkkTools extends plugin<'message'> {
       )
     }
 
-    await this.dispatchPlatform(e)
+    // dispatchPlatform 返回 false 就是「没认出可解析的链接」。这里原来无条件 return true，
+    // 于是 QQBot 上引用解析失效了很久，表现成「机器人没反应」而不是报错。
+    if (!await this.dispatchPlatform(e)) {
+      await e.reply?.('没找到可解析的链接，请引用一条含链接的消息后再发送「#解析」')
+    }
     return true
   }
 
