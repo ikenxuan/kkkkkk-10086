@@ -1,1 +1,1 @@
-export * from './lib/guoba.support.js'
+export * from './lib/module/guoba/index.js'
