@@ -57,6 +57,12 @@ vi.mock('../../src/module/utils/Render.js', () => ({
   Render: vi.fn()
 }))
 
+// 推送路径的投递出口。这份用例只关心「卡片有没有被渲出来」，不关心发给了谁；
+// 不挡掉它就会去碰宿主的 globalThis.Bot，在这里是 undefined。
+vi.mock('../../src/module/utils/masterMessage.js', () => ({
+  sendMasterMessage: vi.fn(async () => undefined)
+}))
+
 vi.mock('../../src/module/utils/Version.js', () => ({
   default: {
     BotName: 'TRSS-Yunzai',
@@ -83,6 +89,7 @@ import {
   normalizeLoopVideoOptions
 } from '../../src/module/utils/FFmpeg.js'
 import { wrapAmagiClient } from '../../src/module/utils/amagiClient.js'
+import { Render } from '../../src/module/utils/Render.js'
 import {
   Base,
   isRemoteVideoTooLargeForUrlSend,
@@ -243,6 +250,9 @@ describe('Base compatibility', () => {
     // 而 AmagiError.code 声明是 number —— 直接 new 一个就得给 code 加 cast，
     // 那就把「运行期真的会收到字符串」这个前提盖掉了。
     // 归一化在 readAmagiFailureCode 里，Base 拿它的结果去查 bilibiliErrorCodeMap。
+    //
+    // 无事件驱动：有事件时 Base 一律原样抛、不出卡（卡片只有 ErrorHandler 一个出口），
+    // 那条登记表判断如今只剩推送路径在用，所以要走推送路径才验得到。
     const stub = {
       fetchVideoInfo: async () => ({
         success: false,
@@ -251,15 +261,15 @@ describe('Base compatibility', () => {
       })
       // satisfies 而不是 as：方法名照 BilibiliFetcher 校验，上游改名时这里会红
     } satisfies Partial<Record<keyof BilibiliFetcher, unknown>>
-    const reply = vi.fn()
-    const base = new Base({ reply }, {
+    const base = new Base(undefined, {
       ...amagiDependencies,
       bilibiliErrorCodeMap: { [-400]: true },
       bilibiliFetcher: wrapAmagiClient(stub) as unknown as BilibiliFetcher
     })
 
     await expect(base.amagi.bilibili.fetchVideoInfo({ bvid: 'BV1' })).rejects.toThrow('unexpected')
-    expect(reply).toHaveBeenCalledTimes(1)
+    // 过了登记表这道闸才会去渲卡片；字符串码没归一化的话这里是 0 次
+    expect(vi.mocked(Render)).toHaveBeenCalledTimes(1)
   })
 
   it('keeps numeric compression reply IDs unchanged', async () => {

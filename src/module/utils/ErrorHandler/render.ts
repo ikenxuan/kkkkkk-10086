@@ -1,6 +1,7 @@
 import { Render } from '@/module/utils/Render'
 import Version from '@/module/utils/Version'
 import { formatBuildTime } from '@/module/tooling/build-metadata'
+import { collectApiDiagnostics, scrubStackPaths } from './diagnostics.js'
 import type { ErrorHandlerContext } from './types.js'
 
 export interface NormalizedError {
@@ -157,8 +158,14 @@ export const renderErrorReport = async (
       error: {
         name: error.name,
         message: error.message,
-        stack: error.stack,
-        businessName: ctx.options.businessName
+        // 清洗绝对路径：这张卡片会直接回到群里，`C:/Users/某人/...` 会连带把服务器
+        // 目录结构和系统用户名一起贴出去。Base.ts 那条路一直有做，这条原来没有。
+        stack: scrubStackPaths(error.stack),
+        businessName: ctx.options.businessName,
+        // `normalizeError` 只读 name / message / stack，`AmagiError` 上的 code / data /
+        // rawError 全丢 —— 而抖音与 B站 唯一有定位价值的 requestUrl、errorDescription
+        // 只活在那里。接口方法名这条路给不出（只有 businessName），留空即不渲染那一行。
+        diagnostics: collectApiDiagnostics(ctx.options.platform ?? '', undefined, ctx.error)
       },
       logs: [
         ...ctx.logs.slice().reverse(),

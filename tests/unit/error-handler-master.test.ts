@@ -55,9 +55,15 @@ describe('hasErrorReportTarget', () => {
     expect(hasErrorReportTarget(ctxWith(BOT_REGISTERED))).toBe(true)
   })
 
-  it('没登记主人的 Bot 没有收件人 —— 不能退化去读 masterQQ', () => {
+  it('没登记主人、又回不了话的 Bot 没有收件人 —— 不能退化去读 masterQQ', () => {
     // 退化读 masterQQ 会拿到 ICQQ 那个主人号配给 QQBot，最终 11255
     expect(hasErrorReportTarget(ctxWith(BOT_UNREGISTERED))).toBe(false)
+  })
+
+  it('没登记主人但事件回得了话时算有收件人 —— 兜底会把卡片退回触发者', () => {
+    // 真机常态：QQBot 的 self_id 不在宿主主人表里，而消息事件一定带 reply。
+    // 原来这里返回 false，于是卡片压根不渲，用户只剩一行「处理失败：...」。
+    expect(hasErrorReportTarget(ctxWith(BOT_UNREGISTERED, async () => {}))).toBe(true)
   })
 
   it('errorLogSendTo 为空时没有收件人', () => {

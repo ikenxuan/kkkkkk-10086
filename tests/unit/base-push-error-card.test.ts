@@ -355,18 +355,19 @@ describe('push error card adapter info', () => {
 })
 
 /**
- * -352 风控闸门：拿得到 voucher 时 Base 必须**原样抛**、一个字都不发。
+ * 有事件时 Base 必须**原样抛**、一个字都不发。
  *
- * 候选路径的两个读取点（这里的闸门、`platform/bilibili/riskControl.ts` 的策略）已经
- * 合并到 `platform/bilibili/riskVoucher.ts`。合并前闸门只认 2 条路径而策略认 4 条，
- * 落在差集上的 voucher 会让用户先收一张「接口失败」卡、紧接着又被要求扫码。
+ * 原来这里自己渲一张卡再 `event.reply`，然后照旧 throw —— 于是同一个失败被上报两次：
+ * 这张（被动回复、只有接口信封、没有采集日志），加上 wrapWithErrorHandler 那张
+ * （带日志与真实堆栈）。私聊里主人就是触发者，两条前后脚落地。
+ * 现在卡片只有 ErrorHandler 一个出口；Base 只保留无事件的推送路径。
  */
-const riskGate = async (error: unknown): Promise<{ rendered: number, replied: number }> => {
+const eventPathGate = async (error: unknown): Promise<{ rendered: number, replied: number }> => {
   installBots({})
   const reply = vi.fn(async () => undefined)
   const base = new Base({ group_id: 114514, user_id: 1919810, bot: napCatBot(), reply } as never, {
     ...amagiDependencies,
-    bilibiliErrorCodeMap: { [-352]: true },
+    bilibiliErrorCodeMap: { [-352]: true, [-412]: true },
     bilibiliFetcher: throwingFetcher<BilibiliFetcher>(error)
   })
 
@@ -375,67 +376,37 @@ const riskGate = async (error: unknown): Promise<{ rendered: number, replied: nu
   return { rendered: renderMock.mock.calls.length, replied: reply.mock.calls.length }
 }
 
-/** 每条候选路径一个形状。`AmagiError(code, message, data, rawError)` */
-const voucherShapes: Array<[string, unknown]> = [
-  ['data.data.v_voucher', new AmagiError(-352, '风控', { data: { v_voucher: 'v' } })],
-  ['data.v_voucher', new AmagiError(-352, '风控', { v_voucher: 'v' })],
-  ['rawError.data.data.v_voucher', new AmagiError(-352, '风控', undefined, { data: { data: { v_voucher: 'v' } } })],
-  ['rawError.data.v_voucher', new AmagiError(-352, '风控', undefined, { data: { v_voucher: 'v' } })],
-  ['rawError.error.data.data.v_voucher', new AmagiError(-352, '风控', undefined, { error: { data: { data: { v_voucher: 'v' } } } })],
-  ['rawError.error.data.v_voucher', new AmagiError(-352, '风控', undefined, { error: { data: { v_voucher: 'v' } } })],
-  ['rawError.v_voucher', new AmagiError(-352, '风控', undefined, { v_voucher: 'v' })],
-  ['v_voucher', Object.assign(new AmagiError(-352, '风控'), { v_voucher: 'v' })]
-]
-
-describe('bilibili -352 risk control gate', () => {
-  it.each(voucherShapes)('原样抛出、不出卡片：voucher 在 %s', async (_path, error) => {
-    expect(await riskGate(error)).toEqual({ rendered: 0, replied: 0 })
-  })
-
-  it('一条都不命中时照旧出卡片 —— 闸门不是「见 -352 就放行」', async () => {
-    // 实测的 -352 信封只有 {code, message, ttl}，没有 data，这才是常态。
-    // 没有 voucher 就走不了验证码流程，此时把错误卡吞掉等于让用户什么也收不到。
-    expect(await riskGate(new AmagiError(-352, '风控', { ttl: 1 }, { errorDescription: '风控校验失败' })))
-      .toEqual({ rendered: 1, replied: 1 })
-  })
-
-  it('空字符串 voucher 不算命中', async () => {
-    expect(await riskGate(new AmagiError(-352, '风控', { data: { v_voucher: '' } })))
-      .toEqual({ rendered: 1, replied: 1 })
+describe('有事件时一律原样抛、不出卡', () => {
+  it.each([
+    // -352 带 voucher：riskControl 策略要拿它去走验证码流程
+    ['-352 带 voucher', new AmagiError(-352, '风控', { data: { v_voucher: 'v' } })],
+    // -352 不带 voucher 才是实测常态（信封只有 {code, message, ttl}）
+    ['-352 不带 voucher', new AmagiError(-352, '风控', { ttl: 1 }, { errorDescription: '风控校验失败' })],
+    // -412 是 IP 级限流，没有 voucher 也没有验证码可过，riskControl 不认它
+    ['-412 IP 风控', new AmagiError(-412, 'B站数据获取失败', { ttl: 1 }, { errorDescription: '请求被拦截 (客户端 ip 被服务端风控)', responseCode: -412 })],
+    // 在登记表里但不是风控类的码，同样不再由 Base 出卡
+    ['登记表外的码', new AmagiError(-500, '服务器错误')]
+  ])('%s', async (_name, error) => {
+    expect(await eventPathGate(error)).toEqual({ rendered: 0, replied: 0 })
   })
 })
 
-describe('push error card leaves the event-driven path alone', () => {
-  it('prefers the event over the push context when both are present', async () => {
-    // 主人手敲 #测试推送 走的是 handler(e)：有真实触发者、有会话群，
-    // 那两行必须按事件来，不能被订阅配置里的群号顶掉。
+describe('有事件时连抖音那条也不出卡', () => {
+  it('哪怕同时设了 pushContext，也是原样抛、一个字不发', async () => {
+    // 原来这里验的是「事件的群/用户两行不被订阅配置顶掉」。现在有事件就压根不出卡，
+    // 那套场景判定改由 renderErrorReport 承担；无事件的推送路径仍然出卡，
+    // 由上面 push error card target rows 覆盖。
+    installBots({ 2854196310: llOneBot() })
     const reply = vi.fn(async () => undefined)
-    const payload = await errorCard({
-      event: { group_id: 114514, user_id: 1919810, bot: napCatBot(), reply },
-      pushContext: { groupWithBot: ['999999:2854196310'] },
-      bots: { 2854196310: llOneBot() }
+    const base = new Base({ group_id: 114514, user_id: 1919810, bot: napCatBot(), reply } as never, {
+      ...amagiDependencies,
+      douyinFetcher: failingFetcher<DouyinFetcher>(500, '抖音接口炸了')
     })
+    base.pushContext = { groupWithBot: ['999999:2854196310'] }
 
-    expect((payload.logs ?? []).map(entry => entry.message)).toEqual([
-      '群: 114514',
-      '用户: 1919810'
-    ])
-    // 订阅配置里的那个群不该出现在卡片上
-    expect(JSON.stringify(payload.logs)).not.toContain('999999')
-    // 适配器同理：事件自带 bot，就不该再去 Bot[botId] 里翻
-    expect(payload.adapterInfo).toMatchObject({ name: 'NapCat.Onebot', protocol: 'napcat' })
-    expect(payload.adapterInfo?.name).not.toBe('LLOneBot')
-    // 有事件就回复到会话里，不发给主人
-    expect(reply).toHaveBeenCalledTimes(1)
-  })
+    await expect(base.amagi.douyin.fetchVideoWork({ aweme_id: '1' })).rejects.toThrow('抖音接口炸了')
 
-  it('keeps a private-chat event free of a group row even with a push context set', async () => {
-    const reply = vi.fn(async () => undefined)
-    const payload = await errorCard({
-      event: { isPrivate: true, user_id: 1919810, bot: napCatBot(), reply },
-      pushContext: { groupWithBot: ['999999:2854196310'] }
-    })
-
-    expect((payload.logs ?? []).map(entry => entry.message)).toEqual(['用户: 1919810'])
+    expect(renderMock).not.toHaveBeenCalled()
+    expect(reply).not.toHaveBeenCalled()
   })
 })

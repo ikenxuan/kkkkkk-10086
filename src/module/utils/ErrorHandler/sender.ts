@@ -62,7 +62,10 @@ export const hasErrorReportTarget = (ctx: ErrorHandlerContext): boolean => {
   const sendTo = Config.app.errorLogSendTo
   if (!sendTo?.length) return false
 
-  if (sendTo.includes('trigger') && ctx.event?.reply) return true
+  // 触发者永远兜得住：主人表按 Bot 取不到人时，handleBusinessError 会把卡片退回给他。
+  // 原来这里要求 sendTo 里显式有 'trigger'，于是默认配置（只有 master）碰上「这个 Bot
+  // 没在宿主 other.yaml 登记」就返回 false —— 一张卡都不渲，用户只剩一行「处理失败」。
+  if (ctx.event?.reply) return true
 
   const botId = getBotId(ctx.event)
   if (!botId) return false
@@ -72,22 +75,39 @@ export const hasErrorReportTarget = (ctx: ErrorHandlerContext): boolean => {
   return sendTo.includes('master') || sendTo.includes('allMasters')
 }
 
-/**
- * 返回「触发者到底收到没有」：调用方要靠它决定还要不要补那条 `处理失败：...` 纯文字。
- * 原来这里是 void，于是卡片已经发到触发者眼前了，调用方还是照发一遍文字，
- * 同一个错误在同一个会话里出现两次。
- */
-export const sendErrorToTrigger = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
-  if (!ctx.event || !Config.app.errorLogSendTo?.includes('trigger')) return false
-
+/** 真的把消息回给触发者。两个出口共用，差别只在前置条件 */
+const replyToTrigger = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
+  if (!ctx.event?.reply) return false
   try {
-    await ctx.event.reply!(message)
+    await ctx.event.reply(message)
     return true
   } catch (error: unknown) {
     logger.error(`[ErrorHandler] 发送错误消息给触发者失败: ${getErrorMessage(error)}`)
     return false
   }
 }
+
+/**
+ * 返回「触发者到底收到没有」：调用方要靠它决定还要不要补那条 `处理失败：...` 纯文字。
+ * 原来这里是 void，于是卡片已经发到触发者眼前了，调用方还是照发一遍文字，
+ * 同一个错误在同一个会话里出现两次。
+ */
+export const sendErrorToTrigger = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
+  if (!Config.app.errorLogSendTo?.includes('trigger')) return false
+  return await replyToTrigger(ctx, message)
+}
+
+/**
+ * 兜底出口：一个收件人都没落地时把卡片退回给触发者。
+ *
+ * 不看 `errorLogSendTo` —— 那份配置表达的是「谁**应该**收到」，而这里处理的是
+ * 「谁都没收到」。真机上这条会常态生效：QQBot 的 self_id 不在宿主主人表里，
+ * `getMasterList` 返回空表。私聊群聊一视同仁，堆栈里的绝对路径由 scrubStackPaths 压掉。
+ */
+export const sendErrorToTriggerAsFallback = async (
+  ctx: ErrorHandlerContext,
+  message: unknown
+): Promise<boolean> => await replyToTrigger(ctx, message)
 
 export const sendErrorToMaster = async (ctx: ErrorHandlerContext, message: unknown): Promise<boolean> => {
   if (!Config.app.errorLogSendTo?.includes('master')) return false

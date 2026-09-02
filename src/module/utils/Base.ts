@@ -4,7 +4,6 @@ import type { ProxyAuth } from '@/types/config'
 import type { FileInfo } from '@/types/platform'
 import { bilibiliFetcher, douyinFetcher } from '@/module/utils/amagiClient'
 import { AmagiError, readAmagiFailureCode } from '@/module/platform/common/softError'
-import { readRiskVoucher } from '@/module/platform/bilibili/riskVoucher'
 import {
   classifyCdnFailure,
   reportCdnFailure,
@@ -21,6 +20,7 @@ import Common from './Common.js'
 import { sanitizeFilename } from './filename.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
 import { getActiveLogEntries } from './ErrorHandler/log-context.js'
+import { collectApiDiagnostics, pick, scrubStackPaths } from './ErrorHandler/diagnostics.js'
 import { buildContextLogEntries, buildEventContextLogEntries, toErrorCardPlatform } from './ErrorHandler/render.js'
 import { getBuildMetadata, formatBuildTime } from '@/module/tooling/build-metadata'
 import type { MessageEvent } from '@/types/message'
@@ -57,22 +57,6 @@ const getAmagiDependencies = (
 }
 
 /**
- * 把栈帧里的绝对路径压成相对路径。
- *
- * 这张错误卡片是直接回复到群里的，绝对路径会连带把服务器的目录结构和系统用户名
- * （`C:/Users/某人/...`）一起贴出去。只保留插件目录以内的相对位置，定位能力不受影响。
- */
-const scrubStackPaths = (stack: string): string => {
-  const pluginPath = Version.pluginPath
-  if (!pluginPath) return stack
-  const yunzaiRoot = pluginPath.replace(/\/plugins\/[^/]+$/, '')
-  const normalized = stack.replace(/\\/g, '/').replaceAll(pluginPath, '.')
-  return yunzaiRoot && yunzaiRoot !== pluginPath
-    ? normalized.replaceAll(yunzaiRoot, '<yunzai>')
-    : normalized
-}
-
-/**
  * amagi 的业务错误只带结构化字段，没有 JS 调用栈。
  * 直接把 `stack` 留空会让错误卡片的堆栈区渲染成空盒子，
  * 因此在代理里现场抓取真实调用栈作为兜底。
@@ -85,29 +69,6 @@ const captureLiveStack = (name: string, message: string): string => {
     .filter(line => /^\s+at\s/.test(line))
   if (frames.length === 0) return ''
   return scrubStackPaths([`${name}: ${message}`, ...frames].join('\n'))
-}
-
-/** 只认字符串 / 数字，其余（对象、null、undefined）一律当空 —— 别让 `[object Object]` 印到卡片上 */
-const asText = (value: unknown): string =>
-  typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
-
-const pick = (...values: unknown[]): string => values.map(asText).find(Boolean) || ''
-
-/** 把 amagi 的结构化报错字段整理成键值对，供模板独立展示 */
-const collectApiDiagnostics = (
-  platform: string,
-  method: string,
-  error: Record<string, unknown>,
-  err: ApiErrorRecord
-): Array<{ label: string; value: string }> => {
-  return [
-    { label: '平台', value: platform },
-    { label: '接口', value: method },
-    { label: '业务码', value: pick(err.code, error.code, error.errorCode) },
-    { label: '请求类型', value: pick(error.requestType, error.request_type) },
-    { label: '错误描述', value: pick(error.errorDescription, error.amagiMessage) },
-    { label: '接口地址', value: pick(error.requestUrl, error.request_url) }
-  ].filter(item => item.value !== '')
 }
 
 /**
@@ -187,7 +148,7 @@ const buildApiErrorImage = async (
         message,
         stack: String(error.stack || '') || captureLiveStack(name, message),
         businessName: method,
-        diagnostics: collectApiDiagnostics(platform, method, error, err)
+        diagnostics: collectApiDiagnostics(platform, method, err)
       },
       logs: [
         ...getActiveLogEntries().filter(entry => entry.level !== 'TRAC').reverse(),
@@ -252,27 +213,34 @@ const wrapFetcherWithErrorCard = <T extends object> (
           } catch (error: unknown) {
             if (!(error instanceof AmagiError)) throw error
 
-            // 渲染、路由判断、回复必须用同一个事件。以前只有 buildApiErrorImage 用了
-            // self.e，判空和 reply 还读着构造参数，于是子类构造后重新赋值 this.e 时
+            // 渲染、路由判断、投递必须用同一个事件。以前只有 buildApiErrorImage 用了
+            // self.e，判空还读着构造参数，于是子类构造后重新赋值 this.e 时
             // 会出现「按新事件渲染、却按旧事件投递」——卡片内容对，但发错了地方。
             const event = self.e ?? fallbackEvent
-            const method = String(prop)
 
+            /*
+              有事件时一律原样上抛，卡片交给 ErrorHandler 出。
+
+              这里原来自己渲一张再 `event.reply`，然后照旧 throw —— 于是同一个失败被上报
+              两次：这张（被动回复、只有接口信封、无采集日志），加上 wrapWithErrorHandler
+              那张（主动私聊给主人、带日志与真实堆栈）。私聊里主人就是触发者，两条前后脚落地。
+              上游的 amagi 层本来就只抛不报，这一处是本地漂移，收回来。
+
+              诊断字段不会因此丢失：`collectApiDiagnostics` 已经搬进 ErrorHandler，
+              renderErrorReport 自己从 AmagiError 上取。
+            */
+            if (Object.keys(event ?? {}).length !== 0) throw error
+
+            // 以下只剩定时推送那条路：没有事件对象，ErrorHandler 走 getBotId(ctx.event)
+            // 一张卡也发不出去，sendMasterMessage 是它唯一的告警出口。
             if (platform === 'bilibili') {
               const code = readAmagiFailureCode(error)
-              // 不在 amagi 登记表里的码不出卡片，交给 ErrorHandler 的策略链
+              // 不在 amagi 登记表里的码不值得给主人推一张卡
               if (code === undefined || !(code in bilibiliErrorCodeMap)) throw error
-              // -352 且拿得到 voucher 时原样抛：riskControl 策略要按它去走验证码流程，
-              // 出卡片就把那条路堵死了。候选路径必须与策略侧同源，见 riskVoucher.ts
-              if (code === -352 && readRiskVoucher(error) && Object.keys(event ?? {}).length !== 0) throw error
             }
 
-            const img = await buildApiErrorImage(platform, method, toApiErrorRecord(error), event, self.pushContext)
-            if (Object.keys(event ?? {}).length === 0) {
-              await sendMasterMessage(platform, img)
-              throw error
-            }
-            await event?.reply?.(img)
+            const img = await buildApiErrorImage(platform, String(prop), toApiErrorRecord(error), event, self.pushContext)
+            await sendMasterMessage(platform, img)
             throw error
           }
         }

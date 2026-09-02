@@ -74,6 +74,27 @@
 - douyin：`listCard` `live` `live-room` `pushPreview` `render`
 - xiaohongshu：`link` `livePhoto`
 
+### 5. `AmagiError.message` 不塞 `util.inspect`
+
+上游 `amagiClient.ts` 把 `util.inspect({ code, data, message, error }, { depth: 10, colors: true, showHidden: true })` 的结果整段塞进 `AmagiError.message`。
+
+本仓只放人读的那一句（见 `utils/amagiClient.ts` 的 `toAmagiError`）。两个理由：
+
+1. `colors: true` 的 ANSI 转义进了错误卡片的 HTML 就是一串乱码；
+2. 那个 message 还会流进发给触发者的 `处理失败：...` 纯文本回复和 `softFetch` 的 `SoftFailureResult`，用户会收到一大坨 dump。
+
+信封里的结构化字段改由 `ErrorHandler/diagnostics.ts` 的 `collectApiDiagnostics` 摊成键值对，走模板的故障详情区 —— 两条出卡路径共用，信息量不比上游少。
+
+### 6. amagi 层的出卡口：只剩无事件的推送路径
+
+上游 `Base.ts` 里没有 amagi 的 Proxy、没有出卡逻辑，失败一律 `throw` 交给 `wrapWithErrorHandler`。本仓曾在 fetcher Proxy 里自己渲卡 + `event.reply`，于是同一个失败被上报两次（那张只有接口信封，ErrorHandler 那张才带日志与堆栈）。
+
+现在已经收回上游形状：**有事件一律原样抛**。保留的部分只有事件为空那一支 —— 定时推送没有事件对象，ErrorHandler 走 `getBotId(ctx.event)` 一张卡也发不出去，`sendMasterMessage` 是它唯一的告警出口，这是云崽宿主特有的、上游不需要。
+
+下一轮同步不要把这一支也删掉。
+
+也不要顺势把 `Base` 改成上游的 `class Base extends AmagiBase`：那个基类是为「持有 `Client({ cookies })` 实例」而存在的，而本仓的 fetcher 是模块级裸导出、cookie 由调用点显式传（见上面那节），没有实例状态可继承。反过来，保留下来的推送出卡口需要 `self.e` 与 `self.pushContext` 两样**每实例**的东西（发给谁、印不印群号），它们进不了模块级单例 —— 所以那层包装只能待在构造函数里。
+
 ## 待查：推送路径的空 cookie（本仓与上游的一处语义分叉）
 
 `platform/bilibili/push.ts` 的 `getdata()` 里，拉视频动态稿件信息的 `fetchVideoInfo` 第二个实参是 `''`，也就是**不带 cookie**：

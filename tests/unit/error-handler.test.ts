@@ -201,3 +201,75 @@ describe('error card context rows converge per scenario', () => {
     expect(push).not.toContain('unknown')
   })
 })
+
+describe('业务错误卡片带上接口诊断', () => {
+  const cardOf = async (error: unknown, platform?: string) => {
+    renderMock.mockClear()
+    renderMock.mockResolvedValue(['image'])
+
+    await renderErrorReport({
+      error,
+      options: { businessName: '解析', platform } as ErrorHandlerContext['options'],
+      logs: [],
+      event: { group_id: 1, user_id: 2 } as MessageEvent
+    })
+
+    expect(renderMock).toHaveBeenCalledTimes(1)
+    return renderMock.mock.calls[0][1] as {
+      error: { stack: string, diagnostics?: Array<{ label: string, value: string }> }
+    }
+  }
+
+  const rows = async (error: unknown, platform?: string): Promise<Record<string, string>> => {
+    const card = await cardOf(error, platform)
+    return Object.fromEntries((card.error.diagnostics ?? []).map(item => [item.label, item.value]))
+  }
+
+  /** 线上那次 -412 的信封形状 */
+  const bilibiliBanned = (): Error => Object.assign(new Error('B站数据获取失败'), {
+    code: -412,
+    rawError: {
+      errorDescription: '请求被拦截 (客户端 ip 被服务端风控)',
+      requestType: 'videoInfo',
+      requestUrl: 'https://api.bilibili.com/x/web-interface/view?bvid=BV1',
+      responseCode: -412
+    }
+  })
+
+  it('把 AmagiError 的信封摊成诊断行', async () => {
+    // normalizeError 只读 name / message / stack，code 与 rawError 原来整个丢掉 ——
+    // 而这条路上唯一有定位价值的就是 requestUrl 和 errorDescription
+    expect(await rows(bilibiliBanned(), 'bilibili')).toMatchObject({
+      平台: 'bilibili',
+      业务码: '-412',
+      请求类型: 'videoInfo',
+      错误描述: '请求被拦截 (客户端 ip 被服务端风控)',
+      接口地址: 'https://api.bilibili.com/x/web-interface/view?bvid=BV1'
+    })
+  })
+
+  it('-412 给一句「等」，不引导用户去找验证码', async () => {
+    // riskControl 只认 -352：-412 没有 voucher，也没有验证码可过
+    expect((await rows(bilibiliBanned(), 'bilibili')).建议).toContain('IP')
+  })
+
+  it('抖音那个恒为 500 的通用失败如实说不知道原因', async () => {
+    const advice = (await rows(Object.assign(new Error('抖音数据获取失败'), { code: 500 }), 'douyin')).建议
+    expect(advice).toContain('稍后再试')
+  })
+
+  it('认不出来的失败不硬凑一句建议', async () => {
+    expect((await rows(new Error('boom'), 'douyin')).建议).toBeUndefined()
+  })
+
+  it('堆栈里的绝对路径被压掉，不把服务器目录贴到群里', async () => {
+    const error = new Error('boom')
+    const pluginRoot = process.cwd().replace(/\\/g, '/')
+    error.stack = `Error: boom\n    at foo (${pluginRoot}/lib/x.js:1:1)`
+
+    const card = await cardOf(error, 'douyin')
+
+    expect(card.error.stack).not.toContain(pluginRoot)
+    expect(card.error.stack).toContain('./lib/x.js')
+  })
+})
