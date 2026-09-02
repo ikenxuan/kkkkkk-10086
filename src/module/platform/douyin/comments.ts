@@ -11,6 +11,7 @@ import {
   type RichTextNode
 } from '@kkk/richtext'
 import { Config, Networks, baseHeaders } from '@/module/utils/index'
+import { getErrorMessage } from '@/module/utils/error-message'
 import { firstUrl } from '@/module/utils/record'
 import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import type { DouyinComment, DouyinSubComment, ExtraSearchText, RawTextExtra } from '@/module/utils/template-contracts'
@@ -260,30 +261,49 @@ const buildDouyinRichText = async (
  * 单张评论图片的 HEIC 转 JPG。
  *
  * 上游用 heic-decode + jpeg-js，这里沿用本仓库既有的 heic-convert，行为一致。
+ *
+ * **不抛**：取不到或转不动就退回原图地址，也就是按「非 HEIC」处理 —— 探测失败最常见
+ * 的原因是网络抖动，跟这张图是不是 HEIC 无关，而 HEIC 在评论区本就是少数。
+ * 裸抛的代价是整批评论图一起没：调用点在 `for...of` 里，异常一穿透，前面已经解析好、
+ * 已经拉完子评论的评论连同 `commentsData` 一起随栈销毁，`Render` 压根不执行，
+ * 用户侧连一句提示都没有（同 `Base.probeVideoSize` 当年那个 bug）。
+ * `heic-convert` 拿到非 HEIC 输入也会抛 `TypeError`，所以这层兜底无论如何都得有。
  */
 const processCommentImage = async (imageUrl: string | null | undefined): Promise<string | null> => {
   if (!imageUrl) return null
 
-  const headers = await new Networks({
-    url: imageUrl,
-    type: 'arraybuffer',
-    headers: { ...baseHeaders, Referer: 'https://www.douyin.com/', Cookie: '' }
-  }).getHeaders()
+  try {
+    const headers = await new Networks({
+      url: imageUrl,
+      type: 'arraybuffer',
+      headers: { ...baseHeaders, Referer: 'https://www.douyin.com/', Cookie: '' },
+      // 这次探测唯一的作用是读 content-type，失败就当非 HEIC 走下去。所以宁可快速
+      // 失败也不要重试放大：默认的 3 秒 × 4 次尝试 + 1/2/3 秒退避最坏 18 秒，而默认
+      // 5 条主评论、每条最多 5 条子评论是串行探测的。
+      headersTimeout: 8000,
+      maxRetries: 0
+    }).getHeaders()
 
-  if (headers['content-type'] !== 'image/heic') return imageUrl
+    if (headers['content-type'] !== 'image/heic') return imageUrl
 
-  const response = await new Networks({
-    url: imageUrl,
-    type: 'arraybuffer',
-    headers: { ...baseHeaders, Referer: 'https://www.douyin.com/', Cookie: '' }
-  }).request()
+    const response = await new Networks({
+      url: imageUrl,
+      type: 'arraybuffer',
+      headers: { ...baseHeaders, Referer: 'https://www.douyin.com/', Cookie: '' }
+    }).request()
 
-  const jpegBuffer = await convert({
-    buffer: response.data as never,
-    format: 'JPEG'
-  })
+    const jpegBuffer = await convert({
+      buffer: response.data as never,
+      format: 'JPEG'
+    })
 
-  return `data:image/jpeg;base64,${Buffer.from(jpegBuffer).toString('base64')}`
+    return `data:image/jpeg;base64,${Buffer.from(jpegBuffer).toString('base64')}`
+  } catch (error: unknown) {
+    // 只记一句话：这条路上的 AxiosError 直接交给 logger 会把 ClientRequest / Agent
+    // 整棵对象树打出来，几百行噪声盖掉真正要看的东西。
+    logger.warn(`[抖音] 评论配图处理失败，按原图渲染：${getErrorMessage(error)}`)
+    return imageUrl
+  }
 }
 
 /** 把 data URL 换成宿主收得下的 base64:// 直链，其余原样 */

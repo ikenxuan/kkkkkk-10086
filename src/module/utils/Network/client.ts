@@ -30,6 +30,14 @@ export interface NetworkRequestOptions {
   method?: Method
   body?: unknown
   timeout?: number
+  /**
+   * 只作用于 {@link Networks.getHeaders} 的探测请求，默认 3000。
+   *
+   * 单独开一个键而不是复用 `timeout`：那四个探体积的调用点（`Base.probeVideoSize`、
+   * 快手与 B站 的 getvideosize）要的就是「快速失败」，而评论图那条路探的是同一个
+   * 签名 CDN 地址、真实下载给的是 30 秒，3 秒紧了一个数量级。
+   */
+  headersTimeout?: number
   maxRetries?: number
   filepath?: string
   proxy?: AxiosProxyConfig | false
@@ -52,6 +60,7 @@ export class Networks {
   readonly method: Method
   readonly body: unknown
   readonly timeout: number
+  readonly headersTimeout: number
   readonly filepath: string | undefined
   readonly maxRetries: number
   readonly userAgent: string
@@ -66,8 +75,10 @@ export class Networks {
     this.method = data.method || 'GET'
     this.body = data.body || ''
     this.timeout = data.timeout || 30000
+    this.headersTimeout = data.headersTimeout || 3000
     this.filepath = data.filepath
-    this.maxRetries = data.maxRetries || 3
+    // `??` 而不是 `||`：`maxRetries: 0`（「一次就够，别重试」）用 `||` 会静默变成 3
+    this.maxRetries = data.maxRetries ?? 3
     this.downloadBucket = data.downloadBucket
     this.userAgent = getRandomUserAgent()
     this.proxy = Config.request?.proxy?.switch
@@ -194,7 +205,7 @@ export class Networks {
       const config = this.getConfig(retryCount)
       const response = await this.axiosInstance.get(this.url, {
         ...config,
-        timeout: 3000,
+        timeout: this.headersTimeout,
         headers: { ...config.headers, Range: 'bytes=0-0' }
       })
       return response.headers
