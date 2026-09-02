@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { getPluginConstructor } from '../../src/module/loader/index.js'
+
 const FIXTURE = fileURLToPath(new URL('../fixtures/baseline/app-contract.json', import.meta.url))
 
 /**
@@ -130,24 +132,28 @@ globalThis.logger = {
   debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), mark: vi.fn()
 } as unknown as typeof logger
 
-// app 模块在求值时就会读取 `plugin` 与 `Config`，因此必须在替身安装之后再导入
-const { kkkAdmin } = await import('../../src/apps/admin.js')
-const { kkkHelp } = await import('../../src/apps/help.js')
-const { kkkPush } = await import('../../src/apps/push.js')
-const { kkkStatistics } = await import('../../src/apps/statistics.js')
-const { kkkTestPush } = await import('../../src/apps/testPush.js')
-const { kkkTools } = await import('../../src/apps/tools.js')
-const { kkkUpdate } = await import('../../src/apps/update.js')
+// app 模块在求值时就会读取 `plugin` 与 `Config`，因此必须在替身安装之后再导入。
+// 留整个命名空间而不是当场解构：解构会把多出来的导出藏起来，而 `module/loader`
+// 要求 app 文件有且仅有一个具名导出。
+const appModules = {
+  admin: await import('../../src/apps/admin.js'),
+  help: await import('../../src/apps/help.js'),
+  push: await import('../../src/apps/push.js'),
+  statistics: await import('../../src/apps/statistics.js'),
+  testPush: await import('../../src/apps/testPush.js'),
+  tools: await import('../../src/apps/tools.js'),
+  update: await import('../../src/apps/update.js')
+}
 
 /** 文件名 → 导出类。文件名即 Yunzai 的注册名，顺序也是契约的一部分。 */
 const apps = {
-  admin: kkkAdmin,
-  help: kkkHelp,
-  push: kkkPush,
-  statistics: kkkStatistics,
-  testPush: kkkTestPush,
-  tools: kkkTools,
-  update: kkkUpdate
+  admin: appModules.admin.kkkAdmin,
+  help: appModules.help.kkkHelp,
+  push: appModules.push.kkkPush,
+  statistics: appModules.statistics.kkkStatistics,
+  testPush: appModules.testPush.kkkTestPush,
+  tools: appModules.tools.kkkTools,
+  update: appModules.update.kkkUpdate
 } as const
 
 interface RuleContract {
@@ -244,6 +250,16 @@ describe('app 契约', () => {
 })
 
 describe('app 契约的结构约束', () => {
+  // 多一个导出就整文件拒载，用户看到的是命令凭空消失：`buildHelpGroups` 为了让测试
+  // 读到菜单数据挂在 help.ts 上，`#kkk帮助` 和 `#kkk版本` 就这么一起没了一整个版本。
+  it('每个 app 文件只有一个具名导出，且 loader 认它是插件构造函数', () => {
+    for (const [fileName, appModule] of Object.entries(appModules)) {
+      expect(Object.keys(appModule), fileName).toEqual([baseline[fileName]!.className])
+      expect(getPluginConstructor(appModule, `${fileName}.js`), fileName)
+        .toBe(apps[fileName as keyof typeof apps])
+    }
+  })
+
   it('每个 app 都声明了 message 事件与非空 rule', () => {
     for (const [fileName, app] of Object.entries(contract)) {
       expect(app.event, fileName).toBe('message')

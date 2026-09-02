@@ -23,7 +23,8 @@ function isConstructable (value: unknown): value is PluginConstructor {
   }
 }
 
-function getPluginConstructor (module: AppModule, file: string): PluginConstructor {
+/** 导出是给 `tests/contracts/apps.test.ts` 用的：那条断言要跑这里的原件，而不是抄一份规则 */
+export function getPluginConstructor (module: AppModule, file: string): PluginConstructor {
   const exports = Object.entries(module)
   const pluginExport = exports[0]
   if (exports.length !== 1 || !pluginExport || pluginExport[0] === 'default' || !isConstructable(pluginExport[1])) {

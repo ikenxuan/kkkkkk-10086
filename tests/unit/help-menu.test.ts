@@ -55,7 +55,9 @@ globalThis.logger = {
 } as unknown as typeof logger
 
 // 替身装好之后再导入：help.ts 在模块求值时就会读 `plugin`
-const { buildHelpGroups, kkkHelp: KkkHelp } = await import('../../src/apps/help.js')
+const { kkkHelp: KkkHelp } = await import('../../src/apps/help.js')
+// buildHelpGroups 住在 module/help/content：apps/*.js 只允许一个具名导出，见那里的说明
+const { buildHelpGroups } = await import('../../src/module/help/content.js')
 
 type HelpGroup = ReturnType<typeof buildHelpGroups>[number]
 type HelpItem = HelpGroup['items'][number]
