@@ -7,7 +7,6 @@ import {
   type RichTextDocument,
   type RichTextNode
 } from '@kkk/richtext'
-import Config from '@/module/utils/Config'
 
 /** 处理后的表情项 */
 export interface KuaishouEmoji {
@@ -147,10 +146,14 @@ export const buildKuaishouRichText = (
 /**
  * @param data 完整的评论数据
  * @param emojidata 处理过后的 emoji 列表
+ * @param limit 保留几条，由调用点用 `kuaishouCommentLimit()` 算好传进来 ——
+ *   取值和「要不要出评论图」的判断必须来自同一处，分头各读一次配置就会出现
+ *   「面板设了 0，判断说不发、这里却切出 5 条」这种对不上的情况
  */
 export default async function comments (
   data: RawCommentPayload | null | undefined,
-  emojidata: KuaishouEmoji[]
+  emojidata: KuaishouEmoji[],
+  limit: number
 ): Promise<KuaishouComment[]> {
   const rootComments = data?.data?.visionCommentList?.rootComments || data?.visionCommentList?.rootComments || []
   if (!Array.isArray(rootComments) || rootComments.length === 0) return []
@@ -175,6 +178,5 @@ export default async function comments (
     }))
     .sort((a, b) => b.digg_count - a.digg_count)
 
-  const limit = Config.kuaishou.numcomment || Config.kuaishou.kuaishounumcomments || 5
-  return jsonArray.slice(0, Math.min(jsonArray.length, limit))
+  return jsonArray.slice(0, Math.min(jsonArray.length, Math.max(0, limit)))
 }

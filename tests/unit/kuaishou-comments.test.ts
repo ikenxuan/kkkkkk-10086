@@ -1,15 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { RawKuaishouComment } from '../../src/module/platform/kuaishou/comments.js'
 
-const configMock = vi.hoisted(() => ({
-  kuaishou: {} as Record<string, unknown>
-}))
-
-vi.mock('../../src/module/utils/Config.js', () => ({
-  default: configMock
-}))
-
+/*
+  `comments()` 不再自己读配置：条数由调用点用 `kuaishouCommentLimit()` 算好传进来，
+  所以这份用例里也没有 Config 替身了。键的新旧兜底（numcomment / kuaishounumcomments）
+  改由 `kuaishou-action.test.ts` 在真正的闸门那一侧钉。
+*/
 const { default: comments, buildKuaishouRichText } = await import('../../src/module/platform/kuaishou/comments.js')
+
+/** 大多数用例不关心条数，给一个不会截断的值 */
+const NO_TRUNCATION = 30
 
 const emojiData = [
   { name: '[大笑]', url: 'https://example.com/laugh.png' },
@@ -19,10 +19,6 @@ const emojiData = [
 ]
 
 const wrap = (rootComments: RawKuaishouComment[]) => ({ data: { visionCommentList: { rootComments } } })
-
-beforeEach(() => {
-  configMock.kuaishou = {}
-})
 
 describe('buildKuaishouRichText', () => {
   it('emits a rich text document instead of an HTML string', async () => {
@@ -94,7 +90,7 @@ describe('kuaishou comments payload', () => {
     const now = 1700000000000
     const result = await comments(wrap([
       { commentId: 'c-1', authorName: '一号', headurl: 'a.png', content: '甲', timestamp: now, realLikedCount: 23456, likedCount: 1, subCommentCount: 7 }
-    ]), emojiData)
+    ]), emojiData, NO_TRUNCATION)
 
     // 点赞数转成 '2.3w' 字符串会让模板里的 `count >= 10000` 恒为 false，万位换算等于被废掉
     expect(result[0].digg_count).toBe(23456)
@@ -105,13 +101,13 @@ describe('kuaishou comments payload', () => {
   })
 
   it('falls back to likedCount when realLikedCount is absent', async () => {
-    const result = await comments(wrap([{ commentId: 'c-1', content: '甲', likedCount: 88 }]), emojiData)
+    const result = await comments(wrap([{ commentId: 'c-1', content: '甲', likedCount: 88 }]), emojiData, NO_TRUNCATION)
 
     expect(result[0].digg_count).toBe(88)
   })
 
   it('defaults every required contract field instead of leaking undefined', async () => {
-    const result = await comments(wrap([{}]), emojiData)
+    const result = await comments(wrap([{}]), emojiData, NO_TRUNCATION)
 
     expect(result[0]).toMatchObject({
       cid: '',
@@ -125,36 +121,36 @@ describe('kuaishou comments payload', () => {
     expect(result[0].text.nodes).toEqual([])
   })
 
-  it('sorts by like count and truncates to the configured limit', async () => {
-    configMock.kuaishou = { numcomment: 2 }
+  it('sorts by like count and truncates to the limit it is handed', async () => {
     const result = await comments(wrap([
       { commentId: 'low', content: '低', likedCount: 1 },
       { commentId: 'high', content: '高', likedCount: 999 },
       { commentId: 'mid', content: '中', likedCount: 50 }
-    ]), emojiData)
+    ]), emojiData, 2)
 
     expect(result.map(item => item.cid)).toEqual(['high', 'mid'])
   })
 
-  it('honours the legacy kuaishounumcomments key', async () => {
-    configMock.kuaishou = { kuaishounumcomments: 1 }
+  // 0 的语义是「不发评论图」，调用点靠它决定整条支线要不要跑；真传进来也不该切出东西
+  it.each([[0], [-1]])('limit 为 %p 时一条都不留', async (limit) => {
     const result = await comments(wrap([
       { commentId: 'a', content: '甲', likedCount: 2 },
       { commentId: 'b', content: '乙', likedCount: 1 }
-    ]), emojiData)
+    ]), emojiData, limit)
 
-    expect(result).toHaveLength(1)
+    expect(result).toEqual([])
   })
 
   it('returns an empty list when the payload carries no comments', async () => {
-    await expect(comments(undefined, emojiData)).resolves.toEqual([])
-    await expect(comments(wrap([]), emojiData)).resolves.toEqual([])
+    await expect(comments(undefined, emojiData, NO_TRUNCATION)).resolves.toEqual([])
+    await expect(comments(wrap([]), emojiData, NO_TRUNCATION)).resolves.toEqual([])
   })
 
   it('reads the flattened payload shape as well', async () => {
     const result = await comments(
       { visionCommentList: { rootComments: [{ commentId: 'c-1', content: '甲' }] } },
-      emojiData
+      emojiData,
+      NO_TRUNCATION
     )
 
     expect(result).toHaveLength(1)

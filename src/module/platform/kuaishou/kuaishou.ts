@@ -1,8 +1,10 @@
 import type { AxiosRequestConfig } from 'axios'
 import { Base, Config, Render, Networks, downloadVideo } from '@/module/utils/index'
+import { kuaishouCommentLimit } from '@/module/platform/common/commentLimit'
 import { runMediaTasks, VIDEO_DOWNLOAD_TIMEOUT_MS } from '@/module/utils/MediaTasks'
 import { reportMedia } from '@/module/utils/media-metrics'
 import comments, { type KuaishouEmoji } from './comments.js'
+import { fetchKuaishouEmojiList, fetchKuaishouWorkComments } from './getdata.js'
 
 interface KuaishouPhoto {
   photoUrl?: string
@@ -24,13 +26,15 @@ export interface KuaishouActionPayload {
       visionVideoDetail?: KuaishouVideoDetail
     }
   }
-  CommentsData?: { data?: unknown }
-  CommentData?: unknown
-  EmojiData?: {
-    data?: {
-      data?: { visionBaseEmoticons?: { iconUrls?: Record<string, string> } }
-      visionBaseEmoticons?: { iconUrls?: Record<string, string> }
-    }
+  /** 评论支线自己按它取评论，见 {@link fetchKuaishouWorkComments} */
+  photoId?: string
+}
+
+/** 表情表响应，两种嵌套深度都见过（同 `comments.ts` 的 RawCommentPayload） */
+interface KuaishouEmojiPayload {
+  data?: {
+    data?: { visionBaseEmoticons?: { iconUrls?: Record<string, string> } }
+    visionBaseEmoticons?: { iconUrls?: Record<string, string> }
   }
 }
 
@@ -65,8 +69,6 @@ export default class KuaiShou extends Base {
 
   async Action (data: KuaishouActionPayload): Promise<boolean> {
     const videoDetail = data.VideoData?.data?.data?.visionVideoDetail || data.VideoData?.data?.visionVideoDetail
-    const commentsData = data.CommentsData?.data || data.CommentsData || data.CommentData
-    const emojiList = data.EmojiData?.data?.data?.visionBaseEmoticons?.iconUrls || data.EmojiData?.data?.visionBaseEmoticons?.iconUrls || {}
 
     if (videoDetail?.status !== 1) {
       await this.e!.reply!('不支持解析的视频')
@@ -75,45 +77,74 @@ export default class KuaiShou extends Base {
     ;(Config.app.parseTip || Config.kuaishou.kuaishoutip) && await this.e!.reply!('检测到快手链接，开始解析')
 
     /*
-      两条独立支线的共享前置，必须留在 fan-out 之前：
-      - `video_url` 两条都要用（评论卡的 share_url / HEAD 探测、以及视频下载本身）
-      - `transformedData` 是 comments() 渲染表情要的表，只该转一次
-      上面 `status !== 1` 的早退和解析提示同理 —— 那两句要在任何支线启动前跑完。
+      `video_url` 两条支线都要用（评论卡的 share_url / HEAD 探测、以及视频下载本身），
+      所以留在 fan-out 之前。上面 `status !== 1` 的早退和解析提示同理。
     */
     const video_url = videoDetail.photo.photoUrl
-    const transformedData: KuaishouEmoji[] = Object.entries(emojiList).map(([name, path]) => {
-      return { name, url: `https:${path}` }
-    })
+
+    /*
+      评论卡的两道闸门，和 fetch 用的是同一个数量值。
+
+      `Config.kuaishou.comment` 在 `config/default_config/kuaishou.yaml` 和锅巴面板里
+      一直都有（`guoba/schemas/kuaishou.ts`「快手评论解析」），但**没有任何代码读它** ——
+      用户在面板上把它关掉，评论卡照发。键不存在时按 true 算，跟 yaml 的默认值一致，
+      也就不会动到没配过这一项的用户。
+
+      数量走 `kuaishouCommentLimit()`：面板把它注册成 `num(..., 0, 30)`，0 是选得出来的
+      值、语义就是不发评论图，而旧实现那句 `numcomment || kuaishounumcomments || 5`
+      会把 0 一路兜回 5。抖音、B站早就走这个 helper 了，快手是最后一个。
+    */
+    const commentLimit = kuaishouCommentLimit()
+    const wantComment = Config.kuaishou.comment !== false && commentLimit > 0
 
     /**
-     * 评论卡片支线：自己处理评论数据、自己探体积、自己渲染、自己发送。
+     * 评论卡片支线：自己取评论与表情、自己探体积、自己渲染、自己发送。
      *
-     * 这三步**必须留在同一条支线里按序跑**：`VideoSize` 就是 `getHeaders()` 探回来的
+     * 取数必须留在这个闭包里：原来它在 `KuaishouData.GetData` 的 `Promise.all` 里，
+     * 评论接口一挂那个 all 就 reject、`Action` 根本不会被调用 —— 下面 runMediaTasks
+     * 的 allSettled 容错救不了 `Action` 之前就抛掉的取数，视频跟着一起不发。
+     *
+     * 探体积和渲染**必须跟着按序跑**：`VideoSize` 就是 `getHeaders()` 探回来的
      * `content-length`，把 HEAD 探测拆成另一条并发支线会让 Render 拿到还没探到的体积。
      * 能和视频下载并发的是「整条评论卡」，不是它内部的这几步。
      */
-    const sendComment = async (): Promise<void> => {
-      const CommentsData = await comments(commentsData as Parameters<typeof comments>[0], transformedData)
-      const videoheaders = await new Networks({ url: video_url as string, headers: kuaishouMediaHeaders(this.headers) }).getHeaders()
-      const Size = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
-      const videoSizeInMB = (Size / (1024 * 1024)).toFixed(2)
-      const img = await Render(
-        'kuaishou/comment',
-        {
-          Type: '视频',
-          viewCount: videoDetail.photo.viewCount,
-          CommentsData,
-          // 契约要 number：模板里是 `CommentLength > 0` 这种数值比较，传字符串时 '0' > 0 为 false 但 '3' > 0 为 true，
-          // 靠隐式转换蒙对不如直接给数字
-          CommentLength: CommentsData?.length ?? 0,
-          // photoUrl 是可选字段，契约里 share_url 必填 string；拿不到就给空串，别把 undefined 塞进模板
-          share_url: video_url || '',
-          VideoSize: videoSizeInMB,
-          likeCount: videoDetail.photo.likeCount
-        }
-      )
-      await this.e!.reply!(img)
-    }
+    const sendComment = wantComment
+      ? async (): Promise<void> => {
+        const [commentsPayload, emojiPayload] = await Promise.all([
+          fetchKuaishouWorkComments(data.photoId),
+          // 表情表拿不到就退成纯文字（抖音、小红书已经是这个行为），不该带走整张评论卡
+          fetchKuaishouEmojiList().catch((error: unknown) => {
+            logger.warn('[快手] 获取表情列表失败，降级为纯文字', error)
+            return undefined
+          })
+        ])
+        const emojiData = (emojiPayload as KuaishouEmojiPayload | undefined)?.data
+        const emojiList = emojiData?.data?.visionBaseEmoticons?.iconUrls || emojiData?.visionBaseEmoticons?.iconUrls || {}
+        const transformedData: KuaishouEmoji[] = Object.entries(emojiList).map(([name, path]) => {
+          return { name, url: `https:${path}` }
+        })
+        const CommentsData = await comments(commentsPayload as Parameters<typeof comments>[0], transformedData, commentLimit)
+        const videoheaders = await new Networks({ url: video_url as string, headers: kuaishouMediaHeaders(this.headers) }).getHeaders()
+        const Size = videoheaders['content-length'] ? parseInt(videoheaders['content-length'], 10) : 0
+        const videoSizeInMB = (Size / (1024 * 1024)).toFixed(2)
+        const img = await Render(
+          'kuaishou/comment',
+          {
+            Type: '视频',
+            viewCount: videoDetail.photo.viewCount,
+            CommentsData,
+            // 契约要 number：模板里是 `CommentLength > 0` 这种数值比较，传字符串时 '0' > 0 为 false 但 '3' > 0 为 true，
+            // 靠隐式转换蒙对不如直接给数字
+            CommentLength: CommentsData?.length ?? 0,
+            // photoUrl 是可选字段，契约里 share_url 必填 string；拿不到就给空串，别把 undefined 塞进模板
+            share_url: video_url || '',
+            VideoSize: videoSizeInMB,
+            likeCount: videoDetail.photo.likeCount
+          }
+        )
+        await this.e!.reply!(img)
+      }
+      : undefined
 
     /** 视频下载支线：只依赖 `video_url`，不等评论卡渲染完 */
     const sendVideo = async (): Promise<void> => {

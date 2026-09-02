@@ -6,7 +6,7 @@ import type { KuaishouDataType } from '../../src/module/platform/kuaishou/getdat
 
 /**
  * `kuaishou/getdata.ts` 的取数与剥壳，外加它产出的 payload 被 `KuaiShou.Action`
- * 原样消费这段接缝。四件事：
+ * 原样消费这段接缝。五件事：
  *
  * 1. **字段路径不能变深**。amagi v6 在响应外面多包了一层 `Result`，而 `comments.ts`
  *    只认 `data.visionCommentList` 与 `visionCommentList` 两级 —— 带壳进去评论会静默
@@ -17,6 +17,8 @@ import type { KuaishouDataType } from '../../src/module/platform/kuaishou/getdat
  *    `cookie?.trim() ?? ''`，没有自己的游客兜底，空 Cookie 会被快手归一成 INVALID_COOKIE。
  * 4. **防盗链头在调用点补**。体积探测那一跳不走 amagi，它原本是靠 getdata.ts 污染
  *    共享 baseHeaders 才拿到 Referer 的。
+ * 5. **评论与表情两跳不在 `GetData` 里**。它们只有评论卡要用，留在 `GetData` 的
+ *    `Promise.all` 里就等于让两跳非必需的取数拥有掐死整条解析的权力。
  *
  * `amagiClient` 整个换成替身，所以真 amagi 一次都不会被 require —— 它 exports map 里的
  * `development` 条件指向未发布的 `src/index.ts`，在 vitest 下加载即 MODULE_NOT_FOUND。
@@ -91,7 +93,7 @@ const { default: KuaiShou } = await import('../../src/module/platform/kuaishou/k
  */
 type KuaishouApiMethod = keyof KuaishouFetcher
 
-/** getdata.ts 真正用到的三个，顺序就是它 `Promise.all` 里的构造顺序 */
+/** 解析一个作品会打到的三个方法，顺序就是它们被发出的顺序（作品在 `GetData`，另两个在评论支线） */
 const USED_METHODS = ['fetchVideoWork', 'fetchWorkComments', 'fetchEmojiList'] as const satisfies readonly KuaishouApiMethod[]
 
 type UsedMethod = (typeof USED_METHODS)[number]
@@ -208,31 +210,41 @@ beforeEach(() => {
 
 describe('KuaishouData.GetData 的取数与剥壳', () => {
   it.each(['one_work', '单个作品信息'] satisfies KuaishouDataType[])(
-    '「%s」打三个 amagi 方法，参数、ck、请求配置依次到位',
+    '「%s」只打作品那一跳，参数、ck、请求配置依次到位',
     async (type) => {
       respondByMethod()
 
       await new KuaishouData(type).GetData({ photoId: PHOTO_ID })
 
+      // 评论与表情不在这里：它们只有评论卡要用，留在这里等于让两跳非必需的取数
+      // 拥有掐死整条解析的权力（`Promise.all` 一条挂全挂，`Action` 根本不会被调用）
       expect(calls.map(call => call.method))
-        .toEqual(['fetchVideoWork', 'fetchWorkComments', 'fetchEmojiList'] satisfies KuaishouApiMethod[])
+        .toEqual(['fetchVideoWork'] satisfies KuaishouApiMethod[])
       expect(doubles.fetchVideoWork).toHaveBeenCalledWith({ photoId: PHOTO_ID }, KUAISHOU_CK, requestConfig)
-      expect(doubles.fetchWorkComments).toHaveBeenCalledWith({ photoId: PHOTO_ID }, KUAISHOU_CK, requestConfig)
-      // 表情列表无参，但 ck 与请求配置一样得给：它们在 amagi 的签名里不可省
-      expect(doubles.fetchEmojiList).toHaveBeenCalledWith({}, KUAISHOU_CK, requestConfig)
+      expect(doubles.fetchWorkComments).not.toHaveBeenCalled()
+      expect(doubles.fetchEmojiList).not.toHaveBeenCalled()
     }
   )
+
+  it('评论与表情两跳由 Action 的评论支线发出，ck 与请求配置一样到位', async () => {
+    respondByMethod()
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+
+    await new KuaiShou(createEvent()).Action(payload as KuaishouActionArg)
+
+    expect(calls.map(call => call.method))
+      .toEqual(['fetchVideoWork', 'fetchWorkComments', 'fetchEmojiList'] satisfies KuaishouApiMethod[])
+    expect(doubles.fetchWorkComments).toHaveBeenCalledWith({ photoId: PHOTO_ID }, KUAISHOU_CK, requestConfig)
+    // 表情列表无参，但 ck 与请求配置一样得给：它们在 amagi 的签名里不可省
+    expect(doubles.fetchEmojiList).toHaveBeenCalledWith({}, KUAISHOU_CK, requestConfig)
+  })
 
   it('剥掉 amagi 的 Result 外壳，payload 的字段路径和迁移前逐字相同', async () => {
     respondByMethod()
 
     const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
-    expect(payload).toEqual({
-      VideoData: VIDEO_BODY,
-      CommentData: COMMENT_BODY,
-      EmojiData: EMOJI_BODY
-    })
+    expect(payload).toEqual({ VideoData: VIDEO_BODY, photoId: PHOTO_ID })
   })
 
   it('裸响应原样透传，不会再剥掉一层 data', async () => {
@@ -241,38 +253,32 @@ describe('KuaishouData.GetData 的取数与剥壳', () => {
 
     const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
 
-    expect(payload).toEqual({
-      VideoData: VIDEO_BODY,
-      CommentData: COMMENT_BODY,
-      EmojiData: EMOJI_BODY
-    })
+    expect(payload).toEqual({ VideoData: VIDEO_BODY, photoId: PHOTO_ID })
   })
 
-  it('三个请求并发在飞，而不是串成三个往返', async () => {
-    // 三个请求之间没有数据依赖。这个 gate 只在**三个都已发出**之后才放行，
-    // 所以串行实现会永久卡在第一个请求上，由下面的 1s 竞速兜底报错。
+  it('评论与表情两跳在评论支线里并发在飞，而不是串成两个往返', async () => {
+    // 两跳之间没有数据依赖。这个 gate 只在**两跳都已发出**之后才放行，
+    // 所以串行实现会永久卡在先发的那跳上，由下面的 1s 竞速兜底报错。
     let release: () => void = () => {}
     const gate = new Promise<void>(resolve => { release = resolve })
 
     installFetchers(async method => {
-      if (calls.length === 3) release()
-      await gate
+      if (method !== 'fetchVideoWork') {
+        if (calls.filter(call => call.method !== 'fetchVideoWork').length === 2) release()
+        await gate
+      }
       return amagiResult(BODY_OF[method])
     })
 
-    const payload = await Promise.race([
-      new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }),
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+    await Promise.race([
+      new KuaiShou(createEvent()).Action(payload as KuaishouActionArg),
       new Promise((_resolve, reject) => {
-        setTimeout(() => reject(new Error('GetData 仍在串行发请求：三个请求没有同时在飞')), 1000)
+        setTimeout(() => reject(new Error('评论支线仍在串行发请求：评论与表情两跳没有同时在飞')), 1000)
       })
     ])
 
     expect(calls).toHaveLength(3)
-    expect(payload).toEqual({
-      VideoData: VIDEO_BODY,
-      CommentData: COMMENT_BODY,
-      EmojiData: EMOJI_BODY
-    })
   })
 
   it('「作品评论信息」只打评论那一跳，返回剥壳后的评论体', async () => {
@@ -288,13 +294,21 @@ describe('KuaishouData.GetData 的取数与剥壳', () => {
     respondByMethod(() => amagiResult(undefined))
 
     const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+    // 三跳都要覆盖，所以带着 payload 走一趟 Action 把评论支线那两跳也发出去
+    await new KuaiShou(createEvent()).Action({ ...(payload as object), VideoData: VIDEO_BODY } as KuaishouActionArg)
 
-    expect(payload).toEqual({ VideoData: undefined, CommentData: undefined, EmojiData: undefined })
     expect(logger.error).toHaveBeenCalledTimes(3)
     // 日志要指名道姓：三条一模一样的报错看不出是哪一跳空了
     for (const method of USED_METHODS) {
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining(method))
     }
+  })
+
+  it('作品那一跳空响应时 payload 只剩 photoId', async () => {
+    respondByMethod(() => amagiResult(undefined))
+
+    expect(await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }))
+      .toEqual({ VideoData: undefined, photoId: PHOTO_ID })
   })
 
   it('amagi 抛错时 GetData 不吞掉它', async () => {
@@ -305,6 +319,18 @@ describe('KuaishouData.GetData 的取数与剥壳', () => {
 
     await expect(new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }))
       .rejects.toThrow('快手数据获取失败')
+  })
+
+  /*
+    评论那一跳原来和作品挤在同一个 `Promise.all` 里，它一抖整个 GetData 就 reject ——
+    `Action` 压根不会被调用，视频完全不发。现在它根本不在这里，连坐不起来。
+  */
+  it('评论接口挂掉也不再连坐 GetData', async () => {
+    respondByMethod()
+    doubles.fetchWorkComments.mockRejectedValue(new Error('评论接口挂了'))
+
+    await expect(new KuaishouData('one_work').GetData({ photoId: PHOTO_ID }))
+      .resolves.toEqual({ VideoData: VIDEO_BODY, photoId: PHOTO_ID })
   })
 
   it('未知请求类型返回 undefined，一个接口都不打', async () => {
@@ -319,7 +345,9 @@ describe('KuaishouData.GetData 的取数与剥壳', () => {
     config.cookies = { kuaishou: cookie }
     respondByMethod()
 
-    await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+    // 三跳分布在 GetData 与评论支线两边，游客 ck 两边都得落上
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+    await new KuaiShou(createEvent()).Action(payload as KuaishouActionArg)
 
     expect(calls).toHaveLength(3)
     for (const call of calls) {
@@ -399,5 +427,25 @@ describe('KuaishouWorkPayload 原样喂给 KuaiShou.Action', () => {
     expect(event.reply).toHaveBeenCalledWith('不支持解析的视频')
     expect(doubles.Render).not.toHaveBeenCalled()
     expect(doubles.downloadVideo).not.toHaveBeenCalled()
+    // 早退在 fan-out 之前，评论支线那两跳也就不该白发
+    expect(doubles.fetchWorkComments).not.toHaveBeenCalled()
+    expect(doubles.fetchEmojiList).not.toHaveBeenCalled()
+  })
+
+  /**
+   * 本次修复的接缝断言：评论那一跳挂了，视频照发。
+   *
+   * 原来它在 `GetData` 的 `Promise.all` 里，一挂 `GetData` 就 reject、`Action` 压根不会
+   * 被调用 —— `runMediaTasks` 的 allSettled 容错在 `Action` 内部，救不了它之前的取数。
+   */
+  it('评论那一跳挂掉时视频照发，Action 也不再抛', async () => {
+    respondByMethod()
+    const payload = await new KuaishouData('one_work').GetData({ photoId: PHOTO_ID })
+    doubles.fetchWorkComments.mockRejectedValue(new Error('评论接口挂了'))
+
+    expect(await new KuaiShou(createEvent()).Action(payload as KuaishouActionArg)).toBe(true)
+
+    expect(doubles.downloadVideo).toHaveBeenCalledTimes(1)
+    expect(doubles.Render).not.toHaveBeenCalled()
   })
 })

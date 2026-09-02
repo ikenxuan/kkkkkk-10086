@@ -4,6 +4,8 @@ const renderMock = vi.hoisted(() => vi.fn())
 const downloadVideoMock = vi.hoisted(() => vi.fn())
 const commentsMock = vi.hoisted(() => vi.fn())
 const getHeadersMock = vi.hoisted(() => vi.fn())
+const fetchCommentsMock = vi.hoisted(() => vi.fn())
+const fetchEmojiMock = vi.hoisted(() => vi.fn())
 
 const configMock = vi.hoisted(() => ({
   app: {} as Record<string, unknown>,
@@ -27,6 +29,12 @@ vi.mock('../../src/module/utils/index.js', () => ({
 
 vi.mock('../../src/module/platform/kuaishou/comments.js', () => ({
   default: commentsMock
+}))
+
+// 评论与表情两跳换成替身：这份用例验的是支线之间的隔离，不是 amagi 的取数管线
+vi.mock('../../src/module/platform/kuaishou/getdata.js', () => ({
+  fetchKuaishouWorkComments: fetchCommentsMock,
+  fetchKuaishouEmojiList: fetchEmojiMock
 }))
 
 /*
@@ -82,8 +90,7 @@ const buildVideoData = () => ({
       }
     }
   },
-  CommentData: { data: { visionCommentList: { rootComments: [] } } },
-  EmojiData: { data: { visionBaseEmoticons: { iconUrls: {} } } }
+  photoId: '3x1'
 })
 
 const createEvent = () => ({ reply: vi.fn().mockResolvedValue({ message_id: 1 }) })
@@ -98,6 +105,8 @@ beforeEach(() => {
   downloadVideoMock.mockResolvedValue(true)
   commentsMock.mockResolvedValue([])
   getHeadersMock.mockResolvedValue({ 'content-length': '2097152' })
+  fetchCommentsMock.mockResolvedValue({ data: { visionCommentList: { rootComments: [] } } })
+  fetchEmojiMock.mockResolvedValue({ data: { visionBaseEmoticons: { iconUrls: {} } } })
 })
 
 describe('KuaiShou.Action media tasks', () => {
@@ -183,6 +192,28 @@ describe('KuaiShou.Action media tasks', () => {
     )
   })
 
+  /**
+   * 这条钉的是本次修复：评论**取数**失败也只是一条支线失败。
+   *
+   * 原来这一跳在 `KuaishouData.GetData` 的 `Promise.all` 里，它一抖 `GetData` 就 reject、
+   * `Action` 压根不会被调用 —— 视频完全不发，用户只看到一张错误卡。
+   */
+  it('keeps downloading the video when the comment fetch fails, and reports it as the comment task', async () => {
+    const fetchError = new Error('comment fetch failed')
+    fetchCommentsMock.mockRejectedValueOnce(fetchError)
+    const event = createEvent()
+
+    await expect(new KuaiShou(event).Action(buildVideoData())).resolves.toBe(true)
+
+    expect(downloadVideoMock).toHaveBeenCalledTimes(1)
+    // 取数就挂了，评论卡不该渲染、更不该发一张空卡出去
+    expect(renderMock).not.toHaveBeenCalled()
+    expect(loggerMock.error).toHaveBeenCalledWith(
+      expect.stringContaining('[快手] 评论图渲染与发送任务失败'),
+      fetchError
+    )
+  })
+
   it('still replies with the comment card when the video download fails, and reports it as the video task', async () => {
     const downloadError = new Error('download failed')
     downloadVideoMock.mockRejectedValueOnce(downloadError)
@@ -215,6 +246,8 @@ describe('KuaiShou.Action media tasks', () => {
 
     expect(event.reply).toHaveBeenCalledWith('不支持解析的视频')
     // 早退在 fan-out 之前：评论取数、HEAD 探测、渲染、下载一个都不该启动
+    expect(fetchCommentsMock).not.toHaveBeenCalled()
+    expect(fetchEmojiMock).not.toHaveBeenCalled()
     expect(commentsMock).not.toHaveBeenCalled()
     expect(getHeadersMock).not.toHaveBeenCalled()
     expect(renderMock).not.toHaveBeenCalled()
