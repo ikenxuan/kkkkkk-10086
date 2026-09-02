@@ -1,5 +1,104 @@
 # Changelog
 
+## [2.41.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.40.0...v2.41.0) (2026-09-02)
+
+
+### ✨ 新功能
+
+* **amagi:** 旁路记录 api:error 的真实业务码 ([0e53b07](https://github.com/ikenxuan/kkkkkk-10086/commit/0e53b076cf5660e6ff5db18a07ee50d62ed1cf99))
+* **bilibili:** 动态的额外卡片接上载荷 ([bc814d5](https://github.com/ikenxuan/kkkkkk-10086/commit/bc814d5b37343b2f5b31dab3e46c1a9013dbc644))
+* **cache:** API 响应加进程内 LRU 分级缓存，诊断卡报并发与缓存 ([8e7b254](https://github.com/ikenxuan/kkkkkk-10086/commit/8e7b2545ec1d5a2b007520f35192b129e1a0391d))
+* **diagnostics:** 诊断卡加上解析队列占用 ([0f48a72](https://github.com/ikenxuan/kkkkkk-10086/commit/0f48a72a75edfdfa274fe254218be1b62eee720a))
+* **douyin:** 扫码登录改用 amagi passport 接口 ([6d348d8](https://github.com/ikenxuan/kkkkkk-10086/commit/6d348d8c4698940c45309e5cac55416f91971564))
+* **douyin:** 视频源改为档位优先、体积其次，并排除 HDR 档 ([7ab99a8](https://github.com/ikenxuan/kkkkkk-10086/commit/7ab99a806993b18d8cf37e8c52fbe16a00daacbe))
+* **download:** 低速自动换地址、CDN 地址簿回退与外部下载器 ([b93d2ff](https://github.com/ikenxuan/kkkkkk-10086/commit/b93d2ff359c54bf88bd6e8dc83b72af12c4d8d51))
+* **download:** 按平台分桶的连接预算，实况图改滑动窗口下载 ([b069850](https://github.com/ikenxuan/kkkkkk-10086/commit/b069850a367a04658db62c9075948e4880cffe07))
+* **ffmpeg:** 新增直播流录制封装 ([79259e0](https://github.com/ikenxuan/kkkkkk-10086/commit/79259e0ee07e1f67f8a294c3aaf7f77f2da2a6ef))
+* **live:** #kkk录直播 命令，抖音与B站各录一段上传 ([2aa111d](https://github.com/ikenxuan/kkkkkk-10086/commit/2aa111d555107b3cc49032d8482427dd0a133c46))
+* **live:** 抖音与 B 站各提供一个可播直播流地址 ([1f35a3f](https://github.com/ikenxuan/kkkkkk-10086/commit/1f35a3f19e790be22fc4fc6fd6a6140bb1fb44d3))
+* **live:** 直播录制的配置项、锅巴面板与时长上限透传 ([c7ad19b](https://github.com/ikenxuan/kkkkkk-10086/commit/c7ad19bd88ebfbf74fe43515ddec3a8372588930))
+* **parse:** 全平台解析支线并发执行 ([6a7ab8e](https://github.com/ikenxuan/kkkkkk-10086/commit/6a7ab8edb1733d05fb73ee95195cb0084d0a4d1b))
+* **utils:** amagiClient 统一把 amagi 业务失败抛成 AmagiError ([145d6bf](https://github.com/ikenxuan/kkkkkk-10086/commit/145d6bf883e000f0cffab4480a03d6079dba5233))
+* **utils:** record.ts 加 at 与 firstUrl 两个安全取值原语 ([ff42bfd](https://github.com/ikenxuan/kkkkkk-10086/commit/ff42bfd6dff1d8f42ee7a9e3f26f88a27be082a4))
+
+
+### 🐛 Bug 修复
+
+* **apps:** BGM 规则补上开头锚点，不再截走别人的命令 ([992d3ba](https://github.com/ikenxuan/kkkkkk-10086/commit/992d3ba9be7158c229cd144fa8c2e6722984ab40))
+* **apps:** 两个 app 的最高优先级判定统一口径 ([343f0ee](https://github.com/ikenxuan/kkkkkk-10086/commit/343f0eed02e2acec679231fa072e8916540c928a))
+* **bilibili:** 番剧分支的音轨与画质列表补上普通视频路径已有的守卫 ([6d05d24](https://github.com/ikenxuan/kkkkkk-10086/commit/6d05d247296a21da774ec7af5c487abdef0a3467))
+* **bilibili:** 直播 playurl 的 wbi 结论改成实测，fixture 按真机校准 ([490564d](https://github.com/ikenxuan/kkkkkk-10086/commit/490564dd3b04af09391f21a829700bb8d483f82b))
+* **bilibili:** 补全裸域名分享链接的协议头，URL 解析失败不再废掉整张模式表 ([497fb43](https://github.com/ikenxuan/kkkkkk-10086/commit/497fb43a225f3f15bdb0e776465cab60ef266099))
+* **config:** 配置读取改深拷贝，pushlist 落盘走原子读改写 ([d44fc4d](https://github.com/ikenxuan/kkkkkk-10086/commit/d44fc4df15f74c94b983ee8ef6a31bda3469c6bf))
+* **douyin:** adapt 模式下体积上限与上传闸门取更严的那个 ([9c3a869](https://github.com/ikenxuan/kkkkkk-10086/commit/9c3a86915910390e13972ad4e9eb558622c057d3))
+* **douyin:** 实况图与推送下载改用签名直链，不再自己拼 snssdk 地址 ([d4b0315](https://github.com/ikenxuan/kkkkkk-10086/commit/d4b03154fe16bbaeb27e05cf55ed41e04b5a3d0a))
+* **douyin:** 收紧 bit_rate 与 url_list 声明，修掉由此暴露的裸下标 ([8af2715](https://github.com/ikenxuan/kkkkkk-10086/commit/8af2715cb3705d976ee69821e2f4cc3d0b41927a))
+* **douyin:** 评论取数搬进支线闭包，接口挂了不再挡住视频 ([7892352](https://github.com/ikenxuan/kkkkkk-10086/commit/789235281c74ad6d8b6086f83492010d2795534e))
+* **douyin:** 评论配图失败不再带走整批评论图 ([8096375](https://github.com/ikenxuan/kkkkkk-10086/commit/80963758542e29a8192523d42df66f554f3c2b74))
+* **error:** 指纹构造失败不再静默，B 站关评论区改为明确提示 ([d748dc8](https://github.com/ikenxuan/kkkkkk-10086/commit/d748dc8bda0b8985d3fd3c25b59e2e5fe7b919da))
+* **help:** 帮助卡补上 #kkk录直播，并给菜单数据加护栏 ([888b080](https://github.com/ikenxuan/kkkkkk-10086/commit/888b080275f58d0f23114d23908568ae1da4c9fb))
+* **help:** 菜单数据搬出 apps/，两条命令恢复可用 ([3583838](https://github.com/ikenxuan/kkkkkk-10086/commit/3583838fdac72d30ea084cd665438e0f3f5f2203))
+* **kuaishou:** 评论与表情取数搬进支线，两个闸门真的生效 ([c0c81f0](https://github.com/ikenxuan/kkkkkk-10086/commit/c0c81f0bc44878629c39a831c9b31b017793f1ea))
+* **live:** 放行直播间链接并修好房间号解析 ([0437ca2](https://github.com/ikenxuan/kkkkkk-10086/commit/0437ca2d55a285f7ef3a1c63ef7d06152ba236ad))
+* **parse:** 外层解析预算从内层支线上限推导，不再被 60s 默认值掐死 ([cb345f3](https://github.com/ikenxuan/kkkkkk-10086/commit/cb345f3661d83d9f665e7c8b0e3b699f412aec51))
+* **parse:** 抖音图文与B站动态的正文、图片、评论各自成支线 ([b7ac2ef](https://github.com/ikenxuan/kkkkkk-10086/commit/b7ac2efcc17e608ec57eb4fd5b6f35761bd5db5b))
+* **parse:** 超时信号透传到任务闭包，取消不再掉在地上 ([58752d0](https://github.com/ikenxuan/kkkkkk-10086/commit/58752d05482c0bd0146e023d2e9e53d8dcd89697))
+* **parse:** 选集类入口补上并发队列与指纹去重 ([498b56e](https://github.com/ikenxuan/kkkkkk-10086/commit/498b56e26a6b37a1cce844965a38ec9420b849e7))
+* **platform:** 模块级 mp4size 与 img 收进解析作用域 ([ba2345e](https://github.com/ikenxuan/kkkkkk-10086/commit/ba2345ed1761466a16cd9f7715621669cbeaf6b7))
+* **push:** 推送视频路径的 bit_rate 裸下标与日志取长度改成安全取值 ([81824c5](https://github.com/ikenxuan/kkkkkk-10086/commit/81824c5552e83f7444440937f3df3aa3a754d6fd))
+* **qqbot:** 引用解析改读 msg_elements ([be45770](https://github.com/ikenxuan/kkkkkk-10086/commit/be4577035e32bf738d395ee5e8ddd006ba8ca66e))
+* **render:** 图文封面与图片列表的裸下标换成 at，保住下标偏好顺序 ([38d6887](https://github.com/ikenxuan/kkkkkk-10086/commit/38d6887253d6c59ac07bc0e2767b7a6d2bd497f7))
+
+
+### 📝 文档
+
+* **comments:** 修正指向已删除 Networks.ts 的注释坐标 ([96ee5aa](https://github.com/ikenxuan/kkkkkk-10086/commit/96ee5aad774fa468a804149f64ed30d44ea040f6))
+* upstream-sync 校准到上游 c5512ace（v2.42.3） ([dcd6453](https://github.com/ikenxuan/kkkkkk-10086/commit/dcd645342a42c1354c529c21fb79d58a574e0290))
+* upstream-sync 的 -352 一节按 2669ab0d 校准 ([255537a](https://github.com/ikenxuan/kkkkkk-10086/commit/255537a78138a7b0c7b468196436421ce7b22dbb))
+* 注释与文档里的失效指针校准 ([a7eb9ad](https://github.com/ikenxuan/kkkkkk-10086/commit/a7eb9ad2a1d2bf787bfd88b503eb24a6408c9bec))
+* 落 upstream-sync.md，按平台记上游 sha 与对齐范围 ([490ea11](https://github.com/ikenxuan/kkkkkk-10086/commit/490ea1120c73c1e396b682f50c594ddf2c0d5c4f))
+* 记下推送路径空 cookie 这处与上游的语义分叉 ([314f8d5](https://github.com/ikenxuan/kkkkkk-10086/commit/314f8d5bdd9e3c688220218cdd71a17fbc84fd7e))
+
+
+### ♻️ 重构
+
+* **bilibili:** -352 的 voucher 提取合并成一个共享模块 ([2669ab0](https://github.com/ikenxuan/kkkkkk-10086/commit/2669ab0d265a54b3148f2f6f858bf6b0818a744d))
+* **cache:** ApiCache 两张策略表的键换成 amagi 英文 fetcher 名 ([ceb2e78](https://github.com/ikenxuan/kkkkkk-10086/commit/ceb2e78d21d28f52b3d49e630d90702aac1307a8))
+* **comments:** 注释清理收尾，49 个小文件 ([6e155fc](https://github.com/ikenxuan/kkkkkk-10086/commit/6e155fc54f74b0250283203e44cb51ab6fc62dab))
+* **comments:** 清掉 11 个大文件里的复述式注释与死 JSDoc ([23b1d29](https://github.com/ikenxuan/kkkkkk-10086/commit/23b1d29a726f0f45429791675e24af03b1fd0d55))
+* **comments:** 清掉 19 个文件里的复述式注释，并找回被误删的类型注释 ([c1a25e3](https://github.com/ikenxuan/kkkkkk-10086/commit/c1a25e366829c39692e26dcf29310ccf2689ecea))
+* **comments:** 清掉 20 个高密度文件里的复述式注释 ([6dd1f27](https://github.com/ikenxuan/kkkkkk-10086/commit/6dd1f27d7531db945f105a9f708b28fb311040a7))
+* **comments:** 清掉最后 21 个文件里的复述式注释 ([36b414e](https://github.com/ikenxuan/kkkkkk-10086/commit/36b414ed595067c61e5b17fd714c4e27bf717478))
+* **config:** 删掉三个失去作用面的配置项 ([5361b33](https://github.com/ikenxuan/kkkkkk-10086/commit/5361b33e1538cf13c469d6e6f2a00ab0bd52b0c8))
+* **error:** 错误卡片收成一个出口 ([ef51bf7](https://github.com/ikenxuan/kkkkkk-10086/commit/ef51bf7c7a4e010c03efcc7b425c014ccf0fcac7))
+* **guoba:** 面板支持迁到 src/module/guoba/index.ts ([c5f7b06](https://github.com/ikenxuan/kkkkkk-10086/commit/c5f7b06a6c3d598d3fb125f2442b8b225cab1023))
+* **kuaishou:** 取数迁到 amagi，并补上软错误码设施 ([370fa60](https://github.com/ikenxuan/kkkkkk-10086/commit/370fa608f887cb90cdf49fcce3aa0dd0094359f4))
+* **network:** attemptDownloadStream 拆入 download-pipeline ([24007e5](https://github.com/ikenxuan/kkkkkk-10086/commit/24007e584f9f8426cda76742b43dd968ef1a5265))
+* **network:** Networks 收成薄客户端并加 barrel ([c34b1ab](https://github.com/ikenxuan/kkkkkk-10086/commit/c34b1ab7a51143cf32670cd5a97a14dd0f9cd866))
+* **network:** 内建下载改走实例 axios ([bfe7bd4](https://github.com/ikenxuan/kkkkkk-10086/commit/bfe7bd4dff0cebd6562987f8654f66aa62ba9484))
+* **network:** 删掉死函数 getfetch 与重复的直播上限默认值 ([23a06b3](https://github.com/ikenxuan/kkkkkk-10086/commit/23a06b324e129b7f9fee9bdcd66420f95b835f4f))
+* **network:** 抽出 download-options 与 retry-plan ([cc31c12](https://github.com/ikenxuan/kkkkkk-10086/commit/cc31c12fa1339f579133c421d45c12350571eb44))
+* **network:** 抽出五个叶子模块 ([e650276](https://github.com/ikenxuan/kkkkkk-10086/commit/e650276682ffdaea21fafdbd6bd0f5e46150c1ca))
+* **network:** 新建 Network/ 目录并移入六个已独立的下载模块 ([d8fc69e](https://github.com/ikenxuan/kkkkkk-10086/commit/d8fc69e8d7df4152693ec904afb2eeed1a931e52))
+* **platform:** 删掉四个 api.ts，调用点直连 amagi fetcher ([3be5556](https://github.com/ikenxuan/kkkkkk-10086/commit/3be555692fb16b6d77f0bad8b0e2e4529228343a))
+* **template:** kkk 矢量图抽成共享组件 ([16be75f](https://github.com/ikenxuan/kkkkkk-10086/commit/16be75fe731febb0853564c1f7f166e17604ba48))
+* **types:** DecorationCardData 在 ktr 侧转发一次，保住上游镜像可比性 ([a563436](https://github.com/ikenxuan/kkkkkk-10086/commit/a563436160870a6f9149df1090d7c4e19dbd674a))
+* **types:** 两份手抄的模板契约副本合成单一声明 ([8e55b7e](https://github.com/ikenxuan/kkkkkk-10086/commit/8e55b7ef4b1f1c9ae5d0dec500f3a0c692d20c7d))
+* **types:** 四个新 types.ts 从 barrel 转发，跟既有约定统一 ([1984307](https://github.com/ikenxuan/kkkkkk-10086/commit/1984307a980517e6b5dcf40f3e61865ba536f432))
+* **types:** 四个目录的跨文件类型声明收进各自 types.ts ([0e41ce0](https://github.com/ikenxuan/kkkkkk-10086/commit/0e41ce01ef28cc572bfc878702ae634dc0b8e960))
+* **types:** 类型声明抽到各目录的 types.ts ([319d6d5](https://github.com/ikenxuan/kkkkkk-10086/commit/319d6d54e8be643182dade48e1a03fe17c4668be))
+* **upload:** 移除按适配器分档的群文件强制判定 ([522ab6a](https://github.com/ikenxuan/kkkkkk-10086/commit/522ab6aff020a1cbd2a6ad68f056a511e52176ce))
+* **utils:** 主人告警通道独立成 masterMessage 模块 ([392e557](https://github.com/ikenxuan/kkkkkk-10086/commit/392e557efce39e9ec598e28ca8ccd85dbbf80f9a))
+
+
+### ✅ 测试
+
+* **bilibili:** 钉住 amagi 枚举与手写兜底副本的对应关系 ([84962cb](https://github.com/ikenxuan/kkkkkk-10086/commit/84962cbcf9099519c8344c10addd5d6b38ee380d))
+* **bilibili:** 钉住每个取数调用点实际传出去的 cookie ([91f830e](https://github.com/ikenxuan/kkkkkk-10086/commit/91f830e9436c7300898c1e29eb8a116ff96034ce))
+* **douyin:** 钉住兜底地址的主机，不跟上游 4772801 换成 https://c/ ([3095a6d](https://github.com/ikenxuan/kkkkkk-10086/commit/3095a6d6d6578b86c9a5c0f003e50b56c2519438))
+* **render:** 运行时报告 fixture 补上 concurrency 字段 ([edf401f](https://github.com/ikenxuan/kkkkkk-10086/commit/edf401f05786a61966863e11ad325632a0b53130))
+* **render:** 运行时报告 fixture 补上 parse 字段并钉住契约类型 ([f8fe370](https://github.com/ikenxuan/kkkkkk-10086/commit/f8fe370244e8649879a625fa3bd75ac7741f2a23))
+
 ## [2.40.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.39.3...v2.40.0) (2026-08-26)
 
 
