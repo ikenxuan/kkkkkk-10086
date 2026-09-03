@@ -47,7 +47,7 @@ realCommentCount: false
 sendHDrecord: true
 
 # 是否按「视频画质偏好」从多档视频源里挑一条
-# 开启：按 videoQuality 定档，档内取体积装得下的最高码率那条，并跳过 HDR 档（HDR 发到不做色调映射的通道会偏灰发白）
+# 开启：按 videoQuality 定档，档内取体积装得下的最高码率那条（含 HDR 档）
 # 关闭：直接用接口给的 H.264 单档地址。实测该地址最高只有 1080p，4K / 2K 只存在于多档列表里，所以关闭等于拿不到高于 1080p 的画质
 autoResolution: true
 
