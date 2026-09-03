@@ -568,8 +568,8 @@ export const renderWorkImage = async (options: RenderWorkImageOptions): Promise<
       music: buildMusicInfo(Detail_Data.music),
       duration: Detail_Data.duration,
       resolution: buildDouyinResolutionInfo(options.videoSource),
-      // HDR 判据和选源用的是同一个函数：`douyinProcessVideos` 会把 HDR 档排掉，
-      // 所以这里通常是 false，只有「整个作品全是 HDR」那条放行分支才为 true。
+      // 标的是选中那一路源，不是「这个作品有 HDR 档」：HDR 档与 SDR 孪生同档同分辨率，
+      // 挑源只按体积取，两条都可能中选。
       is_HDR: options.videoSource ? isDouyinHdrStream(options.videoSource) : undefined,
       ...statFields,
       create_time,

@@ -62,7 +62,7 @@ export const douyin: GuobaSchema[] = [
   sw('douyin.realCommentCount', '显示真实评论数量', '评论图是否显示真实评论数量，关闭则显示解析到的评论数量'),
   sw('douyin.commentImageCollection', '收集评论区图片', '是否收集评论区的图片'),
   sw('douyin.sendHDrecord', '图集 BGM 使用高清语音', '高清语音「ios/PC」系统均无法播放，自行衡量开关'),
-  sw('douyin.autoResolution', '按画质偏好挑选视频源', '开启后按「视频画质偏好」定档、档内取体积装得下的最高码率并跳过 HDR；关闭则直接用接口的 H.264 单档地址，实测最高只有 1080p'),
+  sw('douyin.autoResolution', '按画质偏好挑选视频源', '开启后按「视频画质偏好」定档、档内取体积装得下的最高码率（含 HDR 档）；关闭则直接用接口的 H.264 单档地址，实测最高只有 1080p'),
   radio('douyin.liveImageMergeMode', 'Live 图 BGM 合并模式', [
     option('连续合并', 'continuous'),
     option('独立发送', 'independent')

@@ -221,12 +221,11 @@ export const buildDouyinResolutionInfo = (
  * 这条源本身是不是 HDR。
  *
  * 判据是逐条的，不是整个作品的：真 HDR 作品里 HDR 档与一条同分辨率的 SDR 档成对出现
- * （同 `quality_type`，只差 profile 和 pix_fmt），所以不能用顶层 `is_source_HDR` 排除，
- * 那会把整个作品的档位全清空。
+ * （同 `quality_type`，只差 profile 和 pix_fmt），所以不能用顶层 `is_source_HDR`，
+ * 那会把 SDR 孪生也标成 HDR。
  *
- * 导出是给卡片用的：`douyinProcessVideos` 会把 HDR 档排掉，所以选中的源通常不是 HDR，
- * 只有「整个作品全是 HDR」那条放行分支才会是。卡片和选源判据必须是同一个函数，
- * 否则会出现「选源认为是 HDR 所以排除、卡片认为不是所以不标」这种自相矛盾。
+ * 只有卡片用它 —— 挑源不再排除 HDR，所以选中的源是不是 HDR 由体积和档位决定，
+ * 卡片必须照着**选中那一路**标，不能标作品有没有 HDR 档。
  * @param video - 视频源对象
  * @returns 是否为 HDR 源
  */
@@ -284,9 +283,9 @@ const buildFallbackOrder = (target: DouyinQualityLevel): DouyinQualityLevel[] =>
  * 491.9MB，却会被 497.6MB 的 2K 抢走。小红书那条路径（`xiaohongshu.ts` 的
  * `selectVideoStream`）早就是这么排的，抖音这边一直没跟上。
  *
- * HDR 档一律排除：实测四个真 HDR 作品 4/4，HDR 档的体积恒为该作品的全局最大，所以
- * 「取最大体积」在 HDR 作品上**必然**选中它，而 QQ 不做 tone mapping，HLG 片源偏灰发白。
- * 排除它不用降档 —— SDR 孪生就在同一档、同分辨率、同帧率，只小 5%~10%。
+ * HDR 档不再排除。QQ 现在认得 HDR，不会再把 HLG 片源渲染成偏灰发白，原先把它筛掉的
+ * 理由已经不成立。它的体积恒为该作品的全局最大（四个真 HDR 样本 4/4），所以在自己档位里
+ * 排第一，装得下就会被选中；装不下则顺着同档的 SDR 孪生往下走，不用降档。
  * @param videos - `aweme_detail.video.bit_rate` 数组
  * @param options - 挑源参数
  * @returns 长度为 1 的数组，元素为选中的视频源
@@ -303,13 +302,6 @@ export const douyinProcessVideos = <T extends DouyinBitRateItem>(
     const fallback = videos[0]
     if (!fallback) throw new Error('接口没有返回任何视频源')
     return [fallback]
-  }
-
-  // 全是 HDR 时不排除，否则会挑不出源
-  const sdrOnly = candidates.filter(video => !isDouyinHdrStream(video))
-  const pool = sdrOnly.length > 0 ? sdrOnly : candidates
-  if (sdrOnly.length !== candidates.length) {
-    logger.debug(`[douyin] 排除 ${candidates.length - sdrOnly.length} 条 HDR 源，剩余 ${pool.length} 条`)
   }
 
   const quality = options.videoQuality || 'adapt'
@@ -331,7 +323,7 @@ export const douyinProcessVideos = <T extends DouyinBitRateItem>(
   const effective = limits.filter((value): value is number => typeof value === 'number' && value > 0)
   const sizeLimitBytes = effective.length > 0 ? Math.min(...effective) * 1024 * 1024 : Infinity
 
-  const grouped = groupByQualityLevel(pool)
+  const grouped = groupByQualityLevel(candidates)
   const order = quality === 'adapt' ? QUALITY_PRIORITY : buildFallbackOrder(quality as DouyinQualityLevel)
 
   for (const level of order) {
@@ -344,7 +336,7 @@ export const douyinProcessVideos = <T extends DouyinBitRateItem>(
   }
 
   // 没有任何档塞得进上限（或所有源的档位都认不出），退回体积最小的那条，至少让它有机会发出去
-  const smallest = pool.reduce((min, video) => video.play_addr.data_size < min.play_addr.data_size ? video : min)
+  const smallest = candidates.reduce((min, video) => video.play_addr.data_size < min.play_addr.data_size ? video : min)
   logger.debug(`[douyin] 无档位满足体积上限，退回最小源 ${(smallest.play_addr.data_size / (1024 * 1024)).toFixed(2)}MB`)
   return [smallest]
 }

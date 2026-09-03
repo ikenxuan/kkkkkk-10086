@@ -213,38 +213,38 @@ describe('douyinProcessVideos 档位优先于体积', () => {
 })
 
 /**
- * HDR 档的体积恒为该作品的全局最大（四个真 HDR 样本 4/4），所以「取最大体积」在 HDR
- * 作品上必然选中它 —— 而 QQ 不做 tone mapping，HLG 片源偏灰发白。
- *
- * 排除它不用降档：SDR 孪生就在同一档、同分辨率、同帧率，只小 5%~10%。
+ * HDR 档的体积恒为该作品的全局最大（四个真 HDR 样本 4/4），所以它在自己档位里排第一，
+ * 装得下就该被选中 —— QQ 现在认得 HDR，不再需要把它筛掉换 SDR 孪生。
  */
-describe('douyinProcessVideos 排除 HDR 档', () => {
-  it('HDR 是全局最大体积时也不选它，且不降档', () => {
+describe('douyinProcessVideos 不排除 HDR 档', () => {
+  it('HDR 是全局最大体积时就选它', () => {
     const picked = douyinProcessVideos([
       src({ definition: '4k', gear_name: 'pay_bvc1_hdr_r1_adapt_lowest_4_1', sizeMB: 17.8, hdr: true }),
       src({ definition: '4k', gear_name: 'adapt_lowest_4_1', sizeMB: 16.4 }),
       src({ definition: '1080p', gear_name: 'normal_1080_0', sizeMB: 6 })
     ], { videoQuality: 'adapt', maxAutoVideoSize: 50 })
-    // 仍是 4k，只是换成 SDR 孪生
     expect(getDouyinQualityLevel(picked[0])).toBe('4k')
-    expect(pickedSize(picked)).toBeCloseTo(16.4)
+    expect(pickedSize(picked)).toBeCloseTo(17.8)
   })
 
-  it('只靠 gear_name 的 hdr 标记也能排除（HDR_type 缺失时）', () => {
+  // 只带 gear_name 的 hdr 标记、没有 HDR_type/HDR_bit 的形态同样不该被特殊对待
+  it('只靠 gear_name 标着 hdr 的源也照常参选', () => {
     const picked = douyinProcessVideos([
       src({ definition: '4k', gear_name: 'pay_bvc1_hdr_r1_adapt_lowest_4_1', sizeMB: 17.8 }),
       src({ definition: '4k', gear_name: 'adapt_lowest_4_1', sizeMB: 16.4 })
     ], { videoQuality: 'adapt', maxAutoVideoSize: 50 })
-    expect(pickedSize(picked)).toBeCloseTo(16.4)
+    expect(pickedSize(picked)).toBeCloseTo(17.8)
   })
 
-  // 全是 HDR 时排除会挑不出源，此时必须放行
-  it('全部源都是 HDR 时不排除', () => {
+  // 体积上限说话的时候才让给 SDR 孪生，而且是同档内换一条，不降档
+  it('HDR 超出体积上限时同档换 SDR 孪生', () => {
     const picked = douyinProcessVideos([
-      src({ definition: '4k', gear_name: 'pay_bvc1_hdr_r1_adapt_lowest_4_1', sizeMB: 17.8, hdr: true })
-    ], { videoQuality: 'adapt', maxAutoVideoSize: 50 })
-    expect(picked).toHaveLength(1)
-    expect(pickedSize(picked)).toBeCloseTo(17.8)
+      src({ definition: '4k', gear_name: 'pay_bvc1_hdr_r1_adapt_lowest_4_1', sizeMB: 17.8, hdr: true }),
+      src({ definition: '4k', gear_name: 'adapt_lowest_4_1', sizeMB: 16.4 }),
+      src({ definition: '1080p', gear_name: 'normal_1080_0', sizeMB: 6 })
+    ], { videoQuality: 'adapt', maxAutoVideoSize: 17 })
+    expect(getDouyinQualityLevel(picked[0])).toBe('4k')
+    expect(pickedSize(picked)).toBeCloseTo(16.4)
   })
 })
 
@@ -531,19 +531,18 @@ describe('isDouyinHdrStream', () => {
   })
 
   /*
-    卡片和选源必须共用这个判据。HDR 档会被 douyinProcessVideos 排掉，所以选中的源
-    通常是 SDR；只有「整个作品全是 HDR」那条放行分支才会选中 HDR 源，那时卡片要标出来。
+    卡片标的是选中那一路源，不是「这个作品有没有 HDR 档」。HDR 档与 SDR 孪生同档同分辨率，
+    体积上限决定中选的是哪条，标记必须跟着走，否则会出现「发的是 SDR、卡片写 HDR」。
   */
-  it('选中的源与卡片的 HDR 标记一致', () => {
-    const mixed = douyinProcessVideos([
+  it('卡片的 HDR 标记跟着选中的那一路走', () => {
+    const streams = [
       src({ definition: '1080p', sizeMB: 40, hdr: true }),
       src({ definition: '1080p', sizeMB: 36 })
-    ], { videoQuality: 'adapt' })
-    expect(isDouyinHdrStream(mixed[0])).toBe(false)
-
-    const allHdr = douyinProcessVideos([
-      src({ definition: '1080p', sizeMB: 40, hdr: true })
-    ], { videoQuality: 'adapt' })
-    expect(isDouyinHdrStream(allHdr[0])).toBe(true)
+    ]
+    expect(isDouyinHdrStream(douyinProcessVideos(streams, { videoQuality: 'adapt' })[0])).toBe(true)
+    expect(isDouyinHdrStream(douyinProcessVideos(streams, {
+      videoQuality: 'adapt',
+      maxAutoVideoSize: 38
+    })[0])).toBe(false)
   })
 })
