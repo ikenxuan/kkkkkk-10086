@@ -443,24 +443,34 @@ describe('database singletons', () => {
         }
       }
     }))
+    vi.doMock('../../src/module/db/livePreview.js', () => ({
+      LivePreviewDBBase: class extends CountingDB {
+        constructor () {
+          super('livePreview')
+        }
+      }
+    }))
 
     const db = await import('../../src/module/db/index.js')
 
     const [statisticsA, statisticsB] = await Promise.all([db.getStatisticsDB(), db.getStatisticsDB()])
     const [douyinA, douyinB] = await Promise.all([db.getDouyinDB(), db.getDouyinDB()])
     const [bilibiliA, bilibiliB] = await Promise.all([db.getBilibiliDB(), db.getBilibiliDB()])
+    const [livePreviewA, livePreviewB] = await Promise.all([db.getLivePreviewDB(), db.getLivePreviewDB()])
     const all = await db.initAllDatabases()
 
     expect(statisticsA).not.toBeNull()
     expect(statisticsB).toBe(statisticsA)
     expect(douyinB).toBe(douyinA)
     expect(bilibiliB).toBe(bilibiliA)
+    expect(livePreviewB).toBe(livePreviewA)
     expect(all).toEqual({
       douyinDB: douyinA,
       bilibiliDB: bilibiliA,
-      statisticsDB: statisticsA
+      statisticsDB: statisticsA,
+      livePreviewDB: livePreviewA
     })
-    expect(initialised.sort()).toEqual(['bilibili', 'douyin', 'statistics'])
+    expect(initialised.sort()).toEqual(['bilibili', 'douyin', 'livePreview', 'statistics'])
     expect(db.douyinDB).toBe(douyinA)
     expect(db.bilibiliDB).toBe(bilibiliA)
     expect(db.statisticsDB).toBe(statisticsA)
@@ -468,6 +478,7 @@ describe('database singletons', () => {
     vi.doUnmock('../../src/module/db/statistics.js')
     vi.doUnmock('../../src/module/db/douyin.js')
     vi.doUnmock('../../src/module/db/bilibili.js')
+    vi.doUnmock('../../src/module/db/livePreview.js')
     vi.resetModules()
   })
 })

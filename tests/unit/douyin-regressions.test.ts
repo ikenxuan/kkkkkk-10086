@@ -71,6 +71,10 @@ vi.mock('../../src/runtime/host/common.js', () => ({
 
 vi.mock('@karinjs/md-html', () => ({ markdown: vi.fn((value: string) => value) }))
 vi.mock('../../src/module/platform/common/danmaku.js', () => ({ burnDanmaku: vi.fn() }))
+// 直播间分支会动态 import 它，而它静态依赖 FFmpeg / liveRecord 那条链（要宿主的 lib/config）
+vi.mock('../../src/module/platform/common/livePreview.js', () => ({
+  enqueueLivePreview: vi.fn()
+}))
 vi.mock('../../src/module/platform/common/livePhoto.js', () => ({
   buildLivePhotoMessages: vi.fn(),
   // 批量入口的默认返回：results 为空 => 每张图都走普通图片回退分支。

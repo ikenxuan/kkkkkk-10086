@@ -1,9 +1,11 @@
 import { BilibiliDBBase } from './bilibili.js'
 import { DouyinDBBase } from './douyin.js'
+import { LivePreviewDBBase } from './livePreview.js'
 import { StatisticsDBBase } from './statistics.js'
 
 export * from './bilibili.js'
 export * from './douyin.js'
+export * from './livePreview.js'
 export * from './statistics.js'
 export * from './retention.js'
 
@@ -35,18 +37,27 @@ export const getBilibiliDB = createSingletonGetter(async () => await new Bilibil
 
 export const getStatisticsDB = createSingletonGetter(async () => await new StatisticsDBBase().init())
 
+export const getLivePreviewDB = createSingletonGetter(async () => await new LivePreviewDBBase().init())
+
 export const initAllDatabases = async (): Promise<{
   douyinDB: DouyinDBBase | null
   bilibiliDB: BilibiliDBBase | null
   statisticsDB: StatisticsDBBase | null
+  livePreviewDB: LivePreviewDBBase | null
 }> => {
-  const [douyin, bilibili, statistics] = await Promise.all([
+  const [douyin, bilibili, statistics, livePreview] = await Promise.all([
     getDouyinDB(),
     getBilibiliDB(),
-    getStatisticsDB()
+    getStatisticsDB(),
+    getLivePreviewDB()
   ])
 
-  return { douyinDB: douyin, bilibiliDB: bilibili, statisticsDB: statistics }
+  return {
+    douyinDB: douyin,
+    bilibiliDB: bilibili,
+    statisticsDB: statistics,
+    livePreviewDB: livePreview
+  }
 }
 
 const douyinDBInstance = await getDouyinDB()

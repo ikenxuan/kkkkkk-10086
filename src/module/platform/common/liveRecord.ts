@@ -60,7 +60,7 @@ const BILIBILI_LIVE_SUFFIX: Record<string, string> = {
 }
 
 /** 一路可录的直播流，两个平台的解析结果在这里归一 */
-interface LiveSource {
+export interface LiveSource {
   /** 拉流地址 */
   url: string
   /** 画质的中文名，只进提示语 */
@@ -80,7 +80,7 @@ interface LiveSource {
  * （不是直播间链接、没开播、拿不到地址……），统一回一句「录制失败」等于把排查成本
  * 全推给用户。
  */
-type LiveSourceResult =
+export type LiveSourceResult =
   | { ok: true, source: LiveSource }
   | { ok: false, message: string }
 
@@ -100,7 +100,7 @@ const resolveMaxDuration = (configuredSeconds: number | undefined): { ms: number
 }
 
 /** 抖音：链接 -> 直播间 -> flv 档位 */
-const resolveDouyinSource = async (url: string): Promise<LiveSourceResult> => {
+const resolveDouyinSource = async (url: string, quality?: string): Promise<LiveSourceResult> => {
   const idData = await getDouyinID(url)
   if (idData.type !== 'live_room_detail') {
     return { ok: false, message: '这条抖音链接不是直播间，录直播只认直播间链接' }
@@ -130,7 +130,8 @@ const resolveDouyinSource = async (url: string): Promise<LiveSourceResult> => {
 
   // 配置的档位只是「插到队首」，不是「只认它」：抖音某个档位没转码是常态，
   // 只认配置值会让一条其实可播的流被判成录不到（见 pickDouyinLiveStream 的注释）。
-  const pick = pickDouyinLiveStream(room.liveItem, Config.douyin.live?.quality || 'FULL_HD1')
+  // `quality` 给了就顶掉配置值 —— 预览录制走的是固定中档，不跟用户配的录制画质。
+  const pick = pickDouyinLiveStream(room.liveItem, quality || Config.douyin.live?.quality || 'FULL_HD1')
   if (!pick.url) {
     return { ok: false, message: '这个直播间没给出可用的 flv 拉流地址，录不了' }
   }
@@ -158,14 +159,15 @@ const resolveDouyinSource = async (url: string): Promise<LiveSourceResult> => {
 }
 
 /** B站：链接 -> 房间号 -> playurl */
-const resolveBilibiliSource = async (url: string): Promise<LiveSourceResult> => {
+const resolveBilibiliSource = async (url: string, qn?: number): Promise<LiveSourceResult> => {
   const idData = await getBilibiliID(url)
   if (idData.type !== 'live_room_detail' || !idData.room_id) {
     return { ok: false, message: '这条B站链接不是直播间，录直播只认直播间链接' }
   }
 
   const roomId = String(idData.room_id)
-  const pick = await fetchBilibiliLiveStream(roomId, Config.bilibili.live?.qn || 10000)
+  // `qn` 给了就顶掉配置值，理由同抖音那边：预览走固定中档
+  const pick = await fetchBilibiliLiveStream(roomId, qn || Config.bilibili.live?.qn || 10000)
   if (!pick.url) {
     return { ok: false, message: '拿不到这个B站直播间的拉流地址，可能已关播或该画质不可用' }
   }
@@ -186,6 +188,34 @@ const resolveBilibiliSource = async (url: string): Promise<LiveSourceResult> => 
   }
 }
 
+/** {@link resolveLiveSource} 的画质覆盖。两个平台的画质表达不同，所以分开给 */
+export interface LiveSourceQualityOverride {
+  /** 抖音的 flv 档位键，如 `SD1` */
+  douyinQuality?: string
+  /** B站的画质编号，如 250 */
+  bilibiliQn?: number
+}
+
+/**
+ * 从一条直播间链接取一路可录的流。
+ *
+ * 导出是给预览录制（`common/livePreview.ts`）复用的 —— 它要的取流步骤和录制完全一样，
+ * 只有画质不同。抄第二份的代价是两条路对「不是直播间链接」「没开播」「拿不到地址」
+ * 三种失败给出不同的判据，而这三种恰恰是最常见的。
+ * @param platform 已判定好的平台
+ * @param url 直播间链接
+ * @param override 画质覆盖，不给就用各平台的录制配置
+ * @returns 取流结果，失败时带一句给用户看的话
+ */
+export const resolveLiveSource = async (
+  platform: LiveRecordPlatform,
+  url: string,
+  override: LiveSourceQualityOverride = {}
+): Promise<LiveSourceResult> =>
+  platform === 'douyin'
+    ? await resolveDouyinSource(url, override.douyinQuality)
+    : await resolveBilibiliSource(url, override.bilibiliQn)
+
 /**
  * 录一段直播并上传。
  *
@@ -203,9 +233,7 @@ export const recordLiveRoom = async (
   platform: LiveRecordPlatform,
   url: string
 ): Promise<boolean> => {
-  const resolved = platform === 'douyin'
-    ? await resolveDouyinSource(url)
-    : await resolveBilibiliSource(url)
+  const resolved = await resolveLiveSource(platform, url)
   if (!resolved.ok) {
     await e.reply!(resolved.message)
     return false

@@ -32,12 +32,25 @@ const spies = vi.hoisted(() => ({
   initAllDatabases: vi.fn(),
   mkdir: vi.fn(),
   loadApps: vi.fn(),
-  startPluginServer: vi.fn()
+  startPluginServer: vi.fn(),
+  restoreLivePreviewQueue: vi.fn()
 }))
 
 vi.mock('../../src/module/db/index.js', () => ({
   initAllDatabases: spies.initAllDatabases.mockImplementation(async () => {
     state.calls.push('database')
+  })
+}))
+
+/*
+  直播预览的重启恢复。这个替身不只是为了挡掉 db / FFmpeg 那条重依赖链，
+  也是顺序断言的一部分：恢复出来的项会立刻录制并**主动**发消息，而主动发消息要
+  `Bot[self_id]` 已经就位，所以它必须排在 apps 之后。
+*/
+vi.mock('../../src/module/platform/common/livePreview.js', () => ({
+  restoreLivePreviewQueue: spies.restoreLivePreviewQueue.mockImplementation(async () => {
+    state.calls.push('livePreview')
+    return 0
   })
 }))
 
@@ -97,7 +110,7 @@ describe('plugin bootstrap', () => {
   it('initialises the database, then the directories, then the apps', async () => {
     await import('../../src/index.js')
 
-    expect(state.calls).toEqual(['database', 'directory', 'directory', 'apps'])
+    expect(state.calls).toEqual(['database', 'directory', 'directory', 'apps', 'livePreview'])
   })
 
   it('exports the apps map the loader produced', async () => {
@@ -119,7 +132,7 @@ describe('plugin bootstrap', () => {
     await import('../../src/index.js')
 
     expect(state.serverModuleLoaded).toBe(true)
-    expect(state.calls).toEqual(['database', 'directory', 'directory', 'apps', 'server'])
+    expect(state.calls).toEqual(['database', 'directory', 'directory', 'apps', 'livePreview', 'server'])
   })
 
   it('logs each failed app instead of aborting the whole startup', async () => {

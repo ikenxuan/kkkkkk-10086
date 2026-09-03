@@ -52,6 +52,17 @@ export interface BilibiliLiveStreamPick {
   headers: Record<string, string>
 }
 
+/** {@link listBilibiliLiveStreams} 结果里的一条：一个画质一条地址 */
+export interface BilibiliLiveStreamEntry {
+  /** 画质编号 */
+  qn: number
+  /** 画质中文名 */
+  qualityName: string
+  /** 实际命中的容器格式（`flv` / `fmp4` / `ts`） */
+  format: string
+  url: string
+}
+
 /** 直播拉流请求头。B站的 CDN 校验 Referer，不带就是 403，Origin 一并给上更稳 */
 const liveStreamHeaders = (roomId: number | string): Record<string, string> => ({
   ...(baseHeaders as Record<string, string>),
@@ -117,6 +128,25 @@ export const fetchBilibiliLiveStream = async (
   qn = 10000
 ): Promise<BilibiliLiveStreamPick> => {
   const headers = liveStreamHeaders(roomId)
+  const response = await requestPlayurl(roomId, qn, headers)
+  return pickFromPlayurl(response, qn, headers).pick
+}
+
+/**
+ * 打一次 `getRoomPlayInfo`。
+ *
+ * 拆出来是给 {@link listBilibiliLiveStreams} 复用的 —— 列清单要按画质逐个问，
+ * 而参数里除了 `qn` 每次都一样，抄第二份迟早和这份的 protocol/format/codec 组合走散。
+ * @param roomId 房间号
+ * @param qn 期望画质
+ * @param headers `liveStreamHeaders` 造好的请求头
+ * @returns 未解析的响应体
+ */
+const requestPlayurl = async (
+  roomId: number | string,
+  qn: number,
+  headers: Record<string, string>
+): Promise<unknown> => {
   const params = new URLSearchParams({
     room_id: String(roomId),
     // protocol 0=http-flv 1=http-hls，format 0=flv 1=ts 2=fmp4，codec 0=avc 1=hevc。
@@ -131,11 +161,28 @@ export const fetchBilibiliLiveStream = async (
     panorama: '1'
   })
 
-  const response = await new Networks({
+  return await new Networks({
     url: `${LIVE_PLAYURL_API}?${params.toString()}`,
     headers
   }).getData<unknown>()
+}
 
+/**
+ * 从一份 `getRoomPlayInfo` 响应里挑出可播地址，并把 `accept_qn` 一并带出来。
+ *
+ * `accept_qn` 是列清单唯一的画质来源：官方一次请求只返回**被请求那一档**的地址，
+ * 想拿别的档只能按它逐个再问（见 {@link listBilibiliLiveStreams}）。
+ * 顺带出来不额外花请求，所以挑选和发现放在同一次解析里。
+ * @param response 未解析的响应体
+ * @param requestedQn 入参画质，`current_qn` 缺失时的兜底
+ * @param headers 这次请求用的请求头，原样塞进结果
+ * @returns 挑选结果与该房间可用的画质列表
+ */
+const pickFromPlayurl = (
+  response: unknown,
+  requestedQn: number,
+  headers: Record<string, string>
+): { pick: BilibiliLiveStreamPick, acceptQn: number[] } => {
   const empty: BilibiliLiveStreamPick = {
     url: '',
     qn: 0,
@@ -143,15 +190,18 @@ export const fetchBilibiliLiveStream = async (
     format: '',
     headers
   }
+  const qn = requestedQn
+  const acceptQn: number[] = []
 
-  if (!isRecord(response)) return empty
+  if (!isRecord(response)) return { pick: empty, acceptQn }
   const data = isRecord(response.data) ? response.data : undefined
   const playurlInfo = isRecord(data?.playurl_info) ? data.playurl_info : undefined
   const playurl = isRecord(playurlInfo?.playurl) ? playurlInfo.playurl : undefined
-  if (!playurl) return empty
+  if (!playurl) return { pick: empty, acceptQn }
 
   const qnDesc = playurl.g_qn_desc
   const streams = Array.isArray(playurl.stream) ? playurl.stream : undefined
+  let pick: BilibiliLiveStreamPick | undefined
 
   // 逐层遍历而不是只看 [0]：某一档 codec 给了空 url_info 是常见形态，
   // 只取首项会在「第一档空、第二档可用」时误判成拿不到流。
@@ -172,23 +222,98 @@ export const fetchBilibiliLiveStream = async (
         const baseUrl = typeof codec.base_url === 'string' ? codec.base_url : ''
         const urlInfos = Array.isArray(codec.url_info) ? codec.url_info : undefined
 
+        // accept_qn 挂在每个 codec 上，各档之间实测一致；合并去重是防上游给出不一致的版本。
+        // 这一步不能等挑中地址才做：第一个 codec 就命中时后面的 accept_qn 根本轮不到。
+        for (const value of Array.isArray(codec.accept_qn) ? codec.accept_qn : []) {
+          if (typeof value === 'number' && !acceptQn.includes(value)) acceptQn.push(value)
+        }
+
         for (let urlIndex = 0; urlIndex < (urlInfos?.length ?? 0); urlIndex++) {
           const url = joinUrlInfo(at(urlInfos, urlIndex), baseUrl)
           if (!url) continue
           // 用响应回报的 current_qn 而不是入参 qn：官方降级后两者会不一致，
           // 显示给用户的必须是实际拿到的那一档。
           const actualQn = typeof codec.current_qn === 'number' ? codec.current_qn : qn
-          return {
+          // 不在这里 return：accept_qn 要收满整份响应才准，提前退出会让列清单
+          // 在「第一个 codec 就有地址」的房间上只看到一个画质。
+          pick ??= {
             url,
             qn: actualQn,
             qualityName: readQualityName(qnDesc, actualQn),
             format: formatName,
             headers
           }
+          break
         }
       }
     }
   }
 
-  return empty
+  return { pick: pick ?? empty, acceptQn }
+}
+
+/**
+ * 单次列清单最多打几次 `getRoomPlayInfo`。
+ *
+ * 官方一次请求只回**被请求那一档**的地址，所以「列出所有画质」在协议上就是
+ * 一档一次请求。实测 `accept_qn` 是 4~6 个值（原画/蓝光/超清/高清/流畅，杜比和 4K 偶现），
+ * 这个上限只在上游把列表撑长时才生效，是防串台的护栏而不是常态裁剪。
+ */
+const MAX_QUALITY_REQUESTS = 6
+
+/**
+ * 列出一个直播间所有画质的拉流地址，一个画质一条。
+ *
+ * ## 为什么是新函数而不是改 {@link fetchBilibiliLiveStream}
+ *
+ * 那个函数正被录制路径（`common/liveRecord.ts`）使用，它要的是「一条能播的」。
+ * 把它的返回改成清单，等于让录制路径跟着改一遍取值 —— 两条路径一起担风险。
+ * 两者共用 {@link requestPlayurl} 与 {@link pickFromPlayurl}，所以 protocol/format/codec
+ * 的挑选顺序只有一份，不会分头漂移。
+ *
+ * ## 为什么只按画质列一维
+ *
+ * 响应里是 protocol × format × codec 三层嵌套，全展开一个房间能出十几条长链，
+ * 而其中 hevc 那半在不少播放器上放不了。对用户有意义的维度只有画质，
+ * 所以每个画质给一条 —— 给哪一条由 `pickFromPlayurl` 说，和录制用的是同一套判据。
+ *
+ * ## 代价
+ *
+ * 最多 {@link MAX_QUALITY_REQUESTS} 次请求。第一次拿原画顺便发现 `accept_qn`，
+ * 剩下的按它逐个问。请求是顺序发的：`Networks.getData()` 自带 429/403 重试，
+ * 并发打同一个接口只会让退避互相叠加。
+ * @param roomId 真实房间号（长号）
+ * @returns 地址清单，按画质从高到低；一条都拿不到时返回空数组
+ */
+export const listBilibiliLiveStreams = async (
+  roomId: number | string
+): Promise<BilibiliLiveStreamEntry[]> => {
+  const headers = liveStreamHeaders(roomId)
+  const first = pickFromPlayurl(await requestPlayurl(roomId, 10000, headers), 10000, headers)
+
+  const entries: BilibiliLiveStreamEntry[] = []
+  const seen = new Set<number>()
+  const collect = (pick: BilibiliLiveStreamPick): void => {
+    if (!pick.url || seen.has(pick.qn)) return
+    seen.add(pick.qn)
+    entries.push({ qn: pick.qn, qualityName: pick.qualityName, format: pick.format, url: pick.url })
+  }
+  collect(first.pick)
+
+  // 降序：accept_qn 的顺序是接口给的，不保证从高到低
+  const rest = [...first.acceptQn]
+    .sort((a, b) => b - a)
+    .filter(qn => !seen.has(qn))
+    .slice(0, MAX_QUALITY_REQUESTS - 1)
+
+  for (const qn of rest) {
+    // 一档失败不该拖掉整张清单：这一档没转码、或 CDN 单独拒了这一档都算常态
+    try {
+      collect(pickFromPlayurl(await requestPlayurl(roomId, qn, headers), qn, headers).pick)
+    } catch (error) {
+      logger.debug(`[B站] 取 qn=${qn} 的拉流地址失败，跳过`, error)
+    }
+  }
+
+  return entries.sort((a, b) => b.qn - a.qn)
 }

@@ -20,6 +20,8 @@ import { createBilibiliRichTextForwardMessage } from './richtext-message.js'
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import type { LivePhotoBatchItem } from '@/module/platform/common/types'
 import { bilibiliCommentLimit } from '@/module/platform/common/commentLimit'
+import { buildLiveStreamForward } from '@/module/platform/common/liveStreamForward'
+import { listBilibiliLiveStreams } from './live-stream.js'
 import { livePhotoBatchTimeoutMs, type MediaTaskName, runMediaTasks } from '@/module/utils/MediaTasks'
 import { isSoftFailure, softFetch, SOFT_ERROR_CODES } from '@/module/platform/common/softError'
 import { fromSeconds, reportMedia } from '@/module/utils/media-metrics'
@@ -1214,6 +1216,7 @@ export class Bilibili extends Base {
               avatar_url: userProfileData.data.data.card.face,
               frame: userProfileData.data.data.card.pendant.image,
               fans: Common.count(userProfileData.data.data.card.fans),
+              online: Common.count(liveInfo.data.data.online),
               create_time: liveInfo.data.data.live_time === '-62170012800' ? '获取失败' : liveInfo.data.data.live_time,
               now_time: Common.getCurrentTime(),
               share_url: 'https://live.bilibili.com/' + liveInfo.data.data.room_id,
@@ -1221,6 +1224,39 @@ export class Bilibili extends Base {
             }
           )
           await this.e.reply(img)
+
+          // 卡片印的是「这个直播间是什么」，地址清单是它装不下的东西，所以另发一条。
+          // 房间号沿用 iddata.room_id —— 录制路径（common/liveRecord.ts）喂给取数层的
+          // 也是这个值，两条路对同一个直播间必须问同一个号。
+          const streamForward = await buildLiveStreamForward(
+            this.e,
+            {
+              imageUrl: liveInfo.data.data.user_cover || userProfileData.data.data.card.face,
+              title: liveInfo.data.data.title,
+              author: userProfileData.data.data.card.name,
+              online: `${Common.count(liveInfo.data.data.online)}人正在观看`,
+              shareUrl: 'https://live.bilibili.com/' + liveInfo.data.data.room_id
+            },
+            (await listBilibiliLiveStreams(iddata.room_id)).map(entry => ({
+              quality: entry.qn,
+              qualityName: entry.qualityName,
+              protocol: entry.format,
+              url: entry.url
+            })),
+            `${userProfileData.data.data.card.name} 的直播间信息`
+          )
+          if (streamForward) await this.e.reply(streamForward)
+
+          // 15 秒预览：排进独立队列就走，不占这次解析的预算。链接照 share_url 的形状重建，
+          // 重启恢复时要拿它重新取流。动态 import 的理由同 douyin.ts 那处：
+          // `livePreview` 静态依赖 db 层与 FFmpeg，静态引进来会拉进每个 import 本文件的地方。
+          const { enqueueLivePreview } = await import('@/module/platform/common/livePreview')
+          await enqueueLivePreview(
+            this.e,
+            'bilibili',
+            iddata.room_id,
+            `https://live.bilibili.com/${iddata.room_id}`
+          )
           break
         }
         default:

@@ -27,7 +27,7 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: { cookies: { bilibili: 'SESSDATA=test' } }
 }))
 
-const { fetchBilibiliLiveStream } = await import('../../src/module/platform/bilibili/live-stream.js')
+const { fetchBilibiliLiveStream, listBilibiliLiveStreams } = await import('../../src/module/platform/bilibili/live-stream.js')
 
 /**
  * 一份结构完整的正常响应，畸形用例都从它上面剪字段。
@@ -280,5 +280,117 @@ describe('fetchBilibiliLiveStream malformed responses', () => {
     expect(pick.qn).toBe(0)
     // 即使一个地址都没取到，请求头也要照样回给调用点
     expect(pick.headers.Referer).toBe('https://live.bilibili.com/123456')
+  })
+})
+
+/** 从 Networks 收到的 URL 里读出这次请求的 qn，用来给替身按档位造响应 */
+const requestedQn = (url: string): number => Number(new URL(url).searchParams.get('qn'))
+
+/** 按档位造一份响应：`current_qn` 跟着入参走，模拟官方真的给了那一档 */
+const responseForQn = (qn: number): typeof okResponse => {
+  const response = structuredClone(okResponse)
+  const codec = response.data.playurl_info.playurl.stream[0]!.format[0]!.codec[0]!
+  codec.current_qn = qn
+  codec.base_url = `/live-bvc/123/live_456_${qn}.flv`
+  return response
+}
+
+/**
+ * 列清单是给用户看的，要的是全集；`fetchBilibiliLiveStream` 是给录制用的，只要一条。
+ * 下面这组钉住的是「一个画质一条」「按画质降序」「一档失败不拖垮整张清单」，
+ * 以及请求次数的护栏 —— 官方一次只回一档，所以这里的请求数就是清单长度。
+ */
+describe('listBilibiliLiveStreams', () => {
+  it('按 accept_qn 逐档问，一个画质一条，画质降序', async () => {
+    getData.mockImplementation(async () =>
+      responseForQn(requestedQn(networksOptions.at(-1)!.url))
+    )
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.map(entry => entry.qn)).toEqual([10000, 400, 250, 150])
+    expect(entries[0].qualityName).toBe('原画')
+    expect(entries[2].qualityName).toBe('超清')
+    expect(entries[0].url).toContain('live_456_10000.flv')
+    expect(entries[3].url).toContain('live_456_150.flv')
+    // 第一次问原画顺便发现 accept_qn，剩下三档各一次
+    expect(networksOptions).toHaveLength(4)
+    expect(networksOptions.map(options => requestedQn(options.url))).toEqual([10000, 400, 250, 150])
+  })
+
+  // 官方对某些房间会把所有档都降级到同一个 current_qn，那时清单只该有一条
+  it('同一个画质只出现一次', async () => {
+    getData.mockResolvedValue(okResponse)
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].qn).toBe(10000)
+  })
+
+  /*
+    这一条钉的是 pickFromPlayurl 里那个「不提前 return」：第一个 codec 就有地址时，
+    如果挑中就退出，accept_qn 只会收到那一个 codec 的，后面的档全部发现不了。
+  */
+  it('第一个 codec 就命中时也能拿到完整的 accept_qn', async () => {
+    getData.mockImplementation(async () =>
+      responseForQn(requestedQn(networksOptions.at(-1)!.url))
+    )
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.length).toBeGreaterThan(1)
+  })
+
+  it('单档请求失败时跳过它，其余照常给出', async () => {
+    globalThis.logger = { debug: vi.fn() } as unknown as typeof logger
+    getData.mockImplementation(async () => {
+      const qn = requestedQn(networksOptions.at(-1)!.url)
+      if (qn === 250) throw new Error('CDN 拒了这一档')
+      return responseForQn(qn)
+    })
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.map(entry => entry.qn)).toEqual([10000, 400, 150])
+  })
+
+  it('第一次请求就拿不到地址时返回空数组，且不再追问', async () => {
+    getData.mockResolvedValue({ code: 0, data: {} })
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries).toEqual([])
+    expect(networksOptions).toHaveLength(1)
+  })
+
+  // accept_qn 的顺序是接口给的，不保证从高到低
+  it('accept_qn 乱序时按画质降序问', async () => {
+    getData.mockImplementation(async () => {
+      const qn = requestedQn(networksOptions.at(-1)!.url)
+      const response = responseForQn(qn)
+      response.data.playurl_info.playurl.stream[0]!.format[0]!.codec[0]!.accept_qn = [150, 10000, 250]
+      return response
+    })
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(networksOptions.map(options => requestedQn(options.url))).toEqual([10000, 250, 150])
+    expect(entries.map(entry => entry.qn)).toEqual([10000, 250, 150])
+  })
+
+  // 上游把 accept_qn 撑长时不该变成十几次请求
+  it('请求次数有上限', async () => {
+    getData.mockImplementation(async () => {
+      const qn = requestedQn(networksOptions.at(-1)!.url)
+      const response = responseForQn(qn)
+      response.data.playurl_info.playurl.stream[0]!.format[0]!.codec[0]!.accept_qn =
+        [30000, 20000, 10000, 400, 250, 150, 80, 60, 40, 20]
+      return response
+    })
+
+    await listBilibiliLiveStreams(123456)
+
+    expect(networksOptions).toHaveLength(6)
   })
 })

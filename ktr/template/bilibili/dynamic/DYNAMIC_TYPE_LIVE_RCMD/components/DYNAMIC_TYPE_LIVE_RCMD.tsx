@@ -1,5 +1,5 @@
 import { extractRichTextPlainText, renderRichTextToReact } from '@kkk/richtext'
-import { Clock, Radio, UsersRound } from 'lucide-react'
+import { Clock, Eye, Radio, UsersRound } from 'lucide-react'
 import React from 'react'
 // import { cn } from '../../../../../utils/cn'
 import { isDark as isDarkMode } from '../../../../../utils/theme'
@@ -164,6 +164,13 @@ export const BilibiliLiveDynamic: React.FC<PosterProps<BilibiliLiveDynamicData>>
                   <Clock size={24} />
                   <span>{data.create_time}</span>
                 </div>
+                {/* 在看人数只有直播间链接解析那条路拿得到，缺了整行不渲染 */}
+                {data.online && (
+                  <div className="mt-3 inline-flex items-center gap-3 text-[26px] font-bold whitespace-nowrap select-text">
+                    <Eye size={24} />
+                    <span>{data.online} 人在看</span>
+                  </div>
+                )}
               </div>
             </div>
           </section>

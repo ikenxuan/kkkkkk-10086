@@ -21,6 +21,14 @@ export interface BilibiliLiveDynamicData {
   frame?: string
   /** 粉丝数 */
   fans: string
+  /**
+   * 当前在看人数，已格式化成展示文本。
+   *
+   * 声明成可选是因为三个渲染点里只有直播间链接解析那条拿得到它：
+   * 动态流（`DYNAMIC_TYPE_LIVE_RCMD`）和推送两条走的是动态卡片，
+   * 那份响应里没有房间的实时人数。缺了就整格不渲染。
+   */
+  online?: string
   /** 时间信息 */
   create_time: string
   /** 直播开始时间 */

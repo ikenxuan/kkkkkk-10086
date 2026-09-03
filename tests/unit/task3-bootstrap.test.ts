@@ -36,6 +36,11 @@ vi.mock('../../src/module/db/index.js', () => ({
   initAllDatabases: bootstrapMocks.initAllDatabases
 }))
 
+// 只为挡掉 db / FFmpeg 那条重依赖链，顺序断言在 tests/contracts/bootstrap.test.ts 里
+vi.mock('../../src/module/platform/common/livePreview.js', () => ({
+  restoreLivePreviewQueue: vi.fn(async () => 0)
+}))
+
 describe('Task 3 bootstrap ordering', () => {
   afterEach(() => {
     vi.resetModules()

@@ -7,7 +7,12 @@ vi.mock('../../src/module/utils/index.js', () => ({
   Common: { count: (value: unknown) => String(value ?? 0) }
 }))
 
-const { pickDouyinLiveStream } = await import('../../src/module/platform/douyin/live.js')
+const {
+  buildDouyinLiveHeadline,
+  buildDouyinReflowUrl,
+  listDouyinLiveStreams,
+  pickDouyinLiveStream
+} = await import('../../src/module/platform/douyin/live.js')
 type DouyinLiveItem = import('../../src/module/platform/douyin/live.js').DouyinLiveItem
 
 /** 只造 `stream_url`，其余字段与档位挑选无关 */
@@ -219,5 +224,246 @@ describe('pickDouyinLiveStream malformed responses', () => {
     }))
 
     expect(pick.url).toBe('https://pull.example.com/sd1.flv')
+  })
+})
+
+/**
+ * 清单和挑选是两件事：挑选只要一条能播的、受配置影响；清单要全集、不受配置影响。
+ * 下面这组钉住的就是这个分工，以及「上游新开的档不能从清单里消失」。
+ */
+describe('listDouyinLiveStreams', () => {
+  it('按内置优先级从高到低排，flv 排在同档的 hls 前面', () => {
+    const entries = listDouyinLiveStreams(liveItem({
+      flv_pull_url: {
+        SD2: 'https://pull.example.com/sd2.flv',
+        FULL_HD1: 'https://pull.example.com/full.flv',
+        SD1: 'https://pull.example.com/sd1.flv'
+      },
+      hls_pull_url_map: { FULL_HD1: 'https://pull.example.com/full.m3u8' }
+    }))
+
+    expect(entries.map(entry => `${entry.quality}:${entry.protocol}`)).toEqual([
+      'FULL_HD1:flv',
+      'FULL_HD1:hls',
+      'SD1:flv',
+      'SD2:flv'
+    ])
+  })
+
+  // 内置表只写了三个键，HD1 属于「上游可能给、类型没承诺」那一类，清单不能把它漏掉
+  it('优先级表外的档位追加在后面而不是被丢掉', () => {
+    const entries = listDouyinLiveStreams(liveItem({
+      flv_pull_url: {
+        HD1: 'https://pull.example.com/hd1.flv',
+        FULL_HD1: 'https://pull.example.com/full.flv',
+        BRAND_NEW: 'https://pull.example.com/new.flv'
+      }
+    }))
+
+    expect(entries.map(entry => entry.quality)).toEqual(['FULL_HD1', 'HD1', 'BRAND_NEW'])
+  })
+
+  it('档位中文名取 resolution_name，查不到时回落成档位键', () => {
+    const entries = listDouyinLiveStreams(liveItem({
+      flv_pull_url: { FULL_HD1: 'https://pull.example.com/full.flv', SD1: 'https://pull.example.com/sd1.flv' },
+      resolution_name: { FULL_HD1: '原画' }
+    }))
+
+    expect(entries.map(entry => entry.qualityName)).toEqual(['原画', 'SD1'])
+  })
+
+  // 「存在但是空串」是抖音的常态，清单里出现一条空地址等于给用户一个必然失败的链接
+  it('空串和非字符串值都不进清单', () => {
+    const entries = listDouyinLiveStreams(liveItem({
+      flv_pull_url: { FULL_HD1: '', SD1: '   ', SD2: 1234 } as never,
+      hls_pull_url_map: { FULL_HD1: 'https://pull.example.com/full.m3u8' }
+    }))
+
+    expect(entries).toEqual([{
+      quality: 'FULL_HD1',
+      qualityName: 'FULL_HD1',
+      protocol: 'hls',
+      url: 'https://pull.example.com/full.m3u8'
+    }])
+  })
+
+  // hls_pull_url 与 hls_pull_url_map 是同一份流的两种给法，收两遍就是同一条地址出现两次
+  it('不收单条的 hls_pull_url', () => {
+    const entries = listDouyinLiveStreams(liveItem({
+      flv_pull_url: { FULL_HD1: 'https://pull.example.com/full.flv' },
+      hls_pull_url: 'https://pull.example.com/full.m3u8'
+    }))
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].protocol).toBe('flv')
+  })
+
+  it('整个 stream_url 缺失时返回空数组而不抛', () => {
+    expect(() => listDouyinLiveStreams(undefined)).not.toThrow()
+    expect(listDouyinLiveStreams(undefined)).toEqual([])
+    expect(listDouyinLiveStreams({})).toEqual([])
+    expect(listDouyinLiveStreams(liveItem({ default_resolution: 'FULL_HD1' }))).toEqual([])
+  })
+
+  // 清单不读配置：`pickDouyinLiveStream` 的 preferredQuality 那套不该漏到这里
+  it('不接受也不受画质偏好影响', () => {
+    const streamUrl = {
+      flv_pull_url: { FULL_HD1: 'https://pull.example.com/full.flv', SD1: 'https://pull.example.com/sd1.flv' }
+    }
+
+    expect(listDouyinLiveStreams(liveItem(streamUrl)).map(entry => entry.quality)).toEqual(['FULL_HD1', 'SD1'])
+    expect(pickDouyinLiveStream(liveItem(streamUrl), 'SD1').quality).toBe('SD1')
+  })
+})
+
+describe('buildDouyinReflowUrl', () => {
+  it('拼出 App 分享按钮那种 webcast 链接', () => {
+    expect(buildDouyinReflowUrl('7543662824310573864', 'MS4wLjABAAAAQ-St3h4')).toBe(
+      'https://webcast.amemv.com/douyin/webcast/reflow/7543662824310573864?sec_user_id=MS4wLjABAAAAQ-St3h4'
+    )
+  })
+
+  /*
+    不带 did / iid / with_sec_did：那三个是设备标识，服务端不要求，
+    而硬编一个假 device id 是给风控多送一个矛盾信号。
+  */
+  it('不带设备标识参数', () => {
+    const url = buildDouyinReflowUrl('123', 'MS4w')
+
+    expect(url).not.toContain('did=')
+    expect(url).not.toContain('iid=')
+    expect(url).not.toContain('with_sec_did')
+  })
+
+  // sec_uid 里有 `-` 和 `_`，交给 URLSearchParams 转义不能把它改写坏
+  it('sec_uid 原样出现在 query 里', () => {
+    const secUid = 'MS4wLjABAAAANwkJuWIRFOzg5uCpDRpMj4OX-QryoDgn-yYlXQnRwQQ'
+
+    expect(buildDouyinReflowUrl('123', secUid)).toContain(`sec_user_id=${secUid}`)
+  })
+
+  it('缺房间号或 sec_uid 时返回空串，交给调用方兜', () => {
+    expect(buildDouyinReflowUrl('', 'MS4w')).toBe('')
+    expect(buildDouyinReflowUrl('123', '')).toBe('')
+    expect(buildDouyinReflowUrl('', '')).toBe('')
+  })
+})
+
+/** 造一份够 headline 用的房间项 */
+const headlineLiveItem = (overrides: Record<string, unknown> = {}): never => ({
+  cover: { url_list: ['https://cover.example.com/room.jpg'] },
+  title: '韩式双开门',
+  room_view_stats: { display_value: 340 },
+  ...overrides
+}) as never
+
+describe('buildDouyinLiveHeadline', () => {
+  const anchor = { nickname: '小纯同学', avatar_larger: { url_list: ['https://avatar.example.com/a.jpg'] } }
+
+  it('封面 + 标题 + 作者 + 在线人数 + reflow 链', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem(),
+      webRid: '26139686',
+      roomId: '7543662824310573864',
+      secUid: 'MS4wLjABAAAAQ-St3h4'
+    })
+
+    expect(headline).toEqual({
+      imageUrl: 'https://cover.example.com/room.jpg',
+      title: '韩式双开门',
+      author: '小纯同学',
+      online: '340人正在观看',
+      shareUrl: 'https://webcast.amemv.com/douyin/webcast/reflow/7543662824310573864?sec_user_id=MS4wLjABAAAAQ-St3h4'
+    })
+  })
+
+  // 封面比头像信息量大，但封面缺了不该让这条节点没有图
+  it('没有封面时回落到主播头像', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem({ cover: undefined }),
+      webRid: '26139686',
+      roomId: '123',
+      secUid: 'MS4w'
+    })
+
+    expect(headline.imageUrl).toBe('https://avatar.example.com/a.jpg')
+  })
+
+  // 拼不出 reflow 链时回落到卡片上那条 live.douyin.com
+  it('缺内部房间号时回落到 web_rid 链', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem(),
+      webRid: '26139686',
+      roomId: '',
+      secUid: 'MS4w'
+    })
+
+    expect(headline.shareUrl).toBe('https://live.douyin.com/26139686')
+  })
+
+  it('连 web_rid 都没有时 shareUrl 为空串', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem(),
+      webRid: '',
+      roomId: '',
+      secUid: ''
+    })
+
+    expect(headline.shareUrl).toBe('')
+  })
+
+  /*
+    抖音的 `*_str` 字段本身就是展示文本（'5.3万'）。直接 Number() 会得到 NaN，
+    所以要走 displayCount 那条「带单位原样透传」的分支再补「正在观看」。
+  */
+  it('带单位的人数原样透传', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem({ room_view_stats: { display_value: '5.3万' } }),
+      webRid: '1',
+      roomId: '1',
+      secUid: 'MS4w'
+    })
+
+    expect(headline.online).toBe('5.3万人正在观看')
+  })
+
+  it('room_view_stats 缺失时退到 stats.user_count_str', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem({ room_view_stats: undefined, stats: { user_count_str: '1234' } }),
+      webRid: '1',
+      roomId: '1',
+      secUid: 'MS4w'
+    })
+
+    expect(headline.online).toBe('1234人正在观看')
+  })
+
+  // 取不到人数时给空串，让排版层整行不渲染，而不是印出「0人正在观看」
+  it('两个人数字段都缺时给空串', () => {
+    const headline = buildDouyinLiveHeadline({
+      anchor,
+      liveItem: headlineLiveItem({ room_view_stats: undefined }),
+      webRid: '1',
+      roomId: '1',
+      secUid: 'MS4w'
+    })
+
+    expect(headline.online).toBe('')
+  })
+
+  it('整个房间项和主播都缺时不抛', () => {
+    expect(() => buildDouyinLiveHeadline({
+      anchor: undefined,
+      liveItem: undefined,
+      webRid: '',
+      roomId: '',
+      secUid: ''
+    })).not.toThrow()
   })
 })

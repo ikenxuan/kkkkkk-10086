@@ -444,6 +444,8 @@ export interface LiveInfoData {
   area_name: string
   room_id: number | string
   live_time: string
+  /** 当前在看人数。amagi 的 `BiliLiveRoomDetail` 声明为必填 number，这里跟着它 */
+  online: number
 }
 
 export interface RoomInitData {

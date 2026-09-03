@@ -278,3 +278,29 @@ export interface CountResult {
 export interface SumResult {
   total: number | null
 }
+
+/**
+ * 直播预览队列的落盘行：一个订阅者一行。
+ *
+ * 同一个直播间被多个会话要过时会有多行同 `roomKey`，录制仍然只跑一次
+ * （见 `platform/common/livePreview.ts`），录完按 `roomKey` 把这些行全部取出来逐个发。
+ *
+ * 落盘的唯一目的是活过进程重启：运行期的队列持的是事件对象，序列化不了，
+ * 所以这里存的是「重启后重新发一次消息所需的最小信息」——
+ * 用 `Bot[selfId].pickGroup/pickFriend(sessionId)` 就够。
+ */
+export interface LivePreviewRow {
+  id: number
+  /** bot 实例的 self_id。多 bot 同时在线时缺了它会串台 */
+  selfId: string
+  /** 会话类型，决定重启后走 pickGroup 还是 pickFriend */
+  sessionType: 'group' | 'private'
+  /** 群号或好友号 */
+  sessionId: string
+  platform: 'douyin' | 'bilibili'
+  /** 去重键，形如 `douyin:123456`。录制按它合并，发送按它散开 */
+  roomKey: string
+  /** 原始直播间链接。重启后要重新走一遍取流，所以必须留着 */
+  roomUrl: string
+  createdAt: string
+}
