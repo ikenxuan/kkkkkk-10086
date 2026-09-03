@@ -52,14 +52,36 @@ export interface BilibiliLiveStreamPick {
   headers: Record<string, string>
 }
 
-/** {@link listBilibiliLiveStreams} 结果里的一条：一个画质一条地址 */
+/** {@link listBilibiliLiveStreams} 结果里的一条：一个画质 × 一个协议一条 */
 export interface BilibiliLiveStreamEntry {
   /** 画质编号 */
   qn: number
   /** 画质中文名 */
   qualityName: string
+  /** 协议：`flv` 直连、`hls` 切片（m3u8） */
+  protocol: 'flv' | 'hls'
   /** 实际命中的容器格式（`flv` / `fmp4` / `ts`） */
   format: string
+  url: string
+}
+
+/**
+ * `stream[].protocol_name` -> 对外的协议名。
+ *
+ * 官方给的是 `http_stream` / `http_hls`，而用户要的是「FLV / M3U8」这组说法 ——
+ * 后者是播放器认的词。表外的 protocol 一律不收：收了也不知道该叫它什么。
+ */
+const PROTOCOL_NAMES: Record<string, 'flv' | 'hls'> = {
+  http_stream: 'flv',
+  http_hls: 'hls'
+}
+
+/** 遍历响应时收下的一条候选：一个 protocol × format × codec 的可播地址 */
+interface PlayurlCombo {
+  qn: number
+  protocol: 'flv' | 'hls'
+  format: string
+  codec: string
   url: string
 }
 
@@ -182,7 +204,7 @@ const pickFromPlayurl = (
   response: unknown,
   requestedQn: number,
   headers: Record<string, string>
-): { pick: BilibiliLiveStreamPick, acceptQn: number[] } => {
+): { pick: BilibiliLiveStreamPick, acceptQn: number[], combos: PlayurlCombo[] } => {
   const empty: BilibiliLiveStreamPick = {
     url: '',
     qn: 0,
@@ -192,12 +214,13 @@ const pickFromPlayurl = (
   }
   const qn = requestedQn
   const acceptQn: number[] = []
+  const combos: PlayurlCombo[] = []
 
-  if (!isRecord(response)) return { pick: empty, acceptQn }
+  if (!isRecord(response)) return { pick: empty, acceptQn, combos }
   const data = isRecord(response.data) ? response.data : undefined
   const playurlInfo = isRecord(data?.playurl_info) ? data.playurl_info : undefined
   const playurl = isRecord(playurlInfo?.playurl) ? playurlInfo.playurl : undefined
-  if (!playurl) return { pick: empty, acceptQn }
+  if (!playurl) return { pick: empty, acceptQn, combos }
 
   const qnDesc = playurl.g_qn_desc
   const streams = Array.isArray(playurl.stream) ? playurl.stream : undefined
@@ -208,6 +231,8 @@ const pickFromPlayurl = (
   for (let streamIndex = 0; streamIndex < (streams?.length ?? 0); streamIndex++) {
     const stream = at(streams, streamIndex)
     if (!isRecord(stream)) continue
+    const protocolName = typeof stream.protocol_name === 'string' ? stream.protocol_name : ''
+    const protocol = PROTOCOL_NAMES[protocolName]
     const formats = Array.isArray(stream.format) ? stream.format : undefined
 
     for (let formatIndex = 0; formatIndex < (formats?.length ?? 0); formatIndex++) {
@@ -219,6 +244,7 @@ const pickFromPlayurl = (
       for (let codecIndex = 0; codecIndex < (codecs?.length ?? 0); codecIndex++) {
         const codec = at(codecs, codecIndex)
         if (!isRecord(codec)) continue
+        const codecName = typeof codec.codec_name === 'string' ? codec.codec_name : ''
         const baseUrl = typeof codec.base_url === 'string' ? codec.base_url : ''
         const urlInfos = Array.isArray(codec.url_info) ? codec.url_info : undefined
 
@@ -234,8 +260,8 @@ const pickFromPlayurl = (
           // 用响应回报的 current_qn 而不是入参 qn：官方降级后两者会不一致，
           // 显示给用户的必须是实际拿到的那一档。
           const actualQn = typeof codec.current_qn === 'number' ? codec.current_qn : qn
-          // 不在这里 return：accept_qn 要收满整份响应才准，提前退出会让列清单
-          // 在「第一个 codec 就有地址」的房间上只看到一个画质。
+          // 不在这里 return：accept_qn 和 combos 都要收满整份响应才准，
+          // 提前退出会让列清单在「第一个 codec 就有地址」的房间上只看到一个组合。
           pick ??= {
             url,
             qn: actualQn,
@@ -243,13 +269,14 @@ const pickFromPlayurl = (
             format: formatName,
             headers
           }
+          if (protocol) combos.push({ qn: actualQn, protocol, format: formatName, codec: codecName, url })
           break
         }
       }
     }
   }
 
-  return { pick: pick ?? empty, acceptQn }
+  return { pick: pick ?? empty, acceptQn, combos }
 }
 
 /**
@@ -262,28 +289,29 @@ const pickFromPlayurl = (
 const MAX_QUALITY_REQUESTS = 6
 
 /**
- * 列出一个直播间所有画质的拉流地址，一个画质一条。
+ * 列出一个直播间的拉流地址，**一个画质 × 一个协议一条**。
  *
  * ## 为什么是新函数而不是改 {@link fetchBilibiliLiveStream}
  *
  * 那个函数正被录制路径（`common/liveRecord.ts`）使用，它要的是「一条能播的」。
  * 把它的返回改成清单，等于让录制路径跟着改一遍取值 —— 两条路径一起担风险。
  * 两者共用 {@link requestPlayurl} 与 {@link pickFromPlayurl}，所以 protocol/format/codec
- * 的挑选顺序只有一份，不会分头漂移。
+ * 的解析只有一份，不会分头漂移。
  *
- * ## 为什么只按画质列一维
+ * ## 展开到 protocol，不展开到 codec
  *
- * 响应里是 protocol × format × codec 三层嵌套，全展开一个房间能出十几条长链，
- * 而其中 hevc 那半在不少播放器上放不了。对用户有意义的维度只有画质，
- * 所以每个画质给一条 —— 给哪一条由 `pickFromPlayurl` 说，和录制用的是同一套判据。
+ * 响应是 protocol × format × codec 三层。protocol 那一维要展开 —— 用户要的就是
+ * 「FLV 和 M3U8 各给一份」；codec 那一维不展开：`hevc` 在不少播放器上放不了，
+ * 同一档给两条地址只会让人挑错。所以每个 (画质, 协议) 取一条，优先 `avc`。
  *
  * ## 代价
  *
- * 最多 {@link MAX_QUALITY_REQUESTS} 次请求。第一次拿原画顺便发现 `accept_qn`，
- * 剩下的按它逐个问。请求是顺序发的：`Networks.getData()` 自带 429/403 重试，
- * 并发打同一个接口只会让退避互相叠加。
+ * 最多 {@link MAX_QUALITY_REQUESTS} 次请求 —— 官方一次只回**被请求那一档**的画质，
+ * 但那一档的 FLV 和 M3U8 在同一份响应里，所以协议维度不额外花请求。
+ * 第一次拿原画顺便发现 `accept_qn`，剩下的按它逐个问。请求顺序发：
+ * `Networks.getData()` 自带 429/403 重试，并发打同一个接口只会让退避互相叠加。
  * @param roomId 真实房间号（长号）
- * @returns 地址清单，按画质从高到低；一条都拿不到时返回空数组
+ * @returns 地址清单，按画质从高到低、同画质内 flv 在前；一条都拿不到时返回空数组
  */
 export const listBilibiliLiveStreams = async (
   roomId: number | string
@@ -292,28 +320,44 @@ export const listBilibiliLiveStreams = async (
   const first = pickFromPlayurl(await requestPlayurl(roomId, 10000, headers), 10000, headers)
 
   const entries: BilibiliLiveStreamEntry[] = []
-  const seen = new Set<number>()
-  const collect = (pick: BilibiliLiveStreamPick): void => {
-    if (!pick.url || seen.has(pick.qn)) return
-    seen.add(pick.qn)
-    entries.push({ qn: pick.qn, qualityName: pick.qualityName, format: pick.format, url: pick.url })
+  // key 是 `画质:协议`：同一档的 FLV 和 M3U8 是两条，而同一档同协议的 avc/hevc 只留一条
+  const seen = new Set<string>()
+
+  const collect = (combos: PlayurlCombo[], qualityName: (qn: number) => string): void => {
+    // avc 排前面：同一个 (画质, 协议) 下先到先得，所以要让兼容性好的那个先到
+    const ordered = [...combos].sort((a, b) => Number(b.codec === 'avc') - Number(a.codec === 'avc'))
+    for (const combo of ordered) {
+      const key = `${combo.qn}:${combo.protocol}`
+      if (!combo.url || seen.has(key)) continue
+      seen.add(key)
+      entries.push({
+        qn: combo.qn,
+        qualityName: qualityName(combo.qn),
+        protocol: combo.protocol,
+        format: combo.format,
+        url: combo.url
+      })
+    }
   }
-  collect(first.pick)
+  // 画质名只在 pick 里算过一次，这里按它回填：同一次响应里所有 combo 的 qn 都相同
+  collect(first.combos, () => first.pick.qualityName || String(first.pick.qn))
 
   // 降序：accept_qn 的顺序是接口给的，不保证从高到低
   const rest = [...first.acceptQn]
     .sort((a, b) => b - a)
-    .filter(qn => !seen.has(qn))
+    .filter(qn => !seen.has(`${qn}:flv`) && !seen.has(`${qn}:hls`))
     .slice(0, MAX_QUALITY_REQUESTS - 1)
 
   for (const qn of rest) {
     // 一档失败不该拖掉整张清单：这一档没转码、或 CDN 单独拒了这一档都算常态
     try {
-      collect(pickFromPlayurl(await requestPlayurl(roomId, qn, headers), qn, headers).pick)
+      const round = pickFromPlayurl(await requestPlayurl(roomId, qn, headers), qn, headers)
+      collect(round.combos, () => round.pick.qualityName || String(round.pick.qn))
     } catch (error) {
       logger.debug(`[B站] 取 qn=${qn} 的拉流地址失败，跳过`, error)
     }
   }
 
-  return entries.sort((a, b) => b.qn - a.qn)
+  // 画质降序、同画质内 flv 在前。协议分组由排版层（`common/liveStreamForward.ts`）再做一次
+  return entries.sort((a, b) => b.qn - a.qn || Number(a.protocol === 'hls') - Number(b.protocol === 'hls'))
 }

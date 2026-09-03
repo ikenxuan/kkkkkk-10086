@@ -79,14 +79,12 @@ const PROTOCOL_ICONS: Record<string, string> = {
  * @param e 触发这次解析的事件
  * @param headline 第一条节点的房间信息
  * @param entries 地址清单
- * @param title 转发描述
  * @returns 可以直接交给 `e.reply` 的转发消息；清单为空时返回 undefined，调用点跳过发送
  */
 export const buildLiveStreamForward = async (
   e: BaseEvent,
   headline: LiveRoomHeadline,
-  entries: LiveStreamEntry[],
-  title: string
+  entries: LiveStreamEntry[]
 ): Promise<unknown | undefined> => {
   if (entries.length === 0) return undefined
 
@@ -97,7 +95,12 @@ export const buildLiveStreamForward = async (
     nodes.push(`${icon}${label}_${entry.qualityName}：${entry.url}`)
   }
 
-  return await common.makeForwardMsg(e, nodes, title)
+  /*
+    第三个参数（转发描述）刻意传空串。宿主 `lib/common/common.js` 的 makeForwardMsg 里
+    `if (dec) forwardMsg.push({ message: dec })` —— 空串就是「不要这条额外节点」。
+    给了它的话转发里会多出一条「某某 的直播间信息」，而版式要求的是七条、第一条就是房间信息。
+  */
+  return await common.makeForwardMsg(e, nodes, '')
 }
 
 /**
@@ -113,10 +116,7 @@ const buildHeadlineNode = (headline: LiveRoomHeadline): unknown => {
     headline.title && `📺标题：${headline.title}`,
     headline.author && `🎤作者：${headline.author}`,
     headline.online && `🏄‍♂️在线人数：${headline.online}`,
-    headline.shareUrl && `🔗在线地址：${headline.shareUrl}`,
-    // 下面那些是带签名参数的短时效直链，而这条消息会一直留在群里。
-    // 不说一句的话，用户过几分钟点开只看到 403，分不清是地址过期还是插件坏了。
-    '⏳拉流地址带签名、几分钟后失效，失效了重新解析一次这个直播间'
+    headline.shareUrl && `🔗在线地址：${headline.shareUrl}`
   ].filter(Boolean)
 
   return headline.imageUrl

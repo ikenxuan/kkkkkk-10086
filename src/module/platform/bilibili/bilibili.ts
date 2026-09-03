@@ -1235,15 +1235,17 @@ export class Bilibili extends Base {
               title: liveInfo.data.data.title,
               author: userProfileData.data.data.card.name,
               online: `${Common.count(liveInfo.data.data.online)}人正在观看`,
-              shareUrl: 'https://live.bilibili.com/' + liveInfo.data.data.room_id
+              // 用 live-activity-player 而不是 live.bilibili.com/<room_id>：后者在部分客户端里
+              // 点开是网页版直播间、要求登录才给播，前者是B站自己的内嵌播放器页，直接就能看。
+              // `cid` 就是房间号，`enterTheRoom=0` 表示只播不进房（不发进场通知）。
+              shareUrl: `https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${liveInfo.data.data.room_id}`
             },
             (await listBilibiliLiveStreams(iddata.room_id)).map(entry => ({
               quality: entry.qn,
               qualityName: entry.qualityName,
-              protocol: entry.format,
+              protocol: entry.protocol,
               url: entry.url
-            })),
-            `${userProfileData.data.data.card.name} 的直播间信息`
+            }))
           )
           if (streamForward) await this.e.reply(streamForward)
 

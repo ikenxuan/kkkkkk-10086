@@ -394,3 +394,90 @@ describe('listBilibiliLiveStreams', () => {
     expect(networksOptions).toHaveLength(6)
   })
 })
+
+/**
+ * 同一档的 FLV 和 M3U8 在**同一份响应**里（protocol 那一维不额外花请求），
+ * 所以清单必须把它展开。之前只按画质列一维，结果七条地址里一条 m3u8 都没有。
+ */
+describe('listBilibiliLiveStreams 协议维度', () => {
+  /** 在 okResponse 上补一路 http_hls，模拟真实响应的两个 protocol */
+  const withHls = (qn: number): typeof okResponse => {
+    const response = responseForQn(qn)
+    response.data.playurl_info.playurl.stream.push({
+      protocol_name: 'http_hls',
+      format: [
+        {
+          format_name: 'fmp4',
+          codec: [
+            {
+              codec_name: 'avc',
+              current_qn: qn,
+              accept_qn: [10000, 400, 250, 150],
+              base_url: `/live-bvc/123/live_456_${qn}/index.m3u8`,
+              url_info: [{ host: 'https://cn-hls.bilivideo.com', extra: '?expires=1' }]
+            }
+          ]
+        }
+      ]
+    } as never)
+    return response
+  }
+
+  it('每个画质给出 FLV 与 M3U8 两条', async () => {
+    getData.mockImplementation(async () => withHls(requestedQn(networksOptions.at(-1)!.url)))
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.map(entry => `${entry.qn}:${entry.protocol}`)).toEqual([
+      '10000:flv', '10000:hls',
+      '400:flv', '400:hls',
+      '250:flv', '250:hls',
+      '150:flv', '150:hls'
+    ])
+    expect(entries.find(entry => entry.protocol === 'hls')?.url).toContain('index.m3u8')
+    // 协议维度不额外花请求：还是一档一次
+    expect(networksOptions).toHaveLength(4)
+  })
+
+  it('hls 那条带上实际命中的容器格式', async () => {
+    getData.mockImplementation(async () => withHls(requestedQn(networksOptions.at(-1)!.url)))
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.find(entry => entry.protocol === 'hls')?.format).toBe('fmp4')
+    expect(entries.find(entry => entry.protocol === 'flv')?.format).toBe('flv')
+  })
+
+  // hevc 在不少播放器上放不了，同一个 (画质, 协议) 只该留 avc 那条
+  it('同一档同协议的 avc 与 hevc 只留 avc', async () => {
+    getData.mockImplementation(async () => {
+      const qn = requestedQn(networksOptions.at(-1)!.url)
+      const response = responseForQn(qn)
+      response.data.playurl_info.playurl.stream[0]!.format[0]!.codec.unshift({
+        codec_name: 'hevc',
+        current_qn: qn,
+        accept_qn: [10000],
+        base_url: `/live-bvc/123/hevc_${qn}.flv`,
+        url_info: [{ host: 'https://cn-example.bilivideo.com', extra: '?expires=1' }]
+      } as never)
+      return response
+    })
+
+    const entries = await listBilibiliLiveStreams(123456)
+
+    expect(entries.filter(entry => entry.qn === 10000)).toHaveLength(1)
+    expect(entries[0].url).not.toContain('hevc')
+  })
+
+  // 表外的 protocol_name 不知道该叫它什么，收了只会在转发里印出一个猜的标签
+  it('认不出的 protocol_name 不进清单', async () => {
+    getData.mockImplementation(async () => {
+      const qn = requestedQn(networksOptions.at(-1)!.url)
+      const response = responseForQn(qn)
+      response.data.playurl_info.playurl.stream[0]!.protocol_name = 'http_brand_new'
+      return response
+    })
+
+    expect(await listBilibiliLiveStreams(123456)).toEqual([])
+  })
+})

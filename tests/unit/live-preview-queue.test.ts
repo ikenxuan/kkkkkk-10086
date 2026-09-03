@@ -96,7 +96,7 @@ describe('livePreviewRoomKey', () => {
 })
 
 describe('enqueueLivePreview 录制与发送', () => {
-  it('录成功后先发一句说明再发文件', async () => {
+  it('录成功后只发文件，不带说明文字', async () => {
     arrangeSuccess()
     const e = event()
 
@@ -106,8 +106,9 @@ describe('enqueueLivePreview 录制与发送', () => {
     expect(recordLiveStream).toHaveBeenCalledTimes(1)
     // 15 秒硬编码，不跟 live.maxDuration 走
     expect(recordLiveStream.mock.calls[0]![0].maxDurationMs).toBe(15000)
-    expect(e.reply).toHaveBeenCalledWith('刚才那个直播间的 15 秒预览')
     expect(uploadFile).toHaveBeenCalledTimes(1)
+    // 版式要求预览是一条独立的视频消息，不再附一句「刚才那个直播间的 15 秒预览」
+    expect(e.reply).not.toHaveBeenCalled()
   })
 
   // 预览走固定中档，不跟用户配的录制画质
@@ -188,9 +189,10 @@ describe('enqueueLivePreview 去重与并发', () => {
     await __awaitLivePreviewIdle()
 
     expect(recordLiveStream).toHaveBeenCalledTimes(1)
-    expect(first.reply).toHaveBeenCalledTimes(1)
-    expect(second.reply).toHaveBeenCalledTimes(1)
     expect(uploadFile).toHaveBeenCalledTimes(2)
+    // 两个会话各收到一条视频，都不带说明文字
+    expect(first.reply).not.toHaveBeenCalled()
+    expect(second.reply).not.toHaveBeenCalled()
   })
 
   // 同一个会话把同一条链接连转三次，只该有一个订阅者、一次发送
@@ -303,9 +305,9 @@ describe('restoreLivePreviewQueue', () => {
     await __awaitLivePreviewIdle()
 
     expect(recordLiveStream).toHaveBeenCalledTimes(1)
-    // 恢复出来的项没有事件对象，只能走主动发送：一句说明 + 一段视频
-    expect(group).toHaveBeenCalledTimes(2)
-    expect(group.mock.calls[0]![0]).toBe('刚才那个直播间的 15 秒预览')
+    // 恢复出来的项没有事件对象，只能走主动发送；只发视频，不带说明文字
+    expect(group).toHaveBeenCalledTimes(1)
+    expect(group.mock.calls[0]![0]).toEqual({ type: 'video', file: '/tmp/video/a.flv' })
     expect(rows).toEqual([])
   })
 
@@ -324,7 +326,7 @@ describe('restoreLivePreviewQueue', () => {
     await restoreLivePreviewQueue()
     await __awaitLivePreviewIdle()
 
-    expect(friend).toHaveBeenCalledTimes(2)
+    expect(friend).toHaveBeenCalledTimes(1)
     expect(group).not.toHaveBeenCalled()
   })
 
@@ -378,7 +380,7 @@ describe('restoreLivePreviewQueue', () => {
     await __awaitLivePreviewIdle()
 
     expect(recordLiveStream).toHaveBeenCalledTimes(1)
-    // 两个会话各收到「说明 + 视频」
-    expect(group).toHaveBeenCalledTimes(4)
+    // 两个会话各收到一条视频
+    expect(group).toHaveBeenCalledTimes(2)
   })
 })

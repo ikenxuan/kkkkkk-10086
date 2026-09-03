@@ -46,28 +46,22 @@ const textOf = (node: unknown): string =>
 
 describe('buildLiveStreamForward 第一条节点', () => {
   it('图片和文字在同一条节点里，四行都带 emoji', async () => {
-    await buildLiveStreamForward(event, headline(), [entry()], '标题')
+    await buildLiveStreamForward(event, headline(), [entry()])
 
     const first = nodesOf()[0] as unknown[]
     expect(Array.isArray(first)).toBe(true)
     expect(first[0]).toEqual({ type: 'image', file: 'https://cover.example.com/room.jpg' })
-    const text = String(first[1])
-    expect(text).toContain('📺标题：韩式双开门')
-    expect(text).toContain('🎤作者：小纯同学')
-    expect(text).toContain('🏄‍♂️在线人数：340人正在观看')
-    expect(text).toContain('🔗在线地址：https://webcast.amemv.com/douyin/webcast/reflow/7543662824310573864')
-  })
-
-  // 签名直链会失效，而这条消息会一直留在群里；不说一句用户只会看到 403
-  it('末尾附一句失效说明', async () => {
-    await buildLiveStreamForward(event, headline(), [entry()], '标题')
-
-    expect(textOf(nodesOf()[0])).toContain('失效')
+    expect(String(first[1]).split('\n')).toEqual([
+      '📺标题：韩式双开门',
+      '🎤作者：小纯同学',
+      '🏄‍♂️在线人数：340人正在观看',
+      '🔗在线地址：https://webcast.amemv.com/douyin/webcast/reflow/7543662824310573864?sec_user_id=MS4wAAA'
+    ])
   })
 
   // 缺图不该印出一个裂图段
   it('没有图时第一条节点只有文字', async () => {
-    await buildLiveStreamForward(event, headline({ imageUrl: '' }), [entry()], '标题')
+    await buildLiveStreamForward(event, headline({ imageUrl: '' }), [entry()])
 
     const first = nodesOf()[0]
     expect(Array.isArray(first)).toBe(false)
@@ -79,16 +73,10 @@ describe('buildLiveStreamForward 第一条节点', () => {
     await buildLiveStreamForward(
       event,
       headline({ title: '', author: '', online: '', shareUrl: '' }),
-      [entry()],
-      '标题'
+      [entry()]
     )
 
-    const text = textOf(nodesOf()[0])
-    expect(text).not.toContain('标题：')
-    expect(text).not.toContain('作者：')
-    expect(text).not.toContain('在线人数：')
-    expect(text).not.toContain('在线地址：')
-    expect(text).toContain('失效')
+    expect(textOf(nodesOf()[0])).toBe('')
   })
 })
 
@@ -101,39 +89,38 @@ describe('buildLiveStreamForward 地址节点', () => {
     await buildLiveStreamForward(event, headline(), [
       entry({ qualityName: '蓝光', protocol: 'flv', url: 'https://x/or4.flv' }),
       entry({ qualityName: '蓝光', protocol: 'hls', url: 'https://x/or4.m3u8' }),
-      entry({ qualityName: '高清', protocol: 'flv', url: 'https://x/sd.flv' }),
-      entry({ qualityName: '高清', protocol: 'hls', url: 'https://x/sd.m3u8' }),
       entry({ qualityName: '标清', protocol: 'flv', url: 'https://x/ld.flv' }),
-      entry({ qualityName: '标清', protocol: 'hls', url: 'https://x/ld.m3u8' })
-    ], '标题')
+      entry({ qualityName: '标清', protocol: 'hls', url: 'https://x/ld.m3u8' }),
+      entry({ qualityName: '高清', protocol: 'flv', url: 'https://x/sd.flv' }),
+      entry({ qualityName: '高清', protocol: 'hls', url: 'https://x/sd.m3u8' })
+    ])
 
     // 第 0 条是房间信息，地址从第 1 条开始
     expect(nodesOf().slice(1).map(textOf)).toEqual([
       '🎥FLV_蓝光：https://x/or4.flv',
-      '🎥FLV_高清：https://x/sd.flv',
       '🎥FLV_标清：https://x/ld.flv',
+      '🎥FLV_高清：https://x/sd.flv',
       '📡M3U8_蓝光：https://x/or4.m3u8',
-      '📡M3U8_高清：https://x/sd.m3u8',
-      '📡M3U8_标清：https://x/ld.m3u8'
+      '📡M3U8_标清：https://x/ld.m3u8',
+      '📡M3U8_高清：https://x/sd.m3u8'
     ])
   })
 
   // 用户复制这条是去丢给播放器的，播放器认的是 m3u8 这个说法而不是 hls
   it('hls 显示成 M3U8', async () => {
-    await buildLiveStreamForward(event, headline(), [entry({ protocol: 'hls' })], '标题')
+    await buildLiveStreamForward(event, headline(), [entry({ protocol: 'hls' })])
 
     expect(textOf(nodesOf()[1])).toMatch(/^📡M3U8_/)
   })
 
   /*
-    B站那条的 format 是 flv / ts / fmp4，表里只有前者。
-    表外协议按 indexOf 会拿到 -1 排到最前面 —— 这里钉住它排最后。
+    表外协议按 indexOf 会拿到 -1 排到最前面 —— 这里钉住它排最后并大写显示。
   */
   it('表外协议大写显示并排到最后', async () => {
     await buildLiveStreamForward(event, headline(), [
       entry({ qualityName: '原画', protocol: 'fmp4', url: 'https://x/live.m4s' }),
       entry({ qualityName: '原画', protocol: 'flv', url: 'https://x/live.flv' })
-    ], '标题')
+    ])
 
     expect(nodesOf().slice(1).map(textOf)).toEqual([
       '🎥FLV_原画：https://x/live.flv',
@@ -141,17 +128,21 @@ describe('buildLiveStreamForward 地址节点', () => {
     ])
   })
 
-  it('转发描述原样传给宿主', async () => {
-    await buildLiveStreamForward(event, headline(), [entry()], '小纯同学 的直播间信息')
+  /*
+    转发描述传空串。宿主的 makeForwardMsg 里 `if (dec) forwardMsg.push({ message: dec })`，
+    给了它转发里会多出一条「某某 的直播间信息」——版式要求第一条就是房间信息。
+  */
+  it('不给转发描述，避免多出一条节点', async () => {
+    await buildLiveStreamForward(event, headline(), [entry()])
 
-    expect(makeForwardMsg.mock.calls.at(-1)?.[2]).toBe('小纯同学 的直播间信息')
+    expect(makeForwardMsg.mock.calls.at(-1)?.[2]).toBe('')
   })
 
   // 未开播、或上游一条地址都没给时，不该发一条只有房间信息的空转发
   it('清单为空时返回 undefined 且不调宿主', async () => {
     makeForwardMsg.mockClear()
 
-    await expect(buildLiveStreamForward(event, headline(), [], '标题')).resolves.toBeUndefined()
+    await expect(buildLiveStreamForward(event, headline(), [])).resolves.toBeUndefined()
     expect(makeForwardMsg).not.toHaveBeenCalled()
   })
 })

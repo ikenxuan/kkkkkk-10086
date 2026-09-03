@@ -154,7 +154,7 @@ export interface DouyinLiveStreamEntry {
 }
 
 /**
- * 把直播间的所有拉流地址列出来，一个档位一条。
+ * 把直播间的所有拉流地址列出来，一个档位 × 一个协议一条。
  *
  * 与 {@link pickDouyinLiveStream} 的分工：那个函数是给录制用的，只要一条能播的；
  * 这个是给用户看的，要的是全集。所以它**不**读 `Config.douyin.live.quality` ——
@@ -162,23 +162,23 @@ export interface DouyinLiveStreamEntry {
  *
  * 档位来源是 `flv_pull_url` 与 `hls_pull_url_map` 的键的并集，取所有非空值：
  * 写死内置优先级表那三个键会让上游新开的档在清单里消失，而清单的意义正是「全都给你」。
- * 排序仍然沿用内置优先级表，表外的键按响应自身的键序追加在后面 ——
- * `Object.keys` 的顺序是接口给的顺序，不保证从高到低。
+ *
+ * **顺序照接口给的键序，不按内置优先级表重排。** 实测响应的键序是
+ * `FULL_HD1, SD2, SD1`（蓝光、标清、高清），而优先级表会把它拧成蓝光、高清、标清 ——
+ * 版式要求跟接口一致，所以这里不插手。协议分组由排版层再做一次。
  *
  * `hls_pull_url` 那个单条字段故意不收：它和 `hls_pull_url_map` 是同一份流的两种给法，
  * 收进来就是同一条地址在清单里出现两次。
  * @param liveItem 直播间信息里的房间项，允许整个不存在
- * @returns 地址清单，按档位从高到低；一条都没有时返回空数组
+ * @returns 地址清单，档位按接口键序、同档位内 flv 在前；一条都没有时返回空数组
  */
 export const listDouyinLiveStreams = (liveItem: DouyinLiveItem | undefined): DouyinLiveStreamEntry[] => {
   const streamUrl = liveItem?.stream_url
   const flv = isStringMap(streamUrl?.flv_pull_url) ? streamUrl.flv_pull_url : {}
   const hls = isStringMap(streamUrl?.hls_pull_url_map) ? streamUrl.hls_pull_url_map : {}
 
-  const known = DOUYIN_FLV_QUALITY_PRIORITY.filter(key => key in flv || key in hls)
-  const rest = [...Object.keys(flv), ...Object.keys(hls)]
-    .filter(key => !known.includes(key as typeof known[number]))
-  const ordered = [...new Set<string>([...known, ...rest])]
+  // flv 的键序优先：两张表的键集合实测一致，flv 那份才是主表
+  const ordered = [...new Set<string>([...Object.keys(flv), ...Object.keys(hls)])]
 
   const entries: DouyinLiveStreamEntry[] = []
   for (const quality of ordered) {

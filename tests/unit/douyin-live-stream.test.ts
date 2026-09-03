@@ -232,7 +232,11 @@ describe('pickDouyinLiveStream malformed responses', () => {
  * 下面这组钉住的就是这个分工，以及「上游新开的档不能从清单里消失」。
  */
 describe('listDouyinLiveStreams', () => {
-  it('按内置优先级从高到低排，flv 排在同档的 hls 前面', () => {
+  /*
+    顺序照接口给的键序，不按内置优先级表重排：实测响应是 `FULL_HD1, SD2, SD1`
+    （蓝光、标清、高清），而优先级表会拧成蓝光、高清、标清。版式要求跟接口一致。
+  */
+  it('按接口键序列出，flv 排在同档的 hls 前面', () => {
     const entries = listDouyinLiveStreams(liveItem({
       flv_pull_url: {
         SD2: 'https://pull.example.com/sd2.flv',
@@ -243,15 +247,15 @@ describe('listDouyinLiveStreams', () => {
     }))
 
     expect(entries.map(entry => `${entry.quality}:${entry.protocol}`)).toEqual([
+      'SD2:flv',
       'FULL_HD1:flv',
       'FULL_HD1:hls',
-      'SD1:flv',
-      'SD2:flv'
+      'SD1:flv'
     ])
   })
 
   // 内置表只写了三个键，HD1 属于「上游可能给、类型没承诺」那一类，清单不能把它漏掉
-  it('优先级表外的档位追加在后面而不是被丢掉', () => {
+  it('优先级表外的档位照样在清单里', () => {
     const entries = listDouyinLiveStreams(liveItem({
       flv_pull_url: {
         HD1: 'https://pull.example.com/hd1.flv',
@@ -260,7 +264,7 @@ describe('listDouyinLiveStreams', () => {
       }
     }))
 
-    expect(entries.map(entry => entry.quality)).toEqual(['FULL_HD1', 'HD1', 'BRAND_NEW'])
+    expect(entries.map(entry => entry.quality)).toEqual(['HD1', 'FULL_HD1', 'BRAND_NEW'])
   })
 
   it('档位中文名取 resolution_name，查不到时回落成档位键', () => {

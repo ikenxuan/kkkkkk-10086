@@ -1039,8 +1039,7 @@ export class DouYin extends Base {
               roomId: room.anchor.room_id_str || room.liveItem.id_str || '',
               secUid: room.anchor.sec_uid ?? ''
             }),
-            listDouyinLiveStreams(room.liveItem),
-            `${room.anchor.nickname ?? '直播间'} 的直播间信息`
+            listDouyinLiveStreams(room.liveItem)
           )
           if (streamForward) await this.e.reply(streamForward)
 

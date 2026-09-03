@@ -286,9 +286,7 @@ const deliver = async (
     const tag = session ? `${session.selfId}:${session.sessionType}:${session.sessionId}` : ''
     if (tag && delivered.has(tag)) continue
     if (tag) delivered.add(tag)
-    // 说明必须有：这条视频和当初那张卡片隔了十几秒，中间可能夹着别人的消息，
-    // 不说一句用户不知道它是哪来的
-    await e.reply?.('刚才那个直播间的 15 秒预览')
+    // 只发视频，不带说明文字：版式要求预览是一条独立的视频消息
     await uploadFile(e, { filepath: filePath, totalBytes: sizeMB, originTitle }, '')
   }
 
@@ -329,7 +327,6 @@ const deliverToRow = async (row: LivePreviewRow, filePath: string): Promise<void
     return
   }
 
-  await target.sendMsg('刚才那个直播间的 15 秒预览')
   await target.sendMsg(segment.video(filePath))
 }
 
