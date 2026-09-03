@@ -4,13 +4,13 @@ import { isRecord } from '@/module/utils/record'
  * B站风控（-352）voucher 的**唯一**提取口。
  *
  * 两个调用点在依赖图上离得很远：`platform/bilibili/riskControl.ts` 是 ErrorHandler
- * 策略链的一员，`utils/Base.ts` 是 amagi Proxy 上那道「拿得到 voucher 就原样抛、
- * 不出错误卡」的闸门。两边必须对同一个失败对象给出同一个答案 —— 闸门放行、策略却
- * 不认，用户就先收一张「接口失败」的卡再被要求扫码；反过来则是二维码永远发不出去。
+ * 策略链的一员，`utils/ErrorHandler/diagnostics.ts` 是错误卡片那句「建议」的产出处。
+ * 两边必须对同一个失败对象给出同一个答案 —— 一边判「有 voucher」去发二维码、另一边
+ * 判「没有」在卡片上写「没有验证码可过」，用户会同时收到两条互相打脸的消息。
  *
- * 所以这里做成一个零依赖的叶子模块，而不是让 Base 去 import riskControl：后者会把
- * ErrorHandler 策略链、@ikenxuan/qrcode 以及 `registerErrorStrategy` 那个模块级副作用
- * 一起拉进每一个 `new Base()`。
+ * 所以这里做成一个零依赖的叶子模块，而不是让 diagnostics 去 import riskControl：
+ * 后者会把 ErrorHandler 策略链、@ikenxuan/qrcode 以及 `registerErrorStrategy` 那个
+ * 模块级副作用一起拉进错误卡片这条路 —— 而 diagnostics 正是被策略链调用的一方，会成环。
  */
 
 /** 按路径读取嵌套字段，任意一层缺失时返回 undefined */

@@ -1,5 +1,6 @@
 import Version from '@/module/utils/Version'
 import { isRecord } from '@/module/utils/record'
+import { readRiskVoucher } from '@/module/platform/bilibili/riskVoucher'
 
 /**
  * 把栈帧里的绝对路径压成相对路径。
@@ -34,6 +35,9 @@ const THROTTLED_CODES: Readonly<Record<string, readonly number[]>> = {
   bilibili: [-412, -509, -799]
 }
 
+/** B站 gaia 风控码。带不带 `v_voucher` 决定它有没有交互式出路，见 {@link resolveFailureAdvice} */
+const RISK_CONTROL_CODE = -352
+
 /**
  * 认得出来的失败给一句人话。
  *
@@ -41,12 +45,32 @@ const THROTTLED_CODES: Readonly<Record<string, readonly number[]>> = {
  * 卡片上除了「抖音数据获取失败」什么都没有；而 B站 的 -412 又常被当成 -352 的同类，
  * 可它没有 voucher、也没有验证码可过（riskControl 只认 -352）。
  *
+ * 反过来那半同样要说：**-352 也分两种**。带 `v_voucher` 的能换 gt/challenge，
+ * `riskControl` 策略会接手发二维码，这时候不该由卡片教用户「等一会儿」；不带的连
+ * 「申请验证码」这一步都进不去（实测的 -352 信封只有 `{code, message, ttl}`，
+ * 见 `utils/amagiClient.ts` 的 `logRiskControlShape`），处境和 -412 完全一样，
+ * 而在这之前它一句建议都拿不到。
+ *
  * 认不出来就返回空串，由调用方 filter 掉 —— 猜一句比不说更糟。
+ * @param platform 平台名
+ * @param code 已经取好的业务码
+ * @param inner amagi 的结构化错误子对象
+ * @param error 原始失败对象。判 voucher 要从根上走路径，`inner` 已经剥掉了一层
  */
-const resolveFailureAdvice = (platform: string, code: string, inner: Record<string, unknown>): string => {
+const resolveFailureAdvice = (
+  platform: string,
+  code: string,
+  inner: Record<string, unknown>,
+  error: unknown
+): string => {
   const numeric = Number(code)
   if (THROTTLED_CODES[platform]?.includes(numeric)) {
     return '当前出口 IP 被服务端风控，没有验证码可过，等一会儿再试；反复触发就得换出口或配代理'
+  }
+  // 判据必须复用 readRiskVoucher —— 它同时是 `riskControl.match` 的判据。
+  // 各写一份的下场是卡片说「没有验证码可过」而策略同时在发二维码，两条消息互相打脸。
+  if (platform === 'bilibili' && numeric === RISK_CONTROL_CODE && !readRiskVoucher(error)) {
+    return 'B站这次没下发验证凭据，没有验证码可过。先查「请求配置」里的 User-Agent 是不是粘错了（把 header 名一起粘进值里最常见，实测就是这么撞上的）；确认没问题就是出口 IP 被风控，等一会儿再试或换出口 / 配代理'
   }
   // amagi 对抖音失败一律折叠成 500，且这时候 rawError 是空的：真实业务码在 api:error
   // 事件里（见 amagiClient 的 ensureAmagiEventBridge），卡片这边只能如实说不知道
@@ -91,6 +115,6 @@ export const collectApiDiagnostics = (
     { label: '请求类型', value: pick(inner.requestType, inner.request_type) },
     { label: '错误描述', value: pick(inner.errorDescription, inner.amagiMessage) },
     { label: '接口地址', value: pick(inner.requestUrl, inner.request_url) },
-    { label: '建议', value: resolveFailureAdvice(platform, code, inner) }
+    { label: '建议', value: resolveFailureAdvice(platform, code, inner, error) }
   ].filter(item => item.value !== '')
 }

@@ -386,3 +386,72 @@ describe('buildSharedUserAgentHeader 四平台共用客户端的 UA 决策', () 
     expectOverride(buildSharedUserAgentHeader(), ua)
   })
 })
+
+/**
+ * 粘错 header 名这一种畸形配置。
+ *
+ * 线上实证的形态：用户从开发者工具整行复制，`config/config/request.yaml` 变成
+ * `User-Agent: 'User-Agent,Mozilla/5.0 (...) Safari/534.50'`。
+ * 这条值里没有 `Chrome/` token，于是它从「认不出版本号就尊重用户设置」那条放行分支
+ * 原样进了 amagi，而 amagi 的 Sec-Ch-Ua 是从它派生的 —— 整组客户端提示跟着坏，
+ * B站 gaia 回 -352 并在描述里写「UA 或 wbi 参数不合法」。
+ */
+describe('把 header 名粘进值里的畸形 UA', () => {
+  const REAL_UA = 'Mozilla/5.0 (Windows; U; Windows NT 6.1; zh-CN) AppleWebKit/534.50 Safari/534.50'
+
+  it('逗号形态的前缀被剥掉，剩下的 UA 照常生效', () => {
+    setConfiguredUA(`User-Agent,${REAL_UA}`)
+
+    expectOverride(buildUserAgentHeader('bilibili'), REAL_UA)
+  })
+
+  it('冒号形态和大小写、空格变体一样剥', () => {
+    for (const raw of [
+      `user-agent:${REAL_UA}`,
+      `User-Agent: ${REAL_UA}`,
+      `  USER-AGENT ,  ${REAL_UA}`
+    ]) {
+      setConfiguredUA(raw)
+      expectOverride(buildUserAgentHeader('bilibili'), REAL_UA)
+    }
+  })
+
+  /*
+    剥完之后要重新进版本比较，不能因为「剥过了」就一路放行：
+    粘错前缀的 Chrome/125 仍然比 bilibili 内置的 142 旧，照样不该覆盖。
+  */
+  it('剥完之后版本比较照常生效', () => {
+    setConfiguredUA(`User-Agent,${chromeUA(AMAGI_BUILTIN.bilibili - 1)}`)
+
+    expectNoOverride(buildUserAgentHeader('bilibili'))
+  })
+
+  it('剥完之后比内置新的仍然覆盖', () => {
+    const ua = chromeUA(AMAGI_BUILTIN.bilibili + 1)
+    setConfiguredUA(`User-Agent,${ua}`)
+
+    expectOverride(buildUserAgentHeader('bilibili'), ua)
+  })
+
+  // 只剩一个 header 名、没有 UA 本体时，剥完是空串 —— 那就该当没配，让 amagi 自己决定
+  it('剥完只剩空串时不覆盖', () => {
+    setConfiguredUA('User-Agent,')
+
+    expectNoOverride(buildUserAgentHeader('bilibili'))
+  })
+
+  // 真实 UA 不会以字面量 `User-Agent,` / `User-Agent:` 开头，所以这一刀不该误伤
+  it('正常 UA 一个字符都不动', () => {
+    const ua = chromeUA(AMAGI_BUILTIN.bilibili + 5)
+    setConfiguredUA(ua)
+
+    expectOverride(buildUserAgentHeader('bilibili'), ua)
+  })
+
+  it('把 UserAgent 当成品牌名的自定义 UA 不被误剥', () => {
+    const ua = 'UserAgentBot/1.0'
+    setConfiguredUA(ua)
+
+    expectOverride(buildUserAgentHeader('bilibili'), ua)
+  })
+})

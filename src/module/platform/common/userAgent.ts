@@ -32,6 +32,42 @@ const readChromeMajor = (userAgent: string): number | null => {
   return Number.isFinite(major) ? major : null
 }
 
+/** 只在第一次发现畸形 UA 时告警。这个函数每次请求都会走，不设闸门就是一路刷屏 */
+let warnedHeaderNamePrefix = false
+
+/**
+ * 剥掉被一起粘进值里的 header 名。
+ *
+ * 实测过的真实故障：用户从浏览器开发者工具里整行复制，`config/config/request.yaml`
+ * 变成 `User-Agent: 'User-Agent,Mozilla/5.0 (...) Safari/534.50'`。
+ * 这条值里没有 `Chrome/` token，于是 {@link readChromeMajor} 返回 null、
+ * 走下面「认不出版本号就尊重用户设置」那条放行分支，畸形串原样交给 amagi ——
+ * 而 amagi 的 `Sec-Ch-Ua` 是从它派生的，整组客户端提示跟着一起坏。
+ * B站 gaia 回的 -352 里那句「UA 或 wbi 参数不合法」，前半句就是它。
+ *
+ * 判据只认字面量前缀，不做别的清洗：真实 UA 不会以 `User-Agent,` / `User-Agent:` 开头，
+ * 所以这一刀没有误伤空间；而「这串到底像不像 UA」是个没有可靠判据的问题，
+ * 猜错会把刻意配的移动端 / 自定义 UA 也筛掉。
+ * @param value 配置里的原始值
+ * @returns 剥掉前缀后的值
+ */
+const stripHeaderNamePrefix = (value: string): string => {
+  const stripped = value.replace(/^\s*User-Agent\s*[,:]\s*/i, '')
+  if (stripped !== value && !warnedHeaderNamePrefix) {
+    warnedHeaderNamePrefix = true
+    try {
+      logger.warn(
+        '[UA] 「请求配置」里的 User-Agent 把 header 名也粘进了值里，已自动剥掉前缀。' +
+        '建议去 config/config/request.yaml 或锅巴面板改成只填 UA 本身'
+      )
+    } catch {
+      // 宿主还没注入 logger 时（单测、或加载早期）不能让这句提醒把请求本身带崩。
+      // 同 `utils/amagiClient.ts` 里 logRiskControlShape 的处理。
+    }
+  }
+  return stripped
+}
+
 /**
  * 交给 amagi 的 per-request User-Agent。
  *
@@ -70,11 +106,14 @@ const readChromeMajor = (userAgent: string): number | null => {
  *   `{ 'User-Agent': undefined }`，那仍然会参与 spread 并把 amagi 的值打掉）
  */
 export const buildUserAgentHeader = (platform: AmagiPlatform): Record<string, string> => {
-  const configured = Config.request?.['User-Agent']
-  if (typeof configured !== 'string' || configured.trim() === '') return {}
+  const raw = Config.request?.['User-Agent']
+  if (typeof raw !== 'string' || raw.trim() === '') return {}
+  const configured = stripHeaderNamePrefix(raw)
+  if (configured.trim() === '') return {}
 
   const configuredMajor = readChromeMajor(configured)
-  // 认不出版本号的一律尊重用户设置：可能是刻意配的移动端 / 自定义 UA
+  // 认不出版本号的一律尊重用户设置：可能是刻意配的移动端 / 自定义 UA。
+  // 「把 header 名粘进来」这一种已经在上面剥掉了，不再从这条缝里漏过去。
   if (configuredMajor === null) return { 'User-Agent': configured }
 
   // 比该平台 amagi 内置的旧就不要覆盖 —— 让 amagi 用它自己那套（UA 与 Sec-Ch-Ua 是配对的）
