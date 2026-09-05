@@ -1194,7 +1194,8 @@ export class Bilibili extends Base {
           break
         }
         case 'live_room_detail': {
-          // getid 只用 includes('live.bilibili.com') 判型，提取正则却要求尾随数字
+          // getid 只用 includes('live.bilibili.com') 判型，分区页、活动页这类没有房间号的
+          // 地址也会走到这里
           if (!iddata.room_id) {
             await this.e.reply('该直播间链接缺少房间号，无法解析')
             return true

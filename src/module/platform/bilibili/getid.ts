@@ -101,6 +101,19 @@ const parseUrlSafely = (link: string): URL | undefined => {
 }
 
 /**
+ * 从直播间链接里取房间号。
+ *
+ * 房间号不一定紧跟域名：手机端和 QQ / 空间分享出来的是 `live.bilibili.com/h5/<房间号>`，
+ * 网页版还有 `/blanc/<房间号>` 这一支。只认域名后直接跟数字的话，这两种形状会匹配成
+ * live 类型但房间号是 undefined，用户看到的是「该直播间链接缺少房间号」。
+ *
+ * 不走 `new URL()` 取 pathname，是因为长链接可能连协议头都没有 —— `getLongLink()`
+ * 请求失败时原样回显入参，裸域名进来就是裸域名出去。
+ */
+const extractLiveRoomId = (link: string): string | undefined =>
+  /live\.bilibili\.com(?:\/[^/?#]*)*?\/(\d+)(?:[/?#]|$)/.exec(link)?.[1]
+
+/**
  * 解析B站分享链接，返回作品ID对象
  * @param url 分享链接
  * @param log 是否记录日志
@@ -229,16 +242,10 @@ export const getBilibiliID = async (
       [
         'live',
         (url) => url.includes('live.bilibili.com'),
-        (url) => {
-          // 协议头写成可选，跟上面那个 `includes()` 的宽松度对齐：
-          // 匹配函数只要看到域名就认，提取函数却强求 `https://`，那条链接会匹配成
-          // live 类型但 room_id 是 undefined —— 比不匹配更难查
-          const match = /(?:https?:\/\/)?live\.bilibili\.com\/(\d+)/.exec(url)
-          return {
-            type: 'live_room_detail',
-            room_id: match ? match[1] : undefined
-          }
-        }
+        (url) => ({
+          type: 'live_room_detail',
+          room_id: extractLiveRoomId(url)
+        })
       ]
     ]
 

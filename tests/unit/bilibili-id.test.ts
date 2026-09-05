@@ -116,6 +116,21 @@ describe('getBilibiliID link patterns', () => {
       name: 'a live room link',
       longLink: 'https://live.bilibili.com/22625027',
       expected: { type: 'live_room_detail', room_id: '22625027' }
+    },
+    {
+      name: 'an h5 live room link, the shape QQ and 空间 share',
+      longLink: 'https://live.bilibili.com/h5/1933932414?unique_k=2333&share_source=qzone',
+      expected: { type: 'live_room_detail', room_id: '1933932414' }
+    },
+    {
+      name: 'a blanc live room link',
+      longLink: 'https://live.bilibili.com/blanc/22625027?liteVersion=true',
+      expected: { type: 'live_room_detail', room_id: '22625027' }
+    },
+    {
+      name: 'a live room link with a trailing slash',
+      longLink: 'https://live.bilibili.com/22625027/',
+      expected: { type: 'live_room_detail', room_id: '22625027' }
     }
   ]
 
@@ -133,6 +148,25 @@ describe('getBilibiliID link patterns', () => {
 
     expect(await getBilibiliID('https://b23.tv/share', true, dependencies)).toEqual({ type: 'undefined' })
   })
+
+  // 分区页、活动页也在 live.bilibili.com 下。这里不能猜出一个房间号交给取数层，
+  // `bilibili.ts` 的 live_room_detail 分支就是靠 room_id 为空回「缺少房间号」
+  const roomlessLivePages = [
+    'https://live.bilibili.com/p/eden/area-tags?areaId=86&parentAreaId=9',
+    'https://live.bilibili.com/p/html/live-app-hotrank/index.html?clientType=1',
+    'https://live.bilibili.com/all'
+  ]
+
+  for (const longLink of roomlessLivePages) {
+    it(`leaves the room number empty for ${longLink}`, async () => {
+      getLongLink.mockResolvedValue(longLink)
+
+      expect(await getBilibiliID('https://b23.tv/share', true, dependencies)).toEqual({
+        type: 'live_room_detail',
+        room_id: undefined
+      })
+    })
+  }
 })
 
 describe('getBilibiliID av conversion', () => {
@@ -315,6 +349,15 @@ describe('getBilibiliID malformed long links', () => {
     expect(await getBilibiliID('live.bilibili.com/22625027', true, dependencies)).toEqual({
       type: 'live_room_detail',
       room_id: '22625027'
+    })
+  })
+
+  it('takes the room number out of a scheme-less h5 link too', async () => {
+    getLongLink.mockResolvedValue('live.bilibili.com/h5/1933932414')
+
+    expect(await getBilibiliID('live.bilibili.com/h5/1933932414', true, dependencies)).toEqual({
+      type: 'live_room_detail',
+      room_id: '1933932414'
     })
   })
 
