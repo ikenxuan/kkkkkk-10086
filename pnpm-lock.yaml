@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ikenxuan/amagi':
-        specifier: ^6.6.0
-        version: 6.6.0
+        specifier: https://pkg.pr.new/@ikenxuan/amagi@8caecd3
+        version: https://pkg.pr.new/@ikenxuan/amagi@8caecd3
       '@ikenxuan/qrcode':
         specifier: ^1.5.0
         version: 1.5.0
@@ -539,8 +539,9 @@ packages:
     peerDependencies:
       react: ^16.13 || ^17 || ^18 || ^19
 
-  '@ikenxuan/amagi@6.6.0':
-    resolution: {integrity: sha512-OoMzX7E4xXDI4hujBwIZaXR6oRfISFRjnZ8Jpwxd+YNBzMms/8fbhEiDjnS6heYr0PfFaeSgLi8ORcTG76W1iA==}
+  '@ikenxuan/amagi@https://pkg.pr.new/@ikenxuan/amagi@8caecd3':
+    resolution: {tarball: https://pkg.pr.new/@ikenxuan/amagi@8caecd3}
+    version: 6.7.0-alpha.188.20260905235633.ec259fb
 
   '@ikenxuan/qrcode@1.5.0':
     resolution: {integrity: sha512-tF7q9LVVWGlG9KJQx1AiY313lrR2uFjTzkQGpmTC2msZ+vArgnjgSIFvUjv7WMl2nPR9hySl6/NkAU2Wwn1iZg==}
@@ -4646,7 +4647,7 @@ snapshots:
     dependencies:
       react: 19.2.8
 
-  '@ikenxuan/amagi@6.6.0':
+  '@ikenxuan/amagi@https://pkg.pr.new/@ikenxuan/amagi@8caecd3':
     dependencies:
       '@ikenxuan/xhshow-ts': 1.0.6
       axios: 1.19.0

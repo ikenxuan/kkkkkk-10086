@@ -46,7 +46,7 @@
     "verify": "pnpm check"
   },
   "dependencies": {
-    "@ikenxuan/amagi": "^6.6.0",
+    "@ikenxuan/amagi": "https://pkg.pr.new/@ikenxuan/amagi@8caecd3",
     "@ikenxuan/qrcode": "^1.5.0",
     "@karinjs/md-html": "^1.3.0",
     "axios": "npm:@karinjs/axios@^1.13.2",
