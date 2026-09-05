@@ -37,9 +37,6 @@ APIServerPort: 4567
 # API 服务是否挂载到 Bot 框架自身 HTTP 服务上。Yunzai 版暂保留配置，当前独立 API 服务仍使用 APIServerPort。
 APIServerMount: false
 
-# 渲染图片是否移除底部版本信息
-RemoveWatermark: false
-
 # 渲染图片等待时间，单位：秒。传递 0 可禁用等待。
 RenderWaitTime: 60
 
