@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 import type { AmagiProxyClient } from '../../src/module/utils/types.js'
 
 /**
@@ -72,6 +73,7 @@ vi.mock('../../src/module/platform/bilibili/article.js', () => ({
 
 // 取数一律走注入的 this.amagi.bilibili；模块级 fetcher 被碰到就是接线错了，所以让它直接抛
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: new Proxy({}, {
     get: (_target, prop) => {
       throw new Error(`不该读模块级 bilibiliFetcher.${String(prop)}，取数应走 this.amagi.bilibili`)

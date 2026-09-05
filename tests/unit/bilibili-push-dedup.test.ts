@@ -6,6 +6,7 @@
  * 另外锁住 parseDynamicTypes —— 它在 config 和锅巴面板里都暴露着，但一度没人读。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 
 const getBilibiliDataMock = vi.hoisted(() => vi.fn())
 /** 裸 fetcher 的每个方法都汇进同一个 spy —— 这组用例不区分方法，只要取数有返回 */
@@ -79,6 +80,7 @@ vi.mock('../../src/module/platform/bilibili/article.js', () => ({
 }))
 
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: bilibiliFetcherStub,
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))

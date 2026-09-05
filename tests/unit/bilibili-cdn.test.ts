@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 
 import {
   BILIBILI_UPOS_MIRRORS,
@@ -60,6 +61,7 @@ vi.mock('../../src/module/platform/bilibili/index.js', () => ({
 
 // 任何方法都返回 undefined，与旧的 `getBilibiliData: vi.fn()` 同义：这些用例不该走到取数
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))

@@ -21,10 +21,10 @@ import common from '@/runtime/host/common'
 import type { BilibiliPushItem as BilibiliPushConfigItem } from '@/types/config'
 import fs from 'node:fs'
 import { getErrorMessage } from '@/module/utils/error-message'
-import { loadAmagiRuntime } from './amagi-runtime.js'
+import { loadAmagiEnums } from '@/module/utils/amagiClient'
 import type { AmagiResponse, BiliUserDynamic, BiliUserProfile, BilibiliArticleContent, BilibiliArticleInfo, BilibiliDynamicItem, BilibiliDynamicPayload, BilibiliLiveCard, BilibiliLiveRoomInfo, BilibiliPushEvent, BilibiliPushTarget, BilibiliUserLiveStatus, BilibiliVideoInfo, ForwardNodes, GroupSendable, RenderResult, WillBePushList } from './types.js'
 
-const { DynamicType, MajorType } = loadAmagiRuntime()
+const { DynamicType, MajorType } = loadAmagiEnums()
 
 const asAmagiResponse = <T>(value: unknown): AmagiResponse<T> => value as AmagiResponse<T>
 

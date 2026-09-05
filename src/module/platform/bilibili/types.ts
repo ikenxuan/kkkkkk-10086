@@ -15,14 +15,6 @@ import type { MessageEvent } from '@/types/message'
 
 // ==================== 来自 bilibili.ts ====================
 
-export interface AmagiRuntime {
-  bilibiliApiUrls: {
-    getBangumiStream: (params: { cid: number, ep_id: string }) => string
-  }
-  DynamicType: Record<string, string>
-  AdditionalType: Record<string, string>
-}
-
 export interface BilibiliVideoStream {
   id: number
   base_url?: string
@@ -505,24 +497,6 @@ export interface BilibiliQualityResult<T extends BilibiliVideoStream> {
 }
 
 // ==================== 来自 push.ts ====================
-
-export interface PushAmagiRuntime {
-  DynamicType: {
-    AV: string
-    DRAW: string
-    WORD: string
-    LIVE_RCMD: string
-    FORWARD: string
-    ARTICLE: string
-    [key: string]: string
-  }
-  MajorType: {
-    DRAW: string
-    OPUS: string
-    LIVE_RCMD: string
-    [key: string]: string
-  }
-}
 
 export interface DynamicRichTextNode {
   type?: string

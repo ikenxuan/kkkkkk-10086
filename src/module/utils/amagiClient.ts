@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
 import type {
   ApiErrorEventData,
   BilibiliFetcher,
@@ -191,6 +192,67 @@ const loadAmagiModule = (): AmagiModule => {
   amagiModule ??= require('@ikenxuan/amagi') as AmagiModule
   ensureAmagiEventBridge(amagiModule)
   return amagiModule
+}
+
+/**
+ * amagi 导出的枚举常量表，以及拼番剧流地址的那个函数。
+ *
+ * 三个枚举（`DynamicType` / `MajorType` / `AdditionalType`）都是**按成员名读**的，
+ * 而 `require(...) as ...` 是断言不是校验：上游把 `LIVE_RCMD` 改个名，require 照样成功、
+ * 类型检查照样全绿，运行时拿到 `undefined`，而 `undefined === item.type` 永远为假 ——
+ * 对应那类动态就从推送里静默消失。拦这件事的是 `tests/contracts/amagi-enums.test.ts`：
+ * 它扫源码得出全仓读到的成员清单，再拿真包逐个核。
+ *
+ * 三张表都把**实际读到的成员**逐个列出来，而不是只写 `Record<string, string>`：
+ * 本仓开着 `noUncheckedIndexedAccess`，只给索引签名的话每个 `DynamicType.AV`
+ * 都是 `string | undefined`，四十多个比较点要么全加非空断言、要么全变成永假比较。
+ * 索引签名同时留着，因为真包导出的成员比这几个多。
+ */
+export interface AmagiEnumRuntime {
+  bilibiliApiUrls: {
+    getBangumiStream: (params: { cid: number, ep_id: string }) => string
+  }
+  DynamicType: {
+    AV: string
+    DRAW: string
+    WORD: string
+    LIVE_RCMD: string
+    FORWARD: string
+    ARTICLE: string
+    [key: string]: string
+  }
+  MajorType: {
+    DRAW: string
+    OPUS: string
+    LIVE_RCMD: string
+    [key: string]: string
+  }
+  AdditionalType: {
+    COMMON: string
+    RESERVE: string
+    UGC: string
+    VOTE: string
+    [key: string]: string
+  }
+}
+
+/**
+ * 取 amagi 的枚举常量表。
+ *
+ * 先直接 require 包名；Vite / vitest 下这一步会命中 amagi exports 的 `development`
+ * 条件、跟到未发布的 `src/index.ts` 而抛错，于是从稳定导出的 `axios` 子路径反推 CJS 产物。
+ *
+ * 两级都不成就让它抛：amagi 在 `dependencies` 里，装不上本身就是要修的事。
+ * 这里刻意**没有**手写兜底副本 —— 副本没有任何编译期约束，上游改名后它会安静地
+ * 把对应类型的动态从推送里抹掉，比加载期报错难查得多（上游同样没有兜底）。
+ */
+export const loadAmagiEnums = (): AmagiEnumRuntime => {
+  try {
+    return require('@ikenxuan/amagi') as AmagiEnumRuntime
+  } catch {
+    const axiosEntry = require.resolve('@ikenxuan/amagi/axios')
+    return require(resolve(axiosEntry, '../../default/index.cjs')) as AmagiEnumRuntime
+  }
 }
 
 /**

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 
 /**
  * 裸 fetcher 是「一个对象、每个方法一个键」，而这些用例要断言的是跨方法的调用次序，
@@ -63,6 +64,7 @@ vi.mock('../../src/module/platform/bilibili/article.js', () => ({
 }))
 
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: bilibiliFetcherStub,
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))

@@ -1,8 +1,6 @@
 /* eslint-disable indent */
 import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
-import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
-import { buildAmagiRequestConfig } from '@/module/utils/amagiClient'
+import { buildAmagiRequestConfig, loadAmagiEnums } from '@/module/utils/amagiClient'
 import { burnDanmaku } from '@/module/platform/common/danmaku'
 import common from '@/runtime/host/common'
 import { bilibiliComments, checkCk, genParams } from './index.js'
@@ -31,19 +29,9 @@ import type { RichTextDocument } from '@kkk/richtext'
 import type { DecorationCardData } from '@/module/utils/template-contracts'
 import { at, isRecord } from '@/module/utils/record'
 import { expandBilibiliCdnCandidates, isUposMirrorUrl } from './cdn.js'
-import type { AmagiRuntime, ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicAdditional, DynamicAdditionalButton, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
+import type { ArticleContentResponse, ArticleInfoResponse, BangumiInfoData, BangumiInfoResponse, BangumiPlayResponse, BilibiliConstructorData, BilibiliDanmakuItem, BilibiliDash, BilibiliResourceDataType as BilibiliDataType, BilibiliEvent, BilibiliResourceIdData as BilibiliIdData, BilibiliPayload, BilibiliQualityOptions, BilibiliQualityResult, BilibiliStreamUrls, BilibiliVideoStream, CommentsResponse, DynamicAdditional, DynamicAdditionalButton, DynamicDecoration, DynamicInfoResponse, DynamicOidData, DynamicPicture, GetVideoInput, LegacyBilibiliContent, LiveCardData, LiveInfoResponse, ModernBilibiliContent, RoomInitResponse, UserProfileResponse, VideoInfoResponse } from './types.js'
 
-const require = createRequire(import.meta.url)
-const loadAmagiRuntime = (): AmagiRuntime => {
-  try {
-    return require('@ikenxuan/amagi') as AmagiRuntime
-  } catch {
-    // Vite 会错误地跟随 amagi 的开发入口；从稳定导出的 axios 子路径定位 CJS 产物。
-    const axiosEntry = require.resolve('@ikenxuan/amagi/axios')
-    return require(resolve(axiosEntry, '../../default/index.cjs')) as AmagiRuntime
-  }
-}
-const { bilibiliApiUrls, DynamicType, AdditionalType } = loadAmagiRuntime()
+const { bilibiliApiUrls, DynamicType, AdditionalType } = loadAmagiEnums()
 
 /**
  * B站 PCDN 主机名。

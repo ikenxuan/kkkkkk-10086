@@ -4,23 +4,15 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
 
-import { fallbackAmagiRuntime } from '../../src/module/platform/bilibili/amagi-runtime.js'
-
 /**
  * amagi 枚举的契约基线。
  *
- * 本仓库有三处按名字读 amagi 的枚举常量（`DynamicType` / `MajorType` /
- * `AdditionalType`），全部走 `require(...) as <手写接口>`。那个 `as` 是断言、
- * 不是校验：上游把 `LIVE_RCMD` 改个名，`require` 照样成功、类型检查照样全绿，
- * 运行时拿到的是 `undefined`，而 `undefined === item.type` 永远为假 ——
- * 于是对应的那类动态从推送里静默消失，日志上一个字都没有。
- *
- * `push.ts` 还有一份手写的兜底副本（amagi 装不上时用），同样没有任何编译期约束。
- *
- * 所以这里做两件事，两件都拿真包当唯一事实来源：
- *
- * 1. 兜底副本与真包逐键相等，且覆盖 `push.ts` 实际读到的全部成员；
- * 2. 全仓库读到的每个成员，在真包里都真实存在。
+ * 本仓库按名字读 amagi 的枚举常量（`DynamicType` / `MajorType` / `AdditionalType`），
+ * 走的是 `require(...) as AmagiEnumRuntime`（见 `utils/amagiClient.ts` 的
+ * `loadAmagiEnums`）。那个 `as` 是断言、不是校验：上游把 `LIVE_RCMD` 改个名，
+ * `require` 照样成功、类型检查照样全绿，运行时拿到的是 `undefined`，
+ * 而 `undefined === item.type` 永远为假 —— 于是对应的那类动态从推送里静默消失，
+ * 日志上一个字都没有。这个测试是唯一能拦住它的东西。
  *
  * 读取清单不手写，直接扫源码得出 —— 手写清单迟早和代码脱节，而这个测试存在的
  * 意义就是拦住脱节。
@@ -101,37 +93,6 @@ const upstreamEnum = (enumName: string): Record<string, string> => {
   expect(table, `@ikenxuan/amagi 没有导出 ${enumName}`).toBeTypeOf('object')
   return table as Record<string, string>
 }
-
-describe('amagi 枚举兜底副本与真包对齐', () => {
-  it('DynamicType 的兜底副本与真包逐键相等', () => {
-    const upstream = upstreamEnum('DynamicType')
-    for (const [member, value] of Object.entries(fallbackAmagiRuntime.DynamicType)) {
-      expect(upstream[member], `DynamicType.${member} 在真包里的取值变了或成员被改名`).toBe(value)
-    }
-  })
-
-  it('MajorType 的兜底副本与真包逐键相等', () => {
-    const upstream = upstreamEnum('MajorType')
-    for (const [member, value] of Object.entries(fallbackAmagiRuntime.MajorType)) {
-      expect(upstream[member], `MajorType.${member} 在真包里的取值变了或成员被改名`).toBe(value)
-    }
-  })
-
-  it('push.ts 读到的每个成员都在兜底副本里', () => {
-    // 漏一个成员，装不上 amagi 的用户那里就是 `undefined`，对应动态静默丢失
-    const pushReads = enumReads.filter(read => read.file === 'src/module/platform/bilibili/push.ts')
-    expect(pushReads.length, '没扫到 push.ts 的枚举读取点，正则或文件路径需要更新').toBeGreaterThan(0)
-
-    for (const { enumName, member } of pushReads) {
-      const table = (fallbackAmagiRuntime as unknown as Record<string, Record<string, string>>)[enumName]
-      expect(table, `兜底副本没有 ${enumName}，而 push.ts 读了它`).toBeTypeOf('object')
-      expect(
-        Object.keys(table as Record<string, string>),
-        `push.ts 读了 ${enumName}.${member}，兜底副本里却没有这一项`
-      ).toContain(member)
-    }
-  })
-})
 
 describe('全仓库读到的 amagi 枚举成员都真实存在', () => {
   it('扫到了枚举读取点', () => {

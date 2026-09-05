@@ -12,6 +12,7 @@
  * `docs/upstream-sync.md` 的「待查：推送路径的空 cookie」一节一起更新。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 
 const configMock = vi.hoisted(() => ({
   // 必须非空：空串会让「传了配置 cookie」和「传了 ''」两组断言同时为真，测试恒真
@@ -101,6 +102,7 @@ vi.mock('../../src/module/utils/index.js', async () => {
 // 真 amagi 绝不能被加载：vitest 下 `require('@ikenxuan/amagi')` 会走 exports map 的
 // development 条件，解析到未发布的 src/index.ts，一加载就是 MODULE_NOT_FOUND。
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: { fetchVideoInfo: handles.moduleFetchVideoInfo },
   buildAmagiRequestConfig: vi.fn(() => requestConfig)
 }))

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadRealAmagiEnums } from '../helpers/amagi-enums.js'
 import type { DynamicAdditional } from '../../src/module/platform/bilibili/types.js'
 
 const mocks = vi.hoisted(() => ({
@@ -46,6 +47,7 @@ vi.mock('../../src/module/utils/index.js', () => {
 })
 
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
+  loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: new Proxy({}, {
     get: (_target, prop) => {
       throw new Error(`不该读模块级 bilibiliFetcher.${String(prop)}，取数应走 this.amagi.bilibili`)
