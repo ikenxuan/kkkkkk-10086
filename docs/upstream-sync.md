@@ -10,21 +10,50 @@
 
 | 平台 | 上游 sha | 上游日期 | 上游版本 | 本仓 commit | 对齐范围 |
 |---|---|---|---|---|---|
-| bilibili | `6e557ec3` | 2026-08-18 | 2.42.3 | `3be55569` `2669ab0d` | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。`-352` voucher 提取已合并成一处、路径扩到 8 条（见下），但真实 voucher 位置仍未确证 |
+| bilibili | `f9932f8d` | 2026-09-03 | 2.42.4 | `3be55569` `2669ab0d` +本次 | 调用形态已对齐：中文方法名映射删除，全部调用点改走 amagi v6 英文 fetcher。`-352` voucher 提取已合并成一处、路径扩到 8 条（见下），但真实 voucher 位置仍未确证。opus `node_type: 4` 站内图文链接已跟进 |
 | douyin | `3cf285ae` | 2026-09-01 | 2.42.3 | `3be55569` `097807a0` `6d348d8c` | 调用形态已对齐。**扫码登录已跟到 passport 接口**（见下）。`live-room.ts` 的两步补号时序是本仓设施，上游无对应物 |
 | kuaishou | `f4b0c23e` | 2026-08-17 | 2.42.3 | `3be55569` | 调用形态已对齐，同上。`getdata.ts` 的 `KUAISHOU_METHODS` 常量表是本仓设施 |
 | xiaohongshu | `da7bfd2d` | 2026-08-18 | 2.42.3 | `3be55569` | 调用形态已对齐，同上。上一次同步（`docs/superpowers/plans/2026-08-19-xiaohongshu-v2421-sync.md`）只记了版本号 `v2.42.1` 没记 sha，无法判定同步到了哪一刻，这份表从本次起补上 |
+| 渲染 / 模板 | `ac96199` `e498c5f` | 2026-09-03 | 2.42.4 | 本次 | 隐水印整套删除、页脚版本信息强制常显；登录二维码中心嵌触发者头像 |
 
-上游基准：HEAD `c5512ace`（2026-09-01，v2.42.3），分支 `main`。
+上游基准：HEAD `f9932f8d`（2026-09-03，v2.42.4），分支 `main`。
 
-### 本次扫描：`4772801d..c5512ace` 共 8 个提交，只有 1 个该移植
+### 本轮扫描：`c5512ace..f9932f8d` 共 5 个提交，3 个已移植
 
 | 提交 | 处置 |
 |---|---|
-| `3cf285ae` 抖音登录换 passport 接口 | **已移植**，见下 |
-| `38f9d5b0` 改用 `@snapka/puppeteer` | **已作废，不要移植**——`3cf285ae` 把 puppeteer 整个删了，这两条方向相反。下一轮扫到「我们没跟这条」时不要回头做 |
-| `1db3e356` `c5512ace` | 只动 `package.json`（karin 侧 discordbot 适配器、发版号），与本仓无关 |
-| `e20b7a8e` `4db462b1` `85a6a81a` `d91c833f` | 一个源文件都没动（`noop` / `tmp` / 删占位 / 删探针） |
+| `ac96199` 移除 `@ikenxuan/watermark`，图片强制展示底部版本信息 | **已移植**，见下 |
+| `e498c5f` 登录二维码加触发者头像 | **已移植**，见下 |
+| `f9932f8` B站 opus 站内图文链接节点 + 图标 | **已移植**，见下 |
+| `ee8bc51` 二维码链接拼接错误 | **无需移植**。它修的 `https://c/aweme/v1/play/` 截断域名本仓从来没有过：`videoQuality.ts` 的 `buildDouyinPlayUrl` 早就改用 `URLSearchParams` 且域名恒为 `aweme.snssdk.com`（那处注释里记了当初为什么改）。另一半是上游自己的 `@template/` 路径别名修正，与本仓无关 |
+| `cae3f7a` release 2.42.4 | 只动 `.release-please-manifest.json` / `CHANGELOG.md` / `package.json` |
+
+### 隐水印移除（`ac96199` → 本次）
+
+上游把 `@ikenxuan/watermark` 整套删了，页脚版本信息从「可关」改成强制常显。本仓完整跟进：
+
+- 删 `src/module/utils/Watermark.ts`、`@ikenxuan/watermark` 依赖、`tests/watermark*.test.ts`
+- 删配置项 `app.RemoveWatermark`（`types/config.ts`、两份 `app.yaml`、锅巴面板那一栏）
+- 删 `ctx.watermarkTextBitSize` 与页脚的 `Restore ID`
+- `Render()` 现在一律注入 `ctx.version`，成图**原样返回**
+
+`Watermark.ts` 里那三样和水印无关的东西（`ImageMessage` / `readImageBytes` / `replaceImageBytes`）搬进新的叶子模块 `src/module/utils/imagePayload.ts` —— 分片（`imageSlicer`）、抖音扫码登录落盘、live photo 提示图三处都要读写消息段里的图片字节，和水印不是一回事。
+
+**顺带确认了一件事**：成图那圈透明圆角现在没有任何再编码环节了。截图侧本来就是 `imgType: 'png'` + `omitBackground: true` + `multiPage: false`（宿主见到 multiPage 为真会把编码覆盖成 jpeg，见 `imageSlicer.ts` 开头），分片走自己的 sharp。这一点本仓**领先上游**：上游仍在用宿主的 multiPage。
+
+### 登录二维码头像（`e498c5f` → 本次）
+
+三个二维码模板（`bilibili/qrcodeImg`、`douyin/qrcodeImg`、`other/qrlogin`）从 `generateQRCode` 换成已有的 `QRCodeWithAvatar` 组件，契约加可选字段 `avatarUrl`。
+
+**一处刻意不照抄**：上游 `resolveTriggerAvatarUrl` 走 `e.bot.getAvatarUrl(userId)`（karin 的适配器统一接口，是个 async RPC）。本仓没有这个接口，改成同步的 `src/module/utils/avatar.ts`：按纯数字 QQ 号拼 `q1.qlogo.cn`，openid 一律返回 undefined 让二维码退化成普通二维码。判据与 `pushList.ts` 的 `groupAvatarUrl`、`userRanking.ts` 的 `userAvatarUrl` 一致（后者已改为复用同一个 helper），取号次序与 `ErrorHandler/render.ts` 的 `resolveUserId` 一致（`user_id` 优先、退回 `sender.user_id`，只认 snake_case）。不发 RPC 的取舍同 `userRanking.ts` 里那条注释：塞一个必然 404 的地址会让模板侧 `loadQRCodeAvatar` 等 5 秒超时。
+
+形参类型是 `Pick<MessageEvent, 'user_id' | 'sender'>`，从本仓对宿主事件的镜像上取，不自己编形状；两个 login 的窄事件接口都 `extends` 它。**没有**读 `sender` 上的头像字段 —— `@types/trss-yunzai` 的 `GroupMessage.sender` / `PrivateMessage.sender` 逐字段声明过，里面没有这一项。
+
+### B站 opus 站内图文链接（`f9932f8` → 本次）
+
+`node_type: 4` 是 opus 正文里的高亮链接（官方页面的 `opus-text-rich-hl`）。此前解析器只认 `node_type === 1`、其余 `return []`，那段正文在卡片上凭空消失。
+
+新增 `opusLink` 节点贯穿四层：`richtext/types.ts` 的类型与渲染选项、`richtext/parse` 的 `createOpusLinkNode` 与纯文本提取、`ktr/richtext/react` 的 `OpusLinkIcon` 与渲染分支、`dynamicText.ts` 的解析与合并转发文本。缺跳转地址时退化成普通文本节点。
 
 ### 抖音扫码登录（`3cf285ae` → 本仓 `6d348d8c`）
 
@@ -70,9 +99,14 @@
 
 为云崽宿主或发布版 amagi 而加，**不要照上游删**：
 
-- bilibili：`amagi-runtime` `article` `cdn` `dynamicText` `live-stream` `richtext-message` `types`
+- bilibili：`article` `cdn` `dynamicText` `live-stream` `richtext-message` `types`
 - douyin：`listCard` `live` `live-room` `pushPreview` `render`
 - xiaohongshu：`link` `livePhoto`
+- utils：`imagePayload`（消息段图片字节读写，隐水印删除后留下的那部分）、`avatar`（触发者头像，替上游那个 async 的 `e.bot.getAvatarUrl`）
+
+`platform/bilibili/amagi-runtime` 曾在这张清单上，**已删除**：它存在的理由是那份手写的枚举兜底副本要能被契约测试单独 import，而副本本身跟上游一样不该有 —— 没有任何编译期约束，上游改名后它会安静地把对应类型的动态从推送里抹掉。现在枚举统一由 `utils/amagiClient.ts` 的 `loadAmagiEnums()` 取，require 失败就抛（amagi 在 `dependencies` 里，装不上就是坏安装），`bilibili.ts` 里那份重复的 loader 也一并合掉。
+
+`tests/contracts/amagi-enums.test.ts` 相应只剩「全仓读到的每个成员在真包里都真实存在」这一半 —— 那才是真正在守的东西。挡掉 `amagiClient` 的单测要在工厂里补一项 `loadAmagiEnums`，用 `tests/helpers/amagi-enums.ts` 里的真包加载器，别手写副本。
 
 ### 5. `AmagiError.message` 不塞 `util.inspect`
 
