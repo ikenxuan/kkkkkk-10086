@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.42.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.41.0...v2.42.0) (2026-09-05)
+
+
+### ✨ 新功能
+
+* **bilibili:** opus 正文支持站内图文链接节点 ([109356c](https://github.com/ikenxuan/kkkkkk-10086/commit/109356c61c5792b12dd4dfe7f777578b942c1f92))
+* **config:** 解析失败的配置在 #kkk版本 里列出来 ([ba75079](https://github.com/ikenxuan/kkkkkk-10086/commit/ba7507994e42e00ca9aac9d1a1b55af16aaba214))
+* **douyin:** 抖音号、原声、限时表情走 amagi 免鉴权接口 ([2403e75](https://github.com/ikenxuan/kkkkkk-10086/commit/2403e75733db8d8507e3a1c1ea34286cb967abbd))
+* **douyin:** 视频源不再排除 HDR 档 ([d0ed503](https://github.com/ikenxuan/kkkkkk-10086/commit/d0ed5030017b7af66f84442d11b7f4e939a7b981))
+* **live:** 直播间解析补拉流地址转发与 15 秒预览 ([38028f6](https://github.com/ikenxuan/kkkkkk-10086/commit/38028f653c979177d3bb5a6d16c1425ae8c29e07))
+* **login:** 登录二维码中心嵌触发者头像 ([0f9ec0b](https://github.com/ikenxuan/kkkkkk-10086/commit/0f9ec0bbbe44a375140fb097b5d478e41a51e277))
+
+
+### 🐛 Bug 修复
+
+* **bilibili:** h5 与 blanc 直播间链接取得房间号 ([78a5dc5](https://github.com/ikenxuan/kkkkkk-10086/commit/78a5dc51be806652e8d13e6d162d767bf67ae9e1))
+* **ci:** lockfile 与 package.json 对齐 ([6915dbc](https://github.com/ikenxuan/kkkkkk-10086/commit/6915dbc325fcb7124fda1c010ae59c0d7f35961f))
+* **live:** 转发版式校正，B站补上 M3U8 与各档位 ([c490c31](https://github.com/ikenxuan/kkkkkk-10086/commit/c490c31fe454a4c7821bc8f22326fa9c573cf97a))
+* **request:** UA 粘错 header 名时剥掉前缀，并在 -352 建议里点它 ([69b22f2](https://github.com/ikenxuan/kkkkkk-10086/commit/69b22f2948a3f68f32737bc40a5918b9b8fd7df4))
+
+
+### 📝 文档
+
+* **upstream:** 对齐表跟到 f9932f8d / v2.42.4 ([7c34c44](https://github.com/ikenxuan/kkkkkk-10086/commit/7c34c44a66b2bfcd9c51e4342048bf42de91254b))
+
+
+### ♻️ 重构
+
+* **amagi:** 删掉枚举兜底副本，统一走 loadAmagiEnums ([3ccd661](https://github.com/ikenxuan/kkkkkk-10086/commit/3ccd661caa11a17718b5d656dd9cd45ad85e0373))
+* **render:** 移除隐水印，页脚版本信息强制常显 ([c82e1d9](https://github.com/ikenxuan/kkkkkk-10086/commit/c82e1d9843e012df879f202feba6630e5b6938d9))
+
 ## [2.41.0](https://github.com/ikenxuan/kkkkkk-10086/compare/v2.40.0...v2.41.0) (2026-09-02)
 
 
