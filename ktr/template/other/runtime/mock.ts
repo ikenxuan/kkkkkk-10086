@@ -39,6 +39,11 @@ export const runtimeStable: RuntimeReportData = {
     buildTime: '2026年08月25日 21:40',
     shortCommitHash: '77e7636'
   },
+  // 正常态：一份配置都没坏，模板整段不画
+  configHealth: {
+    degraded: false,
+    files: []
+  },
   runtime: {
     nodeVersion: 'v22.18.0',
     nodeEnv: 'production',
@@ -158,5 +163,32 @@ export const runtimeStable: RuntimeReportData = {
       '* Node 版本钉到 24，action 升到自身跑 node24 的版本 ([73b41ee](https://github.com/ikenxuan/kkkkkk-10086/commit/73b41ee3d670e6f530345b82029b8cf5ea840535))'
     ].join('\n'),
     available: true
+  }
+}
+
+/**
+ * 配置解析失败态。
+ *
+ * 只改 `configHealth`，其余照抄 {@link runtimeStable} —— 这一格是插在页头和「环境摘要」
+ * 之间的，要看的正是它把下面整片内容顶下去之后的间距。
+ *
+ * 三条的原因刻意长短不一：`reason` 是 YAML 解析器的英文原话（已在 core 压成一行），
+ * 长度完全不受控，而这一列是右对齐并且允许换行的 —— 只给短原因就看不出换行后
+ * 和左边文件名的基线怎么对。两种来源都给一条：默认模板坏了是发布包的问题，
+ * 措辞和用户配置不一样。
+ */
+export const runtimeConfigDegraded: RuntimeReportData = {
+  ...runtimeStable,
+  configHealth: {
+    degraded: true,
+    files: [
+      {
+        file: 'cookies.yaml',
+        origin: '用户配置',
+        reason: 'Implicit keys need to be on a single line at line 22, column 1'
+      },
+      { file: 'douyin.yaml', origin: '用户配置', reason: 'Nested mappings are not allowed in compact mappings' },
+      { file: 'upload.yaml', origin: '默认模板', reason: 'YAML root must be a non-array record' }
+    ]
   }
 }

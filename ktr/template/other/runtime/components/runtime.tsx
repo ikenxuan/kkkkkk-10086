@@ -38,6 +38,7 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
   const download = data.concurrency.download
   const cdn = data.concurrency.cdn
   const parse = data.concurrency.parse
+  const configHealth = data.configHealth
   const releaseLabel =
     data.identity.releaseType.toLowerCase() === 'stable'
       ? '正式版'
@@ -197,6 +198,43 @@ export const RuntimeReport: React.FC<PosterProps<RuntimeReportData>> = React.mem
             </div>
           </div>
         </header>
+
+        {/*
+          配置告警排在环境摘要**之前**：这是整张卡上唯一一处「你需要动手」的信息，
+          而摘要往下全是只读指标。排在后面就等于要用户滚过五屏才看见自己的配置没生效。
+          全部正常时整段不画，正常那张卡的版式不受影响。
+        */}
+        {configHealth.degraded ? (
+          <section className="relative mt-25 flex items-start gap-6" style={{ color: palette.warnText }}>
+            <TriangleAlert className="mt-2 h-13 w-13 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="text-[40px] font-black leading-none">
+                {configHealth.files.length} 份配置正在退回默认值
+              </div>
+              <div className="mt-4 text-[27px] font-semibold leading-[1.55] opacity-70">
+                这些文件解析失败，里面写的设置全部没有生效。插件不会自动覆盖它们（覆盖会清掉你写的内容），
+                改好或删掉后重启才会恢复。
+              </div>
+              <div className="mt-9 space-y-6">
+                {configHealth.files.map(entry => (
+                  <div key={`${entry.origin}/${entry.file}`} className="flex items-start justify-between gap-10">
+                    <span className="whitespace-nowrap font-mono text-[26px] font-black">
+                      {entry.file}
+                    </span>
+                    {/*
+                      原因是 YAML 解析器的英文报错，长度不可控，所以这一格允许换行、
+                      不用 truncate：截断之后剩下的半句（「Implicit keys need to…」）
+                      对定位行号毫无用处，而行号往往就在被截掉的那半截里。
+                    */}
+                    <span className="min-w-0 flex-1 text-right font-mono text-[24px] font-bold leading-[1.4] opacity-70">
+                      {entry.origin} · {entry.reason}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <section className="relative mt-30">
           <div className="relative flex items-center gap-5">

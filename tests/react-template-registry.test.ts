@@ -41,6 +41,7 @@ const runtimeData: RuntimeReportData = {
     requiredKarinVersion: '>=4'
   },
   build: { state: 'matched', version: '2.36.0', buildTime: 'now', shortCommitHash: 'local' },
+  configHealth: { degraded: false, files: [] },
   runtime: {
     nodeVersion: 'v22.18.0',
     nodeEnv: 'test',

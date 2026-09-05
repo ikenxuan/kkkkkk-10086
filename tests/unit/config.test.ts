@@ -10,6 +10,7 @@ import type {
   douyinPushItem
 } from '../../src/module/utils/Config.js'
 import YamlReader from '../../src/module/utils/YamlReader.js'
+import { getDegradedConfigSnapshot, resetConfigHealth } from '../../src/module/utils/configHealth.js'
 
 const fixtureRoot = join(process.cwd(), 'tests', 'fixtures', 'config')
 const temporaryDirectories: string[] = []
@@ -34,6 +35,8 @@ async function createConfigRoot (): Promise<string> {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // 登记表是模块级的，本文件有好几个用例故意写坏 yaml，不清就会串到别人的断言里
+  resetConfigHealth()
   globalThis.logger = {
     warn: vi.fn(),
     error: vi.fn(),
@@ -187,6 +190,46 @@ describe('Cfg', () => {
 
     expect(await readFile(file, 'utf8')).toBe(malformed)
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('app.yaml'), expect.anything())
+  })
+
+  /*
+    坏掉的文件既不会被自动修好（覆盖等于清空用户配置），也不会再被提醒第二次 ——
+    上面那两个用例钉的就是「不改文件」和「只有一行日志」。所以那一行日志必须有个
+    补救出口：登记进健康快照，由 `#kkk版本` 的诊断卡列出来。
+  */
+  describe('解析失败要登记给诊断卡', () => {
+    it('登记文件名和所在目录，诊断卡据此告警', async () => {
+      const root = await createConfigRoot()
+      await writeFile(join(root, 'config', 'config', 'app.yaml'), 'broken: [yaml\n')
+      const cfg = createCfg(root)
+
+      cfg.getConfig('app')
+
+      expect(getDegradedConfigSnapshot().map(entry => ({ file: entry.file, directory: entry.directory })))
+        .toEqual([{ file: 'app.yaml', directory: 'config' }])
+    })
+
+    it('改好之后重新解析会把登记摘掉，诊断卡不再挂着修好的告警', async () => {
+      const root = await createConfigRoot()
+      const file = join(root, 'config', 'config', 'app.yaml')
+      await writeFile(file, 'broken: [yaml\n')
+      createCfg(root).getConfig('app')
+      expect(getDegradedConfigSnapshot()).toHaveLength(1)
+
+      await writeFile(file, 'sendforwardmsg: true\n')
+      createCfg(root).getConfig('app')
+
+      expect(getDegradedConfigSnapshot()).toEqual([])
+    })
+
+    it('全都能解析时快照是空的，正常那张卡不会凭空多出告警', async () => {
+      const root = await createConfigRoot()
+      const cfg = createCfg(root)
+
+      cfg.initCfg()
+
+      expect(getDegradedConfigSnapshot()).toEqual([])
+    })
   })
 
   it('ignores falsey subscription IDs during filter synchronization', async () => {

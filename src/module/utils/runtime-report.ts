@@ -29,6 +29,7 @@ import { getApiCacheSnapshot, type ApiCacheTier } from './ApiCache.js'
 import { getCdnProbeSnapshot } from './Network/CdnProbe.js'
 import { type CdnFailureKind, getCdnRegistrySnapshot } from './Network/CdnRegistry.js'
 import Config from './Config.js'
+import { getDegradedConfigSnapshot } from './configHealth.js'
 import { getDownloadBudgetSnapshot } from './Network/DownloadBudget.js'
 import { getParseCoordinatorSnapshot } from './ParseCoordinator.js'
 import { getAdapterInfo } from './ErrorHandler/adapter.js'
@@ -195,6 +196,17 @@ const CDN_FAILURE_LABELS: Readonly<Record<CdnFailureKind, string>> = {
 }
 
 /**
+ * 配置文件所在目录到卡上中文措辞的映射。
+ *
+ * 两者的处置完全不同：用户配置坏了要用户自己去改，默认模板坏了是发布包的问题、
+ * 该重装插件。认不出的目录名原样显示，理由同 {@link DOWNLOAD_BUCKET_LABELS}。
+ */
+const CONFIG_ORIGIN_LABELS: Readonly<Record<string, string>> = {
+  config: '用户配置',
+  default_config: '默认模板'
+}
+
+/**
  * 惩罚剩余时长排成紧凑文本。
  *
  * 单独一个函数而不是复用上面的 `formatDuration`：那个的最小粒度是「秒」且不足
@@ -274,6 +286,7 @@ export const collectRuntimeReport = (event: MessageEvent) => {
   const parseSnapshot = getParseCoordinatorSnapshot()
   const cdnSnapshot = getCdnRegistrySnapshot()
   const probeSnapshot = getCdnProbeSnapshot()
+  const degradedConfigs = getDegradedConfigSnapshot()
   const cacheLookups = cacheSnapshot.hits + cacheSnapshot.coalesced + cacheSnapshot.misses
   const currentChangelog = getLocalChangelog(1)
   const rawScale = Number(Config.app.renderScale) / 100
@@ -306,6 +319,16 @@ export const collectRuntimeReport = (event: MessageEvent) => {
       version: buildMetadata?.version,
       buildTime: buildMetadata?.buildTime ? formatBuildTime(buildMetadata.buildTime) : undefined,
       shortCommitHash: buildMetadata?.shortCommitHash
+    },
+    // 只有解析失败过的文件才在名单里，所以这一格平时是空的、卡上什么都不画。
+    // 名单是进程级的：改好文件后要等 chokidar 触发重新解析才会摘掉。
+    configHealth: {
+      degraded: degradedConfigs.length > 0,
+      files: degradedConfigs.map(entry => ({
+        file: entry.file,
+        origin: CONFIG_ORIGIN_LABELS[entry.directory] ?? entry.directory,
+        reason: entry.reason
+      }))
     },
     runtime: {
       nodeVersion: process.version,

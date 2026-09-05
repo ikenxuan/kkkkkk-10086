@@ -31,6 +31,7 @@ export type {
   BilibiliPushItem as bilibiliPushItem
 } from '@/types/config'
 import { isRecord } from './record.js'
+import { recordConfigParseFailure, recordConfigParseSuccess } from './configHealth.js'
 
 const APP_UPLOAD_KEYS = new Set([
   'videoSendMode',
@@ -584,6 +585,7 @@ export class Cfg {
     try {
       const value: unknown = YAML.parse(fs.readFileSync(file, 'utf8'))
       if (!isRecord(value)) throw new TypeError('YAML root must be a non-array record')
+      recordConfigParseSuccess(file)
       return { valid: true, value }
     } catch (error: unknown) {
       // 用 error 而不是 warn，并且带上原因：这条日志的后果比 warn 应有的分量重得多。
@@ -592,7 +594,16 @@ export class Cfg {
       // 四个平台的 ck 就全成了 null，表现和「没配置」一模一样。
       // 这正是「我明明设了 ck」和「插件说未配置」能同时为真的一种机制，
       // 而现场只有一行 warn，太容易被划过去。
-      logger.error(`[Config] 解析配置文件失败，该文件的配置已全部退回默认值: ${file}`, error)
+      //
+      // 登记一份给 `#kkk版本` 的诊断卡：这行日志是一次性的，而 initCfg() 碰到解析不了的
+      // 用户配置只会 continue（补默认值等于清空用户配置），文件会一直坏着却不再有任何提示。
+      recordConfigParseFailure(file, error)
+      logger.error(
+        `[Config] 解析配置文件失败，该文件的配置已全部退回默认值: ${file}\n` +
+        '  插件不会自动修复它（覆盖会清掉你写的内容），改好或删掉该文件再重启才会恢复。' +
+        '发送 #kkk版本 可以看到当前所有退回默认值的配置',
+        error
+      )
       return { valid: false, value: {} }
     }
   }

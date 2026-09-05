@@ -24,6 +24,26 @@ export interface RuntimeReportData {
     buildTime?: string
     shortCommitHash?: string
   }
+  /**
+   * 配置文件解析状态。
+   *
+   * 解析失败的 yaml 会整份退回默认值，而插件刻意不自动覆盖它（覆盖等于清掉用户
+   * 写的内容），于是那份配置会一直失效、现场只有启动时一行日志。这一格是那条日志
+   * 唯一的补救出口，所以 `degraded` 为真时模板要画得够显眼。
+   */
+  configHealth: {
+    /** 有没有文件正在退回默认值。false 时模板不画这一段 */
+    degraded: boolean
+    /** 解析失败的配置文件，按文件名排序。`degraded` 为 false 时是空数组 */
+    files: Array<{
+      /** 文件名，例如 `request.yaml` */
+      file: string
+      /** 来源说明，已换成中文：`用户配置` / `默认模板` */
+      origin: string
+      /** 解析失败的原因，已在 core 压成一行 */
+      reason: string
+    }>
+  }
   /** Node.js 与操作系统运行时 */
   runtime: {
     nodeVersion: string
