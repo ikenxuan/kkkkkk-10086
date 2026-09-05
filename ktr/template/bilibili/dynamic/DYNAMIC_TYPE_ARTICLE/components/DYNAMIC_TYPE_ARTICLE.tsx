@@ -218,8 +218,7 @@ const BilibiliArticleFooter: React.FC<PosterProps<BilibiliArticleDynamicData>> =
  */
 export const BilibiliArticleDynamic: React.FC<PosterProps<BilibiliArticleDynamicData>> = React.memo((props) => {
   return (
-    // 旧引擎此处只透传 data/version/scale（不带 watermarkTextBitSize），保持不显示 Restore ID 的原有效果
-    <DefaultLayout ctx={{ ...props.ctx, watermarkTextBitSize: undefined }}>
+    <DefaultLayout ctx={props.ctx}>
       <div className="p-4">
         {/* 间距 */}
         <div className="h-25" />

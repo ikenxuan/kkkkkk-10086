@@ -5,7 +5,7 @@ import type { RenderContext } from '@karinjs/template-react'
  * ktr 的 mergeContext 会把调用方传入的字段原样透传。
  */
 export interface PosterContext extends RenderContext {
-  /** 版本信息（页脚展示，RemoveWatermark 时不传） */
+  /** 版本信息（页脚展示；`Render.ts` 一律注入，开发面板与单测可以不传） */
   version?: {
     /** 框架插件 */
     plugin: string
@@ -39,8 +39,6 @@ export interface PosterContext extends RenderContext {
     /** 是否有可用更新 */
     hasUpdate?: boolean
   }
-  /** 水印比特大小（Restore ID） */
-  watermarkTextBitSize?: number
   /** 封面氛围背景贡献度参数（core 从 app.ambientCover 配置注入，缺省时模板用内置默认值） */
   ambientCover?: {
     /** 模糊封面层不透明度 (0~1) */

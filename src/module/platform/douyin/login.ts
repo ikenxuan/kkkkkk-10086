@@ -4,7 +4,7 @@ import type { DouyinPassportVerifyContext } from '@ikenxuan/amagi'
 import { buildAmagiRequestConfig, douyinFetcher, isSmsCodeVerifyWay } from '@/module/utils/amagiClient'
 import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
-import { readImageBytes } from '@/module/utils/Watermark'
+import { readImageBytes } from '@/module/utils/imagePayload'
 import { Common, Config, Render } from '@/module/utils/index'
 
 /**

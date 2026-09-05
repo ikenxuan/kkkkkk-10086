@@ -65,8 +65,7 @@ vi.mock('../../src/module/utils/index.js', () => ({
   Render: doubles.Render
 }))
 
-// Watermark 真身在模块级 import sharp，单测里不需要那颗原生模块
-vi.mock('../../src/module/utils/Watermark.js', () => ({
+vi.mock('../../src/module/utils/imagePayload.js', () => ({
   readImageBytes: doubles.readImageBytes
 }))
 

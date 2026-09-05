@@ -7,9 +7,8 @@
  * 裸字符串，导致 `douyin/video-work` 在这个移植里从来没渲染成功过。
  *
  * 与上游的差异（仅限基础设施，数据形状一律照搬）：
- * - `Render(e, path, params, opts)` -> 本仓库是 `Render(path, params)`，不吃事件，也没有
- *   按次跳过水印的开关（水印由 `Config.app.RemoveWatermark` 全局控制），所以 `skipWatermark`
- *   没有对应实现，此处不提供该选项。
+ * - `Render(e, path, params, opts)` -> 本仓库是 `Render(path, params)`，不吃事件。
+ *   上游那个 `skipWatermark` 选项随隐水印一起废掉了（上游 ac96199），此处不提供。
  * - `Count()` -> `Common.count()`
  * - 上游的 `getWorkTypeInfo()` 返回带 `mainType` 的对象，本仓库是 `isDouyinVideo/isDouyinImage/
  *   isDouyinArticle` 三个谓词 + `getDouyinWorkCoverUrl`，语义一致。
@@ -27,7 +26,7 @@ import { format, fromUnixTime } from 'date-fns'
 
 import { Common, Config, Render } from '@/module/utils/index'
 import { at } from '@/module/utils/record'
-import type { ImageMessage } from '@/module/utils/Watermark'
+import type { ImageMessage } from '@/module/utils/imagePayload'
 
 import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { buildDouyinResolutionInfo, type DouyinBitRateItem, isDouyinHdrStream } from './videoQuality.js'

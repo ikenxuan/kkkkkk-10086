@@ -75,14 +75,6 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: configMock
 }))
 
-vi.mock('@ikenxuan/watermark', () => ({
-  embedWatermarkToPngBytes: vi.fn(() => ({
-    buffer: Buffer.from('watermarked'),
-    wmSize: 8
-  }))
-}))
-
-import { embedWatermarkToPngBytes, type EmbedOutput } from '@ikenxuan/watermark'
 import type { BilibiliFetcher } from '@ikenxuan/amagi'
 import {
   normalizeCompressionOptions,
@@ -95,9 +87,6 @@ import {
   isRemoteVideoTooLargeForUrlSend,
   uploadFile
 } from '../../src/module/utils/Base.js'
-import { embedWatermark } from '../../src/module/utils/Watermark.js'
-
-const encoderMock = vi.mocked(embedWatermarkToPngBytes)
 
 // default + bilibiliErrorCodeMap 同时给齐，getAmagiDependencies 才走短路分支、
 // 不去 require('@ikenxuan/amagi')；两个 fetcher 由上面的模块替身兜底。
@@ -515,47 +504,5 @@ describe('normalizeLoopVideoOptions', () => {
       bgmPath: undefined,
       context: undefined
     })
-  })
-})
-
-describe('embedWatermark', () => {
-  const png = () => Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-  it('unwraps the encoder EmbedOutput instead of discarding the watermark', async () => {
-    // 真实的 embedWatermarkToPngBytes 返回 { buffer, wmSize }，从来不是裸 Buffer。
-    // 迁移前的 toWatermarkBuffer 不认这层包装，于是每一张图都拿到 null——
-    // 隐水印实际上一次都没嵌进去过，还顺带每次渲染都打一条 warn。
-    expect(await embedWatermark(png(), 'watermark')).toEqual(Buffer.from('watermarked'))
-    expect(loggerWarn).not.toHaveBeenCalled()
-    expect(warnSpy).not.toHaveBeenCalled()
-  })
-
-  it('warns through the host logger with its receiver intact when the result is unusable', async () => {
-    const receiverAwareLogger = {
-      calls: 0,
-      warn (this: { calls: number }): void {
-        this.calls++
-      }
-    }
-    globalThis.logger = receiverAwareLogger as unknown as typeof logger
-    encoderMock.mockReturnValueOnce({ wmSize: 8 } as unknown as EmbedOutput)
-
-    expect(await embedWatermark(png(), 'watermark')).toBeNull()
-    // 以方法形式调用（而不是取下来的裸函数），否则 this.calls++ 会抛。
-    expect(receiverAwareLogger.calls).toBe(1)
-    // 宿主 logger 成功接收后不应再往 console 重复打一遍。
-    expect(warnSpy).not.toHaveBeenCalled()
-  })
-
-  it('falls back to console warnings when the host logger rejects the message', async () => {
-    globalThis.logger = {
-      warn: () => {
-        throw new Error('logger down')
-      }
-    } as unknown as typeof logger
-    encoderMock.mockReturnValueOnce({ wmSize: 8 } as unknown as EmbedOutput)
-
-    expect(await embedWatermark(png(), 'watermark')).toBeNull()
-    expect(warnSpy).toHaveBeenCalledTimes(1)
   })
 })

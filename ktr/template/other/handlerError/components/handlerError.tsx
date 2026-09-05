@@ -840,10 +840,10 @@ export const handlerError: React.FC<PosterProps<ApiErrorData>> = (props) => {
                 <span>Commit Hash: {data.commitHash}</span>
               </div>
             )}
-            {/* RemoveWatermark 开启时 Render.ts 不传 ctx.version，DefaultLayout 的页脚整块不渲染，
-                插件与框架版本就彻底消失了——可这张图的用途正是拿去报 bug，版本号不能少。
-                所以页脚缺席时在这里补一份纯文字版本号：只有文字没有 logo，不构成第二组品牌对，
-                也顺带让 data.pluginVersion / data.frameworkVersion 这两个此前无人读取的字段真正生效。 */}
+            {/* 页脚缺席时在这里补一份纯文字版本号：这张图的用途正是拿去报 bug，版本号不能少。
+                `Render.ts` 现在一律传 ctx.version，所以这一支平时到不了；开发面板和单测
+                可以不传，留着它才不至于在那两处丢掉版本号。只有文字没有 logo，不构成第二组品牌对，
+                也顺带让 data.pluginVersion / data.frameworkVersion 这两个字段真正生效。 */}
             {!props.ctx?.version && (
               <>
                 {data.pluginVersion && (

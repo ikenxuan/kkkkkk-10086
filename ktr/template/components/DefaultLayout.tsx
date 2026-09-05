@@ -32,7 +32,7 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
   // 明暗只用于内部装饰分支（辉光强度等）；dark 类与 data-theme 由 ktr 外壳统一写在 body 上，
   // 模板根元素不再重复施加。唯一事实来源是 ctx.theme.mode。
   const useDarkTheme = isDark(ctx)
-  const { version, watermarkTextBitSize } = ctx
+  const { version } = ctx
 
   return (
     <div
@@ -207,20 +207,9 @@ export const DefaultLayout: React.FC<DefaultLayoutProps> = ({ children, ctx, cla
               </>
             )}
           </div>
-
-          {/* Restore ID */}
-          {typeof watermarkTextBitSize === 'number' && (
-            <div className="flex justify-center">
-              <span className="text-xs font-mono text-foreground/30">Restore ID: {watermarkTextBitSize}</span>
-            </div>
-          )}
         </div>
       ) : (
-        <div className="flex items-center justify-center h-24">
-          {typeof watermarkTextBitSize === 'number' && (
-            <span className="text-xs font-mono text-foreground/30">Restore ID: {watermarkTextBitSize}</span>
-          )}
-        </div>
+        <div className="h-24" />
       )}
     </div>
   )

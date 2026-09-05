@@ -47,8 +47,7 @@
   },
   "dependencies": {
     "@ikenxuan/amagi": "^6.6.0",
-    "@ikenxuan/qrcode": "^1.2.0",
-    "@ikenxuan/watermark": "1.3.0",
+    "@ikenxuan/qrcode": "^1.5.0",
     "@karinjs/md-html": "^1.3.0",
     "axios": "npm:@karinjs/axios@^1.13.2",
     "chokidar": "^5.0.0",
@@ -60,7 +59,7 @@
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.4",
     "silk-wasm": "^3.7.1",
     "sqlite3": "npm:@karinjs/sqlite3@^0.4.3",
     "yaml": "^2.9.0"

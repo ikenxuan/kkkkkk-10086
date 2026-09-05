@@ -1,6 +1,6 @@
 import sharp from 'sharp'
 
-import { readImageBytes, replaceImageBytes, type ImageMessage } from './Watermark.js'
+import { readImageBytes, replaceImageBytes, type ImageMessage } from './imagePayload.js'
 import { getErrorMessage } from './error-message.js'
 
 /**

@@ -42,7 +42,6 @@ export interface AppConfig {
   APIServer?: boolean
   APIServerPort?: number
   APIServerMount?: boolean
-  RemoveWatermark?: boolean
   RenderWaitTime?: number
   EmojiReply?: boolean
   parseTip?: boolean

@@ -126,7 +126,8 @@
  * 透明能成立的前提是整条链路上 alpha 不被拍平（已逐环实测）：
  * Render.ts 传 imgType:'png' + omitBackground:true + multiPage:false（宿主只要看到
  * multiPage 为真就把编码强制改成 jpeg，alpha 直接没了）→ imageSlicer.ts 分片走
- * .extract().png() → Watermark.ts 走 embedWatermarkToPngBytes。三环缺一环就退回白角。
+ * .extract().png()，然后成图原样返回。隐水印那一环已随上游 ac96199 删掉，
+ * 现在截图之后不再有任何重编码环节；以后要往这条线上加后处理，先确认它保得住 alpha。
  *
  * 放在 @layer base 外面且用 ID 选择器，避免被任何无层规则盖掉。
  */

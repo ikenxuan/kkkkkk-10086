@@ -7,11 +7,7 @@ import { Config, Common } from './index.js'
 import { renderReactTemplate, resolveReactTemplateRoute } from './react-template/index.js'
 import type { ReactTemplateRoute, TemplateParams } from './react-template/types.js'
 import Version from './Version.js'
-import {
-  applyWatermarkToImages,
-  buildWatermarkText,
-  type ImageMessage
-} from './Watermark.js'
+import type { ImageMessage } from './imagePayload.js'
 import { getErrorMessage } from './error-message.js'
 
 const getRenderScale = (pct = 1): number => {
@@ -70,31 +66,30 @@ export const Render = async <R extends ReactTemplateRoute> (
   if (!reactRoute) {
     throw new Error(`[Render] 未注册 React 模板路由：${templatePath}`)
   }
-  let version: Record<string, unknown> | undefined
-  if (!Config.app.RemoveWatermark) {
-    // 页脚的短提交号取构建时烘进 build-metadata.json 的源码提交：
-    // master / preview 分支的 git 历史是产物历史，问本地 git 拿不到源码提交号；
-    // 而 lib/ 就是那次构建出来的，这个号描述的正是「现在跑的是哪份代码」。
-    // 'unknown' 是 build-metadata 在没有 git 时写下的占位，别让它印成 -gunknown。
-    const buildMetadata = getBuildMetadata()
-    const commitId = buildMetadata?.shortCommitHash && buildMetadata.shortCommitHash !== 'unknown'
-      ? buildMetadata.shortCommitHash
-      : undefined
-    // 工作区状态来自安装目录自己的 git 仓库；测不出来时两个字段都是 null，
-    // 页脚对应那两段就不显示（见 release-channel.ts 里为什么 null 不等于干净）
-    const installState = getInstallState()
-    version = {
-      plugin: 'yunzai-plugin',
-      pluginName: Version.pluginName,
-      pluginVersion: Version.version,
-      commitId,
-      commitsAhead: installState.ahead ?? undefined,
-      dirty: installState.dirty === true,
-      releaseType: getReleaseChannel(),
-      poweredBy: Version.BotName,
-      frameworkVersion: Version.BotVersion,
-      hasUpdate: false
-    }
+  // 页脚的版本信息一律带上（上游 ac96199：所有图片强制展示底部版本信息）。
+  //
+  // 页脚的短提交号取构建时烘进 build-metadata.json 的源码提交：
+  // master / preview 分支的 git 历史是产物历史，问本地 git 拿不到源码提交号；
+  // 而 lib/ 就是那次构建出来的，这个号描述的正是「现在跑的是哪份代码」。
+  // 'unknown' 是 build-metadata 在没有 git 时写下的占位，别让它印成 -gunknown。
+  const buildMetadata = getBuildMetadata()
+  const commitId = buildMetadata?.shortCommitHash && buildMetadata.shortCommitHash !== 'unknown'
+    ? buildMetadata.shortCommitHash
+    : undefined
+  // 工作区状态来自安装目录自己的 git 仓库；测不出来时两个字段都是 null，
+  // 页脚对应那两段就不显示（见 release-channel.ts 里为什么 null 不等于干净）
+  const installState = getInstallState()
+  const version: Record<string, unknown> = {
+    plugin: 'yunzai-plugin',
+    pluginName: Version.pluginName,
+    pluginVersion: Version.version,
+    commitId,
+    commitsAhead: installState.ahead ?? undefined,
+    dirty: installState.dirty === true,
+    releaseType: getReleaseChannel(),
+    poweredBy: Version.BotName,
+    frameworkVersion: Version.BotVersion,
+    hasUpdate: false
   }
 
   let rendered: Awaited<ReturnType<typeof renderReactTemplate>>
@@ -138,7 +133,8 @@ export const Render = async <R extends ReactTemplateRoute> (
   } finally {
     await rendered.cleanup()
   }
-  if (images === false) return false
-  if (Config.app.RemoveWatermark) return images
-  return await applyWatermarkToImages(images, buildWatermarkText())
+  // 成图原样返回：`captureImages` 拿到的就是带 alpha 的 png，圆角外那圈透明像素
+  // 到这里为止没有任何再编码的环节。以后要在这条线上加后处理，先确认它保得住 alpha，
+  // 否则四角会变成白三角（`imageSlicer.ts` 开头记了宿主分片是怎么把它弄没的）。
+  return images
 }

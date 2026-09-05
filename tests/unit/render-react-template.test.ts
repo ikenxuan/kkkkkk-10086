@@ -5,13 +5,11 @@ const screenshotsFileMock = vi.hoisted(() => vi.fn())
 const sliceTallImageMock = vi.hoisted(() => vi.fn())
 const renderReactTemplateMock = vi.hoisted(() => vi.fn())
 const resolveReactTemplateRouteMock = vi.hoisted(() => vi.fn())
-const applyWatermarkMock = vi.hoisted(() => vi.fn())
 const cleanupMock = vi.hoisted(() => vi.fn())
 
 const configMock = vi.hoisted(() => ({
   app: {
     renderScale: 100,
-    RemoveWatermark: true,
     RenderWaitTime: 30,
     multiPageRender: true,
     multiPageHeight: 9000,
@@ -45,10 +43,8 @@ vi.mock('../../src/module/utils/Version.js', () => ({
   }
 }))
 
-vi.mock('../../src/module/utils/Watermark.js', () => ({
-  applyWatermarkToImages: applyWatermarkMock,
-  buildWatermarkText: () => 'watermark',
-  // imageSlicer 从这里取读写图片字节的helper；不 mock 会 No "readImageBytes" export
+vi.mock('../../src/module/utils/imagePayload.js', () => ({
+  // imageSlicer 从这里取读写图片字节的 helper；不 mock 会 No "readImageBytes" export
   readImageBytes: () => null,
   replaceImageBytes: (image: unknown) => image
 }))
@@ -85,9 +81,7 @@ beforeEach(() => {
   screenshotsFileMock.mockReset()
   renderReactTemplateMock.mockReset()
   resolveReactTemplateRouteMock.mockReset()
-  applyWatermarkMock.mockReset()
   cleanupMock.mockReset()
-  configMock.app.RemoveWatermark = true
   configMock.app.multiPageRender = true
   cleanupMock.mockResolvedValue(undefined)
   screenshotFileMock.mockResolvedValue({ type: 'image', file: 'single-rendered' })
@@ -110,7 +104,8 @@ describe('Render React template routing', () => {
       expect.objectContaining({
         scale: 1,
         theme: { mode: 'dark' },
-        version: undefined
+        // 页脚版本信息一律注入，没有开关能关掉它（上游 ac96199）
+        version: expect.objectContaining({ pluginName: 'kkkkkk-10086' })
       })
     )
     const rendererData = renderReactTemplateMock.mock.calls[0]?.[1]
@@ -234,8 +229,7 @@ describe('Render React template routing', () => {
     expect(cleanupMock).toHaveBeenCalledTimes(1)
   })
 
-  it('returns false without legacy fallback or watermarking when a React capture fails', async () => {
-    configMock.app.RemoveWatermark = false
+  it('returns false without any legacy fallback when a React capture fails', async () => {
     resolveReactTemplateRouteMock.mockReturnValue('other/help')
     renderReactTemplateMock.mockResolvedValue(renderedTemplate())
     screenshotFileMock.mockResolvedValue(false)
@@ -246,14 +240,14 @@ describe('Render React template routing', () => {
     expect(screenshotFileMock).toHaveBeenCalledTimes(1)
     expect(screenshotFileMock.mock.calls[0]?.[0]).toBe('kkkkkk-10086/react/other/help')
     expect(cleanupMock).toHaveBeenCalledTimes(1)
-    expect(applyWatermarkMock).not.toHaveBeenCalled()
   })
 
-  it('preserves the existing watermark pipeline after React screenshots', async () => {
-    configMock.app.RemoveWatermark = false
+  // 上游 ac96199 把页脚版本信息改成强制常显，本仓跟进后 `RemoveWatermark` 这个开关
+  // 连同隐水印一起没了。这条钉的是「没有任何开关能再把 ctx.version 关掉」——
+  // 那张图的用途之一是拿去报 bug，版本号不能少。
+  it('always injects the footer version info and returns the capture untouched', async () => {
     resolveReactTemplateRouteMock.mockReturnValue('other/help')
     renderReactTemplateMock.mockResolvedValue(renderedTemplate())
-    applyWatermarkMock.mockResolvedValue(['watermarked'])
 
     const result = await Render('other/help', {})
 
@@ -268,10 +262,7 @@ describe('Render React template routing', () => {
         })
       })
     )
-    expect(applyWatermarkMock).toHaveBeenCalledWith(
-      [{ type: 'image', file: 'single-rendered' }],
-      'watermark'
-    )
-    expect(result).toEqual(['watermarked'])
+    // 成图原样返回：中间再没有会重编码的环节，圆角外那圈透明像素才留得住
+    expect(result).toEqual([{ type: 'image', file: 'single-rendered' }])
   })
 })
