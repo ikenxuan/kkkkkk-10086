@@ -74,6 +74,7 @@ const BilibiliArticleContent: React.FC<PosterProps<BilibiliArticleDynamicData>> 
             at: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },
             topic: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },
             webLink: { className: 'text-[#006A9E] dark:text-[#58B0D5] underline' },
+            opusLink: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },
             mention: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },
             lottery: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },
             vote: { className: 'text-[#006A9E] dark:text-[#58B0D5]' },

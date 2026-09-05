@@ -11,6 +11,7 @@ import type {
   RichTextAtNode,
   RichTextLotteryNode,
   RichTextWebLinkNode,
+  RichTextOpusLinkNode,
   RichTextVoteNode,
   RichTextViewPictureNode,
   RichTextInlineStyle
@@ -76,6 +77,12 @@ export const createWebLinkNode = (text: string, jumpUrl: string): RichTextWebLin
   type: 'webLink',
   text,
   jumpUrl
+})
+
+export const createOpusLinkNode = (text: string, url: string): RichTextOpusLinkNode => ({
+  type: 'opusLink',
+  text,
+  url
 })
 
 export const createVoteNode = (text: string): RichTextVoteNode => ({
@@ -152,6 +159,7 @@ export const extractRichTextPlainText = (document: RichTextDocument): string => 
       case 'at':
       case 'lottery':
       case 'webLink':
+      case 'opusLink':
       case 'vote':
       case 'viewPicture':
       case 'hashtag':

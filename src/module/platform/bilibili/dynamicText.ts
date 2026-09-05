@@ -3,6 +3,7 @@ import {
   createEmojiNode,
   createLineBreakNode,
   createLotteryNode,
+  createOpusLinkNode,
   createRichTextDocument,
   createTextNode,
   createTopicNode,
@@ -511,6 +512,11 @@ export interface BilibiliArticleOpusWord {
 export interface BilibiliArticleOpusTextNode {
   node_type?: number
   word?: BilibiliArticleOpusWord
+  /** `node_type` 为 4 时的高亮链接：站内图文 */
+  link?: {
+    show_text?: string
+    link?: string
+  }
   [key: string]: unknown
 }
 
@@ -758,6 +764,7 @@ const isArticleInlineRichTextNode = (node: RichTextNode): boolean => {
     case 'at':
     case 'lottery':
     case 'webLink':
+    case 'opusLink':
     case 'vote':
     case 'viewPicture':
     case 'hashtag':
@@ -1278,6 +1285,14 @@ export const parseOpusToRichText = (
 
     const textNodes = Array.isArray(paragraph.text?.nodes) ? paragraph.text.nodes : []
     const inlineNodes = textNodes.flatMap(node => {
+      // node_type 4：站内图文高亮链接，官方页面渲染成带图文图标的 <a>。
+      // 缺跳转地址时退化成普通文本，至少不丢正文
+      if (node?.node_type === 4) {
+        const showText = node.link?.show_text
+        if (!showText) return []
+        const url = node.link?.link
+        return [url ? createOpusLinkNode(showText, url) : articleTextNode(showText)]
+      }
       if (node?.node_type !== undefined && node.node_type !== 1) return []
       return node?.word ? opusWordLinesToNodes(node.word, useDarkTheme) : []
     })
@@ -1422,6 +1437,8 @@ const bilibiliInlineNodeToForwardText = (
       return node.name
     case 'webLink':
       return formatBilibiliForwardLink(node.text, node.jumpUrl)
+    case 'opusLink':
+      return formatBilibiliForwardLink(node.text, node.url)
     case 'lineBreak':
       return '\n'
     default:

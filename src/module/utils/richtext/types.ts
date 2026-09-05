@@ -13,6 +13,7 @@ export type RichTextInlineNode =
   | RichTextAtNode
   | RichTextLotteryNode
   | RichTextWebLinkNode
+  | RichTextOpusLinkNode
   | RichTextVoteNode
   | RichTextViewPictureNode
   | RichTextHashtagNode
@@ -128,6 +129,20 @@ export interface RichTextWebLinkNode {
   text: string
   /** 跳转链接 */
   jumpUrl: string
+}
+
+/**
+ * 站内图文链接节点。带SVG图标，显示图文标题。
+ *
+ * 对应 B站 opus 正文里的高亮链接（官方页面上的 `opus-text-rich-hl`）。
+ * 模板渲染不需要交互，所以只渲染图标和文本；`url` 留给纯文本场景（如合并转发）拼出链接。
+ */
+export interface RichTextOpusLinkNode {
+  type: 'opusLink'
+  /** 显示文本（如图文标题） */
+  text: string
+  /** 跳转链接 */
+  url: string
 }
 
 /** 投票节点。带SVG图标，显示投票标题。 */
@@ -272,6 +287,8 @@ export interface RichTextRenderOptions {
   lottery?: RichTextNodeStyleConfig
   /** 网页链接节点 */
   webLink?: RichTextNodeStyleConfig
+  /** 站内图文链接节点 */
+  opusLink?: RichTextNodeStyleConfig
   /** 投票节点 */
   vote?: RichTextNodeStyleConfig
   /** 查看图片节点 */
