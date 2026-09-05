@@ -3,8 +3,8 @@ import React from 'react'
 
 import { DefaultLayout } from '../../../components/DefaultLayout'
 import { GlowImage } from '../../../components/GlowImage'
+import { QRCodeWithAvatar } from '../../../components/QRCodeWithAvatar'
 import type { PosterProps } from '../../../types/ctx'
-import { generateQRCode } from '../../../../utils/QRcode'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import type { QrLoginData } from './types'
 
@@ -15,7 +15,6 @@ import type { QrLoginData } from './types'
  */
 export const QrLogin: React.FC<PosterProps<QrLoginData>> = React.memo((props) => {
   const qrValue = props.data.qr_url ?? props.data.share_url
-  const qrCodeDataUrl = qrValue ? generateQRCode(qrValue, isDarkMode(props.ctx) ?? false) : ''
   const isDark = isDarkMode(props.ctx) ?? false
 
   // 使用蓝紫色系弥散渐变
@@ -185,9 +184,15 @@ export const QrLogin: React.FC<PosterProps<QrLoginData>> = React.memo((props) =>
         {/* 中间二维码区域 */}
         <div className="flex-1 flex flex-col justify-center items-center py-12">
           {/* 二维码 */}
-          {qrCodeDataUrl ? (
+          {qrValue ? (
             <div className="flex justify-center items-center w-200 h-200">
-              <img src={qrCodeDataUrl} alt="登录二维码" className="object-contain w-full h-full" />
+              <QRCodeWithAvatar
+                value={qrValue}
+                avatarUrl={props.data.avatarUrl}
+                useDarkTheme={isDark}
+                alt="登录二维码"
+                className="object-contain w-full h-full"
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-8 justify-center items-center w-200 h-200">

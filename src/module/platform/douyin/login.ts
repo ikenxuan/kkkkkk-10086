@@ -5,6 +5,7 @@ import { buildAmagiRequestConfig, douyinFetcher, isSmsCodeVerifyWay } from '@/mo
 import { getErrorMessage } from '@/module/utils/error-message'
 import { isRecord } from '@/module/utils/record'
 import { readImageBytes } from '@/module/utils/imagePayload'
+import { resolveTriggerAvatarUrl, type AvatarTriggerEvent } from '@/module/utils/avatar'
 import { Common, Config, Render } from '@/module/utils/index'
 
 /**
@@ -35,8 +36,13 @@ const CODE_PATTERN = /^\d{6}$/
 /** 登录凭证里需要确认下发的关键 cookie */
 const REQUIRED_COOKIES = ['sessionid', 'sessionid_ss', 'sid_guard', 'uid_tt', 'uid_tt_ss', 'ttwid']
 
-/** 登录流程使用的事件对象 */
-export interface DouyinLoginEvent {
+/**
+ * 登录流程使用的事件对象。
+ *
+ * 继承 `AvatarTriggerEvent` 的理由同 `bilibili/login.ts`：二维码中心那张头像要按
+ * 宿主事件真实声明过的字段取，而不是自己编一个形状。
+ */
+export interface DouyinLoginEvent extends AvatarTriggerEvent {
   reply: (message: unknown, quote?: boolean) => Promise<unknown>
   bot?: {
     recallMsg?: (event: unknown, id: unknown) => Promise<unknown>
@@ -274,7 +280,10 @@ export const dylogin = async (
     const validFor = qrcodeData.expires_in
     logger.mark(`[抖音登录] 二维码已获取，有效期 ${validFor} 秒`)
 
-    const rendered = await Render('douyin/qrcodeImg', { share_url: qrcodeData.content })
+    const rendered = await Render('douyin/qrcodeImg', {
+      share_url: qrcodeData.content,
+      avatarUrl: resolveTriggerAvatarUrl(e)
+    })
     const qrcodeImage = rendered ? rendered[0] : undefined
     if (!qrcodeImage) throw new Error('生成二维码图片失败')
 

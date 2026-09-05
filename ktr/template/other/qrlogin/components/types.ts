@@ -8,4 +8,6 @@ export interface QrLoginData {
   share_url: string
   /** 兼容旧调用方使用的二维码字段。 */
   qr_url?: string
+  /** 触发登录的用户头像 URL，嵌入二维码中心作为 logo；缺省时生成普通二维码 */
+  avatarUrl?: string
 }

@@ -9,6 +9,7 @@
 import type { GroupUserRankingRow } from '@/types/database'
 import type { MessageEvent } from '@/types/message'
 import { isRecord } from '@/module/utils/record'
+import { qqUserAvatarUrl } from '@/module/utils/avatar'
 
 /** 契约 `GroupStatisticsData['userRanking']` 的元素类型 */
 export interface GroupUserRankingEntry {
@@ -62,8 +63,7 @@ const shortenUserId = (userId: string): string =>
  * 其它（QQBot 的 openid 等）拿不到头像就返回 undefined，让契约里那个可选字段缺席，
  * 模板那格整个不渲染，而不是塞一个必然 404 的地址进去。
  */
-const userAvatarUrl = (userId: string): string | undefined =>
-  /^\d{5,}$/.test(userId) ? `https://q1.qlogo.cn/g?b=qq&nk=${userId}&s=640` : undefined
+const userAvatarUrl = (userId: string): string | undefined => qqUserAvatarUrl(userId)
 
 /**
  * 造一个「用户号 -> 昵称」的同步查询函数。

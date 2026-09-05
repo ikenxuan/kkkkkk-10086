@@ -262,13 +262,15 @@ export class kkkAdmin extends plugin<'message'> {
   }
 
   async Blogin (e: CommandEvent): Promise<boolean> {
-    // 同 dylogin：bilibiliLogin 只用到 reply 与 bot.recallMsg，且把 reply 声明为必填；命令事件上必然带 reply
+    // 同 dylogin：bilibiliLogin 只用到 reply、bot.recallMsg 与取头像那两个身份字段，
+    // 且把 reply 声明为必填；命令事件上必然带 reply
     await bilibiliLogin(e as Parameters<typeof bilibiliLogin>[0])
     return true
   }
 
   async dylogin (e: CommandEvent): Promise<boolean> {
-    // dylogin 只用到 reply 与 bot.recallMsg，而其形参把 reply 声明为必填；命令事件上必然带 reply
+    // dylogin 只用到 reply、bot.recallMsg 与取头像那两个身份字段，而其形参把 reply
+    // 声明为必填；命令事件上必然带 reply
     await dylogin(e as Parameters<typeof dylogin>[0], {
       // 等待秒数由 dylogin 给（它把同一个数字写进了提示文案），这里不能自己定一个别的
       waitForCode: async (prompt, timeoutSeconds) => {

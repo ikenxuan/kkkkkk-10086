@@ -3,9 +3,16 @@ import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiCl
 import * as QRCode from 'qrcode'
 import fs from 'node:fs'
 import { isRecord } from '@/module/utils/record'
+import { resolveTriggerAvatarUrl, type AvatarTriggerEvent } from '@/module/utils/avatar'
 
-/** 登录流程使用的事件对象，与 douyin/login.ts 的 DouyinLoginEvent 保持一致 */
-export interface BilibiliLoginEvent {
+/**
+ * 登录流程使用的事件对象，与 douyin/login.ts 的 DouyinLoginEvent 保持一致。
+ *
+ * 继承 `AvatarTriggerEvent` 是为了让二维码那张头像有据可依：那两个字段的形状取自
+ * `@/types/message` 的 `MessageEvent`（本仓对宿主事件的镜像），而调用点传进来的
+ * 本来就是完整的宿主事件。
+ */
+export interface BilibiliLoginEvent extends AvatarTriggerEvent {
   reply: (message: unknown, quote?: boolean) => Promise<unknown>
   bot?: {
     recallMsg?: (event: unknown, id: unknown) => Promise<unknown>
@@ -68,7 +75,10 @@ export const bilibiliLogin = async (e: BilibiliLoginEvent): Promise<void> => {
   // 发送免责声明和二维码
   const disclaimerMsg = await e.reply('免责声明:\n您将通过扫码完成获取哔哩哔哩网页端的用户登录凭证（ck），该ck将用于请求哔哩哔哩WEB API接口。\n本BOT不会上传任何有关你的信息到第三方，所配置的 ck 只会用于请求官方 API 接口。\n我方仅提供视频解析及相关哔哩哔哩内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~') // 发送免责声明
   const qrcodeMsg = await e.reply(
-    await Render('bilibili/qrcodeImg', { share_url: shareUrl }),
+    await Render('bilibili/qrcodeImg', {
+      share_url: shareUrl,
+      avatarUrl: resolveTriggerAvatarUrl(e)
+    }),
     true
   )
 

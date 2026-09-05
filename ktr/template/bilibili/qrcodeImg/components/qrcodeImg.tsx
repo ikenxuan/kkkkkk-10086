@@ -4,8 +4,8 @@ import React from 'react'
 import { RiArrowRightFill } from 'react-icons/ri'
 
 import { DefaultLayout } from '../../../components/DefaultLayout'
+import { QRCodeWithAvatar } from '../../../components/QRCodeWithAvatar'
 import type { PosterProps } from '../../../types/ctx'
-import { generateQRCode } from '../../../../utils/QRcode'
 import { isDark as isDarkMode } from '../../../../utils/theme'
 import type { BilibiliQrcodeImgData } from './types'
 
@@ -16,7 +16,6 @@ import type { BilibiliQrcodeImgData } from './types'
  */
 export const BilibiliQrcodeImg: React.FC<PosterProps<BilibiliQrcodeImgData>> = React.memo((props) => {
   const isDark = isDarkMode(props.ctx)
-  const qrCodeDataUrl = generateQRCode(props.data.share_url, isDark)
 
   const theme = {
     bg: isDark ? '#000000' : '#FFFFFF',
@@ -126,8 +125,14 @@ export const BilibiliQrcodeImg: React.FC<PosterProps<BilibiliQrcodeImgData>> = R
               height: '800px'
             }}
           >
-            {qrCodeDataUrl ? (
-              <img src={qrCodeDataUrl} alt="QR Code" className="w-full h-full object-contain" />
+            {props.data.share_url ? (
+              <QRCodeWithAvatar
+                value={props.data.share_url}
+                avatarUrl={props.data.avatarUrl}
+                useDarkTheme={isDark}
+                alt="QR Code"
+                className="w-full h-full object-contain"
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-8">
                 <div className="w-24 h-24 border-4 border-border rounded-full animate-spin" style={{ borderTopColor: theme.accent }} />
