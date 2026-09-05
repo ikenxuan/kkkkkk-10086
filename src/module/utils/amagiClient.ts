@@ -281,6 +281,30 @@ export const kuaishouFetcher = lazyFetcher(() => wrapAmagiClient(loadAmagiModule
 export const xiaohongshuFetcher = lazyFetcher(() => wrapAmagiClient(loadAmagiModule().xiaohongshuFetcher))
 
 /**
+ * amagi 的四条免鉴权抖音接口（ikenxuan/amagi#188）：不要 cookie、不算签名，回原样 JSON。
+ *
+ * 这份结构类型是临时的 —— 那个 PR 还没进正式版本号，`DouyinFetcher` 里就没有这四个方法，
+ * 直接点过不了 tsc。amagi 正式发版后连 {@link douyinGuest} 一起删掉、调用点改回直接点
+ * `douyinFetcher`，才能重新拿到改名保护。
+ */
+export interface DouyinGuestFetcher {
+  fetchGuestUserInfo: (options: { unique_id: string }, cookie?: string, requestConfig?: AmagiRequestConfig) => Promise<unknown>
+  fetchGuestMusicInfo: (options: { music_id: string }, cookie?: string, requestConfig?: AmagiRequestConfig) => Promise<unknown>
+  fetchGuestMusicAwemeList: (options: { music_id: string, number?: number, cursor?: number }, cookie?: string, requestConfig?: AmagiRequestConfig) => Promise<unknown>
+  fetchEmojiResourceMeta: (options?: Record<string, never>, cookie?: string, requestConfig?: AmagiRequestConfig) => Promise<unknown>
+}
+
+/**
+ * 取一条免鉴权接口，装的 amagi 没有它时给 `undefined` —— `lazyFetcher` 是裸透传 Proxy，
+ * 方法不存在就是 `undefined(...)`，给 `undefined` 才能让调用方走各自的兜底。
+ * @param method 方法名
+ */
+export const douyinGuest = <K extends keyof DouyinGuestFetcher> (method: K): DouyinGuestFetcher[K] | undefined => {
+  const fetcher = douyinFetcher as unknown as Partial<DouyinGuestFetcher>
+  return typeof fetcher[method] === 'function' ? fetcher[method] : undefined
+}
+
+/**
  * 抖音二次验证的方式判定。
  *
  * 四个 passport 取数方法都在 `douyinFetcher` 上（因此天然过 {@link wrapAmagiClient}，

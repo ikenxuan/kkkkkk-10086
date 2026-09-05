@@ -91,6 +91,7 @@ vi.mock('../../src/module/platform/bilibili/index.js', () => ({
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   bilibiliFetcher: new Proxy({}, { get: () => vi.fn() }),
   douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 vi.mock('../../src/module/platform/bilibili/login.js', () => ({ bilibiliLogin: vi.fn() }))

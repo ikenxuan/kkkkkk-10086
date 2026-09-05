@@ -93,6 +93,7 @@ vi.mock('../../src/module/utils/index.js', async () => {
 
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 
@@ -112,6 +113,12 @@ vi.mock('../../src/module/platform/common/livePhoto.js', () => ({
 
 vi.mock('../../src/module/platform/douyin/index.js', () => ({
   douyinComments: mocks.douyinComments
+}))
+
+// 限时表情补充包会真下 1.9MB zip，单测里连接口都不该碰：表情表原样透传
+vi.mock('../../src/module/platform/douyin/emojiRes.js', () => ({
+  mergeDouyinEmojiList: <T> (base: readonly T[]): T[] => [...base],
+  syncDouyinEmojiResourceOnce: vi.fn(async () => null)
 }))
 
 vi.mock('../../src/module/platform/douyin/workType.js', () => ({

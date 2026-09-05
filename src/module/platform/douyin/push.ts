@@ -5,6 +5,7 @@ import type { DouyinPushType } from '@/types/database'
 import type { DouyinPushItem as DouyinPushConfigItem } from '@/types/config'
 import type { DouyinIdData } from './getid.js'
 import { getDouyinID, douyinProcessVideos, pickDouyinPlayUrl } from './index.js'
+import { resolveDouyinUserByShortId } from './resolveUser.js'
 import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import type { LivePhotoBatchItem } from '@/module/platform/common/types'
@@ -171,6 +172,16 @@ export class DouYinpush extends Base {
     for (const item of pushList) {
       if (item.sec_uid || !item.short_id) continue
       try {
+        // 先按 unique_id 精确解析，搜索只作兜底：它要签名（会被按概率拦），
+        // 且精确匹配失败后会退回 users[0]，有把订阅挂到同名另一个人身上的风险
+        const direct = await resolveDouyinUserByShortId(item.short_id)
+        if (direct) {
+          resolved.set(item.short_id, { sec_uid: direct.sec_uid, nickname: direct.nickname })
+          logger.info(`已为 ${item.remark || item.short_id} 补全 sec_uid: ${direct.sec_uid}`)
+          continue
+        }
+        logger.debug(`${item.short_id} 未能通过 user/info 解析，退回搜索接口`)
+
         const searchResult = await this.amagi.douyin.searchContent({
           query: item.short_id,
           type: 'user',
@@ -815,13 +826,6 @@ export class DouYinpush extends Base {
    * @returns {Promise<void>}
    */
   async setting (data: DouyinSearchResponse): Promise<void> {
-    const event = this.e as DouyinPushEvent & {
-      group_id: string | number
-      self_id: string | number
-      reply: NonNullable<BaseEvent['reply']>
-    }
-    const groupId = String(event.group_id)
-    const botId = String(event.self_id)
     const userCard = Array.isArray(data.data)
       ? data.data.find(item => item.card_unique_name === 'user')
       : undefined
@@ -832,6 +836,23 @@ export class DouYinpush extends Base {
     if (!sec_uid) {
       throw new Error('无法获取用户sec_uid')
     }
+    return await this.settingBySecUid(sec_uid)
+  }
+
+  /**
+   * 订阅/取消订阅的正体，只依赖 sec_uid。从 {@link setting} 里拆出来，是为了让免签名那条路
+   * 不必为了复用这段逻辑去伪造一份搜索结果的形状。
+   *
+   * @param sec_uid 用户 sec_uid
+   */
+  async settingBySecUid (sec_uid: string): Promise<void> {
+    const event = this.e as DouyinPushEvent & {
+      group_id: string | number
+      self_id: string | number
+      reply: NonNullable<BaseEvent['reply']>
+    }
+    const groupId = String(event.group_id)
+    const botId = String(event.self_id)
 
     const UserInfoData = await this.amagi.douyin.fetchUserProfile({ sec_uid, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig()) as DouyinProfileResponse
     const isSubscribed = await douyinDB?.isSubscribed(sec_uid, groupId)

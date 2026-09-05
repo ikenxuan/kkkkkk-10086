@@ -2,6 +2,7 @@ import { bilibiliDB, douyinDB } from '@/module/db/index'
 import { Bilibilipush, getBilibiliID } from '@/module/platform/bilibili/index'
 import { bilibiliFetcher, buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClient'
 import { DouYinpush, getDouyinID } from '@/module/platform/douyin/index'
+import { resolveDouyinUserByShortId } from '@/module/platform/douyin/resolveUser'
 import { Config, wrapWithErrorHandler } from '@/module/utils/index'
 import type { PluginRule, PluginTask } from 'trss-yunzai'
 import type { BilibiliPushItem, DouyinPushItem } from '@/types/config'
@@ -146,6 +147,13 @@ export class kkkPush extends plugin<'message'> {
     }
 
     if (e.isPrivate) return true
+    // 先按抖音号精确解析；输入是昵称时返回 null，自然落到下面的模糊搜索
+    const direct = await resolveDouyinUserByShortId(query)
+    if (direct) {
+      await new DouYinpush(e).settingBySecUid(direct.sec_uid)
+      return true
+    }
+
     const data = await douyinFetcher.searchContent({ query, typeMode: 'strict' }, Config.cookies.douyin, buildAmagiRequestConfig())
     await new DouYinpush(e).setting(
       requireData(data, '抖音搜索数据') as Parameters<DouYinpush['setting']>[0]

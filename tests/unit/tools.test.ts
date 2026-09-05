@@ -63,6 +63,7 @@ vi.mock('../../src/module/platform/douyin/index.js', () => ({
 // 任何方法都返回 undefined，与旧的 `getDouyinData: vi.fn()` 同义：这些用例不该走到取数
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 

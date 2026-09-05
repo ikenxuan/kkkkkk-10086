@@ -109,6 +109,7 @@ vi.mock('../../src/module/platform/douyin/getid.js', () => ({
 }))
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   douyinFetcher: bareDouyinFetcherStub,
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 

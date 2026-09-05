@@ -31,6 +31,7 @@ vi.mock('../../src/module/db/index.js', () => ({ getStatisticsDB: vi.fn().mockRe
 vi.mock('../../src/module/platform/common/liveRecord.js', () => ({ recordLiveRoom: vi.fn() }))
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   douyinFetcher: new Proxy({}, { get: () => vi.fn() }),
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
 vi.mock('../../src/module/platform/douyin/index.js', () => ({

@@ -80,6 +80,7 @@ vi.mock('../../src/module/utils/amagiClient.js', () => ({
     fetchLiveRoomInfo: doubles.fetchLiveRoomInfo,
     fetchUserProfile: doubles.fetchUserProfile
   },
+  douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: doubles.buildAmagiRequestConfig
 }))
 
