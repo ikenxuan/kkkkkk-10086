@@ -13,16 +13,15 @@ jobs:
     steps:
       # 原来用的 actions-cool/issues-helper 在 2026-05-19 被 GitHub 以违反 ToS 封禁
       # （API 返回 Repository access blocked / reason: tos），拉取 action 这一步就失败，
-      # 于是这个流程每次开 issue 都红。改用官方 github-script 自己实现，行为保持不变。
-      - name: 首次提 issue 的作者才欢迎
+      # 于是这个流程每次开 issue 都红。改用官方 github-script 自己实现。
+      - name: 回应新 issue 的作者
         uses: actions/github-script@v9
         with:
           script: |
             const { owner, repo } = context.repo
             const author = context.payload.issue.user.login
 
-            // issues-helper 的 welcome 动作只招呼「第一次提 issue 的人」，这里照样只看作者
-            // 的历史 issue 数。
+            // 查作者的历史 issue 数，用来区分首次提 issue 的人和老作者
             //
             // 用 listForRepo 而不是 search：search 走的是最终一致的索引，而这个流程在
             // issues.opened 的瞬间就跑（实测 #128 创建于 05:34:17、workflow 05:34:19 触发，
@@ -37,16 +36,18 @@ jobs:
             const authored = issues.filter(item => !item.pull_request)
 
             // 当前这条已经建好了，所以首次提 issue 的人这里恰好是 1 条
-            if (authored.length > 1) {
-              core.info(`${author} 之前提过 ${authored.length - 1} 个 issue，跳过欢迎`)
-              return
+            const isFirstIssue = authored.length <= 1
+            if (!isFirstIssue) {
+              core.info(`${author} 之前提过 ${authored.length - 1} 个 issue，发老作者的回应`)
             }
 
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: context.issue.number,
-              body: `你好 @${author}，我们注意到你是第一次创建问题，感谢你的加入！我们非常期待你的想法和贡献。🌟`
+              body: isFirstIssue
+                ? `你好 @${author}，我们注意到你是第一次创建问题，感谢你的加入！我们非常期待你的想法和贡献。🌟`
+                : `你好 @${author}，感谢你再次反馈！我们已经看到这个问题，会尽快跟进。🙌`
             })
 
             await github.rest.reactions.createForIssue({
