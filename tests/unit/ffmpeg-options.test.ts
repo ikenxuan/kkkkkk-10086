@@ -125,8 +125,7 @@ const defaultLogger = {
 }
 const defaultSegment = {
   file: vi.fn(file => ({ type: 'file', file })),
-  video: vi.fn(file => ({ type: 'video', file })),
-  reply: vi.fn(messageId => ({ type: 'reply', messageId }))
+  video: vi.fn(file => ({ type: 'video', file }))
 }
 
 globalThis.logger = defaultLogger as unknown as typeof logger
@@ -143,7 +142,6 @@ afterEach(() => {
   defaultLogger.info.mockClear()
   defaultSegment.file.mockClear()
   defaultSegment.video.mockClear()
-  defaultSegment.reply.mockClear()
   configMock.cookies = {}
   configMock.request = {}
   configMock.pushlist = {}
@@ -284,12 +282,12 @@ describe('Base compatibility', () => {
       uploadDependencies
     )
 
-    expect(defaultSegment.reply).toHaveBeenCalledWith(123)
+    expect(reply.mock.calls[1]?.[0]).toEqual([expect.any(String), { type: 'reply', id: 123 }])
   })
 
   it('unwraps QQBot array message IDs before quoting the compression notice', async () => {
     // QQBot（wind-trace/Yunzai-QQBot-Plugin index.js:807）的 message_id 是数组，
-    // 直接当标量塞给 segment.reply 会拼出坏引用
+    // 引用元素应取首个 ID，不能直接传入整个数组
     configMock.upload = {
       compress: true,
       compresstrigger: 1,
@@ -312,7 +310,7 @@ describe('Base compatibility', () => {
       uploadDependencies
     )
 
-    expect(defaultSegment.reply).toHaveBeenCalledWith('notice-id')
+    expect(reply.mock.calls[1]?.[0]).toEqual([expect.any(String), { type: 'reply', id: 'notice-id' }])
   })
 
   it('keeps compression notice reply failures observable', async () => {

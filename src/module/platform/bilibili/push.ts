@@ -1,4 +1,4 @@
-import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, Render, uploadFile, Version, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
+import { Base, baseHeaders, Common, Config, downloadFile, mergeFile, readMessageId, Render, uploadFile, Version, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { bilibiliProcessVideos, cover, generateDecorationCard, getBilibiliDash, getBilibiliPayload, getvideosize, replacetext } from './bilibili.js'
 import { buildBilibiliLiveSessionId, parseBilibiliLiveStartedAt } from './live-status.js'
 import {
@@ -633,8 +633,7 @@ export class Bilibilipush extends Base {
         }
 
         // Render 返回 false 表示这一轮渲染失败（截图超时、模板报错等）。
-        // 原来会一路落到下面 `status = img ? … : { message_id: '1' }` 的兜底分支，
-        // 拿到一个假 message_id 之后照样写已推缓存，于是这条动态再也不会重试 ——
+        // 若按无需发送卡片的情况写入已推缓存，这条动态就再也不会重试 ——
         // 线上表现是「浏览器抖一下就永久漏推一条」。douyin/push.ts 早就这么拦了，这里漏了。
         if (!skip && img === false) {
           logger.warn(`[Bilibili 推送] 动态 ${dynamicId} 渲染失败，保留未推送状态等待下一轮重试`)
@@ -650,7 +649,7 @@ export class Bilibilipush extends Base {
             if (!skip) {
               const { groupId, botId } = target
               const group = Bot?.[botId]?.pickGroup(groupId)
-              // 发送消息,如果bot不存在或群组不存在,则默认message_id为1,防止bot上线发一堆消息
+              // bot/群不存在时仍记为已处理，防止上线后补发堆积的动态，但不虚构引用 ID。
               if (group) {
                 if (dynamicItem.dynamic_type === DynamicType.ARTICLE && articleForwardPayload) {
                   const forwardMessage = await createBilibiliRichTextForwardMessage(
@@ -674,12 +673,12 @@ export class Bilibilipush extends Base {
                   )
                   if (forwardMessage) await group.sendMsg(forwardMessage as GroupSendable)
                 }
-                status = img ? await group.sendMsg(img as GroupSendable) : { message_id: '1' }
+                status = img ? await group.sendMsg(img as GroupSendable) : undefined
+                cardDelivered = img ? Boolean(status?.message_id) : true
               } else {
                 logger.warn(`bot${botId}不存在或群${groupId}不存在`)
-                status = { message_id: '1' }
+                cardDelivered = true
               }
-              cardDelivered = Boolean(status?.message_id)
               // parsedynamic 只是「要不要顺带解析」的总开关，parseDynamicTypes 才是「解析哪些类型」。
               // 后者 config/default_config 和锅巴面板都暴露了，但这里原来只读总开关，
               // 于是用户取消勾选的类型照样会被二次解析、在卡片之后多发一条视频/图集消息。
@@ -716,14 +715,12 @@ export class Bilibilipush extends Base {
                         dycrad.bvid || ''
                       )
                       if ((Config.upload.usefilelimit && Number(videoSize) > Number(Config.upload.filelimit)) && !Config.upload.compress) {
+                        const messageId = readMessageId(status)
                         Bot?.[botId]?.pickGroup(groupId) && await Bot?.[botId]?.pickGroup(groupId)?.sendMsg(
                           [
                             `设定的最大上传大小为 ${Config.upload.filelimit}MB\n当前解析到的视频大小为 ${Number(videoSize)}MB\n视频太大了，还是去B站看吧~`,
-                            segment.reply(
-                              status && typeof status === 'object' && 'message_id' in status
-                                ? String(status.message_id)
-                                : '1'
-                            )
+                            // 宿主类型只声明字符串 ID；类型断言不转换 OneBot 的数字 ID。
+                            ...(messageId !== undefined ? [{ type: 'reply' as const, id: messageId as string }] : [])
                           ]
                         )
                         break
@@ -873,7 +870,7 @@ export class Bilibilipush extends Base {
           } finally {
             // 只有确实送达（或被过滤跳过）才写已推标记。
             // 原来这里是无条件写的，理由是「防止重复推送」—— 但 bot 上线补推那个场景已经由
-            // 上面 bot/群不存在时的 message_id: '1' 兜底覆盖了。发送本身抛错（风控、网络抖动、
+            // 上面 bot/群不存在时的已处理状态覆盖了。发送本身抛错（风控、网络抖动、
             // 消息过长）时无条件写缓存，等于把这条动态永久吞掉，群里永远收不到。
             if (cardDelivered) {
               await bilibiliDB?.addDynamicCache(
