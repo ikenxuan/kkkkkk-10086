@@ -35,8 +35,12 @@ interface HostPuppeteerBase {
 
 type DealTemplate = (name: string, data: Record<string, unknown>) => string | false
 
-interface YunzaiPuppeteer extends HostPuppeteerBase {
+interface TemplateRenderer {
   dealTpl?: DealTemplate
+}
+
+interface YunzaiPuppeteer extends HostPuppeteerBase, TemplateRenderer {
+  renderers?: Map<string, TemplateRenderer>
 }
 
 const { default: hostPuppeteer } = await importHost<HostPuppeteerModule>('lib', 'puppeteer', 'puppeteer.js')
@@ -48,9 +52,15 @@ const yunzaiPuppeteer = hostPuppeteer as YunzaiPuppeteer
  * renderer-relative path unchanged; ordinary Yunzai templates keep the native
  * `dealTpl` implementation.
  */
-const originalDealTemplate = yunzaiPuppeteer.dealTpl
-if (originalDealTemplate) {
-  yunzaiPuppeteer.dealTpl = (name, data) => {
+// An unnamed host renderer may expose a dispatcher instead of a direct backend.
+const templateRenderers = new Set<TemplateRenderer>([
+  yunzaiPuppeteer,
+  ...(yunzaiPuppeteer.renderers?.values() ?? [])
+])
+for (const renderer of templateRenderers) {
+  const originalDealTemplate = renderer.dealTpl
+  if (typeof originalDealTemplate !== 'function') continue
+  renderer.dealTpl = (name, data) => {
     const staticHtmlPath = data[STATIC_HTML_FILE_KEY]
     if (typeof staticHtmlPath === 'string') {
       const relativePath = relative(process.cwd(), staticHtmlPath)
@@ -62,7 +72,7 @@ if (originalDealTemplate) {
       }
       return false
     }
-    return originalDealTemplate.call(yunzaiPuppeteer, name, data)
+    return originalDealTemplate.call(renderer, name, data)
   }
 }
 
