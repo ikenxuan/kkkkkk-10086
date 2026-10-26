@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { existsSync } from 'node:fs'
+import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import type { xiaohongshuFetcher } from '../../src/module/utils/amagiClient.js'
 
@@ -9,7 +13,7 @@ import type { xiaohongshuFetcher } from '../../src/module/utils/amagiClient.js'
 type XiaohongshuApiMethod = keyof typeof xiaohongshuFetcher
 
 const configMock = vi.hoisted(() => ({
-  app: { parseTip: false },
+  app: { parseTip: false, removeCache: false },
   cookies: { xiaohongshu: 'xhs-cookie' },
   xiaohongshu: { sendContent: [] as string[], numcomment: 5 }
 }))
@@ -198,6 +202,23 @@ beforeEach(() => {
 })
 
 describe('Xiaohongshu media tasks', () => {
+  it('cleans scratch files when preparing the live photo tip fails in archive mode', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-xhs-scratch-'))
+    const file = join(directory, 'live.mp4')
+    await writeFile(file, 'scratch')
+    buildLivePhotoMessagesBatchMock.mockResolvedValueOnce({
+      results: [{ messages: ['live-photo'] }], tempFiles: [{ filepath: file }], generatedLivePhoto: true
+    })
+    buildLivePhotoTipMessageMock.mockRejectedValueOnce(new Error('tip preparation failed'))
+    removeFileMock.mockImplementationOnce(async () => { await unlink(file) })
+    try {
+      await new Xiaohongshu({ reply: vi.fn(async () => undefined) } as never).XiaohongshuHandler(NOTE_ID)
+      expect(existsSync(file)).toBe(false)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   /**
    * 三条支线之间没有数据依赖：笔记卡和评论卡都只要上面取好的 `card` / `emojiData`，
    * 图集支线只要 `card.image_list`。这个闸门只在**三条都已启动**之后才放行，

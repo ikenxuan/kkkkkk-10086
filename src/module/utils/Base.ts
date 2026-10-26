@@ -1,4 +1,6 @@
 import { createRequire } from 'node:module'
+import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ProxyAuth } from '@/types/config'
 import type { FileInfo } from '@/types/platform'
@@ -27,6 +29,7 @@ import type { MessageEvent } from '@/types/message'
 import fs from 'fs'
 import { getErrorMessage } from './error-message.js'
 import { isRecord } from './record.js'
+import { getCachePolicy, isManagedMediaFile } from './cache/runtime.js'
 import type { AmagiDependencies, AmagiModule, AmagiProxyClient, ApiErrorRecord, BaseEvent, DownloadFileOptions, MessageTarget, UploadFileDependencies, UploadFileOptions, VideoDownloadOptions } from './types.js'
 
 const require = createRequire(import.meta.url)
@@ -569,6 +572,33 @@ const sendVideoUrl = async (
  */
 const MESSAGE_SEGMENT_VIDEO_LIMIT_MB = 102
 
+const videoRemovalTimers = new Map<string, ReturnType<typeof setTimeout>>()
+const videoUploadConsumers = new Map<string, number>()
+
+const cancelVideoRemoval = (filePath: string): void => {
+  const timer = videoRemovalTimers.get(filePath)
+  if (timer) clearTimeout(timer)
+  videoRemovalTimers.delete(filePath)
+}
+
+const scheduleVideoRemoval = (filePath: string): void => {
+  cancelVideoRemoval(filePath)
+  if (isManagedMediaFile(filePath) || videoUploadConsumers.has(filePath)) return
+  let identity: fs.Stats
+  try { identity = fs.statSync(filePath) } catch { return }
+  const timer = setTimeout(() => {
+    if (videoRemovalTimers.get(filePath) !== timer) return
+    videoRemovalTimers.delete(filePath)
+    try {
+      const current = fs.statSync(filePath)
+      if (current.dev !== identity.dev || current.ino !== identity.ino || current.size !== identity.size || current.mtimeMs !== identity.mtimeMs) return
+    } catch { return }
+    Common.removeFile(filePath).catch(() => {})
+  }, getCachePolicy().mediaTtlMs ?? 10 * 60 * 1000)
+  timer.unref?.()
+  videoRemovalTimers.set(filePath, timer)
+}
+
 /**
  * 远程 URL 直发前的体积门：**已知**体积超过消息段上限时才拦。
  *
@@ -616,6 +646,32 @@ export const uploadFile = async (
   options?: UploadFileOptions,
   dependencies: UploadFileDependencies = defaultUploadFileDependencies
 ): Promise<boolean> => {
+  const sourcePath = file.filepath
+  cancelVideoRemoval(sourcePath)
+  videoUploadConsumers.set(sourcePath, (videoUploadConsumers.get(sourcePath) ?? 0) + 1)
+  try {
+    return await uploadFileContents(e, file, videoUrl, options, dependencies)
+  } finally {
+    const remaining = (videoUploadConsumers.get(sourcePath) ?? 1) - 1
+    if (remaining > 0) videoUploadConsumers.set(sourcePath, remaining)
+    else videoUploadConsumers.delete(sourcePath)
+    Common.registerVideoPreview(file.filepath, Boolean(Config.app.removeCache))
+    // The same legacy file can feed concurrent senders. Start retention only
+    // when all have finished, and leave managed workspaces to their leases.
+    if (Config.app.removeCache) {
+      scheduleVideoRemoval(sourcePath)
+      if (file.filepath !== sourcePath) scheduleVideoRemoval(file.filepath)
+    }
+  }
+}
+
+const uploadFileContents = async (
+  e: BaseEvent,
+  file: FileInfo,
+  videoUrl: string,
+  options: UploadFileOptions | undefined,
+  dependencies: UploadFileDependencies
+): Promise<boolean> => {
   let newFileSize = file.totalBytes
   const isActiveMessage = options?.active && options?.activeOption
 
@@ -633,7 +689,7 @@ export const uploadFile = async (
     const compressedPath = await mergeFile('压缩视频', {
       path: file.filepath,
       targetBitrate,
-      resultPath: `${Common.tempDri.video}tmp_${Date.now()}.mp4`
+      resultPath: `${Common.tempDri.video}tmp_${Date.now()}_${randomUUID()}.mp4`
     })
     file.filepath = String(compressedPath)
 
@@ -707,7 +763,6 @@ export const uploadFile = async (
   } else {
     File = useGroupFile ? file.filepath : `file://${file.filepath}`
   }
-  Common.registerVideoPreview(file.filepath, Boolean(Config.app.removeCache))
 
   try {
     const msgType = isActiveMessage ? '主动' : '被动'
@@ -753,16 +808,6 @@ export const uploadFile = async (
     }
     logger.error('视频文件上传错误,' + String(error))
     return false
-  } finally {
-    // 用 if 而不是 `a && b && c` 链：宿主的 logger.info 最终落到 log4js 的
-    // `Logger.prototype[levelMethod] = function (...args) { this.log(level, ...args) }`，
-    // 那个函数没有 return，所以返回 undefined。写成 && 链的话第二项就短路了，
-    // 后面的 setTimeout 从来没注册过 —— removeCache 默认是 true，而这里是普通解析
-    // 路径（downloadVideo -> uploadFile）唯一的删除点，于是缓存视频只增不减。
-    if (Config.app.removeCache) {
-      logger.info(`文件 ${file.filepath} 将在 10 分钟后删除`)
-      setTimeout(() => Common.removeFile(file.filepath), 10 * 60 * 1000)
-    }
   }
 }
 
@@ -870,8 +915,9 @@ export const downloadVideo = async (
 
   // 下载文件。备用地址要一路带下去 —— 这里是绝大多数视频下载的入口，
   // 漏了它就等于只有 downloadMergedStream 那一条路享受到换地址重试。
+  const temporaryTitle = path.parse(downloadOpt.title.timestampTitle || 'temp')
   let res = await downloadFile(downloadOpt.video_url, {
-    title: Config.app.removeCache ? (downloadOpt.title.timestampTitle || 'temp') : processFilename(downloadOpt.title.originTitle || 'video', 50),
+    title: Config.app.removeCache ? `${temporaryTitle.name}_${randomUUID()}${temporaryTitle.ext}` : processFilename(downloadOpt.title.originTitle || 'video', 50),
     headers: downloadOpt.headers || baseHeaders,
     isLiveStream: downloadOpt.isLiveStream,
     liveStreamMaxSize: downloadOpt.liveStreamMaxSize,

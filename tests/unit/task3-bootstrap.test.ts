@@ -32,6 +32,10 @@ vi.mock('../../src/module/utils/Config.js', () => ({
   default: { app: { APIServer: false } }
 }))
 
+vi.mock('../../src/module/utils/cache/runtime.js', () => ({
+  startCacheMaintenance: vi.fn()
+}))
+
 vi.mock('../../src/module/db/index.js', () => ({
   initAllDatabases: bootstrapMocks.initAllDatabases
 }))

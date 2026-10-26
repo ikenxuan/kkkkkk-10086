@@ -1,7 +1,7 @@
-import { Config, Version, Common } from '@/module/utils/index'
+import { Config, Version } from '@/module/utils/index'
 import { bilibiliLogin } from '@/module/platform/bilibili/login'
 import { dylogin } from '@/module/platform/douyin/login'
-import fs from 'fs'
+import { sweepPluginCache } from '@/module/utils/cache/runtime'
 import type { PluginTask } from 'trss-yunzai'
 import type { ConfigName } from '@/types/config'
 import type { CommandEvent } from '@/types/message'
@@ -216,10 +216,14 @@ export class kkkAdmin extends plugin<'message'> {
   }
 
   async deltemp (): Promise<boolean> {
-    await removeAllFiles(Common.tempDri.video)
-      .then(() => logger.warn(Common.tempDri.video + '所有文件已删除'))
-      .catch((err: unknown) => logger.error('删除文件时出错:', err))
-    return true
+    try {
+      const result = await sweepPluginCache()
+      logger.info(`缓存清理：检查 ${result.scanned} 项，删除 ${result.deleted} 项，释放 ${result.bytes} 字节，失败 ${result.failed} 项`)
+      return result.failed === 0
+    } catch {
+      logger.error('缓存清理失败')
+      return false
+    }
   }
 
   async ConfigSwitch (e: CommandEvent): Promise<boolean> {
@@ -357,26 +361,4 @@ function checkNumberValue (value: string | undefined, limit: string | number[]):
   if (min !== undefined && num < min) return min
   if (max !== undefined && num > max) return max
   return num
-}
-
-function removeAllFiles (directory: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!fs.existsSync(directory)) {
-      resolve()
-      return
-    }
-    fs.readdir(directory, (err, files) => {
-      if (err) {
-        reject(err)
-        return
-      }
-      const deletePromises = files.map(file => {
-        const filePath = `${directory}/${file}`
-        return new Promise<void>((resolve, reject) => {
-          fs.unlink(filePath, err => err ? reject(err) : resolve())
-        })
-      })
-      Promise.all(deletePromises).then(() => resolve()).catch(reject)
-    })
-  })
 }

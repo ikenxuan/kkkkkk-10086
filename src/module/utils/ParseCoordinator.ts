@@ -1,5 +1,6 @@
 import { MAX_MEDIA_TASK_TIMEOUT_MS } from './MediaTasks.js'
 import { withDownloadBucket } from './Network/DownloadBudget.js'
+import { withMediaCacheScope } from './cache/runtime.js'
 import {
   ParseScheduler,
   type ParseSchedulerSnapshot,
@@ -182,7 +183,7 @@ export class ParseCoordinator {
     // 两层闭包都得把 signal 接住再往里递。以前这里是两个零参箭头函数，
     // guard 递进来的取消信号直接掉在地上：超时点上外层 Promise reject 了，
     // 真实任务却毫无察觉地跑到底，继续占着连接和内存。
-    return this.scheduler.submit(fingerprint, async signal => await withDownloadBucket(identity.platform, async () => {
+    return this.scheduler.submit(fingerprint, async signal => await withDownloadBucket(identity.platform, async () => await withMediaCacheScope(async () => {
       notifyReaction(reaction, 'processing')
 
       try {
@@ -193,7 +194,7 @@ export class ParseCoordinator {
         notifyReaction(reaction, 'failed')
         throw error
       }
-    }))
+    })))
   }
 
   getSnapshot (): ParseSchedulerSnapshot {

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import fs, { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -23,6 +23,7 @@ const configMock = vi.hoisted(() => ({
 const renderMock = vi.hoisted(() => vi.fn())
 const loopVideoWithTransitionMock = vi.hoisted(() => vi.fn())
 const ffmpegMock = vi.hoisted(() => vi.fn())
+const scratch = vi.hoisted(() => ({ partialUrls: new Set<string>(), created: [] as string[] }))
 
 vi.mock('../../src/module/utils/Network/index.js', () => ({
   baseHeaders: {},
@@ -41,6 +42,8 @@ vi.mock('../../src/module/utils/Network/index.js', () => ({
         : this.url.includes('live') ? mp4Fixture : jpegFixture
       mkdirSync(dirname(this.filepath), { recursive: true })
       writeFileSync(this.filepath, payload)
+      scratch.created.push(this.filepath)
+      if (scratch.partialUrls.has(this.url)) throw new Error('download interrupted after writing')
       return { filepath: this.filepath, totalBytes: payload.length }
     }
   }
@@ -104,6 +107,8 @@ beforeEach(() => {
   ffmpegMock.mockReset()
   loopVideoWithTransitionMock.mockReset()
   loopVideoWithTransitionMock.mockResolvedValue({ success: true })
+  scratch.partialUrls.clear()
+  scratch.created = []
 })
 
 afterAll(() => {
@@ -188,6 +193,60 @@ describe('buildLivePhotoMessages system modes', () => {
 })
 
 describe('buildLivePhotoMessages generation modes', () => {
+  it.each([staticUrl, liveVideoUrl])('lets the caller clean partial download %s when archive mode is enabled', async failedUrl => {
+    configMock.app.removeCache = false
+    scratch.partialUrls.add(failedUrl)
+    const result = await buildLivePhotoMessages({ platform: 'test', staticUrl, liveVideoUrl })
+    expect(result.messages).toEqual([])
+    for (const file of result.tempFiles) rmSync(file.filepath, { force: true })
+    expect(scratch.created.every(file => !existsSync(file))).toBe(true)
+  })
+
+  it('lets the caller clean a partially written failed loop video', async () => {
+    configMock.app = { removeCache: false, livePhotoMode: 'video_only' }
+    loopVideoWithTransitionMock.mockImplementation(async ({ outputPath }: { outputPath: string }) => {
+      writeFileSync(outputPath, 'partial loop video')
+      scratch.created.push(outputPath)
+      return { success: false }
+    })
+    const result = await buildLivePhotoMessages({ platform: 'test', staticUrl, liveVideoUrl })
+    for (const file of result.tempFiles) rmSync(file.filepath, { force: true })
+    expect(scratch.created.every(file => !existsSync(file))).toBe(true)
+  })
+
+  it('cleans a partially written failed JPEG conversion', async () => {
+    configMock.app = { removeCache: false, livePhotoMode: 'livephoto_only' }
+    ffmpegMock.mockImplementation(async (args: string[]) => {
+      const output = args.at(-1)!
+      writeFileSync(output, 'partial jpeg')
+      scratch.created.push(output)
+      return { status: false }
+    })
+    const result = await buildLivePhotoMessages({ platform: 'test', staticUrl: 'https://example.com/not-an-image.bin', liveVideoUrl })
+    for (const file of result.tempFiles) rmSync(file.filepath, { force: true })
+    expect(scratch.created.every(file => !existsSync(file))).toBe(true)
+  })
+
+  it('lets the caller clean a partially written motion photo after the writer fails', async () => {
+    configMock.app = { removeCache: false, livePhotoMode: 'livephoto_only' }
+    const originalWrite = fs.writeFileSync
+    const writer = vi.spyOn(fs, 'writeFileSync').mockImplementation((file, data, options) => {
+      if (typeof file === 'string' && /MVIMG_[^/\\]+\.jpg$/.test(file)) {
+        originalWrite(file, 'partial motion photo')
+        scratch.created.push(file)
+        throw new Error('write interrupted')
+      }
+      originalWrite(file, data, options)
+    })
+    try {
+      const result = await buildLivePhotoMessages({ platform: 'test', staticUrl, liveVideoUrl })
+      for (const file of result.tempFiles) rmSync(file.filepath, { force: true })
+      expect(scratch.created.every(file => !existsSync(file))).toBe(true)
+    } finally {
+      writer.mockRestore()
+    }
+  })
+
   it('produces both a looped video and a live photo by default', async () => {
     const result = await buildLivePhotoMessages({ platform: 'test', staticUrl, liveVideoUrl, index: 0 })
 

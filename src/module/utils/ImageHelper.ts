@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { randomUUID } from 'node:crypto'
 import axios, { type AxiosRequestConfig } from 'axios'
 import Common from './Common.js'
 import Config from './Config.js'
@@ -7,6 +8,7 @@ import { runWithDownloadSlot } from './Network/DownloadBudget.js'
 import { getErrorMessage } from './error-message.js'
 import { sanitizeFilenameSegment } from './filename.js'
 import { baseHeaders } from './Network/index.js'
+import { getCachePolicy, isManagedMediaFile } from './cache/runtime.js'
 
 const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)$/i
 
@@ -28,7 +30,7 @@ const buildImageFilePath = (imageUrl: string, title: string, index?: number): st
   const ext = getExtension(imageUrl)
   const suffix = index === undefined ? '' : `_${index}`
   const basename = Config.app.removeCache
-    ? `tmp_${Date.now()}${suffix}`
+    ? `tmp_${Date.now()}_${randomUUID()}${suffix}`
     : `${sanitizeFilename(title)}${suffix}`
   return path.join(Common.tempDri.images, `${basename}${ext}`)
 }
@@ -58,12 +60,13 @@ const downloadImageBuffer = async (
 }
 
 const scheduleImageDelete = (filePath: string): void => {
-  if (!Config.app.removeCache) return
-  setTimeout(() => {
+  if (!Config.app.removeCache || isManagedMediaFile(filePath)) return
+  const timer = setTimeout(() => {
     Common.removeFile(filePath, true).catch((error: unknown) => {
       logger.debug(`[ImageHelper] 删除临时图片失败: ${getErrorMessage(error)}`)
     })
-  }, 10 * 60 * 1000)
+  }, getCachePolicy().mediaTtlMs ?? 10 * 60 * 1000)
+  timer.unref?.()
 }
 
 export const processImageUrl = async (
