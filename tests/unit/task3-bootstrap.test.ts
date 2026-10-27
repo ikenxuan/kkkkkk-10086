@@ -2,12 +2,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const bootstrapMocks = vi.hoisted(() => {
   let resolveDirectoryCreation: (() => void) | undefined
+  let resolveDirectoriesRequested: (() => void) | undefined
   const directoryCreation = new Promise<void>(resolve => {
     resolveDirectoryCreation = resolve
   })
+  const directoriesRequested = new Promise<void>(resolve => {
+    resolveDirectoriesRequested = resolve
+  })
   return {
     directoryCreation,
-    mkdir: vi.fn(() => directoryCreation),
+    directoriesRequested,
+    mkdir: vi.fn(() => {
+      resolveDirectoriesRequested?.()
+      return directoryCreation
+    }),
     loadApps: vi.fn(async () => ({ apps: {}, loadedFiles: [], failedFiles: [] })),
     initAllDatabases: vi.fn(async () => {}),
     resolveDirectoryCreation: () => resolveDirectoryCreation?.()
@@ -60,14 +68,16 @@ describe('Task 3 bootstrap ordering', () => {
 
     const entryPromise = import('../../src/index.js')
 
-    await vi.waitFor(() => {
+    try {
+      // 等待 mkdir 的明确信号，不把模块转译/加载耗时限制在轮询默认的 1 秒内。
+      await bootstrapMocks.directoriesRequested
       expect(bootstrapMocks.initAllDatabases).toHaveBeenCalledOnce()
       expect(bootstrapMocks.mkdir).toHaveBeenCalledTimes(2)
-    })
-    expect(bootstrapMocks.loadApps).not.toHaveBeenCalled()
-
-    bootstrapMocks.resolveDirectoryCreation()
-    await entryPromise
+      expect(bootstrapMocks.loadApps).not.toHaveBeenCalled()
+    } finally {
+      bootstrapMocks.resolveDirectoryCreation()
+      await entryPromise
+    }
 
     expect(bootstrapMocks.loadApps).toHaveBeenCalledOnce()
   })
