@@ -1,4 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { existsSync } from 'node:fs'
+import { mkdtemp, readdir, rm, unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, sep } from 'node:path'
 
 /**
  * 抖音图文作品的三条支线互不牵连。
@@ -27,6 +31,9 @@ const mocks = vi.hoisted(() => ({
   isDouyinArticle: vi.fn(() => false),
   isDouyinVideo: vi.fn(() => false),
   buildLivePhotoMessagesBatch: vi.fn(),
+  buildLivePhotoTipMessage: vi.fn(),
+  removeFile: vi.fn(),
+  videoDirectory: 'tmp/',
   config: {
     getConfig: vi.fn(),
     app: { parseTip: false, removeCache: true },
@@ -76,8 +83,8 @@ vi.mock('../../src/module/utils/index.js', async () => {
       count: (value: unknown) => String(value ?? 0),
       convertTimestampToDateTime: () => '2026-08-18 12:00:00',
       mkdir: vi.fn(),
-      removeFile: vi.fn(async () => undefined),
-      tempDri: { images: '', video: 'tmp/' }
+      removeFile: mocks.removeFile,
+      tempDri: { images: '', get video () { return mocks.videoDirectory } }
     },
     Config: mocks.config,
     Networks: class {},
@@ -96,6 +103,7 @@ vi.mock('../../src/module/utils/amagiClient.js', () => ({
   douyinGuest: vi.fn(() => undefined),
   buildAmagiRequestConfig: vi.fn(() => ({}))
 }))
+vi.mock('../../src/module/utils/Config.js', () => ({ default: mocks.config }))
 
 vi.mock('../../src/module/platform/douyin/danmaku.js', () => ({
   burnDouyinDanmaku: vi.fn()
@@ -108,7 +116,7 @@ vi.mock('../../src/module/platform/common/danmaku.js', () => ({
 vi.mock('../../src/module/platform/common/livePhoto.js', () => ({
   buildLivePhotoMessages: vi.fn(),
   buildLivePhotoMessagesBatch: mocks.buildLivePhotoMessagesBatch,
-  buildLivePhotoTipMessage: vi.fn()
+  buildLivePhotoTipMessage: mocks.buildLivePhotoTipMessage
 }))
 
 vi.mock('../../src/module/platform/douyin/index.js', () => ({
@@ -200,6 +208,10 @@ beforeEach(() => {
   })
 
   mocks.config.douyin.douyinTip = ['图集', '背景音乐']
+  mocks.config.app.removeCache = true
+  mocks.videoDirectory = 'tmp/'
+  mocks.removeFile.mockReset().mockResolvedValue(undefined)
+  mocks.buildLivePhotoTipMessage.mockReset().mockResolvedValue('tip')
   mocks.config.douyin.sendContent = ['info', 'comment']
   mocks.config.getConfig.mockReturnValue({ sendContent: mocks.config.douyin.sendContent })
   mocks.isDouyinArticle.mockReturnValue(false)
@@ -221,6 +233,52 @@ beforeEach(() => {
 })
 
 describe('抖音图文作品的三条支线各自进行', () => {
+  it.each([false, true])('cleans scratch files when tip preparation fails (slides=%s, archive mode)', async slides => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-douyin-scratch-'))
+    const bgm = join(directory, 'bgm.mp3')
+    const live = join(directory, 'live.mp4')
+    await Promise.all([writeFile(bgm, 'bgm scratch'), writeFile(live, 'live scratch')])
+    mocks.config.app.removeCache = false
+    const response = structuredClone(imageWorkResponse)
+    response.data.aweme_detail.is_slides = slides
+    response.data.aweme_detail.images[0]!.clip_type = 1
+    mocks.parseWork.mockResolvedValue(response)
+    mocks.downloadFile.mockResolvedValue({ filepath: bgm })
+    mocks.buildLivePhotoMessagesBatch.mockResolvedValue({
+      results: [{ messages: ['live'] }], tempFiles: [{ filepath: live }], generatedLivePhoto: true
+    })
+    mocks.buildLivePhotoTipMessage.mockRejectedValue(new Error('tip assembly failed'))
+    mocks.removeFile.mockImplementation(async (file: string) => { await unlink(file) })
+    try {
+      await parseImageWork()
+      expect(existsSync(bgm)).toBe(false)
+      expect(existsSync(live)).toBe(false)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  it.each([false, true])('cleans a partial BGM download (slides=%s, archive mode)', async slides => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-douyin-bgm-'))
+    mocks.config.app.removeCache = false
+    mocks.videoDirectory = directory + sep
+    const response = structuredClone(imageWorkResponse)
+    response.data.aweme_detail.is_slides = slides
+    response.data.aweme_detail.images[0]!.clip_type = 1
+    mocks.parseWork.mockResolvedValue(response)
+    mocks.downloadFile.mockImplementation(async (_url: string, options: { title: string }) => {
+      await writeFile(join(directory, options.title), 'half downloaded')
+      throw new Error('download failed')
+    })
+    mocks.removeFile.mockImplementation(async (file: string) => { await unlink(file) })
+    try {
+      await parseImageWork()
+      expect(await readdir(directory)).toEqual([])
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   /**
    * 图集支线卡住时，封面卡和评论卡必须已经发出去了。
    *
@@ -244,14 +302,15 @@ describe('抖音图文作品的三条支线各自进行', () => {
       await vi.waitFor(() => {
         expect(mocks.render).toHaveBeenCalledWith('douyin/comment', expect.anything())
         expect(replies).toContain('rendered-comment')
+        // 两条支线独立调度，评论发完并不代表封面也已完成。
+        expect(mocks.processImageUrl).toHaveBeenCalledWith(
+          'https://example.com/1a.jpg',
+          expect.anything(),
+          0,
+          expect.anything()
+        )
+        expect(replies).toContainEqual([{ type: 'image', url: 'processed:https://example.com/1a.jpg' }])
       })
-      // 封面走 videoInfoMode: 'text'，回的是一条 segment.image 数组
-      expect(mocks.processImageUrl).toHaveBeenCalledWith(
-        'https://example.com/1a.jpg',
-        expect.anything(),
-        0,
-        expect.anything()
-      )
     } finally {
       release()
     }

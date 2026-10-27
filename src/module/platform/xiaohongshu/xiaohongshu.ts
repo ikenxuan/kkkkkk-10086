@@ -327,31 +327,30 @@ export class Xiaohongshu extends Base {
         const imageMessages: unknown[] = []
         const tempFiles: FileInfo[] = []
         let hasGeneratedLivePhoto = false
+        try {
+          const images = card.image_list || []
+          // 先把整批的下载在窗口里滚起来（ffmpeg 仍然按序串行），再按下标消费。
+          // 逐位对齐是关键：imageMessages 的顺序就是转发消息里图片的顺序。
+          const livePhotoBatch = await buildLivePhotoMessagesBatch(images)
+          tempFiles.push(...livePhotoBatch.tempFiles)
+          hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
 
-        const images = card.image_list || []
-        // 先把整批的下载在窗口里滚起来（ffmpeg 仍然按序串行），再按下标消费。
-        // 逐位对齐是关键：imageMessages 的顺序就是转发消息里图片的顺序。
-        const livePhotoBatch = await buildLivePhotoMessagesBatch(images)
-        tempFiles.push(...livePhotoBatch.tempFiles)
-        hasGeneratedLivePhoto = livePhotoBatch.generatedLivePhoto
+          for (const [index, item] of images.entries()) {
+            const livePhoto = livePhotoBatch.results[index]
+            if (livePhoto !== undefined && livePhoto.messages.length > 0) {
+              imageMessages.push(...livePhoto.messages)
+              continue
+            }
 
-        for (const [index, item] of images.entries()) {
-          const livePhoto = livePhotoBatch.results[index]
-          if (livePhoto !== undefined && livePhoto.messages.length > 0) {
-            imageMessages.push(...livePhoto.messages)
-            continue
+            const imageUrl = await processImageUrl(pickXiaohongshuImageUrl(item) ?? '', card.title || '小红书图片', index, {
+              Referer: 'https://www.xiaohongshu.com',
+              Cookie: Config.cookies.xiaohongshu
+            } as AxiosRequestConfig['headers'])
+            if (imageUrl) imageMessages.push(segment.image(imageUrl))
           }
 
-          const imageUrl = await processImageUrl(pickXiaohongshuImageUrl(item) ?? '', card.title || '小红书图片', index, {
-            Referer: 'https://www.xiaohongshu.com',
-            Cookie: Config.cookies.xiaohongshu
-          } as AxiosRequestConfig['headers'])
-          if (imageUrl) imageMessages.push(segment.image(imageUrl))
-        }
+          if (hasGeneratedLivePhoto) imageMessages.push(await buildLivePhotoTipMessage())
 
-        if (hasGeneratedLivePhoto) imageMessages.push(await buildLivePhotoTipMessage())
-
-        try {
           if (imageMessages.length === 1) {
             await this.e!.reply!(imageMessages[0])
           } else if (imageMessages.length > 1) {

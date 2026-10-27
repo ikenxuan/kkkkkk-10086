@@ -1,6 +1,7 @@
 import { loadApps } from './module/loader/index.js'
 import Common from './module/utils/Common.js'
 import Config from './module/utils/Config.js'
+import { startCacheMaintenance } from './module/utils/cache/runtime.js'
 
 // 初始化数据库
 const { initAllDatabases } = await import('@/module/db/index')
@@ -25,6 +26,8 @@ const { apps, failedFiles } = await loadApps()
 for (const { file, error } of failedFiles) {
   logger.error(`载入插件错误：${file}`, error)
 }
+
+startCacheMaintenance()
 
 /*
   直播预览队列的重启恢复。

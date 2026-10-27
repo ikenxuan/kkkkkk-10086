@@ -17,7 +17,6 @@ import {
   type ExecFileOptions
 } from 'node:child_process'
 import { stat } from 'node:fs/promises'
-import Common from './Common.js'
 
 export interface FFmpegExecResult {
   status: boolean
@@ -231,7 +230,6 @@ class FFmpeg {
         if (result && typeof result === 'object' && 'status' in result) {
           if (result.status) {
             logger.mark(`视频已压缩并保存到: ${normalized.resultPath}`)
-            Common.removeFile(normalized.path)
           } else {
             logger.error(normalized.path + ' 压缩失败！')
             logger.error(result)

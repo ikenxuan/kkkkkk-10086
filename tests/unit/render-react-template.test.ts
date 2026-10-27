@@ -242,6 +242,42 @@ describe('Render React template routing', () => {
     expect(cleanupMock).toHaveBeenCalledTimes(1)
   })
 
+  it('preserves the screenshot error when cleanup also rejects', async () => {
+    resolveReactTemplateRouteMock.mockReturnValue('other/help')
+    renderReactTemplateMock.mockResolvedValue(renderedTemplate())
+    const failure = new Error('screenshot failed')
+    screenshotFileMock.mockRejectedValue(failure)
+    cleanupMock.mockRejectedValue(Object.assign(new Error('sensitive path'), { code: 'EACCES' }))
+
+    await expect(Render('other/help')).rejects.toBe(failure)
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('EACCES'))
+    expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('sensitive path'))
+  })
+
+  it('returns successful screenshots even when cleanup fails', async () => {
+    resolveReactTemplateRouteMock.mockReturnValue('other/help')
+    renderReactTemplateMock.mockResolvedValue(renderedTemplate())
+    cleanupMock.mockRejectedValue(Object.assign(new Error('sensitive data'), { code: 'EBUSY' }))
+
+    await expect(Render('other/help')).resolves.toEqual([{ type: 'image', file: 'single-rendered' }])
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('EBUSY'))
+  })
+
+  it('keeps HTML until the screenshot and slicing actually settle after an outer timeout', async () => {
+    resolveReactTemplateRouteMock.mockReturnValue('other/help')
+    renderReactTemplateMock.mockResolvedValue(renderedTemplate())
+    let finishScreenshot!: (value: unknown) => void
+    screenshotFileMock.mockReturnValue(new Promise(resolve => { finishScreenshot = resolve }))
+    const pending = Render('other/help')
+    await vi.waitFor(() => expect(screenshotFileMock).toHaveBeenCalledOnce())
+    const { runWithRequestGuard } = await import('../../src/module/utils/RequestGuard.js')
+    await expect(runWithRequestGuard(() => pending, { timeoutMs: 1, maxRetries: 0 })).rejects.toThrow()
+    expect(cleanupMock).not.toHaveBeenCalled()
+    finishScreenshot({ type: 'image', file: 'late-image' })
+    await expect(pending).resolves.toEqual([{ type: 'image', file: 'late-image' }])
+    expect(cleanupMock).toHaveBeenCalledOnce()
+  })
+
   // 上游 ac96199 把页脚版本信息改成强制常显，本仓跟进后 `RemoveWatermark` 这个开关
   // 连同隐水印一起没了。这条钉的是「没有任何开关能再把 ctx.version 关掉」——
   // 那张图的用途之一是拿去报 bug，版本号不能少。

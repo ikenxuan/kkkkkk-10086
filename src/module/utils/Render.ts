@@ -9,6 +9,7 @@ import type { ReactTemplateRoute, TemplateParams } from './react-template/types.
 import Version from './Version.js'
 import type { ImageMessage } from './imagePayload.js'
 import { getErrorMessage } from './error-message.js'
+import { warnCacheCleanupFailure } from './cache/cleanup.js'
 
 const getRenderScale = (pct = 1): number => {
   const renderScale = Math.min(2, Math.max(0.5, Number(Config.app.renderScale) / 100))
@@ -131,7 +132,7 @@ export const Render = async <R extends ReactTemplateRoute> (
       screenshotData
     )
   } finally {
-    await rendered.cleanup()
+    await rendered.cleanup().catch(warnCacheCleanupFailure)
   }
   // 成图原样返回：`captureImages` 拿到的就是带 alpha 的 png，圆角外那圈透明像素
   // 到这里为止没有任何再编码的环节。以后要在这条线上加后处理，先确认它保得住 alpha，

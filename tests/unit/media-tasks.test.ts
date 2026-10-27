@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
+// Scheduler timing is tested without filesystem setup; media-cache-scopes.test
+// covers the real workspace boundary and promises that outlive their guards.
+vi.mock('../../src/module/utils/cache/runtime.js', () => ({
+  withMediaCacheScope: async <T>(consume: () => Promise<T>): Promise<T> => await consume()
+}))
+
 import { readFileSync } from 'node:fs'
 
 import { DEFAULT_REQUEST_TIMEOUT_MS } from '../../src/module/utils/RequestGuard.js'

@@ -279,8 +279,8 @@ describe('buildLivePhotoMessagesBatch 单张失败', () => {
     const paths = batch.tempFiles.map(file => file.filepath)
     // 视频下载失败，但静态图已经落盘了，必须被收进 tempFiles，否则临时文件泄漏
     expect(paths.some(filepath => /test_static_.*_1\.jpg$/.test(filepath))).toBe(true)
-    // 成功的三张各 4 个文件（静态图 + 源视频 + 循环视频 + 实况图），失败的那张 1 个
-    expect(paths).toHaveLength(13)
+    // 成功的三张各 4 个文件，失败的那张仍登记两个计划下载路径以清掉半文件。
+    expect(paths).toHaveLength(14)
     // 同一个文件不能被收两次，否则调用方会删两遍
     expect(new Set(paths).size).toBe(paths.length)
   })
@@ -295,7 +295,7 @@ describe('buildLivePhotoMessagesBatch 单张失败', () => {
 
     expect(batch.results.every(result => result.messages.length === 0)).toBe(true)
     expect(batch.generatedLivePhoto).toBe(false)
-    expect(batch.tempFiles).toHaveLength(3)
+    expect(batch.tempFiles).toHaveLength(6)
   })
 })
 

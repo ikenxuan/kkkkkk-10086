@@ -61,6 +61,8 @@ vi.mock('../../src/module/utils/index.js', () => {
   }
 })
 
+vi.mock('../../src/module/utils/Config.js', () => ({ default: mocks.config }))
+
 vi.mock('../../src/module/utils/amagiClient.js', () => ({
   loadAmagiEnums: loadRealAmagiEnums,
   bilibiliFetcher: new Proxy({}, {
@@ -213,9 +215,8 @@ const videoInfo = {
 }
 
 /** 走一遍 dynamic_info，返回被渲染过的模板路径序列 */
-const parseDynamic = async (dynamic: unknown): Promise<{ rendered: string[], replies: unknown[] }> => {
+const parseDynamic = async (dynamic: unknown, replies: unknown[] = []): Promise<{ rendered: string[], replies: unknown[] }> => {
   mocks.bilibiliApi.fetchDynamicDetail.mockResolvedValue(dynamic)
-  const replies: unknown[] = []
 
   const subject = Object.create(Bilibili.prototype) as Bilibili
   Object.assign(subject, {
@@ -330,12 +331,14 @@ describe('dynamic_info 的评论图不再带走正文', () => {
     expect(rendered).not.toContain('bilibili/comment')
   })
 
-  it('一切正常时评论卡照出，且排在正文之前', async () => {
-    const { rendered } = await parseDynamic(drawDynamic)
+  it('一切正常时正文卡和评论卡都发送，不依赖完成顺序', async () => {
+    mocks.render.mockImplementation(async (template: string) => ({ type: 'poster', template }))
+    const { rendered, replies } = await parseDynamic(drawDynamic)
 
     expect(rendered).toContain('bilibili/comment')
-    expect(rendered.indexOf('bilibili/comment'))
-      .toBeLessThan(rendered.indexOf('bilibili/dynamic/DYNAMIC_TYPE_DRAW'))
+    expect(rendered).toContain('bilibili/dynamic/DYNAMIC_TYPE_DRAW')
+    expect(replies).toContainEqual({ type: 'poster', template: 'bilibili/comment' })
+    expect(replies).toContainEqual({ type: 'poster', template: 'bilibili/dynamic/DYNAMIC_TYPE_DRAW' })
   })
 })
 
@@ -384,6 +387,33 @@ describe('dynamic_info 的评论图闸门四种类型一致', () => {
   现在正文 / 图片 / 评论卡是三条并发支线。
 */
 describe('dynamic_info 的正文、图片、评论各自进行', () => {
+  it.each([
+    { blocked: 'bilibili/comment', ready: 'bilibili/dynamic/DYNAMIC_TYPE_DRAW' },
+    { blocked: 'bilibili/dynamic/DYNAMIC_TYPE_DRAW', ready: 'bilibili/comment' }
+  ])('$blocked 未完成时，$ready 已发送', async ({ blocked, ready }) => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>(resolve => { release = resolve })
+    mocks.render.mockImplementation(async (template: string) => {
+      if (template === blocked) await gate
+      return { type: 'poster', template }
+    })
+    const replies: unknown[] = []
+    const execution = parseDynamic(drawDynamic, replies)
+
+    try {
+      await vi.waitFor(() => {
+        expect(mocks.render).toHaveBeenCalledWith(blocked, expect.anything())
+        expect(replies).toContainEqual({ type: 'poster', template: ready })
+        expect(replies).not.toContainEqual({ type: 'poster', template: blocked })
+      })
+    } finally {
+      release()
+      await execution
+    }
+
+    expect(replies).toContainEqual({ type: 'poster', template: blocked })
+  })
+
   it('图片处理失败时图文动态的正文卡和评论卡照发', async () => {
     const imageError = new Error('图片 403')
     mocks.processImageUrl.mockRejectedValue(imageError)

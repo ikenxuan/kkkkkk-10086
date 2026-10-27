@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('../../src/module/utils/cache/runtime.js', () => ({
+  withMediaCacheScope: async <T>(consume: () => Promise<T>): Promise<T> => await consume()
+}))
+
 import { MAX_MEDIA_TASK_TIMEOUT_MS } from '../../src/module/utils/MediaTasks.js'
 import {
   acquireDownloadSlot,
