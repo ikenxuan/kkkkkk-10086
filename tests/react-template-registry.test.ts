@@ -147,3 +147,20 @@ test('retries standalone loading after a transient missing artifact', async () =
   await result.cleanup()
   expect(await pathExists(result.htmlPath)).toBe(false)
 }, 20_000)
+
+test('concurrent renders never reuse HTML and cleaning one keeps the other available', async () => {
+  const { renderReactTemplate } = await import('../src/module/utils/react-template/registry.js')
+  const [first, second] = await Promise.all([
+    renderReactTemplate('other/runtime', runtimeData, context),
+    renderReactTemplate('other/runtime', runtimeData, context)
+  ])
+  try {
+    expect(first.htmlPath).not.toBe(second.htmlPath)
+    await first.cleanup()
+    await first.cleanup()
+    expect(await pathExists(first.htmlPath)).toBe(false)
+    expect(await pathExists(second.htmlPath)).toBe(true)
+  } finally {
+    await Promise.all([first.cleanup(), second.cleanup()])
+  }
+}, 20_000)

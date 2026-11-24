@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('../../src/module/utils/cache/runtime.js', () => ({
+  withMediaCacheScope: async <T>(consume: () => Promise<T>): Promise<T> => await consume()
+}))
+
 globalThis.logger = {
   debug: vi.fn(),
   error: vi.fn(),

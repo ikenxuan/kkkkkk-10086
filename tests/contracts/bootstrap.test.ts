@@ -36,6 +36,10 @@ const spies = vi.hoisted(() => ({
   restoreLivePreviewQueue: vi.fn()
 }))
 
+vi.mock('../../src/module/utils/cache/runtime.js', () => ({
+  startCacheMaintenance: vi.fn()
+}))
+
 vi.mock('../../src/module/db/index.js', () => ({
   initAllDatabases: spies.initAllDatabases.mockImplementation(async () => {
     state.calls.push('database')

@@ -1,4 +1,5 @@
 import { DEFAULT_REQUEST_TIMEOUT_MS, runWithRequestGuard } from './RequestGuard.js'
+import { withMediaCacheScope } from './cache/runtime.js'
 
 /**
  * 解析一个作品时可以各自独立跑的分支。
@@ -147,7 +148,7 @@ export const runMediaTasks = async (
 
   const settled = await Promise.allSettled(
     entries.map(([name, task]) => runWithRequestGuard(
-      () => Promise.resolve().then(task),
+      () => Promise.resolve().then(async () => await withMediaCacheScope(task)),
       { timeoutMs: resolveMediaTaskTimeoutMs(name, options), maxRetries: 0 }
     ))
   )

@@ -34,6 +34,17 @@ export interface AppConfig {
   videoTool?: boolean
   defaulttool?: boolean
   removeCache?: boolean
+  cache?: {
+    orphanHours?: number
+    legacyHours?: number
+    mediaMinutes?: number
+    debugHours?: number
+    maxFiles?: number
+    maxSizeMB?: number
+    debugMaxFiles?: number
+    debugMaxSizeMB?: number
+    sweepMinutes?: number
+  }
   priority?: number
   sendforwardmsg?: boolean
   Theme?: number

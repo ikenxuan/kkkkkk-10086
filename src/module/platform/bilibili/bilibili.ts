@@ -1,4 +1,5 @@
 /* eslint-disable indent */
+import { randomUUID } from 'node:crypto'
 import { Base, Render, Config, Networks, mergeFile, Common, baseHeaders, downloadFile, uploadFile, downloadVideo, processImageUrl, sanitizeFilenameSegment } from '@/module/utils/index'
 import { buildAmagiRequestConfig, loadAmagiEnums } from '@/module/utils/amagiClient'
 import { burnDanmaku } from '@/module/platform/common/danmaku'
@@ -1382,7 +1383,7 @@ export class Bilibili extends Base {
 
         let sourcePath = resultPath
         if ((this.forceBurnDanmaku || Config.bilibili.burnDanmaku) && danmakuList.length > 0) {
-          const burnPath = Common.tempDri.video + `Bil_Danmaku_${Date.now()}.mp4`
+          const burnPath = Common.tempDri.video + `Bil_Danmaku_${Date.now()}_${randomUUID()}.mp4`
           const ok = await burnDanmaku('bilibili', resultPath, danmakuList, burnPath, {
             danmakuArea: Config.bilibili.danmakuArea,
             danmakuFontSize: Config.bilibili.danmakuFontSize,
@@ -1394,7 +1395,7 @@ export class Bilibili extends Base {
           }
         }
 
-        const filePath = Common.tempDri.video + `${Config.app.removeCache ? 'tmp_' + Date.now() : this.downloadfilename}.mp4`
+        const filePath = Common.tempDri.video + `${Config.app.removeCache ? 'tmp_' + Date.now() + '_' + randomUUID() : this.downloadfilename}.mp4`
         fs.renameSync(sourcePath, filePath)
         logger.mark(`视频文件重命名完成: ${resultPath.split('/').pop()} -> ${filePath.split('/').pop()}`)
         logger.mark('正在尝试删除缓存文件')
@@ -1535,7 +1536,7 @@ export class Bilibili extends Base {
           resource: videoId ? `bili:${videoId}:${durlUrl ? 'full' : 'video'}` : undefined
         })
         if (videoFile.filepath) {
-          const resultPath = Common.tempDri.video + `Bil_Danmaku_${Date.now()}.mp4`
+          const resultPath = Common.tempDri.video + `Bil_Danmaku_${Date.now()}_${randomUUID()}.mp4`
           const ok = await burnDanmaku('bilibili', videoFile.filepath, danmakuList, resultPath, {
             danmakuArea: Config.bilibili.danmakuArea,
             danmakuFontSize: Config.bilibili.danmakuFontSize,

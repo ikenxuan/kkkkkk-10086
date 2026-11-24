@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import test from 'node:test'
+import test, { after } from 'node:test'
 import { pathToFileURL } from 'node:url'
 
 const root = path.resolve(import.meta.dirname, '..', '..')
 const importBuilt = async relative => await import(pathToFileURL(path.join(root, relative)).href)
+
+after(async () => {
+  // 缓存策略读取插件配置会初始化配置监听器；独立 Node 契约进程负责关闭它们。
+  const { default: config } = await importBuilt('lib/module/utils/Config.js')
+  await Promise.all(Object.values(config.watcher).map(watcher => watcher.close()))
+  const { startCacheMaintenance } = await importBuilt('lib/module/utils/cache/runtime.js')
+  startCacheMaintenance()()
+})
 
 test('the standalone bundle ships the two artifacts the runtime and typechecker load', () => {
   // registry.ts 用 import() 直接加载这一个文件；index.d.mts 是 tsc 唯一能看到的类型面。
@@ -56,9 +64,12 @@ test('the built renderer writes one self-contained document into a disposable di
     )
     assert.match(path.basename(outputDir), /^kkkkkk-10086-ktr-/)
 
-    // 这条断言是下面所有「必须内联」断言的依据：目录里除了 HTML 什么都没有，
-    // 所以任何相对路径或 file:// 引用在 Puppeteer 里都是 404。
-    assert.deepEqual(readdirSync(outputDir), [path.basename(rendered.htmlPath)])
+    // 所有视觉资源仍内联；新增的控制文件只服务于跨进程租约，不是模板资源。
+    assert.deepEqual(readdirSync(outputDir).sort(), ['.kkk-cache.json', '.leases', path.basename(rendered.htmlPath)].sort())
+    const metadata = JSON.parse(readFileSync(path.join(outputDir, '.kkk-cache.json'), 'utf8'))
+    assert.equal(metadata.kind, 'render')
+    assert.equal(metadata.pid, process.pid)
+    assert.equal(readdirSync(path.join(outputDir, '.leases')).length, 1)
 
     const html = readFileSync(rendered.htmlPath, 'utf8')
     assert.match(html, /^<!doctype html>/i)

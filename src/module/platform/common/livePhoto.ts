@@ -259,10 +259,9 @@ const readOrConvertToJpeg = async (imagePath: string): Promise<Buffer> => {
   if (isJpegBuffer(sourceBuffer)) return sourceBuffer
 
   const tempJpegPath = path.join(Common.tempDri.images, `motion_${getTimestampName()}.jpg`)
-  const result = await ffmpeg(['-y', '-i', imagePath, '-frames:v', '1', '-q:v', '2', tempJpegPath])
-  if (!result?.status) throw new Error(`图片转换 JPEG 失败: ${imagePath}`)
-
   try {
+    const result = await ffmpeg(['-y', '-i', imagePath, '-frames:v', '1', '-q:v', '2', tempJpegPath])
+    if (!result?.status) throw new Error(`图片转换 JPEG 失败: ${imagePath}`)
     return fs.readFileSync(tempJpegPath)
   } finally {
     fs.rmSync(tempJpegPath, { force: true })
@@ -365,19 +364,22 @@ const downloadLivePhotoSources = async (
   const index = item.index || 0
   const staticPath = path.join(Common.tempDri.images, `${platform}_static_${name}_${index}.jpg`)
   const liveVideoPath = path.join(Common.tempDri.video, `${platform}_live_src_${name}_${index}.mp4`)
-  const tempFiles: FileInfo[] = []
+  // Register paths before writers start: a rejected download can leave a partial
+  // file, including when archive mode keeps the original media directories.
+  const tempFiles: FileInfo[] = [
+    { filepath: staticPath, totalBytes: 0 },
+    { filepath: liveVideoPath, totalBytes: 0 }
+  ]
 
   // 静态图和实况视频之间没有任何依赖，原先两个连续 await 是纯白等。
   //
-  // 用 allSettled 而不是 all：半边失败时另一边可能已经落盘，那个文件必须被收进
-  // tempFiles，否则临时文件泄漏 —— 改造前就是这样，旧代码在两个下载都成功后才
-  // `push(staticFile, liveVideo)`，视频下载失败时静态图就永远留在磁盘上了。
+  // 两个 writer 都真正结束后才返回，否则调用方清理时另一半仍可能写入。
   const [staticResult, videoResult] = await Promise.allSettled([
     downloadToFile(item.staticUrl, staticPath, headers),
     downloadToFile(item.liveVideoUrl, liveVideoPath, headers)
   ])
-  if (staticResult.status === 'fulfilled') tempFiles.push(staticResult.value)
-  if (videoResult.status === 'fulfilled') tempFiles.push(videoResult.value)
+  if (staticResult.status === 'fulfilled') Object.assign(tempFiles[0]!, staticResult.value)
+  if (videoResult.status === 'fulfilled') Object.assign(tempFiles[1]!, videoResult.value)
 
   // 两个分支分开写而不是三元：TS 只在各自的 if 里才把 PromiseSettledResult
   // 收窄成 rejected，合成一条三元的话 else 侧读不到 .reason。
@@ -422,6 +424,7 @@ const composeLivePhoto = async (
 
   try {
     if (plan.video) {
+      tempFiles.push({ filepath: download.loopPath, totalBytes: 0 })
       const loopResult = await loopVideo(download.liveVideo.filepath, download.loopPath, {
         staticImagePath: download.staticFile.filepath,
         bgmPath: shared.bgmPath,
@@ -430,7 +433,6 @@ const composeLivePhoto = async (
         loopCount: item.loopCount
       })
       if (loopResult.success) {
-        tempFiles.push({ filepath: download.loopPath, totalBytes: 0 })
         const videoPath = Config.upload.videoSendMode === 'base64'
           ? `base64://${fs.readFileSync(download.loopPath).toString('base64')}`
           : `file://${download.loopPath}`
@@ -440,13 +442,13 @@ const composeLivePhoto = async (
     }
 
     if (plan.livePhoto) {
+      tempFiles.push({ filepath: download.motionPath, totalBytes: 0 })
       const built = await buildGoogleMotionPhoto({
         imagePath: download.staticFile.filepath,
         videoPath: download.liveVideo.filepath,
         outputPath: download.motionPath
       })
       if (built) {
-        tempFiles.push({ filepath: download.motionPath, totalBytes: 0 })
         const imagePath = Config.upload.imageSendMode === 'base64'
           ? `base64://${fs.readFileSync(download.motionPath).toString('base64')}`
           : `file://${download.motionPath}`

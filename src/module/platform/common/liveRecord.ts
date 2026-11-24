@@ -1,4 +1,5 @@
 import { Common, Config, baseHeaders, sanitizeFilenameSegment, uploadFile } from '@/module/utils/index'
+import { randomUUID } from 'node:crypto'
 import { recordLiveStream } from '@/module/utils/FFmpeg'
 import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
 import { DEFAULT_PARSE_TIMEOUT_MS } from '@/module/utils/ParseCoordinator'
@@ -250,7 +251,7 @@ export const recordLiveRoom = async (
   // 目录正常在 `src/index.ts` 启动时就建好了，这里再兜一次：缺目录时 ffmpeg 报的是
   // 一句 ENOENT，和「ffmpeg 没装」在日志上分不开。
   await Common.mkdir(Common.tempDri.video)
-  const outputPath = `${Common.tempDri.video}${source.name}_${Date.now()}.${source.suffix}`
+  const outputPath = `${Common.tempDri.video}${source.name}_${Date.now()}_${randomUUID()}.${source.suffix}`
 
   const seconds = Math.round(maxDurationMs / 1000)
   await e.reply!(

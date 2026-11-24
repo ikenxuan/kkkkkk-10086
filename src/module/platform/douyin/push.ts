@@ -10,6 +10,8 @@ import { buildAmagiRequestConfig, douyinFetcher } from '@/module/utils/amagiClie
 import { buildLivePhotoMessagesBatch, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import type { LivePhotoBatchItem } from '@/module/platform/common/types'
 import { withDownloadBucket } from '@/module/utils/Network/DownloadBudget'
+import { withMediaCacheScope } from '@/module/utils/cache/runtime'
+import { randomUUID } from 'node:crypto'
 import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { buildDouyinFavoritePayload, buildDouyinRecommendPayload } from './listCard.js'
 import { buildDouyinLivePayload, type DouyinRoomData } from './live.js'
@@ -121,7 +123,7 @@ export class DouYinpush extends Base {
    * 所有下载都会落到 default 兜底桶，和别的平台抢同一份额度。
    */
   async action (): Promise<boolean | void> {
-    return await withDownloadBucket('douyin', async () => {
+    return await withDownloadBucket('douyin', async () => await withMediaCacheScope(async () => {
       try {
         await this.syncConfigToDatabase()
 
@@ -143,7 +145,7 @@ export class DouYinpush extends Base {
       } catch (error) {
         logger.error(error)
       }
-    })
+    }))
   }
 
   async syncConfigToDatabase (): Promise<void> {
@@ -419,17 +421,20 @@ export class DouYinpush extends Base {
                   const imageres = []
                   const temp = []
                   let hasGeneratedLivePhoto = false
-                  const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
-                  const musicUrl = getDouyinMusicUrl(workData.music)
-                  const liveimgbgm = musicUrl
-                    ? await downloadFile(musicUrl, {
-                      title: `Douyin_tmp_A_${Date.now()}.mp3`,
-                      headers: douyinBaseHeaders
-                    })
-                    : null
-                  if (liveimgbgm?.filepath) temp.push(liveimgbgm)
-
                   try {
+                    const mergeMode = Config.douyin.liveImageMergeMode || 'independent'
+                    const musicUrl = getDouyinMusicUrl(workData.music)
+                    const bgmTitle = `Douyin_tmp_A_${Date.now()}_${randomUUID()}.mp3`
+                    const bgmFile = { filepath: Common.tempDri.video + bgmTitle, totalBytes: 0 }
+                    if (musicUrl) temp.push(bgmFile)
+                    const liveimgbgm = musicUrl
+                      ? await downloadFile(musicUrl, {
+                        title: bgmTitle,
+                        headers: douyinBaseHeaders
+                      })
+                      : null
+                    if (liveimgbgm?.filepath) Object.assign(bgmFile, liveimgbgm)
+
                     const pushImages = workData.images || []
                     const livePhotoItems: LivePhotoBatchItem[] = pushImages.map(item => {
                       if ((item.clip_type ?? 2) === 2) return {}

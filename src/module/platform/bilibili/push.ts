@@ -14,6 +14,8 @@ import { bilibiliFetcher, buildAmagiRequestConfig } from '@/module/utils/amagiCl
 import { buildLivePhotoMessagesBatch as buildCommonLivePhotoMessagesBatch, buildLivePhotoTipMessage } from '@/module/platform/common/livePhoto'
 import type { LivePhotoBatchItem } from '@/module/platform/common/types'
 import { withDownloadBucket } from '@/module/utils/Network/DownloadBudget'
+import { withMediaCacheScope } from '@/module/utils/cache/runtime'
+import { randomUUID } from 'node:crypto'
 import { buildPushListGroupInfo, matchesGroup } from '@/module/platform/common/pushList'
 import { bilibiliDB, cleanOldDynamicCache } from '@/module/db/index'
 import type { BilibiliFilterPushItem } from '@/module/db/bilibili'
@@ -176,7 +178,7 @@ export class Bilibilipush extends Base {
    * 所有下载都会落到 default 兜底桶，和别的平台抢同一份额度。
    */
   async action (): Promise<boolean | void> {
-    return await withDownloadBucket('bilibili', async () => {
+    return await withDownloadBucket('bilibili', async () => await withMediaCacheScope(async () => {
       try {
         await this.syncConfigToDatabase()
         this.ensureConfigFields(Config.pushlist.bilibili || [])
@@ -198,7 +200,7 @@ export class Bilibilipush extends Base {
       } catch (error) {
         logger.error(error)
       }
-    })
+    }))
   }
 
   async syncConfigToDatabase (): Promise<void> {
@@ -749,7 +751,7 @@ export class Bilibilipush extends Base {
                           resultPath: Common.tempDri.video + `Bil_Result_${infoData.data.data.bvid}.mp4`,
                           callback: async (success, resultPath) => {
                             if (success) {
-                              const filePath = Common.tempDri.video + `tmp_${Date.now()}.mp4`
+                              const filePath = Common.tempDri.video + `tmp_${Date.now()}_${randomUUID()}.mp4`
                               fs.renameSync(resultPath, filePath)
                               logger.mark(`视频文件重命名完成: ${resultPath.split('/').pop()} -> ${filePath.split('/').pop()}`)
                               logger.mark('正在尝试删除缓存文件')

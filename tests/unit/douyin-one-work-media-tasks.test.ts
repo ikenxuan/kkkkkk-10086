@@ -272,7 +272,8 @@ describe('Douyin one_work media tasks', () => {
 
     expect(mocks.fetchEmojiList).toHaveBeenCalledOnce()
 
-    const burnOptions = mocks.burnDouyinDanmaku.mock.calls[0]?.[3] as { emojiList?: unknown }
+    const burnOptions = mocks.burnDouyinDanmaku.mock.calls[0]?.[3] as { emojiList?: unknown, tempDir?: string }
+    expect(burnOptions.tempDir).toBe('tmp/')
     expect(burnOptions.emojiList).toEqual([
       { name: '[笑哭]', url: 'https://example.com/laugh.png' }
     ])

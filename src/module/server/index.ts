@@ -14,6 +14,7 @@ import Common from '@/module/utils/Common'
 import Version from '@/module/utils/Version'
 import { sendNotFound } from './response.js'
 import { renderVideoPreviewPage } from './video-preview.js'
+import { getCachePolicy, retainMediaCacheFile } from '@/module/utils/cache/runtime'
 
 interface VideoPreview {
   filename: string
@@ -28,6 +29,7 @@ interface VideoPreviewDependencies {
   validateVideoRequest: (filename: string) => string | null
   getVideoPreview: (filename: string) => VideoPreview | undefined
   markVideoPreviewRemoved: (filename: string) => void
+  retainMediaCacheFile: (filePath: string) => Promise<() => Promise<void>>
 }
 
 interface AmagiRouteFactories {
@@ -61,7 +63,8 @@ const SSR_PREFIX = `${KKK_PREFIX}/ssr`
 const defaultDependencies: VideoPreviewDependencies = {
   validateVideoRequest: filename => Common.validateVideoRequest(filename),
   getVideoPreview: filename => Common.getVideoPreview(filename),
-  markVideoPreviewRemoved: filename => Common.markVideoPreviewRemoved(filename)
+  markVideoPreviewRemoved: filename => Common.markVideoPreviewRemoved(filename),
+  retainMediaCacheFile
 }
 
 const getSafeFilename = (req: Request): string => {
@@ -70,10 +73,10 @@ const getSafeFilename = (req: Request): string => {
   return filename ? path.basename(filename) : ''
 }
 
-const createStreamVideo = (dependencies: VideoPreviewDependencies) => (
+const createStreamVideo = (dependencies: VideoPreviewDependencies) => async (
   req: Request,
   res: Response
-): void => {
+): Promise<void> => {
   const filename = getSafeFilename(req)
   const videoPath = dependencies.validateVideoRequest(filename)
   if (!videoPath) {
@@ -81,32 +84,70 @@ const createStreamVideo = (dependencies: VideoPreviewDependencies) => (
     return
   }
 
-  const stat = fs.statSync(videoPath)
-  const range = req.headers.range
-  res.setHeader('Accept-Ranges', 'bytes')
-  res.setHeader('Content-Type', 'video/mp4')
-
-  if (!range) {
-    res.setHeader('Content-Length', stat.size)
-    fs.createReadStream(videoPath).pipe(res)
+  let release: () => Promise<void>
+  try {
+    release = await dependencies.retainMediaCacheFile(videoPath)
+  } catch {
+    sendNotFound(res, '视频文件暂时不可用')
+    return
+  }
+  let released = false
+  let stream: fs.ReadStream | undefined
+  const finish = (): void => {
+    if (released) return
+    released = true
+    res.off('close', disconnect)
+    res.off('error', disconnect)
+    release().catch(() => {})
+  }
+  const disconnect = (): void => {
+    if (stream) stream.destroy()
+    else finish()
+  }
+  res.once('close', disconnect)
+  res.once('error', disconnect)
+  if (res.destroyed) {
+    finish()
     return
   }
 
-  const [startText, endText] = range.replace(/bytes=/, '').split('-')
-  const start = Number.parseInt(startText || '0', 10)
-  const end = endText ? Number.parseInt(endText, 10) : stat.size - 1
-  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || end >= stat.size) {
-    res.status(416).send('请求范围不满足')
-    return
+  try {
+    const stat = fs.statSync(videoPath)
+    const range = req.headers.range
+    let bounds: { start: number; end: number } | undefined
+    res.setHeader('Accept-Ranges', 'bytes')
+    res.setHeader('Content-Type', 'video/mp4')
+    if (range) {
+      const [startText, endText] = range.replace(/bytes=/, '').split('-')
+      const start = Number.parseInt(startText || '0', 10)
+      const end = endText ? Number.parseInt(endText, 10) : stat.size - 1
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start > end || end >= stat.size) {
+        finish()
+        res.status(416).send('请求范围不满足')
+        return
+      }
+      bounds = { start, end }
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Content-Length': end - start + 1,
+        'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes'
+      })
+    } else {
+      res.setHeader('Content-Length', stat.size)
+    }
+    stream = fs.createReadStream(videoPath, bounds)
+    stream.once('close', finish)
+    stream.once('error', () => {
+      if (!res.headersSent) sendNotFound(res, '视频文件不存在')
+      else res.destroy()
+    })
+    stream.pipe(res)
+  } catch {
+    finish()
+    if (!res.headersSent) sendNotFound(res, '视频文件不存在')
+    else res.destroy()
   }
-
-  res.writeHead(206, {
-    'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-    'Content-Length': end - start + 1,
-    'Content-Type': 'video/mp4',
-    'Accept-Ranges': 'bytes'
-  })
-  fs.createReadStream(videoPath, { start, end }).pipe(res)
 }
 
 const createRenderVideoPage = (dependencies: VideoPreviewDependencies) => (
@@ -125,7 +166,7 @@ const createRenderVideoPage = (dependencies: VideoPreviewDependencies) => (
   const preview = dependencies.getVideoPreview(filename)
   const removeCache = preview?.removeCache ?? Boolean(Config.app.removeCache)
   const createdAt = preview?.createdAt ?? Date.now()
-  const expireAt = preview?.expireAt ?? (removeCache ? createdAt + 10 * 60 * 1000 : undefined)
+  const expireAt = preview?.expireAt ?? (removeCache ? createdAt + (getCachePolicy().mediaTtlMs ?? 10 * 60 * 1000) : undefined)
   res.send(renderVideoPreviewPage({
     filename,
     filePath: preview?.filePath ?? videoPath,

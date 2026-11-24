@@ -10,6 +10,20 @@ defaulttool: true
 # 缓存删除，非必要不修改！
 removeCache: true
 
+# 临时工作区清理。活跃消费者（含其他本机进程）优先于TTL和容量上限；修改后重启生效。
+# removeCache=false 的传统视频/图片存档不纳入清扫；媒体预览从最后消费者完成后计时。
+cache:
+  orphanHours: 24
+  legacyHours: 168
+  mediaMinutes: 10
+  maxFiles: 1000
+  maxSizeMB: 256
+  sweepMinutes: 30
+  # 只有 KKK_TEMPLATE_CAPTURE=1 才保留调试HTML和快照；默认不保留。
+  debugHours: 24
+  debugMaxFiles: 50
+  debugMaxSizeMB: 64
+
 # 自定义优先级，「默认解析」关闭后才会生效。修改后重启生效
 priority: 800
 

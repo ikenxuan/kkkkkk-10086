@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { existsSync } from 'node:fs'
+import { mkdtemp, readFile, rm, unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const commonMock = vi.hoisted(() => ({
   calculateBitrate: vi.fn(() => 100),
@@ -502,5 +506,87 @@ describe('normalizeLoopVideoOptions', () => {
       bgmPath: undefined,
       context: undefined
     })
+  })
+})
+
+describe('legacy video cache timers', () => {
+  it('waits for every concurrent sender before starting the legacy file TTL', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-video-senders-'))
+    const filePath = join(directory, 'concurrent.mp4')
+    await writeFile(filePath, 'needed by the slow sender')
+    const deletions: Promise<void>[] = []
+    commonMock.removeFile.mockImplementation(async (file: string) => {
+      const deletion = unlink(file)
+      deletions.push(deletion)
+      await deletion
+      return true
+    })
+    configMock.app = { removeCache: true, cache: { mediaMinutes: 1 } }
+    vi.useFakeTimers()
+    let finish!: (value: unknown) => void
+    const file = { filepath: filePath, totalBytes: 1 }
+    const slow = uploadFile(createUploadEvent(async () => await new Promise(resolve => { finish = resolve })), file, '', undefined, uploadDependencies)
+    try {
+      await uploadFile(createUploadEvent(async () => ({ message_id: 'fast' })), { ...file }, '', undefined, uploadDependencies)
+      await vi.advanceTimersByTimeAsync(61_000)
+      await Promise.all(deletions)
+      expect(existsSync(filePath)).toBe(true)
+      finish({ message_id: 'slow' })
+      await slow
+      await vi.advanceTimersByTimeAsync(60_000)
+      await expect.poll(() => existsSync(filePath)).toBe(false)
+    } finally {
+      finish({ message_id: 'slow' })
+      await slow
+      vi.clearAllTimers()
+      vi.useRealTimers()
+      commonMock.removeFile.mockReset()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('keeps a file during a later upload and restarts its retention after that upload', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-video-timer-'))
+    const filePath = join(directory, 'shared.mp4')
+    await writeFile(filePath, 'shared recording')
+    commonMock.removeFile.mockImplementation(async (file: string) => { await unlink(file); return true })
+    configMock.app = { removeCache: true, cache: { mediaMinutes: 1 } }
+    vi.useFakeTimers()
+    let finish!: (value: unknown) => void
+    try {
+      const file = { filepath: filePath, totalBytes: 1 }
+      await uploadFile(createUploadEvent(async () => ({ message_id: 'first' })), file, '', undefined, uploadDependencies)
+      await vi.advanceTimersByTimeAsync(30_000)
+      const sending = uploadFile(createUploadEvent(async () => await new Promise(resolve => { finish = resolve })), file, '', undefined, uploadDependencies)
+      await vi.advanceTimersByTimeAsync(40_000)
+      expect(await readFile(filePath, 'utf8')).toBe('shared recording')
+      finish({ message_id: 'second' })
+      await sending
+      await vi.advanceTimersByTimeAsync(60_000)
+      await expect.poll(() => existsSync(filePath)).toBe(false)
+    } finally {
+      vi.useRealTimers()
+      commonMock.removeFile.mockReset()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
+  it('does not delete a replacement file written under the same name', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'kkkkkk-video-generation-'))
+    const filePath = join(directory, 'same-name.mp4')
+    await writeFile(filePath, 'old')
+    commonMock.removeFile.mockImplementation(async (file: string) => { await unlink(file); return true })
+    configMock.app = { removeCache: true }
+    vi.useFakeTimers()
+    try {
+      await uploadFile(createUploadEvent(async () => ({ message_id: 'first' })), { filepath: filePath, totalBytes: 1 }, '', undefined, uploadDependencies)
+      await writeFile(filePath, 'replacement belongs to another operation')
+      await vi.advanceTimersByTimeAsync(10 * 60_000)
+      expect(await readFile(filePath, 'utf8')).toBe('replacement belongs to another operation')
+    } finally {
+      vi.useRealTimers()
+      commonMock.removeFile.mockReset()
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 })

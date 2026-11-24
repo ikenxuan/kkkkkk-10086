@@ -9,6 +9,7 @@ import { Networks } from './Network/index.js'
 import Version from './Version.js'
 import { XIAOHONGSHU_LINK_PATTERN } from '@/module/platform/xiaohongshu/link'
 import { isRecord } from './record.js'
+import { getCachePolicy, getMediaCacheDirectories, isManagedMediaFile } from './cache/runtime.js'
 
 interface VideoPreview {
   filename: string
@@ -200,19 +201,29 @@ export const resolveUseDarkTheme = (
   return useDarkThemeByTime(now)
 }
 class Tools {
-  readonly tempDri: { default: string; video: string; images: string }
+  private readonly originalTempDirectories: { default: string; video: string; images: string }
   readonly videoPreviews = new Map<string, VideoPreview>()
 
   constructor () {
     const defaultPath = join(Version.clientPath, 'temp', Version.pluginName)
-    this.tempDri = {
+    this.originalTempDirectories = {
       default: defaultPath,
       video: join(defaultPath, 'kkkdownload', 'video') + sep,
       images: join(defaultPath, 'kkkdownload', 'images') + sep
     }
   }
 
-  registerVideoPreview (filePath: string, removeCache = Config.app.removeCache, ttlMs = 10 * 60 * 1000): VideoPreview {
+  get tempDri (): { default: string; video: string; images: string } {
+    const media = getMediaCacheDirectories()
+    if (!media) return this.originalTempDirectories
+    return {
+      default: this.originalTempDirectories.default,
+      video: media.video.endsWith(sep) ? media.video : media.video + sep,
+      images: media.images.endsWith(sep) ? media.images : media.images + sep
+    }
+  }
+
+  registerVideoPreview (filePath: string, removeCache = Config.app.removeCache, ttlMs = getCachePolicy().mediaTtlMs ?? 10 * 60 * 1000): VideoPreview {
     const filename = path.basename(filePath)
     const createdAt = Date.now()
     const info: VideoPreview = {
@@ -245,9 +256,9 @@ class Tools {
     if (safeName !== filename || filename.includes('/') || filename.includes('\\')) return null
     const previewInfo = this.getVideoPreview(safeName)
     const videoPath = previewInfo?.filePath || path.join(this.tempDri.video, safeName)
-    const resolvedVideoDir = path.resolve(this.tempDri.video)
+    const resolvedVideoDir = path.resolve(this.originalTempDirectories.video)
     const resolvedPath = path.resolve(videoPath)
-    if (!resolvedPath.startsWith(resolvedVideoDir + path.sep) && resolvedPath !== resolvedVideoDir) return null
+    if (!resolvedPath.startsWith(resolvedVideoDir + path.sep) && resolvedPath !== resolvedVideoDir && !isManagedMediaFile(resolvedPath)) return null
     if (!fs.existsSync(resolvedPath)) return null
     return resolvedPath
   }
@@ -438,14 +449,18 @@ class Tools {
   }
 
   async removeFile (dirname: string, force = false): Promise<boolean> {
+    // A workspace can have other senders, transcoders or HTTP readers. Its owner
+    // schedules deletion after the last consumer, including failed partial files.
+    if (isManagedMediaFile(dirname)) return true
     if (!Config.app.removeCache && !force) return true
     const normalizedPath = dirname.replace(/\\/g, '/')
     try {
       await fs.promises.unlink(normalizedPath)
-      logger.mark(`缓存文件: ${normalizedPath} 删除成功！`)
+      logger.debug('已删除一个缓存文件')
       return true
-    } catch (error: unknown) {
-      logger.error(`缓存文件: ${normalizedPath} 删除失败！`, error)
+    } catch (error) {
+      if (isRecord(error) && error.code === 'ENOENT') return true
+      logger.warn('缓存文件删除失败')
       return false
     }
   }

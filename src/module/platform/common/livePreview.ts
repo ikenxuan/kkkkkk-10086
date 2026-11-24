@@ -1,6 +1,8 @@
 import { Common, sanitizeFilenameSegment, uploadFile } from '@/module/utils/index'
+import { randomUUID } from 'node:crypto'
 import { recordLiveStream } from '@/module/utils/FFmpeg'
 import { fromMilliseconds, reportMedia } from '@/module/utils/media-metrics'
+import { withMediaCacheScope } from '@/module/utils/cache/runtime'
 import { getLivePreviewDB } from '@/module/db/index'
 import { resolveLiveSource } from './liveRecord.js'
 import type { BaseEvent } from '@/module/utils/types'
@@ -222,7 +224,7 @@ const drain = async (): Promise<void> => {
  * 录一项并发给它的所有订阅者。
  * @param job 队列项
  */
-const runJob = async (job: PreviewJob): Promise<void> => {
+const runJob = async (job: PreviewJob): Promise<void> => await withMediaCacheScope(async () => {
   const resolved = await resolveLiveSource(job.platform, job.roomUrl, {
     douyinQuality: PREVIEW_DOUYIN_QUALITY,
     bilibiliQn: PREVIEW_BILIBILI_QN
@@ -235,7 +237,7 @@ const runJob = async (job: PreviewJob): Promise<void> => {
 
   const { source } = resolved
   await Common.mkdir(Common.tempDri.video)
-  const outputPath = `${Common.tempDri.video}${sanitizeFilenameSegment(`预览_${source.name}`)}_${Date.now()}.${source.suffix}`
+  const outputPath = `${Common.tempDri.video}${sanitizeFilenameSegment(`预览_${source.name}`)}_${Date.now()}_${randomUUID()}.${source.suffix}`
 
   const result = await recordLiveStream({
     url: source.url,
@@ -258,7 +260,7 @@ const runJob = async (job: PreviewJob): Promise<void> => {
 
   await deliver(job, result.filePath, sizeMB, `${source.name}.${source.suffix}`)
   await Common.removeFile(result.filePath, true)
-}
+})
 
 /**
  * 把录好的文件发给所有订阅者。
